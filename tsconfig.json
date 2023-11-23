@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "esModuleInterop": true,
+        "outDir": "./build",
+        "strict": true,
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        //   "declaration": true,
+        //   "declarationDir": "./build/types",
+        "lib": ["es6", "dom"],
+        "typeRoots": ["node_modules/@types"],
+        "noEmitOnError": true,
+        "noImplicitAny": true
+    },
+    "include": ["src/**/*", "tests/index.test.ts"],
+    "exclude": ["node_modules", "**/*.test.ts", "dist", "build"]
+}
