@@ -230,4 +230,5 @@ describe("Interactions with the world", ()=>{
         expect(testRes.x).toBeCloseTo(30 - (800 / (Math.sqrt(2) * camera.getZoomLevel())));
         expect(testRes.y).toBeCloseTo(50);
     });
+
 });
