@@ -3,7 +3,7 @@
         "target": "es6",
         "esModuleInterop": true,
         "outDir": "./build",
-        "strict": true,
+        "strict": false,
         "moduleResolution": "node",
         "sourceMap": true,
         "resolveJsonModule": true,
