@@ -225,9 +225,9 @@ describe("Interactions with the world", ()=>{
         const point = {x: 100, y: 100};
         camera.setPosition({x: 30, y: 50});
         camera.setRotationDeg(-45);
+        camera.setZoomLevel(10);
         const testRes = camera.convert2WorldSpace(point);
-        expect(testRes.x).toBeCloseTo(30 - (800 / Math.sqrt(2)));
+        expect(testRes.x).toBeCloseTo(30 - (800 / (Math.sqrt(2) * camera.getZoomLevel())));
         expect(testRes.y).toBeCloseTo(50);
     });
-    
 });

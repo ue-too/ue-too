@@ -246,6 +246,7 @@ export class vCamera {
     convert2WorldSpace(point: Point): Point{
         let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this.viewPortHeight / 2};
         let delta2Point = PointCal.subVector(point, cameraFrameCenter);
+        delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / this.zoomLevel);
         delta2Point = PointCal.rotatePoint(delta2Point, this.rotation);
         return PointCal.addVector(this.position, delta2Point);
     }
