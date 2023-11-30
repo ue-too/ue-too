@@ -196,6 +196,15 @@ describe("Camera zooming operations", ()=>{
         expect(testRes).toBe(false);
     });
 
+    test("Set Zoom less than or equal to 0", ()=>{
+        const zoomRes = camera.setZoomLevel(0);
+        expect(zoomRes).toBe(false);
+        camera.setZoomLevel(1);
+        camera.setZoomLevel(-5);
+        expect(camera.getZoomLevel()).toBe(1);
+
+    })
+
 });
 
 describe("Camera rotation operations", ()=>{

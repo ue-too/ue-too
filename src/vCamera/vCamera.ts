@@ -131,10 +131,10 @@ export class vCamera {
     }
 
     setZoomLevel(zoomLevel: number){
-        if(this.zoomLevelLimits !== undefined && 
+        if(zoomLevel <= 0 || (this.zoomLevelLimits !== undefined && 
         ((this.zoomLevelLimits.max !== undefined && this.zoomLevelLimits.max < zoomLevel) || 
          (this.zoomLevelLimits.min !== undefined && this.zoomLevelLimits.min > zoomLevel)
-        )){
+        ))){
             return false;
         }
         this.zoomLevel = zoomLevel;
