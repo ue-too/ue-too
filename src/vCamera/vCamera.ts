@@ -19,6 +19,11 @@ const defaultCameraOptions: CameraOptions = {
     initialRotation: 0
 }
 
+interface CameraLockableObject{
+    getPosition(): Point;
+    getRotation(): number;
+}
+
 
 
 export class vCamera {
@@ -32,6 +37,8 @@ export class vCamera {
 
     private viewPortWidth: number;
     private viewPortHeight: number;
+
+    private lockOnObject: CameraLockableObject;
 
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
@@ -68,7 +75,7 @@ export class vCamera {
     }
     
     setPosition(position: Point): boolean{
-        if(!this.withinBoundaries(position)){
+        if(!this.withinBoundaries(position) || this.cameraLocked()){
             return false;
         }
         this.position = position;
@@ -101,6 +108,9 @@ export class vCamera {
     }
 
     setPositionWithClamp(position: Point) {
+        if (this.cameraLocked()){
+            return;
+        }
         if (this.withinBoundaries(position)){
             this.position = position;
         } else {
@@ -109,6 +119,9 @@ export class vCamera {
     }
 
     setRotation(rotation: number){
+        if(this.cameraLocked()){
+            return;
+        }
         rotation = this.normalizeAngleZero2TwoPI(rotation);
         this.rotation = rotation;
     }
@@ -200,11 +213,20 @@ export class vCamera {
     }
 
     move(delta: Point){
-        if(!this.withinBoundaries(PointCal.addVector(this.position, delta))){
+        if(!this.withinBoundaries(PointCal.addVector(this.position, delta)) || this.cameraLocked()){
             return false;
         }
         this.position = PointCal.addVector(this.position, delta);
         return true;
+    }
+
+    moveWithClamp(delta: Point){
+        if(this.cameraLocked()){
+            return;
+        }
+        const target = PointCal.addVector(this.position, delta);
+        const clampedTarget = this.clampPoint(target);
+        this.position = clampedTarget;
     }
 
     resetZoomLevel(){
@@ -247,6 +269,9 @@ export class vCamera {
 
     spin(deltaAngle: number){
         // in radians
+        if(this.cameraLocked()){
+            return;
+        }
         this.rotation = this.normalizeAngleZero2TwoPI(this.rotation + deltaAngle);
     }
 
@@ -282,6 +307,45 @@ export class vCamera {
         delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / this.zoomLevel);
         delta2Point = PointCal.rotatePoint(delta2Point, this.rotation);
         return PointCal.addVector(this.position, delta2Point);
+    }
+
+    resetCamera(){
+        this.lockOnObject = undefined;
+        this.position = {x: 0, y: 0};
+        this.rotation = 0;
+        this.zoomLevel = 1;
+    }
+
+    lockOnto(obj: CameraLockableObject){
+        if (!this.withinBoundaries(obj.getPosition())){
+            return;
+        }
+        this.lockOnObject = obj;
+        this.updatePositionToLockedOnObject();
+        this.updateRotationToLockedOnObject();
+    }
+
+    cameraLocked(): boolean{
+        if(this.lockOnObject != undefined){
+            return true;
+        }
+        return false;
+    }
+
+    releaseFromLockedObject(){
+        this.lockOnObject = undefined;
+    }
+
+    updatePositionToLockedOnObject(){
+        if(this.lockOnObject != undefined){
+            this.position = this.clampPoint(this.lockOnObject.getPosition());
+        }
+    }
+
+    updateRotationToLockedOnObject(){
+        if(this.lockOnObject != undefined){
+            this.rotation = this.normalizeAngleZero2TwoPI(this.lockOnObject.getRotation());
+        }
     }
 
 }

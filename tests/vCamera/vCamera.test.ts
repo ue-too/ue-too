@@ -1,5 +1,5 @@
-import { getRandomPoint } from "..";
-import { vCamera, InvalidZoomLevelError } from "../../src";
+import { getRandom, getRandomPoint } from "..";
+import { vCamera, InvalidZoomLevelError, Point } from "../../src";
 
 describe("Initialize a vCamera object", ()=>{
     let camera: vCamera;
@@ -132,6 +132,13 @@ describe("Camera translation Movements", ()=>{
         expect(camera.getPosition()).toEqual({x: 10, y: 10});
     });
 
+    test("Translate camera position outside of boundaries", ()=>{
+        camera.setHorizontalBoundaries(-500, 300);
+        camera.setVerticalBoundaries(-500, 300);
+        camera.moveWithClamp({x: 700, y: -700});
+        expect(camera.getPosition()).toEqual({x: 300, y: -500});
+    });
+
     test("Translate camera to a destination that is not within translation boundaries", ()=>{
         const moveDeltaVector = getRandomPoint(400, 500);
         camera.setHorizontalBoundaries(-500, 300);
@@ -248,6 +255,89 @@ describe("Interactions with the world", ()=>{
         const testRes = camera.convert2WorldSpace(point);
         expect(testRes.x).toBeCloseTo(30 - (800 / (Math.sqrt(2) * camera.getZoomLevel())));
         expect(testRes.y).toBeCloseTo(50);
+        camera.resetCamera();
+        camera.setPosition({x: 10, y: 10});
+        const testRes2 = camera.convert2WorldSpace(point);
+        expect(testRes2.x).toBeCloseTo(-390);
+        expect(testRes2.y).toBeCloseTo(-390);
     });
 
 });
+
+describe("Camera Locking onto a specific object", ()=>{
+
+    let camera: vCamera;
+
+    beforeEach(()=>{
+        camera = new vCamera();
+    });
+
+    test("Update to the locked on object", ()=>{
+        let testObj = new LockableBody;
+        testObj.setPosition({x: 100, y: 100});
+        testObj.setRotation(Math.PI);
+        camera.lockOnto(testObj);
+        expect(camera.getPosition()).toEqual({x: 100, y: 100});
+        expect(camera.getRotation()).toBeCloseTo(Math.PI);
+    });
+
+    test("Trying to move or rotate camera when it's locked", ()=>{
+        let testObj = new LockableBody;
+        testObj.setPosition(getRandomPoint(-500, 500));
+        testObj.setRotation(getRandom(0, 2 * Math.PI));
+        camera.lockOnto(testObj);
+        camera.move({x: 20, y: 20});
+        expect(camera.getPosition()).toEqual(testObj.getPosition());
+        camera.moveWithClamp({x: 20, y: 20});
+        expect(camera.getPosition()).toEqual(testObj.getPosition());
+        camera.setPosition({x: 100, y: 300});
+        expect(camera.getPosition()).toEqual(testObj.getPosition());
+        camera.setPositionWithClamp({x: 100, y: 300});
+        expect(camera.getPosition()).toEqual(testObj.getPosition());
+        camera.spin(Math.PI * 0.5);
+        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
+        camera.spinDeg(50);
+        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
+        camera.setRotation(Math.PI);
+        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
+        camera.setRotationDeg(35);
+        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
+    });
+
+    test("After Releasing the lock camer should be able to move around", ()=>{
+        let testObj = new LockableBody;
+        testObj.setPosition(getRandomPoint(-500, 500));
+        camera.lockOnto(testObj);
+        camera.move({x: 20, y: 20});
+        expect(camera.getPosition()).toEqual(testObj.getPosition());
+        camera.releaseFromLockedObject();
+        camera.setPosition({x: 20, y: 20});
+        expect(camera.getPosition()).toEqual({x: 20, y: 20});
+    });
+});
+
+class LockableBody {
+
+    private position: Point;
+    private rotation: number;
+    constructor(){
+        this.position = {x: 0, y: 0};
+        this.rotation = 0;
+    }
+
+    setPosition(point: Point){
+        this.position = point;
+    }
+
+    setRotation(angle: number){
+        this.rotation = angle;
+    }
+
+    getPosition(): Point{
+        return this.position;
+    }
+
+    getRotation(): number{
+        return this.rotation;
+    }
+}
