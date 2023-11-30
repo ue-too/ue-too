@@ -75,6 +75,39 @@ export class vCamera {
         return true;
     }
 
+    clampPoint(point: Point){
+        if(this.withinBoundaries(point)){
+            return point;
+        }
+        let limit = this.boundaries.min;
+        if (limit != undefined){
+            if(limit.x != undefined){
+                point.x = Math.max(point.x, limit.x);
+            }
+            if(limit.y != undefined){
+                point.y = Math.max(point.y, limit.y);
+            }
+        }
+        limit = this.boundaries.max;
+        if(limit != undefined){
+            if(limit.x != undefined){
+                point.x = Math.min(point.x, limit.x);
+            }
+            if(limit.y != undefined){
+                point.y = Math.min(point.y, limit.y);
+            }
+        }
+        return point;
+    }
+
+    setPositionWithClamp(position: Point) {
+        if (this.withinBoundaries(position)){
+            this.position = position;
+        } else {
+            this.position = this.clampPoint(position);
+        }
+    }
+
     setRotation(rotation: number){
         rotation = this.normalizeAngleZero2TwoPI(rotation);
         this.rotation = rotation;

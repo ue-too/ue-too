@@ -61,6 +61,10 @@ describe("Camera boundaries manipulations", ()=>{
         camera = new vCamera();
     });
 
+    test("Set Empty Boundaries", ()=>{
+        expect(camera.getBoundaries()).toBe(undefined);
+    });
+
     test("Set camera translation boundaries", ()=>{
         camera.setHorizontalBoundaries(-500, 300);
         camera.setVerticalBoundaries(-500, 300);
@@ -88,6 +92,21 @@ describe("Camera boundaries manipulations", ()=>{
         camera.setVerticalBoundaries(300, -500);
         expect(camera.withinBoundaries({x: -700, y: -700})).toBe(false);
     });
+
+    test("Clamp a point within the boundaries", ()=>{
+        camera.setHorizontalBoundaries(-500, 300);
+        camera.setVerticalBoundaries(-500, 300);
+        const testDestPoint = {x: 350, y: 400};
+        expect(camera.clampPoint(testDestPoint)).toEqual({x: 300, y: 300});
+    });
+
+    test("Set position with automatic clamping", ()=>{
+        camera.setHorizontalBoundaries(300, -500);
+        camera.setVerticalBoundaries(-300, 700);
+        const testDestPoint = {x: 250, y: 800};
+        camera.setPositionWithClamp(testDestPoint);
+        expect(camera.getPosition()).toEqual({x: 250, y: 700});
+    })
 
 });
 
