@@ -159,13 +159,21 @@ describe("Camera zooming operations", ()=>{
     test("Set camera zoom", ()=>{
         camera.setZoomLevel(10);
         expect(camera.getZoomLevel()).toBe(10);
-
         camera.setMinZoomLevel(0.005);
         camera.setMaxZoomLevel(30);
         let testRes = camera.setZoomLevel(0.003);
         expect(testRes).toBe(false);
         testRes = camera.setZoomLevel(35);
         expect(testRes).toBe(false);
+    });
+
+    test("Set camera zoom with clamping", ()=>{
+        camera.setZoomLevel(10);
+        expect(camera.getZoomLevel()).toBe(10);
+        camera.setMinZoomLevel(0.005);
+        camera.setMaxZoomLevel(30);
+        camera.setZoomLevelWithClamp(40);
+        expect(camera.getZoomLevel()).toBe(30);
     });
 
     test("Reset zoom", ()=>{
@@ -288,6 +296,7 @@ describe("Camera Locking onto a specific object", ()=>{
         camera.lockOnto(testObj);
         expect(camera.getPosition()).toEqual({x: 100, y: 100});
         expect(camera.getRotation()).toBeCloseTo(Math.PI);
+        expect(camera.getZoomLevel()).toBe(5);
     });
 
     test("Trying to move or rotate camera when it's locked", ()=>{
@@ -295,33 +304,58 @@ describe("Camera Locking onto a specific object", ()=>{
         testObj.setPosition(getRandomPoint(-500, 500));
         testObj.setRotation(getRandom(0, 2 * Math.PI));
         camera.lockOnto(testObj);
-        camera.move({x: 20, y: 20});
+        camera.moveInUI({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.moveWithClamp({x: 20, y: 20});
+        camera.moveWithClampInUI({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPosition({x: 100, y: 300});
+        camera.setPositionInUI({x: 100, y: 300});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPositionWithClamp({x: 100, y: 300});
+        camera.setPositionWithClampInUI({x: 100, y: 300});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.spin(Math.PI * 0.5);
+        camera.spinInUI(Math.PI * 0.5);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.spinDeg(50);
+        camera.spinDegInUI(50);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotation(Math.PI);
+        camera.setRotationInUI(Math.PI);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotationDeg(35);
+        camera.setRotationDegInUI(35);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
     });
 
-    test("After Releasing the lock camer should be able to move around", ()=>{
+    test("After Releasing the lock camera should be able to move around", ()=>{
         let testObj = new LockableBody;
         testObj.setPosition(getRandomPoint(-500, 500));
         camera.lockOnto(testObj);
-        camera.move({x: 20, y: 20});
+        camera.moveInUI({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
         camera.releaseFromLockedObject();
-        camera.setPosition({x: 20, y: 20});
+        camera.setPositionInUI({x: 20, y: 20});
         expect(camera.getPosition()).toEqual({x: 20, y: 20});
+    });
+
+    test("Zoom level should not be affected by the locking", ()=>{
+        let testObj = new LockableBody;
+        testObj.setPosition(getRandomPoint(-500, 500));
+        camera.lockOnto(testObj);
+        camera.setZoomLevel(20);
+        expect(camera.getZoomLevel()).toBe(20);
+    });
+
+});
+
+
+describe("Camera Animations",()=>{
+
+    let camera: vCamera;
+
+    beforeEach(()=>{
+        camera = new vCamera();
+    });
+
+    test("Set Camera position with animation", ()=>{
+        const destPoint = getRandomPoint(-500, 500);
+        camera.setPositionWithAnimation(destPoint);
+
     });
 });
 
@@ -329,6 +363,7 @@ class LockableBody {
 
     private position: Point;
     private rotation: number;
+
     constructor(){
         this.position = {x: 0, y: 0};
         this.rotation = 0;
@@ -348,5 +383,9 @@ class LockableBody {
 
     getRotation(): number{
         return this.rotation;
+    }
+
+    getOptimalZoomLevel(): number{
+        return 5;
     }
 }

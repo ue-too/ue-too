@@ -1,30 +1,17 @@
 import { PointCal } from "point2point";
 import { Point } from "../../src";
-
-
-export type CameraOptions = {
-    initialPosition?: Point;
-    initialZoom?: number;
-    initialRotation?: number;
-}
+import * as easeFunctions from "../easeFunctions";
 
 export type Boundaries = {
     min?: {x?: number, y?: number};
     max?: {x?: number, y?: number};
 }
 
-const defaultCameraOptions: CameraOptions = {
-    initialPosition: {x: 0, y: 0},
-    initialZoom: 1,
-    initialRotation: 0
-}
-
 interface CameraLockableObject{
     getPosition(): Point;
     getRotation(): number;
+    getOptimalZoomLevel(): number;
 }
-
-
 
 export class vCamera {
 
@@ -39,6 +26,11 @@ export class vCamera {
     private viewPortHeight: number;
 
     private lockOnObject: CameraLockableObject;
+
+    private positionAnimationPercentage: number = 1.1;
+    private rotationAnimationPercentage: number = 1.1;
+    private zoomAnimationPercentage: number = 1.1;
+
 
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
@@ -75,11 +67,18 @@ export class vCamera {
     }
     
     setPosition(position: Point): boolean{
-        if(!this.withinBoundaries(position) || this.cameraLocked()){
+        if(!this.withinBoundaries(position)){
             return false;
         }
         this.position = position;
         return true;
+    }
+
+    setPositionInUI(position: Point): boolean{
+        if(this.cameraLocked()){
+            return false;
+        }
+        return this.setPosition(position);
     }
 
     clampPoint(point: Point){
@@ -108,9 +107,7 @@ export class vCamera {
     }
 
     setPositionWithClamp(position: Point) {
-        if (this.cameraLocked()){
-            return;
-        }
+        this.cancelPositionAnimation();
         if (this.withinBoundaries(position)){
             this.position = position;
         } else {
@@ -118,12 +115,29 @@ export class vCamera {
         }
     }
 
+    setPositionWithClampInUI(position: Point) {
+        if (this.cameraLocked()){
+            return;
+        }
+        this.cancelAnimations();
+        this.setPositionWithClamp(position);
+    }
+
     setRotation(rotation: number){
+        rotation = this.normalizeAngleZero2TwoPI(rotation);
+        this.rotation = rotation;
+    }
+
+    setRotationInUI(rotation: number){
         if(this.cameraLocked()){
             return;
         }
-        rotation = this.normalizeAngleZero2TwoPI(rotation);
-        this.rotation = rotation;
+        this.cancelAnimations();
+        this.setRotation(rotation);
+    }
+    
+    setRotationDegInUI(rotationDeg: number){
+        this.setRotationInUI(rotationDeg * Math.PI / 180);
     }
     
     setRotationDeg(rotationDeg: number){
@@ -131,13 +145,53 @@ export class vCamera {
     }
 
     setZoomLevel(zoomLevel: number){
+        if(!this.zoomLevelWithinLimits(zoomLevel)){
+            return false;
+        }
+        this.zoomLevel = zoomLevel;
+        return true;
+    }
+
+    setZoomLevelWithClamp(zoomLevel: number){
+        zoomLevel = this.clampZoomLevel(zoomLevel);
+        this.zoomLevel = zoomLevel;
+    }
+
+    setZoomLevelInUI(zoomLevel: number){
+        if(!this.zoomLevelWithinLimits(zoomLevel)){
+            return false;
+        }
+        this.cancelAnimations();
+        this.zoomLevel = zoomLevel;
+        return true;
+    }
+
+    setZoomLevelWithClampInUI(zoomLevel: number){
+        this.cancelAnimations();
+        zoomLevel = this.clampZoomLevel(zoomLevel);
+        this.zoomLevel = zoomLevel;
+    }
+
+    clampZoomLevel(zoomLevel: number): number{
+        if(this.zoomLevelWithinLimits(zoomLevel)){
+            return zoomLevel;
+        }
+        if(this.zoomLevelLimits.max){
+            zoomLevel = Math.min(this.zoomLevelLimits.max, zoomLevel);
+        }
+        if(this.zoomLevelLimits.min){
+            zoomLevel = Math.max(this.zoomLevelLimits.min, zoomLevel);
+        }
+        return zoomLevel;
+    }
+
+    zoomLevelWithinLimits(zoomLevel: number): boolean{
         if(zoomLevel <= 0 || (this.zoomLevelLimits !== undefined && 
         ((this.zoomLevelLimits.max !== undefined && this.zoomLevelLimits.max < zoomLevel) || 
          (this.zoomLevelLimits.min !== undefined && this.zoomLevelLimits.min > zoomLevel)
         ))){
             return false;
         }
-        this.zoomLevel = zoomLevel;
         return true;
     }
 
@@ -213,17 +267,30 @@ export class vCamera {
     }
 
     move(delta: Point){
-        if(!this.withinBoundaries(PointCal.addVector(this.position, delta)) || this.cameraLocked()){
+        if(!this.withinBoundaries(PointCal.addVector(this.position, delta))){
             return false;
         }
         this.position = PointCal.addVector(this.position, delta);
         return true;
     }
 
-    moveWithClamp(delta: Point){
+    moveInUI(delta: Point){
+        if(this.cameraLocked()){
+            return false;
+        }
+        this.cancelAnimations();
+        return this.move(delta);
+    }
+
+    moveWithClampInUI(delta: Point){
         if(this.cameraLocked()){
             return;
         }
+        this.cancelAnimations();
+        this.moveWithClamp(delta);
+    }
+
+    moveWithClamp(delta: Point){
         const target = PointCal.addVector(this.position, delta);
         const clampedTarget = this.clampPoint(target);
         this.position = clampedTarget;
@@ -237,7 +304,7 @@ export class vCamera {
         // reduce the angle  
         angle = angle % (Math.PI * 2);
 
-        // force it to be the positive remainder, so that 0 <= angle < 360  
+        // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI 
         angle = (angle + Math.PI * 2) % (Math.PI * 2); 
         return angle;
     }
@@ -267,11 +334,22 @@ export class vCamera {
         this.spin(deltaAngle * Math.PI / 180);
     }
 
-    spin(deltaAngle: number){
+    spinDegInUI(deltaAngle: number){
+        // in degrees
+        this.spinInUI(deltaAngle * Math.PI / 180);
+    }
+
+    spinInUI(deltaAngle: number){
         // in radians
         if(this.cameraLocked()){
             return;
         }
+        this.cancelAnimations();
+        this.spin(deltaAngle);
+    }
+
+    spin(deltaAngle: number){
+        // in radians
         this.rotation = this.normalizeAngleZero2TwoPI(this.rotation + deltaAngle);
     }
 
@@ -310,7 +388,7 @@ export class vCamera {
     }
 
     resetCamera(){
-        this.lockOnObject = undefined;
+        this.releaseFromLockedObject();
         this.position = {x: 0, y: 0};
         this.rotation = 0;
         this.zoomLevel = 1;
@@ -323,6 +401,7 @@ export class vCamera {
         this.lockOnObject = obj;
         this.updatePositionToLockedOnObject();
         this.updateRotationToLockedOnObject();
+        this.updateZoomLevelToLockedOnObject();
     }
 
     cameraLocked(): boolean{
@@ -333,6 +412,9 @@ export class vCamera {
     }
 
     releaseFromLockedObject(){
+        if(this.lockOnObject == undefined){
+            return;
+        }
         this.lockOnObject = undefined;
     }
 
@@ -346,6 +428,125 @@ export class vCamera {
         if(this.lockOnObject != undefined){
             this.rotation = this.normalizeAngleZero2TwoPI(this.lockOnObject.getRotation());
         }
+    }
+
+    updateZoomLevelToLockedOnObject(){
+        if(!this.cameraLocked()){
+            return;
+        }
+        this.setZoomLevelWithClamp(this.lockOnObject.getOptimalZoomLevel());
+    }
+
+    setPositionWithAnimation(destPos: Point, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        this.releaseFromLockedObject();
+        destPos = this.clampPoint(destPos);
+        const diff = PointCal.subVector(destPos, this.position);
+        const animationSpeed = 1 / duration; // how many percent in decimal per second
+        this.positionAnimationPercentage = 0;
+        this.updatePosition = ((deltaTime: number) => {
+            if (this.positionAnimationPercentage <= 1){
+                let currentDeltaPercentage = deltaTime * animationSpeed;
+                // console.log("current camera position animation percentage", this.positionAnimationPercentage);
+                let targetPercentage = this.positionAnimationPercentage + currentDeltaPercentage;
+                let percentageOnDeltaMovement = easeFunction(targetPercentage) - easeFunction(this.positionAnimationPercentage)
+                if (targetPercentage > 1){
+                    percentageOnDeltaMovement = easeFunction(1) - easeFunction(this.positionAnimationPercentage);
+                }
+                this.moveWithClamp(PointCal.multiplyVectorByScalar(diff, percentageOnDeltaMovement));
+                this.positionAnimationPercentage = targetPercentage;
+            }
+        }).bind(this);
+    }
+
+    setRotationWithAnimation(destRotation: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        this.releaseFromLockedObject();
+        const diff = this.getAngleSpan(destRotation);
+        // console.log("diff angle", diff);
+        const animationSpeed = 1 / duration; // how many percent in decimal per second
+        this.rotationAnimationPercentage = 0;
+        this.updateRotation = ((deltaTime: number) => {
+            if (this.rotationAnimationPercentage <= 1){
+                let currentDeltaPercentage = deltaTime * animationSpeed;
+                // console.log("current camera rotation animation percentage", this.rotationAnimationPercentage);
+                let targetPercentage = this.rotationAnimationPercentage + currentDeltaPercentage;
+                let percentageOnDeltaRotation = easeFunction(targetPercentage) - easeFunction(this.rotationAnimationPercentage)
+                if (targetPercentage > 1){
+                    percentageOnDeltaRotation = easeFunction(1) - easeFunction(this.rotationAnimationPercentage);
+                }
+                this.spin(diff * percentageOnDeltaRotation);
+                this.rotationAnimationPercentage = targetPercentage;
+            }
+        }).bind(this);
+    }
+
+    setZoomWithAnimation(destZoomLevel: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        this.releaseFromLockedObject();
+        destZoomLevel = this.clampZoomLevel(destZoomLevel);
+        const diff = destZoomLevel - this.zoomLevel;
+        // console.log("diff angle", diff);
+        const animationSpeed = 1 / duration; // how many percent in decimal per second
+        this.zoomAnimationPercentage = 0;
+        this.updateZoomLevel = ((deltaTime: number) => {
+            if (this.zoomAnimationPercentage <= 1){
+                let currentDeltaPercentage = deltaTime * animationSpeed;
+                // console.log("current camera rotation animation percentage", this.rotationAnimationPercentage);
+                let targetPercentage = this.zoomAnimationPercentage + currentDeltaPercentage;
+                let percentageOnDeltaZoom = easeFunction(targetPercentage) - easeFunction(this.zoomAnimationPercentage)
+                if (targetPercentage > 1){
+                    percentageOnDeltaZoom = easeFunction(1) - easeFunction(this.zoomAnimationPercentage);
+                }
+                this.zoomLevel = this.zoomLevel + diff * percentageOnDeltaZoom;
+                this.zoomAnimationPercentage = targetPercentage;
+            }
+        }).bind(this);
+    }
+
+    cancelAnimations(){
+        this.cancelPositionAnimation();
+        this.cancelRotationAnimation();
+        this.cancelZoomAnimation();
+    }
+
+    cancelPositionAnimation(){
+        this.positionAnimationPercentage = 1.1;
+    }
+
+    cancelRotationAnimation(){
+        this.rotationAnimationPercentage = 1.1;
+    }
+
+    cancelZoomAnimation(){
+        this.zoomAnimationPercentage = 1.1;
+    }
+
+    updatePosition(deltaTime: number){
+
+    }
+
+    updateRotation(deltaTime: number){
+
+    }
+
+    updateZoomLevel(deltaTime: number){
+
+    }
+
+    step(deltaTime: number){
+        // deltaTime in seconds;
+        if (this.cameraLocked()){
+            this.updatePositionToLockedOnObject();
+            this.updateRotationToLockedOnObject();
+            return;
+        }
+        this.updatePosition(deltaTime);
+        this.updateRotation(deltaTime);
+        this.updateZoomLevel(deltaTime);
+    }
+
+    resetCameraWithAnimation(){
+        this.setPositionWithAnimation({x: 0, y: 0});
+        this.setRotationWithAnimation(0);
+        this.setZoomWithAnimation(1);
     }
 
 }

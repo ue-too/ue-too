@@ -26,6 +26,7 @@ export class vCanvas extends HTMLElement {
     private dragStartDist: number;
 
     private requestRef: number;
+    private lastUpdateTime: number;
 
     constructor(){
         super();
@@ -54,6 +55,7 @@ export class vCanvas extends HTMLElement {
 
     connectedCallback(){
         this.shadowRoot.appendChild(this._canvas);
+        this.lastUpdateTime = 0;
         this.requestRef = requestAnimationFrame(this.step);
     }
 
@@ -62,6 +64,11 @@ export class vCanvas extends HTMLElement {
     }
 
     step(timestamp: number){
+
+        let deltaTime = timestamp - this.lastUpdateTime;
+        this.lastUpdateTime = timestamp;
+        deltaTime = deltaTime / 1000;
+
         this._canvas.width = this.width;
         this._canvas.height = this.height;
 
@@ -70,8 +77,11 @@ export class vCanvas extends HTMLElement {
         this._context.rotate(this.camera.getRotation());
         this._context.translate(-this.camera.getPosition().x,  this.camera.getPosition().y);
 
-        this.drawAxis(this._context);
+        this.drawAxis(this._context, this.camera.getZoomLevel());
 
+        this.camera.step(deltaTime);
+
+        // everthing should be above this reqestAnimationFrame should be the last call in step
         this.requestRef = window.requestAnimationFrame(this.step);
     }
 
@@ -109,9 +119,9 @@ export class vCanvas extends HTMLElement {
                 this._canvas.height = window.innerHeight;
             }
         }
-        if (name == "style"){
-            this._canvas.setAttribute(name, newValue);
-        }
+        // if (name == "style"){
+        //     this._canvas.setAttribute(name, newValue);
+        // }
         
     }
 
@@ -143,7 +153,7 @@ export class vCanvas extends HTMLElement {
             diff = {x: diff.x, y: -diff.y};
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-            this.camera.moveWithClamp(diffInWorld);
+            this.camera.moveWithClampInUI(diffInWorld);
             this.dragStartPoint = target;
         }
     }
@@ -157,17 +167,17 @@ export class vCanvas extends HTMLElement {
             const diff = {x: e.deltaX, y: e.deltaY};
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-            this.camera.moveWithClamp(diffInWorld);
+            this.camera.moveWithClampInUI(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             if (!this.isDragging){
                 const cursorPosition = {x: e.clientX, y: e.clientY};
                 let cursorWorldPositionPriorToZoom = this.convertWindowPoint2WorldCoord(cursorPosition);
-                this.camera.setZoomLevel(this.camera.getZoomLevel() - zoomAmount * 5);
+                this.camera.setZoomLevelWithClampInUI(this.camera.getZoomLevel() - zoomAmount * 5);
                 let cursorWorldPositionAfterZoom = this.convertWindowPoint2WorldCoord(cursorPosition);
                 let diff = PointCal.subVector(cursorWorldPositionAfterZoom, cursorWorldPositionPriorToZoom);
                 diff = PointCal.multiplyVectorByScalar(diff, -1);
-                this.camera.moveWithClamp(diff);
+                this.camera.moveWithClampInUI(diff);
             }
         }
     }
@@ -183,19 +193,15 @@ export class vCanvas extends HTMLElement {
             // console.log("distance at the beginning of touch gesture", this.startTouchPointDistance);
             // console.log("mid point of two touch point is", midPoint);
         } else if (e.targetTouches.length === 1){
-            this.isDragging = true;
-            this.touchPoints = [{x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY}];
         }
     }
 
     touchcancelHandler(e: TouchEvent){
         this.touchPoints = [];
-        this.isDragging = false;
     }
 
     touchendHandler(e: TouchEvent){
         this.touchPoints = [];
-        this.isDragging = false;
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -204,23 +210,29 @@ export class vCanvas extends HTMLElement {
             //NOTE Touch Zooming
             let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
-            let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
-            let distDiff = this.dragStartDist - touchPointDist;
-            let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-            let midOriginalWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
-            let zoomAmount = distDiff * 0.1 * this.camera.getZoomLevel() * this.SCROLL_SENSITIVITY;
-            this.camera.setZoomLevel(this.camera.getZoomLevel() - zoomAmount);
-            let midWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
-            let posDiff = PointCal.subVector(midOriginalWorldPos, midWorldPos);
-            this.camera.moveWithClamp(posDiff);
-        }
-        if(e.targetTouches.length == 1 && this.isDragging){
-            const diff = PointCal.subVector(this.touchPoints[0], {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY});
-            this.touchPoints = [{x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY}];
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
-            this.camera.moveWithClamp(diffInWorld);
+            let deltaStartPoint = PointCal.subVector(startPoint, this.touchPoints[0]);
+            let deltaEndPoint = PointCal.subVector(endPoint, this.touchPoints[1]);
+            let angleDiff = PointCal.angleFromA2B(deltaStartPoint, deltaEndPoint);
+            let panZoom = Math.abs(angleDiff) > 20 * Math.PI / 180 ? "ZOOMING" : "PANNING";
+            if(panZoom == "ZOOMING"){
+                let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
+                let distDiff = this.dragStartDist - touchPointDist;
+                let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
+                let midOriginalWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
+                let zoomAmount = distDiff * 0.1 * this.camera.getZoomLevel() * this.SCROLL_SENSITIVITY;
+                this.camera.setZoomLevelWithClampInUI(this.camera.getZoomLevel() - zoomAmount);
+                let midWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
+                let posDiff = PointCal.subVector(midOriginalWorldPos, midWorldPos);
+                this.camera.moveWithClampInUI(posDiff);
+                this.touchPoints = [startPoint, endPoint];
+            } else {
+                const diff = PointCal.subVector(this.touchPoints[0], startPoint);
+                let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
+                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
+                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
+                this.camera.moveWithClampInUI(diffInWorld);
+                this.touchPoints = [startPoint, endPoint];
+            }
         }
     }
 
@@ -242,7 +254,8 @@ export class vCanvas extends HTMLElement {
         return this.camera.convert2WorldSpace(pointInCameraViewPort);
     }
 
-    drawAxis(context: CanvasRenderingContext2D): void{
+    drawAxis(context: CanvasRenderingContext2D, zoomLevel: number): void{
+        context.lineWidth = 1 / zoomLevel;
         // y axis
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
@@ -256,5 +269,9 @@ export class vCanvas extends HTMLElement {
         context.moveTo(0, 0);
         context.lineTo(this.maxTransHalfWidth, 0);
         context.stroke();
+    }
+
+    resetCamera(){
+        this.camera.resetCameraWithAnimation();
     }
 }
