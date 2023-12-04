@@ -102,6 +102,7 @@ export class vDial extends HTMLElement{
         let scrolledAngle = scrollAmount * 0.05 * Math.PI / 180;
         const event = new DialWheelEvent("needlechange", {angleSpan: scrolledAngle});
         this.dialWheel.spin(scrolledAngle);
+        this.ring.setAttributeNS(null, "transform", `rotate(${this.dialWheel.getRotation() * 180 / Math.PI} ${this.center.x}, ${this.center.y})`);
         this.dispatchEvent(event);
     }
 
