@@ -273,8 +273,12 @@ export class vCanvas extends HTMLElement {
         this.camera.resetCameraWithAnimation();
     }
 
-    setCameraAngleInUI(rotation: number){
+    spinCameraWithAnimation(rotation: number){
         this.camera.spinWithAnimationInUI(rotation);
+    }
+
+    setCameraAngle(rotation: number){
+        this.camera.spinInUI(rotation);
     }
 }
 

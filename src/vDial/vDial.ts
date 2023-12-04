@@ -76,26 +76,11 @@ export class vDial extends HTMLElement{
             let clickedAngle = PointCal.angleFromA2B({x: 0, y: 1}, diff);
             this.dialWheel.spin(clickedAngle);
             this.ring.setAttributeNS(null, "transform", `rotate(${this.dialWheel.getRotation() * 180 / Math.PI} ${this.center.x}, ${this.center.y})`);
-            const event = new DialWheelEvent("needlechange", {angleSpan: clickedAngle});
+            const event = new DialWheelEvent("needleslide", {angleSpan: clickedAngle});
             this.dispatchEvent(event);
         }
     }
     
-    pointermoveHandler(e: PointerEvent){
-        e.preventDefault();
-        if(e.pointerType == "mouse" && this.isDragging){
-            const topLeftCorner = {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().top};
-            const centerInViewPort = {x: topLeftCorner.x + this.width / 2, y: topLeftCorner.y + this.width / 2};
-            const cursorPosInViewPort = {x: e.clientX, y: e.clientY};
-            let diff = PointCal.subVector(cursorPosInViewPort, centerInViewPort);
-            diff.y = -diff.y;
-            let clickedAngle = PointCal.angleFromA2B(this.dragStart, diff);
-            const event = new DialWheelEvent("needleslide", {angleSpan: clickedAngle});
-            this.dispatchEvent(event);
-        }
-
-    }
-
     touchstartHandler(e: TouchEvent){
         e.preventDefault();
         if(e.targetTouches.length == 1){
@@ -105,7 +90,7 @@ export class vDial extends HTMLElement{
             let diff = PointCal.subVector(cursorPosInViewPort, centerInViewPort);
             diff.y = -diff.y;
             let clickedAngle = PointCal.angleFromA2B({x: 0, y: 1}, diff);
-            const event = new DialWheelEvent("needlechange", {angleSpan: clickedAngle});
+            const event = new DialWheelEvent("needleslide", {angleSpan: clickedAngle});
             this.dialWheel.spin(clickedAngle);
             this.ring.setAttributeNS(null, "transform", `rotate(${this.dialWheel.getRotation() * 180 / Math.PI} ${this.center.x}, ${this.center.y})`);
             this.dispatchEvent(event);
@@ -114,7 +99,10 @@ export class vDial extends HTMLElement{
 
     scrollHandler(e: WheelEvent){
         let scrollAmount = e.deltaY;
-        console.log("scroll amount", scrollAmount);
+        let scrolledAngle = scrollAmount * 0.05 * Math.PI / 180;
+        const event = new DialWheelEvent("needlechange", {angleSpan: scrolledAngle});
+        this.dialWheel.spin(scrolledAngle);
+        this.dispatchEvent(event);
     }
 
     linkRotation(rotation: number){

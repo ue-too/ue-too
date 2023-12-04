@@ -12,10 +12,16 @@ if (button) {
     button.onclick = (e) => element.resetCamera();
 }
 
+dialWheel.addEventListener('needleslide', (evt: Event)=>{
+    let dialEvent = evt as DialWheelEvent;
+    let angleSpan = dialEvent.detail.angleSpan;
+    element.spinCameraWithAnimation(angleSpan);
+});
+
 dialWheel.addEventListener('needlechange', (evt: Event)=>{
     let dialEvent = evt as DialWheelEvent;
     let angleSpan = dialEvent.detail.angleSpan;
-    element.setCameraAngleInUI(angleSpan);
+    element.setCameraAngle(angleSpan);
 });
 
 element.addEventListener('cameraupdate', (evt: Event)=>{
