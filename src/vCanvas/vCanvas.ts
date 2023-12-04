@@ -28,6 +28,8 @@ export class vCanvas extends HTMLElement {
     private requestRef: number;
     private lastUpdateTime: number;
 
+    private lastCameraUpdateEventEmitTime: number;
+
     constructor(){
         super();
         this.width = this._canvas.width;
@@ -41,12 +43,12 @@ export class vCanvas extends HTMLElement {
         this.camera.setMaxZoomLevel(5);
         this.camera.setMinZoomLevel(0.01);
         //TODO Temporary Set Rotation
-        this.camera.setRotationDeg(45);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
         this.registerEventListeners();
+        this.touchPoints = [];
     }
 
     bindFunctions(){
@@ -55,6 +57,7 @@ export class vCanvas extends HTMLElement {
 
     connectedCallback(){
         this.shadowRoot.appendChild(this._canvas);
+        this.lastCameraUpdateEventEmitTime = 0;
         this.lastUpdateTime = 0;
         this.requestRef = requestAnimationFrame(this.step);
     }
@@ -81,6 +84,8 @@ export class vCanvas extends HTMLElement {
 
         this.camera.step(deltaTime);
 
+        this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
+
         // everthing should be above this reqestAnimationFrame should be the last call in step
         this.requestRef = window.requestAnimationFrame(this.step);
     }
@@ -99,7 +104,6 @@ export class vCanvas extends HTMLElement {
     }
 
     attributeChangedCallback(name: string, oldValue: any, newValue: any) {
-        // console.log(`Attribute ${name} has changed.`);
         if (name == "width"){
             this.width = +newValue;
             this._canvas.width = this.width;
@@ -111,18 +115,15 @@ export class vCanvas extends HTMLElement {
             this.camera.setViewPortHeight(this.height);
         }
         if (name == "full-screen"){
-            // console.log("full-screen", newValue);
             if (newValue !== null && newValue !== "false"){
                 this.width = window.innerWidth;
                 this.height = window.innerHeight;
                 this._canvas.width = window.innerWidth;
                 this._canvas.height = window.innerHeight;
+                this.camera.setViewPortWidth(window.innerWidth);
+                this.camera.setViewPortHeight(window.innerHeight);
             }
         }
-        // if (name == "style"){
-        //     this._canvas.setAttribute(name, newValue);
-        // }
-        
     }
 
     pointerDownHandler(e: PointerEvent){
@@ -185,13 +186,10 @@ export class vCanvas extends HTMLElement {
     touchstartHandler(e: TouchEvent){
         e.preventDefault();
         if(e.targetTouches.length === 2){
-            this.isDragging = false;
             let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let secondTouchPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
             this.dragStartDist = PointCal.distanceBetweenPoints(firstTouchPoint, secondTouchPoint);
             this.touchPoints = [firstTouchPoint, secondTouchPoint];
-            // console.log("distance at the beginning of touch gesture", this.startTouchPointDistance);
-            // console.log("mid point of two touch point is", midPoint);
         } else if (e.targetTouches.length === 1){
         }
     }
@@ -206,7 +204,7 @@ export class vCanvas extends HTMLElement {
 
     touchmoveHandler(e: TouchEvent){
         e.preventDefault();
-        if(e.targetTouches.length == 2 && !this.isDragging){
+        if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
             let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
@@ -273,5 +271,25 @@ export class vCanvas extends HTMLElement {
 
     resetCamera(){
         this.camera.resetCameraWithAnimation();
+    }
+
+    setCameraAngleInUI(rotation: number){
+        this.camera.spinWithAnimationInUI(rotation);
+    }
+}
+
+export type CameraDetail = {
+    cameraPosition: Point;
+    cameraAngle: number;
+    cameraZoomLevel: number;
+}
+
+export class CameraUpdateEvent extends Event{
+
+    detail: CameraDetail;
+
+    constructor(type: string, detail: CameraDetail, eventInit?: EventInit){
+        super(type, eventInit);
+        this.detail = detail;
     }
 }

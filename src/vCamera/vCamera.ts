@@ -479,6 +479,52 @@ export class vCamera {
         }).bind(this);
     }
 
+    setRotationWithAnimationInUI(destRotation: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        if(this.cameraLocked()){
+            return;
+        }
+        const diff = this.getAngleSpan(destRotation);
+        // console.log("diff angle", diff);
+        const animationSpeed = 1 / duration; // how many percent in decimal per second
+        this.rotationAnimationPercentage = 0;
+        this.updateRotation = ((deltaTime: number) => {
+            if (this.rotationAnimationPercentage <= 1){
+                let currentDeltaPercentage = deltaTime * animationSpeed;
+                // console.log("current camera rotation animation percentage", this.rotationAnimationPercentage);
+                let targetPercentage = this.rotationAnimationPercentage + currentDeltaPercentage;
+                let percentageOnDeltaRotation = easeFunction(targetPercentage) - easeFunction(this.rotationAnimationPercentage)
+                if (targetPercentage > 1){
+                    percentageOnDeltaRotation = easeFunction(1) - easeFunction(this.rotationAnimationPercentage);
+                }
+                this.spin(diff * percentageOnDeltaRotation);
+                this.rotationAnimationPercentage = targetPercentage;
+            }
+        }).bind(this);
+    }
+
+    spinWithAnimationInUI(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        if(this.cameraLocked()){
+            return;
+        }
+        const diff = angleSpan;
+        // console.log("diff angle", diff);
+        const animationSpeed = 1 / duration; // how many percent in decimal per second
+        this.rotationAnimationPercentage = 0;
+        this.updateRotation = ((deltaTime: number) => {
+            if (this.rotationAnimationPercentage <= 1){
+                let currentDeltaPercentage = deltaTime * animationSpeed;
+                // console.log("current camera rotation animation percentage", this.rotationAnimationPercentage);
+                let targetPercentage = this.rotationAnimationPercentage + currentDeltaPercentage;
+                let percentageOnDeltaRotation = easeFunction(targetPercentage) - easeFunction(this.rotationAnimationPercentage)
+                if (targetPercentage > 1){
+                    percentageOnDeltaRotation = easeFunction(1) - easeFunction(this.rotationAnimationPercentage);
+                }
+                this.spin(diff * percentageOnDeltaRotation);
+                this.rotationAnimationPercentage = targetPercentage;
+            }
+        }).bind(this);
+    }
+
     setZoomWithAnimation(destZoomLevel: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
         this.releaseFromLockedObject();
         destZoomLevel = this.clampZoomLevel(destZoomLevel);
