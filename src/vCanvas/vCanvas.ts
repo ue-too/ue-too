@@ -43,7 +43,6 @@ export class vCanvas extends HTMLElement {
         this.camera.setVerticalBoundaries(-this.maxTransHalfHeight, this.maxTransHalfHeight);
         this.camera.setMaxZoomLevel(5);
         this.camera.setMinZoomLevel(0.01);
-        //TODO Temporary Set Rotation
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
