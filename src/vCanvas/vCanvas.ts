@@ -6,6 +6,7 @@ export class vCanvas extends HTMLElement {
     
     private width: number;
     private height: number;
+    private fullScreenFlag: boolean = false;
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
 
@@ -28,7 +29,7 @@ export class vCanvas extends HTMLElement {
     private requestRef: number;
     private lastUpdateTime: number;
 
-    private lastCameraUpdateEventEmitTime: number;
+    private windowsResizeObserver: ResizeObserver;
 
     constructor(){
         super();
@@ -49,6 +50,8 @@ export class vCanvas extends HTMLElement {
         this.bindFunctions();
         this.registerEventListeners();
         this.touchPoints = [];
+
+        this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
     }
 
     bindFunctions(){
@@ -57,13 +60,14 @@ export class vCanvas extends HTMLElement {
 
     connectedCallback(){
         this.shadowRoot.appendChild(this._canvas);
-        this.lastCameraUpdateEventEmitTime = 0;
         this.lastUpdateTime = 0;
         this.requestRef = requestAnimationFrame(this.step);
+        this.windowsResizeObserver.observe(document.body);
     }
 
     disconnectedCallback(){
         cancelAnimationFrame(this.requestRef);
+        this.windowsResizeObserver.unobserve(document.body);
     }
 
     step(timestamp: number){
@@ -116,6 +120,7 @@ export class vCanvas extends HTMLElement {
         }
         if (name == "full-screen"){
             if (newValue !== null && newValue !== "false"){
+                this.fullScreenFlag = true;
                 this.width = window.innerWidth;
                 this.height = window.innerHeight;
                 this._canvas.width = window.innerWidth;
@@ -250,6 +255,17 @@ export class vCanvas extends HTMLElement {
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
         const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
         return this.camera.convert2WorldSpace(pointInCameraViewPort);
+    }
+
+    windowResizeHandler(){
+        if(this.fullScreenFlag){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            
+            this._canvas.width = this.width;
+            this._canvas.height = this.height;
+
+        }
     }
 
     drawAxis(context: CanvasRenderingContext2D, zoomLevel: number): void{
