@@ -4,3 +4,8 @@ tests
 tsconfig.json
 jest.config.js
 rollup.config.js
+.dockerignore
+.github
+webpack.config.js
+playground
+htmlTemplate
