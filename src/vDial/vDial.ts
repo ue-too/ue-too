@@ -49,7 +49,7 @@ export class vDial extends HTMLElement{
         this.circle.addEventListener('pointerup', this.pointerupHandler.bind(this));
         this.circle.addEventListener('touchstart', this.touchstartHandler.bind(this));
         this.circle.addEventListener('pointerdown', this.pointerdownHandler.bind(this));
-        this.circle.addEventListener('wheel', this.scrollHandler.bind(this));
+        this.addEventListener('wheel', this.scrollHandler.bind(this));
     }
 
     attributeChangedCallback(name: string, oldValue: any, newValue: any) {
