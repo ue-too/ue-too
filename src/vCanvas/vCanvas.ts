@@ -10,15 +10,17 @@ export class vCanvas extends HTMLElement {
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
 
-    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step"];
+    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", "restrict-x-translation", "restrict-y-translation", "restrict-translation", "restrict-rotation", "restrict-zoom"];
 
     private _canvas: HTMLCanvasElement = document.createElement('canvas');
     private _context: CanvasRenderingContext2D;
 
     private camera: vCamera;
-    private restrictTranslationFromUI: boolean = false;
-    private restrictRotationFromUI: boolean = false;
-    private restrictZoomFromUI: boolean = false;
+    
+    private restrictXTranslationFromGesture: boolean = false;
+    private restrictYTranslationFromGesture: boolean = false;
+    private restrictRotationFromGesture: boolean = false;
+    private restrictZoomFromGesture: boolean = false;
 
     private scrollFactor: number = 0.1;
     private SCROLL_SENSITIVITY: number = 0.005;
@@ -149,6 +151,57 @@ export class vCanvas extends HTMLElement {
                 this.handOverStepControl = false;
             }
         }
+        if(name == "restrict-x-translation"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictXTranslationFromGesture = true;
+                this.camera.lockXTranslationFromGesture();
+            } else {
+                this.restrictXTranslationFromGesture = false;
+                this.camera.releaseLockOnXTranslationFromGesture();
+            }
+        }
+        if(name == "restrict-y-translation"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictYTranslationFromGesture = true;
+                this.camera.lockYTranslationFromGesture();
+            } else {
+                this.restrictYTranslationFromGesture = false;
+                this.camera.releaseLockOnYTranslationFromGesture();
+            }
+        }
+        if(name == "restrict-translation"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictYTranslationFromGesture = true;
+                this.camera.lockYTranslationFromGesture();
+                this.restrictXTranslationFromGesture = true;
+                this.camera.lockXTranslationFromGesture();
+            } else {
+                this.restrictYTranslationFromGesture = false;
+                this.camera.releaseLockOnYTranslationFromGesture();
+                this.restrictXTranslationFromGesture = false;
+                this.camera.releaseLockOnXTranslationFromGesture();
+            }
+        }
+        if(name == "restrict-rotation"){
+            console.log("test");
+            if (newValue !== null && newValue !== "false"){
+                this.restrictRotationFromGesture = true;
+                this.camera.lockRotationFromGesture();
+            } else {
+                this.restrictRotationFromGesture = false;
+                this.camera.releaseLockOnRotationFromGesture();
+            }
+        }
+        if(name == "restrict-zoom"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictZoomFromGesture = true;
+                this.camera.lockZoomFromGesture();
+            } else {
+                this.restrictZoomFromGesture = false;
+                this.camera.releaseLockOnZoomFromGesture();
+            }
+        }
+
     }
 
     pointerDownHandler(e: PointerEvent){
@@ -319,7 +372,7 @@ export class vCanvas extends HTMLElement {
     }
 
     spinCameraWithAnimation(rotation: number){
-        this.camera.spinWithAnimationInUI(rotation);
+        this.camera.spinWithAnimationFromGesture(rotation);
     }
 
     setCameraAngle(rotation: number){

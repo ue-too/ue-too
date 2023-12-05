@@ -527,8 +527,11 @@ export class vCamera {
         }).bind(this);
     }
 
-    spinWithAnimationInUI(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    spinWithAnimationFromGesture(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
         if(this.cameraLocked()){
+            return;
+        }
+        if(this.restrictRotationFromGesture){
             return;
         }
         const diff = angleSpan;
