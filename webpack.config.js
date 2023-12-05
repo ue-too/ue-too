@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const nodeExternals = require('webpack-node-externals');
 
 module.exports = [
 {
@@ -31,11 +32,33 @@ module.exports = [
             filename: 'index.html',
             inject: 'body',
             path: path.resolve(__dirname, 'dist'),// Output directory
-            publicPath: "/"
+            publicPath: "/vCanvasDemo/"
         })
     ],
     devServer: {
         static: path.resolve(__dirname, 'dist'), // Specify the directory for serving static files
     },
-}
+},
+{
+  mode: "development",
+  entry: './src/staticServer/index.ts',
+  target: 'node',
+  module: {
+      rules: [
+      {
+          test: /\.tsx?$/,
+          use: 'ts-loader',
+          exclude: /node_modules/,
+      },
+      ],
+  },
+  resolve: {
+      extensions: ['.tsx', '.ts', '.js'],
+  },
+  externals: nodeExternals(),
+  output: {
+      filename: 'server.js',
+      path: path.resolve(__dirname, 'dist'),
+  },
+},
 ];
