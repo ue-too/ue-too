@@ -304,21 +304,21 @@ describe("Camera Locking onto a specific object", ()=>{
         testObj.setPosition(getRandomPoint(-500, 500));
         testObj.setRotation(getRandom(0, 2 * Math.PI));
         camera.lockOnto(testObj);
-        camera.moveInUI({x: 20, y: 20});
+        camera.moveFromGesture({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.moveWithClampInUI({x: 20, y: 20});
+        camera.moveWithClampFromGesture({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPositionInUI({x: 100, y: 300});
+        camera.setPositionFromGesture({x: 100, y: 300});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPositionWithClampInUI({x: 100, y: 300});
+        camera.setPositionWithClampFromGesture({x: 100, y: 300});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.spinInUI(Math.PI * 0.5);
+        camera.spinFromGesture(Math.PI * 0.5);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.spinDegInUI(50);
+        camera.spinDegFromGesture(50);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotationInUI(Math.PI);
+        camera.setRotationFromGesture(Math.PI);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotationDegInUI(35);
+        camera.setRotationDegFromGesture(35);
         expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
     });
 
@@ -326,10 +326,10 @@ describe("Camera Locking onto a specific object", ()=>{
         let testObj = new LockableBody;
         testObj.setPosition(getRandomPoint(-500, 500));
         camera.lockOnto(testObj);
-        camera.moveInUI({x: 20, y: 20});
+        camera.moveFromGesture({x: 20, y: 20});
         expect(camera.getPosition()).toEqual(testObj.getPosition());
         camera.releaseFromLockedObject();
-        camera.setPositionInUI({x: 20, y: 20});
+        camera.setPositionFromGesture({x: 20, y: 20});
         expect(camera.getPosition()).toEqual({x: 20, y: 20});
     });
 
@@ -358,6 +358,62 @@ describe("Camera Animations",()=>{
 
     });
 });
+
+describe("Restrictions on camera", ()=>{
+
+    let camera: vCamera;
+
+    beforeEach(()=>{
+        camera = new vCamera();
+    });
+
+    test("Restrict camera translation", ()=>{
+        camera.move({x: 10, y: 10});
+        camera.lockTranslationFromGesture();
+        camera.move({x: 10, y: 10});
+        expect(camera.getPosition()).toEqual({x: 20, y: 20});
+        camera.lockTranslationFromGesture();
+        camera.moveFromGesture({x: 10, y: 10});
+        expect(camera.getPosition()).toEqual({x: 20, y: 20});
+        camera.releaseLockOnTranslationFromGesture();
+        camera.moveFromGesture({x: 10, y: 10});
+        expect(camera.getPosition()).toEqual({x: 30, y: 30});
+        camera.lockTranslationFromGesture();
+        camera.moveWithClamp({x: 10, y: 10});
+        expect(camera.getPosition()).toEqual({x: 40, y: 40});
+        camera.moveWithClampFromGesture({x: 10, y: 10});
+        expect(camera.getPosition()).toEqual({x: 40, y: 40});
+    });
+    
+    test("Restrict camera zoom", ()=>{
+        camera.lockZoomFromGesture();
+        expect(camera.setZoomLevelFromGesture(10)).toBe(false);
+        expect(camera.setZoomLevel(10)).toBe(true);
+        camera.setZoomLevelWithClampFromGesture(20);
+        expect(camera.getZoomLevel()).toBe(10);
+        camera.releaseLockOnZoomFromGesture();
+        expect(camera.setZoomLevelFromGesture(5)).toBe(true);
+        expect(camera.getZoomLevel()).toBe(5);
+        camera.setZoomLevelWithClampFromGesture(15);
+        expect(camera.getZoomLevel()).toBe(15);
+    });
+
+    test("Restrict camera rotation", ()=>{
+        camera.lockRotationFromGesture();
+        camera.setRotationDegFromGesture(30);
+        expect(camera.getRotationDeg()).toBeCloseTo(0);
+        camera.spinDegFromGesture(10);
+        expect(camera.getRotationDeg()).toBeCloseTo(0);
+        camera.setRotationDeg(30);
+        expect(camera.getRotationDeg()).toBeCloseTo(30);
+        camera.releaseLockOnRotationFromGesture();
+        camera.setRotationDegFromGesture(20);
+        expect(camera.getRotationDeg()).toBeCloseTo(20);
+        camera.spinDegFromGesture(10);
+        expect(camera.getRotationDeg()).toBeCloseTo(30);
+    })
+
+})
 
 class LockableBody {
 
@@ -388,4 +444,4 @@ class LockableBody {
     getOptimalZoomLevel(): number{
         return 5;
     }
-}
+};

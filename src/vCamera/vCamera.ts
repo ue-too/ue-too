@@ -31,6 +31,12 @@ export class vCamera {
     private rotationAnimationPercentage: number = 1.1;
     private zoomAnimationPercentage: number = 1.1;
 
+    private restrictXTranslationFromGesture: boolean = false;
+    private restrictYTranslationFromGesture: boolean = false;
+
+    private restrictZoomFromGesture: boolean = false;
+
+    private restrictRotationFromGesture: boolean = false;
 
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
@@ -74,9 +80,15 @@ export class vCamera {
         return true;
     }
 
-    setPositionInUI(position: Point): boolean{
+    setPositionFromGesture(position: Point): boolean{
         if(this.cameraLocked()){
             return false;
+        }
+        if(this.restrictXTranslationFromGesture){
+            position.x = this.position.x;
+        }
+        if(this.restrictYTranslationFromGesture){
+            position.y = this.position.y;
         }
         return this.setPosition(position);
     }
@@ -115,9 +127,15 @@ export class vCamera {
         }
     }
 
-    setPositionWithClampInUI(position: Point) {
+    setPositionWithClampFromGesture(position: Point) {
         if (this.cameraLocked()){
             return;
+        }
+        if(this.restrictXTranslationFromGesture){
+            position.x = this.position.x;
+        }
+        if(this.restrictYTranslationFromGesture){
+            position.y = this.position.y;
         }
         this.cancelAnimations();
         this.setPositionWithClamp(position);
@@ -128,16 +146,19 @@ export class vCamera {
         this.rotation = rotation;
     }
 
-    setRotationInUI(rotation: number){
+    setRotationFromGesture(rotation: number){
         if(this.cameraLocked()){
+            return;
+        }
+        if(this.restrictRotationFromGesture){
             return;
         }
         this.cancelAnimations();
         this.setRotation(rotation);
     }
     
-    setRotationDegInUI(rotationDeg: number){
-        this.setRotationInUI(rotationDeg * Math.PI / 180);
+    setRotationDegFromGesture(rotationDeg: number){
+        this.setRotationFromGesture(rotationDeg * Math.PI / 180);
     }
     
     setRotationDeg(rotationDeg: number){
@@ -157,17 +178,23 @@ export class vCamera {
         this.zoomLevel = zoomLevel;
     }
 
-    setZoomLevelInUI(zoomLevel: number){
+    setZoomLevelFromGesture(zoomLevel: number){
         if(!this.zoomLevelWithinLimits(zoomLevel)){
             return false;
         }
-        this.cancelAnimations();
+        if(this.restrictZoomFromGesture){
+            return false;
+        }
+        this.cancelZoomAnimation();
         this.zoomLevel = zoomLevel;
         return true;
     }
 
-    setZoomLevelWithClampInUI(zoomLevel: number){
-        this.cancelAnimations();
+    setZoomLevelWithClampFromGesture(zoomLevel: number){
+        if(this.restrictZoomFromGesture){
+            return;
+        }
+        this.cancelZoomAnimation();
         zoomLevel = this.clampZoomLevel(zoomLevel);
         this.zoomLevel = zoomLevel;
     }
@@ -274,17 +301,35 @@ export class vCamera {
         return true;
     }
 
-    moveInUI(delta: Point){
+    moveFromGesture(delta: Point){
         if(this.cameraLocked()){
             return false;
+        }
+        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+            return false;
+        }
+        if(this.restrictXTranslationFromGesture){
+            delta.x = 0;
+        }
+        if(this.restrictYTranslationFromGesture){
+            delta.y = 0;
         }
         this.cancelAnimations();
         return this.move(delta);
     }
 
-    moveWithClampInUI(delta: Point){
+    moveWithClampFromGesture(delta: Point){
         if(this.cameraLocked()){
             return;
+        }
+        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+            return false;
+        }
+        if(this.restrictXTranslationFromGesture){
+            delta.x = 0;
+        }
+        if(this.restrictYTranslationFromGesture){
+            delta.y = 0;
         }
         this.cancelAnimations();
         this.moveWithClamp(delta);
@@ -334,14 +379,17 @@ export class vCamera {
         this.spin(deltaAngle * Math.PI / 180);
     }
 
-    spinDegInUI(deltaAngle: number){
+    spinDegFromGesture(deltaAngle: number){
         // in degrees
-        this.spinInUI(deltaAngle * Math.PI / 180);
+        this.spinFromGesture(deltaAngle * Math.PI / 180);
     }
 
-    spinInUI(deltaAngle: number){
+    spinFromGesture(deltaAngle: number){
         // in radians
         if(this.cameraLocked()){
+            return;
+        }
+        if(this.restrictRotationFromGesture){
             return;
         }
         this.cancelAnimations();
@@ -479,29 +527,6 @@ export class vCamera {
         }).bind(this);
     }
 
-    setRotationWithAnimationInUI(destRotation: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
-        if(this.cameraLocked()){
-            return;
-        }
-        const diff = this.getAngleSpan(destRotation);
-        // console.log("diff angle", diff);
-        const animationSpeed = 1 / duration; // how many percent in decimal per second
-        this.rotationAnimationPercentage = 0;
-        this.updateRotation = ((deltaTime: number) => {
-            if (this.rotationAnimationPercentage <= 1){
-                let currentDeltaPercentage = deltaTime * animationSpeed;
-                // console.log("current camera rotation animation percentage", this.rotationAnimationPercentage);
-                let targetPercentage = this.rotationAnimationPercentage + currentDeltaPercentage;
-                let percentageOnDeltaRotation = easeFunction(targetPercentage) - easeFunction(this.rotationAnimationPercentage)
-                if (targetPercentage > 1){
-                    percentageOnDeltaRotation = easeFunction(1) - easeFunction(this.rotationAnimationPercentage);
-                }
-                this.spin(diff * percentageOnDeltaRotation);
-                this.rotationAnimationPercentage = targetPercentage;
-            }
-        }).bind(this);
-    }
-
     spinWithAnimationInUI(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
         if(this.cameraLocked()){
             return;
@@ -593,6 +618,48 @@ export class vCamera {
         this.setPositionWithAnimation({x: 0, y: 0});
         this.setRotationWithAnimation(0);
         this.setZoomWithAnimation(1);
+    }
+
+    lockTranslationFromGesture(){
+        this.restrictXTranslationFromGesture = true;
+        this.restrictYTranslationFromGesture = true;
+    }
+
+    releaseLockOnTranslationFromGesture(){
+        this.restrictXTranslationFromGesture = false;
+        this.restrictYTranslationFromGesture = false;
+    }
+
+    lockXTranslationFromGesture(){
+        this.restrictXTranslationFromGesture = true;
+    }
+
+    releaseLockOnXTranslationFromGesture(){
+        this.restrictXTranslationFromGesture = false;
+    }
+
+    lockYTranslationFromGesture(){
+        this.restrictYTranslationFromGesture = true;
+    }
+
+    releaseLockOnYTranslationFromGesture(){
+        this.restrictYTranslationFromGesture = false;
+    }
+
+    lockZoomFromGesture(){
+        this.restrictZoomFromGesture = true;
+    }
+
+    releaseLockOnZoomFromGesture(){
+        this.restrictZoomFromGesture = false;
+    }
+
+    lockRotationFromGesture(){
+        this.restrictRotationFromGesture = true;
+    }
+
+    releaseLockOnRotationFromGesture(){
+        this.restrictRotationFromGesture = false;
     }
 
 }
