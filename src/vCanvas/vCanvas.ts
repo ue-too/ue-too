@@ -4,8 +4,8 @@ import { PointCal } from "point2point";
 
 export class vCanvas extends HTMLElement {
     
-    private width: number;
-    private height: number;
+    private canvasWidth: number;
+    private canvasHeight: number;
     private fullScreenFlag: boolean = false;
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
@@ -37,24 +37,31 @@ export class vCanvas extends HTMLElement {
 
     private windowsResizeObserver: ResizeObserver;
 
+    private UIComponentList: UIComponent[];
+
     constructor(){
         super();
-        this.width = this._canvas.width;
-        this.height = this._canvas.height;
+        this.canvasWidth = this._canvas.width;
+        this.canvasHeight = this._canvas.height;
         this.maxTransHalfHeight = 25000;
         this.maxTransHalfWidth = 25000;
+        this.style.display = "inline-block";
         
         this.camera = new vCamera();
         this.camera.setHorizontalBoundaries(-this.maxTransHalfWidth, this.maxTransHalfWidth);
         this.camera.setVerticalBoundaries(-this.maxTransHalfHeight, this.maxTransHalfHeight);
         this.camera.setMaxZoomLevel(5);
         this.camera.setMinZoomLevel(0.01);
+        this.camera.setViewPortWidth(this.canvasWidth);
+        this.camera.setViewPortHeight(this.canvasHeight);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
         this.registerEventListeners();
         this.touchPoints = [];
+
+        this.UIComponentList = [];
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
     }
@@ -85,10 +92,10 @@ export class vCanvas extends HTMLElement {
         this.lastUpdateTime = timestamp;
         deltaTime = deltaTime / 1000;
 
-        this._canvas.width = this.width;
-        this._canvas.height = this.height;
+        this._canvas.width = this.canvasWidth;
+        this._canvas.height = this.canvasHeight;
 
-        this._context.translate( this.width / 2, this.height / 2 );
+        this._context.translate( this.canvasWidth / 2, this.canvasHeight / 2 );
         this._context.scale(this.camera.getZoomLevel(), this.camera.getZoomLevel());
         this._context.rotate(this.camera.getRotation());
         this._context.translate(-this.camera.getPosition().x,  this.camera.getPosition().y);
@@ -100,6 +107,10 @@ export class vCanvas extends HTMLElement {
         this.camera.step(deltaTime);
 
         this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
+
+        this.UIComponentList.forEach((uiComponent)=>{
+            uiComponent.draw(this._context, this.camera.getZoomLevel());
+        });
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
         if(!this.handOverStepControl){
@@ -122,20 +133,20 @@ export class vCanvas extends HTMLElement {
 
     attributeChangedCallback(name: string, oldValue: any, newValue: any) {
         if (name == "width"){
-            this.width = +newValue;
-            this._canvas.width = this.width;
-            this.camera.setViewPortWidth(this.width);
+            this.canvasWidth = +newValue;
+            this._canvas.width = this.canvasWidth;
+            this.camera.setViewPortWidth(this.canvasWidth);
         }
         if (name == "height"){
-            this.height = +newValue;
-            this._canvas.height = this.height;
-            this.camera.setViewPortHeight(this.height);
+            this.canvasHeight = +newValue;
+            this._canvas.height = this.canvasHeight;
+            this.camera.setViewPortHeight(this.canvasHeight);
         }
         if (name == "full-screen"){
             if (newValue !== null && newValue !== "false"){
                 this.fullScreenFlag = true;
-                this.width = window.innerWidth;
-                this.height = window.innerHeight;
+                this.canvasWidth = window.innerWidth;
+                this.canvasHeight = window.innerHeight;
                 this._canvas.width = window.innerWidth;
                 this._canvas.height = window.innerHeight;
                 this.camera.setViewPortWidth(window.innerWidth);
@@ -205,9 +216,7 @@ export class vCanvas extends HTMLElement {
     }
 
     pointerDownHandler(e: PointerEvent){
-        console.log("clicked world position:", this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
         if(e.pointerType === "mouse" && (e.button == 0 || e.metaKey)){
-            console.log("start dragging");
             this.isDragging = true;
             this.dragStartPoint = {x: e.clientX, y: e.clientY};
         }
@@ -216,9 +225,6 @@ export class vCanvas extends HTMLElement {
     pointerUpHandler(e: PointerEvent){
         if(e.pointerType === "mouse"){
             if (e.button == 0) {
-                if (this.isDragging){
-                    console.log("end dragging");
-                }
                 this.isDragging = false;
             }
             this._canvas.style.cursor = "auto";
@@ -333,10 +339,10 @@ export class vCanvas extends HTMLElement {
 
     windowResizeHandler(){
         if(this.fullScreenFlag){
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
-            this._canvas.width = this.width;
-            this._canvas.height = this.height;
+            this.canvasWidth = window.innerWidth;
+            this.canvasHeight = window.innerHeight;
+            this._canvas.width = this.canvasWidth;
+            this._canvas.height = this.canvasHeight;
             this.camera.setViewPortWidth(window.innerWidth);
             this.camera.setViewPortHeight(window.innerHeight);
         }
@@ -386,6 +392,18 @@ export class vCanvas extends HTMLElement {
             return null;
         }
     }
+
+    getContext(): CanvasRenderingContext2D{
+        return this._context;
+    }
+
+    insertUIComponent(component: UIComponent){
+        this.UIComponentList.push(component);
+    }
+}
+
+export interface UIComponent{
+    draw(context: CanvasRenderingContext2D, zoomLevel: number): void;
 }
 
 export type CameraDetail = {

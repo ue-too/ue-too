@@ -8,8 +8,12 @@
 <body style="margin: 0; overflow: hidden;">
   <!-- Add any necessary HTML markup here -->
   <div style="height: 100%; width: 100%; position: relative;">
-    <v-canvas id="test-graph" full-screen style="position: absolute; background-color: gray;"></v-canvas>
+    <v-canvas id="test-graph" style="position: absolute; background-color: gray" full-screen></v-canvas>
     <v-dial width="300" style="position: absolute; z-index: 100; top: 350px; left: 50px;"></v-dial>
+    <div style="position: absolute; z-index: 100; top: 80px; left: 50px; user-select: none;">Mouse Clicked Position in World Coordinate: <span id="clicked-position"></span></div>
+    <div style="position: absolute; z-index: 100; top: 100px; left: 50px; user-select: none;">Camera Position in World Coordinate: <span id="camera-position"></span></div>
+    <div style="position: absolute; z-index: 100; top: 120px; left: 50px; user-select: none;">Zoom Level: <span id="zoom-level"></span></div>
+    <div style="position: absolute; z-index: 100; top: 140px; left: 50px; user-select: none;">Rotation Angle in Degree: <span id="camera-rotation"></span></div>
     <button style="position: absolute;" >Reset Camera</button>
 
     
