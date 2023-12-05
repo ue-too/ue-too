@@ -2,6 +2,8 @@
 
 __This project is experimental (only to show a way to have a canvas that can be panned, zoomed, and rotated) please do not use it in production until you modify it to your needs, test it out, and make sure that it suits all your needs__ <br/>
 
+[Demo](https://vntchang.dev/vCanvasDemo/)
+
 This is a project that I pull from the [Component Library](https://github.com/niuee/vnt-component-library). <br/>
 It's basically a canvas with pan and zoom and also rotation on camera.<br/>
 This is implemented using the web component API. I plan to also implement it as a React component.<br/>
