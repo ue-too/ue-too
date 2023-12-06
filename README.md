@@ -36,7 +36,7 @@ __Red__ is the x axis.
 The coordinate of the rendering context is still down for positive y and right for positive x. It's just when a user clicked on the canvas, the coordinate that is reported is in up for positive y and right for positive x coordinate system.
 
 ### panning
-Keyboard-Mouse: <kbd>⌘</kbd> + Hold Down Left Mouse Button or on windows <kbd>⊞</kbd> + Hold Down Left Mouse Button <br/>
+Keyboard-Mouse: <kbd>⌘</kbd> + Hold Down Left Mouse Button or on windows <kbd>⊞</kbd> + Hold Down Left Mouse Button <br/> or Hold the wheel button.
 Trackpad: Two fingers swipe to pan<br/>
 Touch: Two fingers swipe to pan (plan to change it to one finger drag to pan)<br/>
 

@@ -239,7 +239,7 @@ export class vCanvas extends HTMLElement {
     }
 
     pointerDownHandler(e: PointerEvent){
-        if(e.pointerType === "mouse" && (e.button == 0 || e.metaKey)){
+        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey)){
             this.isDragging = true;
             this.dragStartPoint = {x: e.clientX, y: e.clientY};
         }
@@ -247,7 +247,7 @@ export class vCanvas extends HTMLElement {
 
     pointerUpHandler(e: PointerEvent){
         if(e.pointerType === "mouse"){
-            if (e.button == 0) {
+            if (this.isDragging) {
                 this.isDragging = false;
             }
             this._canvas.style.cursor = "auto";
