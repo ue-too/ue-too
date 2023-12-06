@@ -58,7 +58,6 @@ export class vCanvas extends HTMLElement {
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
-        this.registerEventListeners();
         this.touchPoints = [];
 
         this.UIComponentList = [];
@@ -68,10 +67,19 @@ export class vCanvas extends HTMLElement {
 
     bindFunctions(){
         this.step = this.step.bind(this);
+        this.pointerDownHandler = this.pointerDownHandler.bind(this);
+        this.pointerUpHandler = this.pointerUpHandler.bind(this);
+        this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
+        this.touchstartHandler = this.touchstartHandler.bind(this);
+        this.touchendHandler = this.touchendHandler.bind(this);
+        this.touchcancelHandler = this.touchcancelHandler.bind(this);
+        this.touchmoveHandler = this.touchmoveHandler.bind(this);
+        this.scrollHandler = this.scrollHandler.bind(this);
     }
 
     connectedCallback(){
         this.shadowRoot.appendChild(this._canvas);
+        this.registerEventListeners();
         this.lastUpdateTime = 0;
         this.windowsResizeObserver.observe(document.body);
         if(!this.handOverStepControl){
@@ -84,6 +92,7 @@ export class vCanvas extends HTMLElement {
             cancelAnimationFrame(this.requestRef);
         }
         this.windowsResizeObserver.unobserve(document.body);
+        this.removeEventListeners();
     }
 
     private step(timestamp: number){
@@ -119,16 +128,30 @@ export class vCanvas extends HTMLElement {
     }
 
     registerEventListeners(){
-        this._canvas.addEventListener('pointerdown', this.pointerDownHandler.bind(this));
-        this._canvas.addEventListener('pointerup', this.pointerUpHandler.bind(this));
-        this._canvas.addEventListener('pointermove', this.pointerMoveHandler.bind(this));
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler);
+        this._canvas.addEventListener('pointerup', this.pointerUpHandler);
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler);
 
-        this._canvas.addEventListener('wheel', this.scrollHandler.bind(this));
+        this._canvas.addEventListener('wheel', this.scrollHandler);
 
-        this._canvas.addEventListener('touchstart', this.touchstartHandler.bind(this));
-        this._canvas.addEventListener('touchend', this.touchendHandler.bind(this));
-        this._canvas.addEventListener('touchcancel', this.touchcancelHandler.bind(this));
-        this._canvas.addEventListener('touchmove', this.touchmoveHandler.bind(this));
+        this._canvas.addEventListener('touchstart', this.touchstartHandler);
+        this._canvas.addEventListener('touchend', this.touchendHandler);
+        this._canvas.addEventListener('touchcancel', this.touchcancelHandler);
+        this._canvas.addEventListener('touchmove', this.touchmoveHandler);
+    }
+
+    removeEventListeners(){
+        this._canvas.removeEventListener('pointerdown', this.pointerDownHandler);
+        this._canvas.removeEventListener('pointerup', this.pointerUpHandler);
+        this._canvas.removeEventListener('pointermove', this.pointerMoveHandler);
+
+        this._canvas.removeEventListener('wheel', this.scrollHandler);
+
+        this._canvas.removeEventListener('touchstart', this.touchstartHandler);
+        this._canvas.removeEventListener('touchend', this.touchendHandler);
+        this._canvas.removeEventListener('touchcancel', this.touchcancelHandler);
+        this._canvas.removeEventListener('touchmove', this.touchmoveHandler);
+
     }
 
     attributeChangedCallback(name: string, oldValue: any, newValue: any) {
