@@ -1,6 +1,7 @@
 import { vCamera, CameraLockableObject } from "../vCamera";
 import { Point } from "..";
 import { PointCal } from "point2point";
+import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
 
 export class vCanvas extends HTMLElement {
     
@@ -22,14 +23,10 @@ export class vCanvas extends HTMLElement {
     private restrictRotationFromGesture: boolean = false;
     private restrictZoomFromGesture: boolean = false;
 
-    private scrollFactor: number = 0.1;
     private SCROLL_SENSITIVITY: number = 0.005;
 
     private isDragging: boolean = false;
     private dragStartPoint: Point;
-
-    private touchPoints: Point[];
-    private dragStartDist: number;
 
     private requestRef: number;
     private handOverStepControl: boolean = false;
@@ -38,6 +35,8 @@ export class vCanvas extends HTMLElement {
     private windowsResizeObserver: ResizeObserver;
 
     private UIComponentList: UIComponent[];
+
+    private touchStrategy: CanvasTouchStrategy;
 
     constructor(){
         super();
@@ -55,10 +54,11 @@ export class vCanvas extends HTMLElement {
         this.camera.setViewPortWidth(this.canvasWidth);
         this.camera.setViewPortHeight(this.canvasHeight);
 
+        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera);
+
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
-        this.touchPoints = [];
 
         this.UIComponentList = [];
 
@@ -292,54 +292,19 @@ export class vCanvas extends HTMLElement {
     }
 
     touchstartHandler(e: TouchEvent){
-        e.preventDefault();
-        if(e.targetTouches.length === 2){
-            let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            let secondTouchPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
-            this.dragStartDist = PointCal.distanceBetweenPoints(firstTouchPoint, secondTouchPoint);
-            this.touchPoints = [firstTouchPoint, secondTouchPoint];
-        } else if (e.targetTouches.length === 1){
-        }
+        this.touchStrategy.touchstartHandler(e);
     }
 
     touchcancelHandler(e: TouchEvent){
-        this.touchPoints = [];
+        this.touchStrategy.touchcancelHandler(e);
     }
 
     touchendHandler(e: TouchEvent){
-        this.touchPoints = [];
+        this.touchStrategy.touchendHandler(e);
     }
 
     touchmoveHandler(e: TouchEvent){
-        e.preventDefault();
-        if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
-            //NOTE Touch Zooming
-            let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
-            let deltaStartPoint = PointCal.subVector(startPoint, this.touchPoints[0]);
-            let deltaEndPoint = PointCal.subVector(endPoint, this.touchPoints[1]);
-            let angleDiff = PointCal.angleFromA2B(deltaStartPoint, deltaEndPoint);
-            let panZoom = Math.abs(angleDiff) > 20 * Math.PI / 180 ? "ZOOMING" : "PANNING";
-            if(panZoom == "ZOOMING"){
-                let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
-                let distDiff = this.dragStartDist - touchPointDist;
-                let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-                let midOriginalWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
-                let zoomAmount = distDiff * 0.1 * this.camera.getZoomLevel() * this.SCROLL_SENSITIVITY;
-                this.camera.setZoomLevelWithClampFromGesture(this.camera.getZoomLevel() - zoomAmount);
-                let midWorldPos = this.convertWindowPoint2WorldCoord(midPoint);
-                let posDiff = PointCal.subVector(midOriginalWorldPos, midWorldPos);
-                this.camera.moveWithClampFromGesture(posDiff);
-                this.touchPoints = [startPoint, endPoint];
-            } else {
-                const diff = PointCal.subVector(this.touchPoints[0], startPoint);
-                let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
-                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
-                this.camera.moveWithClampFromGesture(diffInWorld);
-                this.touchPoints = [startPoint, endPoint];
-            }
-        }
+        this.touchStrategy.touchmoveHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
     }
 
     getInternalCanvas(): HTMLCanvasElement {
