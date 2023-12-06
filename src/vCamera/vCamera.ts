@@ -7,7 +7,7 @@ export type Boundaries = {
     max?: {x?: number, y?: number};
 }
 
-interface CameraLockableObject{
+export interface CameraLockableObject{
     getPosition(): Point;
     getRotation(): number;
     getOptimalZoomLevel(): number;
