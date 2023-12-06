@@ -1,4 +1,4 @@
-import { vCamera } from "../vCamera";
+import { vCamera, CameraLockableObject } from "../vCamera";
 import { Point } from "..";
 import { PointCal } from "point2point";
 
@@ -429,6 +429,10 @@ export interface UIComponent{
     draw(context: CanvasRenderingContext2D, zoomLevel: number): void;
 }
 
+export interface RayCastableObject{
+    raycast(cursorPosition: Point): boolean;
+}
+
 export type CameraDetail = {
     cameraPosition: Point;
     cameraAngle: number;
@@ -442,5 +446,45 @@ export class CameraUpdateEvent extends Event{
     constructor(type: string, detail: CameraDetail, eventInit?: EventInit){
         super(type, eventInit);
         this.detail = detail;
+    }
+}
+
+export class InteractiveUIPolygonComponent implements UIComponent, RayCastableObject {
+
+    position: Point;
+    rotation: number;
+    vertices: Point[];
+
+    constructor(center: Point, vertices: Point[] = [], rotation: number = 0){
+        this.position = center;
+        this.rotation = rotation;
+        this.vertices = vertices;
+    }
+
+    convertVertices(): Point[]{
+        let res = this.vertices.map((vertex)=>{
+            return PointCal.addVector(this.position, PointCal.rotatePoint(vertex, this.rotation));
+        });
+        return res;
+    }
+
+    draw(context: CanvasRenderingContext2D, zoomLevel: number): void {
+        let points = this.convertVertices();
+        context.beginPath();
+        points.forEach((point, index)=>{
+            let prevPoint: Point;
+            if(index == 0){
+                prevPoint = points[points.length - 1];
+            } else{
+                prevPoint = points[index - 1];
+            }
+            context.moveTo(point.x, -point.y);
+            context.lineTo(prevPoint.x, -prevPoint.y);
+        });
+        context.stroke();
+    }
+
+    raycast(cursorPosition: Point): boolean {
+        return true;
     }
 }

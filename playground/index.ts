@@ -1,4 +1,4 @@
-import { vCanvas, CameraUpdateEvent } from "../src";
+import { vCanvas, CameraUpdateEvent, InteractiveUIPolygonComponent } from "../src";
 import { vDial, DialWheelEvent } from "../src";
 
 
@@ -51,3 +51,6 @@ element.addEventListener('pointerdown', (e)=>{
         positionText.innerHTML = `x: ${clickedPoint.x.toFixed(2)} y: ${clickedPoint.y.toFixed(2)}`;
     }
 });
+
+let testPolygon = new InteractiveUIPolygonComponent({x: 100, y: 100}, [{x: 50, y: 50}, {x: -50, y: 50}, {x: -50, y: -50}, {x: 50, y: -50}], 45 * Math.PI / 180);
+element.insertUIComponent(testPolygon);
