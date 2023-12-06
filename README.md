@@ -182,10 +182,11 @@ let canvasStepFn = canvasElement.getStepFunction(); // this will return the step
 
 // this is an example of your own step function
 function step(timestamp){
+    // call the step function of the canvas first because the canvas step function will clear the canvas
+    canvasStepFn(timestamp);
     // do your work
     // ...
     // ...
-    canvasStepFn(timestamp);
     window.requestAnimationFrame(step);
 }
 
