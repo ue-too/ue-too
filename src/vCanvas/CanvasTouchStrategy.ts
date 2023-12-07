@@ -54,14 +54,9 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
                 let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
                 let distDiff = this.dragStartDist - touchPointDist;
                 let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-                let midOriginalWorldPos = this.convertWindowPoint2ViewPortPoint(bottomLeftCorner, midPoint);
-                midOriginalWorldPos = this.controlCamera.convert2WorldSpace(midOriginalWorldPos);
+                midPoint = this.convertWindowPoint2ViewPortPoint(bottomLeftCorner, midPoint);
                 let zoomAmount = distDiff * 0.1 * this.controlCamera.getZoomLevel() * this.ZOOM_SENSATIVITY;
-                this.controlCamera.setZoomLevelWithClampFromGesture(this.controlCamera.getZoomLevel() - zoomAmount);
-                let midWorldPos = this.convertWindowPoint2ViewPortPoint(bottomLeftCorner, midPoint);
-                midWorldPos = this.controlCamera.convert2WorldSpace(midWorldPos);
-                let posDiff = PointCal.subVector(midOriginalWorldPos, midWorldPos);
-                this.controlCamera.moveWithClampFromGesture(posDiff);
+                this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
                 this.touchPoints = [startPoint, endPoint];
             } else {
                 const diff = PointCal.subVector(this.touchPoints[0], startPoint);
