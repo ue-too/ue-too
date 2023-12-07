@@ -145,13 +145,18 @@ The above methods are not ideal. I am still thinking about how to improve this p
 
 #### `restrict-{x-translation | y-translation | rotation | zoom}`
 This is to restrict any kind of input from the gestures (mouse-keyboard input, trackpad gesture, touch points) to move, rotate, or zoom the canvas.<br/>
-For Example, to limit the x direction translation set the attribute restrict-x-translation on the html tag.
+For Example, to limit the absolute x direction translation set the attribute restrict-x-translation on the html tag.
 
 This will restrict the ability to pan the canvas in x-direction.
 ```html
 <v-canvas restrict-x-translation></v-canvas> 
 ```
-
+#### `restrict-relative-{x-translation | y-translation}`
+This is to restrict any kind of input from the gestures (mouse-keyboard input, trackpad gesture, touch points) to move relative to the camera viewport.
+X is the left and right direction of the view port and Y is the up and down direction.
+```html
+<v-canvas restrict-relative-x-translation></v-canvas> 
+```
 #### `full-screen`
 This is to set the dimensions of the canvas to be the same as `window.innerHeight` and `window.innerWidth`.<br/>
 This will override the `width` and `height` attribute.

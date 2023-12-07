@@ -98,6 +98,7 @@ export class vDial extends HTMLElement{
     }
 
     scrollHandler(e: WheelEvent){
+        e.preventDefault();
         let scrollAmount = e.deltaY;
         let scrolledAngle = scrollAmount * 0.05 * Math.PI / 180;
         const event = new DialWheelEvent("needlechange", {angleSpan: scrolledAngle});

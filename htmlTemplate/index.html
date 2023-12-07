@@ -6,17 +6,88 @@
   <title>Dev Server</title>
 </head>
 <body style="margin: 0; overflow: hidden;">
+  <style>
+    /* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+  </style>
   <!-- Add any necessary HTML markup here -->
-  <div style="height: 100%; width: 100%; position: relative;">
-    <v-canvas id="test-graph" style="position: absolute; background-color: gray" full-screen></v-canvas>
-    <v-dial width="300" style="position: absolute; z-index: 100; top: 350px; left: 50px;"></v-dial>
-    <div style="position: absolute; z-index: 100; top: 80px; left: 50px; user-select: none;">Mouse Clicked Position in World Coordinate: <span id="clicked-position"></span></div>
-    <div style="position: absolute; z-index: 100; top: 100px; left: 50px; user-select: none;">Camera Position in World Coordinate: <span id="camera-position"></span></div>
-    <div style="position: absolute; z-index: 100; top: 120px; left: 50px; user-select: none;">Zoom Level: <span id="zoom-level"></span></div>
-    <div style="position: absolute; z-index: 100; top: 140px; left: 50px; user-select: none;">Rotation Angle in Degree: <span id="camera-rotation"></span></div>
-    <button style="position: absolute;" >Reset Camera</button>
+    <div style="position: relative;">
+      <v-canvas id="test-graph" style="position: absolute; z-index: 1;"  full-screen></v-canvas>
+      <v-dial width="300" style="position: absolute; z-index: 2;"></v-dial>
+      <div style="position: absolute; left: 10vw; z-index: 2;">
+        <div style="user-select: none;">Mouse Clicked Position in World Coordinate: <span id="clicked-position"></span></div>
+        <div style="user-select: none;">Camera Position in World Coordinate: <span id="camera-position"></span></div>
+        <div style="user-select: none;">Zoom Level: <span id="zoom-level"></span></div>
+        <div style="user-select: none;">Rotation Angle in Degree: <span id="camera-rotation"></span></div>
+        <button id="reset-camera" >Reset Camera</button>
+        <button id="restrict-x-translation">Restrict X Translation</button>
+        <label class="switch">
+          <input type="checkbox">
+          <span class="slider round"></span>
+        </label>
+      </div>
+    </div>
 
     
-  </div>
 </body>
 </html>

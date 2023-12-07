@@ -1,7 +1,8 @@
 import { vCamera, CameraLockableObject } from "../vCamera";
-import { Point } from "..";
+import { Point, UIComponent, InteractiveUIComponent } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom } from "./CanvasTrackpadStrategy";
 
 export class vCanvas extends HTMLElement {
     
@@ -11,7 +12,7 @@ export class vCanvas extends HTMLElement {
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
 
-    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", "restrict-x-translation", "restrict-y-translation", "restrict-translation", "restrict-rotation", "restrict-zoom"];
+    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", "restrict-x-translation", "restrict-y-translation", "restrict-translation", "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation"];
 
     private _canvas: HTMLCanvasElement = document.createElement('canvas');
     private _context: CanvasRenderingContext2D;
@@ -22,8 +23,8 @@ export class vCanvas extends HTMLElement {
     private restrictYTranslationFromGesture: boolean = false;
     private restrictRotationFromGesture: boolean = false;
     private restrictZoomFromGesture: boolean = false;
-
-    private SCROLL_SENSITIVITY: number = 0.005;
+    private restrictRelativeXTranslationFromGesture: boolean = false;
+    private restrictRelativeYTranslationFromGesture: boolean = false;
 
     private isDragging: boolean = false;
     private dragStartPoint: Point;
@@ -34,9 +35,10 @@ export class vCanvas extends HTMLElement {
 
     private windowsResizeObserver: ResizeObserver;
 
-    private UIComponentList: UIComponent[];
+    private UIComponentList: InteractiveUIComponent[] = [];
 
     private touchStrategy: CanvasTouchStrategy;
+    private trackpadStrategy: CanvasTrackpadStrategy;
 
     constructor(){
         super();
@@ -44,7 +46,7 @@ export class vCanvas extends HTMLElement {
         this.canvasHeight = this._canvas.height;
         this.maxTransHalfHeight = 25000;
         this.maxTransHalfWidth = 25000;
-        this.style.display = "inline-block";
+        this.style.display = "block";
         
         this.camera = new vCamera();
         this.camera.setHorizontalBoundaries(-this.maxTransHalfWidth, this.maxTransHalfWidth);
@@ -54,13 +56,14 @@ export class vCanvas extends HTMLElement {
         this.camera.setViewPortWidth(this.canvasWidth);
         this.camera.setViewPortHeight(this.canvasHeight);
 
-        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera);
-
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
         this.UIComponentList = [];
+
+        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera, this.UIComponentList);
+        this.trackpadStrategy = new TwoFingerPanPinchZoom();
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
     }
@@ -118,6 +121,7 @@ export class vCanvas extends HTMLElement {
         this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
 
         this.UIComponentList.forEach((uiComponent)=>{
+            uiComponent.update(deltaTime);
             uiComponent.draw(this._context, this.camera.getZoomLevel());
         });
 
@@ -186,6 +190,7 @@ export class vCanvas extends HTMLElement {
             }
         }
         if(name == "restrict-x-translation"){
+            console.log("test");
             if (newValue !== null && newValue !== "false"){
                 this.restrictXTranslationFromGesture = true;
                 this.camera.lockXTranslationFromGesture();
@@ -235,7 +240,24 @@ export class vCanvas extends HTMLElement {
                 this.camera.releaseLockOnZoomFromGesture();
             }
         }
-
+        if(name == "restrict-relative-y-translation"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictRelativeYTranslationFromGesture = true;
+                this.camera.lockRelativeYTranslationFromGesture();
+            } else {
+                this.restrictRelativeYTranslationFromGesture = false;
+                this.camera.releaseLockOnRelativeYTranslationFromGesture();
+            }
+        }
+        if(name == "restrict-relative-x-translation"){
+            if (newValue !== null && newValue !== "false"){
+                this.restrictRelativeXTranslationFromGesture = true;
+                this.camera.lockRelativeXTranslationFromGesture();
+            } else {
+                this.restrictRelativeXTranslationFromGesture = false;
+                this.camera.releaseLockOnRelativeXTranslationFromGesture();
+            }
+        }
     }
 
     pointerDownHandler(e: PointerEvent){
@@ -249,6 +271,10 @@ export class vCanvas extends HTMLElement {
         if(e.pointerType === "mouse"){
             if (this.isDragging) {
                 this.isDragging = false;
+            } else {
+                this.UIComponentList.forEach((component)=>{
+                    component.raycast(this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
+                })
             }
             this._canvas.style.cursor = "auto";
         }
@@ -269,38 +295,27 @@ export class vCanvas extends HTMLElement {
 
     scrollHandler(e: WheelEvent){
         e.preventDefault();
-        const zoomAmount = e.deltaY * this.SCROLL_SENSITIVITY;
+        this.trackpadStrategy.scrollHandler(e, this.camera, this.getCoordinateConversionFn({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}));
+    }
 
-        if (!e.ctrlKey){
-            //NOTE this is panning the camera
-            const diff = {x: e.deltaX, y: e.deltaY};
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-            this.camera.moveWithClampFromGesture(diffInWorld);
-        } else {
-            //NOTE this is zooming the camera
-            if (!this.isDragging){
-                const cursorPosition = {x: e.clientX, y: e.clientY};
-                let cursorWorldPositionPriorToZoom = this.convertWindowPoint2WorldCoord(cursorPosition);
-                this.camera.setZoomLevelWithClampFromGesture(this.camera.getZoomLevel() - zoomAmount * 5);
-                let cursorWorldPositionAfterZoom = this.convertWindowPoint2WorldCoord(cursorPosition);
-                let diff = PointCal.subVector(cursorWorldPositionAfterZoom, cursorWorldPositionPriorToZoom);
-                diff = PointCal.multiplyVectorByScalar(diff, -1);
-                this.camera.moveWithClampFromGesture(diff);
-            }
+    getCoordinateConversionFn(bottomLeftCorner: Point): (interestPoint: Point)=>Point{
+        const conversionFn =  (interestPoint: Point)=>{
+            const viewPortPoint = PointCal.flipYAxis(PointCal.subVector(interestPoint, bottomLeftCorner));
+            return viewPortPoint;
         }
+        return conversionFn;
     }
 
     touchstartHandler(e: TouchEvent){
-        this.touchStrategy.touchstartHandler(e);
+        this.touchStrategy.touchstartHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
     }
 
     touchcancelHandler(e: TouchEvent){
-        this.touchStrategy.touchcancelHandler(e);
+        this.touchStrategy.touchcancelHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
     }
 
     touchendHandler(e: TouchEvent){
-        this.touchStrategy.touchendHandler(e);
+        this.touchStrategy.touchendHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -385,17 +400,9 @@ export class vCanvas extends HTMLElement {
         return this._context;
     }
 
-    insertUIComponent(component: UIComponent){
+    insertUIComponent(component: InteractiveUIComponent){
         this.UIComponentList.push(component);
     }
-}
-
-export interface UIComponent{
-    draw(context: CanvasRenderingContext2D, zoomLevel: number): void;
-}
-
-export interface RayCastableObject{
-    raycast(cursorPosition: Point): boolean;
 }
 
 export type CameraDetail = {
@@ -411,45 +418,5 @@ export class CameraUpdateEvent extends Event{
     constructor(type: string, detail: CameraDetail, eventInit?: EventInit){
         super(type, eventInit);
         this.detail = detail;
-    }
-}
-
-export class InteractiveUIPolygonComponent implements UIComponent, RayCastableObject {
-
-    position: Point;
-    rotation: number;
-    vertices: Point[];
-
-    constructor(center: Point, vertices: Point[] = [], rotation: number = 0){
-        this.position = center;
-        this.rotation = rotation;
-        this.vertices = vertices;
-    }
-
-    convertVertices(): Point[]{
-        let res = this.vertices.map((vertex)=>{
-            return PointCal.addVector(this.position, PointCal.rotatePoint(vertex, this.rotation));
-        });
-        return res;
-    }
-
-    draw(context: CanvasRenderingContext2D, zoomLevel: number): void {
-        let points = this.convertVertices();
-        context.beginPath();
-        points.forEach((point, index)=>{
-            let prevPoint: Point;
-            if(index == 0){
-                prevPoint = points[points.length - 1];
-            } else{
-                prevPoint = points[index - 1];
-            }
-            context.moveTo(point.x, -point.y);
-            context.lineTo(prevPoint.x, -prevPoint.y);
-        });
-        context.stroke();
-    }
-
-    raycast(cursorPosition: Point): boolean {
-        return true;
     }
 }

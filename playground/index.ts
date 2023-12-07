@@ -1,12 +1,13 @@
 import { vCanvas, CameraUpdateEvent, InteractiveUIPolygonComponent } from "../src";
-import { vDial, DialWheelEvent } from "../src";
+import { vDial, DialWheelEvent, Point } from "../src";
 
 
 customElements.define('v-canvas', vCanvas);
 customElements.define('v-dial', vDial);
 
 let element = document.getElementById("test-graph") as vCanvas;
-let button = document.querySelector("button");
+let button = document.querySelector("#reset-camera") as HTMLButtonElement;
+let restrictXTranslationButton = document.querySelector("#restrict-x-translation") as HTMLButtonElement;
 let dialWheel = document.querySelector("v-dial") as vDial;
 let positionText = document.querySelector("#clicked-position");
 let zoomLevelText = document.querySelector("#zoom-level");
@@ -15,6 +16,24 @@ let cameraRotationText = document.querySelector("#camera-rotation");
 
 if (button) {
     button.onclick = (e) => element.resetCamera();
+}
+
+if (restrictXTranslationButton) {
+    restrictXTranslationButton.onclick = (e) => {
+        element.setAttribute("restrict-relative-x-translation", "true")
+    };
+}
+if(dialWheel && element){
+    const dialWheelHalfHeight = dialWheel.clientHeight / 2;
+    const dialWheelHalfWidth = dialWheel.clientWidth / 2;
+    const canvasCenterX = element.getBoundingClientRect().left + element.clientWidth / 2;
+    const canvasCenterY = element.getBoundingClientRect().top + element.clientHeight / 2;
+    let topValue = canvasCenterY - dialWheelHalfHeight;
+    let leftValue = canvasCenterX - dialWheelHalfWidth;
+    console.log("top", topValue);
+    console.log("left", leftValue);
+    dialWheel.style.top = topValue.toString() + "px";
+    dialWheel.style.left = leftValue.toString() + "px";
 }
 
 dialWheel.addEventListener('needleslide', (evt: Event)=>{
@@ -52,5 +71,11 @@ element.addEventListener('pointerdown', (e)=>{
     }
 });
 
+
 let testPolygon = new InteractiveUIPolygonComponent({x: 100, y: 100}, [{x: 50, y: 50}, {x: -50, y: 50}, {x: -50, y: -50}, {x: 50, y: -50}], 45 * Math.PI / 180);
+
+const raycastCallback = (position: Point)=>{
+    element.getCamera().lockOntoWithTransition(testPolygon);
+};
+testPolygon.setRayCastCallback(raycastCallback);
 element.insertUIComponent(testPolygon);

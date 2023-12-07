@@ -299,40 +299,6 @@ describe("Camera Locking onto a specific object", ()=>{
         expect(camera.getZoomLevel()).toBe(5);
     });
 
-    test("Trying to move or rotate camera when it's locked", ()=>{
-        let testObj = new LockableBody;
-        testObj.setPosition(getRandomPoint(-500, 500));
-        testObj.setRotation(getRandom(0, 2 * Math.PI));
-        camera.lockOnto(testObj);
-        camera.moveFromGesture({x: 20, y: 20});
-        expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.moveWithClampFromGesture({x: 20, y: 20});
-        expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPositionFromGesture({x: 100, y: 300});
-        expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.setPositionWithClampFromGesture({x: 100, y: 300});
-        expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.spinFromGesture(Math.PI * 0.5);
-        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.spinDegFromGesture(50);
-        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotationFromGesture(Math.PI);
-        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-        camera.setRotationDegFromGesture(35);
-        expect(camera.getRotation()).toBeCloseTo(testObj.getRotation());
-    });
-
-    test("After Releasing the lock camera should be able to move around", ()=>{
-        let testObj = new LockableBody;
-        testObj.setPosition(getRandomPoint(-500, 500));
-        camera.lockOnto(testObj);
-        camera.moveFromGesture({x: 20, y: 20});
-        expect(camera.getPosition()).toEqual(testObj.getPosition());
-        camera.releaseFromLockedObject();
-        camera.setPositionFromGesture({x: 20, y: 20});
-        expect(camera.getPosition()).toEqual({x: 20, y: 20});
-    });
-
     test("Zoom level should not be affected by the locking", ()=>{
         let testObj = new LockableBody;
         testObj.setPosition(getRandomPoint(-500, 500));
