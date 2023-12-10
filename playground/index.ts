@@ -13,6 +13,13 @@ let positionText = document.querySelector("#clicked-position");
 let zoomLevelText = document.querySelector("#zoom-level");
 let cameraPositionText = document.querySelector("#camera-position");
 let cameraRotationText = document.querySelector("#camera-rotation");
+let toggleTest = document.querySelector("#toggle-test") as HTMLInputElement;
+
+if(toggleTest){
+    toggleTest.onchange = (e) =>{
+        dialWheel.style.visibility = toggleTest.checked ? "visible" : "hidden";
+    }
+}
 
 if (button) {
     button.onclick = (e) => element.resetCamera();
@@ -34,6 +41,7 @@ if(dialWheel && element){
     console.log("left", leftValue);
     dialWheel.style.top = topValue.toString() + "px";
     dialWheel.style.left = leftValue.toString() + "px";
+    dialWheel.style.visibility = "hidden";
 }
 
 dialWheel.addEventListener('needleslide', (evt: Event)=>{
