@@ -116,7 +116,6 @@ export class vCanvas extends HTMLElement {
 
         this.drawAxis(this._context, this.camera.getZoomLevel());
 
-        this.camera.step(deltaTime);
 
         this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
 
@@ -124,6 +123,8 @@ export class vCanvas extends HTMLElement {
             uiComponent.update(deltaTime);
             uiComponent.draw(this._context, this.camera.getZoomLevel());
         });
+
+        this.camera.step(deltaTime);
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
         if(!this.handOverStepControl){
