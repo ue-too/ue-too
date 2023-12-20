@@ -32,6 +32,7 @@ type ZoomAnimation = {
     easingFn: (percentage: number)=> number;
     duration: number;
     diff: number;
+    anchorPoint?: Point;
 }
 
 export class vCamera {
@@ -136,29 +137,62 @@ export class vCamera {
         return this.setPosition(position);
     }
 
+    clampPointEntireViewPort(point: Point){
+        let topLeftCorner = this.convert2WorldSpaceWRT(point, {x: 0, y: this.viewPortHeight});
+        let bottomLeftCorner = this.convert2WorldSpaceWRT(point, {x: 0, y: 0});
+        let topRightCorner = this.convert2WorldSpaceWRT(point, {x: this.viewPortWidth, y: this.viewPortHeight});
+        let bottomRightCorner = this.convert2WorldSpaceWRT(point, {x: this.viewPortWidth, y: 0});
+        let topLeftCornerClamped = this.clampPoint(topLeftCorner);
+        let topRightCornerClamped = this.clampPoint(topRightCorner);
+        let bottomLeftCornerClamped = this.clampPoint(bottomLeftCorner);
+        let bottomRightCornerClamped = this.clampPoint(bottomRightCorner);
+        console.log(topLeftCornerClamped, bottomLeftCornerClamped, topRightCornerClamped, bottomRightCornerClamped);
+        let topLeftCornerDiff = PointCal.subVector(topLeftCornerClamped, topLeftCorner);
+        let topRightCornerDiff = PointCal.subVector(topRightCornerClamped, topRightCorner);
+        let bottomLeftCornerDiff = PointCal.subVector(bottomLeftCornerClamped, bottomLeftCorner);
+        let bottomRightCornerDiff = PointCal.subVector(bottomRightCornerClamped, bottomRightCorner);
+        let diffs = [topLeftCornerDiff, topRightCornerDiff, bottomLeftCornerDiff, bottomRightCornerDiff];
+        console.log("diffs", diffs);
+        let maxXDiff = Math.abs(diffs[0].x);
+        let maxYDiff = Math.abs(diffs[0].y);
+        let delta = diffs[0];
+        diffs.forEach((diff)=>{
+            if(Math.abs(diff.x) > maxXDiff){
+                maxXDiff = Math.abs(diff.x);
+                delta.x = diff.x;
+            }
+            if(Math.abs(diff.y) > maxYDiff){
+                maxYDiff = Math.abs(diff.y);
+                delta.y = diff.y;
+            }
+        });
+        return PointCal.addVector(point, delta);
+    }
+
     clampPoint(point: Point){
         if(this.withinBoundaries(point)){
             return point;
         }
+        let manipulatePoint = {x: point.x, y: point.y};
         let limit = this.boundaries.min;
         if (limit != undefined){
             if(limit.x != undefined){
-                point.x = Math.max(point.x, limit.x);
+                manipulatePoint.x = Math.max(manipulatePoint.x, limit.x);
             }
             if(limit.y != undefined){
-                point.y = Math.max(point.y, limit.y);
+                manipulatePoint.y = Math.max(manipulatePoint.y, limit.y);
             }
         }
         limit = this.boundaries.max;
         if(limit != undefined){
             if(limit.x != undefined){
-                point.x = Math.min(point.x, limit.x);
+                manipulatePoint.x = Math.min(manipulatePoint.x, limit.x);
             }
             if(limit.y != undefined){
-                point.y = Math.min(point.y, limit.y);
+                manipulatePoint.y = Math.min(manipulatePoint.y, limit.y);
             }
         }
-        return point;
+        return manipulatePoint;
     }
 
     setPositionWithClamp(position: Point) {
@@ -169,6 +203,38 @@ export class vCamera {
             this.position = this.clampPoint(position);
         }
     }
+
+    setPositionWithClampEntireViewPort(position: Point){
+        this.cancelPositionAnimation();
+        this.position = this.clampPointEntireViewPort(position);
+    }
+
+    setPositionWithClampEntireViewPortFromGesture(position: Point) {
+        if(this.restrictXTranslationFromGesture){
+            position.x = this.position.x;
+        }
+        if(this.restrictYTranslationFromGesture){
+            position.y = this.position.y;
+        }
+        if(this.restrictRelativeXTranslationFromGesture){
+            const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
+            let delta = PointCal.subVector(this.position, position);
+            const value = PointCal.dotProduct(upDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(upDirection, value);
+            position = PointCal.addVector(this.position, delta);
+        }
+        if(this.restrictRelativeYTranslationFromGesture){
+            const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
+            let delta = PointCal.subVector(this.position, position);
+            const value = PointCal.dotProduct(rightDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(rightDirection, value);
+            position = PointCal.addVector(this.position, delta);
+        }
+        this.cancelAnimations();
+        this.releasePositionFromLockedObject();
+        this.setPositionWithClampEntireViewPort(position);
+    }
+
 
     setPositionWithClampFromGesture(position: Point) {
         if(this.restrictXTranslationFromGesture){
@@ -392,7 +458,7 @@ export class vCamera {
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
         }
-        this.releasePositionFromLockedObject();
+        this.releaseFromLockedObject();
         this.cancelAnimations();
         return this.move(delta);
     }
@@ -420,14 +486,48 @@ export class vCamera {
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
         }
-        this.releasePositionFromLockedObject();
+        this.releaseFromLockedObject();
         this.cancelAnimations();
         this.moveWithClamp(delta);
+    }
+
+    moveWithClampEntireViewPortFromGesture(delta: Point){
+        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+            return;
+        }
+        if(this.restrictRelativeXTranslationFromGesture && this.restrictRelativeYTranslationFromGesture){
+            return;
+        }
+        if(this.restrictXTranslationFromGesture){
+            delta.x = 0;
+        }
+        if(this.restrictYTranslationFromGesture){
+            delta.y = 0;
+        }
+        if(this.restrictRelativeXTranslationFromGesture){
+            const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
+            const value = PointCal.dotProduct(upDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(upDirection, value);
+        }
+        if(this.restrictRelativeYTranslationFromGesture){
+            const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
+            const value = PointCal.dotProduct(rightDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(rightDirection, value);
+        }
+        this.releaseFromLockedObject();
+        this.cancelAnimations();
+        this.moveWithClampEntireViewPort(delta);
     }
 
     moveWithClamp(delta: Point){
         const target = PointCal.addVector(this.position, delta);
         const clampedTarget = this.clampPoint(target);
+        this.position = clampedTarget;
+    }
+
+    moveWithClampEntireViewPort(delta: Point){
+        const target = PointCal.addVector(this.position, delta);
+        const clampedTarget = this.clampPointEntireViewPort(target);
         this.position = clampedTarget;
     }
 
@@ -515,12 +615,28 @@ export class vCamera {
         return this.zoomLevelLimits;
     }
 
+    convert2WorldSpaceWRT(centerPoint: Point, interestPoint: Point): Point{
+        let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this.viewPortHeight / 2};
+        let delta2Point = PointCal.subVector(interestPoint, cameraFrameCenter);
+        delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / this.zoomLevel);
+        delta2Point = PointCal.rotatePoint(delta2Point, this.rotation);
+        return PointCal.addVector(centerPoint, delta2Point);
+    }
+
     convert2WorldSpace(point: Point): Point{
         let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this.viewPortHeight / 2};
         let delta2Point = PointCal.subVector(point, cameraFrameCenter);
         delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / this.zoomLevel);
         delta2Point = PointCal.rotatePoint(delta2Point, this.rotation);
         return PointCal.addVector(this.position, delta2Point);
+    }
+
+    invertFromWorldSpace(point: Point): Point{
+        let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this.viewPortHeight / 2};
+        let delta2Point = PointCal.subVector(point, this.position);
+        delta2Point = PointCal.rotatePoint(delta2Point, -this.rotation);
+        delta2Point = PointCal.multiplyVectorByScalar(delta2Point, this.zoomLevel);
+        return PointCal.addVector(cameraFrameCenter, delta2Point);
     }
 
     resetCamera(){
@@ -619,7 +735,6 @@ export class vCamera {
     }
 
     spinWithAnimationFromGesture(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
-        
         if(this.restrictRotationFromGesture){
             return;
         }
@@ -637,6 +752,16 @@ export class vCamera {
         this.zoomAnimation.easingFn = easeFunction;
         this.zoomAnimation.animationPercentage = 0;
         this.zoomAnimation.duration = duration;
+    }
+
+    setZoomAnimationWithAnchor(destZoomLevel: number, anchorPointInViewPort: Point, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+        destZoomLevel = this.clampZoomLevel(destZoomLevel);
+        const diff = destZoomLevel - this.zoomLevel;
+        this.zoomAnimation.diff = diff;
+        this.zoomAnimation.easingFn = easeFunction;
+        this.zoomAnimation.animationPercentage = 0;
+        this.zoomAnimation.duration = duration;
+        this.zoomAnimation.anchorPoint = anchorPointInViewPort;
     }
 
     cancelAnimations(){
@@ -695,8 +820,18 @@ export class vCamera {
             if (targetPercentage > 1){
                 percentageOnDeltaZoom = this.zoomAnimation.easingFn(1) - this.zoomAnimation.easingFn(this.zoomAnimation.animationPercentage);
             }
-            this.zoomLevel = this.zoomLevel + this.zoomAnimation.diff * percentageOnDeltaZoom;
-            this.zoomAnimation.animationPercentage = targetPercentage;
+            if (this.zoomAnimation.anchorPoint != undefined){
+                console.log("anchor point", this.zoomAnimation.anchorPoint);
+                let anchorInWorld = this.convert2WorldSpace(this.zoomAnimation.anchorPoint);
+                this.zoomAnimation.animationPercentage = targetPercentage;
+                this.zoomLevel = this.zoomLevel + this.zoomAnimation.diff * percentageOnDeltaZoom; 
+                let anchorInWorldAfterZoom = this.convert2WorldSpace(this.zoomAnimation.anchorPoint);
+                const diff = PointCal.subVector(anchorInWorld, anchorInWorldAfterZoom);
+                this.moveWithClamp(diff);
+            } else {
+                this.zoomLevel = this.zoomLevel + this.zoomAnimation.diff * percentageOnDeltaZoom; 
+                this.zoomAnimation.animationPercentage = targetPercentage;
+            }
         }
     }
 

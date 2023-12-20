@@ -279,6 +279,21 @@ describe("Interactions with the world", ()=>{
         expect(testRes2.y).toBeCloseTo(-390);
     });
 
+    test("Convert point within world space to camera view", ()=>{
+        const point = {x: 10, y: 30};
+        camera.setPosition({x: 30, y: 50});
+        const cameraCenterInViewPort = {x: 500, y: 500};
+        const testRes = camera.invertFromWorldSpace(point);
+        expect(testRes.x).toBeCloseTo(cameraCenterInViewPort.x - 20);
+        expect(testRes.y).toBeCloseTo(cameraCenterInViewPort.y - 20);
+        const test2Point = {x: 10, y: 50};
+        camera.setRotationDeg(-45);
+        const testRes2 = camera.invertFromWorldSpace(test2Point);
+        const expectedRes = {x: 500 - 20 / Math.sqrt(2), y: 500 - 20 / Math.sqrt(2)};
+        expect(testRes2.x).toBeCloseTo(expectedRes.x);
+        expect(testRes2.y).toBeCloseTo(expectedRes.y);
+    });
+
 });
 
 describe("Camera Locking onto a specific object", ()=>{

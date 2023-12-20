@@ -2,7 +2,7 @@ import { vCamera, CameraLockableObject } from "../vCamera";
 import { Point, UIComponent, InteractiveUIComponent } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom } from "./CanvasTrackpadStrategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView } from "./CanvasTrackpadStrategy";
 
 export class vCanvas extends HTMLElement {
     
@@ -44,8 +44,10 @@ export class vCanvas extends HTMLElement {
         super();
         this.canvasWidth = this._canvas.width;
         this.canvasHeight = this._canvas.height;
-        this.maxTransHalfHeight = 25000;
-        this.maxTransHalfWidth = 25000;
+
+        this._canvas.style.display = "block";
+        this.maxTransHalfHeight = 160000;
+        this.maxTransHalfWidth = 160000;
         this.style.display = "block";
         
         this.camera = new vCamera();
@@ -113,6 +115,7 @@ export class vCanvas extends HTMLElement {
         this._context.translate(-this.camera.getPosition().x,  this.camera.getPosition().y);
 
         this.drawReferenceCircle(this._context, {x: 30, y: 20});
+        this.drawBoundingBox(this._context);
 
         this.drawAxis(this._context, this.camera.getZoomLevel());
 
@@ -166,9 +169,12 @@ export class vCanvas extends HTMLElement {
             this.camera.setViewPortWidth(this.canvasWidth);
         }
         if (name == "height"){
+            console.log("new value", newValue);
             this.canvasHeight = +newValue;
+            console.log("canvas height", this.canvasHeight);
             this._canvas.height = this.canvasHeight;
             this.camera.setViewPortHeight(this.canvasHeight);
+            console.log("internal canvas height", this._canvas.height);
         }
         if (name == "full-screen"){
             if (newValue !== null && newValue !== "false"){
@@ -353,7 +359,7 @@ export class vCanvas extends HTMLElement {
     }
 
     drawAxis(context: CanvasRenderingContext2D, zoomLevel: number): void{
-        // context.lineWidth = 1 / zoomLevel;
+        context.lineWidth = 1 / zoomLevel;
         // y axis
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
@@ -375,6 +381,15 @@ export class vCanvas extends HTMLElement {
         // context.moveTo(pos.x, -pos.y);
         context.arc(pos.x, -pos.y, 5, 0, 2 * Math.PI);
         context.stroke();
+    }
+
+    drawBoundingBox(context: CanvasRenderingContext2D): void{
+        context.beginPath();
+        context.strokeStyle = "blue";
+        context.lineWidth = 100;
+        context.roundRect(-this.maxTransHalfWidth, -this.maxTransHalfHeight, this.maxTransHalfWidth * 2, this.maxTransHalfHeight * 2, 5);
+        context.stroke();
+        context.lineWidth = 3;
     }
 
     resetCamera(){
