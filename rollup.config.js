@@ -11,20 +11,22 @@ export default [{
   output: [{
     file: packageJson.main,
     format: 'cjs',
-    name: 'YourLibrary',
-    sourcemap: true,
+    name: '@niuee/vcanvas',
+    sourcemap: 'inline',
   },  
   {
     file: packageJson.module,
     format: 'esm',
-    name: 'YourLibrary',
-    sourcemap: true,
+    name: '@niuee/vcanvas',
+    sourcemap: 'inline'
   }
   ],
   plugins: [
     typescript(),
     resolve(),
-    terser(),
+    terser({
+      mangle: false,
+    }),
   ],
 },
 {
