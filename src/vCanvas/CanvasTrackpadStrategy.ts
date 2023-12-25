@@ -29,7 +29,7 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
         } else {
             //NOTE this is zooming the camera
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - zoomAmount * 5, coordinateConversionFn(cursorPosition));
+            controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - ((zoomAmount * 5) * controlCamera.getZoomLevel()), coordinateConversionFn(cursorPosition));
         }
     }
 }
