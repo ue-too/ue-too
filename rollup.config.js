@@ -12,13 +12,13 @@ export default [{
     file: packageJson.main,
     format: 'cjs',
     name: '@niuee/vcanvas',
-    sourcemap: 'inline',
+    sourcemap: true,
   },  
   {
     file: packageJson.module,
     format: 'esm',
     name: '@niuee/vcanvas',
-    sourcemap: 'inline'
+    sourcemap: true
   }
   ],
   plugins: [
