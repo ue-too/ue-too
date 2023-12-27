@@ -65,7 +65,7 @@ export class vCanvas extends HTMLElement {
         this.UIComponentList = [];
 
         this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera, this.UIComponentList);
-        this.trackpadStrategy = new TwoFingerPanPinchZoom();
+        this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView();
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
     }
