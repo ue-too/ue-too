@@ -56,7 +56,7 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
         } else {
             //NOTE this is zooming the camera
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - zoomAmount * 5, coordinateConversionFn(cursorPosition));
+            controlCamera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - (controlCamera.getZoomLevel() * zoomAmount * 5), coordinateConversionFn(cursorPosition));
         }
     }
 }
