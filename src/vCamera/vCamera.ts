@@ -146,13 +146,11 @@ export class vCamera {
         let topRightCornerClamped = this.clampPoint(topRightCorner);
         let bottomLeftCornerClamped = this.clampPoint(bottomLeftCorner);
         let bottomRightCornerClamped = this.clampPoint(bottomRightCorner);
-        console.log(topLeftCornerClamped, bottomLeftCornerClamped, topRightCornerClamped, bottomRightCornerClamped);
         let topLeftCornerDiff = PointCal.subVector(topLeftCornerClamped, topLeftCorner);
         let topRightCornerDiff = PointCal.subVector(topRightCornerClamped, topRightCorner);
         let bottomLeftCornerDiff = PointCal.subVector(bottomLeftCornerClamped, bottomLeftCorner);
         let bottomRightCornerDiff = PointCal.subVector(bottomRightCornerClamped, bottomRightCorner);
         let diffs = [topLeftCornerDiff, topRightCornerDiff, bottomLeftCornerDiff, bottomRightCornerDiff];
-        console.log("diffs", diffs);
         let maxXDiff = Math.abs(diffs[0].x);
         let maxYDiff = Math.abs(diffs[0].y);
         let delta = diffs[0];
@@ -316,6 +314,21 @@ export class vCamera {
         this.cancelZoomAnimation();
         zoomLevel = this.clampZoomLevel(zoomLevel);
         this.zoomLevel = zoomLevel;
+    }
+
+    setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
+        if(this.restrictZoomFromGesture){
+            return;
+        }
+        this.cancelZoomAnimation();
+        let originalAnchorInWorld = this.convert2WorldSpace(anchorInViewPort);
+        zoomLevel = this.clampZoomLevel(zoomLevel);
+        this.zoomLevel = zoomLevel;
+        if(!this.lockPositionOnObject){
+            let anchorInWorldAfterZoom = this.convert2WorldSpace(anchorInViewPort);
+            const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+            this.moveWithClampEntireViewPortFromGesture(diff);
+        }
     }
 
     setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
