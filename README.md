@@ -41,7 +41,7 @@ Trackpad: Two fingers swipe to pan<br/>
 Touch: Two fingers swipe to pan (plan to change it to one finger drag to pan)<br/>
 
 ### zooming
-Keyboard-Mouse: scroll on the wheel, (zoom is anchor to the cursor position)<br/>
+Keyboard-Mouse: scroll on the wheel while holding down the control key, (zoom is anchor to the cursor position)<br/>
 Trackpad: Two fingers pinch to zoom<br/>
 Touch: Two fingers pinch to zoom<br/>
 
