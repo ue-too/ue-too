@@ -3,21 +3,26 @@ import { Point, UIComponent, InteractiveUIComponent } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
 import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView } from "./CanvasTrackpadStrategy";
+import * as AttributeChangeCommands from "./attributeChangCommand";
 
 export class vCanvas extends HTMLElement {
     
-    private canvasWidth: number;
-    private canvasHeight: number;
+    private canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
+    private canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
     private fullScreenFlag: boolean = false;
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
 
-    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", "restrict-x-translation", "restrict-y-translation", "restrict-translation", "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation"];
+    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", 
+                                "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
+                                "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation"];
 
     private _canvas: HTMLCanvasElement = document.createElement('canvas');
     private _context: CanvasRenderingContext2D;
 
     private camera: vCamera;
+
+    private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
     
     private restrictXTranslationFromGesture: boolean = false;
     private restrictYTranslationFromGesture: boolean = false;
@@ -35,8 +40,6 @@ export class vCanvas extends HTMLElement {
 
     private windowsResizeObserver: ResizeObserver;
 
-    private UIComponentList: InteractiveUIComponent[] = [];
-
     private touchStrategy: CanvasTouchStrategy;
     private trackpadStrategy: CanvasTrackpadStrategy;
 
@@ -46,8 +49,8 @@ export class vCanvas extends HTMLElement {
         this.canvasHeight = this._canvas.height;
 
         this._canvas.style.display = "block";
-        this.maxTransHalfHeight = 160000;
-        this.maxTransHalfWidth = 160000;
+        this.maxTransHalfHeight = 40075000 / 2;
+        this.maxTransHalfWidth = 40075000 / 2;
         this.style.display = "block";
         
         this.camera = new vCamera();
@@ -62,12 +65,12 @@ export class vCanvas extends HTMLElement {
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this.UIComponentList = [];
-
-        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera, this.UIComponentList);
+        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera);
         this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView();
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
+
+        this.setCommands();
     }
 
     bindFunctions(){
@@ -122,11 +125,6 @@ export class vCanvas extends HTMLElement {
 
         this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
 
-        this.UIComponentList.forEach((uiComponent)=>{
-            uiComponent.update(deltaTime);
-            uiComponent.draw(this._context, this.camera.getZoomLevel());
-        });
-
         this.camera.step(deltaTime);
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
@@ -159,111 +157,18 @@ export class vCanvas extends HTMLElement {
         this._canvas.removeEventListener('touchend', this.touchendHandler);
         this._canvas.removeEventListener('touchcancel', this.touchcancelHandler);
         this._canvas.removeEventListener('touchmove', this.touchmoveHandler);
-
     }
 
-    attributeChangedCallback(name: string, oldValue: any, newValue: any) {
-        if (name == "width"){
-            this.canvasWidth = +newValue;
-            this._canvas.width = this.canvasWidth;
-            this.camera.setViewPortWidth(this.canvasWidth);
+    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        if(newValue == null){
+            return;
         }
-        if (name == "height"){
-            console.log("new value", newValue);
-            this.canvasHeight = +newValue;
-            console.log("canvas height", this.canvasHeight);
-            this._canvas.height = this.canvasHeight;
-            this.camera.setViewPortHeight(this.canvasHeight);
-            console.log("internal canvas height", this._canvas.height);
-        }
-        if (name == "full-screen"){
-            if (newValue !== null && newValue !== "false"){
-                this.fullScreenFlag = true;
-                this.canvasWidth = window.innerWidth;
-                this.canvasHeight = window.innerHeight;
-                this._canvas.width = window.innerWidth;
-                this._canvas.height = window.innerHeight;
-                this.camera.setViewPortWidth(window.innerWidth);
-                this.camera.setViewPortHeight(window.innerHeight);
-            } else {
-                this.fullScreenFlag = false;
+        const command = this.attributeCommands.get(name);
+        if(command){
+            if(newValue == ""){
+                newValue = "true";
             }
-        }
-        if (name == "tap-step"){
-            if (newValue !== null && newValue !== "false"){
-                this.handOverStepControl = true;
-            } else {
-                this.handOverStepControl = false;
-            }
-        }
-        if(name == "restrict-x-translation"){
-            console.log("test");
-            if (newValue !== null && newValue !== "false"){
-                this.restrictXTranslationFromGesture = true;
-                this.camera.lockXTranslationFromGesture();
-            } else {
-                this.restrictXTranslationFromGesture = false;
-                this.camera.releaseLockOnXTranslationFromGesture();
-            }
-        }
-        if(name == "restrict-y-translation"){
-            if (newValue !== null && newValue !== "false"){
-                this.restrictYTranslationFromGesture = true;
-                this.camera.lockYTranslationFromGesture();
-            } else {
-                this.restrictYTranslationFromGesture = false;
-                this.camera.releaseLockOnYTranslationFromGesture();
-            }
-        }
-        if(name == "restrict-translation"){
-            if (newValue !== null && newValue !== "false"){
-                this.restrictYTranslationFromGesture = true;
-                this.camera.lockYTranslationFromGesture();
-                this.restrictXTranslationFromGesture = true;
-                this.camera.lockXTranslationFromGesture();
-            } else {
-                this.restrictYTranslationFromGesture = false;
-                this.camera.releaseLockOnYTranslationFromGesture();
-                this.restrictXTranslationFromGesture = false;
-                this.camera.releaseLockOnXTranslationFromGesture();
-            }
-        }
-        if(name == "restrict-rotation"){
-            console.log("test");
-            if (newValue !== null && newValue !== "false"){
-                this.restrictRotationFromGesture = true;
-                this.camera.lockRotationFromGesture();
-            } else {
-                this.restrictRotationFromGesture = false;
-                this.camera.releaseLockOnRotationFromGesture();
-            }
-        }
-        if(name == "restrict-zoom"){
-            if (newValue !== null && newValue !== "false"){
-                this.restrictZoomFromGesture = true;
-                this.camera.lockZoomFromGesture();
-            } else {
-                this.restrictZoomFromGesture = false;
-                this.camera.releaseLockOnZoomFromGesture();
-            }
-        }
-        if(name == "restrict-relative-y-translation"){
-            if (newValue !== null && newValue !== "false"){
-                this.restrictRelativeYTranslationFromGesture = true;
-                this.camera.lockRelativeYTranslationFromGesture();
-            } else {
-                this.restrictRelativeYTranslationFromGesture = false;
-                this.camera.releaseLockOnRelativeYTranslationFromGesture();
-            }
-        }
-        if(name == "restrict-relative-x-translation"){
-            if (newValue !== null && newValue !== "false"){
-                this.restrictRelativeXTranslationFromGesture = true;
-                this.camera.lockRelativeXTranslationFromGesture();
-            } else {
-                this.restrictRelativeXTranslationFromGesture = false;
-                this.camera.releaseLockOnRelativeXTranslationFromGesture();
-            }
+            command.execute(newValue);
         }
     }
 
@@ -278,10 +183,6 @@ export class vCanvas extends HTMLElement {
         if(e.pointerType === "mouse"){
             if (this.isDragging) {
                 this.isDragging = false;
-            } else {
-                this.UIComponentList.forEach((component)=>{
-                    component.raycast(this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
-                })
             }
             this._canvas.style.cursor = "auto";
         }
@@ -416,8 +317,127 @@ export class vCanvas extends HTMLElement {
         return this._context;
     }
 
-    insertUIComponent(component: InteractiveUIComponent){
-        this.UIComponentList.push(component);
+    setCommands(){
+        this.attributeCommands = new Map<string, AttributeChangeCommands.AttributeChangeCommand>();
+        this.attributeCommands.set("width", new AttributeChangeCommands.SetWidthCommand(this));
+        this.attributeCommands.set("height", new AttributeChangeCommands.SetHeightCommand(this));
+        this.attributeCommands.set("full-screen", new AttributeChangeCommands.ToggleFullScreenCommand(this));
+        this.attributeCommands.set("tap-step", new AttributeChangeCommands.ToggleStepFunctionCommand(this));
+        this.attributeCommands.set("restrict-x-translation", new AttributeChangeCommands.RestrictXTranslationCommand(this));
+        this.attributeCommands.set("restrict-y-translation", new AttributeChangeCommands.RestrictYTranslationCommand(this));
+        this.attributeCommands.set("restrict-translation", new AttributeChangeCommands.RestrictTranslationCommand(this));
+        this.attributeCommands.set("restrict-rotation", new AttributeChangeCommands.RestrictRotationCommand(this));
+        this.attributeCommands.set("restrict-zoom", new AttributeChangeCommands.RestrictZoomCommand(this));
+        this.attributeCommands.set("restrict-relative-x-translation", new AttributeChangeCommands.RestrictRelativeXTranslationCommand(this));
+        this.attributeCommands.set("restrict-relative-y-translation", new AttributeChangeCommands.RestrictRelativeYTranslationCommand(this));
+    }
+
+    setCanvasWidth(width: number){
+        this.canvasWidth = width;
+        this._canvas.width = width;
+        this.camera.setViewPortWidth(this.canvasWidth);
+    }
+
+    setCanvasHeight(height: number){
+        this.canvasHeight = height;
+        this._canvas.height = height;
+        this.camera.setViewPortHeight(this.canvasHeight);
+    }
+
+    toggleFullScreen(fullscreen: boolean){
+        if(fullscreen){
+            this.fullScreenFlag = true;
+            this.canvasWidth = window.innerWidth;
+            this.canvasHeight = window.innerHeight;
+            this._canvas.width = window.innerWidth;
+            this._canvas.height = window.innerHeight;
+            this.camera.setViewPortWidth(window.innerWidth);
+            this.camera.setViewPortHeight(window.innerHeight);
+        } else {
+            this.fullScreenFlag = false;
+        }
+    }
+
+    toggleStepFunction(tapStep: boolean){
+        if(tapStep){
+            this.handOverStepControl = true;
+        } else {
+            this.handOverStepControl = false;
+        }
+    }
+
+    toggleXTranslationRestriction(restrictXTranslation: boolean){
+        if(restrictXTranslation){
+            this.restrictXTranslationFromGesture = true;
+            this.camera.lockXTranslationFromGesture();
+        } else {
+            this.restrictXTranslationFromGesture = false;
+            this.camera.releaseLockOnXTranslationFromGesture();
+        }
+    }
+
+    toggleYTranslationRestriction(restrictYTranslation: boolean){
+        if(restrictYTranslation){
+            this.restrictYTranslationFromGesture = true;
+            this.camera.lockYTranslationFromGesture();
+        } else {
+            this.restrictYTranslationFromGesture = false;
+            this.camera.releaseLockOnYTranslationFromGesture();
+        }
+    }
+
+    toggleTranslationRestriction(restrictTranslation: boolean){
+        if(restrictTranslation){
+            this.restrictYTranslationFromGesture = true;
+            this.camera.lockYTranslationFromGesture();
+            this.restrictXTranslationFromGesture = true;
+            this.camera.lockXTranslationFromGesture();
+        } else {
+            this.restrictYTranslationFromGesture = false;
+            this.camera.releaseLockOnYTranslationFromGesture();
+            this.restrictXTranslationFromGesture = false;
+            this.camera.releaseLockOnXTranslationFromGesture();
+        }
+    }
+
+    toggleRotationRestriction(restrictRotation: boolean){
+        if(restrictRotation){
+            this.restrictRotationFromGesture = true;
+            this.camera.lockRotationFromGesture();
+        } else {
+            this.restrictRotationFromGesture = false;
+            this.camera.releaseLockOnRotationFromGesture();
+        }
+    }
+
+    toggleZoomRestriction(restrictZoom: boolean){
+        if(restrictZoom){
+            this.restrictZoomFromGesture = true;
+            this.camera.lockZoomFromGesture();
+        } else {
+            this.restrictZoomFromGesture = false;
+            this.camera.releaseLockOnZoomFromGesture();
+        }
+    }
+
+    toggleRelativeXTranslationRestriction(restrictRelativeXTranslation: boolean){
+        if(restrictRelativeXTranslation){
+            this.restrictRelativeXTranslationFromGesture = true;
+            this.camera.lockRelativeXTranslationFromGesture();
+        } else {
+            this.restrictRelativeXTranslationFromGesture = false;
+            this.camera.releaseLockOnRelativeXTranslationFromGesture();
+        }
+    }
+
+    toggleRelativeYTranslationRestriction(restrictRelativeYTranslation: boolean){
+        if(restrictRelativeYTranslation){
+            this.restrictRelativeYTranslationFromGesture = true;
+            this.camera.lockRelativeYTranslationFromGesture();
+        } else {
+            this.restrictRelativeYTranslationFromGesture = false;
+            this.camera.releaseLockOnRelativeYTranslationFromGesture();
+        }
     }
 }
 

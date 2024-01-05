@@ -85,12 +85,10 @@ export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategy {
     private dragStartPoint: Point;
     private tapPoint: Point;
 
-    private interactiveComponents: InteractiveUIComponent[];
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(controlCamera: vCamera, interactiveComponents: InteractiveUIComponent[] = []){
-        this.interactiveComponents = interactiveComponents;
+    constructor(controlCamera: vCamera){
         this.controlCamera = controlCamera;
     }
 
@@ -116,11 +114,6 @@ export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategy {
     }
 
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point){
-        if(this.tapPoint !== null){
-            this.interactiveComponents.forEach((component)=>{
-                component.raycast(this.tapPoint);
-            })
-        }
         this.isDragging = false;
         this.touchPoints = [];
     }
