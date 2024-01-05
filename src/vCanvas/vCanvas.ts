@@ -15,7 +15,9 @@ export class vCanvas extends HTMLElement {
 
     static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", 
                                 "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
-                                "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation"];
+                                "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
+                                "max-half-trans-width", "max-half-trans-height"]
+                                ;
 
     private _canvas: HTMLCanvasElement = document.createElement('canvas');
     private _context: CanvasRenderingContext2D;
@@ -438,6 +440,16 @@ export class vCanvas extends HTMLElement {
             this.restrictRelativeYTranslationFromGesture = false;
             this.camera.releaseLockOnRelativeYTranslationFromGesture();
         }
+    }
+
+    setMaxHalfTransWidth(maxHalfTransWidth: number){
+        this.maxTransHalfWidth = maxHalfTransWidth;
+        this.camera.setHorizontalBoundaries(-this.maxTransHalfWidth, this.maxTransHalfWidth);
+    }
+
+    setMaxHalfTransHeight(maxHalfTransHeight: number){
+        this.maxTransHalfHeight = maxHalfTransHeight;
+        this.camera.setVerticalBoundaries(-this.maxTransHalfHeight, this.maxTransHalfHeight);
     }
 }
 

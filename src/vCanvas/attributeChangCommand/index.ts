@@ -91,3 +91,19 @@ export class RestrictRelativeYTranslationCommand implements AttributeChangeComma
         this.canvas.toggleRelativeYTranslationRestriction(newValue === 'true');
     }
 }
+
+export class SetMaxHalfTransHeightCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        this.canvas.setMaxHalfTransHeight(+newValue);
+    }
+}
+
+export class setMaxHalfTransWidthCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        this.canvas.setMaxHalfTransWidth(+newValue);
+    }
+}
