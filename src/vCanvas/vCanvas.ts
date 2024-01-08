@@ -5,6 +5,10 @@ import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "
 import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView } from "./CanvasTrackpadStrategy";
 import * as AttributeChangeCommands from "./attributeChangCommand";
 
+
+export interface RotationComponent {
+    setRotation(rotation: number): void;
+}
 export class vCanvas extends HTMLElement {
     
     private canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
@@ -13,7 +17,7 @@ export class vCanvas extends HTMLElement {
     private maxTransHalfHeight: number;
     private maxTransHalfWidth: number;
 
-    static observedAttributes = ["width", "height", "full-screen", "style", "tap-step", 
+    static observedAttributes = ["width", "height", "full-screen", "control-step", 
                                 "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
                                 "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
                                 "max-half-trans-width", "max-half-trans-height"]
@@ -324,7 +328,7 @@ export class vCanvas extends HTMLElement {
         this.attributeCommands.set("width", new AttributeChangeCommands.SetWidthCommand(this));
         this.attributeCommands.set("height", new AttributeChangeCommands.SetHeightCommand(this));
         this.attributeCommands.set("full-screen", new AttributeChangeCommands.ToggleFullScreenCommand(this));
-        this.attributeCommands.set("tap-step", new AttributeChangeCommands.ToggleStepFunctionCommand(this));
+        this.attributeCommands.set("control-step", new AttributeChangeCommands.ToggleStepFunctionCommand(this));
         this.attributeCommands.set("restrict-x-translation", new AttributeChangeCommands.RestrictXTranslationCommand(this));
         this.attributeCommands.set("restrict-y-translation", new AttributeChangeCommands.RestrictYTranslationCommand(this));
         this.attributeCommands.set("restrict-translation", new AttributeChangeCommands.RestrictTranslationCommand(this));
