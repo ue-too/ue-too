@@ -1,4 +1,4 @@
-import { vCamera } from "../vCamera";
+import vCamera  from "../vCamera";
 import { PointCal } from "point2point";
 import { InteractiveUIComponent, Point } from "..";
 

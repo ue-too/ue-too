@@ -35,7 +35,7 @@ type ZoomAnimation = {
     anchorPoint?: Point;
 }
 
-export class vCamera {
+export default class vCamera {
 
     private position: Point;
     private zoomLevel: number;
