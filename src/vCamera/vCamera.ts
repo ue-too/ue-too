@@ -920,6 +920,14 @@ export default class vCamera {
         this.restrictRelativeYTranslationFromGesture = false;
     }
 
+    pointIsInViewPort(point: Point): boolean{
+        const pointInCameraFrame = this.invertFromWorldSpace(point);
+        if(pointInCameraFrame.x < 0 || pointInCameraFrame.x > this.viewPortWidth || pointInCameraFrame.y < 0 || pointInCameraFrame.y > this.viewPortHeight){
+            return false;
+        }
+        return true;
+    }
+
 }
 
 export class InvalidZoomLevelError extends Error {

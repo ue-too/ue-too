@@ -1,5 +1,6 @@
 import { getRandom, getRandomPoint } from "..";
-import { vCamera, InvalidZoomLevelError, Point } from "../../src";
+import vCamera, { InvalidZoomLevelError } from "../../src/vCamera";
+import { Point } from "../../src";
 
 describe("Initialize a vCamera object", ()=>{
     let camera: vCamera;
@@ -340,6 +341,22 @@ describe("Camera Animations",()=>{
     });
 });
 
+describe("Camera Rendering Optimization", ()=>{
+    
+    let camera: vCamera;
+
+    beforeEach(()=>{
+        camera = new vCamera();
+    });
+
+    test("Given a point in world space, check if it is within the camera view", ()=>{
+        const point = {x: 501, y: 500};
+        expect(camera.pointIsInViewPort(point)).toBe(false);
+        const point2 = {x: 500, y: 500};
+        expect(camera.pointIsInViewPort(point2)).toBe(true);
+    });
+});
+
 describe("Restrictions on camera", ()=>{
 
     let camera: vCamera;
@@ -394,7 +411,9 @@ describe("Restrictions on camera", ()=>{
         expect(camera.getRotationDeg()).toBeCloseTo(30);
     })
 
-})
+});
+
+
 
 class LockableBody {
 
