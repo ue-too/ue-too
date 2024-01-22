@@ -1,6 +1,7 @@
 import vCamera from "../../vCamera";
 import { Point } from "point2point";
 
+export * from "./cameraObserver";
 export interface CameraChangeCommand {
     execute(): void;
 }
