@@ -8,7 +8,7 @@ export class SetWidthCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.setCanvasWidth(+newValue)
+        this.canvas.width = +newValue;
     }
 }
 
@@ -16,7 +16,7 @@ export class SetHeightCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.setCanvasHeight(+newValue)
+        this.canvas.height = +newValue;
     }
 }
 
@@ -24,7 +24,13 @@ export class ToggleFullScreenCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleFullScreen(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.fullScreenFlag = true;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        } else {
+            this.canvas.fullScreenFlag = false;
+        }
     }
 }
 
@@ -32,7 +38,11 @@ export class ToggleStepFunctionCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleStepFunction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.stepControl = true;
+        } else {
+            this.canvas.stepControl = false;
+        }
     }
 }
 
@@ -40,7 +50,11 @@ export class RestrictXTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleXTranslationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictXTranslation = true;
+        } else {
+            this.canvas.restrictXTranslation = false;
+        }
     }
 }
 
@@ -48,7 +62,11 @@ export class RestrictYTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleYTranslationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictYTranslation = true;
+        } else {
+            this.canvas.restrictYTranslation = false;
+        }
     }
 }
 
@@ -56,7 +74,13 @@ export class RestrictTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleTranslationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictXTranslation = true;
+            this.canvas.restrictYTranslation = true;
+        } else {
+            this.canvas.restrictXTranslation = false;
+            this.canvas.restrictYTranslation = false;
+        }
     }
 }
 
@@ -64,7 +88,11 @@ export class RestrictRotationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleRotationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictRotation = true;
+        } else {
+            this.canvas.restrictRotation = false;
+        }
     }
 }
 
@@ -72,7 +100,11 @@ export class RestrictZoomCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleZoomRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictZoom = true;
+        } else {
+            this.canvas.restrictZoom = false;
+        }
     }
 }
 
@@ -80,7 +112,11 @@ export class RestrictRelativeXTranslationCommand implements AttributeChangeComma
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleRelativeXTranslationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictRelativeXTranslation = true;
+        } else {
+            this.canvas.restrictRelativeXTranslation = false;
+        }
     }
 }
 
@@ -88,7 +124,11 @@ export class RestrictRelativeYTranslationCommand implements AttributeChangeComma
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.toggleRelativeYTranslationRestriction(newValue === 'true');
+        if(newValue === 'true'){
+            this.canvas.restrictRelativeYTranslation = true;
+        } else {
+            this.canvas.restrictRelativeYTranslation = false;
+        }
     }
 }
 
@@ -96,14 +136,23 @@ export class SetMaxHalfTransHeightCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.setMaxHalfTransHeight(+newValue);
+        this.canvas.maxTransHalfHeight = +newValue;
     }
 }
 
-export class setMaxHalfTransWidthCommand implements AttributeChangeCommand {
+export class SetMaxHalfTransWidthCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        this.canvas.setMaxHalfTransWidth(+newValue);
+        this.canvas.maxTransHalfWidth = +newValue;
+    }
+}
+
+
+export class SetDebugModeCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        this.canvas.debugMode = newValue === 'true';
     }
 }

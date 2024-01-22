@@ -12,37 +12,27 @@ export interface RotationComponent {
 }
 export class vCanvas extends HTMLElement {
     
-    private canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
-    private canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
-    private fullScreenFlag: boolean = false;
-    private maxTransHalfHeight: number;
-    private maxTransHalfWidth: number;
+    private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
+    private _canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
+    private _fullScreenFlag: boolean = false;
 
     static observedAttributes = ["width", "height", "full-screen", "control-step", 
                                 "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
                                 "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
-                                "max-half-trans-width", "max-half-trans-height"]
-                                ;
+                                "max-half-trans-width", "max-half-trans-height", "debug-mode"];
 
     private _canvas: HTMLCanvasElement = document.createElement('canvas');
     private _context: CanvasRenderingContext2D;
 
-    private camera: vCamera;
+    private _camera: vCamera;
 
     private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
-    
-    private restrictXTranslationFromGesture: boolean = false;
-    private restrictYTranslationFromGesture: boolean = false;
-    private restrictRotationFromGesture: boolean = false;
-    private restrictZoomFromGesture: boolean = false;
-    private restrictRelativeXTranslationFromGesture: boolean = false;
-    private restrictRelativeYTranslationFromGesture: boolean = false;
 
     private isDragging: boolean = false;
     private dragStartPoint: Point;
 
     private requestRef: number;
-    private handOverStepControl: boolean = false;
+    private _handOverStepControl: boolean = false;
     private lastUpdateTime: number;
 
     private windowsResizeObserver: ResizeObserver;
@@ -50,34 +40,177 @@ export class vCanvas extends HTMLElement {
     private touchStrategy: CanvasTouchStrategy;
     private trackpadStrategy: CanvasTrackpadStrategy;
 
+    private _debugMode: boolean = false;
+    private mousePos: Point = {x: 0, y: 0};
+
     constructor(){
         super();
-        this.canvasWidth = this._canvas.width;
-        this.canvasHeight = this._canvas.height;
+        this._canvasWidth = this._canvas.width;
+        this._canvasHeight = this._canvas.height;
 
         this._canvas.style.display = "block";
-        this.maxTransHalfHeight = 40075000 / 2;
-        this.maxTransHalfWidth = 40075000 / 2;
         this.style.display = "block";
         
-        this.camera = new vCamera();
-        this.camera.setHorizontalBoundaries(-this.maxTransHalfWidth, this.maxTransHalfWidth);
-        this.camera.setVerticalBoundaries(-this.maxTransHalfHeight, this.maxTransHalfHeight);
-        this.camera.setMaxZoomLevel(5);
-        this.camera.setMinZoomLevel(0.01);
-        this.camera.setViewPortWidth(this.canvasWidth);
-        this.camera.setViewPortHeight(this.canvasHeight);
+        this._camera = new vCamera();
+        this.maxTransHalfHeight = 40075000 / 2;
+        this.maxTransHalfWidth = 40075000 / 2;
+        this._camera.setMaxZoomLevel(5);
+        this._camera.setMinZoomLevel(0.01);
+        this._camera.setViewPortWidth(this._canvasWidth);
+        this._camera.setViewPortHeight(this._canvasHeight);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this.touchStrategy = new OneFingerPanTwoFingerZoom(this.camera);
+        this.touchStrategy = new OneFingerPanTwoFingerZoom(this._camera);
         this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView();
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
 
+        this._debugMode = false;
+
         this.setCommands();
+    }
+
+    get fullScreenFlag(): boolean {
+        return this._fullScreenFlag;
+    }
+
+    set fullScreenFlag(value: boolean) {
+        this._fullScreenFlag = value;
+    }
+
+    get width(): number {
+        return this._canvasWidth;
+    }
+
+    set width(value: number) {
+        this._canvasWidth = value;
+        this._canvas.width = value;
+        this._camera.setViewPortWidth(value);
+    }
+
+    get height(): number {
+        return this._canvasHeight;
+    }
+
+    set height(value: number) {
+        this._canvasHeight = value;
+        this._canvas.height = value;
+        this._camera.setViewPortHeight(value);
+    }
+
+    set stepControl(value: boolean){
+        this._handOverStepControl = value;
+    }
+
+    get stepControl(): boolean{ 
+        return this._handOverStepControl;
+    }
+
+    get restrictXTranslation(): boolean{ 
+        return this._camera.restrictXTranslationFromGesture;
+    }
+    
+    set restrictXTranslation(value: boolean){
+        if(value){
+            this._camera.lockXTranslationFromGesture();
+        } else {
+            this._camera.releaseLockOnXTranslationFromGesture();
+        }
+    }
+
+    get restrictYTranslation(): boolean{
+        return this._camera.restrictYTranslationFromGesture;
+    }
+
+    set restrictYTranslation(value: boolean){
+        if(value){
+            this._camera.lockYTranslationFromGesture();
+        } else {
+            this._camera.releaseLockOnYTranslationFromGesture();
+        }
+    }
+
+    get restrictRotation(): boolean{
+        return this._camera.restrictRotationFromGesture;
+    }
+
+    set restrictRotation(value: boolean){
+        if(value){
+            this._camera.lockRotationFromGesture();
+        } else {
+            this._camera.releaseLockOnRotationFromGesture();
+        }
+    }
+
+    get restrictZoom(): boolean{
+        return this._camera.restrictZoomFromGesture;
+    }
+
+    set restrictZoom(value: boolean){
+        if(value){
+            this._camera.lockZoomFromGesture();
+        } else {
+            this._camera.releaseLockOnZoomFromGesture();
+        }
+    }
+
+    get restrictRelativeXTranslation(): boolean{
+        return this._camera.restrictRelativeXTranslationFromGesture;
+    }
+
+    set restrictRelativeXTranslation(value: boolean){
+        if(value){
+            this._camera.lockRelativeXTranslationFromGesture();
+        } else {
+            this._camera.releaseLockOnRelativeXTranslationFromGesture();
+        }
+    }
+
+    get restrictRelativeYTranslation(): boolean{
+        return this._camera.restrictRelativeYTranslationFromGesture;
+    }
+
+    set restrictRelativeYTranslation(value: boolean){
+        if(value){
+            this._camera.lockRelativeYTranslationFromGesture();
+        } else {
+            this._camera.releaseLockOnRelativeYTranslationFromGesture();
+        }
+    }
+
+    get maxTransHalfHeight(): number | undefined{
+        const boundaries = this._camera.getBoundaries();
+        if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.y != undefined && boundaries.max.y != undefined){
+            return (boundaries.max.y - boundaries.min.y) / 2;
+        }
+        return undefined;
+    }
+
+    set maxTransHalfHeight(value: number){
+        this._camera.setVerticalBoundaries(-value, value);
+    }
+
+    get maxTransHalfWidth(): number | undefined{
+        const boundaries = this._camera.getBoundaries();
+        if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.x != undefined && boundaries.max.x != undefined){
+            return (boundaries.max.x - boundaries.min.x) / 2;
+        }
+        return undefined;
+    }
+    
+    set maxTransHalfWidth(value: number){
+        this._camera.setHorizontalBoundaries(-value, value);
+    }
+
+    get debugMode(): boolean{
+        return this._debugMode;
+    }
+
+    set debugMode(value: boolean){
+        this._debugMode = value;
     }
 
     bindFunctions(){
@@ -97,13 +230,13 @@ export class vCanvas extends HTMLElement {
         this.registerEventListeners();
         this.lastUpdateTime = 0;
         this.windowsResizeObserver.observe(document.body);
-        if(!this.handOverStepControl){
+        if(!this._handOverStepControl){
             this.requestRef = requestAnimationFrame(this.step);
         }
     }
 
     disconnectedCallback(){
-        if(!this.handOverStepControl){
+        if(!this._handOverStepControl){
             cancelAnimationFrame(this.requestRef);
         }
         this.windowsResizeObserver.unobserve(document.body);
@@ -116,26 +249,28 @@ export class vCanvas extends HTMLElement {
         this.lastUpdateTime = timestamp;
         deltaTime = deltaTime / 1000;
 
-        this._canvas.width = this.canvasWidth;
-        this._canvas.height = this.canvasHeight;
+        this._canvas.width = this._canvasWidth;
+        this._canvas.height = this._canvasHeight;
 
-        this._context.translate( this.canvasWidth / 2, this.canvasHeight / 2 );
-        this._context.scale(this.camera.getZoomLevel(), this.camera.getZoomLevel());
-        this._context.rotate(this.camera.getRotation());
-        this._context.translate(-this.camera.getPosition().x,  this.camera.getPosition().y);
+        this._context.translate( this._canvasWidth / 2, this._canvasHeight / 2 );
+        this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
+        this._context.rotate(this._camera.getRotation());
+        this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
 
-        this.drawReferenceCircle(this._context, {x: 30, y: 20});
-        this.drawBoundingBox(this._context);
+        if(this._debugMode){
+            // this.drawCrossHeir(this._context, this.mousePos);
+            // this.drawPositionText(this._context, this.mousePos);
+            this.drawReferenceCircle(this._context, {x: 30, y: 20});
+            this.drawBoundingBox(this._context);
+            this.drawAxis(this._context, this._camera.getZoomLevel());
+        }
 
-        this.drawAxis(this._context, this.camera.getZoomLevel());
+        this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this._camera.getRotation(), cameraPosition: this._camera.getPosition(), cameraZoomLevel: this._camera.getZoomLevel()}));
 
-
-        this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this.camera.getRotation(), cameraPosition: this.camera.getPosition(), cameraZoomLevel: this.camera.getZoomLevel()}));
-
-        this.camera.step(deltaTime);
+        this._camera.step(deltaTime);
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
-        if(!this.handOverStepControl){
+        if(!this._handOverStepControl){
             this.requestRef = window.requestAnimationFrame(this.step);
         }
     }
@@ -196,21 +331,22 @@ export class vCanvas extends HTMLElement {
     }
 
     pointerMoveHandler(e: PointerEvent){
+        this.mousePos = this._camera.convert2WorldSpace(this.convertWindowPoint2ViewPortPoint({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}, {x: e.clientX, y: e.clientY}));
         if (e.pointerType == "mouse" && this.isDragging){
             this._canvas.style.cursor = "move";
             const target = {x: e.clientX, y: e.clientY};
             let diff = PointCal.subVector(this.dragStartPoint, target);
             diff = {x: diff.x, y: -diff.y};
-            let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
-            this.camera.moveWithClampFromGesture(diffInWorld);
+            let diffInWorld = PointCal.rotatePoint(diff, this._camera.getRotation());
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.getZoomLevel());
+            this._camera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = target;
         }
     }
 
     scrollHandler(e: WheelEvent){
         e.preventDefault();
-        this.trackpadStrategy.scrollHandler(e, this.camera, this.getCoordinateConversionFn({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}));
+        this.trackpadStrategy.scrollHandler(e, this._camera, this.getCoordinateConversionFn({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}));
     }
 
     getCoordinateConversionFn(bottomLeftCorner: Point): (interestPoint: Point)=>Point{
@@ -242,7 +378,7 @@ export class vCanvas extends HTMLElement {
     }
 
     getCamera(): vCamera {
-        return this.camera;
+        return this._camera;
     }
 
     convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
@@ -252,17 +388,17 @@ export class vCanvas extends HTMLElement {
 
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
         const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-        return this.camera.convert2WorldSpace(pointInCameraViewPort);
+        return this._camera.convert2WorldSpace(pointInCameraViewPort);
     }
 
     windowResizeHandler(){
         if(this.fullScreenFlag){
-            this.canvasWidth = window.innerWidth;
-            this.canvasHeight = window.innerHeight;
-            this._canvas.width = this.canvasWidth;
-            this._canvas.height = this.canvasHeight;
-            this.camera.setViewPortWidth(window.innerWidth);
-            this.camera.setViewPortHeight(window.innerHeight);
+            this._canvasWidth = window.innerWidth;
+            this._canvasHeight = window.innerHeight;
+            this._canvas.width = this._canvasWidth;
+            this._canvas.height = this._canvasHeight;
+            this._camera.setViewPortWidth(window.innerWidth);
+            this._camera.setViewPortHeight(window.innerHeight);
         }
     }
 
@@ -300,20 +436,38 @@ export class vCanvas extends HTMLElement {
         context.lineWidth = 3;
     }
 
+    drawCrossHeir(context: CanvasRenderingContext2D, pos: Point): void{
+        context.beginPath();
+        context.strokeStyle = "red";
+        context.lineWidth = 2;
+        context.moveTo(pos.x - 10, -pos.y);
+        context.lineTo(pos.x + 10, -pos.y);
+        context.moveTo(pos.x, -pos.y - 10);
+        context.lineTo(pos.x, -pos.y + 10);
+        context.stroke();
+        context.lineWidth = 3;
+    }
+
+    drawPositionText(context: CanvasRenderingContext2D, pos: Point): void{
+        context.font = `${20 / this._camera.getZoomLevel()}px Arial`;
+        context.fillStyle = "red";
+        context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + 10, -pos.y - 10);
+    }
+
     resetCamera(){
-        this.camera.resetCameraWithAnimation();
+        this._camera.resetCameraWithAnimation();
     }
 
     spinCameraWithAnimation(rotation: number){
-        this.camera.spinWithAnimationFromGesture(rotation);
+        this._camera.spinWithAnimationFromGesture(rotation);
     }
 
     setCameraAngle(rotation: number){
-        this.camera.spinFromGesture(rotation);
+        this._camera.spinFromGesture(rotation);
     }
 
     getStepFunction(): (timestamp: number)=>void{
-        if (this.handOverStepControl){
+        if (this._handOverStepControl){
             return this.step.bind(this);
         } else {
             return null;
@@ -337,125 +491,11 @@ export class vCanvas extends HTMLElement {
         this.attributeCommands.set("restrict-zoom", new AttributeChangeCommands.RestrictZoomCommand(this));
         this.attributeCommands.set("restrict-relative-x-translation", new AttributeChangeCommands.RestrictRelativeXTranslationCommand(this));
         this.attributeCommands.set("restrict-relative-y-translation", new AttributeChangeCommands.RestrictRelativeYTranslationCommand(this));
+        this.attributeCommands.set("debug-mode", new AttributeChangeCommands.SetDebugModeCommand(this));
+        this.attributeCommands.set("max-half-trans-width", new AttributeChangeCommands.SetMaxHalfTransWidthCommand(this));
+        this.attributeCommands.set("max-half-trans-height", new AttributeChangeCommands.SetMaxHalfTransHeightCommand(this));
     }
 
-    setCanvasWidth(width: number){
-        this.canvasWidth = width;
-        this._canvas.width = width;
-        this.camera.setViewPortWidth(this.canvasWidth);
-    }
-
-    setCanvasHeight(height: number){
-        this.canvasHeight = height;
-        this._canvas.height = height;
-        this.camera.setViewPortHeight(this.canvasHeight);
-    }
-
-    toggleFullScreen(fullscreen: boolean){
-        if(fullscreen){
-            this.fullScreenFlag = true;
-            this.canvasWidth = window.innerWidth;
-            this.canvasHeight = window.innerHeight;
-            this._canvas.width = window.innerWidth;
-            this._canvas.height = window.innerHeight;
-            this.camera.setViewPortWidth(window.innerWidth);
-            this.camera.setViewPortHeight(window.innerHeight);
-        } else {
-            this.fullScreenFlag = false;
-        }
-    }
-
-    toggleStepFunction(tapStep: boolean){
-        if(tapStep){
-            this.handOverStepControl = true;
-        } else {
-            this.handOverStepControl = false;
-        }
-    }
-
-    toggleXTranslationRestriction(restrictXTranslation: boolean){
-        if(restrictXTranslation){
-            this.restrictXTranslationFromGesture = true;
-            this.camera.lockXTranslationFromGesture();
-        } else {
-            this.restrictXTranslationFromGesture = false;
-            this.camera.releaseLockOnXTranslationFromGesture();
-        }
-    }
-
-    toggleYTranslationRestriction(restrictYTranslation: boolean){
-        if(restrictYTranslation){
-            this.restrictYTranslationFromGesture = true;
-            this.camera.lockYTranslationFromGesture();
-        } else {
-            this.restrictYTranslationFromGesture = false;
-            this.camera.releaseLockOnYTranslationFromGesture();
-        }
-    }
-
-    toggleTranslationRestriction(restrictTranslation: boolean){
-        if(restrictTranslation){
-            this.restrictYTranslationFromGesture = true;
-            this.camera.lockYTranslationFromGesture();
-            this.restrictXTranslationFromGesture = true;
-            this.camera.lockXTranslationFromGesture();
-        } else {
-            this.restrictYTranslationFromGesture = false;
-            this.camera.releaseLockOnYTranslationFromGesture();
-            this.restrictXTranslationFromGesture = false;
-            this.camera.releaseLockOnXTranslationFromGesture();
-        }
-    }
-
-    toggleRotationRestriction(restrictRotation: boolean){
-        if(restrictRotation){
-            this.restrictRotationFromGesture = true;
-            this.camera.lockRotationFromGesture();
-        } else {
-            this.restrictRotationFromGesture = false;
-            this.camera.releaseLockOnRotationFromGesture();
-        }
-    }
-
-    toggleZoomRestriction(restrictZoom: boolean){
-        if(restrictZoom){
-            this.restrictZoomFromGesture = true;
-            this.camera.lockZoomFromGesture();
-        } else {
-            this.restrictZoomFromGesture = false;
-            this.camera.releaseLockOnZoomFromGesture();
-        }
-    }
-
-    toggleRelativeXTranslationRestriction(restrictRelativeXTranslation: boolean){
-        if(restrictRelativeXTranslation){
-            this.restrictRelativeXTranslationFromGesture = true;
-            this.camera.lockRelativeXTranslationFromGesture();
-        } else {
-            this.restrictRelativeXTranslationFromGesture = false;
-            this.camera.releaseLockOnRelativeXTranslationFromGesture();
-        }
-    }
-
-    toggleRelativeYTranslationRestriction(restrictRelativeYTranslation: boolean){
-        if(restrictRelativeYTranslation){
-            this.restrictRelativeYTranslationFromGesture = true;
-            this.camera.lockRelativeYTranslationFromGesture();
-        } else {
-            this.restrictRelativeYTranslationFromGesture = false;
-            this.camera.releaseLockOnRelativeYTranslationFromGesture();
-        }
-    }
-
-    setMaxHalfTransWidth(maxHalfTransWidth: number){
-        this.maxTransHalfWidth = maxHalfTransWidth;
-        this.camera.setHorizontalBoundaries(-this.maxTransHalfWidth, this.maxTransHalfWidth);
-    }
-
-    setMaxHalfTransHeight(maxHalfTransHeight: number){
-        this.maxTransHalfHeight = maxHalfTransHeight;
-        this.camera.setVerticalBoundaries(-this.maxTransHalfHeight, this.maxTransHalfHeight);
-    }
 }
 
 export type CameraDetail = {

@@ -55,15 +55,41 @@ export default class vCamera {
     private rotationAnimation: RotationAnimation;
     private zoomAnimation: ZoomAnimation;
 
-    private restrictXTranslationFromGesture: boolean = false;
-    private restrictYTranslationFromGesture: boolean = false;
+    private _restrictXTranslationFromGesture: boolean = false;
 
-    private restrictRelativeXTranslationFromGesture: boolean = false;
-    private restrictRelativeYTranslationFromGesture: boolean = false;
+    get restrictXTranslationFromGesture(): boolean {
+        return this._restrictXTranslationFromGesture;
+    }
 
-    private restrictZoomFromGesture: boolean = false;
+    private _restrictYTranslationFromGesture: boolean = false;
 
-    private restrictRotationFromGesture: boolean = false;
+    get restrictYTranslationFromGesture(): boolean {
+        return this._restrictYTranslationFromGesture;
+    }
+
+    private _restrictRelativeXTranslationFromGesture: boolean = false;
+
+    get restrictRelativeXTranslationFromGesture(): boolean {
+        return this._restrictRelativeXTranslationFromGesture;
+    }
+
+    private _restrictRelativeYTranslationFromGesture: boolean = false;
+
+    get restrictRelativeYTranslationFromGesture(): boolean {
+        return this._restrictRelativeYTranslationFromGesture;
+    }
+
+    private _restrictZoomFromGesture: boolean = false;
+
+    get restrictZoomFromGesture(): boolean {
+        return this._restrictZoomFromGesture;
+    }
+
+    private _restrictRotationFromGesture: boolean = false;
+
+    get restrictRotationFromGesture(): boolean {
+        return this._restrictRotationFromGesture;
+    }
 
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
@@ -128,10 +154,10 @@ export default class vCamera {
     setPositionFromGesture(position: Point): boolean{
         this.releasePositionFromLockedObject();
         
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             position.x = this.position.x;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             position.y = this.position.y;
         }
         return this.setPosition(position);
@@ -208,20 +234,20 @@ export default class vCamera {
     }
 
     setPositionWithClampEntireViewPortFromGesture(position: Point) {
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             position.x = this.position.x;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             position.y = this.position.y;
         }
-        if(this.restrictRelativeXTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture){
             const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
             let delta = PointCal.subVector(this.position, position);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
             position = PointCal.addVector(this.position, delta);
         }
-        if(this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeYTranslationFromGesture){
             const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
             let delta = PointCal.subVector(this.position, position);
             const value = PointCal.dotProduct(rightDirection, delta);
@@ -235,20 +261,20 @@ export default class vCamera {
 
 
     setPositionWithClampFromGesture(position: Point) {
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             position.x = this.position.x;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             position.y = this.position.y;
         }
-        if(this.restrictRelativeXTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture){
             const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
             let delta = PointCal.subVector(this.position, position);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
             position = PointCal.addVector(this.position, delta);
         }
-        if(this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeYTranslationFromGesture){
             const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
             let delta = PointCal.subVector(this.position, position);
             const value = PointCal.dotProduct(rightDirection, delta);
@@ -266,7 +292,7 @@ export default class vCamera {
     }
 
     setRotationFromGesture(rotation: number){
-        if(this.restrictRotationFromGesture){
+        if(this._restrictRotationFromGesture){
             return;
         }
         this.releaseRotationFromLockedObject();
@@ -299,7 +325,7 @@ export default class vCamera {
         if(!this.zoomLevelWithinLimits(zoomLevel)){
             return false;
         }
-        if(this.restrictZoomFromGesture){
+        if(this._restrictZoomFromGesture){
             return false;
         }
         this.cancelZoomAnimation();
@@ -308,7 +334,7 @@ export default class vCamera {
     }
 
     setZoomLevelWithClampFromGesture(zoomLevel: number){
-        if(this.restrictZoomFromGesture){
+        if(this._restrictZoomFromGesture){
             return;
         }
         this.cancelZoomAnimation();
@@ -317,7 +343,7 @@ export default class vCamera {
     }
 
     setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
-        if(this.restrictZoomFromGesture){
+        if(this._restrictZoomFromGesture){
             return;
         }
         this.cancelZoomAnimation();
@@ -332,7 +358,7 @@ export default class vCamera {
     }
 
     setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
-        if(this.restrictZoomFromGesture){
+        if(this._restrictZoomFromGesture){
             return;
         }
         this.cancelZoomAnimation();
@@ -449,24 +475,24 @@ export default class vCamera {
     }
 
     moveFromGesture(delta: Point){
-        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
             return false;
         }
-        if(this.restrictRelativeXTranslationFromGesture && this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
             return false;
         }
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             delta.x = 0;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             delta.y = 0;
         }
-        if(this.restrictRelativeXTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture){
             const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
         }
-        if(this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeYTranslationFromGesture){
             const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
@@ -477,24 +503,24 @@ export default class vCamera {
     }
 
     moveWithClampFromGesture(delta: Point){
-        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
             return;
         }
-        if(this.restrictRelativeXTranslationFromGesture && this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
             return;
         }
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             delta.x = 0;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             delta.y = 0;
         }
-        if(this.restrictRelativeXTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture){
             const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
         }
-        if(this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeYTranslationFromGesture){
             const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
@@ -505,24 +531,24 @@ export default class vCamera {
     }
 
     moveWithClampEntireViewPortFromGesture(delta: Point){
-        if(this.restrictXTranslationFromGesture && this.restrictYTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
             return;
         }
-        if(this.restrictRelativeXTranslationFromGesture && this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
             return;
         }
-        if(this.restrictXTranslationFromGesture){
+        if(this._restrictXTranslationFromGesture){
             delta.x = 0;
         }
-        if(this.restrictYTranslationFromGesture){
+        if(this._restrictYTranslationFromGesture){
             delta.y = 0;
         }
-        if(this.restrictRelativeXTranslationFromGesture){
+        if(this._restrictRelativeXTranslationFromGesture){
             const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
         }
-        if(this.restrictRelativeYTranslationFromGesture){
+        if(this._restrictRelativeYTranslationFromGesture){
             const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
@@ -589,7 +615,7 @@ export default class vCamera {
 
     spinFromGesture(deltaAngle: number){
         // in radians
-        if(this.restrictRotationFromGesture){
+        if(this._restrictRotationFromGesture){
             return;
         }
         this.releaseRotationFromLockedObject();
@@ -748,7 +774,7 @@ export default class vCamera {
     }
 
     spinWithAnimationFromGesture(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
-        if(this.restrictRotationFromGesture){
+        if(this._restrictRotationFromGesture){
             return;
         }
         this.releaseRotationFromLockedObject();
@@ -863,61 +889,61 @@ export default class vCamera {
     }
 
     lockTranslationFromGesture(){
-        this.restrictXTranslationFromGesture = true;
-        this.restrictYTranslationFromGesture = true;
+        this._restrictXTranslationFromGesture = true;
+        this._restrictYTranslationFromGesture = true;
     }
 
     releaseLockOnTranslationFromGesture(){
-        this.restrictXTranslationFromGesture = false;
-        this.restrictYTranslationFromGesture = false;
+        this._restrictXTranslationFromGesture = false;
+        this._restrictYTranslationFromGesture = false;
     }
 
     lockXTranslationFromGesture(){
-        this.restrictXTranslationFromGesture = true;
+        this._restrictXTranslationFromGesture = true;
     }
 
     releaseLockOnXTranslationFromGesture(){
-        this.restrictXTranslationFromGesture = false;
+        this._restrictXTranslationFromGesture = false;
     }
 
     lockYTranslationFromGesture(){
-        this.restrictYTranslationFromGesture = true;
+        this._restrictYTranslationFromGesture = true;
     }
 
     releaseLockOnYTranslationFromGesture(){
-        this.restrictYTranslationFromGesture = false;
+        this._restrictYTranslationFromGesture = false;
     }
 
     lockZoomFromGesture(){
-        this.restrictZoomFromGesture = true;
+        this._restrictZoomFromGesture = true;
     }
 
     releaseLockOnZoomFromGesture(){
-        this.restrictZoomFromGesture = false;
+        this._restrictZoomFromGesture = false;
     }
 
     lockRotationFromGesture(){
-        this.restrictRotationFromGesture = true;
+        this._restrictRotationFromGesture = true;
     }
 
     releaseLockOnRotationFromGesture(){
-        this.restrictRotationFromGesture = false;
+        this._restrictRotationFromGesture = false;
     }
     
     lockRelativeXTranslationFromGesture(){
-        this.restrictRelativeXTranslationFromGesture = true;
+        this._restrictRelativeXTranslationFromGesture = true;
     }
 
     releaseLockOnRelativeXTranslationFromGesture(){
-        this.restrictRelativeXTranslationFromGesture = false;
+        this._restrictRelativeXTranslationFromGesture = false;
     }
 
     lockRelativeYTranslationFromGesture(){
-        this.restrictRelativeYTranslationFromGesture = true;
+        this._restrictRelativeYTranslationFromGesture = true;
     }
 
     releaseLockOnRelativeYTranslationFromGesture(){
-        this.restrictRelativeYTranslationFromGesture = false;
+        this._restrictRelativeYTranslationFromGesture = false;
     }
 
     pointIsInViewPort(point: Point): boolean{
