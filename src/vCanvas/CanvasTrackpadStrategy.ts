@@ -1,50 +1,80 @@
 import  vCamera  from "../vCamera";
+import { vCanvas } from "..";
 import { PointCal } from "point2point";
 import { InteractiveUIComponent, Point } from "..";
+import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
+import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./cameraChangeCommand";
 
 export interface CanvasTrackpadStrategy {
-    scrollHandler(e: WheelEvent, controlCamera: vCamera, coordinateConversionFn: (interestPoint: Point) => Point): void;
+    setUp(): void;
+    tearDown(): void;
 }
-
 
 export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
 
-    private SCROLL_SENSATIVITY: number;
+    private cameraObserver: CameraObserver;
+    private SCROLL_SENSATIVITY: number = 0.005;
+    private canvas: vCanvas;
 
-    constructor(){
-        this.SCROLL_SENSATIVITY = 0.005;
+    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
+        this.canvas = canvas;
+        this.cameraObserver = cameraObserver;
+        this.scrollHandler = this.scrollHandler.bind(this);
+    }
+
+    setUp(): void{
+        this.canvas.addEventListener('wheel', this.scrollHandler);
+    }
+
+    tearDown(): void{
+        this.canvas.removeEventListener('wheel', this.scrollHandler);
     }
 
 
-    scrollHandler(e: WheelEvent, controlCamera: vCamera, coordinateConversionFn: (interestPoint: Point) => Point){
+    scrollHandler(e: WheelEvent): void {
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
 
         if (!e.ctrlKey){
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             const diff = {x: e.deltaX, y: e.deltaY};
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), controlCamera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / controlCamera.getZoomLevel());
-            controlCamera.moveWithClampFromGesture(diffInWorld);
+            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
+            this.cameraObserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - ((zoomAmount * 5) * controlCamera.getZoomLevel()), coordinateConversionFn(cursorPosition));
+            const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
+            const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
+            this.cameraObserver.executeCommand(new CameraZoomCommand(this.canvas.getCamera(), zoomLevel, anchorPoint));
         }
+
     }
 }
 
 export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrategy {
 
     private SCROLL_SENSATIVITY: number;
+    private canvas: vCanvas;
+    private cameraObserver: CameraObserver;
 
-    constructor(){
+    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
+        this.canvas = canvas;
+        this.cameraObserver = cameraObserver;
+        this.scrollHandler = this.scrollHandler.bind(this);
     }
 
+    setUp(): void {
+        this.canvas.addEventListener('wheel', this.scrollHandler);
+    }
 
-    scrollHandler(e: WheelEvent, controlCamera: vCamera, coordinateConversionFn: (interestPoint: Point) => Point){
+    tearDown(): void {
+        this.canvas.removeEventListener('wheel', this.scrollHandler);
+    }
+
+    scrollHandler(e: WheelEvent){
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
 
         if (!e.ctrlKey){
@@ -52,14 +82,16 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
             const diff = {x: e.deltaX, y: e.deltaY};
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), controlCamera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / controlCamera.getZoomLevel());
-            controlCamera.moveWithClampEntireViewPortFromGesture(diffInWorld);
+            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
+            this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            controlCamera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(controlCamera.getZoomLevel() - (controlCamera.getZoomLevel() * zoomAmount * 5), coordinateConversionFn(cursorPosition));
+            const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
+            const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
+            this.cameraObserver.executeCommand(new CameraZoomLimitEntireViewPortCommand(this.canvas.getCamera(), zoomLevel, anchorPoint));
         }
     }
 }

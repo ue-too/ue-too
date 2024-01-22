@@ -1,15 +1,109 @@
 import vCamera from "../vCamera";
+import { vCanvas } from "..";
 import { PointCal } from "point2point";
 import { InteractiveUIComponent, Point } from "..";
-
-export interface CanvasTouchStrategy {
+import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
+import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "./cameraChangeCommand";
+export interface CanvasTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchcancelHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchmoveHandler(e: TouchEvent, bottomLeftCorner: Point): void;
 }
 
+export interface CanvasTouchStrategy {
+    setUp(): void;
+    tearDown(): void;
+}
+
+
 export class TwoFingerPanZoom implements CanvasTouchStrategy {
+
+    private touchPoints: Point[];
+    private canvas: vCanvas;
+    private dragStartDist: number;
+    private cameraObeserver: CameraObserver; 
+
+    private ZOOM_SENSATIVITY: number = 0.005;
+
+    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
+        this.canvas = canvas;
+        this.cameraObeserver = cameraObserver;
+        this.touchcancelHandler = this.touchcancelHandler.bind(this);
+        this.touchendHandler = this.touchendHandler.bind(this);
+        this.touchmoveHandler = this.touchmoveHandler.bind(this);
+        this.touchstartHandler = this.touchstartHandler.bind(this);
+    }
+
+    setUp(): void {
+        this.canvas.addEventListener('touchstart', this.touchstartHandler);
+        this.canvas.addEventListener('touchend', this.touchendHandler);
+        this.canvas.addEventListener('touchcancel', this.touchcancelHandler);
+        this.canvas.addEventListener('touchmove', this.touchmoveHandler);
+    }
+
+    tearDown(): void {
+        this.canvas.removeEventListener('touchstart', this.touchstartHandler);
+        this.canvas.removeEventListener('touchend', this.touchendHandler);
+        this.canvas.removeEventListener('touchcancel', this.touchcancelHandler);
+        this.canvas.removeEventListener('touchmove', this.touchmoveHandler);
+    }
+
+    touchstartHandler(e: TouchEvent){
+        e.preventDefault();
+        if(e.targetTouches.length === 2){
+            let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            let secondTouchPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
+            this.dragStartDist = PointCal.distanceBetweenPoints(firstTouchPoint, secondTouchPoint);
+            this.touchPoints = [firstTouchPoint, secondTouchPoint];
+        } else if (e.targetTouches.length === 1){
+        }
+    }
+
+    touchcancelHandler(e: TouchEvent){
+        this.touchPoints = [];
+    }
+
+    touchendHandler(e: TouchEvent){
+        this.touchPoints = [];
+    }
+
+    touchmoveHandler(e: TouchEvent){
+        e.preventDefault();
+        if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
+            //NOTE Touch Zooming
+            let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
+            let deltaStartPoint = PointCal.subVector(startPoint, this.touchPoints[0]);
+            let deltaEndPoint = PointCal.subVector(endPoint, this.touchPoints[1]);
+            let angleDiff = PointCal.angleFromA2B(deltaStartPoint, deltaEndPoint);
+            let panZoom = Math.abs(angleDiff) > 20 * Math.PI / 180 ? "ZOOMING" : "PANNING";
+            if(panZoom == "ZOOMING"){
+                let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
+                let distDiff = this.dragStartDist - touchPointDist;
+                let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
+                midPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
+                let zoomAmount = distDiff * 0.1 * this.canvas.getCamera().getZoomLevel() * this.ZOOM_SENSATIVITY;
+                this.cameraObeserver.executeCommand(new CameraZoomCommand(this.canvas.getCamera(), zoomAmount, midPoint));
+                this.touchPoints = [startPoint, endPoint];
+            } else {
+                const diff = PointCal.subVector(this.touchPoints[0], startPoint);
+                let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
+                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
+                diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
+                this.cameraObeserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
+                this.touchPoints = [startPoint, endPoint];
+            }
+        }
+    }
+
+    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
+        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
+        return {x: res.x, y: -res.y};
+    }
+
+}
+export class TwoFingerPanZoomLegacy implements CanvasTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: vCamera;
@@ -75,7 +169,7 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
     }
 }
 
-export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategy {
+export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: vCamera;

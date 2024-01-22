@@ -3,9 +3,11 @@ import vCamera from "../vCamera";
 import { Point, UIComponent, InteractiveUIComponent } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView } from "./CanvasTrackpadStrategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
+import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
 import * as AttributeChangeCommands from "./attributeChangCommand";
-
+import { CameraLogger, CameraObserver } from "./cameraChangeCommand/cameraObserver";
+import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 
 export interface RotationComponent {
     setRotation(rotation: number): void;
@@ -25,6 +27,7 @@ export class vCanvas extends HTMLElement {
     private _context: CanvasRenderingContext2D;
 
     private _camera: vCamera;
+    private _cameraObserver: CameraObserver;
 
     private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
 
@@ -39,8 +42,10 @@ export class vCanvas extends HTMLElement {
 
     private touchStrategy: CanvasTouchStrategy;
     private trackpadStrategy: CanvasTrackpadStrategy;
+    private keyboardMouseStrategy: CanvasKMStrategy;
 
     private _debugMode: boolean = false;
+    private _cameraUpdateListener: CameraListener;
     private mousePos: Point = {x: 0, y: 0};
 
     constructor(){
@@ -58,13 +63,18 @@ export class vCanvas extends HTMLElement {
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvasWidth);
         this._camera.setViewPortHeight(this._canvasHeight);
+        this._cameraObserver = new CameraObserver(this._camera);
+
+        this._cameraUpdateListener = new CameraLogger();
+        this._cameraObserver.subsribe(this._cameraUpdateListener);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this.touchStrategy = new OneFingerPanTwoFingerZoom(this._camera);
-        this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView();
+        this.touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
+        this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
+        this.keyboardMouseStrategy = new DefaultCanvasKMStrategy(this, this._cameraObserver);
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
 
@@ -215,14 +225,6 @@ export class vCanvas extends HTMLElement {
 
     bindFunctions(){
         this.step = this.step.bind(this);
-        this.pointerDownHandler = this.pointerDownHandler.bind(this);
-        this.pointerUpHandler = this.pointerUpHandler.bind(this);
-        this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
-        this.touchstartHandler = this.touchstartHandler.bind(this);
-        this.touchendHandler = this.touchendHandler.bind(this);
-        this.touchcancelHandler = this.touchcancelHandler.bind(this);
-        this.touchmoveHandler = this.touchmoveHandler.bind(this);
-        this.scrollHandler = this.scrollHandler.bind(this);
     }
 
     connectedCallback(){
@@ -276,29 +278,16 @@ export class vCanvas extends HTMLElement {
     }
 
     registerEventListeners(){
-        this._canvas.addEventListener('pointerdown', this.pointerDownHandler);
-        this._canvas.addEventListener('pointerup', this.pointerUpHandler);
-        this._canvas.addEventListener('pointermove', this.pointerMoveHandler);
 
-        this._canvas.addEventListener('wheel', this.scrollHandler);
-
-        this._canvas.addEventListener('touchstart', this.touchstartHandler);
-        this._canvas.addEventListener('touchend', this.touchendHandler);
-        this._canvas.addEventListener('touchcancel', this.touchcancelHandler);
-        this._canvas.addEventListener('touchmove', this.touchmoveHandler);
+        this.trackpadStrategy.setUp();
+        this.touchStrategy.setUp();
+        this.keyboardMouseStrategy.setUp();
     }
 
     removeEventListeners(){
-        this._canvas.removeEventListener('pointerdown', this.pointerDownHandler);
-        this._canvas.removeEventListener('pointerup', this.pointerUpHandler);
-        this._canvas.removeEventListener('pointermove', this.pointerMoveHandler);
-
-        this._canvas.removeEventListener('wheel', this.scrollHandler);
-
-        this._canvas.removeEventListener('touchstart', this.touchstartHandler);
-        this._canvas.removeEventListener('touchend', this.touchendHandler);
-        this._canvas.removeEventListener('touchcancel', this.touchcancelHandler);
-        this._canvas.removeEventListener('touchmove', this.touchmoveHandler);
+        this.trackpadStrategy.tearDown();
+        this.touchStrategy.tearDown();
+        this.keyboardMouseStrategy.tearDown();
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -344,33 +333,12 @@ export class vCanvas extends HTMLElement {
         }
     }
 
-    scrollHandler(e: WheelEvent){
-        e.preventDefault();
-        this.trackpadStrategy.scrollHandler(e, this._camera, this.getCoordinateConversionFn({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}));
-    }
-
     getCoordinateConversionFn(bottomLeftCorner: Point): (interestPoint: Point)=>Point{
         const conversionFn =  (interestPoint: Point)=>{
             const viewPortPoint = PointCal.flipYAxis(PointCal.subVector(interestPoint, bottomLeftCorner));
             return viewPortPoint;
         }
         return conversionFn;
-    }
-
-    touchstartHandler(e: TouchEvent){
-        this.touchStrategy.touchstartHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
-    }
-
-    touchcancelHandler(e: TouchEvent){
-        this.touchStrategy.touchcancelHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
-    }
-
-    touchendHandler(e: TouchEvent){
-        this.touchStrategy.touchendHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
-    }
-
-    touchmoveHandler(e: TouchEvent){
-        this.touchStrategy.touchmoveHandler(e, {x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom});
     }
 
     getInternalCanvas(): HTMLCanvasElement {
@@ -494,6 +462,14 @@ export class vCanvas extends HTMLElement {
         this.attributeCommands.set("debug-mode", new AttributeChangeCommands.SetDebugModeCommand(this));
         this.attributeCommands.set("max-half-trans-width", new AttributeChangeCommands.SetMaxHalfTransWidthCommand(this));
         this.attributeCommands.set("max-half-trans-height", new AttributeChangeCommands.SetMaxHalfTransHeightCommand(this));
+    }
+
+    subscribeToCameraUpdate(listener: CameraListener){
+        this._cameraObserver.subsribe(listener);
+    }
+
+    unsubscribeToCameraUpdate(listener: CameraListener){
+        this._cameraObserver.subsribe(listener);
     }
 
 }
