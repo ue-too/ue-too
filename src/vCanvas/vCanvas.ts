@@ -66,7 +66,7 @@ export class vCanvas extends HTMLElement {
         this._cameraObserver = new CameraObserver(this._camera);
 
         this._cameraUpdateListener = new CameraLogger();
-        this._cameraObserver.subsribe(this._cameraUpdateListener);
+        this._cameraObserver.subscribe(this._cameraUpdateListener);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
@@ -80,7 +80,7 @@ export class vCanvas extends HTMLElement {
 
         this._debugMode = false;
 
-        this.setCommands();
+        this.setAttributeCommands();
     }
 
     get fullScreenFlag(): boolean {
@@ -267,8 +267,6 @@ export class vCanvas extends HTMLElement {
             this.drawAxis(this._context, this._camera.getZoomLevel());
         }
 
-        this.dispatchEvent(new CameraUpdateEvent('cameraupdate', {cameraAngle: this._camera.getRotation(), cameraPosition: this._camera.getPosition(), cameraZoomLevel: this._camera.getZoomLevel()}));
-
         this._camera.step(deltaTime);
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
@@ -278,7 +276,6 @@ export class vCanvas extends HTMLElement {
     }
 
     registerEventListeners(){
-
         this.trackpadStrategy.setUp();
         this.touchStrategy.setUp();
         this.keyboardMouseStrategy.setUp();
@@ -446,7 +443,7 @@ export class vCanvas extends HTMLElement {
         return this._context;
     }
 
-    setCommands(){
+    setAttributeCommands(){
         this.attributeCommands = new Map<string, AttributeChangeCommands.AttributeChangeCommand>();
         this.attributeCommands.set("width", new AttributeChangeCommands.SetWidthCommand(this));
         this.attributeCommands.set("height", new AttributeChangeCommands.SetHeightCommand(this));
@@ -465,11 +462,11 @@ export class vCanvas extends HTMLElement {
     }
 
     subscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.subsribe(listener);
+        this._cameraObserver.subscribe(listener);
     }
 
     unsubscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.subsribe(listener);
+        this._cameraObserver.unsubscribe(listener);
     }
 
 }

@@ -32,8 +32,8 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
 
 
     scrollHandler(e: WheelEvent): void {
+        e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
-
         if (!e.ctrlKey){
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
@@ -75,8 +75,8 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
     }
 
     scrollHandler(e: WheelEvent){
+        e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
-
         if (!e.ctrlKey){
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
