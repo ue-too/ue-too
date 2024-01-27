@@ -6,13 +6,13 @@ import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "
 import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
 import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
 import * as AttributeChangeCommands from "./attributeChangCommand";
-import { CameraLogger, CameraObserver } from "./cameraChangeCommand/cameraObserver";
+import { CameraLogger, CameraObserver, CameraUpdateNotification } from "./cameraChangeCommand/cameraObserver";
 import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 
 export interface RotationComponent {
     setRotation(rotation: number): void;
 }
-export class vCanvas extends HTMLElement {
+export class vCanvas extends HTMLElement{
     
     private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
     private _canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
@@ -223,8 +223,14 @@ export class vCanvas extends HTMLElement {
         this._debugMode = value;
     }
 
+    get camera(): vCamera{
+        return this._camera;
+    }
+
     bindFunctions(){
         this.step = this.step.bind(this);
+        this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
+        this.pointerDownHandler = this.pointerDownHandler.bind(this);
     }
 
     connectedCallback(){
@@ -259,15 +265,16 @@ export class vCanvas extends HTMLElement {
         this._context.rotate(this._camera.getRotation());
         this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
 
+        this._camera.step(deltaTime);
+
         if(this._debugMode){
-            // this.drawCrossHeir(this._context, this.mousePos);
-            // this.drawPositionText(this._context, this.mousePos);
+            let mouseInWorld = this.convertWindowPoint2WorldCoord(this.mousePos);
+            this.drawCrossHair(this._context, mouseInWorld, 50);
+            this.drawPositionText(this._context, mouseInWorld, 20);
             this.drawReferenceCircle(this._context, {x: 30, y: 20});
             this.drawBoundingBox(this._context);
             this.drawAxis(this._context, this._camera.getZoomLevel());
         }
-
-        this._camera.step(deltaTime);
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
         if(!this._handOverStepControl){
@@ -279,12 +286,16 @@ export class vCanvas extends HTMLElement {
         this.trackpadStrategy.setUp();
         this.touchStrategy.setUp();
         this.keyboardMouseStrategy.setUp();
+        this.addEventListener("pointermove", this.pointerMoveHandler);
+        this.addEventListener("pointerdown", this.pointerDownHandler);
     }
 
     removeEventListeners(){
         this.trackpadStrategy.tearDown();
         this.touchStrategy.tearDown();
         this.keyboardMouseStrategy.tearDown();
+        this.removeEventListener("pointermove", this.pointerMoveHandler);
+        this.removeEventListener("pointerdown", this.pointerDownHandler);
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -300,34 +311,12 @@ export class vCanvas extends HTMLElement {
         }
     }
 
-    pointerDownHandler(e: PointerEvent){
-        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey)){
-            this.isDragging = true;
-            this.dragStartPoint = {x: e.clientX, y: e.clientY};
-        }
-    }
-
-    pointerUpHandler(e: PointerEvent){
-        if(e.pointerType === "mouse"){
-            if (this.isDragging) {
-                this.isDragging = false;
-            }
-            this._canvas.style.cursor = "auto";
-        }
-    }
-
     pointerMoveHandler(e: PointerEvent){
-        this.mousePos = this._camera.convert2WorldSpace(this.convertWindowPoint2ViewPortPoint({x: this.getBoundingClientRect().left, y: this.getBoundingClientRect().bottom}, {x: e.clientX, y: e.clientY}));
-        if (e.pointerType == "mouse" && this.isDragging){
-            this._canvas.style.cursor = "move";
-            const target = {x: e.clientX, y: e.clientY};
-            let diff = PointCal.subVector(this.dragStartPoint, target);
-            diff = {x: diff.x, y: -diff.y};
-            let diffInWorld = PointCal.rotatePoint(diff, this._camera.getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.getZoomLevel());
-            this._camera.moveWithClampFromGesture(diffInWorld);
-            this.dragStartPoint = target;
-        }
+        this.mousePos = {x: e.clientX, y: e.clientY}; 
+    }
+
+    pointerDownHandler(e: PointerEvent) {
+        console.log("clicked at", this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
     }
 
     getCoordinateConversionFn(bottomLeftCorner: Point): (interestPoint: Point)=>Point{
@@ -401,22 +390,26 @@ export class vCanvas extends HTMLElement {
         context.lineWidth = 3;
     }
 
-    drawCrossHeir(context: CanvasRenderingContext2D, pos: Point): void{
+    drawCrossHair(context: CanvasRenderingContext2D, pos: Point, size: number): void{
+        // size is the pixel shown in the viewport 
+        let halfSize = size / 2;
+        halfSize = halfSize / this._camera.getZoomLevel();
         context.beginPath();
         context.strokeStyle = "red";
-        context.lineWidth = 2;
-        context.moveTo(pos.x - 10, -pos.y);
-        context.lineTo(pos.x + 10, -pos.y);
-        context.moveTo(pos.x, -pos.y - 10);
-        context.lineTo(pos.x, -pos.y + 10);
+        context.lineWidth = 2 / this._camera.getZoomLevel();
+        context.moveTo(pos.x - halfSize, -pos.y);
+        context.lineTo(pos.x + halfSize, -pos.y);
+        context.moveTo(pos.x, -pos.y - halfSize);
+        context.lineTo(pos.x, -pos.y + halfSize);
         context.stroke();
         context.lineWidth = 3;
     }
 
-    drawPositionText(context: CanvasRenderingContext2D, pos: Point): void{
+    drawPositionText(context: CanvasRenderingContext2D, pos: Point, offset: number): void{
+        offset = offset / this._camera.getZoomLevel();
         context.font = `${20 / this._camera.getZoomLevel()}px Arial`;
         context.fillStyle = "red";
-        context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + 10, -pos.y - 10);
+        context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
     }
 
     resetCamera(){

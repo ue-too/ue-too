@@ -54,7 +54,11 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
             if (this.isDragging) {
                 this.isDragging = false;
             }
-            this.canvas.getInternalCanvas().style.cursor = "auto";
+            if (!this.canvas.debugMode) {
+                this.canvas.getInternalCanvas().style.cursor = "auto";
+            } else {
+                this.canvas.getInternalCanvas().style.cursor = "none";
+            }
         }
     }
 

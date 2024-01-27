@@ -154,5 +154,10 @@ export class SetDebugModeCommand implements AttributeChangeCommand {
 
     execute(newValue: string): void {
         this.canvas.debugMode = newValue === 'true';
+        if (newValue == "true") {
+            this.canvas.getInternalCanvas().style.cursor = "none";
+        } else {
+            this.canvas.getInternalCanvas().style.cursor = "auto";
+        }
     }
 }
