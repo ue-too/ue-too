@@ -7,8 +7,11 @@ import { CameraMoveCommand } from "./cameraChangeCommand";
 
 type CoordinateConversionFn = (interestPoint: Point) => Point;
 export interface CanvasKMStrategy {
+    disabled: boolean;
     setUp(): void;
     tearDown(): void;
+    enableStrategy(): void;
+    disableStrategy(): void;
 }
 
 
@@ -19,6 +22,7 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     private dragStartPoint: Point;
     private canvas: vCanvas;
     private cameraObserver: CameraObserver;
+    private _disabled: boolean;
 
     constructor(canvas: vCanvas, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
@@ -49,7 +53,18 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
         }
     }
 
+    disableStrategy(): void {
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
+    }
+
     pointerUpHandler(e: PointerEvent){
+        if(this._disabled){
+            return;
+        }
         if(e.pointerType === "mouse"){
             if (this.isDragging) {
                 this.isDragging = false;
@@ -63,7 +78,9 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     }
 
     pointerMoveHandler(e: PointerEvent){
-        // this.mousePos = this.canvas.
+        if(this._disabled){
+            return;
+        }
         if (e.pointerType == "mouse" && this.isDragging){
             this.canvas.getInternalCanvas().style.cursor = "grabbing";
             const target = {x: e.clientX, y: e.clientY};
@@ -74,5 +91,8 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
             this.cameraObserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
             this.dragStartPoint = target;
         }
+    }
+    get disabled(): boolean {
+        return this._disabled;
     }
 }
