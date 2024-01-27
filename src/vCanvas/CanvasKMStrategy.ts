@@ -61,7 +61,7 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     pointerMoveHandler(e: PointerEvent){
         // this.mousePos = this.canvas.
         if (e.pointerType == "mouse" && this.isDragging){
-            this.canvas.getInternalCanvas().style.cursor = "move";
+            this.canvas.getInternalCanvas().style.cursor = "grabbing";
             const target = {x: e.clientX, y: e.clientY};
             let diff = PointCal.subVector(this.dragStartPoint, target);
             diff = {x: diff.x, y: -diff.y};
