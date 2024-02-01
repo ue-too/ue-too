@@ -193,7 +193,7 @@ export default class vCamera {
         return PointCal.addVector(point, delta);
     }
 
-    clampPoint(point: Point){
+    clampPoint(point: Point): Point{
         if(this.withinBoundaries(point)){
             return point;
         }
@@ -342,9 +342,9 @@ export default class vCamera {
         this.zoomLevel = zoomLevel;
     }
 
-    setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
+    setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): boolean{
         if(this._restrictZoomFromGesture){
-            return;
+            return false;
         }
         this.cancelZoomAnimation();
         let originalAnchorInWorld = this.convert2WorldSpace(anchorInViewPort);
@@ -355,11 +355,12 @@ export default class vCamera {
             const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
             this.moveWithClampEntireViewPortFromGesture(diff);
         }
+        return true;
     }
 
-    setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point){
+    setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): boolean{
         if(this._restrictZoomFromGesture){
-            return;
+            return false;
         }
         this.cancelZoomAnimation();
         let originalAnchorInWorld = this.convert2WorldSpace(anchorInViewPort);
@@ -370,6 +371,7 @@ export default class vCamera {
             const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
             this.moveWithClampFromGesture(diff);
         }
+        return true;
     }
 
     clampZoomLevel(zoomLevel: number): number{
@@ -502,12 +504,12 @@ export default class vCamera {
         return this.move(delta);
     }
 
-    moveWithClampFromGesture(delta: Point){
+    moveWithClampFromGesture(delta: Point): boolean{
         if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
-            return;
+            return false;
         }
         if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
-            return;
+            return false;
         }
         if(this._restrictXTranslationFromGesture){
             delta.x = 0;
@@ -528,14 +530,15 @@ export default class vCamera {
         this.releaseFromLockedObject();
         this.cancelAnimations();
         this.moveWithClamp(delta);
+        return true;
     }
 
-    moveWithClampEntireViewPortFromGesture(delta: Point){
+    moveWithClampEntireViewPortFromGesture(delta: Point): boolean{
         if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
-            return;
+            return false;
         }
         if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
-            return;
+            return false;
         }
         if(this._restrictXTranslationFromGesture){
             delta.x = 0;
@@ -556,6 +559,7 @@ export default class vCamera {
         this.releaseFromLockedObject();
         this.cancelAnimations();
         this.moveWithClampEntireViewPort(delta);
+        return true;
     }
 
     moveWithClamp(delta: Point){
@@ -616,11 +620,12 @@ export default class vCamera {
     spinFromGesture(deltaAngle: number){
         // in radians
         if(this._restrictRotationFromGesture){
-            return;
+            return false;
         }
         this.releaseRotationFromLockedObject();
         this.cancelAnimations();
         this.spin(deltaAngle);
+        return true;
     }
 
     spin(deltaAngle: number){

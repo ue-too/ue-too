@@ -6,7 +6,7 @@ import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "
 import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
 import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
 import * as AttributeChangeCommands from "./attributeChangCommand";
-import { CameraLogger, CameraObserver, CameraUpdateNotification } from "./cameraChangeCommand/cameraObserver";
+import { CameraChangeEventName, CameraCommandPayload, CameraLogger, CameraObserver, CameraUpdateNotification, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
 import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 
 export interface RotationComponent {
@@ -30,9 +30,6 @@ export class vCanvas extends HTMLElement{
     private _cameraObserver: CameraObserver;
 
     private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
-
-    private isDragging: boolean = false;
-    private dragStartPoint: Point;
 
     private requestRef: number;
     private _handOverStepControl: boolean = false;
@@ -462,6 +459,9 @@ export class vCanvas extends HTMLElement{
         this._cameraObserver.unsubscribe(listener);
     }
 
+    on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
+        this._cameraObserver.on(eventName, callback);
+    }
 }
 
 export type CameraDetail = {
