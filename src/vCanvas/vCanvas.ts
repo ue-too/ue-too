@@ -22,7 +22,7 @@ export default class vCanvas extends HTMLElement{
                                 "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
                                 "max-half-trans-width", "max-half-trans-height", "debug-mode"];
 
-    private _canvas: HTMLCanvasElement = document.createElement('canvas');
+    private _canvas: HTMLCanvasElement; 
     private _context: CanvasRenderingContext2D;
 
     private _camera: vCamera;
@@ -45,12 +45,9 @@ export default class vCanvas extends HTMLElement{
 
     constructor(){
         super();
-        this._canvasWidth = this._canvas.width; // need to keep this in order to clear the canvas
-        this._canvasHeight = this._canvas.height; // need to keep this in order to clear the canvas
 
-        this._canvas.style.display = "block";
-        this.style.display = "block";
-        
+        this._canvas = document.createElement('canvas');
+
         this._camera = new vCamera();
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
@@ -62,7 +59,6 @@ export default class vCanvas extends HTMLElement{
 
         this._cameraObserver = new CameraObserver(this._camera);
 
-        this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
@@ -93,6 +89,11 @@ export default class vCanvas extends HTMLElement{
         this._canvasWidth = value;
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
+        const minZoomLevel = value / (this.maxTransHalfWidth * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            console.log("set");
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
     }
 
     get height(): number {
@@ -103,6 +104,11 @@ export default class vCanvas extends HTMLElement{
         this._canvasHeight = value;
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
+        const minZoomLevel = value / (this.maxTransHalfHeight * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            console.log("set");
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
     }
 
     set stepControl(value: boolean){
@@ -252,7 +258,12 @@ export default class vCanvas extends HTMLElement{
     }
 
     connectedCallback(){
-        this.shadowRoot.appendChild(this._canvas);
+        this._canvasWidth = this._canvas.width; // need to keep this in order to clear the canvas
+        this._canvasHeight = this._canvas.height; // need to keep this in order to clear the canvas
+        this.shadowRoot.appendChild(this._canvas)
+        this._context = this._canvas.getContext("2d");
+        this._canvas.style.display = "block";
+        this.style.display = "inline-block";
         this.registerEventListeners();
         this.lastUpdateTime = 0;
         this.windowsResizeObserver.observe(document.body);
@@ -371,6 +382,9 @@ export default class vCanvas extends HTMLElement{
             this._canvas.height = this._canvasHeight;
             this._camera.setViewPortWidth(window.innerWidth);
             this._camera.setViewPortHeight(window.innerHeight);
+        } else {
+            this._canvas.width = this._canvasWidth;
+            this._canvas.height = this._canvasHeight;
         }
     }
 
