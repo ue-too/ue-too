@@ -35,19 +35,6 @@ export type CameraRotateCommandPayload = {
     deltaRotation: number
 }
 
-export type CameraRotateCommandPayloadAlt = {
-    deltaRotation: number
-}
-
-export type CameraPanCommandPayloadAlt = {
-    diff: Point
-}
-
-export type CameraZoomCommandPayloadAlt = {
-    zoomAmount: number,
-    anchorPoint: Point
-}
-
 export type CameraPanCommandPayload = {
     type: "pan",
     diff: Point
