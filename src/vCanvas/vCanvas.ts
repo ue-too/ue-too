@@ -32,7 +32,7 @@ export class vCanvas extends HTMLElement{
     private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
 
     private requestRef: number;
-    private _handOverStepControl: boolean = false;
+    private _handOverStepControl: boolean = true;
     private lastUpdateTime: number;
 
     private windowsResizeObserver: ResizeObserver;
