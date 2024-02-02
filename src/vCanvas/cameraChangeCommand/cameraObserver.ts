@@ -119,6 +119,12 @@ export class CameraObserver {
             break;
         }
     }
+
+    clearCallbacks(): void {
+        this.panCallbackList = [];
+        this.zoomCallbackList = [];
+        this.rotateCallbackList = [];
+    }
     
 }
 
