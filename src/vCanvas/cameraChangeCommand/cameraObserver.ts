@@ -135,10 +135,6 @@ export class CameraObserver {
     
 }
 
-// let cameraObserver: CameraObserver = new CameraObserver(new vCamera({x: 0, y: 0}, 1, 0));
-// cameraObserver.on("pan", (payload, cameraState) => {
-//     console.log(payload.diff);
-// })
 export interface CameraChangeCommand {
     execute(): boolean;
     commandPayload: CameraCommandPayload;
