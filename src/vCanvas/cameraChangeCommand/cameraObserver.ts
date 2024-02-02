@@ -1,23 +1,23 @@
 import { Point } from "point2point";
 import vCamera from "../../vCamera";
 
-export type CameraPanEvent = {
+export type CameraPanEventPayload = {
     diff: Point;
 }
 
-export type CameraZoomEvent = {
+export type CameraZoomEventPayload = {
     zoomAmount: number;
     anchorPoint: Point;
 }
 
-export type CameraRotateEvent = {
+export type CameraRotateEventPayload = {
     deltaRotation: number;
 }
 
 export type CameraEventMapping = {
-    "pan": CameraPanEvent,
-    "zoom": CameraZoomEvent,
-    "rotate": CameraRotateEvent
+    "pan": CameraPanEventPayload,
+    "zoom": CameraZoomEventPayload,
+    "rotate": CameraRotateEventPayload
 }
 
 export interface CameraListener {
