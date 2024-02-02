@@ -1,12 +1,11 @@
-import { CameraLockableObject } from "../vCamera";
 import vCamera from "../vCamera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
+import {CanvasTouchStrategy, TwoFingerPanZoom} from "./CanvasTouchStrategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
 import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
 import * as AttributeChangeCommands from "./attributeChangCommand";
-import { CameraChangeEventName, CameraCommandPayload, CameraLogger, CameraObserver, CameraUpdateNotification, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
+import { CameraObserver, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
 import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 
 export interface RotationComponent {
@@ -37,9 +36,9 @@ export class vCanvas extends HTMLElement{
 
     private windowsResizeObserver: ResizeObserver;
 
-    private touchStrategy: CanvasTouchStrategy;
-    private trackpadStrategy: CanvasTrackpadStrategy;
-    private keyboardMouseStrategy: CanvasKMStrategy;
+    private _touchStrategy: CanvasTouchStrategy;
+    private _trackpadStrategy: CanvasTrackpadStrategy;
+    private _keyboardMouseStrategy: CanvasKMStrategy;
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
@@ -67,9 +66,9 @@ export class vCanvas extends HTMLElement{
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this.touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
-        this.trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
-        this.keyboardMouseStrategy = new DefaultCanvasKMStrategy(this, this._cameraObserver);
+        this._touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
+        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
+        this._keyboardMouseStrategy = new DefaultCanvasKMStrategy(this, this._cameraObserver);
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
 
@@ -222,6 +221,30 @@ export class vCanvas extends HTMLElement{
         return this._camera;
     }
 
+    set touchStrategy(strategy: CanvasTouchStrategy){
+        this._touchStrategy = strategy;
+    }
+
+    get touchStrategy(): CanvasTouchStrategy{
+        return this._touchStrategy;
+    }
+
+    set trackpadStrategy(strategy: CanvasTrackpadStrategy){
+        this._trackpadStrategy = strategy;
+    }
+
+    get trackpadStrategy(): CanvasTrackpadStrategy{
+        return this._trackpadStrategy;
+    }
+
+    set keyboardMouseStrategy(strategy: CanvasKMStrategy){
+        this._keyboardMouseStrategy = strategy;
+    }
+
+    get keyboardMouseStrategy(): CanvasKMStrategy{
+        return this._keyboardMouseStrategy;
+    }
+
     bindFunctions(){
         this.step = this.step.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
@@ -278,17 +301,17 @@ export class vCanvas extends HTMLElement{
     }
 
     registerEventListeners(){
-        this.trackpadStrategy.setUp();
-        this.touchStrategy.setUp();
-        this.keyboardMouseStrategy.setUp();
+        this._trackpadStrategy.setUp();
+        this._touchStrategy.setUp();
+        this._keyboardMouseStrategy.setUp();
         this.addEventListener("pointermove", this.pointerMoveHandler);
         this.addEventListener("pointerdown", this.pointerDownHandler);
     }
 
     removeEventListeners(){
-        this.trackpadStrategy.tearDown();
-        this.touchStrategy.tearDown();
-        this.keyboardMouseStrategy.tearDown();
+        this._trackpadStrategy.tearDown();
+        this._touchStrategy.tearDown();
+        this._keyboardMouseStrategy.tearDown();
         this.removeEventListener("pointermove", this.pointerMoveHandler);
         this.removeEventListener("pointerdown", this.pointerDownHandler);
     }
