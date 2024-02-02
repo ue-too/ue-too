@@ -42,28 +42,23 @@ export class vCanvas extends HTMLElement{
     private keyboardMouseStrategy: CanvasKMStrategy;
 
     private _debugMode: boolean = false;
-    private _cameraUpdateListener: CameraListener;
     private mousePos: Point = {x: 0, y: 0};
 
     constructor(){
         super();
-        this._canvasWidth = this._canvas.width;
-        this._canvasHeight = this._canvas.height;
+        this._canvasWidth = this._canvas.width; // need to keep this in order to clear the canvas
+        this._canvasHeight = this._canvas.height; // need to keep this in order to clear the canvas
 
         this._canvas.style.display = "block";
         this.style.display = "block";
         
         this._camera = new vCamera();
-        this.maxTransHalfHeight = 40075000 / 2;
-        this.maxTransHalfWidth = 40075000 / 2;
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvasWidth);
         this._camera.setViewPortHeight(this._canvasHeight);
-        this._cameraObserver = new CameraObserver(this._camera);
 
-        this._cameraUpdateListener = new CameraLogger();
-        this._cameraObserver.subscribe(this._cameraUpdateListener);
+        this._cameraObserver = new CameraObserver(this._camera);
 
         this._context = this._canvas.getContext("2d");
         this.attachShadow({mode: "open"});
@@ -461,6 +456,10 @@ export class vCanvas extends HTMLElement{
 
     on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
         this._cameraObserver.on(eventName, callback);
+    }
+
+    clearCameraUpdateCallbacks(){
+        this._cameraObserver.clearCallbacks();
     }
 }
 
