@@ -3,35 +3,44 @@
 __This project is experimental (only to show a way to have a canvas that can be panned, zoomed, and rotated) please do not use it in production until you modify it to your needs, test it out, and make sure that it suits all your needs__ <br/>
 
 [Demo](https://vntchang.dev/vCanvasDemo/)
+_The demo version is rather old and outdated but it showcases the basic functionalities so I am keeping it here. I will replace it with the newer version later on when it's stable_
 
-This is a project that I pull from the [Component Library](https://github.com/niuee/vnt-component-library). <br/>
-It's basically a canvas with pan and zoom and also rotation on camera.<br/>
-This is implemented using the web component API. I plan to also implement it as a React component.<br/>
+Initially, I needed a way to have a pannable and zoomable canvas for a racetrack maker project that I was working on. I stumbled upon a [codepen example](https://codepen.io/chengarda/pen/wRxoyB) that is posted in stackoverflow. It was a fantastic starting point. It provided everything that I need. However, some functionalities I needed was not there; I started to build on top of this and make a canvas element that is easier to work with and modify and has the functionalities that I need. 
 
-This custom canvas element supports Safari, Chrome, and Firefox as for the eariliest version of each browser I would need time to investigate more on that. Webkit does not support extending from existing HTMLElement like HTMLCanvasElement, thus the canvas element is inheriting from just simple HTMLElement with an internal canvas element attached to the shadow dom. <br/>
-The panning, zooming, rotating supports keyboard-mouse, trackpad, and also touch on iOS and iPadOS devices. I haven't tested this with screen that has touch capability. Also android devices are not tested either.
+This project is written entirely with vanilla JavaScript. However, in the future I plan to have a React version of this and maybe support other frontend libraries and/or frameworks.
 
-### Usage 
-You can install the package from npm using 
-```
-npm install @niuee/vcanvas
-```
+It's using the web component api and supports Safari, Chrome, and Firefox as for the eariliest version of each browser I would need time to investigate more on that. Webkit does not support extending from existing HTMLElement like HTMLCanvasElement, thus the canvas element is inheriting from just simple HTMLElement with an internal canvas element attached to the shadow dom.
+
+The panning, zooming, rotating supports keyboard-mouse, trackpad, and also touch on iOS and iPadOS devices. I haven't tested this with screen that has touch capability. Android devices are not tested either.
+
+The [design document](https://hackmd.io/@niuee/ByKskjAUp) contains a more detailed explanation of the underlying mechanisms of the canvas including the camera system that is essentially the backbone of this custom canvas.
+
+### Installation
+~~You can install the package from npm using~~
+
+_I am revamping some of the features of vCanvas, currently the changes are not reflected on the published npm package. There are no simple way to just install and use the package since I use other packages that I didn't publish to npm; if you really want to clone the project and build it yourself, see the package.json file for other packages that vCanvas depends on and clone those packages from my GitHub repositories as well. (It's listed below)_ 
+
+- [point2point](https://github.com/niuee/point2point) I've published this package on npm but I added some functions that I used in vCanvas and those are not updated to npm yet. 
+
+After cloning the repo you can change the path for point2point in vCanvas's package.json and npm install to install the local cloned version of point2point.
+
+---
+### Usage
 Just like any other web component, you have to define the custom element first.
 ```javascript
-// you can put the name that you want in here. make sure that it's more than two words and with dash(es) in between otherwise it won't work.
+// you can put the name that you want in here; but you have to make sure that it's more than one word (two words and up) and with dash(es) in between otherwise it won't work. This is the constraint imposed by web component
 import { vCanvas } from "@niuee/vcanvas";
-customElements.define('tag-name-you-want', vCanvas);
+customElements.define('tag-name-you-desire', vCanvas);
 ```
 Then in a html file you can use it like this.
 ```html
-<v-canvas></v-canvas>
+<tag-name-you-desire></tag-name-you-desire>
 ```
 
 ### Coordinate System
-I know the coordinate system for the native canvas html element down is positive y and right is positive x.<br>
-However, I decided to flip the y-axis around to make up positive y and right positve x.<br/>
-In the demo I have drawn the x and y axis on the canvas element. <br/>
-__Green__ is the y axis and the extending direction is the positive direction. <br/>
+I know the coordinate system for the native canvas html element down is positive y and right is positive x. However, I decided to flip the y-axis around to make up positive y and right positve x.
+In the demo I have drawn the x and y axis on the canvas element. 
+__Green__ is the y axis and the extending direction is the positive direction.
 __Red__ is the x axis.
 The coordinate of the rendering context is still down for positive y and right for positive x. It's just when a user clicked on the canvas, the coordinate that is reported is in up for positive y and right for positive x coordinate system.
 
@@ -41,55 +50,27 @@ Trackpad: Two fingers swipe to pan<br/>
 Touch: Two fingers swipe to pan (plan to change it to one finger drag to pan)<br/>
 
 ### zooming
-Keyboard-Mouse: scroll on the wheel while holding down the control key, (zoom is anchor to the cursor position)<br/>
+Keyboard-Mouse: scroll the wheel while holding down the control key, (zoom is anchor to the cursor position)<br/>
 Trackpad: Two fingers pinch to zoom<br/>
 Touch: Two fingers pinch to zoom<br/>
 
 ### rotating
-Rotating is a little more complicated because I couldn't figure out an intuitive way to directly rotate the canvas.
-So I created sort of like a helper element to go with this functionality. It's the vDial. It's bascially a dial wheel element to emit event to change the rotation angle of the canvas. Please check the playground example for how to link the input element to the canvas element. You can actually swap any other input element for this. 
+Rotating is a little more complicated because I couldn't figure out an intuitive way to directly rotate the canvas. However, the functionality is there. I'll explain in more detail in a later section.
 
-Below is the example using the dial wheel element to add event listener to update the canvas rotation to the input value of the dial wheel.
+---
+### RequestAnimationFrame
+HTML Canvas is essentially a static image. To make it look like an actual canvas that you can manipulate and mess around. It relies on the requestAnimationFrame function. Clearing the canvas and redrawing at each frame so that it looks like the canvas is actually moving like an animation. 
+
+Currently, the default is that the canvas will not call the requestAnimationFrame itself. It relies on the user to call requestAnimationFrame for it. I will demonstrate it below.
+
+### Get the step function of the canvas.
+You can think of the step function similar to the `render` function of a `renderer` from threejs where you have to call it in the `animate` function in this [example](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene). The step function takes in an argument `timestamp: number`; you can get this directly as the arugment of the call back function passed into `requestAnimationFrame`. You can also just use the step function as the callback passed into `requestAnimationFrame`; but this way you would not be able to do much stuff with the canvas. To get the `step` function simply call the `getStepFunction()` from the canvas element like this.
 ```javascript
-dialWheel.addEventListener('needlechange', (evt: Event)=>{
-    let dialEvent = evt as DialWheelEvent;
-    let angleSpan = dialEvent.detail.angleSpan;
-    // call this function to update the rotation of the canvas; it takes an angle in radians.
-    element.setCameraAngle(angleSpan);
-});
-```
+const stepFunction = canvasElement.getStepFunction(); // canvas element is of type vCanvas you can get it using the queryselector
 
-You can swap it with the input element of your choice; heck, you can probably create a more stylish and intuitive element to control the rotation than I did.
-```javascript
-let canvasElement = document.querySelector("#test-canvas");
-let inputElement = document.querySelector("#your-input-element"); // let's take a textfield input as an example
-input.addEventListener('change', (e)=>{
-    canvasElement.setCameraAngle(e.target.value); // assumming e.target.value is a valid value (setCameraAngle takes in an angle in radians)
-})
-```
+const context = canvasElement.getContext(); // this is the drawing context for the canvas element
 
-There is also a custom event that the canvas element emits to pass the camera information to other element. (So you can sync your element with the current rotation / position / zoom level of the canvas element to indicate the status of the canvas camera)
-```javascript
-let canvasElement = document.querySelector("#test-canvas");
-canvasElement.addEventListener('cameraupdate', (evt)=>{
-    let cameraInfo = evt.detail;
-    dialWheel.linkRotation(cameraInfo.cameraAngle); // you can swap this with the input element of your choice
-})
-```
-
-### To Draw Your Own Stuff
-This is a bit more complicated. I intend to find a better solution for this. Currently there are two ways to draw your own stuff. <br/>
-I am going to demonstrate both of those.
-
-1. Add the `tap-step` attribute to the canvas element and draw in your own step functions
-```html
-<v-canvas tap-step></v-canvas>
-```
-```javascript
-
-const context = canvasElement.getContext();
-const stepFunction = canvasElement.getStepFunction();
-
+// this is the step function that wraps the canvas step function so you can also do stuff at each frame
 function step(timestamp: number){
     // make sure to step the canvas element first otherwise your stuff is going to get wiped when the canvas element steps
     stepFunction(timestamp);
@@ -103,44 +84,10 @@ function step(timestamp: number){
     window.requestAnimationFrame(step);
 }
 
-window.requestAnimationFrame(step);
+// remember to call the function to start
+step(0); 
 ```
-
-2. Create a class that implements the UIComponent interface. I have an exported interface as shown below.
-```typescript
-interface UIComponent{
-    draw(context: CanvasRenderingContext2D, zoomLevel: number): void;
-}
-```
-The canvas element has a method to add into its list of UI components. The canvas will draw them at every frame.
-```typescript
-// this is an example of an implementation of UIComponent interface
-class UICircle implements UIComponent {
-
-    private centerX: number;
-    private centerY: number;
-    private radius: number;
-
-    constructor(centerX: number, centerY: number, radius: number){
-        this.centerX = centerX;
-        this.centerY = centerY;
-        this.radius = radius;
-    }
-
-    draw(context: CanvasRenderingContext2D, zoomLevel: number){
-        context.beginPath();
-        context.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
-        context.stroke();
-    }
-}
-
-// example of inserting into canvas
-const exampleCircle = new UICircle(0, 0, 200);
-canvasElement.insertUIComponent(exampleCircle);
-```
-
-The above methods are not ideal. I am still thinking about how to improve this process.
-
+---
 ### Attributes
 
 #### `restrict-{x-translation | y-translation | rotation | zoom}`
@@ -176,24 +123,99 @@ This is to set the height of the canvas.
 <v-canvas height="300"></v-canvas> 
 ```
 
-#### `tap-step`
-This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically.
+#### `control-step`
+This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically. Default is "true"(meaning that the canvas element would not call rAF itself the user would have to "control the step function"; I know it's kind of confusing I am still working on the name though)
 ```html
-<v-canvas tap-step></v-canvas> 
+<v-canvas control-step="false"></v-canvas> 
 ```
-After setting this attribute, for the panning, zooming, and rotating to work. You need to call the `window.requestAnimationFrame` yourself, and also call the step function for the canvas along with your own step function. Below is an example.
-```javascript
-let canvasStepFn = canvasElement.getStepFunction(); // this will return the step function of the canvas element
+Setting this attribute to "false"(string as attribute value can only be string), the canvas would handle the calling of rAF and the user would just get the pan, zoom, and rotate functionality automatically. However, in this mode you would probably have to go into the source code of the canvas and add stuff to the step function to actually acheive anything.
 
-// this is an example of your own step function
-function step(timestamp){
-    // call the step function of the canvas first because the canvas step function will clear the canvas
-    canvasStepFn(timestamp);
-    // do your work
-    // ...
-    // ...
-    window.requestAnimationFrame(step);
+#### `debug-mode`
+This would switch on the debug mode for the canvas. Currently, the debug mode is drawing the reference circle in green, the axis in their respective color, the bounding box in blue. The cursor icon would be replaced with a red crosshair and at the top right to the crosshair would be the position of the cursor in world coordinate.
+```html
+<v-canvas debug-mode></v-canvas>
+```
+
+#### `max-half-trans-width`
+This is to set the horizontal boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Left and right both gets the same value. The entire horizontal boundary is then 2 * half width wide. 
+```html
+<!-- This would set the entire horizontal boundary of the camera to be 2000-->
+<v-canvas max-half-trans-width="1000"></v-canvas>
+```
+
+#### `max-half-trans-height`
+This is to set the vertical boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Top and bottom both gets the same value. The entire vertical boundary is then 2 * half width wide. 
+```html
+<!-- This would set the entire vertical boundary of the camera to be 2000-->
+<v-canvas max-half-trans-height="1000"></v-canvas>
+```
+---
+### Listen to the event of panning, zooming, rotating movement
+This is one of the revamped feature of the canvas. The rotation of the canvas needed to be controlled by an external element. That element would have to sync up with the rotation of the canvas. This was originally done through custom event; the canvas orientation would be dispatch through custom events at every frame even if the canvas is stationary. The mechanism in place now is to set up an event listener just like before but the canvas would only report the current orientation when the canvas is moved in any way. 
+
+#### Pan Event
+To listen to the pan event of the canvas.
+```javascript
+// the pan call back 
+function panCallback(event, cameraState) {
+    // payload for pan event would contain the diff of the canvas pan
+    // cameraState would be the current state of the abstracted camera
+    console.log(event); // {diff: {x: number, y: number}}
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
 }
 
-window.requestAnimationFrame(step);
+// listen to the pan event and when a pan event occur the callback would execute
+canvasElement.on("pan", panCallback);
+
+// pan event payload looks like 
+// {
+//     diff: Point;
+// }
+
+// cameraState looks like
+// {
+//     position: Point;
+//     rotation: nubmer;
+//     zoomLevel: number;
+// }
 ```
+
+#### Rotate Event
+To Listen to the rotate event of the canvas.
+```javascript
+// the rotate call back 
+function rotateCallback(event, cameraState) {
+    console.log(event);
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
+}
+
+// listen to the rotate event and when a pan event occur the callback would execute
+canvasElement.on("rotate", rotateCallback);
+
+// rotate event payload looks like
+// {
+//     deltaRotation: number;
+// }
+```
+#### Zoom Event
+To Listen to the zoom event of the canvas.
+```javascript
+// the zoom call back 
+function zoomCallback(event, cameraState) {
+    console.log(event); 
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
+}
+
+// listen to the zoom event and when a pan event occur the callback would execute
+canvasElement.on("rotate", rotateCallback);
+
+// zoom event payload looks like
+// {
+//     deltaZoomAmount: number;
+//     anchorPoint: Point;
+// }
+```
+---
+
+To control the rotation the external element would have to be able to tell the canvas how to rotate. To do this, the external element would have to issue a command to the canvas. This usecase is rather uncommon so I'll point to the source code for the commands and if you need to add new commands it's also at the same place. 
+`/src/vCanvas/cameraChangeCommand/cameraObserver.ts`
