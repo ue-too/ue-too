@@ -1,7 +1,7 @@
 import vCamera from "../vCamera";
 import { vCanvas } from "..";
 import { PointCal } from "point2point";
-import { InteractiveUIComponent, Point } from "..";
+import { Point } from "..";
 import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
 import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "./cameraChangeCommand";
 export interface CanvasTouchStrategyLegacy {
