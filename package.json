@@ -6,7 +6,9 @@
   "module": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "build": "rollup -c --bundleConfigAsCjs",
+    "rollup": "rollup -c --bundleConfigAsCjs",
+    "build": "npm run rollup && npm run move-package",
+    "move-package": "node ./scripts/move-package.mjs",
     "test": "jest"
   },
   "repository": {
