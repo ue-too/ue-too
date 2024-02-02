@@ -1,6 +1,6 @@
 import { CameraLockableObject } from "../vCamera";
 import vCamera from "../vCamera";
-import { Point, UIComponent, InteractiveUIComponent } from "..";
+import { Point } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom} from "./CanvasTouchStrategy";
 import { CanvasTrackpadStrategy, TwoFingerPanPinchZoom, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
