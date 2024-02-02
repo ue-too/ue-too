@@ -11,7 +11,7 @@ import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 export interface RotationComponent {
     setRotation(rotation: number): void;
 }
-export class vCanvas extends HTMLElement{
+export default class vCanvas extends HTMLElement{
     
     private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
     private _canvasHeight: number; // this is the reference height for when clearing the canvas in the step function

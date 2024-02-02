@@ -1,5 +1,5 @@
 import vCamera from "../vCamera";
-import { vCanvas } from "..";
+import vCanvas from "../vCanvas/vCanvas";
 import { PointCal } from "point2point";
 import { Point } from "..";
 import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
