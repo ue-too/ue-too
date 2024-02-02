@@ -6,7 +6,7 @@ export type CameraPanEventPayload = {
 }
 
 export type CameraZoomEventPayload = {
-    zoomAmount: number;
+    deltaZoomAmount: number;
     anchorPoint: Point;
 }
 
@@ -42,7 +42,7 @@ export type CameraPanCommandPayload = {
 
 export type CameraZoomCommandPayload = {
     type: "zoom",
-    zoomAmount: number,
+    deltaZoomAmount: number,
     anchorPoint: Point
 }
 
@@ -175,7 +175,7 @@ export class CameraZoomCommand implements CameraChangeCommand {
     get commandPayload(): CameraZoomCommandPayload {
         return {
             type: "zoom",
-            zoomAmount: this.zoomAmount,
+            deltaZoomAmount: this.zoomAmount,
             anchorPoint: this.anchorPoint
         }
     }
@@ -191,7 +191,7 @@ export class CameraZoomLimitEntireViewPortCommand implements CameraChangeCommand
     get commandPayload(): CameraZoomCommandPayload {
         return {
             type: "zoom",
-            zoomAmount: this.zoomAmount,
+            deltaZoomAmount: this.zoomAmount,
             anchorPoint: this.anchorPoint
         }
     }

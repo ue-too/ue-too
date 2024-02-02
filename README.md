@@ -13,6 +13,8 @@ It's using the web component api and supports Safari, Chrome, and Firefox as for
 
 The panning, zooming, rotating supports keyboard-mouse, trackpad, and also touch on iOS and iPadOS devices. I haven't tested this with screen that has touch capability. Android devices are not tested either.
 
+The [design document](https://hackmd.io/@niuee/ByKskjAUp) contains a more detailed explanation of the underlying mechanisms of the canvas including the camera system that is essentially the backbone of this custom canvas.
+
 ### Installation
 ~~You can install the package from npm using~~
 
@@ -155,5 +157,65 @@ This is one of the revamped feature of the canvas. The rotation of the canvas ne
 To listen to the pan event of the canvas.
 ```javascript
 // the pan call back 
-function panCallback()
+function panCallback(event, cameraState) {
+    // payload for pan event would contain the diff of the canvas pan
+    // cameraState would be the current state of the abstracted camera
+    console.log(event); // {diff: {x: number, y: number}}
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
+}
+
+// listen to the pan event and when a pan event occur the callback would execute
+canvasElement.on("pan", panCallback);
+
+// pan event payload looks like 
+// {
+//     diff: Point;
+// }
+
+// cameraState looks like
+// {
+//     position: Point;
+//     rotation: nubmer;
+//     zoomLevel: number;
+// }
 ```
+
+#### Rotate Event
+To Listen to the rotate event of the canvas.
+```javascript
+// the rotate call back 
+function rotateCallback(event, cameraState) {
+    console.log(event);
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
+}
+
+// listen to the rotate event and when a pan event occur the callback would execute
+canvasElement.on("rotate", rotateCallback);
+
+// rotate event payload looks like
+// {
+//     deltaRotation: number;
+// }
+```
+#### Zoom Event
+To Listen to the zoom event of the canvas.
+```javascript
+// the zoom call back 
+function zoomCallback(event, cameraState) {
+    console.log(event); 
+    console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
+}
+
+// listen to the zoom event and when a pan event occur the callback would execute
+canvasElement.on("rotate", rotateCallback);
+
+// zoom event payload looks like
+// {
+//     deltaZoomAmount: number;
+//     anchorPoint: Point;
+// }
+```
+---
+
+To control the rotation the external element would have to be able to tell the canvas how to rotate. To do this, the external element would have to issue a command to the canvas. This usecase is rather uncommon so I'll point to the source code for the commands and if you need to add new commands it's also at the same place. 
+`/src/vCanvas/cameraChangeCommand/cameraObserver.ts`
