@@ -57,6 +57,9 @@ export class vCanvas extends HTMLElement{
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvasWidth);
         this._camera.setViewPortHeight(this._canvasHeight);
+        
+        this.maxTransHalfHeight = 5000;
+        this.maxTransHalfWidth = 5000;
 
         this._cameraObserver = new CameraObserver(this._camera);
 
