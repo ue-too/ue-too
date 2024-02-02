@@ -55,11 +55,37 @@ Touch: Two fingers pinch to zoom<br/>
 ### rotating
 Rotating is a little more complicated because I couldn't figure out an intuitive way to directly rotate the canvas. However, the functionality is there. I'll explain in more detail in a later section.
 
+---
 ### RequestAnimationFrame
 HTML Canvas is essentially a static image. To make it look like an actual canvas that you can manipulate and mess around. It relies on the requestAnimationFrame function. Clearing the canvas and redrawing at each frame so that it looks like the canvas is actually moving like an animation. 
 
-Currently, the default is that the canvas will not call the requestAnimationFrame itself. It relies on the user to call requestAnimationFrame for it. 
+Currently, the default is that the canvas will not call the requestAnimationFrame itself. It relies on the user to call requestAnimationFrame for it. I will demonstrate it below.
 
+### Get the step function of the canvas.
+You can think of the step function similar to the `render` function of a `renderer` from threejs where you have to call it in the `animate` function in this [example](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene). The step function takes in an argument `timestamp: number`; you can get this directly as the arugment of the call back function passed into `requestAnimationFrame`. You can also just use the step function as the callback passed into `requestAnimationFrame`; but this way you would not be able to do much stuff with the canvas. To get the `step` function simply call the `getStepFunction()` from the canvas element like this.
+```javascript
+const stepFunction = canvasElement.getStepFunction(); // canvas element is of type vCanvas you can get it using the queryselector
+
+const context = canvasElement.getContext(); // this is the drawing context for the canvas element
+
+// this is the step function that wraps the canvas step function so you can also do stuff at each frame
+function step(timestamp: number){
+    // make sure to step the canvas element first otherwise your stuff is going to get wiped when the canvas element steps
+    stepFunction(timestamp);
+
+    // this is an example of drawing a circle
+    context.beginPath();
+    context.arc(200, -100, 5, 0, Math.PI * 2);
+    context.stroke();
+
+    // call the requestAnimationFrame to keep stepping
+    window.requestAnimationFrame(step);
+}
+
+// remember to call the function to start
+step(0); 
+```
+---
 ### Attributes
 
 #### `restrict-{x-translation | y-translation | rotation | zoom}`
@@ -95,24 +121,39 @@ This is to set the height of the canvas.
 <v-canvas height="300"></v-canvas> 
 ```
 
-#### `tap-step`
-This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically.
+#### `control-step`
+This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically. Default is "true"(meaning that the canvas element would not call rAF itself the user would have to "control the step function"; I know it's kind of confusing I am still working on the name though)
 ```html
-<v-canvas tap-step></v-canvas> 
+<v-canvas control-step="false"></v-canvas> 
 ```
-After setting this attribute, for the panning, zooming, and rotating to work. You need to call the `window.requestAnimationFrame` yourself, and also call the step function for the canvas along with your own step function. Below is an example.
+Setting this attribute to "false"(string as attribute value can only be string), the canvas would handle the calling of rAF and the user would just get the pan, zoom, and rotate functionality automatically. However, in this mode you would probably have to go into the source code of the canvas and add stuff to the step function to actually acheive anything.
+
+#### `debug-mode`
+This would switch on the debug mode for the canvas. Currently, the debug mode is drawing the reference circle in green, the axis in their respective color, the bounding box in blue. The cursor icon would be replaced with a red crosshair and at the top right to the crosshair would be the position of the cursor in world coordinate.
+```html
+<v-canvas debug-mode></v-canvas>
+```
+
+#### `max-half-trans-width`
+This is to set the horizontal boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Left and right both gets the same value. The entire horizontal boundary is then 2 * half width wide. 
+```html
+<!-- This would set the entire horizontal boundary of the camera to be 2000-->
+<v-canvas max-half-trans-width="1000"></v-canvas>
+```
+
+#### `max-half-trans-height`
+This is to set the vertical boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Top and bottom both gets the same value. The entire vertical boundary is then 2 * half width wide. 
+```html
+<!-- This would set the entire vertical boundary of the camera to be 2000-->
+<v-canvas max-half-trans-height="1000"></v-canvas>
+```
+---
+### Listen to the event of panning, zooming, rotating movement
+This is one of the revamped feature of the canvas. The rotation of the canvas needed to be controlled by an external element. That element would have to sync up with the rotation of the canvas. This was originally done through custom event; the canvas orientation would be dispatch through custom events at every frame even if the canvas is stationary. The mechanism in place now is to set up an event listener just like before but the canvas would only report the current orientation when the canvas is moved in any way. 
+
+#### Pan Event
+To listen to the pan event of the canvas.
 ```javascript
-let canvasStepFn = canvasElement.getStepFunction(); // this will return the step function of the canvas element
-
-// this is an example of your own step function
-function step(timestamp){
-    // call the step function of the canvas first because the canvas step function will clear the canvas
-    canvasStepFn(timestamp);
-    // do your work
-    // ...
-    // ...
-    window.requestAnimationFrame(step);
-}
-
-window.requestAnimationFrame(step);
+// the pan call back 
+function panCallback()
 ```
