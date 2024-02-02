@@ -11,6 +11,7 @@ const packageJson = require("./package.json");
 
 
 const fs = require('fs');
+
 const plugins = [
     resolve(),
     typescript({
@@ -34,7 +35,7 @@ const folderBuilds = getComponentsFolders('./src').map((folder) => {
     input: `src/${folder}/index.ts`,
     output: [
     {
-      file: `build/${folder}/esm/index.js`,
+      file: `build/${folder}/index.js`,
       sourcemap: true,
       format: 'esm',
     },
