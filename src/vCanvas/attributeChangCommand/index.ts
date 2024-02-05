@@ -1,4 +1,4 @@
-import vCanvas from "../vCanvas";;
+import vCanvas from "../vCanvas";
 
 export interface AttributeChangeCommand {
     execute(newValue: string): void;

@@ -91,7 +91,6 @@ export default class vCanvas extends HTMLElement{
         this._camera.setViewPortWidth(value);
         const minZoomLevel = value / (this.maxTransHalfWidth * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            console.log("set");
             this._camera.setMinZoomLevel(minZoomLevel);
         }
     }
@@ -106,7 +105,6 @@ export default class vCanvas extends HTMLElement{
         this._camera.setViewPortHeight(value);
         const minZoomLevel = value / (this.maxTransHalfHeight * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            console.log("set");
             this._camera.setMinZoomLevel(minZoomLevel);
         }
     }
