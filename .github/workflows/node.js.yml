@@ -10,16 +10,12 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   test:
-    
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [18.x, 20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
@@ -33,12 +29,26 @@ jobs:
         version: 8
     - run: pnpm install --frozen-lockfile
     - run: pnpm test
-    - if: github.ref == 'refs/heads/main'
-      run: pnpm build
-    - if: github.ref == 'refs/heads/main'
-      run: pnpm run increment-patch-version
-    - if: github.ref == 'refs/heads/main'
-      run: pnpm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  build:
+    runs-on: ubuntu-latest
+    name: Publish Package to npmjs
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm run increment-patch-version
+      - run: pnpm publish --access public ./build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
+
