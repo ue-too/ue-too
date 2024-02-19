@@ -10,8 +10,9 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
 
+  test:
+    
     runs-on: ubuntu-latest
 
     strategy:
@@ -31,4 +32,8 @@ jobs:
         version: 8
     - run: pnpm install --frozen-lockfile
     - run: pnpm test
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
     - run: pnpm run build --if-present
