@@ -27,6 +27,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
     - uses: pnpm/action-setup@v3
       with:
         version: 8
@@ -34,4 +35,10 @@ jobs:
     - run: pnpm test
     - if: github.ref == 'refs/heads/main'
       run: pnpm build
+    - if: github.ref == 'refs/heads/main'
+      run: pnpm run increment-patch-version
+    - if: github.ref == 'refs/heads/main'
+      run: pnpm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     
