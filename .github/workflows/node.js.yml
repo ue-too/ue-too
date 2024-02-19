@@ -32,6 +32,6 @@ jobs:
         version: 8
     - run: pnpm install --frozen-lockfile
     - run: pnpm test
-    - if: github.action_ref == 'refs/heads/main'
+    - if: github.ref == 'refs/heads/main'
       run: pnpm build
     
