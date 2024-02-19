@@ -32,8 +32,6 @@ jobs:
         version: 8
     - run: pnpm install --frozen-lockfile
     - run: pnpm test
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - run: pnpm run build --if-present
+    - if: github.action_ref == 'refs/heads/main'
+      run: pnpm build
+    

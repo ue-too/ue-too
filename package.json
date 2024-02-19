@@ -9,6 +9,9 @@
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "npm run rollup && npm run move-package",
     "move-package": "node ./scripts/move-package.mjs",
+    "increment-major-version": "node ./scripts/increment-major-version.mjs",
+    "increment-minor-version": "node ./scripts/increment-minor-version.mjs",
+    "increment-patch-version": "node ./scripts/increment-patch-version.mjs",
     "test": "jest"
   },
   "repository": {
