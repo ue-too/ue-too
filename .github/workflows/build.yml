@@ -49,6 +49,7 @@ jobs:
       - name: Get Published Version
         id: get-version
         run: echo "{version}={$(pnpm view @niuee/vcanvas version)}" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Check the current version
         run: |
           if [[ \"$(pnpm view @niuee/vcanvas version)\" == $(pnpm pkg get version)  ]]
