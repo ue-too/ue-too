@@ -302,6 +302,7 @@ export default class vCanvas extends HTMLElement{
             this.drawReferenceCircle(this._context, {x: 30, y: 20});
             this.drawBoundingBox(this._context);
             this.drawAxis(this._context, this._camera.getZoomLevel());
+            this.drawCameraCenterWithCrossHair(this._context, 50);
         }
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
@@ -434,6 +435,12 @@ export default class vCanvas extends HTMLElement{
         context.lineTo(pos.x, -pos.y + halfSize);
         context.stroke();
         context.lineWidth = 3;
+    }
+
+    drawCameraCenterWithCrossHair(context: CanvasRenderingContext2D, size: number): void{
+        let pos = this._camera.getPosition();
+        this.drawCrossHair(context, pos, size);
+        this.drawPositionText(context, pos, 20);
     }
 
     drawPositionText(context: CanvasRenderingContext2D, pos: Point, offset: number): void{
