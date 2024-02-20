@@ -34,7 +34,7 @@ jobs:
         with:
           version: 8
       - run: pnpm install --frozen-lockfile
-      - run: pnpm buld
+      - run: pnpm build
       - run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
             pnpm run increment-patch-version
@@ -43,7 +43,7 @@ jobs:
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
             pnpm run increment-major-version
           fi
-      - run: pnpm publish --access public ./build
+      #- run: pnpm publish --access public ./build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version
