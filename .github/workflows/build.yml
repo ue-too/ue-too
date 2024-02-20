@@ -61,8 +61,11 @@ jobs:
            else
             echo "synced=False" >> $GITHUB_OUTPUT
           fi
-          echo ${{ steps.check-version.outputs.synced }}
+          
         shell: bash
+      - name: See if version is synced
+        run: |
+          echo ${{ steps.check-version.outputs.synced }}
       - name: Sync package version
         if: ${{ steps.check-version.outputs.synced }} == False
         run: |
