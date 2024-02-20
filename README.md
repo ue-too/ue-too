@@ -16,7 +16,11 @@ The panning, zooming, rotating supports keyboard-mouse, trackpad, and also touch
 The [design document](https://hackmd.io/@niuee/ByKskjAUp) contains a more detailed explanation of the underlying mechanisms of the canvas including the camera system that is essentially the backbone of this custom canvas.
 
 ### Installation
-~~You can install the package from npm using~~
+You can install the package from npm using
+```
+npm install @niuee/vcanvas
+```
+Or you can just use the files in the release and import it directly
 
 _I am revamping some of the features of vCanvas, currently the changes are not reflected on the published npm package. There are no simple way to just install and use the package since I use other packages that I didn't publish to npm; if you really want to clone the project and build it yourself, see the package.json file for other packages that vCanvas depends on and clone those packages from my GitHub repositories as well. (It's listed below)_ 
 
