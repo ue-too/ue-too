@@ -1,6 +1,6 @@
 {
   "name": "@niuee/vcanvas",
-  "version": "0.1.4",
+  "version": "0.1.2",
   "description": "",
   "main": "./build/index.cjs",
   "module": "./build/index.js",
