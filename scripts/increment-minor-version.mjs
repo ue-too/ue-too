@@ -7,7 +7,7 @@ const majorVersion = data.version.split(".")[0];
 const minorVersion = data.version.split(".")[1];
 const patchVersion = data.version.split(".")[2];
 console.log(`Current version: ${data.version}`);
-data.version = `${majorVersion}.${parseInt(minorVersion) + 1}.${patchVersion}`;
+data.version = `${majorVersion}.${parseInt(minorVersion) + 1}.0`;
 
 import { writeFileSync } from "fs";
 writeFileSync("./build/package.json", JSON.stringify(data, null, 2));
