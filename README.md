@@ -189,7 +189,7 @@ function rotateCallback(event, cameraState) {
     console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
 }
 
-// listen to the rotate event and when a pan event occur the callback would execute
+// listen to the rotate event and when a rotate event occur the callback would execute
 canvasElement.on("rotate", rotateCallback);
 
 // rotate event payload looks like
@@ -206,8 +206,8 @@ function zoomCallback(event, cameraState) {
     console.log(cameraState) // {position: Point, rotation: number, zoomLevel: number}
 }
 
-// listen to the zoom event and when a pan event occur the callback would execute
-canvasElement.on("rotate", rotateCallback);
+// listen to the zoom event and when a zoom event occur the callback would execute
+canvasElement.on("zoom", rotateCallback);
 
 // zoom event payload looks like
 // {
