@@ -120,5 +120,25 @@ export default [
         mangle: false,
       }),
     ],
+  },
+  {
+    // distribution for direct browser usage
+    input: 'src/index.ts',
+    output: {
+      file: 'dist/vcanvas.js',
+      format: 'esm',
+      name: 'vcanvas',
+      sourcemap: true,
+    },
+    plugins: [
+      resolve(),
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: false,
+      }),
+      terser({
+        mangle: false,
+      }),
+    ],
   }
 ];
