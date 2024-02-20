@@ -77,7 +77,7 @@ jobs:
           git push
       - name: Create release
         env:
-          # GITHUB_TOKEN: ${{ secrets.PAT }}
+          GH_TOKEN: ${{ secrets.PAT }}
           tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
         run: |
           gh release create "$tag" \
