@@ -34,6 +34,15 @@ jobs:
       - run: pnpm publish --access public ./build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: pnpm run sync-package-version
+      - name: Sync package version
+        run: pnpm run sync-package-version
+      - name: Commit Back the version number to main
+        run: |
+          git config --global user.email "vntchang@gmail.com"
+          git config --global user.name "niuee"
+          git add package.json
+          git commit -m "chore: bump version"
+          git push
+      
     
 
