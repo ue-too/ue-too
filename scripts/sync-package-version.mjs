@@ -1,13 +1,8 @@
-import path from "path";
-import data from "../build/package.json" assert { type: "json" };
 import mainData from "../package.json" assert { type: "json" };
 
-const buildMajorVersion = data.version.split(".")[0];
-const buildMinorVersion = data.version.split(".")[1];
-const buildPatchVersion = data.version.split(".")[2];
 console.log(`Current version: ${mainData.version}`);
+console.log(`Passed In Version: ${process.argv[2]}`);
+const [buildMajorVersion, buildMinorVersion, buildPatchVersion] = process.argv[2].split(".");
 mainData.version = `${buildMajorVersion}.${buildMinorVersion}.${buildPatchVersion}`;
-console.log(`Synced version: ${mainData.version}`);
-
 import { writeFileSync } from "fs";
 writeFileSync("./package.json", JSON.stringify(mainData, null, 2));

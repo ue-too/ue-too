@@ -1,12 +1,15 @@
 name:  Publish to NPM
 
 on:
-  workflow_run:
-    workflows: ["Run Tests"]
-    branches: [main]
-    types: 
-      - completed
   workflow_dispatch:
+    inputs:
+        version-type:
+          type: choice
+          description: Bump Version
+          options: 
+          - major
+          - minor
+          - patch
 
 jobs:
   build:
@@ -31,18 +34,28 @@ jobs:
         with:
           version: 8
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - run: pnpm run increment-patch-version
+      - run: pnpm buld
+      - run: |
+          if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
+            pnpm run increment-patch-version
+          elif [[ ${{ github.event.inputs.version-type }} == 'minor' ]]; then
+            pnpm run increment-minor-version
+          elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
+            pnpm run increment-major-version
+          fi
       - run: pnpm publish --access public ./build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Get Published Version
+        id: get-version
+        run: echo ::set-output name=version::$(pnpm view @niuee/vcanvas version)
       - name: Sync package version
-        run: pnpm run sync-package-version
+        run: pnpm run sync-package-version -- ${{ steps.get-version.outputs.version }}
       - name: Commit Back the version number to main
         run: |
           git config --global user.email "vntchang@gmail.com"
           git config --global user.name "niuee"
           git add package.json
-          git commit -m "chore: bump version"
+          git commit -m "chore: bump ${{github.event.inputs.version-type}} version"
           git push
       
