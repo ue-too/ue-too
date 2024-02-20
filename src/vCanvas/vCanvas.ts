@@ -422,12 +422,12 @@ export default class vCanvas extends HTMLElement{
         context.lineWidth = 3;
     }
 
-    drawCrossHair(context: CanvasRenderingContext2D, pos: Point, size: number): void{
+    drawCrossHair(context: CanvasRenderingContext2D, pos: Point, size: number, color: string = "red"): void{
         // size is the pixel shown in the viewport 
         let halfSize = size / 2;
         halfSize = halfSize / this._camera.getZoomLevel();
         context.beginPath();
-        context.strokeStyle = "red";
+        context.strokeStyle = color;
         context.lineWidth = 2 / this._camera.getZoomLevel();
         context.moveTo(pos.x - halfSize, -pos.y);
         context.lineTo(pos.x + halfSize, -pos.y);
@@ -439,14 +439,14 @@ export default class vCanvas extends HTMLElement{
 
     drawCameraCenterWithCrossHair(context: CanvasRenderingContext2D, size: number): void{
         let pos = this._camera.getPosition();
-        this.drawCrossHair(context, pos, size);
-        this.drawPositionText(context, pos, 20);
+        this.drawCrossHair(context, pos, size, "teal");
+        this.drawPositionText(context, pos, 20, "teal");
     }
 
-    drawPositionText(context: CanvasRenderingContext2D, pos: Point, offset: number): void{
+    drawPositionText(context: CanvasRenderingContext2D, pos: Point, offset: number, color: string="red"): void{
         offset = offset / this._camera.getZoomLevel();
         context.font = `${20 / this._camera.getZoomLevel()}px Arial`;
-        context.fillStyle = "red";
+        context.fillStyle = color;
         context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
     }
 
