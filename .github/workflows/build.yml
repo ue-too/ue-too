@@ -75,4 +75,13 @@ jobs:
           git add package.json
           git commit -m "chore: bump ${{github.event.inputs.version-type}} version to ${{ steps.get-version.outputs.version }}"
           git push
+      - name: Create release
+        env:
+          # GITHUB_TOKEN: ${{ secrets.PAT }}
+          tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes
       
