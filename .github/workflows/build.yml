@@ -67,7 +67,7 @@ jobs:
         run: |
           echo ${{ steps.check-version.outputs.synced }}
       - name: Sync package version
-        if: ${{ steps.check-version.outputs.synced }} == False
+        if: ${{ steps.check-version.outputs.synced }} == "False"
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
