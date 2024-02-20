@@ -64,6 +64,6 @@ jobs:
           git config --global user.email "vntchang@gmail.com"
           git config --global user.name "niuee"
           git add package.json
-          git commit -m "chore: bump ${{github.event.inputs.version-type}} version"
+          git commit -m "chore: bump ${{github.event.inputs.version-type}} version to ${{ steps.get-version.outputs.version }}"
           git push
       
