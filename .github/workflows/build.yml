@@ -80,7 +80,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
           tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
         run: |
-          gh release create "$tag" \
+          gh release create "$tag" ./dist/ \
               --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
               --generate-notes
