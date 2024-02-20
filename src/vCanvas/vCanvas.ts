@@ -47,7 +47,8 @@ export default class vCanvas extends HTMLElement{
         super();
 
         this._canvas = document.createElement('canvas');
-
+        this._canvas.width = 300;
+        this._canvas.height = 300;
         this._camera = new vCamera();
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
