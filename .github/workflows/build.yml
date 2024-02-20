@@ -51,6 +51,7 @@ jobs:
         run: echo "{version}={$(pnpm view @niuee/vcanvas version)}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Check the current version
+        id: check-version
         run: |
           if [[ \"$(pnpm view @niuee/vcanvas version)\" == $(pnpm pkg get version)  ]]
             then
@@ -58,8 +59,9 @@ jobs:
            else
             echo "{synced}={False}" >> $GITHUB_OUTPUT
           fi
+        shell: bash
       - name: Sync package version
-        if: ${{ steps.get-version.outputs.synced }} == "False"
+        if: ${{ steps.check-version.outputs.synced }} == "False"
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
