@@ -61,9 +61,10 @@ jobs:
            else
             echo "synced=False" >> $GITHUB_OUTPUT
           fi
+          echo ${{ steps.check-version.outputs.synced }}
         shell: bash
       - name: Sync package version
-        if: ${{ steps.check-version.outputs.synced }} == "False"
+        if: ${{ steps.check-version.outputs.synced }} == False
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
