@@ -9,9 +9,9 @@
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "pnpm run rollup && pnpm run move-package",
     "move-package": "node ./scripts/move-package.mjs",
-    "increment-major-version": "node ./scripts/increment-major-version.mjs",
-    "increment-minor-version": "node ./scripts/increment-minor-version.mjs",
-    "increment-patch-version": "node ./scripts/increment-patch-version.mjs",
+    "increment-major-version": "cd ./build && pnpm version major",
+    "increment-minor-version": "cd ./build && pnpm version minor",
+    "increment-patch-version": "cd ./build && pnpm version patch",
     "sync-package-version": "node ./scripts/sync-package-version.mjs",
     "test": "jest"
   },
