@@ -48,11 +48,19 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version
         id: get-version
-        run: echo ::set-output name=version::$(pnpm view @niuee/vcanvas version)
-      - name: Sync package version
-        run: pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
-      - name: Commit Back the version number to main
+        run: echo "{version}={$(pnpm view @niuee/vcanvas version)}" >> $GITHUB_OUTPUT
+      - name: Check the current version
         run: |
+          if [[ \"$(pnpm view @niuee/vcanvas version)\" == $(pnpm pkg get version)  ]]
+            then
+            echo "{synced}={True}" >> $GITHUB_OUTPUT
+           else
+            echo "{synced}={False}" >> $GITHUB_OUTPUT
+          fi
+      - name: Sync package version
+        if: ${{ steps.get-version.outputs.synced }} == "False"
+        run: |
+          pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
           git config --global user.name "niuee"
           git add package.json
