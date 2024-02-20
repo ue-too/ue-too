@@ -49,7 +49,7 @@ jobs:
       - name: Get Published Version
         id: get-version
         run: |
-          echo "{version}={$(pnpm view @niuee/vcanvas version)}" >> $GITHUB_OUTPUT
+          echo "version=$(pnpm view @niuee/vcanvas version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Check the current version
         id: check-version
@@ -57,9 +57,9 @@ jobs:
           echo ${{ steps.get-version.outputs.version }}
           if [[ \"$(pnpm view @niuee/vcanvas version)\" == $(pnpm pkg get version)  ]]
             then
-            echo "{synced}={True}" >> $GITHUB_OUTPUT
+            echo "synced=True" >> $GITHUB_OUTPUT
            else
-            echo "{synced}={False}" >> $GITHUB_OUTPUT
+            echo "synced=False" >> $GITHUB_OUTPUT
           fi
         shell: bash
       - name: Sync package version
