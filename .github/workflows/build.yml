@@ -18,7 +18,7 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/release/')
     steps:
       - name: Fail if branch is not main
-        if: (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/release/'))
+        if: (github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/heads/release/'))
         run: |
           echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
           exit 1
@@ -43,7 +43,7 @@ jobs:
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
             pnpm run increment-major-version
           fi
-      - run: pnpm publish --access public ./build
+      - run: pnpm publish --no-git-checks --access public ./build
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version

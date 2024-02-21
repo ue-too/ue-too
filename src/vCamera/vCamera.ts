@@ -652,6 +652,9 @@ export default class vCamera {
             return false;
         }
         this.zoomLevelLimits.min = minZoomLevel;
+        if(this.zoomLevel < minZoomLevel){
+            this.zoomLevel = minZoomLevel;
+        }
         return true;
     }
 
