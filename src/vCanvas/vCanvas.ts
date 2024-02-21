@@ -8,6 +8,8 @@ import * as AttributeChangeCommands from "./attributeChangCommand";
 import { CameraObserver, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
 import { CameraListener } from "./cameraChangeCommand/cameraObserver";
 
+import { calculateOrderOfMagnitude } from "../util";
+
 export interface RotationComponent {
     setRotation(rotation: number): void;
 }
@@ -297,12 +299,15 @@ export default class vCanvas extends HTMLElement{
 
         if(this._debugMode){
             let mouseInWorld = this.convertWindowPoint2WorldCoord(this.mousePos);
+            this.drawBoundingBox(this._context);
             this.drawCrossHair(this._context, mouseInWorld, 50);
             this.drawPositionText(this._context, mouseInWorld, 20);
             this.drawReferenceCircle(this._context, {x: 30, y: 20});
-            this.drawBoundingBox(this._context);
             this.drawAxis(this._context, this._camera.getZoomLevel());
             this.drawCameraCenterWithCrossHair(this._context, 50);
+            if(this._camera.getRotationDeg() == 0) {
+                this.drawRuler(this._context);
+            }
         }
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
@@ -376,12 +381,8 @@ export default class vCanvas extends HTMLElement{
 
     windowResizeHandler(){
         if(this.fullScreenFlag){
-            this._canvasWidth = window.innerWidth;
-            this._canvasHeight = window.innerHeight;
-            this._canvas.width = this._canvasWidth;
-            this._canvas.height = this._canvasHeight;
-            this._camera.setViewPortWidth(window.innerWidth);
-            this._camera.setViewPortHeight(window.innerHeight);
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
         } else {
             this._canvas.width = this._canvasWidth;
             this._canvas.height = this._canvasHeight;
@@ -441,6 +442,155 @@ export default class vCanvas extends HTMLElement{
         let pos = this._camera.getPosition();
         this.drawCrossHair(context, pos, size, "teal");
         this.drawPositionText(context, pos, 20, "teal");
+    }
+
+    drawRuler(context: CanvasRenderingContext2D): void{
+        let topLeftCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left};
+        topLeftCorner = this.convertWindowPoint2WorldCoord(topLeftCorner);
+        let topRightCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().right};
+        topRightCorner = this.convertWindowPoint2WorldCoord(topRightCorner);
+        let bottomLeftCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left};
+        bottomLeftCorner = this.convertWindowPoint2WorldCoord(bottomLeftCorner);
+        let bottomRightCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().right};
+        bottomRightCorner = this.convertWindowPoint2WorldCoord(bottomRightCorner);
+        let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
+        let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
+        let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
+        let orderOfMagnitude = calculateOrderOfMagnitude(width);
+        let divisor = Math.pow(10, orderOfMagnitude);
+        let halfDivisor = divisor / 2;
+        let subDivisor = divisor / 10;
+        let minHorizontalLargeTick = Math.ceil(topLeftCorner.x / divisor) * divisor;
+        let maxHorizontalLargeTick = Math.floor(topRightCorner.x / divisor) * divisor;
+        let minVerticalLargeTick = Math.ceil(bottomLeftCorner.y / divisor) * divisor;
+        let maxVerticalLargeTick = Math.floor(topLeftCorner.y / divisor) * divisor;
+        let minHorizontalMediumTick = Math.ceil(topLeftCorner.x / halfDivisor) * halfDivisor;
+        let maxHorizontalMediumTick = Math.floor(topRightCorner.x / halfDivisor) * halfDivisor;
+        let minVerticalMediumTick = Math.ceil(bottomLeftCorner.y / halfDivisor) * halfDivisor;
+        let maxVerticalMediumTick = Math.floor(topLeftCorner.y / halfDivisor) * halfDivisor;
+        let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
+        let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
+        let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
+        let horizontalLargeTickCrampedness = (maxHorizontalLargeTick - minHorizontalLargeTick) / divisor;
+        let verticalLargeTickCrampedness = (maxVerticalLargeTick - minVerticalLargeTick) / divisor;
+        let horizontalMediumTickCrampedness = (maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor;
+        let verticalMediumTickCrampedness = (maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor;
+        let horizontalSmallTickCrampedness = (maxHorizontalSmallTick - minHorizontalSmallTick) / subDivisor;
+        let verticalSmallTickCrampedness = (maxVerticalSmallTick - minVerticalSmallTick) / subDivisor;
+
+        for(let i = minHorizontalLargeTick; i <= maxHorizontalLargeTick; i += divisor){
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 5 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 50 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -50 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
+            context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+            context.stroke();
+        }
+        for(let i = minVerticalLargeTick; i <= maxVerticalLargeTick; i += divisor){
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 5 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -50 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 50 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
+            
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+            context.stroke();
+        }
+        for(let i = minHorizontalMediumTick; i <= maxHorizontalMediumTick; i += halfDivisor){
+            if(i % divisor == 0) continue;
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 3 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 25 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -25 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            if(horizontalLargeTickCrampedness < 5) {
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
+                const textDimensions = context.measureText(`${i.toFixed(0)}`);
+                const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+            }
+            context.stroke();
+        }
+        for(let i = minVerticalMediumTick; i <= maxVerticalMediumTick; i += halfDivisor){
+            if(i % divisor == 0) continue;
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 3 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -25 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 25 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            if(verticalLargeTickCrampedness < 5) {
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
+                const textDimensions = context.measureText(`${i.toFixed(0)}`);
+                context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+            }
+            context.stroke();
+        }
+        for(let i = minHorizontalSmallTick; i <= maxHorizontalSmallTick; i += subDivisor){
+            if(i % divisor == 0 || i % halfDivisor == 0) continue;
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 1 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 12.5 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -12.5 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            if(horizontalMediumTickCrampedness < 10) {
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
+                const textDimensions = context.measureText(`${i.toFixed(0)}`);
+                const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+            }
+            context.stroke();
+        }
+        for(let i = minVerticalSmallTick; i <= maxVerticalSmallTick; i += subDivisor){
+            if(i % divisor == 0 || i % halfDivisor == 0) continue;
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 1 / this._camera.getZoomLevel();
+            let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -12.5 / this._camera.getZoomLevel()));
+            context.moveTo(resPoint.x, -resPoint.y);
+            resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 12.5 / this._camera.getZoomLevel()));
+            context.lineTo(resPoint.x, -resPoint.y);
+            if(verticalMediumTickCrampedness < 10) {
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
+                const textDimensions = context.measureText(`${i.toFixed(0)}`);
+                context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+            }
+            context.stroke();
+        }
     }
 
     drawPositionText(context: CanvasRenderingContext2D, pos: Point, offset: number, color: string="red"): void{
