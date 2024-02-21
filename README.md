@@ -151,6 +151,16 @@ This is to set the vertical boundaries for the viewport. Currently, the boundari
 ```
 
 #### `grid`
+This is to toggle the grid displayed on the canvas. The spacing currently is not adjustable; it is the same as the ruler (it flexible depending on the zoom).
+```html
+<v-canvas grid></v-canvas>
+```
+
+#### `ruler`
+This is to toggle the ruler displayed on the canvas. The spacing depends on the zoom level.
+```html
+<v-canvas ruler></v-canvas>
+```
 ---
 ### Listen to the event of panning, zooming, rotating movement
 This is one of the revamped feature of the canvas. The rotation of the canvas needed to be controlled by an external element. That element would have to sync up with the rotation of the canvas. This was originally done through custom event; the canvas orientation would be dispatch through custom events at every frame even if the canvas is stationary. The mechanism in place now is to set up an event listener just like before but the canvas would only report the current orientation when the canvas is moved in any way. 
