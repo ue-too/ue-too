@@ -24,6 +24,9 @@ export class ToggleFullScreenCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.fullScreenFlag === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.fullScreenFlag = true;
             this.canvas.width = window.innerWidth;
@@ -38,6 +41,9 @@ export class ToggleStepFunctionCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.stepControl === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.stepControl = true;
         } else {
@@ -50,6 +56,9 @@ export class RestrictXTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictXTranslation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictXTranslation = true;
         } else {
@@ -62,6 +71,9 @@ export class RestrictYTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictYTranslation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictYTranslation = true;
         } else {
@@ -74,6 +86,9 @@ export class RestrictTranslationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictXTranslation === false && this.canvas.restrictYTranslation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictXTranslation = true;
             this.canvas.restrictYTranslation = true;
@@ -88,6 +103,9 @@ export class RestrictRotationCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictRotation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictRotation = true;
         } else {
@@ -100,6 +118,9 @@ export class RestrictZoomCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictZoom === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictZoom = true;
         } else {
@@ -112,6 +133,9 @@ export class RestrictRelativeXTranslationCommand implements AttributeChangeComma
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictRelativeXTranslation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictRelativeXTranslation = true;
         } else {
@@ -124,6 +148,9 @@ export class RestrictRelativeYTranslationCommand implements AttributeChangeComma
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if(newValue === "" && this.canvas.restrictRelativeYTranslation === false){
+            newValue = "true";
+        }
         if(newValue === 'true'){
             this.canvas.restrictRelativeYTranslation = true;
         } else {
@@ -153,6 +180,9 @@ export class SetDebugModeCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
+        if (newValue === "" && this.canvas.debugMode === false){
+            newValue = "true";
+        }
         this.canvas.debugMode = newValue === 'true';
         if (newValue == "true") {
             this.canvas.getInternalCanvas().style.cursor = "none";
@@ -166,7 +196,10 @@ export class ToggleGridCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        if(newValue === 'true' || newValue === ""){
+        if(newValue === "" && this.canvas.displayGrid === false){
+            newValue = "true";
+        }
+        if(newValue === 'true'){
             this.canvas.displayGrid = true;
         } else {
             this.canvas.displayGrid = false;
@@ -178,7 +211,10 @@ export class ToggleRulerCommand implements AttributeChangeCommand {
     constructor(private canvas: vCanvas) { }
 
     execute(newValue: string): void {
-        if(newValue === 'true' || newValue === ""){
+        if(newValue === "" && this.canvas.displayRuler === false){
+            newValue = "true";
+        }
+        if(newValue === 'true'){
             this.canvas.displayRuler = true;
         } else {
             this.canvas.displayRuler = false;

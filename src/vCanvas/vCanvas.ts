@@ -383,13 +383,10 @@ export default class vCanvas extends HTMLElement{
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if(newValue == null){
-            return;
+            newValue = "false";
         }
         const command = this.attributeCommands.get(name);
         if(command){
-            if(newValue == ""){
-                newValue = "true";
-            }
             command.execute(newValue);
         }
     }
