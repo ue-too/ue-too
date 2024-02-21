@@ -22,11 +22,7 @@ npm install @niuee/vcanvas
 ```
 Or you can just use the files in the release and import it directly
 
-_I am revamping some of the features of vCanvas, currently the changes are not reflected on the published npm package. There are no simple way to just install and use the package since I use other packages that I didn't publish to npm; if you really want to clone the project and build it yourself, see the package.json file for other packages that vCanvas depends on and clone those packages from my GitHub repositories as well. (It's listed below)_ 
-
-- [point2point](https://github.com/niuee/point2point) I've published this package on npm but I added some functions that I used in vCanvas and those are not updated to npm yet. 
-
-After cloning the repo you can change the path for point2point in vCanvas's package.json and npm install to install the local cloned version of point2point.
+They are in the release tab of this repo. (both the minified JavaScript file and the map)
 
 ---
 ### Usage
@@ -49,7 +45,7 @@ __Red__ is the x axis.
 The coordinate of the rendering context is still down for positive y and right for positive x. It's just when a user clicked on the canvas, the coordinate that is reported is in up for positive y and right for positive x coordinate system.
 
 ### panning
-Keyboard-Mouse: <kbd>⌘</kbd> + Hold Down Left Mouse Button or on windows <kbd>⊞</kbd> + Hold Down Left Mouse Button <br/> or Hold the wheel button.
+Keyboard-Mouse: <kbd>⌘</kbd> + Hold Down Left Mouse Button or on windows <kbd>⊞</kbd> + Hold Down Left Mouse Button or Hold the wheel button. <br/>
 Trackpad: Two fingers swipe to pan<br/>
 Touch: Two fingers swipe to pan (plan to change it to one finger drag to pan)<br/>
 
@@ -68,7 +64,7 @@ HTML Canvas is essentially a static image. To make it look like an actual canvas
 Currently, the default is that the canvas will not call the requestAnimationFrame itself. It relies on the user to call requestAnimationFrame for it. I will demonstrate it below.
 
 ### Get the step function of the canvas.
-You can think of the step function similar to the `render` function of a `renderer` from threejs where you have to call it in the `animate` function in this [example](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene). The step function takes in an argument `timestamp: number`; you can get this directly as the arugment of the call back function passed into `requestAnimationFrame`. You can also just use the step function as the callback passed into `requestAnimationFrame`; but this way you would not be able to do much stuff with the canvas. To get the `step` function simply call the `getStepFunction()` from the canvas element like this.
+You can think of the step function similar to the `render` function of a `renderer` from threejs which you have to call in the `animate` function in this [example](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene). The step function takes in an argument `timestamp: number`; you can get this directly as the arugment of the call back function passed into `requestAnimationFrame`. You can also just use the step function as the callback passed into `requestAnimationFrame`; but this way you would not be able to do much stuff with the canvas. To get the `step` function simply call the `getStepFunction()` from the canvas element like this.
 ```javascript
 const stepFunction = canvasElement.getStepFunction(); // canvas element is of type vCanvas you can get it using the queryselector
 
@@ -152,6 +148,18 @@ This is to set the vertical boundaries for the viewport. Currently, the boundari
 ```html
 <!-- This would set the entire vertical boundary of the camera to be 2000-->
 <v-canvas max-half-trans-height="1000"></v-canvas>
+```
+
+#### `grid`
+This is to toggle the grid displayed on the canvas. The spacing currently is not adjustable; it is the same as the ruler (it flexible depending on the zoom).
+```html
+<v-canvas grid></v-canvas>
+```
+
+#### `ruler`
+This is to toggle the ruler displayed on the canvas. The spacing depends on the zoom level.
+```html
+<v-canvas ruler></v-canvas>
 ```
 ---
 ### Listen to the event of panning, zooming, rotating movement
