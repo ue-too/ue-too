@@ -161,3 +161,43 @@ export class SetDebugModeCommand implements AttributeChangeCommand {
         }
     }
 }
+
+export class ToggleGridCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        if(newValue === 'true' || newValue === ""){
+            this.canvas.displayGrid = true;
+        } else {
+            this.canvas.displayGrid = false;
+        }
+    }
+}
+
+export class ToggleRulerCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        if(newValue === 'true' || newValue === ""){
+            this.canvas.displayRuler = true;
+        } else {
+            this.canvas.displayRuler = false;
+        }
+    }
+}
+
+export class SetVerticalGridSizeCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        this.canvas.verticalGridSize = +newValue;
+    }
+}
+
+export class SetHorizontalGridSizeCommand implements AttributeChangeCommand {
+    constructor(private canvas: vCanvas) { }
+
+    execute(newValue: string): void {
+        this.canvas.horizontalGridSize = +newValue;
+    }
+}
