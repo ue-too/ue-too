@@ -18,7 +18,7 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/release/')
     steps:
       - name: Fail if branch is not main
-        if: (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/heads/release/'))
+        if: (github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/heads/release/'))
         run: |
           echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
           exit 1
