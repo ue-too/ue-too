@@ -22,7 +22,7 @@ export default class vCanvas extends HTMLElement{
     static observedAttributes = ["width", "height", "full-screen", "control-step", 
                                 "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
                                 "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
-                                "max-half-trans-width", "max-half-trans-height", "debug-mode"];
+                                "max-half-trans-width", "max-half-trans-height", "debug-mode", "ruler", "grid", "vertical-grid-size", "horizontal-grid-size"];
 
     private _canvas: HTMLCanvasElement; 
     private _context: CanvasRenderingContext2D;
@@ -44,6 +44,12 @@ export default class vCanvas extends HTMLElement{
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
+
+    private _verticalGridSize: number = 0;
+    private _horizontalGridSize: number = 0;
+
+    private _displayGrid: boolean = false;
+    private _displayRuler: boolean = false;
 
     constructor(){
         super();
@@ -252,6 +258,44 @@ export default class vCanvas extends HTMLElement{
         return this._keyboardMouseStrategy;
     }
 
+    set verticalGridSize(value: number){
+        if(value < 0) {
+            return;
+        }
+        this._verticalGridSize = value;
+    }
+
+    get verticalGridSize(): number{
+        return this._verticalGridSize;
+    }
+
+    set horizontalGridSize(value: number){
+        if(value < 0) {
+            return;
+        }
+        this._horizontalGridSize = value;
+    }
+
+    get horizontalGridSize(): number{
+        return this._horizontalGridSize;
+    }
+
+    get displayGrid(): boolean{
+        return this._displayGrid;
+    }
+
+    set displayGrid(value: boolean){
+        this._displayGrid = value;
+    }
+
+    get displayRuler(): boolean{
+        return this._displayRuler;
+    }
+
+    set displayRuler(value: boolean){
+        this._displayRuler = value;
+    }
+
     bindFunctions(){
         this.step = this.step.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
@@ -305,9 +349,14 @@ export default class vCanvas extends HTMLElement{
             this.drawReferenceCircle(this._context, {x: 30, y: 20});
             this.drawAxis(this._context, this._camera.getZoomLevel());
             this.drawCameraCenterWithCrossHair(this._context, 50);
-            if(this._camera.getRotationDeg() == 0) {
-                this.drawRuler(this._context);
-            }
+        }
+
+        if(this._displayGrid && this._camera.getRotationDeg() == 0){
+            this.drawGrid(this._context);
+        }
+
+        if(this._displayRuler && this._camera.getRotationDeg() == 0){
+            this.drawRuler(this._context);
         }
 
         // everthing should be above this reqestAnimationFrame should be the last call in step
@@ -334,13 +383,10 @@ export default class vCanvas extends HTMLElement{
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if(newValue == null){
-            return;
+            newValue = "false";
         }
         const command = this.attributeCommands.get(name);
         if(command){
-            if(newValue == ""){
-                newValue = "true";
-            }
             command.execute(newValue);
         }
     }
@@ -444,6 +490,46 @@ export default class vCanvas extends HTMLElement{
         this.drawPositionText(context, pos, 20, "teal");
     }
 
+    drawGrid(context: CanvasRenderingContext2D): void{
+        let topLeftCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left};
+        topLeftCorner = this.convertWindowPoint2WorldCoord(topLeftCorner);
+        let topRightCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().right};
+        topRightCorner = this.convertWindowPoint2WorldCoord(topRightCorner);
+        let bottomLeftCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left};
+        bottomLeftCorner = this.convertWindowPoint2WorldCoord(bottomLeftCorner);
+        let bottomRightCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().right};
+        bottomRightCorner = this.convertWindowPoint2WorldCoord(bottomRightCorner);
+        let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
+        let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
+        let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
+        let orderOfMagnitude = calculateOrderOfMagnitude(width);
+        let divisor = Math.pow(10, orderOfMagnitude);
+        let subDivisor = divisor / 10;
+        let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
+        let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
+        let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
+
+        for(let i = minHorizontalSmallTick; i <= maxHorizontalSmallTick; i += subDivisor){
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 0.5 / this._camera.getZoomLevel();
+            context.moveTo(i, -topLeftCorner.y);
+            context.lineTo(i, -topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            context.stroke();
+        }
+        for(let i = minVerticalSmallTick; i <= maxVerticalSmallTick; i += subDivisor){
+            context.beginPath();
+            context.strokeStyle = "black";
+            context.fillStyle = "black";
+            context.lineWidth = 0.5 / this._camera.getZoomLevel();
+            context.moveTo(topLeftCorner.x, -i);
+            context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), -i);
+            context.stroke();
+        }
+    }
+
     drawRuler(context: CanvasRenderingContext2D): void{
         let topLeftCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left};
         topLeftCorner = this.convertWindowPoint2WorldCoord(topLeftCorner);
@@ -476,8 +562,6 @@ export default class vCanvas extends HTMLElement{
         let verticalLargeTickCrampedness = (maxVerticalLargeTick - minVerticalLargeTick) / divisor;
         let horizontalMediumTickCrampedness = (maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor;
         let verticalMediumTickCrampedness = (maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor;
-        let horizontalSmallTickCrampedness = (maxHorizontalSmallTick - minHorizontalSmallTick) / subDivisor;
-        let verticalSmallTickCrampedness = (maxVerticalSmallTick - minVerticalSmallTick) / subDivisor;
 
         for(let i = minHorizontalLargeTick; i <= maxHorizontalLargeTick; i += divisor){
             context.beginPath();
@@ -640,6 +724,10 @@ export default class vCanvas extends HTMLElement{
         this.attributeCommands.set("debug-mode", new AttributeChangeCommands.SetDebugModeCommand(this));
         this.attributeCommands.set("max-half-trans-width", new AttributeChangeCommands.SetMaxHalfTransWidthCommand(this));
         this.attributeCommands.set("max-half-trans-height", new AttributeChangeCommands.SetMaxHalfTransHeightCommand(this));
+        this.attributeCommands.set("vertical-grid-size", new AttributeChangeCommands.SetVerticalGridSizeCommand(this));
+        this.attributeCommands.set("horizontal-grid-size", new AttributeChangeCommands.SetHorizontalGridSizeCommand(this));
+        this.attributeCommands.set("ruler", new AttributeChangeCommands.ToggleRulerCommand(this));
+        this.attributeCommands.set("grid", new AttributeChangeCommands.ToggleGridCommand(this));
     }
 
     subscribeToCameraUpdate(listener: CameraListener){

@@ -149,6 +149,8 @@ This is to set the vertical boundaries for the viewport. Currently, the boundari
 <!-- This would set the entire vertical boundary of the camera to be 2000-->
 <v-canvas max-half-trans-height="1000"></v-canvas>
 ```
+
+#### `grid`
 ---
 ### Listen to the event of panning, zooming, rotating movement
 This is one of the revamped feature of the canvas. The rotation of the canvas needed to be controlled by an external element. That element would have to sync up with the rotation of the canvas. This was originally done through custom event; the canvas orientation would be dispatch through custom events at every frame even if the canvas is stationary. The mechanism in place now is to set up an event listener just like before but the canvas would only report the current orientation when the canvas is moved in any way. 
