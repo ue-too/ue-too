@@ -1,6 +1,6 @@
 {
-  "name": "@niuee/vcanvas",
-  "version": "0.3.0",
+  "name": "ccanvas",
+  "version": "0.0.1",
   "description": "",
   "main": "./build/index.cjs",
   "module": "./build/index.js",
@@ -17,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niuee/vCanvas.git"
+    "url": "git+https://github.com/niuee/ccanvas.git"
   },
   "author": "niuee",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/niuee/vCanvas/issues"
+    "url": "https://github.com/niuee/ccanvas/issues"
   },
-  "homepage": "https://github.com/niuee/vCanvas#readme",
+  "homepage": "https://github.com/niuee/ccanvas#readme",
   "devDependencies": {
     "@rollup/plugin-html": "^1.0.3",
     "@rollup/plugin-node-resolve": "^15.1.0",
