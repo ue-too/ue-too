@@ -1,7 +1,7 @@
-export * from "./vCanvas";
+export * from "./board";
 export * from "./CanvasTouchStrategy";
 export * from "./CanvasTrackpadStrategy"
 export * from "./attributeChangCommand";
 export * from "./cameraChangeCommand";
-import vCanvas from "./vCanvas";
-export default vCanvas;
+import Board from "./board";
+export default Board;

@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import { Point } from "../../src";
+import { Point } from "..";
 import * as easeFunctions from "../easeFunctions";
 
 export type Boundaries = {
@@ -35,7 +35,7 @@ type ZoomAnimation = {
     anchorPoint?: Point;
 }
 
-export default class vCamera {
+export default class BoardCamera {
 
     private position: Point;
     private zoomLevel: number;

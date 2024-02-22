@@ -125,7 +125,7 @@ export default [
     // distribution for direct browser usage
     input: 'src/index.ts',
     output: {
-      file: 'dist/vcanvas.js',
+      file: 'dist/board.js',
       format: 'esm',
       name: 'vcanvas',
       sourcemap: true,

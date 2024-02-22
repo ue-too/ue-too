@@ -1,11 +1,11 @@
-import vCanvas from "../vCanvas";
+import Board from "../board";
 
 export interface AttributeChangeCommand {
     execute(newValue: string): void;
 }
 
 export class SetWidthCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.width = +newValue;
@@ -13,7 +13,7 @@ export class SetWidthCommand implements AttributeChangeCommand {
 }
 
 export class SetHeightCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.height = +newValue;
@@ -21,7 +21,7 @@ export class SetHeightCommand implements AttributeChangeCommand {
 }
 
 export class ToggleFullScreenCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.fullScreenFlag === false){
@@ -38,7 +38,7 @@ export class ToggleFullScreenCommand implements AttributeChangeCommand {
 }
 
 export class ToggleStepFunctionCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.stepControl === false){
@@ -53,7 +53,7 @@ export class ToggleStepFunctionCommand implements AttributeChangeCommand {
 }
 
 export class RestrictXTranslationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictXTranslation === false){
@@ -68,7 +68,7 @@ export class RestrictXTranslationCommand implements AttributeChangeCommand {
 }
 
 export class RestrictYTranslationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictYTranslation === false){
@@ -83,7 +83,7 @@ export class RestrictYTranslationCommand implements AttributeChangeCommand {
 }
 
 export class RestrictTranslationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictXTranslation === false && this.canvas.restrictYTranslation === false){
@@ -100,7 +100,7 @@ export class RestrictTranslationCommand implements AttributeChangeCommand {
 }
 
 export class RestrictRotationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictRotation === false){
@@ -115,7 +115,7 @@ export class RestrictRotationCommand implements AttributeChangeCommand {
 }
 
 export class RestrictZoomCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictZoom === false){
@@ -130,7 +130,7 @@ export class RestrictZoomCommand implements AttributeChangeCommand {
 }
 
 export class RestrictRelativeXTranslationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictRelativeXTranslation === false){
@@ -145,7 +145,7 @@ export class RestrictRelativeXTranslationCommand implements AttributeChangeComma
 }
 
 export class RestrictRelativeYTranslationCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.restrictRelativeYTranslation === false){
@@ -160,7 +160,7 @@ export class RestrictRelativeYTranslationCommand implements AttributeChangeComma
 }
 
 export class SetMaxHalfTransHeightCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.maxTransHalfHeight = +newValue;
@@ -168,7 +168,7 @@ export class SetMaxHalfTransHeightCommand implements AttributeChangeCommand {
 }
 
 export class SetMaxHalfTransWidthCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.maxTransHalfWidth = +newValue;
@@ -177,7 +177,7 @@ export class SetMaxHalfTransWidthCommand implements AttributeChangeCommand {
 
 
 export class SetDebugModeCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if (newValue === "" && this.canvas.debugMode === false){
@@ -193,7 +193,7 @@ export class SetDebugModeCommand implements AttributeChangeCommand {
 }
 
 export class ToggleGridCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.displayGrid === false){
@@ -208,7 +208,7 @@ export class ToggleGridCommand implements AttributeChangeCommand {
 }
 
 export class ToggleRulerCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         if(newValue === "" && this.canvas.displayRuler === false){
@@ -223,7 +223,7 @@ export class ToggleRulerCommand implements AttributeChangeCommand {
 }
 
 export class SetVerticalGridSizeCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.verticalGridSize = +newValue;
@@ -231,7 +231,7 @@ export class SetVerticalGridSizeCommand implements AttributeChangeCommand {
 }
 
 export class SetHorizontalGridSizeCommand implements AttributeChangeCommand {
-    constructor(private canvas: vCanvas) { }
+    constructor(private canvas: Board) { }
 
     execute(newValue: string): void {
         this.canvas.horizontalGridSize = +newValue;

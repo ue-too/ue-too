@@ -1,7 +1,7 @@
-import vCamera  from "../vCamera";
+import vCamera  from "../board-camera";
 import { PointCal } from "point2point";
 import { Point } from "..";
-import { vCanvas } from "..";
+import Board from ".";
 import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
 import { CameraMoveCommand } from "./cameraChangeCommand";
 
@@ -21,11 +21,11 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
     private dragStartPoint: Point;
-    private canvas: vCanvas;
+    private canvas: Board;
     private cameraObserver: CameraObserver;
     private _disabled: boolean;
 
-    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
+    constructor(canvas: Board, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
         this.isDragging = false;
         this.canvas = canvas;
