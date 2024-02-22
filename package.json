@@ -17,14 +17,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niuee/ccanvas.git"
+    "url": "git+https://github.com/niuee/board.git"
   },
   "author": "niuee",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/niuee/ccanvas/issues"
+    "url": "https://github.com/niuee/board/issues"
   },
-  "homepage": "https://github.com/niuee/ccanvas#readme",
+  "homepage": "https://github.com/niuee/board#readme",
   "devDependencies": {
     "@rollup/plugin-html": "^1.0.3",
     "@rollup/plugin-node-resolve": "^15.1.0",
