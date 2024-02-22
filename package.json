@@ -1,5 +1,5 @@
 {
-  "name": "ccanvas",
+  "name": "@niuee/board",
   "version": "0.0.1",
   "description": "",
   "main": "./build/index.cjs",

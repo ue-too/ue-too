@@ -1,8 +1,8 @@
-export * from "./vCanvas";
-export * from "./vCamera";
+export * from "./board";
+export * from "./board-camera";
 export * from "./vDial";
-export {default as vCamera} from "./vCamera";
-export {default as vCanvas} from "./vCanvas";
+export {default as BoardCamera} from "./board-camera";
+export {default as Board} from "./board";
 
 export type Point = {
     x: number,

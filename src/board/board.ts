@@ -1,4 +1,4 @@
-import vCamera from "../vCamera";
+import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
 import {CanvasTouchStrategy, TwoFingerPanZoom} from "./CanvasTouchStrategy";
@@ -13,7 +13,7 @@ import { calculateOrderOfMagnitude } from "../util";
 export interface RotationComponent {
     setRotation(rotation: number): void;
 }
-export default class vCanvas extends HTMLElement{
+export default class Board extends HTMLElement{
     
     private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
     private _canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
@@ -27,7 +27,7 @@ export default class vCanvas extends HTMLElement{
     private _canvas: HTMLCanvasElement; 
     private _context: CanvasRenderingContext2D;
 
-    private _camera: vCamera;
+    private _camera: BoardCamera;
     private _cameraObserver: CameraObserver;
 
     private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
@@ -57,7 +57,7 @@ export default class vCanvas extends HTMLElement{
         this._canvas = document.createElement('canvas');
         this._canvas.width = 300;
         this._canvas.height = 300;
-        this._camera = new vCamera();
+        this._camera = new BoardCamera();
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvasWidth);
@@ -230,7 +230,7 @@ export default class vCanvas extends HTMLElement{
         this._debugMode = value;
     }
 
-    get camera(): vCamera{
+    get camera(): BoardCamera{
         return this._camera;
     }
 
@@ -411,7 +411,7 @@ export default class vCanvas extends HTMLElement{
         return this._canvas;
     }
 
-    getCamera(): vCamera {
+    getCamera(): BoardCamera {
         return this._camera;
     }
 

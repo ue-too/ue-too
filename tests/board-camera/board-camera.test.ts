@@ -1,12 +1,12 @@
 import { getRandom, getRandomPoint } from "..";
-import vCamera, { InvalidZoomLevelError } from "../../src/vCamera";
+import BoardCamera, { InvalidZoomLevelError } from "../../src/board-camera";
 import { Point } from "../../src";
 
-describe("Initialize a vCamera object", ()=>{
-    let camera: vCamera;
+describe("Initialize a BoardCamera object", ()=>{
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Initialze with default parameters", ()=>{
@@ -17,7 +17,7 @@ describe("Initialize a vCamera object", ()=>{
 
     test("Initialize with invalid zoom level", ()=>{
         let testFunc = ()=>{
-            camera = new vCamera({x: 0, y: 0}, 100, 100, 0);
+            camera = new BoardCamera({x: 0, y: 0}, 100, 100, 0);
         }
         expect(testFunc).toThrow(InvalidZoomLevelError);
     });
@@ -25,11 +25,11 @@ describe("Initialize a vCamera object", ()=>{
 });
 
 
-describe("Basic Operations on vCamera object attributes", ()=>{
-    let camera: vCamera;
+describe("Basic Operations on BoardCamera object attributes", ()=>{
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set Camera Position", ()=>{
@@ -56,10 +56,10 @@ describe("Basic Operations on vCamera object attributes", ()=>{
 
 
 describe("Camera boundaries manipulations", ()=>{
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set Empty Boundaries", ()=>{
@@ -112,10 +112,10 @@ describe("Camera boundaries manipulations", ()=>{
 });
 
 describe("Camera translation Movements", ()=>{
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set camera position outside of boundaries", ()=>{
@@ -151,10 +151,10 @@ describe("Camera translation Movements", ()=>{
 });
 
 describe("Camera zooming operations", ()=>{
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set camera zoom", ()=>{
@@ -217,10 +217,10 @@ describe("Camera zooming operations", ()=>{
 });
 
 describe("Camera rotation operations", ()=>{
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set camera rotation in degree", ()=>{
@@ -259,10 +259,10 @@ describe("Camera rotation operations", ()=>{
 
 
 describe("Interactions with the world", ()=>{
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Convert point within camera view to world space", ()=>{
@@ -299,10 +299,10 @@ describe("Interactions with the world", ()=>{
 
 describe("Camera Locking onto a specific object", ()=>{
 
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Update to the locked on object", ()=>{
@@ -328,10 +328,10 @@ describe("Camera Locking onto a specific object", ()=>{
 
 describe("Camera Animations",()=>{
 
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Set Camera position with animation", ()=>{
@@ -343,10 +343,10 @@ describe("Camera Animations",()=>{
 
 describe("Camera Rendering Optimization", ()=>{
     
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Given a point in world space, check if it is within the camera view", ()=>{
@@ -359,10 +359,10 @@ describe("Camera Rendering Optimization", ()=>{
 
 describe("Restrictions on camera", ()=>{
 
-    let camera: vCamera;
+    let camera: BoardCamera;
 
     beforeEach(()=>{
-        camera = new vCamera();
+        camera = new BoardCamera();
     });
 
     test("Restrict camera translation", ()=>{

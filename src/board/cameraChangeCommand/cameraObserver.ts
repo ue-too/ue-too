@@ -1,5 +1,5 @@
 import { Point } from "point2point";
-import vCamera from "../../vCamera";
+import BoardCamera from "../../board-camera";
 
 export type CameraPanEventPayload = {
     diff: Point;
@@ -67,12 +67,12 @@ export type CallbackList<K extends keyof CameraEventMapping> = ((event: CameraEv
 export class CameraObserver {
 
     private subscribers: CameraListener[] = [];
-    private camera: vCamera;
+    private camera: BoardCamera;
     private panCallbackList: CallbackList<"pan"> = [];
     private zoomCallbackList: CallbackList<"zoom"> = [];
     private rotateCallbackList: CallbackList<"rotate"> = [];
 
-    constructor(camera: vCamera) {
+    constructor(camera: BoardCamera) {
         this.camera = camera;
     }
     
@@ -135,7 +135,7 @@ export interface CameraChangeCommand {
 
 export class CameraMoveCommand implements CameraChangeCommand {
 
-    constructor(private camera: vCamera, private diff: Point) { }
+    constructor(private camera: BoardCamera, private diff: Point) { }
 
     execute(): boolean {
         return this.camera.moveWithClampFromGesture(this.diff);
@@ -151,7 +151,7 @@ export class CameraMoveCommand implements CameraChangeCommand {
 
 export class CameraMoveLimitEntireViewPortCommand implements CameraChangeCommand {
     
-    constructor(private camera: vCamera, private diff: Point) { }
+    constructor(private camera: BoardCamera, private diff: Point) { }
 
     execute(): boolean {
         return this.camera.moveWithClampEntireViewPortFromGesture(this.diff);
@@ -166,7 +166,7 @@ export class CameraMoveLimitEntireViewPortCommand implements CameraChangeCommand
 }
 
 export class CameraZoomCommand implements CameraChangeCommand {
-    constructor(private camera: vCamera, private zoomAmount: number, private anchorPoint: Point) { }
+    constructor(private camera: BoardCamera, private zoomAmount: number, private anchorPoint: Point) { }
 
     execute(): boolean {
         return this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint);
@@ -182,7 +182,7 @@ export class CameraZoomCommand implements CameraChangeCommand {
 }
 
 export class CameraZoomLimitEntireViewPortCommand implements CameraChangeCommand {
-    constructor(private camera: vCamera, private zoomAmount: number, private anchorPoint: Point) { }
+    constructor(private camera: BoardCamera, private zoomAmount: number, private anchorPoint: Point) { }
 
     execute(): boolean {
         return this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint);
@@ -198,7 +198,7 @@ export class CameraZoomLimitEntireViewPortCommand implements CameraChangeCommand
 }
 
 export class CameraRotateCommand implements CameraChangeCommand {
-    constructor(private camera: vCamera, private deltaRotation: number) { }
+    constructor(private camera: BoardCamera, private deltaRotation: number) { }
 
     execute(): boolean {
         return this.camera.spinFromGesture(this.deltaRotation);

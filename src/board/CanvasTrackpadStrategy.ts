@@ -1,5 +1,5 @@
-import  vCamera  from "../vCamera";
-import { vCanvas } from "..";
+import  CCamera  from "../board-camera";
+import { Board } from "..";
 import { PointCal } from "point2point";
 import {  Point } from "..";
 import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
@@ -14,9 +14,9 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
 
     private cameraObserver: CameraObserver;
     private SCROLL_SENSATIVITY: number = 0.005;
-    private canvas: vCanvas;
+    private canvas: Board;
 
-    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
+    constructor(canvas: Board, cameraObserver: CameraObserver){
         this.canvas = canvas;
         this.cameraObserver = cameraObserver;
         this.scrollHandler = this.scrollHandler.bind(this);
@@ -56,10 +56,10 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
 export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrategy {
 
     private SCROLL_SENSATIVITY: number;
-    private canvas: vCanvas;
+    private canvas: Board;
     private cameraObserver: CameraObserver;
 
-    constructor(canvas: vCanvas, cameraObserver: CameraObserver){
+    constructor(canvas: Board, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
         this.canvas = canvas;
         this.cameraObserver = cameraObserver;
