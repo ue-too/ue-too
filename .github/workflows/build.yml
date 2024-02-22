@@ -55,7 +55,7 @@ jobs:
         id: check-version
         run: |
           echo ${{ steps.get-version.outputs.version }}
-          if [[ \"$(pnpm view @niuee/vcanvas version)\" == $(pnpm pkg get version)  ]]
+          if [[ \"$(pnpm view @niuee/board version)\" == $(pnpm pkg get version)  ]]
             then
             echo "synced=True" >> $GITHUB_OUTPUT
            else
