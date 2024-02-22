@@ -18,7 +18,7 @@ The [design document](https://hackmd.io/@niuee/ByKskjAUp) contains a more detail
 ### Installation
 You can install the package from npm using
 ```
-npm install @niuee/vcanvas
+npm install @niuee/board
 ```
 Or you can just use the files in the release and import it directly
 
