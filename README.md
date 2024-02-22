@@ -1,4 +1,4 @@
-# vCanvas
+# board
 
 __This project is experimental (only to show a way to have a canvas that can be panned, zoomed, and rotated) please do not use it in production until you modify it to your needs, test it out, and make sure that it suits all your needs__ <br/>
 
@@ -29,8 +29,8 @@ They are in the release tab of this repo. (both the minified JavaScript file and
 Just like any other web component, you have to define the custom element first.
 ```javascript
 // you can put the name that you want in here; but you have to make sure that it's more than one word (two words and up) and with dash(es) in between otherwise it won't work. This is the constraint imposed by web component
-import { vCanvas } from "@niuee/vcanvas";
-customElements.define('tag-name-you-desire', vCanvas);
+import { Board } from "@niuee/board";
+customElements.define('tag-name-you-desire', Board);
 ```
 Then in a html file you can use it like this.
 ```html
@@ -96,70 +96,70 @@ For Example, to limit the absolute x direction translation set the attribute res
 
 This will restrict the ability to pan the canvas in x-direction.
 ```html
-<v-canvas restrict-x-translation></v-canvas> 
+<canvas-board restrict-x-translation></canvas-board> 
 ```
 #### `restrict-relative-{x-translation | y-translation}`
 This is to restrict any kind of input from the gestures (mouse-keyboard input, trackpad gesture, touch points) to move relative to the camera viewport.
 X is the left and right direction of the view port and Y is the up and down direction.
 ```html
-<v-canvas restrict-relative-x-translation></v-canvas> 
+<canvas-board restrict-relative-x-translation></canvas-board> 
 ```
 #### `full-screen`
 This is to set the dimensions of the canvas to be the same as `window.innerHeight` and `window.innerWidth`.<br/>
 This will override the `width` and `height` attribute.
 ```html
-<v-canvas full-screen></v-canvas> 
+<canvas-board full-screen></canvas-board> 
 ```
 
 #### `width`
 This is to set the width of the canvas.
 ```html
-<v-canvas width="300"></v-canvas> 
+<canvas-board width="300"></canvas-board> 
 ```
 
 #### `height`
 This is to set the height of the canvas.
 ```html
-<v-canvas height="300"></v-canvas> 
+<canvas-board height="300"></canvas-board> 
 ```
 
 #### `control-step`
 This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically. Default is "true"(meaning that the canvas element would not call rAF itself the user would have to "control the step function"; I know it's kind of confusing I am still working on the name though)
 ```html
-<v-canvas control-step="false"></v-canvas> 
+<canvas-board control-step="false"></canvas-board> 
 ```
 Setting this attribute to "false"(string as attribute value can only be string), the canvas would handle the calling of rAF and the user would just get the pan, zoom, and rotate functionality automatically. However, in this mode you would probably have to go into the source code of the canvas and add stuff to the step function to actually acheive anything.
 
 #### `debug-mode`
 This would switch on the debug mode for the canvas. Currently, the debug mode is drawing the reference circle in green, the axis in their respective color, the bounding box in blue. The cursor icon would be replaced with a red crosshair and at the top right to the crosshair would be the position of the cursor in world coordinate.
 ```html
-<v-canvas debug-mode></v-canvas>
+<canvas-board debug-mode></canvas-board>
 ```
 
 #### `max-half-trans-width`
 This is to set the horizontal boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Left and right both gets the same value. The entire horizontal boundary is then 2 * half width wide. 
 ```html
 <!-- This would set the entire horizontal boundary of the camera to be 2000-->
-<v-canvas max-half-trans-width="1000"></v-canvas>
+<canvas-board max-half-trans-width="1000"></canvas-board>
 ```
 
 #### `max-half-trans-height`
 This is to set the vertical boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Top and bottom both gets the same value. The entire vertical boundary is then 2 * half width wide. 
 ```html
 <!-- This would set the entire vertical boundary of the camera to be 2000-->
-<v-canvas max-half-trans-height="1000"></v-canvas>
+<canvas-board max-half-trans-height="1000"></canvas-board>
 ```
 
 #### `grid`
 This is to toggle the grid displayed on the canvas. The spacing currently is not adjustable; it is the same as the ruler (it flexible depending on the zoom).
 ```html
-<v-canvas grid></v-canvas>
+<canvas-board grid></canvas-board>
 ```
 
 #### `ruler`
 This is to toggle the ruler displayed on the canvas. The spacing depends on the zoom level.
 ```html
-<v-canvas ruler></v-canvas>
+<canvas-board ruler></canvas-board>
 ```
 ---
 ### Listen to the event of panning, zooming, rotating movement
