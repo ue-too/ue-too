@@ -104,9 +104,9 @@ export class CameraObserver {
 
     zoomCameraLimitEntireViewPort(zoomAmount: number, anchorPoint: Point): void {
         const res = this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomAmount, anchorPoint);
-        if(res){
+        if(res.success){
             this.zoomCallbackList.forEach((callback) => {
-                callback({deltaZoomAmount: zoomAmount, anchorPoint: anchorPoint}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+                callback({deltaZoomAmount: res.deltaZoomAmount, anchorPoint: anchorPoint}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
             });
         }
     }
@@ -117,9 +117,9 @@ export class CameraObserver {
 
     panCameraLimitEntireViewPort(diff: Point): void {
         const res = this.camera.moveWithClampEntireViewPortFromGesture(diff);
-        if(res){
+        if(res.success){
             this.panCallbackList.forEach((callback) => {
-                callback({diff: diff}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+                callback({diff: res.deltaPosition}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
             });
         }
     }
@@ -190,7 +190,7 @@ export class CameraMoveLimitEntireViewPortCommand implements CameraChangeCommand
     constructor(private camera: BoardCamera, private diff: Point) { }
 
     execute(): boolean {
-        return this.camera.moveWithClampEntireViewPortFromGesture(this.diff);
+        return this.camera.moveWithClampEntireViewPortFromGesture(this.diff).success;
     }
 
     get commandPayload(): CameraPanCommandPayload {
@@ -221,7 +221,7 @@ export class CameraZoomLimitEntireViewPortCommand implements CameraChangeCommand
     constructor(private camera: BoardCamera, private zoomAmount: number, private anchorPoint: Point) { }
 
     execute(): boolean {
-        return this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint);
+        return this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint).success;
     }
 
     get commandPayload(): CameraZoomCommandPayload {
