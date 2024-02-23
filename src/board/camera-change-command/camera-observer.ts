@@ -97,6 +97,42 @@ export class CameraObserver {
             break;
         }
     }
+
+    zoomCamera(zoomAmount: number, anchorPoint: Point): void {
+        this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomAmount, anchorPoint);
+    }
+
+    zoomCameraLimitEntireViewPort(zoomAmount: number, anchorPoint: Point): void {
+        const res = this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomAmount, anchorPoint);
+        if(res){
+            this.zoomCallbackList.forEach((callback) => {
+                callback({deltaZoomAmount: zoomAmount, anchorPoint: anchorPoint}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+            });
+        }
+    }
+
+    panCamera(diff: Point): void {
+        this.camera.moveWithClampFromGesture(diff);
+    }
+
+    panCameraLimitEntireViewPort(diff: Point): void {
+        const res = this.camera.moveWithClampEntireViewPortFromGesture(diff);
+        if(res){
+            this.panCallbackList.forEach((callback) => {
+                callback({diff: diff}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+            });
+        }
+    }
+
+    rotateCamera(deltaRotation: number): void {
+        // deltaRotation is in degrees
+        const res = this.camera.spinDegFromGesture(deltaRotation);
+        if(res){
+            this.rotateCallbackList.forEach((callback) => {
+                callback({deltaRotation: deltaRotation}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+            });
+        }
+    }
     
     subscribe(subscriber: CameraListener): void {
         this.subscribers.push(subscriber);

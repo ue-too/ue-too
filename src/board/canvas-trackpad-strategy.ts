@@ -84,7 +84,8 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
             const diff = {x: e.deltaX, y: e.deltaY};
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
-            this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
+            // this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
+            this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");

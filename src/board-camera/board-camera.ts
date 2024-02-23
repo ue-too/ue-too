@@ -558,8 +558,7 @@ export default class BoardCamera {
         }
         this.releaseFromLockedObject();
         this.cancelAnimations();
-        this.moveWithClampEntireViewPort(delta);
-        return true;
+        return this.moveWithClampEntireViewPort(delta);
     }
 
     moveWithClamp(delta: Point){
@@ -568,10 +567,15 @@ export default class BoardCamera {
         this.position = clampedTarget;
     }
 
-    moveWithClampEntireViewPort(delta: Point){
+    moveWithClampEntireViewPort(delta: Point): boolean{
         const target = PointCal.addVector(this.position, delta);
         const clampedTarget = this.clampPointEntireViewPort(target);
+        const standard = 1 / this.zoomLevel;
+        if (PointCal.distanceBetweenPoints(clampedTarget, this.position) < standard){
+            return false;
+        }
         this.position = clampedTarget;
+        return true;
     }
 
     resetZoomLevel(){
@@ -614,7 +618,7 @@ export default class BoardCamera {
 
     spinDegFromGesture(deltaAngle: number){
         // in degrees
-        this.spinFromGesture(deltaAngle * Math.PI / 180);
+        return this.spinFromGesture(deltaAngle * Math.PI / 180);
     }
 
     spinFromGesture(deltaAngle: number){
