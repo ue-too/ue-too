@@ -2,8 +2,8 @@ import  CCamera  from "../board-camera";
 import { Board } from "..";
 import { PointCal } from "point2point";
 import {  Point } from "..";
-import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
-import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./cameraChangeCommand";
+import { CameraObserver } from "./camera-change-command/camera-observer";
+import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./camera-change-command";
 
 export interface CanvasTrackpadStrategy {
     setUp(): void;

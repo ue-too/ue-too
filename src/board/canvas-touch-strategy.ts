@@ -2,8 +2,8 @@ import vCamera from "../board-camera";
 import vCanvas from "./board";
 import { PointCal } from "point2point";
 import { Point } from "..";
-import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
-import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "./cameraChangeCommand";
+import { CameraObserver } from "./camera-change-command/camera-observer";
+import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "./camera-change-command";
 export interface CanvasTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;

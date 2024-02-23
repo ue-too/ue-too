@@ -2,8 +2,8 @@ import vCamera  from "../board-camera";
 import { PointCal } from "point2point";
 import { Point } from "..";
 import Board from ".";
-import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
-import { CameraMoveCommand } from "./cameraChangeCommand";
+import { CameraObserver } from "./camera-change-command/camera-observer";
+import { CameraMoveCommand } from "./camera-change-command";
 
 
 type CoordinateConversionFn = (interestPoint: Point) => Point;

@@ -1,6 +1,6 @@
 import { PointCal } from "point2point";
 import { Point } from "..";
-import * as easeFunctions from "../easeFunctions";
+import * as easeFunctions from "../ease-functions";
 
 export type Boundaries = {
     min?: {x?: number, y?: number};

@@ -1,12 +1,12 @@
 import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoom} from "./CanvasTouchStrategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
-import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
-import * as AttributeChangeCommands from "./attributeChangCommand";
-import { CameraObserver, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
-import { CameraListener } from "./cameraChangeCommand/cameraObserver";
+import {CanvasTouchStrategy, TwoFingerPanZoom} from "./canvas-touch-strategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "./canvas-trackpad-strategy";
+import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./canvas-km-strategy";
+import * as AttributeChangeCommands from "./attribute-change-command";
+import { CameraObserver, CameraState, CameraEventMapping} from "./camera-change-command/camera-observer";
+import { CameraListener } from "./camera-change-command/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
