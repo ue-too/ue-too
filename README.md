@@ -66,6 +66,7 @@ Currently, the default is that the canvas will not call the requestAnimationFram
 ### Get the step function of the canvas.
 You can think of the step function similar to the `render` function of a `renderer` from threejs which you have to call in the `animate` function in this [example](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene). The step function takes in an argument `timestamp: number`; you can get this directly as the arugment of the call back function passed into `requestAnimationFrame`. You can also just use the step function as the callback passed into `requestAnimationFrame`; but this way you would not be able to do much stuff with the canvas. To get the `step` function simply call the `getStepFunction()` from the canvas element like this.
 ```javascript
+const canvasElement = document.querySelector("canvas-board") as Board; // this is the tag name that you assign to the custom element; or you can assign id to the tag and select using id
 const stepFunction = canvasElement.getStepFunction(); // canvas element is of type vCanvas you can get it using the queryselector
 
 const context = canvasElement.getContext(); // this is the drawing context for the canvas element
