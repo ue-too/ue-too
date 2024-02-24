@@ -2,8 +2,8 @@ import  CCamera  from "../board-camera";
 import { Board } from "..";
 import { PointCal } from "point2point";
 import {  Point } from "..";
-import { CameraObserver } from "./cameraChangeCommand/cameraObserver";
-import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./cameraChangeCommand";
+import { CameraObserver } from "./camera-change-command/camera-observer";
+import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./camera-change-command";
 
 export interface CanvasTrackpadStrategy {
     setUp(): void;
@@ -40,14 +40,14 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
             const diff = {x: e.deltaX, y: e.deltaY};
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
-            this.cameraObserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
+            this.cameraObserver.panCamera(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
             const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
             const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
-            this.cameraObserver.executeCommand(new CameraZoomCommand(this.canvas.getCamera(), zoomLevel, anchorPoint));
+            this.cameraObserver.zoomCamera(zoomLevel, anchorPoint);
         }
 
     }
@@ -84,14 +84,15 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
             const diff = {x: e.deltaX, y: e.deltaY};
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
-            this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
+            // this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
+            this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
             const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
             const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
-            this.cameraObserver.executeCommand(new CameraZoomLimitEntireViewPortCommand(this.canvas.getCamera(), zoomLevel, anchorPoint));
+            this.cameraObserver.zoomCameraLimitEntireViewPort(zoomLevel, anchorPoint);
         }
     }
 }
