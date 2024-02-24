@@ -39,7 +39,6 @@ export default class Board {
     private attributeObserver: MutationObserver;
 
     constructor(canvas: HTMLCanvasElement){
-        console.log(canvas);
         this._canvas = canvas;
         this._context = canvas.getContext("2d");
         this._camera = new BoardCamera();
@@ -47,9 +46,19 @@ export default class Board {
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvas.width);
         this._camera.setViewPortHeight(this._canvas.height);
-        
         this.maxTransHalfHeight = 5000;
         this.maxTransHalfWidth = 5000;
+        let minZoomLevel = this._canvas.width / (this.maxTransHalfWidth * 2);
+        console.log(minZoomLevel);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            console.log("test width");
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
+        minZoomLevel = this._canvas.height / (this.maxTransHalfHeight * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            console.log("test height");
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
 
         this._cameraObserver = new CameraObserver(this._camera);
 
@@ -75,12 +84,14 @@ export default class Board {
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
+                    console.log("width changed");
                     this._camera.setViewPortWidth(this._canvas.width);
                     const minZoomLevel = this._canvas.width / (this.maxTransHalfWidth * 2);
                     if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
                         this._camera.setMinZoomLevel(minZoomLevel);
                     }
                 } else if(mutation.attributeName === "height"){
+                    console.log("height changed");
                     this._camera.setViewPortHeight(this._canvas.height);
                     const minZoomLevel = this._canvas.height / (this.maxTransHalfHeight * 2);
                     if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
@@ -313,8 +324,10 @@ export default class Board {
         this.lastUpdateTime = timestamp;
         deltaTime = deltaTime / 1000;
 
-        this._canvas.width = this._canvas.width;
-        this._canvas.height = this._canvas.height;
+        // this._canvas.width = this._canvas.width;
+        // this._canvas.height = this._canvas.height;
+        this._context.resetTransform();
+        this._context.clearRect(-this.maxTransHalfWidth, -this.maxTransHalfHeight, this.maxTransHalfWidth * 2, this.maxTransHalfHeight * 2);
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
@@ -351,6 +364,8 @@ export default class Board {
         this._trackpadStrategy.setUp();
         this._touchStrategy.setUp();
         this._keyboardMouseStrategy.setUp();
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler.bind(this));
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler.bind(this));
     }
 
     removeEventListeners(){
