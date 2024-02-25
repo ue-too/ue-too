@@ -1,6 +1,6 @@
 import { PointCal } from "point2point";
 import { Point } from "..";
-import * as easeFunctions from "../easeFunctions";
+import * as easeFunctions from "../ease-functions";
 
 export type Boundaries = {
     min?: {x?: number, y?: number};
@@ -34,6 +34,42 @@ type ZoomAnimation = {
     diff: number;
     anchorPoint?: Point;
 }
+
+export type CameraZoomSuccessRes = {
+    success: true;
+    deltaZoomAmount: number;
+    resultingZoomLevel: number;
+}
+
+export type CameraZoomFailureRes = {
+    success: false;
+}
+
+export type CameraZoomResult = CameraZoomSuccessRes | CameraZoomFailureRes;
+
+export type CameraPanSuccessRes = {
+    success: true;
+    deltaPosition: Point;
+    resultingPosition: Point;
+}
+
+export type CameraPanFailureRes = {
+    success: false;
+}
+
+export type CameraPanResult = CameraPanSuccessRes | CameraPanFailureRes;
+
+export type CameraRotateSuccessRes = {
+    success: true;
+    deltaRotation: number;
+    resultingRotation: number;
+}
+
+export type CameraRotateFailureRes = {
+    success: false;
+}
+
+export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
 
 export default class BoardCamera {
 
@@ -168,10 +204,10 @@ export default class BoardCamera {
         let bottomLeftCorner = this.convert2WorldSpaceWRT(point, {x: 0, y: 0});
         let topRightCorner = this.convert2WorldSpaceWRT(point, {x: this.viewPortWidth, y: this.viewPortHeight});
         let bottomRightCorner = this.convert2WorldSpaceWRT(point, {x: this.viewPortWidth, y: 0});
-        let topLeftCornerClamped = this.clampPoint(topLeftCorner);
-        let topRightCornerClamped = this.clampPoint(topRightCorner);
-        let bottomLeftCornerClamped = this.clampPoint(bottomLeftCorner);
-        let bottomRightCornerClamped = this.clampPoint(bottomRightCorner);
+        let {clipped: topLeftRes, point: topLeftCornerClamped} = this.clampPointWithRes(topLeftCorner);
+        let {clipped: topRightRes, point: topRightCornerClamped} = this.clampPointWithRes(topRightCorner);
+        let {clipped: bottomLeftRes, point: bottomLeftCornerClamped} = this.clampPointWithRes(bottomLeftCorner);
+        let {clipped: botomRightRes, point: bottomRightCornerClamped} = this.clampPointWithRes(bottomRightCorner);
         let topLeftCornerDiff = PointCal.subVector(topLeftCornerClamped, topLeftCorner);
         let topRightCornerDiff = PointCal.subVector(topRightCornerClamped, topRightCorner);
         let bottomLeftCornerDiff = PointCal.subVector(bottomLeftCornerClamped, bottomLeftCorner);
@@ -191,6 +227,32 @@ export default class BoardCamera {
             }
         });
         return PointCal.addVector(point, delta);
+    }
+    
+    clampPointWithRes(point: Point): {clipped: boolean, point: Point}{
+        if(this.withinBoundaries(point)){
+            return {clipped: false, point: point};
+        }
+        let manipulatePoint = {x: point.x, y: point.y};
+        let limit = this.boundaries.min;
+        if (limit != undefined){
+            if(limit.x != undefined){
+                manipulatePoint.x = Math.max(manipulatePoint.x, limit.x);
+            }
+            if(limit.y != undefined){
+                manipulatePoint.y = Math.max(manipulatePoint.y, limit.y);
+            }
+        }
+        limit = this.boundaries.max;
+        if(limit != undefined){
+            if(limit.x != undefined){
+                manipulatePoint.x = Math.min(manipulatePoint.x, limit.x);
+            }
+            if(limit.y != undefined){
+                manipulatePoint.y = Math.min(manipulatePoint.y, limit.y);
+            }
+        }
+        return {clipped: true, point: manipulatePoint};
     }
 
     clampPoint(point: Point): Point{
@@ -342,20 +404,28 @@ export default class BoardCamera {
         this.zoomLevel = zoomLevel;
     }
 
-    setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): boolean{
+    setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): CameraZoomResult{
         if(this._restrictZoomFromGesture){
-            return false;
+            return {success: false};
         }
         this.cancelZoomAnimation();
         let originalAnchorInWorld = this.convert2WorldSpace(anchorInViewPort);
+        const originalZoomLevel = this.zoomLevel;
+        if(this.zoomLevelLimits.max !== undefined && this.clampZoomLevel(zoomLevel) == this.zoomLevelLimits.max && this.zoomLevel == this.zoomLevelLimits.max){
+            return {success: false};
+        }
+        if(this.zoomLevelLimits.min !== undefined && this.clampZoomLevel(zoomLevel) == this.zoomLevelLimits.min && this.zoomLevel == this.zoomLevelLimits.min){
+            return {success: false};
+        }
         zoomLevel = this.clampZoomLevel(zoomLevel);
+        const deltaZoomAmount = zoomLevel - originalZoomLevel;
         this.zoomLevel = zoomLevel;
         if(!this.lockPositionOnObject){
             let anchorInWorldAfterZoom = this.convert2WorldSpace(anchorInViewPort);
             const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-            this.moveWithClampEntireViewPortFromGesture(diff);
+            const res = this.moveWithClampEntireViewPortFromGesture(diff);
         }
-        return true;
+        return {success: true, deltaZoomAmount: deltaZoomAmount, resultingZoomLevel: zoomLevel};
     }
 
     setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): boolean{
@@ -533,7 +603,39 @@ export default class BoardCamera {
         return true;
     }
 
-    moveWithClampEntireViewPortFromGesture(delta: Point): boolean{
+    moveWithClampEntireViewPortFromGesture(delta: Point): CameraPanResult{
+        if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
+            return {success: false};
+        }
+        if(this._restrictRelativeXTranslationFromGesture && this._restrictRelativeYTranslationFromGesture){
+            return {success: false};
+        }
+        if(this._restrictXTranslationFromGesture){
+            delta.x = 0;
+        }
+        if(this._restrictYTranslationFromGesture){
+            delta.y = 0;
+        }
+        if(this._restrictRelativeXTranslationFromGesture){
+            const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this.rotation);
+            const value = PointCal.dotProduct(upDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(upDirection, value);
+        }
+        if(this._restrictRelativeYTranslationFromGesture){
+            const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this.rotation);
+            const value = PointCal.dotProduct(rightDirection, delta);
+            delta = PointCal.multiplyVectorByScalar(rightDirection, value);
+        }
+        this.releaseFromLockedObject();
+        this.cancelAnimations();
+        const res = this.moveWithClampEntireViewPort(delta);
+        if(res.moved){
+            return {success: res.moved, deltaPosition: res.actualDelta, resultingPosition: this.position};
+        }
+        return {success: false}
+    }
+
+    moveWithClampEntireViewPortFromGestureBypass(delta: Point){
         if(this._restrictXTranslationFromGesture && this._restrictYTranslationFromGesture){
             return false;
         }
@@ -558,8 +660,7 @@ export default class BoardCamera {
         }
         this.releaseFromLockedObject();
         this.cancelAnimations();
-        this.moveWithClampEntireViewPort(delta);
-        return true;
+        return this.moveWithClampEntireViewPort(delta);
     }
 
     moveWithClamp(delta: Point){
@@ -568,7 +669,19 @@ export default class BoardCamera {
         this.position = clampedTarget;
     }
 
-    moveWithClampEntireViewPort(delta: Point){
+    moveWithClampEntireViewPort(delta: Point): {moved: boolean, actualDelta: Point}{
+        const target = PointCal.addVector(this.position, delta);
+        const clampedTarget = this.clampPointEntireViewPort(target);
+        const diff = PointCal.subVector(clampedTarget, this.position);
+        if(PointCal.magnitude(diff) < 10E-10 && PointCal.magnitude(diff) < 1 / this.zoomLevel){
+            return {moved: false, actualDelta: {x: 0, y: 0}};
+        }
+        const actualDelta = PointCal.subVector(clampedTarget, this.position);
+        this.position = clampedTarget;
+        return {moved: true, actualDelta: actualDelta};
+    }
+
+    moveWithClampEntireViewPortBypass(delta: Point){
         const target = PointCal.addVector(this.position, delta);
         const clampedTarget = this.clampPointEntireViewPort(target);
         this.position = clampedTarget;
@@ -614,7 +727,7 @@ export default class BoardCamera {
 
     spinDegFromGesture(deltaAngle: number){
         // in degrees
-        this.spinFromGesture(deltaAngle * Math.PI / 180);
+        return this.spinFromGesture(deltaAngle * Math.PI / 180);
     }
 
     spinFromGesture(deltaAngle: number){
@@ -663,6 +776,7 @@ export default class BoardCamera {
     }
 
     convert2WorldSpaceWRT(centerPoint: Point, interestPoint: Point): Point{
+        // the coordinate for the interest point is relative to the center point
         let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this.viewPortHeight / 2};
         let delta2Point = PointCal.subVector(interestPoint, cameraFrameCenter);
         delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / this.zoomLevel);

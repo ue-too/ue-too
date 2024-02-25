@@ -1,7 +1,8 @@
 export * from "./board";
-export * from "./CanvasTouchStrategy";
-export * from "./CanvasTrackpadStrategy"
-export * from "./attributeChangCommand";
-export * from "./cameraChangeCommand";
-import Board from "./board";
-export default Board;
+export * from "./canvas-touch-strategy";
+export * from "./canvas-trackpad-strategy"
+export * from "./attribute-change-command";
+export * from "./camera-change-command";
+export { default as Board } from "./board";
+import BoardElement from "./board-element";
+export default BoardElement;
