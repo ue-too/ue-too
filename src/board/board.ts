@@ -536,10 +536,16 @@ export default class Board {
         let horizontalMediumTickCrampedness = (maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor;
         let verticalMediumTickCrampedness = (maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor;
        
-        let divisorInActualPixel = divisor / this._camera.getZoomLevel();
-        let halfDivisorInActualPixel = halfDivisor / this._camera.getZoomLevel();
-        let subDivisorInActualPixel = subDivisor / this._camera.getZoomLevel();
+        let divisorInActualPixel = divisor * this._camera.getZoomLevel();
+        let halfDivisorInActualPixel = halfDivisor * this._camera.getZoomLevel();
+        let subDivisorInActualPixel = subDivisor * this._camera.getZoomLevel();
 
+        
+        context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
+        const midBaseLineTextDimensions = context.measureText(`${-(halfDivisor + minHorizontalMediumTick)}`);
+        const midBaseLineHeight =  midBaseLineTextDimensions.fontBoundingBoxAscent + midBaseLineTextDimensions.fontBoundingBoxDescent;
+        const subBaseLineTextDimensions = context.measureText(`${-(subDivisor + minHorizontalSmallTick)}`);
+        const subBaseLineHeight = subBaseLineTextDimensions.fontBoundingBoxAscent + subBaseLineTextDimensions.fontBoundingBoxDescent;
 
         for(let i = minHorizontalLargeTick; i <= maxHorizontalLargeTick; i += divisor){
             context.beginPath();
@@ -587,7 +593,7 @@ export default class Board {
             context.lineTo(resPoint.x, -resPoint.y);
             context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
-            if(halfDivisorInActualPixel > textDimensions.width) {
+            if(halfDivisorInActualPixel > midBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
@@ -608,7 +614,7 @@ export default class Board {
             context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
-            if(halfDivisorInActualPixel > height) {
+            if(halfDivisorInActualPixel > midBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
@@ -627,7 +633,7 @@ export default class Board {
             context.lineTo(resPoint.x, -resPoint.y);
             context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
-            if(subDivisorInActualPixel > textDimensions.width) {
+            if(subDivisorInActualPixel > subBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
@@ -648,7 +654,7 @@ export default class Board {
             context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
-            if(subDivisorInActualPixel > height) {
+            if(subDivisorInActualPixel > subBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
