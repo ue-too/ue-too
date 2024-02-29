@@ -1,10 +1,10 @@
 import BoardCamera from "../board-camera";
-import Board from "./board";
-import BoardElement from "./board-element";
+import Board from "../boardify/board";
+import BoardElement from "../board-element/board-element";
 import { PointCal } from "point2point";
 import { Point } from "..";
-import { CameraObserver } from "./camera-change-command/camera-observer";
-import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "./camera-change-command";
+import { CameraObserver } from "../camera-change-command/camera-observer";
+import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "../camera-change-command";
 export interface CanvasTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;
