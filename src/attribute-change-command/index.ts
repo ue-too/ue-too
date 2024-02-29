@@ -1,4 +1,4 @@
-import Board from "../board-element";
+import Board from "../board-element/board-element";
 
 export interface AttributeChangeCommand {
     execute(newValue: string): void;

@@ -1,5 +1,5 @@
 import { Point } from "point2point";
-import BoardCamera from "../../board-camera";
+import BoardCamera from "../board-camera";
 
 export type CameraPanEventPayload = {
     diff: Point;
