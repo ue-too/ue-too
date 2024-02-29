@@ -1,9 +1,9 @@
-import BoardElement from "./board-element";
-import Board from "./board";
+import BoardElement from "../board-element/board-element";
+import Board from "../boardify/board";
 import { PointCal } from "point2point";
 import {  Point } from "..";
-import { CameraObserver } from "./camera-change-command/camera-observer";
-import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "./camera-change-command";
+import { CameraObserver } from "../camera-change-command/camera-observer";
+import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "../camera-change-command";
 
 export interface CanvasTrackpadStrategy {
     setUp(): void;
