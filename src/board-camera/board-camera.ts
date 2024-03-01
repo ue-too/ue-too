@@ -478,6 +478,10 @@ export default class BoardCamera {
         }
         this.boundaries.min.x = min;
         this.boundaries.max.x = max;
+        //NOTE leave for future optimization when setting the boundaries if the camera lies outside the boundaries clamp the position of the camera
+        // if(!this.withinBoundaries(this.position)){
+        //     this.position = this.clampPoint(this.position);
+        // }
     }
 
     setVerticalBoundaries(min: number, max: number){

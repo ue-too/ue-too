@@ -37,6 +37,7 @@ export default class Board {
     private _displayRuler: boolean = false;
 
     private attributeObserver: MutationObserver;
+    private windowResizeObserver: ResizeObserver;
 
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
@@ -46,17 +47,14 @@ export default class Board {
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvas.width);
         this._camera.setViewPortHeight(this._canvas.height);
-        this.maxTransHalfHeight = 5000;
-        this.maxTransHalfWidth = 5000;
-        let minZoomLevel = this._canvas.width / (this.maxTransHalfWidth * 2);
-        console.log(minZoomLevel);
+        this.maxHalfTransHeight = 5000;
+        this.maxHalfTransWidth = 5000;
+        let minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            console.log("test width");
             this._camera.setMinZoomLevel(minZoomLevel);
         }
-        minZoomLevel = this._canvas.height / (this.maxTransHalfHeight * 2);
+        minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            console.log("test height");
             this._camera.setMinZoomLevel(minZoomLevel);
         }
 
@@ -71,6 +69,8 @@ export default class Board {
         this._debugMode = false;
 
         this.attributeObserver = new MutationObserver(this.attributeCallBack.bind(this));
+        this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
+        this.windowResizeObserver.observe(document.body);
 
         this.attributeObserver.observe(this._canvas, {attributes: true});
         this.registerEventListeners();
@@ -84,16 +84,16 @@ export default class Board {
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    console.log("width changed");
+                    // console.log("width changed");
                     this._camera.setViewPortWidth(this._canvas.width);
-                    const minZoomLevel = this._canvas.width / (this.maxTransHalfWidth * 2);
+                    const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
                     if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
                         this._camera.setMinZoomLevel(minZoomLevel);
                     }
                 } else if(mutation.attributeName === "height"){
-                    console.log("height changed");
+                    // console.log("height changed");
                     this._camera.setViewPortHeight(this._canvas.height);
-                    const minZoomLevel = this._canvas.height / (this.maxTransHalfHeight * 2);
+                    const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
                     if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
                         this._camera.setMinZoomLevel(minZoomLevel);
                     }
@@ -102,16 +102,29 @@ export default class Board {
         }
     }
 
-    get fullScreenFlag(): boolean {
+    get fullScreen(): boolean {
         return this._fullScreenFlag;
     }
 
-    set fullScreenFlag(value: boolean) {
+    set fullScreen(value: boolean) {
         this._fullScreenFlag = value;
+        if(this._fullScreenFlag){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+        }
     }
 
     get width(): number {
         return this._canvas.width;
+    }
+
+    set width(value: number) {
+        this._canvas.width = value;
+        this._camera.setViewPortWidth(value);
+        const minZoomLevel = value / (this.maxHalfTransWidth * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
     }
 
     get height(): number {
@@ -121,7 +134,7 @@ export default class Board {
     set height(value: number) {
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
-        const minZoomLevel = value / (this.maxTransHalfHeight * 2);
+        const minZoomLevel = value / (this.maxHalfTransHeight * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
         }
@@ -207,7 +220,7 @@ export default class Board {
         }
     }
 
-    get maxTransHalfHeight(): number | undefined{
+    get maxHalfTransHeight(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.y != undefined && boundaries.max.y != undefined){
             return (boundaries.max.y - boundaries.min.y) / 2;
@@ -215,11 +228,11 @@ export default class Board {
         return undefined;
     }
 
-    set maxTransHalfHeight(value: number){
+    set maxHalfTransHeight(value: number){
         this._camera.setVerticalBoundaries(-value, value);
     }
 
-    get maxTransHalfWidth(): number | undefined{
+    get maxHalfTransWidth(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.x != undefined && boundaries.max.x != undefined){
             return (boundaries.max.x - boundaries.min.x) / 2;
@@ -227,7 +240,7 @@ export default class Board {
         return undefined;
     }
     
-    set maxTransHalfWidth(value: number){
+    set maxHalfTransWidth(value: number){
         this._camera.setHorizontalBoundaries(-value, value);
     }
 
@@ -307,6 +320,7 @@ export default class Board {
 
     bindFunctions(){
         this.step = this.step.bind(this);
+        this.windowResizeHandler = this.windowResizeHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
     }
@@ -327,7 +341,7 @@ export default class Board {
         // this._canvas.width = this._canvas.width;
         // this._canvas.height = this._canvas.height;
         this._context.resetTransform();
-        this._context.clearRect(-this.maxTransHalfWidth, -this.maxTransHalfHeight, this.maxTransHalfWidth * 2, this.maxTransHalfHeight * 2);
+        this._context.clearRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2);
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
@@ -414,14 +428,14 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(0, -this.maxTransHalfHeight);
+        context.lineTo(0, -this.maxHalfTransHeight);
         context.stroke();
         
         // x axis
         context.beginPath();
         context.strokeStyle = `rgba(220, 59, 59, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(this.maxTransHalfWidth, 0);
+        context.lineTo(this.maxHalfTransWidth, 0);
         context.stroke();
     }
 
@@ -437,7 +451,7 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = "blue";
         context.lineWidth = 100;
-        context.roundRect(-this.maxTransHalfWidth, -this.maxTransHalfHeight, this.maxTransHalfWidth * 2, this.maxTransHalfHeight * 2, 5);
+        context.roundRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2, 5);
         context.stroke();
         context.lineWidth = 3;
     }
@@ -531,10 +545,6 @@ export default class Board {
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
         let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
         let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
-        let horizontalLargeTickCrampedness = (maxHorizontalLargeTick - minHorizontalLargeTick) / divisor;
-        let verticalLargeTickCrampedness = (maxVerticalLargeTick - minVerticalLargeTick) / divisor;
-        let horizontalMediumTickCrampedness = (maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor;
-        let verticalMediumTickCrampedness = (maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor;
        
         let divisorInActualPixel = divisor * this._camera.getZoomLevel();
         let halfDivisorInActualPixel = halfDivisor * this._camera.getZoomLevel();
@@ -708,5 +718,13 @@ export default class Board {
 
     clearCameraUpdateCallbacks(){
         this._cameraObserver.clearCallbacks();
+    }
+
+
+    windowResizeHandler(){
+        if(this._fullScreenFlag){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+        }
     }
 }
