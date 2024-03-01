@@ -49,7 +49,7 @@ jobs:
       - name: Get Published Version
         id: get-version
         run: |
-          echo "version=$(pnpm view @niuee/vcanvas version)" >> $GITHUB_OUTPUT
+          echo "version=$(pnpm view @niuee/board version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Check the current version
         id: check-version
