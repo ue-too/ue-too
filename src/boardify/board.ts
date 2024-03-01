@@ -1,28 +1,17 @@
 import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoom} from "./CanvasTouchStrategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "./CanvasTrackpadStrategy";
-import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "./CanvasKMStrategy";
-import * as AttributeChangeCommands from "./attributeChangCommand";
-import { CameraObserver, CameraState, CameraEventMapping} from "./cameraChangeCommand/cameraObserver";
-import { CameraListener } from "./cameraChangeCommand/cameraObserver";
+import {CanvasTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy/touch-strategy";
+import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireViewForBoard} from "../trackpad-strategy/trackpad-strategy";
+import { CanvasKMStrategy, DefaultCanvasKMStrategyForBoard } from "../km-strategy/km-strategy";
+import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
+import { CameraListener } from "../camera-change-command/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
-export interface RotationComponent {
-    setRotation(rotation: number): void;
-}
-export default class Board extends HTMLElement{
+export default class Board {
     
-    private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
-    private _canvasHeight: number; // this is the reference height for when clearing the canvas in the step function
     private _fullScreenFlag: boolean = false;
-
-    static observedAttributes = ["width", "height", "full-screen", "control-step", 
-                                "restrict-x-translation", "restrict-y-translation", "restrict-translation", 
-                                "restrict-rotation", "restrict-zoom", "restrict-relative-x-translation", "restrict-relative-y-translation",
-                                "max-half-trans-width", "max-half-trans-height", "debug-mode", "ruler", "grid", "vertical-grid-size", "horizontal-grid-size"];
 
     private _canvas: HTMLCanvasElement; 
     private _context: CanvasRenderingContext2D;
@@ -30,13 +19,9 @@ export default class Board extends HTMLElement{
     private _camera: BoardCamera;
     private _cameraObserver: CameraObserver;
 
-    private attributeCommands: Map<string, AttributeChangeCommands.AttributeChangeCommand>;
-
     private requestRef: number;
     private _handOverStepControl: boolean = true;
     private lastUpdateTime: number;
-
-    private windowsResizeObserver: ResizeObserver;
 
     private _touchStrategy: CanvasTouchStrategy;
     private _trackpadStrategy: CanvasTrackpadStrategy;
@@ -51,68 +36,105 @@ export default class Board extends HTMLElement{
     private _displayGrid: boolean = false;
     private _displayRuler: boolean = false;
 
-    constructor(){
-        super();
+    private attributeObserver: MutationObserver;
+    private windowResizeObserver: ResizeObserver;
 
-        this._canvas = document.createElement('canvas');
-        this._canvas.width = 300;
-        this._canvas.height = 300;
+    constructor(canvas: HTMLCanvasElement){
+        this._canvas = canvas;
+        this._context = canvas.getContext("2d");
         this._camera = new BoardCamera();
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
-        this._camera.setViewPortWidth(this._canvasWidth);
-        this._camera.setViewPortHeight(this._canvasHeight);
-        
-        this.maxTransHalfHeight = 5000;
-        this.maxTransHalfWidth = 5000;
+        this._camera.setViewPortWidth(this._canvas.width);
+        this._camera.setViewPortHeight(this._canvas.height);
+        this.maxHalfTransHeight = 5000;
+        this.maxHalfTransWidth = 5000;
+        let minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
+        minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
 
         this._cameraObserver = new CameraObserver(this._camera);
 
-        this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this._touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
-        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
-        this._keyboardMouseStrategy = new DefaultCanvasKMStrategy(this, this._cameraObserver);
-
-        this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
+        this._touchStrategy = new TwoFingerPanZoomForBoard(this._canvas, this, this._cameraObserver);
+        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireViewForBoard(this._canvas, this, this._cameraObserver);
+        this._keyboardMouseStrategy = new DefaultCanvasKMStrategyForBoard(this._canvas, this, this._cameraObserver);
 
         this._debugMode = false;
 
-        this.setAttributeCommands();
+        this.attributeObserver = new MutationObserver(this.attributeCallBack.bind(this));
+        this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
+        this.windowResizeObserver.observe(document.body);
+
+        this.attributeObserver.observe(this._canvas, {attributes: true});
+        this.registerEventListeners();
+        this.lastUpdateTime = 0;
+        if(!this._handOverStepControl){
+            this.requestRef = requestAnimationFrame(this.step);
+        }
     }
 
-    get fullScreenFlag(): boolean {
+    attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
+        for(let mutation of mutationsList){
+            if(mutation.type === "attributes"){
+                if(mutation.attributeName === "width"){
+                    // console.log("width changed");
+                    this._camera.setViewPortWidth(this._canvas.width);
+                    const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+                    if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                        this._camera.setMinZoomLevel(minZoomLevel);
+                    }
+                } else if(mutation.attributeName === "height"){
+                    // console.log("height changed");
+                    this._camera.setViewPortHeight(this._canvas.height);
+                    const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+                    if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                        this._camera.setMinZoomLevel(minZoomLevel);
+                    }
+                }
+            }
+        }
+    }
+
+    get fullScreen(): boolean {
         return this._fullScreenFlag;
     }
 
-    set fullScreenFlag(value: boolean) {
+    set fullScreen(value: boolean) {
         this._fullScreenFlag = value;
+        if(this._fullScreenFlag){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+        }
     }
 
     get width(): number {
-        return this._canvasWidth;
+        return this._canvas.width;
     }
 
     set width(value: number) {
-        this._canvasWidth = value;
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
-        const minZoomLevel = value / (this.maxTransHalfWidth * 2);
+        const minZoomLevel = value / (this.maxHalfTransWidth * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
         }
     }
 
     get height(): number {
-        return this._canvasHeight;
+        return this._canvas.height;
     }
 
     set height(value: number) {
-        this._canvasHeight = value;
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
-        const minZoomLevel = value / (this.maxTransHalfHeight * 2);
+        const minZoomLevel = value / (this.maxHalfTransHeight * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
         }
@@ -198,7 +220,7 @@ export default class Board extends HTMLElement{
         }
     }
 
-    get maxTransHalfHeight(): number | undefined{
+    get maxHalfTransHeight(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.y != undefined && boundaries.max.y != undefined){
             return (boundaries.max.y - boundaries.min.y) / 2;
@@ -206,11 +228,11 @@ export default class Board extends HTMLElement{
         return undefined;
     }
 
-    set maxTransHalfHeight(value: number){
+    set maxHalfTransHeight(value: number){
         this._camera.setVerticalBoundaries(-value, value);
     }
 
-    get maxTransHalfWidth(): number | undefined{
+    get maxHalfTransWidth(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.x != undefined && boundaries.max.x != undefined){
             return (boundaries.max.x - boundaries.min.x) / 2;
@@ -218,7 +240,7 @@ export default class Board extends HTMLElement{
         return undefined;
     }
     
-    set maxTransHalfWidth(value: number){
+    set maxHalfTransWidth(value: number){
         this._camera.setHorizontalBoundaries(-value, value);
     }
 
@@ -298,30 +320,15 @@ export default class Board extends HTMLElement{
 
     bindFunctions(){
         this.step = this.step.bind(this);
+        this.windowResizeHandler = this.windowResizeHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
-    }
-
-    connectedCallback(){
-        this._canvasWidth = this._canvas.width; // need to keep this in order to clear the canvas
-        this._canvasHeight = this._canvas.height; // need to keep this in order to clear the canvas
-        this.shadowRoot.appendChild(this._canvas)
-        this._context = this._canvas.getContext("2d");
-        this._canvas.style.display = "block";
-        this.style.display = "inline-block";
-        this.registerEventListeners();
-        this.lastUpdateTime = 0;
-        this.windowsResizeObserver.observe(document.body);
-        if(!this._handOverStepControl){
-            this.requestRef = requestAnimationFrame(this.step);
-        }
     }
 
     disconnectedCallback(){
         if(!this._handOverStepControl){
             cancelAnimationFrame(this.requestRef);
         }
-        this.windowsResizeObserver.unobserve(document.body);
         this.removeEventListeners();
     }
 
@@ -331,10 +338,12 @@ export default class Board extends HTMLElement{
         this.lastUpdateTime = timestamp;
         deltaTime = deltaTime / 1000;
 
-        this._canvas.width = this._canvasWidth;
-        this._canvas.height = this._canvasHeight;
+        // this._canvas.width = this._canvas.width;
+        // this._canvas.height = this._canvas.height;
+        this._context.resetTransform();
+        this._context.clearRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2);
 
-        this._context.translate( this._canvasWidth / 2, this._canvasHeight / 2 );
+        this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
         this._context.rotate(this._camera.getRotation());
         this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
@@ -369,26 +378,14 @@ export default class Board extends HTMLElement{
         this._trackpadStrategy.setUp();
         this._touchStrategy.setUp();
         this._keyboardMouseStrategy.setUp();
-        this.addEventListener("pointermove", this.pointerMoveHandler);
-        this.addEventListener("pointerdown", this.pointerDownHandler);
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler.bind(this));
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler.bind(this));
     }
 
     removeEventListeners(){
         this._trackpadStrategy.tearDown();
         this._touchStrategy.tearDown();
         this._keyboardMouseStrategy.tearDown();
-        this.removeEventListener("pointermove", this.pointerMoveHandler);
-        this.removeEventListener("pointerdown", this.pointerDownHandler);
-    }
-
-    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
-        if(newValue == null){
-            newValue = "false";
-        }
-        const command = this.attributeCommands.get(name);
-        if(command){
-            command.execute(newValue);
-        }
     }
 
     pointerMoveHandler(e: PointerEvent){
@@ -425,30 +422,20 @@ export default class Board extends HTMLElement{
         return this._camera.convert2WorldSpace(pointInCameraViewPort);
     }
 
-    windowResizeHandler(){
-        if(this.fullScreenFlag){
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
-        } else {
-            this._canvas.width = this._canvasWidth;
-            this._canvas.height = this._canvasHeight;
-        }
-    }
-
     drawAxis(context: CanvasRenderingContext2D, zoomLevel: number): void{
         context.lineWidth = 1 / zoomLevel;
         // y axis
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(0, -this.maxTransHalfHeight);
+        context.lineTo(0, -this.maxHalfTransHeight);
         context.stroke();
         
         // x axis
         context.beginPath();
         context.strokeStyle = `rgba(220, 59, 59, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(this.maxTransHalfWidth, 0);
+        context.lineTo(this.maxHalfTransWidth, 0);
         context.stroke();
     }
 
@@ -464,7 +451,7 @@ export default class Board extends HTMLElement{
         context.beginPath();
         context.strokeStyle = "blue";
         context.lineWidth = 100;
-        context.roundRect(-this.maxTransHalfWidth, -this.maxTransHalfHeight, this.maxTransHalfWidth * 2, this.maxTransHalfHeight * 2, 5);
+        context.roundRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2, 5);
         context.stroke();
         context.lineWidth = 3;
     }
@@ -558,10 +545,17 @@ export default class Board extends HTMLElement{
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
         let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
         let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
-        let horizontalLargeTickCrampedness = (maxHorizontalLargeTick - minHorizontalLargeTick) / divisor;
-        let verticalLargeTickCrampedness = (maxVerticalLargeTick - minVerticalLargeTick) / divisor;
-        let horizontalMediumTickCrampedness = (maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor;
-        let verticalMediumTickCrampedness = (maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor;
+       
+        let divisorInActualPixel = divisor * this._camera.getZoomLevel();
+        let halfDivisorInActualPixel = halfDivisor * this._camera.getZoomLevel();
+        let subDivisorInActualPixel = subDivisor * this._camera.getZoomLevel();
+
+        
+        context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
+        const midBaseLineTextDimensions = context.measureText(`${-(halfDivisor + minHorizontalMediumTick)}`);
+        const midBaseLineHeight =  midBaseLineTextDimensions.fontBoundingBoxAscent + midBaseLineTextDimensions.fontBoundingBoxDescent;
+        const subBaseLineTextDimensions = context.measureText(`${-(subDivisor + minHorizontalSmallTick)}`);
+        const subBaseLineHeight = subBaseLineTextDimensions.fontBoundingBoxAscent + subBaseLineTextDimensions.fontBoundingBoxDescent;
 
         for(let i = minHorizontalLargeTick; i <= maxHorizontalLargeTick; i += divisor){
             context.beginPath();
@@ -607,11 +601,11 @@ export default class Board extends HTMLElement{
             context.moveTo(resPoint.x, -resPoint.y);
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -25 / this._camera.getZoomLevel()));
             context.lineTo(resPoint.x, -resPoint.y);
-            if(horizontalLargeTickCrampedness < 5) {
+            context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            if(halfDivisorInActualPixel > midBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
-                const textDimensions = context.measureText(`${i.toFixed(0)}`);
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
                 context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
             }
@@ -627,11 +621,12 @@ export default class Board extends HTMLElement{
             context.moveTo(resPoint.x, -resPoint.y);
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 25 / this._camera.getZoomLevel()));
             context.lineTo(resPoint.x, -resPoint.y);
-            if(verticalLargeTickCrampedness < 5) {
+            context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
+            if(halfDivisorInActualPixel > midBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
-                const textDimensions = context.measureText(`${i.toFixed(0)}`);
                 context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
             }
             context.stroke();
@@ -646,11 +641,11 @@ export default class Board extends HTMLElement{
             context.moveTo(resPoint.x, -resPoint.y);
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -12.5 / this._camera.getZoomLevel()));
             context.lineTo(resPoint.x, -resPoint.y);
-            if(horizontalMediumTickCrampedness < 10) {
+            context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            if(subDivisorInActualPixel > subBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
-                const textDimensions = context.measureText(`${i.toFixed(0)}`);
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
                 context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
             }
@@ -666,11 +661,12 @@ export default class Board extends HTMLElement{
             context.moveTo(resPoint.x, -resPoint.y);
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 12.5 / this._camera.getZoomLevel()));
             context.lineTo(resPoint.x, -resPoint.y);
-            if(verticalMediumTickCrampedness < 10) {
+            context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
+            const textDimensions = context.measureText(`${i.toFixed(0)}`);
+            const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
+            if(subDivisorInActualPixel > subBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
-                const textDimensions = context.measureText(`${i.toFixed(0)}`);
                 context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
             }
             context.stroke();
@@ -708,28 +704,6 @@ export default class Board extends HTMLElement{
         return this._context;
     }
 
-    setAttributeCommands(){
-        this.attributeCommands = new Map<string, AttributeChangeCommands.AttributeChangeCommand>();
-        this.attributeCommands.set("width", new AttributeChangeCommands.SetWidthCommand(this));
-        this.attributeCommands.set("height", new AttributeChangeCommands.SetHeightCommand(this));
-        this.attributeCommands.set("full-screen", new AttributeChangeCommands.ToggleFullScreenCommand(this));
-        this.attributeCommands.set("control-step", new AttributeChangeCommands.ToggleStepFunctionCommand(this));
-        this.attributeCommands.set("restrict-x-translation", new AttributeChangeCommands.RestrictXTranslationCommand(this));
-        this.attributeCommands.set("restrict-y-translation", new AttributeChangeCommands.RestrictYTranslationCommand(this));
-        this.attributeCommands.set("restrict-translation", new AttributeChangeCommands.RestrictTranslationCommand(this));
-        this.attributeCommands.set("restrict-rotation", new AttributeChangeCommands.RestrictRotationCommand(this));
-        this.attributeCommands.set("restrict-zoom", new AttributeChangeCommands.RestrictZoomCommand(this));
-        this.attributeCommands.set("restrict-relative-x-translation", new AttributeChangeCommands.RestrictRelativeXTranslationCommand(this));
-        this.attributeCommands.set("restrict-relative-y-translation", new AttributeChangeCommands.RestrictRelativeYTranslationCommand(this));
-        this.attributeCommands.set("debug-mode", new AttributeChangeCommands.SetDebugModeCommand(this));
-        this.attributeCommands.set("max-half-trans-width", new AttributeChangeCommands.SetMaxHalfTransWidthCommand(this));
-        this.attributeCommands.set("max-half-trans-height", new AttributeChangeCommands.SetMaxHalfTransHeightCommand(this));
-        this.attributeCommands.set("vertical-grid-size", new AttributeChangeCommands.SetVerticalGridSizeCommand(this));
-        this.attributeCommands.set("horizontal-grid-size", new AttributeChangeCommands.SetHorizontalGridSizeCommand(this));
-        this.attributeCommands.set("ruler", new AttributeChangeCommands.ToggleRulerCommand(this));
-        this.attributeCommands.set("grid", new AttributeChangeCommands.ToggleGridCommand(this));
-    }
-
     subscribeToCameraUpdate(listener: CameraListener){
         this._cameraObserver.subscribe(listener);
     }
@@ -745,20 +719,12 @@ export default class Board extends HTMLElement{
     clearCameraUpdateCallbacks(){
         this._cameraObserver.clearCallbacks();
     }
-}
 
-export type CameraDetail = {
-    cameraPosition: Point;
-    cameraAngle: number;
-    cameraZoomLevel: number;
-}
 
-export class CameraUpdateEvent extends Event{
-
-    detail: CameraDetail;
-
-    constructor(type: string, detail: CameraDetail, eventInit?: EventInit){
-        super(type, eventInit);
-        this.detail = detail;
+    windowResizeHandler(){
+        if(this._fullScreenFlag){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+        }
     }
 }
