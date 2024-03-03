@@ -5,6 +5,9 @@ import {  Point } from "..";
 import { CameraObserver } from "../camera-change-command/camera-observer";
 import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortCommand, CameraMoveLimitEntireViewPortCommand } from "../camera-change-command";
 
+/**
+ * @category Trackpad Strategy
+ */
 export interface CanvasTrackpadStrategy {
     setUp(): void;
     tearDown(): void;

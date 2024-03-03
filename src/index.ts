@@ -6,7 +6,7 @@ export * from "./km-strategy";
 export * from "./touch-strategy";
 export * from "./trackpad-strategy";
 export * from "./util";
-export * from "./vDial";
+export * from "./v-dial";
 export {default as BoardCamera} from "./board-camera";
 export {default as BoardElement} from "./board-element";
 import Board from "./boardify";

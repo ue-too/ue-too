@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import { Point } from "../";
+import { Point } from "..";
 
 export class vDial extends HTMLElement{
 
@@ -120,7 +120,7 @@ export class vDial extends HTMLElement{
 
 }
 
-class DialWheel {
+export class DialWheel {
 
     private rotation: number;
 
