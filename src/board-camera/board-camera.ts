@@ -1,6 +1,7 @@
 import { PointCal } from "point2point";
 import { Point } from "..";
-import * as easeFunctions from "../ease-functions";
+import { EaseFunctions } from "../ease-functions";
+import { EaseFunction } from "../ease-functions";
 
 export type Boundaries = {
     min?: {x?: number, y?: number};
@@ -13,23 +14,23 @@ export interface CameraLockableObject{
     getOptimalZoomLevel(): number;
 }
 
-type PositionAnimation = {
+export type PositionAnimation = {
     animationPercentage: number;
-    easingFn: (percentage: number)=> number;
+    easingFn: EaseFunction;
     duration: number;
     diff: Point;
 }
 
-type RotationAnimation = {
+export type RotationAnimation = {
     animationPercentage: number;
-    easingFn: (percentage: number)=> number;
+    easingFn: EaseFunction;
     duration: number;
     diff: number;
 }
 
-type ZoomAnimation = {
+export type ZoomAnimation = {
     animationPercentage: number;
-    easingFn: (percentage: number)=> number;
+    easingFn: EaseFunction;
     duration: number;
     diff: number;
     anchorPoint?: Point;
@@ -882,7 +883,7 @@ export default class BoardCamera {
         this.setZoomLevelWithClamp(this.lockOnObject.getOptimalZoomLevel());
     }
 
-    setPositionWithAnimation(destPos: Point, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    setPositionWithAnimation(destPos: Point, duration: number = 1, easeFunction: EaseFunction = EaseFunctions.easeInOutSine){
         destPos = this.clampPoint(destPos);
         const diff = PointCal.subVector(destPos, this.position);
         this.positionAnimation.animationPercentage = 0;
@@ -891,7 +892,7 @@ export default class BoardCamera {
         this.positionAnimation.diff = diff;
     }
 
-    setRotationWithAnimation(destRotation: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    setRotationWithAnimation(destRotation: number, duration: number = 1, easeFunction: EaseFunction = EaseFunctions.easeInOutSine){
         const diff = this.getAngleSpan(destRotation);
         this.rotationAnimation.diff = diff;
         this.rotationAnimation.duration = duration;
@@ -899,7 +900,7 @@ export default class BoardCamera {
         this.rotationAnimation.easingFn = easeFunction;
     }
 
-    spinWithAnimationFromGesture(angleSpan: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    spinWithAnimationFromGesture(angleSpan: number, duration: number = 1, easeFunction: EaseFunction = EaseFunctions.easeInOutSine){
         if(this._restrictRotationFromGesture){
             return;
         }
@@ -910,7 +911,10 @@ export default class BoardCamera {
         this.rotationAnimation.easingFn = easeFunction;
     }
 
-    setZoomWithAnimation(destZoomLevel: number, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    /**
+     * @group Camera Zoom Operations
+     */
+    setZoomWithAnimation(destZoomLevel: number, duration: number = 1, easeFunction: EaseFunction = EaseFunctions.easeInOutSine){
         destZoomLevel = this.clampZoomLevel(destZoomLevel);
         const diff = destZoomLevel - this.zoomLevel;
         this.zoomAnimation.diff = diff;
@@ -919,7 +923,10 @@ export default class BoardCamera {
         this.zoomAnimation.duration = duration;
     }
 
-    setZoomAnimationWithAnchor(destZoomLevel: number, anchorPointInViewPort: Point, duration: number = 1, easeFunction: (t: number)=> number = easeFunctions.easeInOutSine){
+    /**
+     * @group Camera Zoom Operations
+     */
+    setZoomAnimationWithAnchor(destZoomLevel: number, anchorPointInViewPort: Point, duration: number = 1, easeFunction: EaseFunction = EaseFunctions.easeInOutSine){
         destZoomLevel = this.clampZoomLevel(destZoomLevel);
         const diff = destZoomLevel - this.zoomLevel;
         this.zoomAnimation.diff = diff;

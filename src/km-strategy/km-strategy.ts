@@ -8,6 +8,10 @@ import { CameraMoveCommand } from "../camera-change-command";
 
 
 type CoordinateConversionFn = (interestPoint: Point) => Point;
+
+/**
+ * @category Keyboard-Mouse Strategy
+ */
 export interface CanvasKMStrategy {
     disabled: boolean;
     setUp(): void;

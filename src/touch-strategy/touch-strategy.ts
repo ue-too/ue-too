@@ -5,6 +5,10 @@ import { PointCal } from "point2point";
 import { Point } from "..";
 import { CameraObserver } from "../camera-change-command/camera-observer";
 import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "../camera-change-command";
+
+/**
+ * @category Touch Strategy
+ */
 export interface CanvasTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;
