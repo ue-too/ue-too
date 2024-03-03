@@ -5,6 +5,8 @@ __This project is experimental (only to show a way to have a canvas that can be 
 [Demo](https://vntchang.dev/vCanvasDemo/)
 _The demo version is rather old and outdated but it showcases the basic functionalities so I am keeping it here. I will replace it with the newer version later on when it's stable_
 
+[Documentation](https://niuee.github.io/board/index.html) This documentation is still in its early stages; a lot of things are still not documented.
+
 Initially, I needed a way to have a pannable and zoomable canvas for a racetrack maker project that I was working on. I stumbled upon a [codepen example](https://codepen.io/chengarda/pen/wRxoyB) that is posted in stackoverflow. It was a fantastic starting point. It provided everything that I need. However, some functionalities I needed was not there; I started to build on top of this and make a canvas element that is easier to work with and modify and has the functionalities that I need. 
 
 This project is written entirely with vanilla JavaScript (with TypeScript). However, in the future I plan to have a React version of this and maybe support other frontend libraries and/or frameworks.
