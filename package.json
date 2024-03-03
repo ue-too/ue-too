@@ -9,6 +9,7 @@
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "pnpm run rollup && pnpm run move-package",
     "move-package": "node ./scripts/move-package.mjs",
+    "build:doc": "pnpm exec typedoc --options ./typedoc.json",
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
@@ -45,6 +46,10 @@
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.1",
     "tslib": "^2.6.0",
+    "typedoc": "^0.25.9",
+    "typedoc-material-theme": "^1.0.2",
+    "typedoc-plugin-mdn-links": "^3.1.17",
+    "typedoc-theme-hierarchy": "^4.0.0",
     "typescript": "^5.0.3"
   }
 }

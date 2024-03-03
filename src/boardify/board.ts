@@ -9,6 +9,10 @@ import { CameraListener } from "../camera-change-command/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
+/**
+ * Class representing a Board
+ * @category Board
+ */
 export default class Board {
     
     private _fullScreenFlag: boolean = false;
@@ -39,6 +43,11 @@ export default class Board {
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
 
+    /**
+     * Board constructor
+     * @constructor
+     * @param {HTMLCanvasElement} canvas - The canvas element for the board to extend its capabilities
+     */
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
         this._context = canvas.getContext("2d");
@@ -80,6 +89,11 @@ export default class Board {
         }
     }
 
+    /**
+     * Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two) 
+     * @param mutationsList 
+     * @param observer 
+     */
     attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
@@ -102,10 +116,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is in full screen mode
+     */
     get fullScreen(): boolean {
         return this._fullScreenFlag;
     }
 
+    /**
+     * set the flag indicating if the board is in full screen mode; this will also effect the width and height of the canvas
+     */
     set fullScreen(value: boolean) {
         this._fullScreenFlag = value;
         if(this._fullScreenFlag){
@@ -114,10 +134,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the width of the canvas element the board is attached to
+     */
     get width(): number {
         return this._canvas.width;
     }
 
+    /**
+     * set the width of the canvas element the board is attached to; if the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated
+     */
     set width(value: number) {
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
@@ -127,10 +153,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the height of the canvas element the board is attached to
+     */
     get height(): number {
         return this._canvas.height;
     }
 
+    /**
+     * set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated
+     */
     set height(value: number) {
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
@@ -140,18 +172,30 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is handing over the control of the step function
+     */
     set stepControl(value: boolean){
         this._handOverStepControl = value;
     }
 
+    /**
+     * set the flag indicating if the board is handing over the control of the step function
+     */
     get stepControl(): boolean{ 
         return this._handOverStepControl;
     }
 
+    /**
+     * get the flag indicating if the board is restricting the x translation
+     */
     get restrictXTranslation(): boolean{ 
         return this._camera.restrictXTranslationFromGesture;
     }
     
+    /**
+     * set the flag indicating if the board is restricting the x translation
+     */
     set restrictXTranslation(value: boolean){
         if(value){
             this._camera.lockXTranslationFromGesture();
@@ -160,10 +204,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is restricting the y translation
+     */
     get restrictYTranslation(): boolean{
         return this._camera.restrictYTranslationFromGesture;
     }
 
+    /**
+     * set the flag indicating if the board is restricting the y translation
+     */
     set restrictYTranslation(value: boolean){
         if(value){
             this._camera.lockYTranslationFromGesture();
@@ -172,10 +222,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is restricting the rotation
+     */
     get restrictRotation(): boolean{
         return this._camera.restrictRotationFromGesture;
     }
 
+    /**
+     * set the flag indicating if the board is restricting the rotation
+     */
     set restrictRotation(value: boolean){
         if(value){
             this._camera.lockRotationFromGesture();
@@ -184,10 +240,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is restricting the zoom
+     */
     get restrictZoom(): boolean{
         return this._camera.restrictZoomFromGesture;
     }
 
+    /**
+     * set the flag indicating if the board is restricting the zoom
+     */
     set restrictZoom(value: boolean){
         if(value){
             this._camera.lockZoomFromGesture();
@@ -196,10 +258,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is restricting the relative x translation
+     */
     get restrictRelativeXTranslation(): boolean{
         return this._camera.restrictRelativeXTranslationFromGesture;
     }
 
+    /**
+     * set the flag indicating if the board is restricting the relative x translation
+     */
     set restrictRelativeXTranslation(value: boolean){
         if(value){
             this._camera.lockRelativeXTranslationFromGesture();
@@ -208,10 +276,16 @@ export default class Board {
         }
     }
 
+    /**
+     * get the flag indicating if the board is restricting the relative y translation
+     */
     get restrictRelativeYTranslation(): boolean{
         return this._camera.restrictRelativeYTranslationFromGesture;
     }
 
+    /**
+     * set the flag indicating if the board is restricting the relative y translation
+     */
     set restrictRelativeYTranslation(value: boolean){
         if(value){
             this._camera.lockRelativeYTranslationFromGesture();
@@ -220,6 +294,9 @@ export default class Board {
         }
     }
 
+    /**
+     * get the half of the maximum translation height the board is allowing for the camera to move
+     */
     get maxHalfTransHeight(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.y != undefined && boundaries.max.y != undefined){
@@ -228,10 +305,16 @@ export default class Board {
         return undefined;
     }
 
+    /**
+     * set the half of the maximum translation height the board is allowing for the camera to move
+     */
     set maxHalfTransHeight(value: number){
         this._camera.setVerticalBoundaries(-value, value);
     }
 
+    /**
+     * get the half of the maximum translation width the board is allowing for the camera to move
+     */
     get maxHalfTransWidth(): number | undefined{
         const boundaries = this._camera.getBoundaries();
         if( boundaries != undefined && boundaries.min != undefined && boundaries.max != undefined && boundaries.min.x != undefined && boundaries.max.x != undefined){
@@ -240,46 +323,79 @@ export default class Board {
         return undefined;
     }
     
+    /**
+     * set the half of the maximum translation width the board is allowing for the camera to move
+     */
     set maxHalfTransWidth(value: number){
         this._camera.setHorizontalBoundaries(-value, value);
     }
 
+    /**
+     * Get the flag indicating if the board is in debug mode
+     */
     get debugMode(): boolean{
         return this._debugMode;
     }
 
+    /**
+     * Set the flag indicating if the board is in debug mode
+     */
     set debugMode(value: boolean){
         this._debugMode = value;
     }
 
+    /**
+     * Get the internal camera the board is using
+     */
     get camera(): BoardCamera{
         return this._camera;
     }
 
+    /**
+     * Set the current strategy the board is using for touch events 
+     */ 
     set touchStrategy(strategy: CanvasTouchStrategy){
         this._touchStrategy = strategy;
     }
 
+    /**
+     * Get the current strategy the board is using for touch events 
+     */
     get touchStrategy(): CanvasTouchStrategy{
         return this._touchStrategy;
     }
 
+    /**
+     * Set the current strategy the board is using for trackpad events
+     */
     set trackpadStrategy(strategy: CanvasTrackpadStrategy){
         this._trackpadStrategy = strategy;
     }
 
+    /**
+     * Get the current strategy the board is using for trackpad events
+     */
     get trackpadStrategy(): CanvasTrackpadStrategy{
         return this._trackpadStrategy;
     }
 
+    /**
+     * Set the current strategy the board is using for keyboard and mouse events
+     */
     set keyboardMouseStrategy(strategy: CanvasKMStrategy){
         this._keyboardMouseStrategy = strategy;
     }
 
+    /**
+     * Get the current strategy the board is using for keyboard and mouse events
+     */
     get keyboardMouseStrategy(): CanvasKMStrategy{
         return this._keyboardMouseStrategy;
     }
 
+    /**
+     * Set the current strategy the board is using for camera events; currently this has no effect
+     */
     set verticalGridSize(value: number){
         if(value < 0) {
             return;
@@ -287,10 +403,16 @@ export default class Board {
         this._verticalGridSize = value;
     }
 
+    /**
+     * Get the current strategy the board is using for camera events; currently this property has no effect
+     */
     get verticalGridSize(): number{
         return this._verticalGridSize;
     }
 
+    /**
+     * Set the current strategy the board is using for camera events; currently this property has no effect
+     */
     set horizontalGridSize(value: number){
         if(value < 0) {
             return;
@@ -298,26 +420,44 @@ export default class Board {
         this._horizontalGridSize = value;
     }
 
+    /**
+     * Get the current strategy the board is using for camera events; currently this property has no effect
+     */
     get horizontalGridSize(): number{
         return this._horizontalGridSize;
     }
 
+    /**
+     * Set the flag indicating if the board is displaying the grid
+     */
     get displayGrid(): boolean{
         return this._displayGrid;
     }
 
+    /**
+     * Get the flag indicating if the board is displaying the grid
+     */
     set displayGrid(value: boolean){
         this._displayGrid = value;
     }
 
+    /**
+     * Get the flag indicating if the board is displaying the ruler
+     */
     get displayRuler(): boolean{
         return this._displayRuler;
     }
 
+    /**
+     * Set the flag indicating if the board is displaying the ruler
+     */
     set displayRuler(value: boolean){
         this._displayRuler = value;
     }
 
+    /**
+     * Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)
+     */
     bindFunctions(){
         this.step = this.step.bind(this);
         this.windowResizeHandler = this.windowResizeHandler.bind(this);
@@ -325,6 +465,9 @@ export default class Board {
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
     }
 
+    /**
+     * @deprecated This is a residue function after migrating from the custom web component to the board class
+     */
     disconnectedCallback(){
         if(!this._handOverStepControl){
             cancelAnimationFrame(this.requestRef);
@@ -332,6 +475,10 @@ export default class Board {
         this.removeEventListeners();
     }
 
+    /**
+     * This function can be passed directly to the requestAnimationFrame to enable the extra functionalities of a board. (Or be called to step the board in a custom step function)
+     * @param timestamp the time stamp from the requestAnimationFrame
+     */
     private step(timestamp: number){
 
         let deltaTime = timestamp - this.lastUpdateTime;
@@ -374,6 +521,7 @@ export default class Board {
         }
     }
 
+
     registerEventListeners(){
         this._trackpadStrategy.setUp();
         this._touchStrategy.setUp();
@@ -388,6 +536,11 @@ export default class Board {
         this._keyboardMouseStrategy.tearDown();
     }
 
+    /**
+     * 
+     * @param e 
+     * @listens pointermove
+     */
     pointerMoveHandler(e: PointerEvent){
         this.mousePos = {x: e.clientX, y: e.clientY}; 
     }
@@ -719,7 +872,6 @@ export default class Board {
     clearCameraUpdateCallbacks(){
         this._cameraObserver.clearCallbacks();
     }
-
 
     windowResizeHandler(){
         if(this._fullScreenFlag){
