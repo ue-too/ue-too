@@ -1,9 +1,9 @@
 import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy/touch-strategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireViewForBoard} from "../trackpad-strategy/trackpad-strategy";
-import { CanvasKMStrategy, DefaultCanvasKMStrategyForBoard } from "../km-strategy/km-strategy";
+import {BoardTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy/touch-strategy";
+import { BoardTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireViewForBoard} from "../trackpad-strategy/trackpad-strategy";
+import { BoardKMStrategy, DefaultBoardKMStrategy } from "../km-strategy/km-strategy";
 import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
 import { CameraListener } from "../camera-change-command/camera-observer";
 
@@ -27,9 +27,9 @@ export default class Board {
     private _handOverStepControl: boolean = true;
     private lastUpdateTime: number;
 
-    private _touchStrategy: CanvasTouchStrategy;
-    private _trackpadStrategy: CanvasTrackpadStrategy;
-    private _keyboardMouseStrategy: CanvasKMStrategy;
+    private _touchStrategy: BoardTouchStrategy;
+    private _trackpadStrategy: BoardTrackpadStrategy;
+    private _keyboardMouseStrategy: BoardKMStrategy;
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
@@ -73,7 +73,7 @@ export default class Board {
 
         this._touchStrategy = new TwoFingerPanZoomForBoard(this._canvas, this, this._cameraObserver);
         this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireViewForBoard(this._canvas, this, this._cameraObserver);
-        this._keyboardMouseStrategy = new DefaultCanvasKMStrategyForBoard(this._canvas, this, this._cameraObserver);
+        this._keyboardMouseStrategy = new DefaultBoardKMStrategy(this._canvas, this, this._cameraObserver);
 
         this._debugMode = false;
 
@@ -354,42 +354,48 @@ export default class Board {
     /**
      * Set the current strategy the board is using for touch events 
      */ 
-    set touchStrategy(strategy: CanvasTouchStrategy){
+    set touchStrategy(strategy: BoardTouchStrategy){
+        this._touchStrategy.tearDown();
         this._touchStrategy = strategy;
+        this._touchStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for touch events 
      */
-    get touchStrategy(): CanvasTouchStrategy{
+    get touchStrategy(): BoardTouchStrategy{
         return this._touchStrategy;
     }
 
     /**
      * Set the current strategy the board is using for trackpad events
      */
-    set trackpadStrategy(strategy: CanvasTrackpadStrategy){
+    set trackpadStrategy(strategy: BoardTrackpadStrategy){
+        this._trackpadStrategy.tearDown();
         this._trackpadStrategy = strategy;
+        this._trackpadStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for trackpad events
      */
-    get trackpadStrategy(): CanvasTrackpadStrategy{
+    get trackpadStrategy(): BoardTrackpadStrategy{
         return this._trackpadStrategy;
     }
 
     /**
      * Set the current strategy the board is using for keyboard and mouse events
      */
-    set keyboardMouseStrategy(strategy: CanvasKMStrategy){
+    set keyboardMouseStrategy(strategy: BoardKMStrategy){
+        this._keyboardMouseStrategy.tearDown();
         this._keyboardMouseStrategy = strategy;
+        this._keyboardMouseStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for keyboard and mouse events
      */
-    get keyboardMouseStrategy(): CanvasKMStrategy{
+    get keyboardMouseStrategy(): BoardKMStrategy{
         return this._keyboardMouseStrategy;
     }
 

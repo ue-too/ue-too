@@ -12,7 +12,7 @@ type CoordinateConversionFn = (interestPoint: Point) => Point;
 /**
  * @category Keyboard-Mouse Strategy
  */
-export interface CanvasKMStrategy {
+export interface BoardKMStrategy {
     disabled: boolean;
     setUp(): void;
     tearDown(): void;
@@ -21,7 +21,7 @@ export interface CanvasKMStrategy {
 }
 
 
-export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
+export class DefaultBoardElementKMStrategy implements BoardKMStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
@@ -103,7 +103,7 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     }
 }
 
-export class DefaultCanvasKMStrategyForBoard implements CanvasKMStrategy {
+export class DefaultBoardKMStrategy implements BoardKMStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;

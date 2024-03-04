@@ -8,21 +8,37 @@ import { CameraMoveCommand, CameraZoomCommand, CameraZoomLimitEntireViewPortComm
 /**
  * @category Trackpad Strategy
  */
-export interface CanvasTrackpadStrategy {
+export interface BoardTrackpadStrategy {
+    disabled: boolean;
+    disableStrategy(): void;
+    enableStrategy(): void;
     setUp(): void;
     tearDown(): void;
 }
 
-export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
+export class TwoFingerPanPinchZoom implements BoardTrackpadStrategy {
 
     private cameraObserver: CameraObserver;
     private SCROLL_SENSATIVITY: number = 0.005;
     private canvas: BoardElement;
+    private _disabled: boolean = false;
 
     constructor(canvas: BoardElement, cameraObserver: CameraObserver){
         this.canvas = canvas;
         this.cameraObserver = cameraObserver;
         this.scrollHandler = this.scrollHandler.bind(this);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void{
@@ -33,8 +49,8 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
         this.canvas.removeEventListener('wheel', this.scrollHandler);
     }
 
-
     scrollHandler(e: WheelEvent): void {
+        if(this._disabled) return;
         e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
         if (!e.ctrlKey){
@@ -56,17 +72,30 @@ export class TwoFingerPanPinchZoom implements CanvasTrackpadStrategy {
     }
 }
 
-export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrategy {
+export class TwoFingerPanPinchZoomLimitEntireView implements BoardTrackpadStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private canvas: BoardElement;
     private cameraObserver: CameraObserver;
+    private _disabled: boolean = false;
 
     constructor(canvas: BoardElement, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
         this.canvas = canvas;
         this.cameraObserver = cameraObserver;
         this.scrollHandler = this.scrollHandler.bind(this);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -78,6 +107,7 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
     }
 
     scrollHandler(e: WheelEvent){
+        if (this._disabled) return;
         e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
         if (!e.ctrlKey){
@@ -100,12 +130,13 @@ export class TwoFingerPanPinchZoomLimitEntireView implements CanvasTrackpadStrat
     }
 }
 
-export class TwoFingerPanPinchZoomLimitEntireViewForBoard implements CanvasTrackpadStrategy {
+export class TwoFingerPanPinchZoomLimitEntireViewForBoard implements BoardTrackpadStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private canvas: HTMLCanvasElement;
     private board: Board;
     private cameraObserver: CameraObserver;
+    private _disabled: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver){
         this.SCROLL_SENSATIVITY = 0.005;
@@ -113,6 +144,18 @@ export class TwoFingerPanPinchZoomLimitEntireViewForBoard implements CanvasTrack
         this.board = board;
         this.cameraObserver = cameraObserver;
         this.scrollHandler = this.scrollHandler.bind(this);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+    
+    disableStrategy(): void {
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -124,6 +167,7 @@ export class TwoFingerPanPinchZoomLimitEntireViewForBoard implements CanvasTrack
     }
 
     scrollHandler(e: WheelEvent){
+        if(this._disabled) return;
         e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
         if (!e.ctrlKey){

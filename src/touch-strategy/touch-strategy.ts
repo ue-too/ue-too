@@ -6,28 +6,33 @@ import { Point } from "..";
 import { CameraObserver } from "../camera-change-command/camera-observer";
 import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "../camera-change-command";
 
-/**
- * @category Touch Strategy
- */
-export interface CanvasTouchStrategyLegacy {
+export interface BoardTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchcancelHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchmoveHandler(e: TouchEvent, bottomLeftCorner: Point): void;
 }
 
-export interface CanvasTouchStrategy {
+
+/**
+ * @category Touch Strategy
+ */
+export interface BoardTouchStrategy {
+    disabled: boolean;
+    enableStrategy(): void;
+    disableStrategy(): void;
     setUp(): void;
     tearDown(): void;
 }
 
-export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
+export class TwoFingerPanZoomForBoard implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private canvas: HTMLCanvasElement;
     private board: Board;
     private dragStartDist: number;
-    private cameraObeserver: CameraObserver; 
+    private cameraObeserver: CameraObserver;
+    private _disabled: boolean = false;
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
@@ -38,6 +43,20 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
         this.touchendHandler = this.touchendHandler.bind(this);
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
         this.touchstartHandler = this.touchstartHandler.bind(this);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this.dragStartDist = 0;
+        this.touchPoints = [];
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -55,6 +74,7 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
     }
 
     touchstartHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length === 2){
             let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
@@ -66,14 +86,17 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
     }
 
     touchcancelHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchendHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchmoveHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
@@ -102,13 +125,9 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
         }
     }
 
-    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
-    }
 }
 
-export class TwoFingerPanZoom implements CanvasTouchStrategy {
+export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private canvas: BoardElement;
@@ -117,6 +136,8 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
+    private _disabled: boolean = false;
+
     constructor(canvas: BoardElement, cameraObserver: CameraObserver){
         this.canvas = canvas;
         this.cameraObeserver = cameraObserver;
@@ -124,6 +145,20 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
         this.touchendHandler = this.touchendHandler.bind(this);
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
         this.touchstartHandler = this.touchstartHandler.bind(this);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this.dragStartDist = 0;
+        this.touchPoints = [];
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -141,6 +176,7 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
     }
 
     touchstartHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length === 2){
             let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
@@ -152,14 +188,17 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
     }
 
     touchcancelHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchendHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchmoveHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
@@ -187,13 +226,8 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
             }
         }
     }
-
-    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
-    }
 }
-export class TwoFingerPanZoomLegacy implements CanvasTouchStrategyLegacy {
+export class TwoFingerPanZoomLegacy implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
@@ -259,7 +293,7 @@ export class TwoFingerPanZoomLegacy implements CanvasTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategyLegacy {
+export class OneFingerPanTwoFingerZoom implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
@@ -333,7 +367,7 @@ export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoomBoard implements CanvasTouchStrategyLegacy {
+export class OneFingerPanTwoFingerZoomBoard implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
