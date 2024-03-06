@@ -41,7 +41,7 @@ They are in the release tab of this repo. (both the minified JavaScript file and
 ### Usage
 There are two ways to use this package. One is to use the custom element `BoardElement` class. This is the custom element however I can't quite to sort out the issue where the style and dimensions of the custom element not lining up with the canvas element attached to the shadow dom. Therefore, I have an alternative and is the recommended way to use this package: to use a Board class to provide the extended functionalities and leave the HTML element and CSS to the html and CSS files. 
 
-#### The `BoardElement` way.
+The `BoardElement` way.
 
 Just like any other web component, you have to define the custom element first.
 ```javascript
