@@ -1,0 +1,21 @@
+{
+    "BoardKMStrategy": {
+        "comment": {
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Keyboard-Mouse Strategy"
+                        }
+                    ]
+                }
+            ],
+            "modifierTags": {},
+            "summary": []
+        },
+        "properties": {},
+        "methods": {}
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "BoardTouchStrategy": {
+        "comment": {
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Touch Strategy"
+                        }
+                    ]
+                }
+            ],
+            "modifierTags": {},
+            "summary": []
+        },
+        "properties": {},
+        "methods": {}
+    }
+}

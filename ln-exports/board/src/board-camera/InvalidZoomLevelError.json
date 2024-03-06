@@ -1,0 +1,65 @@
+{
+    "InvalidZoomLevelError": {
+        "properties": {
+            "prepareStackTrace": {
+                "comment": {
+                    "blockTags": [
+                        {
+                            "tag": "@see",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "https://v8.dev/docs/stack-trace-api#customizing-stack-traces"
+                                }
+                            ]
+                        }
+                    ],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "Optional override for formatting stack traces"
+                        }
+                    ]
+                }
+            }
+        },
+        "methods": {
+            "captureStackTrace": {
+                "comment": {
+                    "blockTags": [],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "Create .stack property on a target object"
+                        }
+                    ]
+                }
+            },
+            "__type": {
+                "comment": {
+                    "blockTags": [
+                        {
+                            "tag": "@see",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "https://v8.dev/docs/stack-trace-api#customizing-stack-traces"
+                                }
+                            ]
+                        }
+                    ],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "Optional override for formatting stack traces"
+                        }
+                    ]
+                }
+            }
+        },
+        "accessors": {}
+    }
+}

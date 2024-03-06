@@ -1,0 +1,698 @@
+{
+    "default": {
+        "comment": {
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Board"
+                        }
+                    ]
+                }
+            ],
+            "modifierTags": {},
+            "summary": [
+                {
+                    "kind": "text",
+                    "text": "Class representing a Board"
+                }
+            ]
+        },
+        "properties": {},
+        "methods": {
+            "attributeCallBack": {
+                "comment": {
+                    "parameters": {
+                        "mutationsList": {
+                            "comment": {
+                                "blockTags": [],
+                                "modifierTags": {},
+                                "summary": []
+                            }
+                        },
+                        "observer": {
+                            "comment": {
+                                "blockTags": [],
+                                "modifierTags": {},
+                                "summary": []
+                            }
+                        }
+                    },
+                    "blockTags": [],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two)"
+                        }
+                    ]
+                }
+            },
+            "bindFunctions": {
+                "comment": {
+                    "blockTags": [],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)"
+                        }
+                    ]
+                }
+            },
+            "disconnectedCallback": {
+                "comment": {
+                    "blockTags": [
+                        {
+                            "tag": "@deprecated",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "This is a residue function after migrating from the custom web component to the board class"
+                                }
+                            ]
+                        }
+                    ],
+                    "modifierTags": {},
+                    "summary": []
+                }
+            },
+            "step": {
+                "comment": {
+                    "parameters": {
+                        "timestamp": {
+                            "comment": {
+                                "blockTags": [],
+                                "modifierTags": {},
+                                "summary": [
+                                    {
+                                        "kind": "text",
+                                        "text": "the time stamp from the requestAnimationFrame"
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "blockTags": [],
+                    "modifierTags": {},
+                    "summary": [
+                        {
+                            "kind": "text",
+                            "text": "This function can be passed directly to the requestAnimationFrame to enable the extra functionalities of a board. (Or be called to step the board in a custom step function)"
+                        }
+                    ]
+                }
+            },
+            "pointerMoveHandler": {
+                "comment": {
+                    "parameters": {
+                        "e": {
+                            "comment": {
+                                "blockTags": [],
+                                "modifierTags": {},
+                                "summary": []
+                            }
+                        }
+                    },
+                    "blockTags": [
+                        {
+                            "tag": "@listens",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "pointermove"
+                                }
+                            ]
+                        }
+                    ],
+                    "modifierTags": {},
+                    "summary": []
+                }
+            }
+        },
+        "accessors": {
+            "fullScreen": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is in full screen mode"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is in full screen mode; this will also effect the width and height of the canvas"
+                            }
+                        ]
+                    }
+                }
+            },
+            "width": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the width of the canvas element the board is attached to"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the width of the canvas element the board is attached to; if the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated"
+                            }
+                        ]
+                    }
+                }
+            },
+            "height": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the height of the canvas element the board is attached to"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated"
+                            }
+                        ]
+                    }
+                }
+            },
+            "stepControl": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is handing over the control of the step function"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is handing over the control of the step function"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictXTranslation": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the x translation"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the x translation"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictYTranslation": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the y translation"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the y translation"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictRotation": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the rotation"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the rotation"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictZoom": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the zoom"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the zoom"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictRelativeXTranslation": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the relative x translation"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the relative x translation"
+                            }
+                        ]
+                    }
+                }
+            },
+            "restrictRelativeYTranslation": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the flag indicating if the board is restricting the relative y translation"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the flag indicating if the board is restricting the relative y translation"
+                            }
+                        ]
+                    }
+                }
+            },
+            "maxHalfTransHeight": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the half of the maximum translation height the board is allowing for the camera to move"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the half of the maximum translation height the board is allowing for the camera to move"
+                            }
+                        ]
+                    }
+                }
+            },
+            "maxHalfTransWidth": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "get the half of the maximum translation width the board is allowing for the camera to move"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "set the half of the maximum translation width the board is allowing for the camera to move"
+                            }
+                        ]
+                    }
+                }
+            },
+            "debugMode": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the flag indicating if the board is in debug mode"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the flag indicating if the board is in debug mode"
+                            }
+                        ]
+                    }
+                }
+            },
+            "camera": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the internal camera the board is using"
+                            }
+                        ]
+                    }
+                }
+            },
+            "touchStrategy": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the current strategy the board is using for touch events"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the current strategy the board is using for touch events"
+                            }
+                        ]
+                    }
+                }
+            },
+            "trackpadStrategy": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the current strategy the board is using for trackpad events"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the current strategy the board is using for trackpad events"
+                            }
+                        ]
+                    }
+                }
+            },
+            "keyboardMouseStrategy": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the current strategy the board is using for keyboard and mouse events"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the current strategy the board is using for keyboard and mouse events"
+                            }
+                        ]
+                    }
+                }
+            },
+            "verticalGridSize": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the current strategy the board is using for camera events; currently this property has no effect"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the current strategy the board is using for camera events; currently this has no effect"
+                            }
+                        ]
+                    }
+                }
+            },
+            "horizontalGridSize": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the current strategy the board is using for camera events; currently this property has no effect"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the current strategy the board is using for camera events; currently this property has no effect"
+                            }
+                        ]
+                    }
+                }
+            },
+            "displayGrid": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the flag indicating if the board is displaying the grid"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the flag indicating if the board is displaying the grid"
+                            }
+                        ]
+                    }
+                }
+            },
+            "displayRuler": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the flag indicating if the board is displaying the ruler"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the flag indicating if the board is displaying the ruler"
+                            }
+                        ]
+                    }
+                }
+            },
+            "limitEntireViewPort": {
+                "getter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Get the flag indicating if the board is limiting the entire view port"
+                            }
+                        ]
+                    }
+                },
+                "setter": {
+                    "comment": {
+                        "blockTags": [],
+                        "modifierTags": {},
+                        "summary": [
+                            {
+                                "kind": "text",
+                                "text": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well;"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}

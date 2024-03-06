@@ -68,6 +68,9 @@ devDependencies:
   typedoc-material-theme:
     specifier: ^1.0.2
     version: 1.0.2(typedoc@0.25.9)
+  typedoc-plugin-localization:
+    specifier: ^3.0.4
+    version: 3.0.4
   typedoc-plugin-mdn-links:
     specifier: ^3.1.17
     version: 3.1.17(typedoc@0.25.9)
@@ -3504,6 +3507,12 @@ packages:
     dependencies:
       '@material/material-color-utilities': 0.2.7
       typedoc: 0.25.9(typescript@5.3.3)
+    dev: true
+
+  /typedoc-plugin-localization@3.0.4:
+    resolution: {integrity: sha512-gnQrMvMsIzZhNW/V2+IgIh6bFq4CJgTk2PDGAxSnNMTHF30IZ3RBBpc8FWkqCZt3D9mKG9X3k3sNLt6385ARBg==}
+    dependencies:
+      fs-extra: 10.1.0
     dev: true
 
   /typedoc-plugin-mdn-links@3.1.17(typedoc@0.25.9):

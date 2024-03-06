@@ -48,6 +48,7 @@
     "tslib": "^2.6.0",
     "typedoc": "^0.25.9",
     "typedoc-material-theme": "^1.0.2",
+    "typedoc-plugin-localization": "^3.0.4",
     "typedoc-plugin-mdn-links": "^3.1.17",
     "typedoc-theme-hierarchy": "^4.0.0",
     "typescript": "^5.0.3"

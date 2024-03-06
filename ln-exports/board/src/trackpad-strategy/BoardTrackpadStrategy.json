@@ -1,0 +1,21 @@
+{
+    "BoardTrackpadStrategy": {
+        "comment": {
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Trackpad Strategy"
+                        }
+                    ]
+                }
+            ],
+            "modifierTags": {},
+            "summary": []
+        },
+        "properties": {},
+        "methods": {}
+    }
+}
