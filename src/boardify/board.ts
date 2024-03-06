@@ -1,9 +1,9 @@
 import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy/touch-strategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireViewForBoard} from "../trackpad-strategy/trackpad-strategy";
-import { CanvasKMStrategy, DefaultCanvasKMStrategyForBoard } from "../km-strategy/km-strategy";
+import {BoardTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy";
+import { BoardTrackpadStrategy, DefaultBoardTrackpadStrategy} from "../trackpad-strategy";
+import { BoardKMStrategy, DefaultBoardKMStrategy } from "../km-strategy";
 import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
 import { CameraListener } from "../camera-change-command/camera-observer";
 
@@ -27,9 +27,11 @@ export default class Board {
     private _handOverStepControl: boolean = true;
     private lastUpdateTime: number;
 
-    private _touchStrategy: CanvasTouchStrategy;
-    private _trackpadStrategy: CanvasTrackpadStrategy;
-    private _keyboardMouseStrategy: CanvasKMStrategy;
+    private _touchStrategy: BoardTouchStrategy;
+    private _trackpadStrategy: BoardTrackpadStrategy;
+    private _keyboardMouseStrategy: BoardKMStrategy;
+
+    private _limitEntireViewPort: boolean = true;
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
@@ -58,30 +60,31 @@ export default class Board {
         this._camera.setViewPortHeight(this._canvas.height);
         this.maxHalfTransHeight = 5000;
         this.maxHalfTransWidth = 5000;
-        let minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
-        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            this._camera.setMinZoomLevel(minZoomLevel);
-        }
-        minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
-        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            this._camera.setMinZoomLevel(minZoomLevel);
-        }
+        this.adjustZoomLevelBaseOnDimensions();
+        // let minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+        // if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+        //     this._camera.setMinZoomLevel(minZoomLevel);
+        // }
+        // minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+        // if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+        //     this._camera.setMinZoomLevel(minZoomLevel);
+        // }
 
         this._cameraObserver = new CameraObserver(this._camera);
 
         this.bindFunctions();
 
-        this._touchStrategy = new TwoFingerPanZoomForBoard(this._canvas, this, this._cameraObserver);
-        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireViewForBoard(this._canvas, this, this._cameraObserver);
-        this._keyboardMouseStrategy = new DefaultCanvasKMStrategyForBoard(this._canvas, this, this._cameraObserver);
+        this._touchStrategy = new TwoFingerPanZoomForBoard(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
+        this._trackpadStrategy = new DefaultBoardTrackpadStrategy(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
+        this._keyboardMouseStrategy = new DefaultBoardKMStrategy(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
 
         this._debugMode = false;
 
         this.attributeObserver = new MutationObserver(this.attributeCallBack.bind(this));
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
-
         this.attributeObserver.observe(this._canvas, {attributes: true});
+
         this.registerEventListeners();
         this.lastUpdateTime = 0;
         if(!this._handOverStepControl){
@@ -100,16 +103,20 @@ export default class Board {
                 if(mutation.attributeName === "width"){
                     // console.log("width changed");
                     this._camera.setViewPortWidth(this._canvas.width);
-                    const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
-                    if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-                        this._camera.setMinZoomLevel(minZoomLevel);
+                    if(this._limitEntireViewPort){
+                        const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+                        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                            this._camera.setMinZoomLevel(minZoomLevel);
+                        }
                     }
                 } else if(mutation.attributeName === "height"){
                     // console.log("height changed");
                     this._camera.setViewPortHeight(this._canvas.height);
-                    const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
-                    if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-                        this._camera.setMinZoomLevel(minZoomLevel);
+                    if(this._limitEntireViewPort){
+                        const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+                        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                            this._camera.setMinZoomLevel(minZoomLevel);
+                        }
                     }
                 }
             }
@@ -147,9 +154,11 @@ export default class Board {
     set width(value: number) {
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
-        const minZoomLevel = value / (this.maxHalfTransWidth * 2);
-        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            this._camera.setMinZoomLevel(minZoomLevel);
+        if(this._limitEntireViewPort){
+            const minZoomLevel = value / (this.maxHalfTransWidth * 2);
+            if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                this._camera.setMinZoomLevel(minZoomLevel);
+            }
         }
     }
 
@@ -164,11 +173,14 @@ export default class Board {
      * set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated
      */
     set height(value: number) {
+        console.log("set height value", value);
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
-        const minZoomLevel = value / (this.maxHalfTransHeight * 2);
-        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-            this._camera.setMinZoomLevel(minZoomLevel);
+        if(this._limitEntireViewPort){
+            const minZoomLevel = value / (this.maxHalfTransHeight * 2);
+            if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+                this._camera.setMinZoomLevel(minZoomLevel);
+            }
         }
     }
 
@@ -354,42 +366,51 @@ export default class Board {
     /**
      * Set the current strategy the board is using for touch events 
      */ 
-    set touchStrategy(strategy: CanvasTouchStrategy){
+    set touchStrategy(strategy: BoardTouchStrategy){
+        this._touchStrategy.tearDown();
+        strategy.limitEntireViewPort = this._limitEntireViewPort;
         this._touchStrategy = strategy;
+        this._touchStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for touch events 
      */
-    get touchStrategy(): CanvasTouchStrategy{
+    get touchStrategy(): BoardTouchStrategy{
         return this._touchStrategy;
     }
 
     /**
      * Set the current strategy the board is using for trackpad events
      */
-    set trackpadStrategy(strategy: CanvasTrackpadStrategy){
+    set trackpadStrategy(strategy: BoardTrackpadStrategy){
+        this._trackpadStrategy.tearDown();
+        strategy.limitEntireViewPort = this._limitEntireViewPort;
         this._trackpadStrategy = strategy;
+        this._trackpadStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for trackpad events
      */
-    get trackpadStrategy(): CanvasTrackpadStrategy{
+    get trackpadStrategy(): BoardTrackpadStrategy{
         return this._trackpadStrategy;
     }
 
     /**
      * Set the current strategy the board is using for keyboard and mouse events
      */
-    set keyboardMouseStrategy(strategy: CanvasKMStrategy){
+    set keyboardMouseStrategy(strategy: BoardKMStrategy){
+        this._keyboardMouseStrategy.tearDown();
+        strategy.limitEntireViewPort = this._limitEntireViewPort;
         this._keyboardMouseStrategy = strategy;
+        this._keyboardMouseStrategy.setUp();
     }
 
     /**
      * Get the current strategy the board is using for keyboard and mouse events
      */
-    get keyboardMouseStrategy(): CanvasKMStrategy{
+    get keyboardMouseStrategy(): BoardKMStrategy{
         return this._keyboardMouseStrategy;
     }
 
@@ -456,6 +477,26 @@ export default class Board {
     }
 
     /**
+     * Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well;
+     */
+    set limitEntireViewPort(value: boolean){
+        this._limitEntireViewPort = value;
+        this._trackpadStrategy.limitEntireViewPort = value;
+        this._touchStrategy.limitEntireViewPort = value;
+        this._keyboardMouseStrategy.limitEntireViewPort = value;
+        if(value){
+            this.adjustZoomLevelBaseOnDimensions();
+        }
+    }
+
+    /**
+     * Get the flag indicating if the board is limiting the entire view port
+     */
+    get limitEntireViewPort(): boolean{
+        return this._limitEntireViewPort;
+    }
+
+    /**
      * Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)
      */
     bindFunctions(){
@@ -463,6 +504,29 @@ export default class Board {
         this.windowResizeHandler = this.windowResizeHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
+    }
+
+    adjustZoomLevelBaseOnDimensions(){
+        const minZoomLevelHeight = this._canvas.height / (this.maxHalfTransHeight * 2);
+        const minZoomLevelWidth = this._canvas.width / (this.maxHalfTransWidth * 2);
+        const minZoomLevel = Math.min(minZoomLevelHeight, minZoomLevelWidth);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
+    }
+
+    adjustZoomLevelBoundsBaseOnWidth(){
+        const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
+    }
+
+    adjustZoomLevelBoundsBaseOnHeight(){
+        const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+        if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
+            this._camera.setMinZoomLevel(minZoomLevel);
+        }
     }
 
     /**
@@ -526,14 +590,16 @@ export default class Board {
         this._trackpadStrategy.setUp();
         this._touchStrategy.setUp();
         this._keyboardMouseStrategy.setUp();
-        this._canvas.addEventListener('pointermove', this.pointerMoveHandler.bind(this));
-        this._canvas.addEventListener('pointerdown', this.pointerDownHandler.bind(this));
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler);
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler);
     }
 
     removeEventListeners(){
         this._trackpadStrategy.tearDown();
         this._touchStrategy.tearDown();
         this._keyboardMouseStrategy.tearDown();
+        this._canvas.removeEventListener('pointermove', this.pointerMoveHandler);
+        this._canvas.removeEventListener('pointerdown', this.pointerDownHandler);
     }
 
     /**

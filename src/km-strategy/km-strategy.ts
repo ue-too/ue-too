@@ -4,7 +4,6 @@ import { Point } from "..";
 import BoardElement from "../board-element";
 import Board from "../boardify";
 import { CameraObserver } from "../camera-change-command/camera-observer";
-import { CameraMoveCommand } from "../camera-change-command";
 
 
 type CoordinateConversionFn = (interestPoint: Point) => Point;
@@ -12,7 +11,8 @@ type CoordinateConversionFn = (interestPoint: Point) => Point;
 /**
  * @category Keyboard-Mouse Strategy
  */
-export interface CanvasKMStrategy {
+export interface BoardKMStrategy {
+    limitEntireViewPort: boolean;
     disabled: boolean;
     setUp(): void;
     tearDown(): void;
@@ -21,7 +21,7 @@ export interface CanvasKMStrategy {
 }
 
 
-export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
+export class DefaultBoardElementKMStrategy implements BoardKMStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
@@ -29,11 +29,21 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     private canvas: BoardElement;
     private cameraObserver: CameraObserver;
     private _disabled: boolean;
+    private _limitEntireViewPort: boolean;
 
-    constructor(canvas: BoardElement, cameraObserver: CameraObserver){
+    get limitEntireViewPort(): boolean {
+        return this._limitEntireViewPort;
+    }
+
+    set limitEntireViewPort(value: boolean){
+        this._limitEntireViewPort = value;
+    }
+
+    constructor(canvas: BoardElement, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.isDragging = false;
         this.canvas = canvas;
+        this._limitEntireViewPort = limitEntireViewPort;
         this.cameraObserver = cameraObserver;
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
@@ -60,6 +70,8 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     }
 
     disableStrategy(): void {
+        this.dragStartPoint = {x: 0, y: 0};
+        this.isDragging = false;
         this._disabled = true;
     }
 
@@ -94,7 +106,11 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
             diff = {x: diff.x, y: -diff.y};
             let diffInWorld = PointCal.rotatePoint(diff, this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
-            this.cameraObserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
+            if(this._limitEntireViewPort){
+                this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
+            } else {
+                this.cameraObserver.panCamera(diffInWorld);
+            }
             this.dragStartPoint = target;
         }
     }
@@ -103,7 +119,7 @@ export class DefaultCanvasKMStrategy implements CanvasKMStrategy {
     }
 }
 
-export class DefaultCanvasKMStrategyForBoard implements CanvasKMStrategy {
+export class DefaultBoardKMStrategy implements BoardKMStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
@@ -112,16 +128,26 @@ export class DefaultCanvasKMStrategyForBoard implements CanvasKMStrategy {
     private board: Board;
     private cameraObserver: CameraObserver;
     private _disabled: boolean;
+    private _limitEntireViewPort: boolean;
 
-    constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver){
+    constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.isDragging = false;
         this.canvas = canvas;
         this.board = board;
         this.cameraObserver = cameraObserver;
+        this._limitEntireViewPort = limitEntireViewPort;
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._limitEntireViewPort;
+    }
+
+    set limitEntireViewPort(value: boolean){
+        this._limitEntireViewPort = value;
     }
 
     setUp(): void {
@@ -178,7 +204,11 @@ export class DefaultCanvasKMStrategyForBoard implements CanvasKMStrategy {
             diff = {x: diff.x, y: -diff.y};
             let diffInWorld = PointCal.rotatePoint(diff, this.board.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.board.getCamera().getZoomLevel());
-            this.cameraObserver.executeCommand(new CameraMoveCommand(this.board.getCamera(), diffInWorld));
+            if(this._limitEntireViewPort){
+                this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
+            } else {
+                this.cameraObserver.panCamera(diffInWorld);
+            }
             this.dragStartPoint = target;
         }
     }
