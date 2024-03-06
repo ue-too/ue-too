@@ -1,9 +1,9 @@
 import BoardCamera from "../board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {CanvasTouchStrategy, TwoFingerPanZoom} from "../touch-strategy/touch-strategy";
-import { CanvasTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "../trackpad-strategy/trackpad-strategy";
-import { DefaultCanvasKMStrategy, CanvasKMStrategy } from "../km-strategy/km-strategy";
+import {BoardTouchStrategy, TwoFingerPanZoom} from "../touch-strategy/touch-strategy";
+import { BoardTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "../trackpad-strategy/trackpad-strategy";
+import { DefaultBoardElementKMStrategy, BoardKMStrategy } from "../km-strategy/km-strategy";
 import * as AttributeChangeCommands from "../attribute-change-command";
 import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
 import { CameraListener } from "../camera-change-command/camera-observer";
@@ -38,9 +38,9 @@ export default class BoardElement extends HTMLElement{
 
     private windowsResizeObserver: ResizeObserver;
 
-    private _touchStrategy: CanvasTouchStrategy;
-    private _trackpadStrategy: CanvasTrackpadStrategy;
-    private _keyboardMouseStrategy: CanvasKMStrategy;
+    private _touchStrategy: BoardTouchStrategy;
+    private _trackpadStrategy: BoardTrackpadStrategy;
+    private _keyboardMouseStrategy: BoardKMStrategy;
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
@@ -73,7 +73,7 @@ export default class BoardElement extends HTMLElement{
 
         this._touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
         this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
-        this._keyboardMouseStrategy = new DefaultCanvasKMStrategy(this, this._cameraObserver);
+        this._keyboardMouseStrategy = new DefaultBoardElementKMStrategy(this, this._cameraObserver);
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
 
@@ -234,27 +234,27 @@ export default class BoardElement extends HTMLElement{
         return this._camera;
     }
 
-    set touchStrategy(strategy: CanvasTouchStrategy){
+    set touchStrategy(strategy: BoardTouchStrategy){
         this._touchStrategy = strategy;
     }
 
-    get touchStrategy(): CanvasTouchStrategy{
+    get touchStrategy(): BoardTouchStrategy{
         return this._touchStrategy;
     }
 
-    set trackpadStrategy(strategy: CanvasTrackpadStrategy){
+    set trackpadStrategy(strategy: BoardTrackpadStrategy){
         this._trackpadStrategy = strategy;
     }
 
-    get trackpadStrategy(): CanvasTrackpadStrategy{
+    get trackpadStrategy(): BoardTrackpadStrategy{
         return this._trackpadStrategy;
     }
 
-    set keyboardMouseStrategy(strategy: CanvasKMStrategy){
+    set keyboardMouseStrategy(strategy: BoardKMStrategy){
         this._keyboardMouseStrategy = strategy;
     }
 
-    get keyboardMouseStrategy(): CanvasKMStrategy{
+    get keyboardMouseStrategy(): BoardKMStrategy{
         return this._keyboardMouseStrategy;
     }
 
@@ -697,11 +697,12 @@ export default class BoardElement extends HTMLElement{
     }
 
     getStepFunction(): (timestamp: number)=>void{
-        if (this._handOverStepControl){
-            return this.step.bind(this);
-        } else {
-            return null;
-        }
+        // if (this._handOverStepControl){
+        //     return this.step.bind(this);
+        // } else {
+        //     return null;
+        // }
+        return this.step;
     }
 
     getContext(): CanvasRenderingContext2D{

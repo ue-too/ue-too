@@ -4,40 +4,69 @@ import BoardElement from "../board-element/board-element";
 import { PointCal } from "point2point";
 import { Point } from "..";
 import { CameraObserver } from "../camera-change-command/camera-observer";
-import { CameraZoomCommand, CameraMoveCommand, CameraRotateCommand } from "../camera-change-command";
 
-/**
- * @category Touch Strategy
- */
-export interface CanvasTouchStrategyLegacy {
+export interface BoardTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchendHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchcancelHandler(e: TouchEvent, bottomLeftCorner: Point): void;
     touchmoveHandler(e: TouchEvent, bottomLeftCorner: Point): void;
 }
 
-export interface CanvasTouchStrategy {
+
+/**
+ * @category Touch Strategy
+ */
+export interface BoardTouchStrategy {
+    disabled: boolean;
+    limitEntireViewPort: boolean;
+    enableStrategy(): void;
+    disableStrategy(): void;
     setUp(): void;
     tearDown(): void;
 }
 
-export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
+export class TwoFingerPanZoomForBoard implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private canvas: HTMLCanvasElement;
     private board: Board;
     private dragStartDist: number;
-    private cameraObeserver: CameraObserver; 
+    private cameraObeserver: CameraObserver;
+    private _disabled: boolean = false;
+    private _limitEntireViewPort: boolean = true;
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver){
+    constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
         this.canvas = canvas;
         this.cameraObeserver = cameraObserver;
         this.touchcancelHandler = this.touchcancelHandler.bind(this);
         this.touchendHandler = this.touchendHandler.bind(this);
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
         this.touchstartHandler = this.touchstartHandler.bind(this);
+        this._limitEntireViewPort = limitEntireViewPort;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._limitEntireViewPort;
+    }
+
+    set limitEntireViewPort(limitEntireViewPort: boolean){
+        this._limitEntireViewPort = limitEntireViewPort;
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this.dragStartDist = 0;
+        this.touchPoints = [];
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -55,6 +84,7 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
     }
 
     touchstartHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length === 2){
             let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
@@ -66,14 +96,17 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
     }
 
     touchcancelHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchendHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchmoveHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
@@ -89,33 +122,40 @@ export class TwoFingerPanZoomForBoard implements CanvasTouchStrategy {
                 let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
                 midPoint = this.board.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
                 let zoomAmount = distDiff * 0.1 * this.board.getCamera().getZoomLevel() * this.ZOOM_SENSATIVITY;
-                this.cameraObeserver.executeCommand(new CameraZoomCommand(this.board.getCamera(), zoomAmount, midPoint));
+                if(this._limitEntireViewPort){
+                    this.cameraObeserver.zoomCameraLimitEntireViewPort(zoomAmount, midPoint);
+                } else {
+                    this.cameraObeserver.zoomCamera(zoomAmount, midPoint);
+                }
                 this.touchPoints = [startPoint, endPoint];
             } else {
                 const diff = PointCal.subVector(this.touchPoints[0], startPoint);
                 let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.board.getCamera().getRotation());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.board.getCamera().getZoomLevel());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
-                this.cameraObeserver.executeCommand(new CameraMoveCommand(this.board.getCamera(), diffInWorld));
+                if(this._limitEntireViewPort){
+                    this.cameraObeserver.panCameraLimitEntireViewPort(diffInWorld);
+                } else {
+                    this.cameraObeserver.panCamera(diffInWorld);
+                }
                 this.touchPoints = [startPoint, endPoint];
             }
         }
     }
 
-    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
-    }
 }
 
-export class TwoFingerPanZoom implements CanvasTouchStrategy {
+export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private canvas: BoardElement;
     private dragStartDist: number;
-    private cameraObeserver: CameraObserver; 
+    private cameraObeserver: CameraObserver;
+    private _limitEntireViewPort: boolean = true;
 
     private ZOOM_SENSATIVITY: number = 0.005;
+
+    private _disabled: boolean = false;
 
     constructor(canvas: BoardElement, cameraObserver: CameraObserver){
         this.canvas = canvas;
@@ -124,6 +164,28 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
         this.touchendHandler = this.touchendHandler.bind(this);
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
         this.touchstartHandler = this.touchstartHandler.bind(this);
+    }
+
+    set limitEntireViewPort(limitEntireViewPort: boolean){
+        this._limitEntireViewPort = limitEntireViewPort;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._limitEntireViewPort;
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    disableStrategy(): void {
+        this.dragStartDist = 0;
+        this.touchPoints = [];
+        this._disabled = true;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
     }
 
     setUp(): void {
@@ -141,6 +203,7 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
     }
 
     touchstartHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length === 2){
             let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
@@ -152,14 +215,17 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
     }
 
     touchcancelHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchendHandler(e: TouchEvent){
+        if(this._disabled) return;
         this.touchPoints = [];
     }
 
     touchmoveHandler(e: TouchEvent){
+        if(this._disabled) return;
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
@@ -175,25 +241,28 @@ export class TwoFingerPanZoom implements CanvasTouchStrategy {
                 let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
                 midPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
                 let zoomAmount = distDiff * 0.1 * this.canvas.getCamera().getZoomLevel() * this.ZOOM_SENSATIVITY;
-                this.cameraObeserver.executeCommand(new CameraZoomCommand(this.canvas.getCamera(), zoomAmount, midPoint));
+                if(this._limitEntireViewPort){
+                    this.cameraObeserver.zoomCameraLimitEntireViewPort(zoomAmount, midPoint);
+                } else {
+                    this.cameraObeserver.zoomCamera(zoomAmount, midPoint);
+                }
                 this.touchPoints = [startPoint, endPoint];
             } else {
                 const diff = PointCal.subVector(this.touchPoints[0], startPoint);
                 let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
-                this.cameraObeserver.executeCommand(new CameraMoveCommand(this.canvas.getCamera(), diffInWorld));
+                if(this._limitEntireViewPort){
+                    this.cameraObeserver.panCameraLimitEntireViewPort(diffInWorld);
+                } else {
+                    this.cameraObeserver.panCamera(diffInWorld);
+                }
                 this.touchPoints = [startPoint, endPoint];
             }
         }
     }
-
-    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
-    }
 }
-export class TwoFingerPanZoomLegacy implements CanvasTouchStrategyLegacy {
+export class TwoFingerPanZoomLegacy implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
@@ -259,7 +328,7 @@ export class TwoFingerPanZoomLegacy implements CanvasTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategyLegacy {
+export class OneFingerPanTwoFingerZoom implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
@@ -333,7 +402,7 @@ export class OneFingerPanTwoFingerZoom implements CanvasTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoomBoard implements CanvasTouchStrategyLegacy {
+export class OneFingerPanTwoFingerZoomBoard implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
