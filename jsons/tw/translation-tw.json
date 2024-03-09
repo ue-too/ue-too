@@ -154,6 +154,39 @@
     "item": "callSignature"
   },
   {
+    "translationKey": "696cb08572d8d1c7f8bbaa7c41faddbb",
+    "translationJSONPath": [
+      "2327",
+      "comments",
+      "index-0"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "item": "class"
+  },
+  {
+    "translationKey": "ea685013238876b47f878efa1cd2fca9",
+    "translationJSONPath": [
+      "2271",
+      "comments",
+      "index-0"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "item": "class"
+  },
+  {
+    "translationKey": "49119e48b8c0709f97f955f07295ff98",
+    "translationJSONPath": [
+      "2299",
+      "comments",
+      "index-0"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "item": "class"
+  },
+  {
     "translationKey": "f80ed261b92ada3b24cc42a547ade87f",
     "translationJSONPath": [
       "3508",
@@ -163,5 +196,16 @@
     "originalText": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",
     "translation": "",
     "item": "setSignature"
+  },
+  {
+    "translationKey": "89942e165089afd6df620ff023db970d",
+    "translationJSONPath": [
+      "2260",
+      "comments",
+      "index-0"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "item": "interface"
   }
 ]

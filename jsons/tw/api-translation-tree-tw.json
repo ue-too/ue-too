@@ -316,6 +316,106 @@
       }
     ]
   },
+  "2260": {
+    "name": "BoardTrackpadStrategy",
+    "comments": [
+      {
+        "originalText": "this is a test string for interface",
+        "translation": "",
+        "translationJSONPath": [
+          "2260",
+          "comments",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "comment",
+          "summary",
+          "index-0",
+          "text"
+        ],
+        "kind": "interface",
+        "translationKey": "89942e165089afd6df620ff023db970d",
+        "locationIdentifier": "87b37e43a09a5b58ecff30fc0ed2b07e"
+      }
+    ]
+  },
+  "2271": {
+    "name": "TwoFingerPanPinchZoom",
+    "comments": [
+      {
+        "originalText": "this is a test string for interface",
+        "translation": "",
+        "translationJSONPath": [
+          "2271",
+          "comments",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "comment",
+          "summary",
+          "index-0",
+          "text"
+        ],
+        "kind": "class",
+        "translationKey": "ea685013238876b47f878efa1cd2fca9",
+        "locationIdentifier": "baa1b1c06a7ccfdb19fc369b4bb9bb15"
+      }
+    ]
+  },
+  "2299": {
+    "name": "TwoFingerPanPinchZoomLimitEntireView",
+    "comments": [
+      {
+        "originalText": "this is a test string for interface",
+        "translation": "",
+        "translationJSONPath": [
+          "2299",
+          "comments",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "comment",
+          "summary",
+          "index-0",
+          "text"
+        ],
+        "kind": "class",
+        "translationKey": "49119e48b8c0709f97f955f07295ff98",
+        "locationIdentifier": "b24641d5072eca9b3fc5e6a5c35ad6d0"
+      }
+    ]
+  },
+  "2327": {
+    "name": "DefaultBoardTrackpadStrategy",
+    "comments": [
+      {
+        "originalText": "this is a test string for interface",
+        "translation": "",
+        "translationJSONPath": [
+          "2327",
+          "comments",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "comment",
+          "summary",
+          "index-0",
+          "text"
+        ],
+        "kind": "class",
+        "translationKey": "696cb08572d8d1c7f8bbaa7c41faddbb",
+        "locationIdentifier": "ad599b88bf81589520d12d6df647a33d"
+      }
+    ]
+  },
   "3508": {
     "name": "limitEntireViewPort",
     "comments": [

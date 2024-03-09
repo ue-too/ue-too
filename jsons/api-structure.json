@@ -101,6 +101,17 @@
     "setSignature",
     "implementationOf"
   ],
+  "getSignatureReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "type",
+    "implementationOf",
+    "comment"
+  ],
   "methodReflection": [
     "id",
     "name",
@@ -111,6 +122,18 @@
     "signatures",
     "implementationOf"
   ],
+  "setSignatureReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "parameters",
+    "type",
+    "implementationOf",
+    "comment"
+  ],
   "interfaceReflection": [
     "id",
     "name",
@@ -120,7 +143,8 @@
     "children",
     "groups",
     "sources",
-    "implementedBy"
+    "implementedBy",
+    "comment"
   ],
   "typeAliasReflection": [
     "id",

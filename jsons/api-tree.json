@@ -632,42 +632,90 @@
           "@niuee/board",
           "BoardCamera",
           "restrictRelativeXTranslationFromGesture"
-        ]
+        ],
+        "restrictRelativeXTranslationFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictRelativeXTranslationFromGesture",
+            "restrictRelativeXTranslationFromGesture"
+          ]
+        }
       },
       "restrictRelativeYTranslationFromGesture": {
         "path": [
           "@niuee/board",
           "BoardCamera",
           "restrictRelativeYTranslationFromGesture"
-        ]
+        ],
+        "restrictRelativeYTranslationFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictRelativeYTranslationFromGesture",
+            "restrictRelativeYTranslationFromGesture"
+          ]
+        }
       },
       "restrictRotationFromGesture": {
         "path": [
           "@niuee/board",
           "BoardCamera",
           "restrictRotationFromGesture"
-        ]
+        ],
+        "restrictRotationFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictRotationFromGesture",
+            "restrictRotationFromGesture"
+          ]
+        }
       },
       "restrictXTranslationFromGesture": {
         "path": [
           "@niuee/board",
           "BoardCamera",
           "restrictXTranslationFromGesture"
-        ]
+        ],
+        "restrictXTranslationFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictXTranslationFromGesture",
+            "restrictXTranslationFromGesture"
+          ]
+        }
       },
       "restrictYTranslationFromGesture": {
         "path": [
           "@niuee/board",
           "BoardCamera",
           "restrictYTranslationFromGesture"
-        ]
+        ],
+        "restrictYTranslationFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictYTranslationFromGesture",
+            "restrictYTranslationFromGesture"
+          ]
+        }
       },
       "restrictZoomFromGesture": {
         "path": [
           "@niuee/board",
           "BoardCamera",
           "restrictZoomFromGesture"
-        ]
+        ],
+        "restrictZoomFromGesture": {
+          "path": [
+            "@niuee/board",
+            "BoardCamera",
+            "restrictZoomFromGesture",
+            "restrictZoomFromGesture"
+          ]
+        }
       },
       "cameraPositionLockedOnObject": {
         "path": [
@@ -2289,147 +2337,315 @@
           "@niuee/board",
           "BoardElement",
           "camera"
-        ]
+        ],
+        "camera": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "camera",
+            "camera"
+          ]
+        }
       },
       "debugMode": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "debugMode"
-        ]
+        ],
+        "debugMode": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "debugMode",
+            "debugMode"
+          ]
+        }
       },
       "displayGrid": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "displayGrid"
-        ]
+        ],
+        "displayGrid": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "displayGrid",
+            "displayGrid"
+          ]
+        }
       },
       "displayRuler": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "displayRuler"
-        ]
+        ],
+        "displayRuler": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "displayRuler",
+            "displayRuler"
+          ]
+        }
       },
       "fullScreenFlag": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "fullScreenFlag"
-        ]
+        ],
+        "fullScreenFlag": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "fullScreenFlag",
+            "fullScreenFlag"
+          ]
+        }
       },
       "height": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "height"
-        ]
+        ],
+        "height": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "height",
+            "height"
+          ]
+        }
       },
       "horizontalGridSize": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "horizontalGridSize"
-        ]
+        ],
+        "horizontalGridSize": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "horizontalGridSize",
+            "horizontalGridSize"
+          ]
+        }
       },
       "keyboardMouseStrategy": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "keyboardMouseStrategy"
-        ]
+        ],
+        "keyboardMouseStrategy": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "keyboardMouseStrategy",
+            "keyboardMouseStrategy"
+          ]
+        }
       },
       "maxTransHalfHeight": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "maxTransHalfHeight"
-        ]
+        ],
+        "maxTransHalfHeight": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "maxTransHalfHeight",
+            "maxTransHalfHeight"
+          ]
+        }
       },
       "maxTransHalfWidth": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "maxTransHalfWidth"
-        ]
+        ],
+        "maxTransHalfWidth": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "maxTransHalfWidth",
+            "maxTransHalfWidth"
+          ]
+        }
       },
       "restrictRelativeXTranslation": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictRelativeXTranslation"
-        ]
+        ],
+        "restrictRelativeXTranslation": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictRelativeXTranslation",
+            "restrictRelativeXTranslation"
+          ]
+        }
       },
       "restrictRelativeYTranslation": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictRelativeYTranslation"
-        ]
+        ],
+        "restrictRelativeYTranslation": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictRelativeYTranslation",
+            "restrictRelativeYTranslation"
+          ]
+        }
       },
       "restrictRotation": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictRotation"
-        ]
+        ],
+        "restrictRotation": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictRotation",
+            "restrictRotation"
+          ]
+        }
       },
       "restrictXTranslation": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictXTranslation"
-        ]
+        ],
+        "restrictXTranslation": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictXTranslation",
+            "restrictXTranslation"
+          ]
+        }
       },
       "restrictYTranslation": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictYTranslation"
-        ]
+        ],
+        "restrictYTranslation": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictYTranslation",
+            "restrictYTranslation"
+          ]
+        }
       },
       "restrictZoom": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "restrictZoom"
-        ]
+        ],
+        "restrictZoom": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "restrictZoom",
+            "restrictZoom"
+          ]
+        }
       },
       "stepControl": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "stepControl"
-        ]
+        ],
+        "stepControl": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "stepControl",
+            "stepControl"
+          ]
+        }
       },
       "touchStrategy": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "touchStrategy"
-        ]
+        ],
+        "touchStrategy": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "touchStrategy",
+            "touchStrategy"
+          ]
+        }
       },
       "trackpadStrategy": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "trackpadStrategy"
-        ]
+        ],
+        "trackpadStrategy": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "trackpadStrategy",
+            "trackpadStrategy"
+          ]
+        }
       },
       "verticalGridSize": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "verticalGridSize"
-        ]
+        ],
+        "verticalGridSize": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "verticalGridSize",
+            "verticalGridSize"
+          ]
+        }
       },
       "width": {
         "path": [
           "@niuee/board",
           "BoardElement",
           "width"
-        ]
+        ],
+        "width": {
+          "path": [
+            "@niuee/board",
+            "BoardElement",
+            "width",
+            "width"
+          ]
+        }
       },
       "attributeChangedCallback": {
         "path": [
@@ -3002,7 +3218,15 @@
           "@niuee/board",
           "CameraMoveCommand",
           "commandPayload"
-        ]
+        ],
+        "commandPayload": {
+          "path": [
+            "@niuee/board",
+            "CameraMoveCommand",
+            "commandPayload",
+            "commandPayload"
+          ]
+        }
       },
       "execute": {
         "path": [
@@ -3059,7 +3283,15 @@
           "@niuee/board",
           "CameraMoveLimitEntireViewPortCommand",
           "commandPayload"
-        ]
+        ],
+        "commandPayload": {
+          "path": [
+            "@niuee/board",
+            "CameraMoveLimitEntireViewPortCommand",
+            "commandPayload",
+            "commandPayload"
+          ]
+        }
       },
       "execute": {
         "path": [
@@ -3322,7 +3554,15 @@
           "@niuee/board",
           "CameraRotateCommand",
           "commandPayload"
-        ]
+        ],
+        "commandPayload": {
+          "path": [
+            "@niuee/board",
+            "CameraRotateCommand",
+            "commandPayload",
+            "commandPayload"
+          ]
+        }
       },
       "execute": {
         "path": [
@@ -3386,7 +3626,15 @@
           "@niuee/board",
           "CameraZoomCommand",
           "commandPayload"
-        ]
+        ],
+        "commandPayload": {
+          "path": [
+            "@niuee/board",
+            "CameraZoomCommand",
+            "commandPayload",
+            "commandPayload"
+          ]
+        }
       },
       "execute": {
         "path": [
@@ -3450,7 +3698,15 @@
           "@niuee/board",
           "CameraZoomLimitEntireViewPortCommand",
           "commandPayload"
-        ]
+        ],
+        "commandPayload": {
+          "path": [
+            "@niuee/board",
+            "CameraZoomLimitEntireViewPortCommand",
+            "commandPayload",
+            "commandPayload"
+          ]
+        }
       },
       "execute": {
         "path": [
@@ -3542,14 +3798,30 @@
           "@niuee/board",
           "DefaultBoardElementKMStrategy",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardElementKMStrategy",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "DefaultBoardElementKMStrategy",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardElementKMStrategy",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -3738,14 +4010,30 @@
           "@niuee/board",
           "DefaultBoardKMStrategy",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardKMStrategy",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "DefaultBoardKMStrategy",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardKMStrategy",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -3920,14 +4208,30 @@
           "@niuee/board",
           "DefaultBoardTrackpadStrategy",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardTrackpadStrategy",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "DefaultBoardTrackpadStrategy",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "DefaultBoardTrackpadStrategy",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -5326,14 +5630,30 @@
           "@niuee/board",
           "TwoFingerPanPinchZoom",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanPinchZoom",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "TwoFingerPanPinchZoom",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanPinchZoom",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -5471,14 +5791,30 @@
           "@niuee/board",
           "TwoFingerPanPinchZoomLimitEntireView",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanPinchZoomLimitEntireView",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "TwoFingerPanPinchZoomLimitEntireView",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanPinchZoomLimitEntireView",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -5630,14 +5966,30 @@
           "@niuee/board",
           "TwoFingerPanZoom",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanZoom",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "TwoFingerPanZoom",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanZoom",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -5841,14 +6193,30 @@
           "@niuee/board",
           "TwoFingerPanZoomForBoard",
           "disabled"
-        ]
+        ],
+        "disabled": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanZoomForBoard",
+            "disabled",
+            "disabled"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "TwoFingerPanZoomForBoard",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "TwoFingerPanZoomForBoard",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "disableStrategy": {
         "path": [
@@ -6260,154 +6628,330 @@
           "@niuee/board",
           "default",
           "camera"
-        ]
+        ],
+        "camera": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "camera",
+            "camera"
+          ]
+        }
       },
       "debugMode": {
         "path": [
           "@niuee/board",
           "default",
           "debugMode"
-        ]
+        ],
+        "debugMode": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "debugMode",
+            "debugMode"
+          ]
+        }
       },
       "displayGrid": {
         "path": [
           "@niuee/board",
           "default",
           "displayGrid"
-        ]
+        ],
+        "displayGrid": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "displayGrid",
+            "displayGrid"
+          ]
+        }
       },
       "displayRuler": {
         "path": [
           "@niuee/board",
           "default",
           "displayRuler"
-        ]
+        ],
+        "displayRuler": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "displayRuler",
+            "displayRuler"
+          ]
+        }
       },
       "fullScreen": {
         "path": [
           "@niuee/board",
           "default",
           "fullScreen"
-        ]
+        ],
+        "fullScreen": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "fullScreen",
+            "fullScreen"
+          ]
+        }
       },
       "height": {
         "path": [
           "@niuee/board",
           "default",
           "height"
-        ]
+        ],
+        "height": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "height",
+            "height"
+          ]
+        }
       },
       "horizontalGridSize": {
         "path": [
           "@niuee/board",
           "default",
           "horizontalGridSize"
-        ]
+        ],
+        "horizontalGridSize": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "horizontalGridSize",
+            "horizontalGridSize"
+          ]
+        }
       },
       "keyboardMouseStrategy": {
         "path": [
           "@niuee/board",
           "default",
           "keyboardMouseStrategy"
-        ]
+        ],
+        "keyboardMouseStrategy": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "keyboardMouseStrategy",
+            "keyboardMouseStrategy"
+          ]
+        }
       },
       "limitEntireViewPort": {
         "path": [
           "@niuee/board",
           "default",
           "limitEntireViewPort"
-        ]
+        ],
+        "limitEntireViewPort": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "limitEntireViewPort",
+            "limitEntireViewPort"
+          ]
+        }
       },
       "maxHalfTransHeight": {
         "path": [
           "@niuee/board",
           "default",
           "maxHalfTransHeight"
-        ]
+        ],
+        "maxHalfTransHeight": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "maxHalfTransHeight",
+            "maxHalfTransHeight"
+          ]
+        }
       },
       "maxHalfTransWidth": {
         "path": [
           "@niuee/board",
           "default",
           "maxHalfTransWidth"
-        ]
+        ],
+        "maxHalfTransWidth": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "maxHalfTransWidth",
+            "maxHalfTransWidth"
+          ]
+        }
       },
       "restrictRelativeXTranslation": {
         "path": [
           "@niuee/board",
           "default",
           "restrictRelativeXTranslation"
-        ]
+        ],
+        "restrictRelativeXTranslation": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictRelativeXTranslation",
+            "restrictRelativeXTranslation"
+          ]
+        }
       },
       "restrictRelativeYTranslation": {
         "path": [
           "@niuee/board",
           "default",
           "restrictRelativeYTranslation"
-        ]
+        ],
+        "restrictRelativeYTranslation": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictRelativeYTranslation",
+            "restrictRelativeYTranslation"
+          ]
+        }
       },
       "restrictRotation": {
         "path": [
           "@niuee/board",
           "default",
           "restrictRotation"
-        ]
+        ],
+        "restrictRotation": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictRotation",
+            "restrictRotation"
+          ]
+        }
       },
       "restrictXTranslation": {
         "path": [
           "@niuee/board",
           "default",
           "restrictXTranslation"
-        ]
+        ],
+        "restrictXTranslation": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictXTranslation",
+            "restrictXTranslation"
+          ]
+        }
       },
       "restrictYTranslation": {
         "path": [
           "@niuee/board",
           "default",
           "restrictYTranslation"
-        ]
+        ],
+        "restrictYTranslation": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictYTranslation",
+            "restrictYTranslation"
+          ]
+        }
       },
       "restrictZoom": {
         "path": [
           "@niuee/board",
           "default",
           "restrictZoom"
-        ]
+        ],
+        "restrictZoom": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "restrictZoom",
+            "restrictZoom"
+          ]
+        }
       },
       "stepControl": {
         "path": [
           "@niuee/board",
           "default",
           "stepControl"
-        ]
+        ],
+        "stepControl": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "stepControl",
+            "stepControl"
+          ]
+        }
       },
       "touchStrategy": {
         "path": [
           "@niuee/board",
           "default",
           "touchStrategy"
-        ]
+        ],
+        "touchStrategy": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "touchStrategy",
+            "touchStrategy"
+          ]
+        }
       },
       "trackpadStrategy": {
         "path": [
           "@niuee/board",
           "default",
           "trackpadStrategy"
-        ]
+        ],
+        "trackpadStrategy": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "trackpadStrategy",
+            "trackpadStrategy"
+          ]
+        }
       },
       "verticalGridSize": {
         "path": [
           "@niuee/board",
           "default",
           "verticalGridSize"
-        ]
+        ],
+        "verticalGridSize": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "verticalGridSize",
+            "verticalGridSize"
+          ]
+        }
       },
       "width": {
         "path": [
           "@niuee/board",
           "default",
           "width"
-        ]
+        ],
+        "width": {
+          "path": [
+            "@niuee/board",
+            "default",
+            "width",
+            "width"
+          ]
+        }
       },
       "adjustZoomLevelBaseOnDimensions": {
         "path": [

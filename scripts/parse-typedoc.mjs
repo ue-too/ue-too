@@ -1,4 +1,4 @@
-import { readFile, readFileSync, write, writeFileSync } from 'node:fs';
+import { readFile, readFileSync, write, writeFile, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import data from '../jsons/api.json' assert { type: 'json' };
 import * as typedoc from "typedoc";
@@ -55,9 +55,6 @@ function crawlAsTree(node){
     if((node.flags && "isExternal" in node.flags && node.flags.isExternal)){
         return undefined;
     }
-    // if(node.name === "limitEntireViewPort"){
-    //     console.log(node);
-    // }
     path.push(node.name);
     flatList[node.id] = {};
     flatList[node.id].name = node.name;
@@ -108,6 +105,8 @@ const testNodes = {"@niuee/board": crawlAsTree(data)};
 mkdir(`jsons/${localizeCode}`, { recursive: true }, (err) => {
     if (err) throw err;
 });
+
+
 writeFileSync(resolve("jsons", "api-tree.json"), JSON.stringify(testNodes, null, 2));
 writeFileSync(resolve("jsons", "api-structure.json"), JSON.stringify(structure, null, 2));
 writeFileSync(resolve(`jsons/${localizeCode}`, `api-translation-tree-${localizeCode}.json`), JSON.stringify(flatList, null, 2));

@@ -5,6 +5,7 @@ import { CameraObserver } from "../camera-change-command/camera-observer";
 
 /**
  * @category Trackpad Strategy
+ * @translation this is a test string for interface
  */
 export interface BoardTrackpadStrategy {
     limitEntireViewPort: boolean;

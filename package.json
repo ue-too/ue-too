@@ -12,6 +12,7 @@
     "doc:parse-raw-json": "node ./scripts/parse-typedoc.mjs",
     "doc:inject-translation": "node ./scripts/inject-translation.mjs",
     "doc:setup": "pnpm exec typedoc --options ./typedoc.json",
+    "doc:en": "pnpm exec typedoc --options translated.typedoc.json --entryPointStrategy merge --entryPoints ./jsons/api-translation-stripped.json --out ./docs/",
     "doc:default": "pnpm doc:setup && node ./scripts/parse-typedoc-default.mjs && pnpm exec typedoc --options ./translated.typedoc.json --entryPoints ./jsons/api-translation-stripped.json --out ./docs",
     "doc:gen-translated-html": "run(){ if [ $# -eq 0 ]; then echo \"No Language Code provided.\"; else echo \"Language Code is: $1\"; pnpm exec typedoc --options translated.typedoc.json --entryPoints ./jsons/api-$1.json --out ./docs/$1; fi;}; run",
     "increment-major-version": "cd ./build && pnpm version major",
