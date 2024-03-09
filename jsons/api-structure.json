@@ -1,0 +1,135 @@
+{
+  "projectReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "children",
+    "groups",
+    "categories",
+    "packageName",
+    "readme",
+    "symbolIdMap"
+  ],
+  "namespaceReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "children",
+    "groups",
+    "sources"
+  ],
+  "functionReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "signatures"
+  ],
+  "callSignatureReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "parameters",
+    "type",
+    "comment",
+    "typeParameter",
+    "implementationOf"
+  ],
+  "classReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "comment",
+    "children",
+    "groups",
+    "sources",
+    "extendedTypes",
+    "implementedTypes"
+  ],
+  "constructorReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "signatures",
+    "overwrites"
+  ],
+  "constructorSignatureReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "comment",
+    "sources",
+    "parameters",
+    "type",
+    "overwrites"
+  ],
+  "propertyReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "type",
+    "defaultValue",
+    "comment"
+  ],
+  "accessorReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "getSignature",
+    "setSignature",
+    "implementationOf"
+  ],
+  "methodReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "signatures",
+    "implementationOf"
+  ],
+  "interfaceReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "children",
+    "groups",
+    "sources",
+    "implementedBy"
+  ],
+  "typeAliasReflection": [
+    "id",
+    "name",
+    "variant",
+    "kind",
+    "flags",
+    "sources",
+    "type",
+    "typeParameters"
+  ]
+}

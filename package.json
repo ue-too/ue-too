@@ -9,7 +9,11 @@
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "pnpm run rollup && pnpm run move-package",
     "move-package": "node ./scripts/move-package.mjs",
-    "build:doc": "pnpm exec typedoc --options ./typedoc.json",
+    "doc:parse-raw-json": "node ./scripts/parse-typedoc.mjs",
+    "doc:inject-translation": "node ./scripts/inject-translation.mjs",
+    "doc:setup": "pnpm exec typedoc --options ./typedoc.json",
+    "doc:default": "pnpm doc:setup && node ./scripts/parse-typedoc-default.mjs && pnpm exec typedoc --options ./translated.typedoc.json --entryPoints ./jsons/api-translation-stripped.json --out ./docs",
+    "doc:gen-translated-html": "run(){ if [ $# -eq 0 ]; then echo \"No Language Code provided.\"; else echo \"Language Code is: $1\"; pnpm exec typedoc --options translated.typedoc.json --entryPoints ./jsons/api-$1.json --out ./docs/$1; fi;}; run",
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
@@ -48,9 +52,7 @@
     "tslib": "^2.6.0",
     "typedoc": "^0.25.9",
     "typedoc-material-theme": "^1.0.2",
-    "typedoc-plugin-localization": "^3.0.4",
     "typedoc-plugin-mdn-links": "^3.1.17",
-    "typedoc-theme-hierarchy": "^4.0.0",
     "typescript": "^5.0.3"
   }
 }

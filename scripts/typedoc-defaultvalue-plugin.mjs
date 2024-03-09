@@ -1,4 +1,4 @@
-import {Converter, TypeScript, Application} from "typedoc";
+import {Converter, TypeScript, Application, Renderer,ProjectReflection, ReflectionGroup} from "typedoc";
 
 export const load = function ({ application, options }) {
     /** @type {Map<Reflection, string>} */
@@ -47,3 +47,31 @@ export const load = function ({ application, options }) {
         defaultValues.clear();
     });
 };
+
+
+/**!SECTION
+ * @param {Reflection} reflection
+ */
+function hasCustomTag(reflection){
+    let count = 0;
+    if(reflection.comment){
+        reflection.comment.blockTags.forEach((blockTag)=>{
+            if(blockTag.tag == "@group"){
+                console.log(blockTag);
+                console.log(blockTag.content)
+                count++;
+            }
+        });
+    }
+
+    return count > 0;
+}
+
+function removeCustomTag(reflection){
+    if(reflection.comment){
+        reflection.comment.blockTags = reflection.comment.blockTags.filter((blockTag)=>{
+            return blockTag.tag != "@customtag";
+        });
+    }
+    return reflection;
+}

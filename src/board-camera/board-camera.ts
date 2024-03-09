@@ -72,8 +72,14 @@ export type CameraRotateFailureRes = {
 
 export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
 
+/**
+ * @translation test string
+ */
 export default class BoardCamera {
 
+    /**!SECTION
+     * @translation test string for position
+     */
     private position: Point;
     private zoomLevel: number;
     private rotation: number;
@@ -122,12 +128,19 @@ export default class BoardCamera {
         return this._restrictZoomFromGesture;
     }
 
+    /**!SECTION
+     * @translation restrict on rotation
+     */
     private _restrictRotationFromGesture: boolean = false;
 
     get restrictRotationFromGesture(): boolean {
         return this._restrictRotationFromGesture;
     }
 
+    /**
+     * 
+     * @translation this is the board camera
+     */
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
             throw new InvalidZoomLevelError("zoom level cannot be less than or equal to 0");
@@ -188,6 +201,9 @@ export default class BoardCamera {
         return true;
     }
 
+    /**
+     * @translation another test string
+     */
     setPositionFromGesture(position: Point): boolean{
         this.releasePositionFromLockedObject();
         

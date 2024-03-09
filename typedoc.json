@@ -1,11 +1,18 @@
 {
-    "plugin": ["typedoc-material-theme", "./scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links", "typedoc-plugin-localization"],
-    "themeColor": "#ffffff",
+    "plugin": [],
+    // "themeColor": "#ffffff",
     "categoryOrder": ["Board", "Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
     "readme": "./README.md",
-    "out": "./docs",
     "entryPoints": ["./src/index.ts"],
     "navigation": {
       "includeCategories": true
-    }
+    },
+    "out": "./docs",
+    "json": "./jsons/api.json",
+    "visibilityFilters": {
+      "protected": true,
+      "private": true,
+      "inherited": true,
+      "external": true,
+  }
 }

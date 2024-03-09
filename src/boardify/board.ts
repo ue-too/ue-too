@@ -477,7 +477,7 @@ export default class Board {
     }
 
     /**
-     * Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well;
+     * @translation Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well
      */
     set limitEntireViewPort(value: boolean){
         this._limitEntireViewPort = value;
