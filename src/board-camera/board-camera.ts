@@ -3,6 +3,11 @@ import { Point } from "..";
 import { EaseFunctions } from "../ease-functions";
 import { EaseFunction } from "../ease-functions";
 
+
+/**
+ * @category Board Camera
+ * @translation need to translate boundaries text
+ */
 export type Boundaries = {
     min?: {x?: number, y?: number};
     max?: {x?: number, y?: number};

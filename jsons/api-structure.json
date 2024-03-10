@@ -152,6 +152,7 @@
     "variant",
     "kind",
     "flags",
+    "comment",
     "sources",
     "type",
     "typeParameters"

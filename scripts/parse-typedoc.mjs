@@ -101,6 +101,7 @@ function crawlAsTree(node){
 }
 
 const testNodes = {"@niuee/board": crawlAsTree(data)};
+console.log(testNodes["@niuee/board"]["BoardElement"]["step"].__proto__);
 // console.log(structure);
 mkdir(`jsons/${localizeCode}`, { recursive: true }, (err) => {
     if (err) throw err;

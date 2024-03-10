@@ -55,11 +55,22 @@
     "kind": "category"
   },
   {
-    "translationKey": "dcbaef5f44201fe39a2f3701b30c45fe",
+    "translationKey": "4c9e69d070ac22c5e84c65645bd7a637",
     "translationJSONPath": [
       "0",
       "categories",
       "index-5"
+    ],
+    "originalText": "Board Camera",
+    "translation": "",
+    "kind": "category"
+  },
+  {
+    "translationKey": "5cdea3152d884698ddaf265b8f49994f",
+    "translationJSONPath": [
+      "0",
+      "categories",
+      "index-6"
     ],
     "originalText": "Other",
     "translation": "",
@@ -207,5 +218,16 @@
     "originalText": "this is a test string for interface",
     "translation": "",
     "item": "interface"
+  },
+  {
+    "translationKey": "3caf2f307c2201d7d763f4ffe08056f6",
+    "translationJSONPath": [
+      "1487",
+      "comments",
+      "index-0"
+    ],
+    "originalText": "need to translate boundaries text",
+    "translation": "",
+    "item": "typeAlias"
   }
 ]

@@ -1,0 +1,4957 @@
+{
+  "0": {
+    "path": [
+      "@niuee/board"
+    ],
+    "categories": [
+      {
+        "translationKey": "1fc924ea4b2cb8564fc1e33091c54607",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-0",
+          "title"
+        ],
+        "originalText": "Board",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "b1511b25d700c995f128b46c3b203a54"
+      },
+      {
+        "translationKey": "71ecd51de7e68ea959736ec5294bf31f",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-1"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-1",
+          "title"
+        ],
+        "originalText": "Trackpad Strategy",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "c53d2e7a3d7659c13d96856eeca063cb"
+      },
+      {
+        "translationKey": "a390fe51ff0a6a97ebb68b9ebaf9543d",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-2"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-2",
+          "title"
+        ],
+        "originalText": "Keyboard-Mouse Strategy",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "8a38274aa0f1aeb71ff90616caa0fe2f"
+      },
+      {
+        "translationKey": "82b5de59aaac4a8f4317050846459954",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-3"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-3",
+          "title"
+        ],
+        "originalText": "Touch Strategy",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "6e5b277556dd2f02616eec057244ad78"
+      },
+      {
+        "translationKey": "fce88dfd8e7339e39af90187771fc29b",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-4"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-4",
+          "title"
+        ],
+        "originalText": "Easing Functions",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "3816e98c7091d57e1e5550eb1fa253f3"
+      },
+      {
+        "translationKey": "4c9e69d070ac22c5e84c65645bd7a637",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-5"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-5",
+          "title"
+        ],
+        "originalText": "Board Camera",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "9941bfc0127cdc8b09d6e16f59a0d788"
+      },
+      {
+        "translationKey": "5cdea3152d884698ddaf265b8f49994f",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-6"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-6",
+          "title"
+        ],
+        "originalText": "Other",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "daa2a395156a000a9a92d18e1db936da"
+      }
+    ],
+    "EaseFunctions": {
+      "path": [
+        "@niuee/board",
+        "EaseFunctions"
+      ],
+      "easeInBack": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInBack"
+        ]
+      },
+      "easeInBounce": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInBounce"
+        ]
+      },
+      "easeInCirc": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInCirc"
+        ]
+      },
+      "easeInCubic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInCubic"
+        ]
+      },
+      "easeInElastic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInElastic"
+        ]
+      },
+      "easeInExpo": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInExpo"
+        ]
+      },
+      "easeInOutBack": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutBack"
+        ]
+      },
+      "easeInOutBounce": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutBounce"
+        ]
+      },
+      "easeInOutCirc": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutCirc"
+        ]
+      },
+      "easeInOutCubic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutCubic"
+        ]
+      },
+      "easeInOutElastic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutElastic"
+        ]
+      },
+      "easeInOutExpo": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutExpo"
+        ]
+      },
+      "easeInOutQuad": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutQuad"
+        ]
+      },
+      "easeInOutQuart": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutQuart"
+        ]
+      },
+      "easeInOutQuint": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutQuint"
+        ]
+      },
+      "easeInOutSine": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInOutSine"
+        ]
+      },
+      "easeInQuad": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInQuad"
+        ]
+      },
+      "easeInQuart": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInQuart"
+        ]
+      },
+      "easeInQuint": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInQuint"
+        ]
+      },
+      "easeInSine": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeInSine"
+        ]
+      },
+      "easeOutBack": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutBack"
+        ]
+      },
+      "easeOutBounce": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutBounce"
+        ]
+      },
+      "easeOutCirc": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutCirc"
+        ]
+      },
+      "easeOutCubic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutCubic"
+        ]
+      },
+      "easeOutElastic": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutElastic"
+        ]
+      },
+      "easeOutExpo": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutExpo"
+        ]
+      },
+      "easeOutQuad": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutQuad"
+        ]
+      },
+      "easeOutQuart": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutQuart"
+        ]
+      },
+      "easeOutQuint": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutQuint"
+        ]
+      },
+      "easeOutSine": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "easeOutSine"
+        ]
+      },
+      "linear": {
+        "path": [
+          "@niuee/board",
+          "EaseFunctions",
+          "linear"
+        ]
+      }
+    },
+    "BoardCamera": {
+      "path": [
+        "@niuee/board",
+        "BoardCamera"
+      ],
+      "groups": [
+        {
+          "translationKey": "888ebeb744a8d60219d0167503eb1062",
+          "translationJSONPath": [
+            "6",
+            "groups",
+            "index-4",
+            "index-0"
+          ],
+          "projectPath": [
+            "@niuee/board",
+            "BoardCamera",
+            "groups",
+            "index-4",
+            "title"
+          ],
+          "originalText": "Camera Zoom Operations",
+          "translation": "",
+          "kind": "group",
+          "locationIdentifier": "f7366a73d166167619f8a4cd551b01d7"
+        }
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "constructor"
+        ]
+      },
+      "_restrictRelativeXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictRelativeXTranslationFromGesture"
+        ]
+      },
+      "_restrictRelativeYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictRelativeYTranslationFromGesture"
+        ]
+      },
+      "_restrictRotationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictRotationFromGesture"
+        ]
+      },
+      "_restrictXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictXTranslationFromGesture"
+        ]
+      },
+      "_restrictYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictYTranslationFromGesture"
+        ]
+      },
+      "_restrictZoomFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "_restrictZoomFromGesture"
+        ]
+      },
+      "boundaries": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "boundaries"
+        ]
+      },
+      "lockOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockOnObject"
+        ]
+      },
+      "lockPositionOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockPositionOnObject"
+        ]
+      },
+      "lockRotationOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockRotationOnObject"
+        ]
+      },
+      "position": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "position"
+        ]
+      },
+      "positionAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "positionAnimation"
+        ]
+      },
+      "rotation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "rotation"
+        ]
+      },
+      "rotationAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "rotationAnimation"
+        ]
+      },
+      "viewPortHeight": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "viewPortHeight"
+        ]
+      },
+      "viewPortWidth": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "viewPortWidth"
+        ]
+      },
+      "zoomAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "zoomAnimation"
+        ]
+      },
+      "zoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "zoomLevel"
+        ]
+      },
+      "zoomLevelLimits": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "zoomLevelLimits"
+        ]
+      },
+      "restrictRelativeXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictRelativeXTranslationFromGesture"
+        ]
+      },
+      "restrictRelativeYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictRelativeYTranslationFromGesture"
+        ]
+      },
+      "restrictRotationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictRotationFromGesture"
+        ]
+      },
+      "restrictXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictXTranslationFromGesture"
+        ]
+      },
+      "restrictYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictYTranslationFromGesture"
+        ]
+      },
+      "restrictZoomFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "restrictZoomFromGesture"
+        ]
+      },
+      "cameraPositionLockedOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cameraPositionLockedOnObject"
+        ]
+      },
+      "cameraRotationLockedOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cameraRotationLockedOnObject"
+        ]
+      },
+      "cancelAnimations": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cancelAnimations"
+        ]
+      },
+      "cancelPositionAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cancelPositionAnimation"
+        ]
+      },
+      "cancelRotationAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cancelRotationAnimation"
+        ]
+      },
+      "cancelZoomAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "cancelZoomAnimation"
+        ]
+      },
+      "clampPoint": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "clampPoint"
+        ]
+      },
+      "clampPointEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "clampPointEntireViewPort"
+        ]
+      },
+      "clampPointWithRes": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "clampPointWithRes"
+        ]
+      },
+      "clampZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "clampZoomLevel"
+        ]
+      },
+      "convert2WorldSpace": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "convert2WorldSpace"
+        ]
+      },
+      "convert2WorldSpaceWRT": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "convert2WorldSpaceWRT"
+        ]
+      },
+      "getAngleSpan": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getAngleSpan"
+        ]
+      },
+      "getAngleSpanDeg": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getAngleSpanDeg"
+        ]
+      },
+      "getBoundaries": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getBoundaries"
+        ]
+      },
+      "getPosition": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getPosition"
+        ]
+      },
+      "getRotation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getRotation"
+        ]
+      },
+      "getRotationDeg": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getRotationDeg"
+        ]
+      },
+      "getViewPortHeight": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getViewPortHeight"
+        ]
+      },
+      "getViewPortWidth": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getViewPortWidth"
+        ]
+      },
+      "getZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getZoomLevel"
+        ]
+      },
+      "getZoomLevelLimits": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "getZoomLevelLimits"
+        ]
+      },
+      "invertFromWorldSpace": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "invertFromWorldSpace"
+        ]
+      },
+      "lockOnto": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockOnto"
+        ]
+      },
+      "lockOntoWithTransition": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockOntoWithTransition"
+        ]
+      },
+      "lockRelativeXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockRelativeXTranslationFromGesture"
+        ]
+      },
+      "lockRelativeYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockRelativeYTranslationFromGesture"
+        ]
+      },
+      "lockRotationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockRotationFromGesture"
+        ]
+      },
+      "lockTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockTranslationFromGesture"
+        ]
+      },
+      "lockXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockXTranslationFromGesture"
+        ]
+      },
+      "lockYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockYTranslationFromGesture"
+        ]
+      },
+      "lockZoomFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "lockZoomFromGesture"
+        ]
+      },
+      "move": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "move"
+        ]
+      },
+      "moveFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveFromGesture"
+        ]
+      },
+      "moveWithClamp": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClamp"
+        ]
+      },
+      "moveWithClampEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClampEntireViewPort"
+        ]
+      },
+      "moveWithClampEntireViewPortBypass": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClampEntireViewPortBypass"
+        ]
+      },
+      "moveWithClampEntireViewPortFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClampEntireViewPortFromGesture"
+        ]
+      },
+      "moveWithClampEntireViewPortFromGestureBypass": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClampEntireViewPortFromGestureBypass"
+        ]
+      },
+      "moveWithClampFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "moveWithClampFromGesture"
+        ]
+      },
+      "normalizeAngleZero2TwoPI": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "normalizeAngleZero2TwoPI"
+        ]
+      },
+      "pointIsInViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "pointIsInViewPort"
+        ]
+      },
+      "releaseFromLockedObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseFromLockedObject"
+        ]
+      },
+      "releaseLockOnRelativeXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnRelativeXTranslationFromGesture"
+        ]
+      },
+      "releaseLockOnRelativeYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnRelativeYTranslationFromGesture"
+        ]
+      },
+      "releaseLockOnRotationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnRotationFromGesture"
+        ]
+      },
+      "releaseLockOnTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnTranslationFromGesture"
+        ]
+      },
+      "releaseLockOnXTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnXTranslationFromGesture"
+        ]
+      },
+      "releaseLockOnYTranslationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnYTranslationFromGesture"
+        ]
+      },
+      "releaseLockOnZoomFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseLockOnZoomFromGesture"
+        ]
+      },
+      "releasePositionFromLockedObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releasePositionFromLockedObject"
+        ]
+      },
+      "releaseRotationFromLockedObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "releaseRotationFromLockedObject"
+        ]
+      },
+      "resetCamera": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "resetCamera"
+        ]
+      },
+      "resetCameraWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "resetCameraWithAnimation"
+        ]
+      },
+      "resetZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "resetZoomLevel"
+        ]
+      },
+      "setHorizontalBoundaries": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setHorizontalBoundaries"
+        ]
+      },
+      "setMaxZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setMaxZoomLevel"
+        ]
+      },
+      "setMinZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setMinZoomLevel"
+        ]
+      },
+      "setPosition": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPosition"
+        ]
+      },
+      "setPositionFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionFromGesture"
+        ]
+      },
+      "setPositionWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionWithAnimation"
+        ]
+      },
+      "setPositionWithClamp": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionWithClamp"
+        ]
+      },
+      "setPositionWithClampEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionWithClampEntireViewPort"
+        ]
+      },
+      "setPositionWithClampEntireViewPortFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionWithClampEntireViewPortFromGesture"
+        ]
+      },
+      "setPositionWithClampFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setPositionWithClampFromGesture"
+        ]
+      },
+      "setRotation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setRotation"
+        ]
+      },
+      "setRotationDeg": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setRotationDeg"
+        ]
+      },
+      "setRotationDegFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setRotationDegFromGesture"
+        ]
+      },
+      "setRotationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setRotationFromGesture"
+        ]
+      },
+      "setRotationWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setRotationWithAnimation"
+        ]
+      },
+      "setVerticalBoundaries": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setVerticalBoundaries"
+        ]
+      },
+      "setViewPortHeight": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setViewPortHeight"
+        ]
+      },
+      "setViewPortWidth": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setViewPortWidth"
+        ]
+      },
+      "setZoomAnimationWithAnchor": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomAnimationWithAnchor"
+        ]
+      },
+      "setZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevel"
+        ]
+      },
+      "setZoomLevelFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevelFromGesture"
+        ]
+      },
+      "setZoomLevelWithClamp": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevelWithClamp"
+        ]
+      },
+      "setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint"
+        ]
+      },
+      "setZoomLevelWithClampFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevelWithClampFromGesture"
+        ]
+      },
+      "setZoomLevelWithClampFromGestureAtAnchorPoint": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomLevelWithClampFromGestureAtAnchorPoint"
+        ]
+      },
+      "setZoomWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "setZoomWithAnimation"
+        ]
+      },
+      "spin": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "spin"
+        ]
+      },
+      "spinDeg": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "spinDeg"
+        ]
+      },
+      "spinDegFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "spinDegFromGesture"
+        ]
+      },
+      "spinFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "spinFromGesture"
+        ]
+      },
+      "spinWithAnimationFromGesture": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "spinWithAnimationFromGesture"
+        ]
+      },
+      "step": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "step"
+        ]
+      },
+      "updatePosition": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updatePosition"
+        ]
+      },
+      "updatePositionToLockedOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updatePositionToLockedOnObject"
+        ]
+      },
+      "updateRotation": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updateRotation"
+        ]
+      },
+      "updateRotationToLockedOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updateRotationToLockedOnObject"
+        ]
+      },
+      "updateZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updateZoomLevel"
+        ]
+      },
+      "updateZoomLevelToLockedOnObject": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "updateZoomLevelToLockedOnObject"
+        ]
+      },
+      "withinBoundaries": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "withinBoundaries"
+        ]
+      },
+      "zoomLevelValid": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "zoomLevelValid"
+        ]
+      },
+      "zoomLevelWithinLimits": {
+        "path": [
+          "@niuee/board",
+          "BoardCamera",
+          "zoomLevelWithinLimits"
+        ]
+      }
+    },
+    "BoardElement": {
+      "path": [
+        "@niuee/board",
+        "BoardElement"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "constructor"
+        ]
+      },
+      "_camera": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_camera"
+        ]
+      },
+      "_cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_cameraObserver"
+        ]
+      },
+      "_canvas": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_canvas"
+        ]
+      },
+      "_canvasHeight": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_canvasHeight"
+        ]
+      },
+      "_canvasWidth": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_canvasWidth"
+        ]
+      },
+      "_context": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_context"
+        ]
+      },
+      "_debugMode": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_debugMode"
+        ]
+      },
+      "_displayGrid": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_displayGrid"
+        ]
+      },
+      "_displayRuler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_displayRuler"
+        ]
+      },
+      "_fullScreenFlag": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_fullScreenFlag"
+        ]
+      },
+      "_handOverStepControl": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_handOverStepControl"
+        ]
+      },
+      "_horizontalGridSize": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_horizontalGridSize"
+        ]
+      },
+      "_keyboardMouseStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_keyboardMouseStrategy"
+        ]
+      },
+      "_touchStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_touchStrategy"
+        ]
+      },
+      "_trackpadStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_trackpadStrategy"
+        ]
+      },
+      "_verticalGridSize": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "_verticalGridSize"
+        ]
+      },
+      "attributeCommands": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "attributeCommands"
+        ]
+      },
+      "lastUpdateTime": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "lastUpdateTime"
+        ]
+      },
+      "mousePos": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "mousePos"
+        ]
+      },
+      "requestRef": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "requestRef"
+        ]
+      },
+      "windowsResizeObserver": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "windowsResizeObserver"
+        ]
+      },
+      "observedAttributes": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "observedAttributes"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "camera"
+        ]
+      },
+      "debugMode": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "debugMode"
+        ]
+      },
+      "displayGrid": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "displayGrid"
+        ]
+      },
+      "displayRuler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "displayRuler"
+        ]
+      },
+      "fullScreenFlag": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "fullScreenFlag"
+        ]
+      },
+      "height": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "height"
+        ]
+      },
+      "horizontalGridSize": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "horizontalGridSize"
+        ]
+      },
+      "keyboardMouseStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "keyboardMouseStrategy"
+        ]
+      },
+      "maxTransHalfHeight": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "maxTransHalfHeight"
+        ]
+      },
+      "maxTransHalfWidth": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "maxTransHalfWidth"
+        ]
+      },
+      "restrictRelativeXTranslation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictRelativeXTranslation"
+        ]
+      },
+      "restrictRelativeYTranslation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictRelativeYTranslation"
+        ]
+      },
+      "restrictRotation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictRotation"
+        ]
+      },
+      "restrictXTranslation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictXTranslation"
+        ]
+      },
+      "restrictYTranslation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictYTranslation"
+        ]
+      },
+      "restrictZoom": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "restrictZoom"
+        ]
+      },
+      "stepControl": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "stepControl"
+        ]
+      },
+      "touchStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "touchStrategy"
+        ]
+      },
+      "trackpadStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "trackpadStrategy"
+        ]
+      },
+      "verticalGridSize": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "verticalGridSize"
+        ]
+      },
+      "width": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "width"
+        ]
+      },
+      "attributeChangedCallback": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "attributeChangedCallback"
+        ]
+      },
+      "bindFunctions": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "bindFunctions"
+        ]
+      },
+      "clearCameraUpdateCallbacks": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "clearCameraUpdateCallbacks"
+        ]
+      },
+      "connectedCallback": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "connectedCallback"
+        ]
+      },
+      "convertWindowPoint2ViewPortPoint": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "convertWindowPoint2ViewPortPoint"
+        ]
+      },
+      "convertWindowPoint2WorldCoord": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "convertWindowPoint2WorldCoord"
+        ]
+      },
+      "disconnectedCallback": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "disconnectedCallback"
+        ]
+      },
+      "drawAxis": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawAxis"
+        ]
+      },
+      "drawBoundingBox": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawBoundingBox"
+        ]
+      },
+      "drawCameraCenterWithCrossHair": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawCameraCenterWithCrossHair"
+        ]
+      },
+      "drawCrossHair": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawCrossHair"
+        ]
+      },
+      "drawGrid": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawGrid"
+        ]
+      },
+      "drawPositionText": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawPositionText"
+        ]
+      },
+      "drawReferenceCircle": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawReferenceCircle"
+        ]
+      },
+      "drawRuler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "drawRuler"
+        ]
+      },
+      "getCamera": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "getCamera"
+        ]
+      },
+      "getContext": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "getContext"
+        ]
+      },
+      "getCoordinateConversionFn": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "getCoordinateConversionFn"
+        ]
+      },
+      "getInternalCanvas": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "getInternalCanvas"
+        ]
+      },
+      "getStepFunction": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "getStepFunction"
+        ]
+      },
+      "on": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "on"
+        ]
+      },
+      "pointerDownHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "pointerDownHandler"
+        ]
+      },
+      "pointerMoveHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "pointerMoveHandler"
+        ]
+      },
+      "registerEventListeners": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "registerEventListeners"
+        ]
+      },
+      "removeEventListeners": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "removeEventListeners"
+        ]
+      },
+      "resetCamera": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "resetCamera"
+        ]
+      },
+      "setAttributeCommands": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "setAttributeCommands"
+        ]
+      },
+      "setCameraAngle": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "setCameraAngle"
+        ]
+      },
+      "spinCameraWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "spinCameraWithAnimation"
+        ]
+      },
+      "step": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "step"
+        ]
+      },
+      "subscribeToCameraUpdate": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "subscribeToCameraUpdate"
+        ]
+      },
+      "unsubscribeToCameraUpdate": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "unsubscribeToCameraUpdate"
+        ]
+      },
+      "windowResizeHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardElement",
+          "windowResizeHandler"
+        ]
+      }
+    },
+    "CameraLogger": {
+      "path": [
+        "@niuee/board",
+        "CameraLogger"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraLogger",
+          "constructor"
+        ]
+      },
+      "notifyChange": {
+        "path": [
+          "@niuee/board",
+          "CameraLogger",
+          "notifyChange"
+        ]
+      }
+    },
+    "CameraMoveCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraMoveCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveCommand",
+          "constructor"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveCommand",
+          "camera"
+        ]
+      },
+      "diff": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveCommand",
+          "diff"
+        ]
+      },
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveCommand",
+          "execute"
+        ]
+      }
+    },
+    "CameraMoveLimitEntireViewPortCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraMoveLimitEntireViewPortCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveLimitEntireViewPortCommand",
+          "constructor"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveLimitEntireViewPortCommand",
+          "camera"
+        ]
+      },
+      "diff": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveLimitEntireViewPortCommand",
+          "diff"
+        ]
+      },
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveLimitEntireViewPortCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraMoveLimitEntireViewPortCommand",
+          "execute"
+        ]
+      }
+    },
+    "CameraObserver": {
+      "path": [
+        "@niuee/board",
+        "CameraObserver"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "constructor"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "camera"
+        ]
+      },
+      "panCallbackList": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "panCallbackList"
+        ]
+      },
+      "rotateCallbackList": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "rotateCallbackList"
+        ]
+      },
+      "subscribers": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "subscribers"
+        ]
+      },
+      "zoomCallbackList": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "zoomCallbackList"
+        ]
+      },
+      "clearCallbacks": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "clearCallbacks"
+        ]
+      },
+      "executeCommand": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "executeCommand"
+        ]
+      },
+      "on": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "on"
+        ]
+      },
+      "panCamera": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "panCamera"
+        ]
+      },
+      "panCameraLimitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "panCameraLimitEntireViewPort"
+        ]
+      },
+      "rotateCamera": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "rotateCamera"
+        ]
+      },
+      "subscribe": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "subscribe"
+        ]
+      },
+      "unsubscribe": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "unsubscribe"
+        ]
+      },
+      "zoomCamera": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "zoomCamera"
+        ]
+      },
+      "zoomCameraLimitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "CameraObserver",
+          "zoomCameraLimitEntireViewPort"
+        ]
+      }
+    },
+    "CameraRotateCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraRotateCommand",
+          "constructor"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraRotateCommand",
+          "camera"
+        ]
+      },
+      "deltaRotation": {
+        "path": [
+          "@niuee/board",
+          "CameraRotateCommand",
+          "deltaRotation"
+        ]
+      },
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraRotateCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraRotateCommand",
+          "execute"
+        ]
+      }
+    },
+    "CameraZoomCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "constructor"
+        ]
+      },
+      "anchorPoint": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "anchorPoint"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "camera"
+        ]
+      },
+      "zoomAmount": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "zoomAmount"
+        ]
+      },
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomCommand",
+          "execute"
+        ]
+      }
+    },
+    "CameraZoomLimitEntireViewPortCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomLimitEntireViewPortCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "constructor"
+        ]
+      },
+      "anchorPoint": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "anchorPoint"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "camera"
+        ]
+      },
+      "zoomAmount": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "zoomAmount"
+        ]
+      },
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraZoomLimitEntireViewPortCommand",
+          "execute"
+        ]
+      }
+    },
+    "DefaultBoardElementKMStrategy": {
+      "path": [
+        "@niuee/board",
+        "DefaultBoardElementKMStrategy"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "constructor"
+        ]
+      },
+      "SCROLL_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "SCROLL_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "_limitEntireViewPort"
+        ]
+      },
+      "cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "cameraObserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "canvas"
+        ]
+      },
+      "dragStartPoint": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "dragStartPoint"
+        ]
+      },
+      "isDragging": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "isDragging"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "enableStrategy"
+        ]
+      },
+      "pointerDownHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "pointerDownHandler"
+        ]
+      },
+      "pointerMoveHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "pointerMoveHandler"
+        ]
+      },
+      "pointerUpHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "pointerUpHandler"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardElementKMStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "DefaultBoardKMStrategy": {
+      "path": [
+        "@niuee/board",
+        "DefaultBoardKMStrategy"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "constructor"
+        ]
+      },
+      "SCROLL_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "SCROLL_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "_limitEntireViewPort"
+        ]
+      },
+      "board": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "board"
+        ]
+      },
+      "cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "cameraObserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "canvas"
+        ]
+      },
+      "dragStartPoint": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "dragStartPoint"
+        ]
+      },
+      "isDragging": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "isDragging"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "enableStrategy"
+        ]
+      },
+      "pointerDownHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "pointerDownHandler"
+        ]
+      },
+      "pointerMoveHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "pointerMoveHandler"
+        ]
+      },
+      "pointerUpHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "pointerUpHandler"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardKMStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "DefaultBoardTrackpadStrategy": {
+      "path": [
+        "@niuee/board",
+        "DefaultBoardTrackpadStrategy"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "constructor"
+        ]
+      },
+      "SCROLL_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "SCROLL_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "_limitEntireViewPort"
+        ]
+      },
+      "board": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "board"
+        ]
+      },
+      "cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "cameraObserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "canvas"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "enableStrategy"
+        ]
+      },
+      "scrollHandler": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "scrollHandler"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "DefaultBoardTrackpadStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "DialWheel": {
+      "path": [
+        "@niuee/board",
+        "DialWheel"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "constructor"
+        ]
+      },
+      "rotation": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "rotation"
+        ]
+      },
+      "getAngleSpan": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "getAngleSpan"
+        ]
+      },
+      "getAngleSpanDeg": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "getAngleSpanDeg"
+        ]
+      },
+      "getRotation": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "getRotation"
+        ]
+      },
+      "normalizeAngleZero2TwoPI": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "normalizeAngleZero2TwoPI"
+        ]
+      },
+      "setRotation": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "setRotation"
+        ]
+      },
+      "setRotationDeg": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "setRotationDeg"
+        ]
+      },
+      "spin": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "spin"
+        ]
+      },
+      "spinDeg": {
+        "path": [
+          "@niuee/board",
+          "DialWheel",
+          "spinDeg"
+        ]
+      }
+    },
+    "DialWheelEvent": {
+      "path": [
+        "@niuee/board",
+        "DialWheelEvent"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "DialWheelEvent",
+          "constructor"
+        ]
+      },
+      "detail": {
+        "path": [
+          "@niuee/board",
+          "DialWheelEvent",
+          "detail"
+        ]
+      }
+    },
+    "InvalidZoomLevelError": {
+      "path": [
+        "@niuee/board",
+        "InvalidZoomLevelError"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "InvalidZoomLevelError",
+          "constructor"
+        ]
+      }
+    },
+    "OneFingerPanTwoFingerZoom": {
+      "path": [
+        "@niuee/board",
+        "OneFingerPanTwoFingerZoom"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "constructor"
+        ]
+      },
+      "ZOOM_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "ZOOM_SENSATIVITY"
+        ]
+      },
+      "controlCamera": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "controlCamera"
+        ]
+      },
+      "dragStartPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "dragStartPoint"
+        ]
+      },
+      "isDragging": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "isDragging"
+        ]
+      },
+      "tapPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "tapPoint"
+        ]
+      },
+      "touchPoints": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "touchPoints"
+        ]
+      },
+      "zoomStartDist": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "zoomStartDist"
+        ]
+      },
+      "convertWindowPoint2ViewPortPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "convertWindowPoint2ViewPortPoint"
+        ]
+      },
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoom",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "OneFingerPanTwoFingerZoomBoard": {
+      "path": [
+        "@niuee/board",
+        "OneFingerPanTwoFingerZoomBoard"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "constructor"
+        ]
+      },
+      "ZOOM_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "ZOOM_SENSATIVITY"
+        ]
+      },
+      "controlCamera": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "controlCamera"
+        ]
+      },
+      "dragStartPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "dragStartPoint"
+        ]
+      },
+      "isDragging": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "isDragging"
+        ]
+      },
+      "tapPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "tapPoint"
+        ]
+      },
+      "touchPoints": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "touchPoints"
+        ]
+      },
+      "zoomStartDist": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "zoomStartDist"
+        ]
+      },
+      "convertWindowPoint2ViewPortPoint": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "convertWindowPoint2ViewPortPoint"
+        ]
+      },
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "OneFingerPanTwoFingerZoomBoard",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "RestrictRelativeXTranslationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictRelativeXTranslationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeXTranslationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeXTranslationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeXTranslationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictRelativeYTranslationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictRelativeYTranslationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeYTranslationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeYTranslationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictRelativeYTranslationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictRotationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictRotationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictRotationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictRotationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictRotationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictTranslationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictTranslationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictTranslationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictTranslationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictTranslationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictXTranslationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictXTranslationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictXTranslationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictXTranslationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictXTranslationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictYTranslationCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictYTranslationCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictYTranslationCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictYTranslationCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictYTranslationCommand",
+          "execute"
+        ]
+      }
+    },
+    "RestrictZoomCommand": {
+      "path": [
+        "@niuee/board",
+        "RestrictZoomCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "RestrictZoomCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "RestrictZoomCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "RestrictZoomCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetDebugModeCommand": {
+      "path": [
+        "@niuee/board",
+        "SetDebugModeCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetDebugModeCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetDebugModeCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetDebugModeCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetHeightCommand": {
+      "path": [
+        "@niuee/board",
+        "SetHeightCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetHeightCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetHeightCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetHeightCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetHorizontalGridSizeCommand": {
+      "path": [
+        "@niuee/board",
+        "SetHorizontalGridSizeCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetHorizontalGridSizeCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetHorizontalGridSizeCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetHorizontalGridSizeCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetMaxHalfTransHeightCommand": {
+      "path": [
+        "@niuee/board",
+        "SetMaxHalfTransHeightCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransHeightCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransHeightCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransHeightCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetMaxHalfTransWidthCommand": {
+      "path": [
+        "@niuee/board",
+        "SetMaxHalfTransWidthCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransWidthCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransWidthCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetMaxHalfTransWidthCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetVerticalGridSizeCommand": {
+      "path": [
+        "@niuee/board",
+        "SetVerticalGridSizeCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetVerticalGridSizeCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetVerticalGridSizeCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetVerticalGridSizeCommand",
+          "execute"
+        ]
+      }
+    },
+    "SetWidthCommand": {
+      "path": [
+        "@niuee/board",
+        "SetWidthCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "SetWidthCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "SetWidthCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "SetWidthCommand",
+          "execute"
+        ]
+      }
+    },
+    "ToggleFullScreenCommand": {
+      "path": [
+        "@niuee/board",
+        "ToggleFullScreenCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "ToggleFullScreenCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "ToggleFullScreenCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "ToggleFullScreenCommand",
+          "execute"
+        ]
+      }
+    },
+    "ToggleGridCommand": {
+      "path": [
+        "@niuee/board",
+        "ToggleGridCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "ToggleGridCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "ToggleGridCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "ToggleGridCommand",
+          "execute"
+        ]
+      }
+    },
+    "ToggleRulerCommand": {
+      "path": [
+        "@niuee/board",
+        "ToggleRulerCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "ToggleRulerCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "ToggleRulerCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "ToggleRulerCommand",
+          "execute"
+        ]
+      }
+    },
+    "ToggleStepFunctionCommand": {
+      "path": [
+        "@niuee/board",
+        "ToggleStepFunctionCommand"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "ToggleStepFunctionCommand",
+          "constructor"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "ToggleStepFunctionCommand",
+          "canvas"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "ToggleStepFunctionCommand",
+          "execute"
+        ]
+      }
+    },
+    "TwoFingerPanPinchZoom": {
+      "path": [
+        "@niuee/board",
+        "TwoFingerPanPinchZoom"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "constructor"
+        ]
+      },
+      "SCROLL_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "SCROLL_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "_limitEntireViewPort"
+        ]
+      },
+      "cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "cameraObserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "canvas"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "enableStrategy"
+        ]
+      },
+      "scrollHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "scrollHandler"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoom",
+          "tearDown"
+        ]
+      }
+    },
+    "TwoFingerPanPinchZoomLimitEntireView": {
+      "path": [
+        "@niuee/board",
+        "TwoFingerPanPinchZoomLimitEntireView"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "constructor"
+        ]
+      },
+      "SCROLL_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "SCROLL_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "_limitEntireViewPort"
+        ]
+      },
+      "cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "cameraObserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "canvas"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "enableStrategy"
+        ]
+      },
+      "scrollHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "scrollHandler"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanPinchZoomLimitEntireView",
+          "tearDown"
+        ]
+      }
+    },
+    "TwoFingerPanZoom": {
+      "path": [
+        "@niuee/board",
+        "TwoFingerPanZoom"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "constructor"
+        ]
+      },
+      "ZOOM_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "ZOOM_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "_limitEntireViewPort"
+        ]
+      },
+      "cameraObeserver": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "cameraObeserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "canvas"
+        ]
+      },
+      "dragStartDist": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "dragStartDist"
+        ]
+      },
+      "touchPoints": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "touchPoints"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "enableStrategy"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "tearDown"
+        ]
+      },
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoom",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "TwoFingerPanZoomForBoard": {
+      "path": [
+        "@niuee/board",
+        "TwoFingerPanZoomForBoard"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "constructor"
+        ]
+      },
+      "ZOOM_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "ZOOM_SENSATIVITY"
+        ]
+      },
+      "_disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "_disabled"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "_limitEntireViewPort"
+        ]
+      },
+      "board": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "board"
+        ]
+      },
+      "cameraObeserver": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "cameraObeserver"
+        ]
+      },
+      "canvas": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "canvas"
+        ]
+      },
+      "dragStartDist": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "dragStartDist"
+        ]
+      },
+      "touchPoints": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "touchPoints"
+        ]
+      },
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "enableStrategy"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "tearDown"
+        ]
+      },
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomForBoard",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "TwoFingerPanZoomLegacy": {
+      "path": [
+        "@niuee/board",
+        "TwoFingerPanZoomLegacy"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "constructor"
+        ]
+      },
+      "ZOOM_SENSATIVITY": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "ZOOM_SENSATIVITY"
+        ]
+      },
+      "controlCamera": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "controlCamera"
+        ]
+      },
+      "dragStartDist": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "dragStartDist"
+        ]
+      },
+      "touchPoints": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "touchPoints"
+        ]
+      },
+      "convertWindowPoint2ViewPortPoint": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "convertWindowPoint2ViewPortPoint"
+        ]
+      },
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "TwoFingerPanZoomLegacy",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "default": {
+      "path": [
+        "@niuee/board",
+        "default"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "constructor"
+        ]
+      },
+      "_camera": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_camera"
+        ]
+      },
+      "_cameraObserver": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_cameraObserver"
+        ]
+      },
+      "_canvas": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_canvas"
+        ]
+      },
+      "_context": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_context"
+        ]
+      },
+      "_debugMode": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_debugMode"
+        ]
+      },
+      "_displayGrid": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_displayGrid"
+        ]
+      },
+      "_displayRuler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_displayRuler"
+        ]
+      },
+      "_fullScreenFlag": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_fullScreenFlag"
+        ]
+      },
+      "_handOverStepControl": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_handOverStepControl"
+        ]
+      },
+      "_horizontalGridSize": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_horizontalGridSize"
+        ]
+      },
+      "_keyboardMouseStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_keyboardMouseStrategy"
+        ]
+      },
+      "_limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_limitEntireViewPort"
+        ]
+      },
+      "_touchStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_touchStrategy"
+        ]
+      },
+      "_trackpadStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_trackpadStrategy"
+        ]
+      },
+      "_verticalGridSize": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "_verticalGridSize"
+        ]
+      },
+      "attributeObserver": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "attributeObserver"
+        ]
+      },
+      "lastUpdateTime": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "lastUpdateTime"
+        ]
+      },
+      "mousePos": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "mousePos"
+        ]
+      },
+      "requestRef": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "requestRef"
+        ]
+      },
+      "windowResizeObserver": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "windowResizeObserver"
+        ]
+      },
+      "camera": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "camera"
+        ]
+      },
+      "debugMode": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "debugMode"
+        ]
+      },
+      "displayGrid": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "displayGrid"
+        ]
+      },
+      "displayRuler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "displayRuler"
+        ]
+      },
+      "fullScreen": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "fullScreen"
+        ]
+      },
+      "height": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "height"
+        ]
+      },
+      "horizontalGridSize": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "horizontalGridSize"
+        ]
+      },
+      "keyboardMouseStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "keyboardMouseStrategy"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "limitEntireViewPort"
+        ]
+      },
+      "maxHalfTransHeight": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "maxHalfTransHeight"
+        ]
+      },
+      "maxHalfTransWidth": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "maxHalfTransWidth"
+        ]
+      },
+      "restrictRelativeXTranslation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictRelativeXTranslation"
+        ]
+      },
+      "restrictRelativeYTranslation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictRelativeYTranslation"
+        ]
+      },
+      "restrictRotation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictRotation"
+        ]
+      },
+      "restrictXTranslation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictXTranslation"
+        ]
+      },
+      "restrictYTranslation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictYTranslation"
+        ]
+      },
+      "restrictZoom": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "restrictZoom"
+        ]
+      },
+      "stepControl": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "stepControl"
+        ]
+      },
+      "touchStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "touchStrategy"
+        ]
+      },
+      "trackpadStrategy": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "trackpadStrategy"
+        ]
+      },
+      "verticalGridSize": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "verticalGridSize"
+        ]
+      },
+      "width": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "width"
+        ]
+      },
+      "adjustZoomLevelBaseOnDimensions": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "adjustZoomLevelBaseOnDimensions"
+        ]
+      },
+      "adjustZoomLevelBoundsBaseOnHeight": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "adjustZoomLevelBoundsBaseOnHeight"
+        ]
+      },
+      "adjustZoomLevelBoundsBaseOnWidth": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "adjustZoomLevelBoundsBaseOnWidth"
+        ]
+      },
+      "attributeCallBack": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "attributeCallBack"
+        ]
+      },
+      "bindFunctions": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "bindFunctions"
+        ]
+      },
+      "clearCameraUpdateCallbacks": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "clearCameraUpdateCallbacks"
+        ]
+      },
+      "convertWindowPoint2ViewPortPoint": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "convertWindowPoint2ViewPortPoint"
+        ]
+      },
+      "convertWindowPoint2WorldCoord": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "convertWindowPoint2WorldCoord"
+        ]
+      },
+      "disconnectedCallback": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "disconnectedCallback"
+        ]
+      },
+      "drawAxis": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawAxis"
+        ]
+      },
+      "drawBoundingBox": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawBoundingBox"
+        ]
+      },
+      "drawCameraCenterWithCrossHair": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawCameraCenterWithCrossHair"
+        ]
+      },
+      "drawCrossHair": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawCrossHair"
+        ]
+      },
+      "drawGrid": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawGrid"
+        ]
+      },
+      "drawPositionText": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawPositionText"
+        ]
+      },
+      "drawReferenceCircle": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawReferenceCircle"
+        ]
+      },
+      "drawRuler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "drawRuler"
+        ]
+      },
+      "getCamera": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "getCamera"
+        ]
+      },
+      "getContext": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "getContext"
+        ]
+      },
+      "getCoordinateConversionFn": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "getCoordinateConversionFn"
+        ]
+      },
+      "getInternalCanvas": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "getInternalCanvas"
+        ]
+      },
+      "getStepFunction": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "getStepFunction"
+        ]
+      },
+      "on": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "on"
+        ]
+      },
+      "pointerDownHandler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "pointerDownHandler"
+        ]
+      },
+      "pointerMoveHandler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "pointerMoveHandler"
+        ]
+      },
+      "registerEventListeners": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "registerEventListeners"
+        ]
+      },
+      "removeEventListeners": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "removeEventListeners"
+        ]
+      },
+      "resetCamera": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "resetCamera"
+        ]
+      },
+      "setCameraAngle": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "setCameraAngle"
+        ]
+      },
+      "spinCameraWithAnimation": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "spinCameraWithAnimation"
+        ]
+      },
+      "step": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "step"
+        ]
+      },
+      "subscribeToCameraUpdate": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "subscribeToCameraUpdate"
+        ]
+      },
+      "unsubscribeToCameraUpdate": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "unsubscribeToCameraUpdate"
+        ]
+      },
+      "windowResizeHandler": {
+        "path": [
+          "@niuee/board",
+          "default",
+          "windowResizeHandler"
+        ]
+      }
+    },
+    "vDial": {
+      "path": [
+        "@niuee/board",
+        "vDial"
+      ],
+      "constructor": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "constructor"
+        ]
+      },
+      "arrow": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "arrow"
+        ]
+      },
+      "center": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "center"
+        ]
+      },
+      "circle": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "circle"
+        ]
+      },
+      "dialWheel": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "dialWheel"
+        ]
+      },
+      "dragStart": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "dragStart"
+        ]
+      },
+      "isDragging": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "isDragging"
+        ]
+      },
+      "radius": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "radius"
+        ]
+      },
+      "ring": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "ring"
+        ]
+      },
+      "svg": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "svg"
+        ]
+      },
+      "width": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "width"
+        ]
+      },
+      "observedAttributes": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "observedAttributes"
+        ]
+      },
+      "attributeChangedCallback": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "attributeChangedCallback"
+        ]
+      },
+      "connectedCallback": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "connectedCallback"
+        ]
+      },
+      "disconnectedCallback": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "disconnectedCallback"
+        ]
+      },
+      "getRotation": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "getRotation"
+        ]
+      },
+      "linkRotation": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "linkRotation"
+        ]
+      },
+      "pointerdownHandler": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "pointerdownHandler"
+        ]
+      },
+      "pointerupHandler": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "pointerupHandler"
+        ]
+      },
+      "registerEventListener": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "registerEventListener"
+        ]
+      },
+      "scrollHandler": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "scrollHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "vDial",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "AttributeChangeCommand": {
+      "path": [
+        "@niuee/board",
+        "AttributeChangeCommand"
+      ],
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "AttributeChangeCommand",
+          "execute"
+        ]
+      }
+    },
+    "BoardKMStrategy": {
+      "path": [
+        "@niuee/board",
+        "BoardKMStrategy"
+      ],
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "enableStrategy"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "BoardKMStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "BoardTouchStrategy": {
+      "path": [
+        "@niuee/board",
+        "BoardTouchStrategy"
+      ],
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "enableStrategy"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "BoardTouchStrategyLegacy": {
+      "path": [
+        "@niuee/board",
+        "BoardTouchStrategyLegacy"
+      ],
+      "touchcancelHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategyLegacy",
+          "touchcancelHandler"
+        ]
+      },
+      "touchendHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategyLegacy",
+          "touchendHandler"
+        ]
+      },
+      "touchmoveHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategyLegacy",
+          "touchmoveHandler"
+        ]
+      },
+      "touchstartHandler": {
+        "path": [
+          "@niuee/board",
+          "BoardTouchStrategyLegacy",
+          "touchstartHandler"
+        ]
+      }
+    },
+    "BoardTrackpadStrategy": {
+      "path": [
+        "@niuee/board",
+        "BoardTrackpadStrategy"
+      ],
+      "disabled": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "disabled"
+        ]
+      },
+      "limitEntireViewPort": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "limitEntireViewPort"
+        ]
+      },
+      "disableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "disableStrategy"
+        ]
+      },
+      "enableStrategy": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "enableStrategy"
+        ]
+      },
+      "setUp": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "setUp"
+        ]
+      },
+      "tearDown": {
+        "path": [
+          "@niuee/board",
+          "BoardTrackpadStrategy",
+          "tearDown"
+        ]
+      }
+    },
+    "CameraChangeCommand": {
+      "path": [
+        "@niuee/board",
+        "CameraChangeCommand"
+      ],
+      "commandPayload": {
+        "path": [
+          "@niuee/board",
+          "CameraChangeCommand",
+          "commandPayload"
+        ]
+      },
+      "execute": {
+        "path": [
+          "@niuee/board",
+          "CameraChangeCommand",
+          "execute"
+        ]
+      }
+    },
+    "CameraListener": {
+      "path": [
+        "@niuee/board",
+        "CameraListener"
+      ],
+      "notifyChange": {
+        "path": [
+          "@niuee/board",
+          "CameraListener",
+          "notifyChange"
+        ]
+      }
+    },
+    "CameraLockableObject": {
+      "path": [
+        "@niuee/board",
+        "CameraLockableObject"
+      ],
+      "getOptimalZoomLevel": {
+        "path": [
+          "@niuee/board",
+          "CameraLockableObject",
+          "getOptimalZoomLevel"
+        ]
+      },
+      "getPosition": {
+        "path": [
+          "@niuee/board",
+          "CameraLockableObject",
+          "getPosition"
+        ]
+      },
+      "getRotation": {
+        "path": [
+          "@niuee/board",
+          "CameraLockableObject",
+          "getRotation"
+        ]
+      }
+    },
+    "Boundaries": {
+      "path": [
+        "@niuee/board",
+        "Boundaries"
+      ]
+    },
+    "CallbackList": {
+      "path": [
+        "@niuee/board",
+        "CallbackList"
+      ]
+    },
+    "CameraChangeEventName": {
+      "path": [
+        "@niuee/board",
+        "CameraChangeEventName"
+      ]
+    },
+    "CameraCommandPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraCommandPayload"
+      ]
+    },
+    "CameraEventMapping": {
+      "path": [
+        "@niuee/board",
+        "CameraEventMapping"
+      ]
+    },
+    "CameraPanCommandPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraPanCommandPayload"
+      ]
+    },
+    "CameraPanEventPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraPanEventPayload"
+      ]
+    },
+    "CameraPanFailureRes": {
+      "path": [
+        "@niuee/board",
+        "CameraPanFailureRes"
+      ]
+    },
+    "CameraPanResult": {
+      "path": [
+        "@niuee/board",
+        "CameraPanResult"
+      ]
+    },
+    "CameraPanSuccessRes": {
+      "path": [
+        "@niuee/board",
+        "CameraPanSuccessRes"
+      ]
+    },
+    "CameraRotateCommandPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateCommandPayload"
+      ]
+    },
+    "CameraRotateEventPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateEventPayload"
+      ]
+    },
+    "CameraRotateFailureRes": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateFailureRes"
+      ]
+    },
+    "CameraRotateRes": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateRes"
+      ]
+    },
+    "CameraRotateSuccessRes": {
+      "path": [
+        "@niuee/board",
+        "CameraRotateSuccessRes"
+      ]
+    },
+    "CameraState": {
+      "path": [
+        "@niuee/board",
+        "CameraState"
+      ]
+    },
+    "CameraUpdateNotification": {
+      "path": [
+        "@niuee/board",
+        "CameraUpdateNotification"
+      ]
+    },
+    "CameraZoomCommandPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomCommandPayload"
+      ]
+    },
+    "CameraZoomEventPayload": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomEventPayload"
+      ]
+    },
+    "CameraZoomFailureRes": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomFailureRes"
+      ]
+    },
+    "CameraZoomResult": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomResult"
+      ]
+    },
+    "CameraZoomSuccessRes": {
+      "path": [
+        "@niuee/board",
+        "CameraZoomSuccessRes"
+      ]
+    },
+    "EaseFunction": {
+      "path": [
+        "@niuee/board",
+        "EaseFunction"
+      ]
+    },
+    "Point": {
+      "path": [
+        "@niuee/board",
+        "Point"
+      ]
+    },
+    "PositionAnimation": {
+      "path": [
+        "@niuee/board",
+        "PositionAnimation"
+      ]
+    },
+    "RotationAnimation": {
+      "path": [
+        "@niuee/board",
+        "RotationAnimation"
+      ]
+    },
+    "ZoomAnimation": {
+      "path": [
+        "@niuee/board",
+        "ZoomAnimation"
+      ]
+    },
+    "calculateOrderOfMagnitude": {
+      "path": [
+        "@niuee/board",
+        "calculateOrderOfMagnitude"
+      ]
+    }
+  }
+}

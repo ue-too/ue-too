@@ -93,7 +93,7 @@
         "locationIdentifier": "3816e98c7091d57e1e5550eb1fa253f3"
       },
       {
-        "translationKey": "dcbaef5f44201fe39a2f3701b30c45fe",
+        "translationKey": "4c9e69d070ac22c5e84c65645bd7a637",
         "translationJSONPath": [
           "0",
           "categories",
@@ -105,10 +105,28 @@
           "index-5",
           "title"
         ],
+        "originalText": "Board Camera",
+        "translation": "",
+        "kind": "category",
+        "locationIdentifier": "9941bfc0127cdc8b09d6e16f59a0d788"
+      },
+      {
+        "translationKey": "5cdea3152d884698ddaf265b8f49994f",
+        "translationJSONPath": [
+          "0",
+          "categories",
+          "index-6"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "categories",
+          "index-6",
+          "title"
+        ],
         "originalText": "Other",
         "translation": "",
         "kind": "category",
-        "locationIdentifier": "cd2036003bb05f5a4c65d03d159163a4"
+        "locationIdentifier": "daa2a395156a000a9a92d18e1db936da"
       }
     ]
   },
@@ -313,6 +331,31 @@
         "kind": "callSignature",
         "translationKey": "31e1e1f34378468b663ea2d2948dff57",
         "locationIdentifier": "6fd07e1ca40bb6ebc689afc063704c7d"
+      }
+    ]
+  },
+  "1487": {
+    "name": "Boundaries",
+    "comments": [
+      {
+        "originalText": "need to translate boundaries text",
+        "translation": "",
+        "translationJSONPath": [
+          "1487",
+          "comments",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "Boundaries",
+          "comment",
+          "summary",
+          "index-0",
+          "text"
+        ],
+        "kind": "typeAlias",
+        "translationKey": "3caf2f307c2201d7d763f4ffe08056f6",
+        "locationIdentifier": "f92c9022f4c3b757a16a5ef10b772ef2"
       }
     ]
   },

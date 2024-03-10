@@ -6,6 +6,7 @@ import crypto from "crypto";
 
 
 const reflectionKind = typedoc.ReflectionKind;
+
 const constantGroup = {
     "Constructors": "placeholder",
     "Properties": "placeholder",
@@ -18,25 +19,6 @@ const constantGroup = {
     "Type Aliases": "placeholder",
     "Functions": "placeholder",
 };
-
-
-function bfs(node){
-    const res = [];
-    const queue = [node];
-    while (queue.length > 0){
-        const length = queue.length;
-        const level = {};
-        for(let index = 0; index < length; index++){
-            const curNode = queue.shift();
-            level[curNode.name] = curNode;
-            if (curNode.children){
-                queue.push(...curNode.children);
-            }
-        }
-        res.push(level);
-    }
-    return res;
-}
 
 let structure = {};
 let translationList = [];
