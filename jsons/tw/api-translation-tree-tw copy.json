@@ -1,11 +1,6 @@
 {
   "0": {
-    "path": [
-      "@niuee/board"
-    ],
     "name": "@niuee/board",
-    "kind": "project",
-    "id": 0,
     "categories": [
       {
         "translationKey": "1fc924ea4b2cb8564fc1e33091c54607",
@@ -133,39 +128,10 @@
         "kind": "category",
         "locationIdentifier": "daa2a395156a000a9a92d18e1db936da"
       }
-    ],
-    "groups": []
+    ]
   },
   "6": {
-    "path": [
-      "@niuee/board",
-      "BoardCamera"
-    ],
     "name": "BoardCamera",
-    "kind": "class",
-    "id": 6,
-    "groups": [
-      {
-        "translationKey": "888ebeb744a8d60219d0167503eb1062",
-        "translationJSONPath": [
-          "6",
-          "groups",
-          "index-4",
-          "index-0"
-        ],
-        "projectPath": [
-          "@niuee/board",
-          "BoardCamera",
-          "groups",
-          "index-4",
-          "title"
-        ],
-        "originalText": "Camera Zoom Operations",
-        "translation": "",
-        "kind": "group",
-        "locationIdentifier": "f7366a73d166167619f8a4cd551b01d7"
-      }
-    ],
     "comments": [
       {
         "originalText": "test string",
@@ -187,18 +153,31 @@
         "translationKey": "202ace2a1c45f417d1d40ab3fea86975",
         "locationIdentifier": "775d2751256ce215aa77f991ca3f0288"
       }
+    ],
+    "groups": [
+      {
+        "translationKey": "888ebeb744a8d60219d0167503eb1062",
+        "translationJSONPath": [
+          "6",
+          "groups",
+          "index-0"
+        ],
+        "projectPath": [
+          "@niuee/board",
+          "BoardCamera",
+          "groups",
+          "index-4",
+          "title"
+        ],
+        "originalText": "Camera Zoom Operations",
+        "translation": "",
+        "kind": "group",
+        "locationIdentifier": "bd9f08655098a5b79ad89f4be6c75ca3"
+      }
     ]
   },
   "8": {
-    "path": [
-      "@niuee/board",
-      "BoardCamera",
-      "constructor",
-      "new BoardCamera"
-    ],
     "name": "new BoardCamera",
-    "kind": "constructorSignature",
-    "id": 8,
     "comments": [
       {
         "originalText": "this is the board camera",
@@ -225,14 +204,7 @@
     ]
   },
   "14": {
-    "path": [
-      "@niuee/board",
-      "BoardCamera",
-      "position"
-    ],
     "name": "position",
-    "kind": "property",
-    "id": 14,
     "comments": [
       {
         "originalText": "test string for position",
@@ -258,14 +230,7 @@
     ]
   },
   "54": {
-    "path": [
-      "@niuee/board",
-      "BoardCamera",
-      "_restrictRotationFromGesture"
-    ],
     "name": "_restrictRotationFromGesture",
-    "kind": "property",
-    "id": 54,
     "comments": [
       {
         "originalText": "restrict on rotation",
@@ -291,15 +256,7 @@
     ]
   },
   "74": {
-    "path": [
-      "@niuee/board",
-      "BoardCamera",
-      "setPositionFromGesture",
-      "setPositionFromGesture"
-    ],
     "name": "setPositionFromGesture",
-    "kind": "callSignature",
-    "id": 74,
     "comments": [
       {
         "originalText": "another test string",
@@ -326,14 +283,7 @@
     ]
   },
   "344": {
-    "path": [
-      "@niuee/board",
-      "BoardElement"
-    ],
     "name": "BoardElement",
-    "kind": "class",
-    "id": 344,
-    "groups": [],
     "comments": [
       {
         "originalText": "This is a translation needed text",
@@ -358,15 +308,7 @@
     ]
   },
   "458": {
-    "path": [
-      "@niuee/board",
-      "BoardElement",
-      "step",
-      "step"
-    ],
     "name": "step",
-    "kind": "callSignature",
-    "id": 458,
     "comments": [
       {
         "originalText": "this is the text",
@@ -393,13 +335,7 @@
     ]
   },
   "1487": {
-    "path": [
-      "@niuee/board",
-      "Boundaries"
-    ],
     "name": "Boundaries",
-    "kind": "typeAlias",
-    "id": 1487,
     "comments": [
       {
         "originalText": "need to translate boundaries text",
@@ -424,14 +360,7 @@
     ]
   },
   "2260": {
-    "path": [
-      "@niuee/board",
-      "BoardTrackpadStrategy"
-    ],
     "name": "BoardTrackpadStrategy",
-    "kind": "interface",
-    "id": 2260,
-    "groups": [],
     "comments": [
       {
         "originalText": "this is a test string for interface",
@@ -456,14 +385,7 @@
     ]
   },
   "2271": {
-    "path": [
-      "@niuee/board",
-      "TwoFingerPanPinchZoom"
-    ],
     "name": "TwoFingerPanPinchZoom",
-    "kind": "class",
-    "id": 2271,
-    "groups": [],
     "comments": [
       {
         "originalText": "this is a test string for interface",
@@ -488,14 +410,7 @@
     ]
   },
   "2299": {
-    "path": [
-      "@niuee/board",
-      "TwoFingerPanPinchZoomLimitEntireView"
-    ],
     "name": "TwoFingerPanPinchZoomLimitEntireView",
-    "kind": "class",
-    "id": 2299,
-    "groups": [],
     "comments": [
       {
         "originalText": "this is a test string for interface",
@@ -520,14 +435,7 @@
     ]
   },
   "2327": {
-    "path": [
-      "@niuee/board",
-      "DefaultBoardTrackpadStrategy"
-    ],
     "name": "DefaultBoardTrackpadStrategy",
-    "kind": "class",
-    "id": 2327,
-    "groups": [],
     "comments": [
       {
         "originalText": "this is a test string for interface",
@@ -552,15 +460,7 @@
     ]
   },
   "3508": {
-    "path": [
-      "@niuee/board",
-      "default",
-      "limitEntireViewPort",
-      "limitEntireViewPort"
-    ],
     "name": "limitEntireViewPort",
-    "kind": "setSignature",
-    "id": 3508,
     "comments": [
       {
         "originalText": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",

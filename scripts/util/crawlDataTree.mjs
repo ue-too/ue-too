@@ -4,8 +4,8 @@ import { resolve } from "path";
 import { writeFileSync } from "fs";
 import * as typedoc from "typedoc";
 
-
 const reflectionKind = typedoc.ReflectionKind;
+
 const constantGroup = {
     "Constructors": "placeholder",
     "Properties": "placeholder",
@@ -23,10 +23,11 @@ parse(data);
 
 export function parse(dataNode){
     const translationItem = [];
-    const tree = {"@niuee/board": dfs(dataNode, [])};
+    const flatList = {};
+    const tree = {"@niuee/board": dfs(dataNode, [], flatList)};
     const flattened = flatten(tree["@niuee/board"]);
     writeFileSync(resolve("scripts/util/testdata", "tree.json"), JSON.stringify(tree, null, 2));
-    writeFileSync(resolve("scripts/util/testdata", "flattened.json"), JSON.stringify(flattened, null, 2));
+    writeFileSync(resolve("scripts/util/testdata", "flattened.json"), JSON.stringify(flatList, null, 2));
     return tree;
 }
 
@@ -49,7 +50,7 @@ function flatten(node){
     return list; 
 }
 
-function dfs(node, path){
+function dfs(node, path, flatList){
     if (node == undefined){
         return undefined;
     }
@@ -60,29 +61,44 @@ function dfs(node, path){
     const res = Object.create(node);
     res.path = [...path];
     const categories = getCategoryStrings(res);
+    const comments = getComment(res);
     const groups = getGroups(res);
+
     if(categories){
         res.categories = categories;
     }
-    if(groups && groups.length > 0){
-        res.groups = groups;
+    if(comments && comments.length > 0){
+        res.comments = comments;
     }
-    if (node.children == undefined){
-        return res;
+    if((groups && groups.length > 0) || (categories && categories.length > 0) || (comments.length > 0)){
+        flatList[res.id] = {
+            path: res.path,
+            name: res.name,
+            kind: reflectionMapping(res),
+            id: res.id,
+            categories: res.categories,
+            groups: groups,
+            comments: res.comments,
+        };
     }
-    for (let child of node.children){
-        res[child.name] = dfs(child, [...path]);
+    // if (node.children == undefined){
+    //     return res;
+    // }
+    if(res.children){
+        for (let child of res.children){
+            res[child.name] = dfs(child, [...path], flatList);
+        }
     }
     if (res.signatures){
         res.signatures.forEach((signature)=>{
-            res[signature.name] = dfs(signature, [...path]);
+            res[signature.name] = dfs(signature, [...path], flatList);
         });
     }
     if(res.getSignature){
-        res[getSignature.name] = dfs(res.getSignature, [...path]);
+        res[res.getSignature.name] = dfs(res.getSignature, [...path], flatList);
     }
     if(res.setSignature){
-        res[setSignature.name] = dfs(res.setSignature, [...path]);
+        res[res.setSignature.name] = dfs(res.setSignature, [...path], flatList);
     }
     return res;
 }
@@ -124,4 +140,104 @@ export function getGroups(node){
         });
     }
     return undefined;
+}
+
+function getComment(node){
+    const res = [];
+    if(node.comment){
+        if(node.comment.summary == undefined){
+            node.comment.summary = [];
+        }
+        if(node.comment.blockTags){
+            node.comment.blockTags.forEach((comment)=>{
+                if(comment.tag !== "@translation"){
+                    return;
+                }
+                comment.content.forEach((content, index)=>{
+                    if(content.kind !== "text"){
+                        return;
+                    }
+                    const item = {};
+                    item.originalText = content.text;
+                    item.translation = "";
+                    item.translationJSONPath = [];
+                    item.translationJSONPath.push(`${node.id}`);
+                    item.translationJSONPath.push("comments");
+                    item.translationJSONPath.push(`index-${index}`);
+                    const insertAtSummary = node.comment.summary.length;
+                    item.projectPath = [...node.path, "comment", "summary",`index-${insertAtSummary}`, "text"];
+                    node.comment.summary.push(content);
+                    item.kind = reflectionMapping(node);
+                    const locationIdentifier = crypto.createHash('md5').update(`${item.translationJSONPath.join("")}${item.originalText}${item.kind}`).digest('hex');
+                    item.translationKey = crypto.createHash('md5').update(`${item.projectPath.join("")}${item.originalText}${item.kind}`).digest('hex');
+                    item.locationIdentifier = locationIdentifier;
+                    res.push(item);
+                });
+            });
+            node.comment.blockTags = node.comment.blockTags.filter((comment)=>{
+                return comment.tag !== "@translation";
+            });
+            if(node.comment.blockTags.length === 0){
+                delete node.comment.blockTags;
+            }
+
+        }
+    }
+    return res;
+}
+
+function reflectionMapping(node){
+    if(node.kind == undefined){
+        return "unknown";
+    }
+    switch(node.kind){
+    case reflectionKind.Project:
+        return "project";
+    case reflectionKind.Module:
+        return "module";
+    case reflectionKind.Namespace:
+        return "namespace";
+    case reflectionKind.Enum:
+        return "enum";
+    case reflectionKind.EnumMember:
+        return "enumMember";
+    case reflectionKind.Variable:
+        return "variable";
+    case reflectionKind.Function:
+        return "function";
+    case reflectionKind.Class:
+        return "class";
+    case reflectionKind.Interface:
+        return "interface";
+    case reflectionKind.Constructor:
+        return "constructor";
+    case reflectionKind.Property:
+        return "property";
+    case reflectionKind.Method:
+        return "method";
+    case reflectionKind.CallSignature:
+        return "callSignature";
+    case reflectionKind.IndexSignature:
+        return "indexSignature";
+    case reflectionKind.ConstructorSignature:
+        return "constructorSignature";
+    case reflectionKind.Parameter:
+        return "parameter";
+    case reflectionKind.TypeLiteral:
+        return "typeLiteral";
+    case reflectionKind.TypeParameter:
+        return "typeParameter";
+    case reflectionKind.Accessor:
+        return "accessor";
+    case reflectionKind.GetSignature:
+        return "getSignature";
+    case reflectionKind.SetSignature:
+        return "setSignature";
+    case reflectionKind.TypeAlias:
+        return "typeAlias";
+    case reflectionKind.Reference:
+        return "reference";
+    default:
+        return "unknown";
+    }
 }
