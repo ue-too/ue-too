@@ -130,3 +130,6 @@ dist
 .pnp.*
 
 build
+
+docs-staging
+doc-jsons/staging

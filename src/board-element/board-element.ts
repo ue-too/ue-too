@@ -13,6 +13,12 @@ import { calculateOrderOfMagnitude } from "../util";
 export interface RotationComponent {
     setRotation(rotation: number): void;
 }
+
+/**
+ * @translation This is a translation needed text
+ * @example this is not going to be parsed by the localization tool
+ * 
+ */
 export default class BoardElement extends HTMLElement{
     
     private _canvasWidth: number; // this is the reference width for when clearing the canvas in the step function
@@ -325,6 +331,11 @@ export default class BoardElement extends HTMLElement{
         this.removeEventListeners();
     }
 
+    /**
+     * 
+     * @param timestamp this is the comment
+     * @translation this is the text
+     */
     private step(timestamp: number){
 
         let deltaTime = timestamp - this.lastUpdateTime;

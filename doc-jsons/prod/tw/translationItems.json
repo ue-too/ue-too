@@ -1,0 +1,258 @@
+{
+  "1fc924ea4b2cb8564fc1e33091c54607": {
+    "translationKey": "1fc924ea4b2cb8564fc1e33091c54607",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-0",
+      "title"
+    ],
+    "originalText": "Board",
+    "translation": "板班"
+  },
+  "71ecd51de7e68ea959736ec5294bf31f": {
+    "translationKey": "71ecd51de7e68ea959736ec5294bf31f",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-1",
+      "title"
+    ],
+    "originalText": "Trackpad Strategy",
+    "translation": ""
+  },
+  "a390fe51ff0a6a97ebb68b9ebaf9543d": {
+    "translationKey": "a390fe51ff0a6a97ebb68b9ebaf9543d",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-2",
+      "title"
+    ],
+    "originalText": "Keyboard-Mouse Strategy",
+    "translation": "鍵盤滑鼠操作"
+  },
+  "82b5de59aaac4a8f4317050846459954": {
+    "translationKey": "82b5de59aaac4a8f4317050846459954",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-3",
+      "title"
+    ],
+    "originalText": "Touch Strategy",
+    "translation": ""
+  },
+  "fce88dfd8e7339e39af90187771fc29b": {
+    "translationKey": "fce88dfd8e7339e39af90187771fc29b",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-4",
+      "title"
+    ],
+    "originalText": "Easing Functions",
+    "translation": ""
+  },
+  "4c9e69d070ac22c5e84c65645bd7a637": {
+    "translationKey": "4c9e69d070ac22c5e84c65645bd7a637",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-5",
+      "title"
+    ],
+    "originalText": "Board Camera",
+    "translation": ""
+  },
+  "5cdea3152d884698ddaf265b8f49994f": {
+    "translationKey": "5cdea3152d884698ddaf265b8f49994f",
+    "projectPath": [
+      "@niuee/board",
+      "categories",
+      "index-6",
+      "title"
+    ],
+    "originalText": "Other",
+    "translation": ""
+  },
+  "202ace2a1c45f417d1d40ab3fea86975": {
+    "translationKey": "202ace2a1c45f417d1d40ab3fea86975",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "test string",
+    "translation": ""
+  },
+  "17a52b8e6aade9e8d9ae2def83cfcaf3": {
+    "translationKey": "17a52b8e6aade9e8d9ae2def83cfcaf3",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "constructor",
+      "new BoardCamera",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is the board camera",
+    "translation": ""
+  },
+  "5cfbace2df04c1bdc708625251e8ab35": {
+    "translationKey": "5cfbace2df04c1bdc708625251e8ab35",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "position",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "originalText": "test string for position",
+    "translation": ""
+  },
+  "a1c1c66b7a0b6d8d1018b2831ab56ac0": {
+    "translationKey": "a1c1c66b7a0b6d8d1018b2831ab56ac0",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "_restrictRotationFromGesture",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "originalText": "restrict on rotation",
+    "translation": ""
+  },
+  "71ddd47076f665a178e4ec3999ff647f": {
+    "translationKey": "71ddd47076f665a178e4ec3999ff647f",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "setPositionFromGesture",
+      "setPositionFromGesture",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "another test string",
+    "translation": ""
+  },
+  "8a9445079c84ea717e09e1a75ff4cf91": {
+    "translationKey": "8a9445079c84ea717e09e1a75ff4cf91",
+    "projectPath": [
+      "@niuee/board",
+      "BoardElement",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "This is a translation needed text",
+    "translation": ""
+  },
+  "31e1e1f34378468b663ea2d2948dff57": {
+    "translationKey": "31e1e1f34378468b663ea2d2948dff57",
+    "projectPath": [
+      "@niuee/board",
+      "BoardElement",
+      "step",
+      "step",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is the text",
+    "translation": ""
+  },
+  "3caf2f307c2201d7d763f4ffe08056f6": {
+    "translationKey": "3caf2f307c2201d7d763f4ffe08056f6",
+    "projectPath": [
+      "@niuee/board",
+      "Boundaries",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "need to translate boundaries text",
+    "translation": ""
+  },
+  "89942e165089afd6df620ff023db970d": {
+    "translationKey": "89942e165089afd6df620ff023db970d",
+    "projectPath": [
+      "@niuee/board",
+      "BoardTrackpadStrategy",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "ea685013238876b47f878efa1cd2fca9": {
+    "translationKey": "ea685013238876b47f878efa1cd2fca9",
+    "projectPath": [
+      "@niuee/board",
+      "TwoFingerPanPinchZoom",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "49119e48b8c0709f97f955f07295ff98": {
+    "translationKey": "49119e48b8c0709f97f955f07295ff98",
+    "projectPath": [
+      "@niuee/board",
+      "TwoFingerPanPinchZoomLimitEntireView",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "696cb08572d8d1c7f8bbaa7c41faddbb": {
+    "translationKey": "696cb08572d8d1c7f8bbaa7c41faddbb",
+    "projectPath": [
+      "@niuee/board",
+      "DefaultBoardTrackpadStrategy",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "f80ed261b92ada3b24cc42a547ade87f": {
+    "translationKey": "f80ed261b92ada3b24cc42a547ade87f",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "limitEntireViewPort",
+      "limitEntireViewPort",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "originalText": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",
+    "translation": ""
+  }
+}
