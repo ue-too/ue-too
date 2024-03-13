@@ -6,5 +6,8 @@
   "navigation": {
     "includeCategories": true
   },
-  "out": "../doc-transition/"
+  "out": "../doc-transition/",
+  "visibilityFilters": {
+    "private" : false
+  }
 }

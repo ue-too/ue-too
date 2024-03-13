@@ -43,6 +43,12 @@ export function parseRawTranslation(tree, translationObject){
         const targetNode = getByPathShort(tree, item.projectPath);
         const originalText = getByPath(tree, item.projectPath);
         if(targetNode == undefined || originalText !== item.originalText){
+            if(targetNode == undefined){
+                console.log("This translation item is removed; please remove it from the translation file", item);
+            } else {
+                console.log("The original text is different");
+                console.log("original text:", originalText);
+            }
             discrepencies.push(item);
             console.log("This translation item either changed place or removed or the original text is different; please revise the translation", item);
         }
@@ -53,7 +59,7 @@ export function parseRawTranslation(tree, translationObject){
 export function parse(dataNode){
     const flatList = {};
     const structure = {};
-    const tree = {"@niuee/board": dfs(dataNode, [], flatList, structure)};
+    const tree = {"0": dfs(dataNode, [], flatList, structure)};
     const translationItems = getTranslationItem(flatList);
     const translationObject = getTranslationItemsAsObject(flatList);
     return {tree: tree, flatList: flatList, translationItems: translationItems, translationObject: translationObject, structure: structure};
@@ -85,16 +91,18 @@ export function getTranslationItemsAsObject(flatList){
                 res[category.translationKey] = {
                     translationKey: category.translationKey,
                     projectPath: category.projectPath,
+                    translationJSONPath: category.translationJSONPath,
                     originalText: category.originalText,
                     translation: "",
                 };
             });
         }
-        if (item.groupList !== undefined && item.groupList.length > 0){
-            item.groupList.forEach((group)=>{
+        if (item.groups !== undefined && item.groups.length > 0){
+            item.groups.forEach((group)=>{
                 res[group.translationKey] = {
                     translationKey: group.translationKey,
                     projectPath: group.projectPath,
+                    translationJSONPath: group.translationJSONPath,
                     originalText: group.originalText,
                     translation: "",
                 };
@@ -105,6 +113,7 @@ export function getTranslationItemsAsObject(flatList){
                 res[comment.translationKey] = {
                     translationKey: comment.translationKey,
                     projectPath: comment.projectPath,
+                    translationJSONPath: comment.translationJSONPath,
                     originalText: comment.originalText,
                     translation: "",
                 };
@@ -141,7 +150,7 @@ export function dfs(node, path, flatList, structure){
     if((node.flags && "isExternal" in node.flags && node.flags.isExternal)){
         return undefined;
     }
-    path.push(node.name);
+    path.push(node.id.toString());
     const res = Object.create(node);
     res.path = [...path];
 
@@ -164,7 +173,7 @@ export function dfs(node, path, flatList, structure){
     structure[kindKey] = curKindKeys;
 
     if((groupList && groupList.length > 0) || (categories && categories.length > 0) || (comments.length > 0)){
-        flatList[res.id] = {
+        flatList[res.id.toString()] = {
             path: res.path,
             name: res.name,
             kind: reflectionMapping(res),
@@ -177,19 +186,19 @@ export function dfs(node, path, flatList, structure){
 
     if(res.children){
         for (let child of res.children){
-            res[child.name] = dfs(child, [...path], flatList, structure);
+            res[child.id.toString()] = dfs(child, [...path], flatList, structure);
         }
     }
     if (res.signatures){
         res.signatures.forEach((signature)=>{
-            res[signature.name] = dfs(signature, [...path], flatList, structure);
+            res[signature.id.toString()] = dfs(signature, [...path], flatList, structure);
         });
     }
     if(res.getSignature){
-        res[res.getSignature.name] = dfs(res.getSignature, [...path], flatList, structure);
+        res[res.getSignature.id.toString()] = dfs(res.getSignature, [...path], flatList, structure);
     }
     if(res.setSignature){
-        res[res.setSignature.name] = dfs(res.setSignature, [...path], flatList, structure);
+        res[res.setSignature.id.toString()] = dfs(res.setSignature, [...path], flatList, structure);
     }
     return res;
 }
@@ -253,6 +262,7 @@ export function getComment(node){
                     item.translation = "";
                     item.translationJSONPath = [];
                     item.translationJSONPath.push(`${node.id}`);
+                    item.translationJSONPath.push(`${node.name}`);
                     item.translationJSONPath.push("comments");
                     item.translationJSONPath.push(`index-${index}`);
                     const insertAtSummary = node.comment.summary.length;

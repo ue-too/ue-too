@@ -23,6 +23,8 @@ try{
     } else {
         console.log("Discrepencies found");
         console.log(discrepencies);
+        injectTranslation(res.tree, translationData);
+        writeFileSync(resolve(`./doc-jsons/staging/${l10nCode}`, "api.json"), JSON.stringify(data, null, 2));
     }
 } catch(e) {
     console.log("There is an error parsing the raw api data");

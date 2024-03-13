@@ -78,6 +78,7 @@ export type CameraRotateFailureRes = {
 export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
 
 /**
+ * @category Board Camera
  * @translation test string
  */
 export default class BoardCamera {
@@ -207,6 +208,7 @@ export default class BoardCamera {
     }
 
     /**
+     * @group Camera Position Operations
      * @translation another test string
      */
     setPositionFromGesture(position: Point): boolean{
@@ -221,6 +223,9 @@ export default class BoardCamera {
         return this.setPosition(position);
     }
 
+    /**
+     * @group Clamping
+     * */
     clampPointEntireViewPort(point: Point){
         let topLeftCorner = this.convert2WorldSpaceWRT(point, {x: 0, y: this.viewPortHeight});
         let bottomLeftCorner = this.convert2WorldSpaceWRT(point, {x: 0, y: 0});
@@ -251,6 +256,11 @@ export default class BoardCamera {
         return PointCal.addVector(point, delta);
     }
     
+    /**
+     * @group Clamping
+     * @param point 
+     * @returns 
+     */
     clampPointWithRes(point: Point): {clipped: boolean, point: Point}{
         if(this.withinBoundaries(point)){
             return {clipped: false, point: point};
@@ -277,6 +287,12 @@ export default class BoardCamera {
         return {clipped: true, point: manipulatePoint};
     }
 
+    /**
+     * @group Clamping
+     * @translation Clamp a point within the boundaries of the world
+     * @param point 
+     * @returns 
+     */
     clampPoint(point: Point): Point{
         if(this.withinBoundaries(point)){
             return point;

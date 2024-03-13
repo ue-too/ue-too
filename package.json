@@ -15,6 +15,7 @@
     "doc:gen-translate-json": "node ./scripts/gen-translation-file.mjs",
     "doc:inject-translation": "node ./scripts/inject-translation-file.mjs",
     "doc:gen-staging-doc": "run(){ if [ $# -eq 0 ]; then echo \"No Language Code provided. Going for us as default\"; pnpm exec typedoc --options ./typedoc-config/staging.typedoc.json --readme ./README.md --entryPoints ./doc-jsons/staging/api.json --out ./docs-staging/en; else echo \"Language Code is: $1\"; pnpm exec typedoc --options ./typedoc-config/staging.typedoc.json --readme ./doc-jsons/staging/$1/README.md --entryPoints ./doc-jsons/staging/$1/api.json --out ./docs-staging/$1; fi;}; run",
+    "doc:default": "pnpm run doc:setup && pnpm run doc:parse-raw && pnpm run doc:gen-staging-doc",
     "doc:move2prod": "node ./scripts/doc-transition.mjs",
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
