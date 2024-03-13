@@ -3,10 +3,9 @@
   "themeColor": "#ffffff",
   "categoryOrder": ["Board", "Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
   "readme": "./README.md",
-  // "out": "./docs",
   "entryPoints": ["./src/index.ts"],
   "navigation": {
     "includeCategories": true
   },
-  "json": "./jsons/api.json",
+  "json": "./doc-jsons/staging/api-raw.json",
 }
