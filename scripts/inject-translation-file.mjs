@@ -11,13 +11,13 @@ try{
     const data = JSON.parse(readFileSync(resolve(`./doc-jsons/staging`, `api.json`), 'utf8')); 
     const translationData = JSON.parse(readFileSync(resolve(`./doc-jsons/staging/${l10nCode}`, `translationItems.json`), 'utf8'));
     const translations = JSON.parse(readFileSync(resolve(`./doc-jsons/staging/${l10nCode}`, `editThisFile.json`), 'utf8'));
-    for (const translation of translations) {
-        const translationItem = translationData[translation.translationKeys];
+    for (const translationKey of Object.keys(translations)) {
+        const translationItem = translationData[translationKey];
         if(translationItem == undefined){
-            console.log(`Translation item not found for ${translation.translationKeys}`);
+            console.log(`Translation item not found for ${translations[translationKey].translationKeys}`);
             process.exit(1);
         }
-        translationItem.translation = translation.translation;
+        translationItem.translation = translations[translationKey].translation;
     }
     if(data == undefined){
         console.log("raw api data is not found")
@@ -28,6 +28,7 @@ try{
     if(discrepencies.length == 0){
         console.log("No discrepencies found");
         injectTranslation(res.tree, translationData);
+        writeFileSync(resolve(`./doc-jsons/staging/${l10nCode}`, "translationItems.json"), JSON.stringify(translationData, null, 2));
         writeFileSync(resolve(`./doc-jsons/staging/${l10nCode}`, "api.json"), JSON.stringify(data, null, 2));
     } else {
         console.log("Discrepencies found");

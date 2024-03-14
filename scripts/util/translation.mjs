@@ -91,7 +91,7 @@ export function getTranslationItemsAsObject(flatList){
                 res[category.translationKey] = {
                     translationKey: category.translationKey,
                     projectPath: category.projectPath,
-                    translationJSONPath: category.translationJSONPath,
+                    flatPath: category.flatPath,
                     belongsTo: item.name,
                     kind: "category",
                     originalText: category.originalText,
@@ -219,11 +219,11 @@ export function dfs(node, path, flatList, structure){
 export function getCategoryStrings(node){
     if (node.categories){
         return node.categories.map((category, index) => {
-            const translationJSONPath = [`${node.id}`, `categories`, `index-${index}`];
+            const flatPath = [`${node.id}`, `categories`, `index-${index}`];
             const projectPath = [...node.path, "categories", `index-${index}`, "title"];
             const translationKey = crypto.createHash('md5').update(`${projectPath.join("")}${category.title}${"category"}`).digest('hex');
-            const locationIdentifier = crypto.createHash('md5').update(`${translationJSONPath.join("")}${category.title}${"category"}`).digest('hex');
-            const item = { translationKey: translationKey, translationJSONPath: translationJSONPath, projectPath: projectPath, originalText: category.title, translation: "", kind: "category", locationIdentifier: locationIdentifier};
+            const locationIdentifier = crypto.createHash('md5').update(`${flatPath.join("")}${category.title}${"category"}`).digest('hex');
+            const item = { translationKey: translationKey, flatPath: flatPath, projectPath: projectPath, originalText: category.title, translation: "", kind: "category", locationIdentifier: locationIdentifier};
             return item;
         });
     }
@@ -234,21 +234,21 @@ export function getGroups(node){
     if(node.groups){
         let items = node.groups.map((group, index) => {
             const projectPath = [...node.path, "groups", `index-${index}`, "title"];
-            const translationJSONPath = [];
-            translationJSONPath.push(`${node.id}`);
-            translationJSONPath.push("groups");
-            translationJSONPath.push(`index-${index}`);
+            const flatPath = [];
+            flatPath.push(`${node.id}`);
+            flatPath.push("groups");
+            flatPath.push(`index-${index}`);
             const translationKey = crypto.createHash('md5').update(`${projectPath.join("")}${group.title}${"group"}`).digest('hex');
-            const locationIdentifier = crypto.createHash('md5').update(`${translationJSONPath.join("")}${group.title}${"group"}`).digest('hex');
-            const item = { translationKey: translationKey, translationJSONPath: translationJSONPath, projectPath: projectPath, originalText: group.title, translation: "", kind: "group", locationIdentifier: locationIdentifier};
+            const locationIdentifier = crypto.createHash('md5').update(`${flatPath.join("")}${group.title}${"group"}`).digest('hex');
+            const item = { translationKey: translationKey, flatPath: flatPath, projectPath: projectPath, originalText: group.title, translation: "", kind: "group", locationIdentifier: locationIdentifier};
             return item;
         });
         items = items.filter((item)=>{
             return !(item.originalText in constantGroup);
         });
         return items.map((item, index)=>{
-            item.translationJSONPath.push(`index-${index}`);
-            item.locationIdentifier = crypto.createHash('md5').update(`${item.translationJSONPath.join("")}${item.originalText}${"group"}`).digest('hex');
+            item.flatPath.push(`index-${index}`);
+            item.locationIdentifier = crypto.createHash('md5').update(`${item.flatPath.join("")}${item.originalText}${"group"}`).digest('hex');
             return {...item};
         });
     }
@@ -273,16 +273,16 @@ export function getComment(node){
                     const item = {};
                     item.originalText = content.text;
                     item.translation = "";
-                    item.translationJSONPath = [];
-                    item.translationJSONPath.push(`${node.id}`);
-                    item.translationJSONPath.push(`${node.name}`);
-                    item.translationJSONPath.push("comments");
-                    item.translationJSONPath.push(`index-${index}`);
+                    item.flatPath = [];
+                    item.flatPath.push(`${node.id}`);
+                    item.flatPath.push(`${node.name}`);
+                    item.flatPath.push("comments");
+                    item.flatPath.push(`index-${index}`);
                     const insertAtSummary = node.comment.summary.length;
                     item.projectPath = [...node.path, "comment", "summary",`index-${insertAtSummary}`, "text"];
                     node.comment.summary.push(content);
                     item.kind = reflectionMapping(node);
-                    const locationIdentifier = crypto.createHash('md5').update(`${item.translationJSONPath.join("")}${item.originalText}${item.kind}`).digest('hex');
+                    const locationIdentifier = crypto.createHash('md5').update(`${item.flatPath.join("")}${item.originalText}${item.kind}`).digest('hex');
                     item.translationKey = crypto.createHash('md5').update(`${item.projectPath.join("")}${item.originalText}${item.kind}`).digest('hex');
                     item.locationIdentifier = locationIdentifier;
                     res.push(item);

@@ -10,8 +10,37 @@ import { CameraListener } from "../camera-change-command/camera-observer";
 import { calculateOrderOfMagnitude } from "../util";
 
 /**
- * @translation Default Export of the @niuee/board package 
+ * @translation Default Export of the @niuee/board package. <br/>
+ * 
+ *
  * @category Board
+ * @example
+ * ```typescript
+ * import Board from "@niuee/board";
+ * 
+ * // or however you prefer to get a canvas element that is already in the DOM
+ * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
+ * const board = new Board(canvasElement);
+ * 
+ * const stepFn = board.getStepFunction(); 
+ * const context = board.getContext();
+ * 
+ * function step(timestamp: number){
+ *    stepFn(timestamp);
+ * // do other stuff after the board has stepped
+ * //.
+ * //.
+ * //.
+ * }
+ * ```
+ * @translation Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.
+ * 
+ * However, this does not apply if you are using the cdn or bundled version of the package.
+ * @customtag test line position
+ * @example
+ * ```typescript
+ * import {Board} from "@niuee/board/boardify";
+ * ```
  */
 export default class Board {
     

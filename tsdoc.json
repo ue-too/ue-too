@@ -3,8 +3,8 @@
     "extends": ["typedoc/tsdoc.json"],
     "tagDefinitions": [
         {
-            "tagName": "@customtag",
-            "syntaxKind": "inline"
+            "tagName": "@translation",
+            "syntaxKind": "block"
         }
     ]
 }

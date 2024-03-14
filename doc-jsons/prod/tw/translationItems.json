@@ -1,1879 +1,1625 @@
 {
-  "795b893795ff5fa8a338277851b2a3ae": {
-    "translationKey": "795b893795ff5fa8a338277851b2a3ae",
+  "1fc924ea4b2cb8564fc1e33091c54607": {
+    "translationKey": "1fc924ea4b2cb8564fc1e33091c54607",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-0",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-0"
-    ],
+    "belongsTo": "@niuee/board",
+    "kind": "category",
     "originalText": "Board",
     "translation": "板班"
   },
-  "79d2c5019068cf015e11358282cc6852": {
-    "translationKey": "79d2c5019068cf015e11358282cc6852",
+  "fe3eaa07ee1bb3ecad564a90840a8b2d": {
+    "translationKey": "fe3eaa07ee1bb3ecad564a90840a8b2d",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-1",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-1"
-    ],
-    "originalText": "Trackpad Strategy",
-    "translation": "觸控板操作"
+    "belongsTo": "@niuee/board",
+    "kind": "category",
+    "originalText": "Board Camera",
+    "translation": "板班相機 changed in production"
   },
-  "ff1d25f2e7f142492889679c0abc7a01": {
-    "translationKey": "ff1d25f2e7f142492889679c0abc7a01",
+  "8080f01a2a569783b5531ec2c336a8fa": {
+    "translationKey": "8080f01a2a569783b5531ec2c336a8fa",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-2",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-2"
-    ],
-    "originalText": "Keyboard-Mouse Strategy",
-    "translation": "滑鼠鍵盤操作"
+    "belongsTo": "@niuee/board",
+    "kind": "category",
+    "originalText": "Trackpad Strategy",
+    "translation": ""
   },
-  "e0e8d7bf6cdb0bb3a7743cd6e3a0a0f1": {
-    "translationKey": "e0e8d7bf6cdb0bb3a7743cd6e3a0a0f1",
+  "71f43b78263f1a844edccd650ae01497": {
+    "translationKey": "71f43b78263f1a844edccd650ae01497",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-3",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-3"
-    ],
-    "originalText": "Touch Strategy",
-    "translation": "觸控操作"
+    "belongsTo": "@niuee/board",
+    "kind": "category",
+    "originalText": "Keyboard-Mouse Strategy",
+    "translation": ""
   },
-  "d18ec7f6c9800e87f952c326c621f52f": {
-    "translationKey": "d18ec7f6c9800e87f952c326c621f52f",
+  "2f5e4b4194421fc5e784a595e4456606": {
+    "translationKey": "2f5e4b4194421fc5e784a595e4456606",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-4",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-4"
-    ],
-    "originalText": "Easing Functions",
-    "translation": "減緩函數"
+    "belongsTo": "@niuee/board",
+    "kind": "category",
+    "originalText": "Touch Strategy",
+    "translation": ""
   },
-  "0d31e424bb7d374c9beec2992cb8517f": {
-    "translationKey": "0d31e424bb7d374c9beec2992cb8517f",
+  "8e2353b78ed86f38e7cb1049ce620f2d": {
+    "translationKey": "8e2353b78ed86f38e7cb1049ce620f2d",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-5",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-5"
-    ],
-    "originalText": "Board Camera",
-    "translation": "板班相機"
+    "belongsTo": "@niuee/board",
+    "kind": "category",
+    "originalText": "Easing Functions",
+    "translation": ""
   },
-  "c7bb962ebff7aac037562a0e4bddc0c3": {
-    "translationKey": "c7bb962ebff7aac037562a0e4bddc0c3",
+  "5cdea3152d884698ddaf265b8f49994f": {
+    "translationKey": "5cdea3152d884698ddaf265b8f49994f",
     "projectPath": [
-      "0",
+      "@niuee/board",
       "categories",
       "index-6",
       "title"
     ],
-    "translationJSONPath": [
-      "0",
-      "categories",
-      "index-6"
-    ],
+    "belongsTo": "@niuee/board",
+    "kind": "category",
     "originalText": "Other",
-    "translation": "其他"
+    "translation": ""
   },
-  "ede3c39daa5e54408b0460d6a76a3c1e": {
-    "translationKey": "ede3c39daa5e54408b0460d6a76a3c1e",
+  "09ea77df3eee195c1e9c370cc5443a37": {
+    "translationKey": "09ea77df3eee195c1e9c370cc5443a37",
     "projectPath": [
-      "0",
-      "6",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "6",
+      "@niuee/board",
       "BoardCamera",
-      "comments",
-      "index-0"
+      "groups",
+      "index-4",
+      "title"
     ],
-    "originalText": "test string",
+    "belongsTo": "BoardCamera",
+    "kind": "group",
+    "originalText": "Camera Position Operations",
     "translation": ""
   },
-  "ca3f7e1dd3ad2e9812277d21d6c1c63f": {
-    "translationKey": "ca3f7e1dd3ad2e9812277d21d6c1c63f",
+  "da81ab360786bb6604f758306e8cd871": {
+    "translationKey": "da81ab360786bb6604f758306e8cd871",
     "projectPath": [
-      "0",
-      "6",
-      "7",
-      "8",
+      "@niuee/board",
+      "BoardCamera",
+      "groups",
+      "index-5",
+      "title"
+    ],
+    "belongsTo": "BoardCamera",
+    "kind": "group",
+    "originalText": "Camera Zoom Operations",
+    "translation": ""
+  },
+  "4a459b1f5d98b189c22d3ba586877c47": {
+    "translationKey": "4a459b1f5d98b189c22d3ba586877c47",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
+      "groups",
+      "index-6",
+      "title"
+    ],
+    "belongsTo": "BoardCamera",
+    "kind": "group",
+    "originalText": "Clamping",
+    "translation": ""
+  },
+  "c5a939dc4c4eb46c3f088d278a0aff8c": {
+    "translationKey": "c5a939dc4c4eb46c3f088d278a0aff8c",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "8",
-      "new BoardCamera",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "this is the board camera",
+    "name": "BoardCamera",
+    "kind": "class",
+    "originalText": "This is the backbone of the canvas panning and a lot of other stuff that is made easy by the camera.",
     "translation": ""
   },
-  "87e1eccbf1d9b8129a727c044055e3bd": {
-    "translationKey": "87e1eccbf1d9b8129a727c044055e3bd",
+  "a1c1c66b7a0b6d8d1018b2831ab56ac0": {
+    "translationKey": "a1c1c66b7a0b6d8d1018b2831ab56ac0",
     "projectPath": [
-      "0",
-      "6",
-      "14",
-      "comment",
-      "summary",
-      "index-1",
-      "text"
-    ],
-    "translationJSONPath": [
-      "14",
-      "position",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "test string for position",
-    "translation": ""
-  },
-  "78116a2b8692db33ff15a8362bb5e57e": {
-    "translationKey": "78116a2b8692db33ff15a8362bb5e57e",
-    "projectPath": [
-      "0",
-      "6",
-      "54",
-      "comment",
-      "summary",
-      "index-1",
-      "text"
-    ],
-    "translationJSONPath": [
-      "54",
+      "@niuee/board",
+      "BoardCamera",
       "_restrictRotationFromGesture",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "restrict on rotation",
-    "translation": "限制板班相機使其無法旋轉"
-  },
-  "cdd74f057dea1031f85e3b23088ef349": {
-    "translationKey": "cdd74f057dea1031f85e3b23088ef349",
-    "projectPath": [
-      "0",
-      "6",
-      "73",
-      "74",
       "comment",
       "summary",
-      "index-0",
+      "index-1",
       "text"
     ],
-    "translationJSONPath": [
-      "74",
-      "setPositionFromGesture",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "another test string",
+    "name": "_restrictRotationFromGesture",
+    "kind": "property",
+    "originalText": "restrict on rotation",
     "translation": ""
   },
-  "f9d952b8a55c2361980e599943faf738": {
-    "translationKey": "f9d952b8a55c2361980e599943faf738",
+  "6c8e860f72eb2f01367335db6cd1876f": {
+    "translationKey": "6c8e860f72eb2f01367335db6cd1876f",
     "projectPath": [
-      "0",
-      "6",
-      "93",
-      "94",
+      "@niuee/board",
+      "BoardCamera",
+      "setPositionFromGesture",
+      "setPositionFromGesture",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "94",
+    "name": "setPositionFromGesture",
+    "kind": "callSignature",
+    "originalText": "Set the position of the camera from gesture input of user; this is different from the setPosition method in that it takes into account the restrictions on the camera",
+    "translation": ""
+  },
+  "7afb6da3b192212c891f2f7d14ce907f": {
+    "translationKey": "7afb6da3b192212c891f2f7d14ce907f",
+    "projectPath": [
+      "@niuee/board",
+      "BoardCamera",
       "clampPoint",
-      "comments",
-      "index-0"
+      "clampPoint",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
     ],
+    "name": "clampPoint",
+    "kind": "callSignature",
     "originalText": "Clamp a point within the boundaries of the world",
     "translation": ""
   },
-  "0ef21c037d26fbb55287675de52367c9": {
-    "translationKey": "0ef21c037d26fbb55287675de52367c9",
+  "8a9445079c84ea717e09e1a75ff4cf91": {
+    "translationKey": "8a9445079c84ea717e09e1a75ff4cf91",
     "projectPath": [
-      "0",
-      "344",
+      "@niuee/board",
+      "BoardElement",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "344",
-      "BoardElement",
-      "comments",
-      "index-0"
-    ],
+    "name": "BoardElement",
+    "kind": "class",
     "originalText": "This is a translation needed text",
     "translation": ""
   },
-  "6d08bcd7a005d01cdc44dadd36276b65": {
-    "translationKey": "6d08bcd7a005d01cdc44dadd36276b65",
+  "31e1e1f34378468b663ea2d2948dff57": {
+    "translationKey": "31e1e1f34378468b663ea2d2948dff57",
     "projectPath": [
-      "0",
-      "344",
-      "457",
-      "458",
+      "@niuee/board",
+      "BoardElement",
+      "step",
+      "step",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "458",
-      "step",
-      "comments",
-      "index-0"
-    ],
+    "name": "step",
+    "kind": "callSignature",
     "originalText": "this is the text",
     "translation": ""
   },
-  "61e85c924b75af303a596d6e5a3cde1d": {
-    "translationKey": "61e85c924b75af303a596d6e5a3cde1d",
+  "3caf2f307c2201d7d763f4ffe08056f6": {
+    "translationKey": "3caf2f307c2201d7d763f4ffe08056f6",
     "projectPath": [
-      "0",
-      "1487",
+      "@niuee/board",
+      "Boundaries",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "1487",
-      "Boundaries",
-      "comments",
-      "index-0"
-    ],
+    "name": "Boundaries",
+    "kind": "typeAlias",
     "originalText": "need to translate boundaries text",
     "translation": ""
   },
-  "0de7b2fb396f0944bc7b6e62dba9477f": {
-    "translationKey": "0de7b2fb396f0944bc7b6e62dba9477f",
+  "89942e165089afd6df620ff023db970d": {
+    "translationKey": "89942e165089afd6df620ff023db970d",
     "projectPath": [
-      "0",
-      "2250",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "2250",
+      "@niuee/board",
       "BoardTrackpadStrategy",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "this is a test string for interface",
-    "translation": ""
-  },
-  "4a5c84f7481da7189e2be174d764ad0b": {
-    "translationKey": "4a5c84f7481da7189e2be174d764ad0b",
-    "projectPath": [
-      "0",
-      "2261",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "2261",
+    "name": "BoardTrackpadStrategy",
+    "kind": "interface",
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "ea685013238876b47f878efa1cd2fca9": {
+    "translationKey": "ea685013238876b47f878efa1cd2fca9",
+    "projectPath": [
+      "@niuee/board",
       "TwoFingerPanPinchZoom",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "this is a test string for interface",
-    "translation": ""
-  },
-  "06b9bd8e0a15c4f66231ed66378aa5b7": {
-    "translationKey": "06b9bd8e0a15c4f66231ed66378aa5b7",
-    "projectPath": [
-      "0",
-      "2289",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "2289",
+    "name": "TwoFingerPanPinchZoom",
+    "kind": "class",
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "49119e48b8c0709f97f955f07295ff98": {
+    "translationKey": "49119e48b8c0709f97f955f07295ff98",
+    "projectPath": [
+      "@niuee/board",
       "TwoFingerPanPinchZoomLimitEntireView",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "this is a test string for interface",
-    "translation": ""
-  },
-  "b15221523b88f18f11218017db34fb37": {
-    "translationKey": "b15221523b88f18f11218017db34fb37",
-    "projectPath": [
-      "0",
-      "2317",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "2317",
+    "name": "TwoFingerPanPinchZoomLimitEntireView",
+    "kind": "class",
+    "originalText": "this is a test string for interface",
+    "translation": ""
+  },
+  "696cb08572d8d1c7f8bbaa7c41faddbb": {
+    "translationKey": "696cb08572d8d1c7f8bbaa7c41faddbb",
+    "projectPath": [
+      "@niuee/board",
       "DefaultBoardTrackpadStrategy",
-      "comments",
-      "index-0"
+      "comment",
+      "summary",
+      "index-0",
+      "text"
     ],
+    "name": "DefaultBoardTrackpadStrategy",
+    "kind": "class",
     "originalText": "this is a test string for interface",
     "translation": ""
   },
-  "887755dc9be9fb9e5896a0043ca973c1": {
-    "translationKey": "887755dc9be9fb9e5896a0043ca973c1",
+  "d1f12401a79fd36461979792a40efed3": {
+    "translationKey": "d1f12401a79fd36461979792a40efed3",
     "projectPath": [
-      "0",
-      "3386",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "3386",
+      "@niuee/board",
       "default",
-      "comments",
-      "index-0"
+      "groups",
+      "index-4",
+      "title"
     ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Attribute",
+    "translation": ""
+  },
+  "99991ba079fa792393fab75875c36776": {
+    "translationKey": "99991ba079fa792393fab75875c36776",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-5",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Camera Control",
+    "translation": ""
+  },
+  "3a53aade1a13cc8b9b94a6a8c7f3925c": {
+    "translationKey": "3a53aade1a13cc8b9b94a6a8c7f3925c",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-6",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Control Strategy",
+    "translation": ""
+  },
+  "abfaa9a42f9ca194e627828a164fb753": {
+    "translationKey": "abfaa9a42f9ca194e627828a164fb753",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-7",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Debug Tools",
+    "translation": ""
+  },
+  "b3ccd91e56ffb5c596465b8e3bb14bac": {
+    "translationKey": "b3ccd91e56ffb5c596465b8e3bb14bac",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-8",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Internal Attributes",
+    "translation": ""
+  },
+  "824f6604ed7524903d369f8727622cc1": {
+    "translationKey": "824f6604ed7524903d369f8727622cc1",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-9",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Restriction",
+    "translation": ""
+  },
+  "091ff3ebbc7246fc5261f370b628272f": {
+    "translationKey": "091ff3ebbc7246fc5261f370b628272f",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "groups",
+      "index-10",
+      "title"
+    ],
+    "belongsTo": "default",
+    "kind": "group",
+    "originalText": "Zoom Level",
+    "translation": ""
+  },
+  "a0c3ac160336a5c59361d4530fd4bd1c": {
+    "translationKey": "a0c3ac160336a5c59361d4530fd4bd1c",
+    "projectPath": [
+      "@niuee/board",
+      "default",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "name": "default",
+    "kind": "class",
     "originalText": "Default Export of the @niuee/board package",
-    "translation": "@niuee/board 的預設導出"
+    "translation": ""
   },
-  "dfa389dec54044da893df1d807073014": {
-    "translationKey": "dfa389dec54044da893df1d807073014",
+  "37730462278c03f494f0505e892b80d8": {
+    "translationKey": "37730462278c03f494f0505e892b80d8",
     "projectPath": [
-      "0",
-      "3386",
-      "3387",
-      "3388",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "3388",
+      "@niuee/board",
+      "default",
+      "constructor",
       "new default",
-      "comments",
-      "index-0"
+      "comment",
+      "summary",
+      "index-0",
+      "text"
     ],
+    "name": "new default",
+    "kind": "constructorSignature",
     "originalText": "Board constructor",
-    "translation": "板班建構子"
+    "translation": ""
   },
-  "3715498707460a384fc7ab4d0a5e5d40": {
-    "translationKey": "3715498707460a384fc7ab4d0a5e5d40",
+  "0bcae8fe581e97666af58352dc108388": {
+    "translationKey": "0bcae8fe581e97666af58352dc108388",
     "projectPath": [
-      "0",
-      "3386",
-      "3408",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "3408",
+      "@niuee/board",
+      "default",
       "attributeObserver",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "The observer mainly for the width and height of the canvas element",
-    "translation": "主要用於觀察 canvas 畫布元素的寬度和高度"
-  },
-  "f2172cb478062d6de02496eb640898cd": {
-    "translationKey": "f2172cb478062d6de02496eb640898cd",
-    "projectPath": [
-      "0",
-      "3386",
-      "3410",
-      "3411",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3411",
+    "name": "attributeObserver",
+    "kind": "property",
+    "originalText": "The observer mainly for the width and height of the canvas element",
+    "translation": ""
+  },
+  "df15c866dd27cff633a2a1ca7759976e": {
+    "translationKey": "df15c866dd27cff633a2a1ca7759976e",
+    "projectPath": [
+      "@niuee/board",
+      "default",
       "attributeCallBack",
-      "comments",
-      "index-0"
+      "attributeCallBack",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
     ],
+    "name": "attributeCallBack",
+    "kind": "callSignature",
     "originalText": "Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two)",
     "translation": ""
   },
-  "560470dc11de4820f458c36920c15fbb": {
-    "translationKey": "560470dc11de4820f458c36920c15fbb",
+  "d4351488767011dc6f9e4306d972c7f5": {
+    "translationKey": "d4351488767011dc6f9e4306d972c7f5",
     "projectPath": [
-      "0",
-      "3386",
-      "3414",
-      "3415",
+      "@niuee/board",
+      "default",
+      "fullScreen",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3415",
-      "fullScreen",
-      "comments",
-      "index-0"
-    ],
+    "name": "fullScreen",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is in full screen mode",
     "translation": ""
   },
-  "0e26ad0a1d3567acf3da2e5adb12447a": {
-    "translationKey": "0e26ad0a1d3567acf3da2e5adb12447a",
+  "928e95a7c4e7d0859350239e33f15b4d": {
+    "translationKey": "928e95a7c4e7d0859350239e33f15b4d",
     "projectPath": [
-      "0",
-      "3386",
-      "3414",
-      "3416",
+      "@niuee/board",
+      "default",
+      "fullScreen",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3416",
-      "fullScreen",
-      "comments",
-      "index-0"
-    ],
+    "name": "fullScreen",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is in full screen mode; this will also effect the width and height of the canvas",
     "translation": ""
   },
-  "7c57ba414b04bfe05906916a16c6d209": {
-    "translationKey": "7c57ba414b04bfe05906916a16c6d209",
+  "596702b1a67eb3b069c05bffdad4d451": {
+    "translationKey": "596702b1a67eb3b069c05bffdad4d451",
     "projectPath": [
-      "0",
-      "3386",
-      "3418",
-      "3419",
+      "@niuee/board",
+      "default",
+      "width",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3419",
-      "width",
-      "comments",
-      "index-0"
-    ],
+    "name": "width",
+    "kind": "getSignature",
     "originalText": "get the width of the canvas element the board is attached to",
     "translation": ""
   },
-  "0c3341c5d211ea896c400afa847e2ae9": {
-    "translationKey": "0c3341c5d211ea896c400afa847e2ae9",
+  "079e0ff202bdb567b9391a2dde030230": {
+    "translationKey": "079e0ff202bdb567b9391a2dde030230",
     "projectPath": [
-      "0",
-      "3386",
-      "3418",
-      "3420",
+      "@niuee/board",
+      "default",
+      "width",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3420",
-      "width",
-      "comments",
-      "index-0"
-    ],
+    "name": "width",
+    "kind": "setSignature",
     "originalText": "set the width of the canvas element the board is attached to; if the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated",
     "translation": ""
   },
-  "7c6e28676526bded5bd37a5db7a8e381": {
-    "translationKey": "7c6e28676526bded5bd37a5db7a8e381",
+  "d663b35a75692cc9ca4b260b411fc168": {
+    "translationKey": "d663b35a75692cc9ca4b260b411fc168",
     "projectPath": [
-      "0",
-      "3386",
-      "3422",
-      "3423",
+      "@niuee/board",
+      "default",
+      "height",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3423",
-      "height",
-      "comments",
-      "index-0"
-    ],
+    "name": "height",
+    "kind": "getSignature",
     "originalText": "get the height of the canvas element the board is attached to",
     "translation": ""
   },
-  "82ec0726ecbd0bbbab8a7be9e6332a7f": {
-    "translationKey": "82ec0726ecbd0bbbab8a7be9e6332a7f",
+  "ba5c83a9918515936562974a7151aa83": {
+    "translationKey": "ba5c83a9918515936562974a7151aa83",
     "projectPath": [
-      "0",
-      "3386",
-      "3422",
-      "3424",
+      "@niuee/board",
+      "default",
+      "height",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3424",
-      "height",
-      "comments",
-      "index-0"
-    ],
+    "name": "height",
+    "kind": "setSignature",
     "originalText": "set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated",
     "translation": ""
   },
-  "37b3474b2d604e6aaa66d9f575dc791f": {
-    "translationKey": "37b3474b2d604e6aaa66d9f575dc791f",
+  "7a5b4be79a0d139667faf1a01960c3b1": {
+    "translationKey": "7a5b4be79a0d139667faf1a01960c3b1",
     "projectPath": [
-      "0",
-      "3386",
-      "3426",
-      "3427",
+      "@niuee/board",
+      "default",
+      "stepControl",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3427",
-      "stepControl",
-      "comments",
-      "index-0"
-    ],
+    "name": "stepControl",
+    "kind": "getSignature",
     "originalText": "set the flag indicating if the board is handing over the control of the step function",
     "translation": ""
   },
-  "7bd21697efb32c6bdd9fa662cd2026b0": {
-    "translationKey": "7bd21697efb32c6bdd9fa662cd2026b0",
+  "0040b08ab1b511c8a7e763b4c885c03c": {
+    "translationKey": "0040b08ab1b511c8a7e763b4c885c03c",
     "projectPath": [
-      "0",
-      "3386",
-      "3426",
-      "3428",
+      "@niuee/board",
+      "default",
+      "stepControl",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3428",
-      "stepControl",
-      "comments",
-      "index-0"
-    ],
+    "name": "stepControl",
+    "kind": "setSignature",
     "originalText": "get the flag indicating if the board is handing over the control of the step function",
     "translation": ""
   },
-  "5936e87957c9ac07ac43ce967ed6d606": {
-    "translationKey": "5936e87957c9ac07ac43ce967ed6d606",
+  "92abb869abc74ddea37558a99ef105b5": {
+    "translationKey": "92abb869abc74ddea37558a99ef105b5",
     "projectPath": [
-      "0",
-      "3386",
-      "3430",
-      "3431",
+      "@niuee/board",
+      "default",
+      "restrictXTranslation",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3431",
-      "restrictXTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictXTranslation",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the x translation",
     "translation": ""
   },
-  "8f0b9e0fc00f72bfd579f4cb6199d9ec": {
-    "translationKey": "8f0b9e0fc00f72bfd579f4cb6199d9ec",
+  "2ddd92aeac87259d18a197bb791eb8e9": {
+    "translationKey": "2ddd92aeac87259d18a197bb791eb8e9",
     "projectPath": [
-      "0",
-      "3386",
-      "3430",
-      "3432",
+      "@niuee/board",
+      "default",
+      "restrictXTranslation",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3432",
-      "restrictXTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictXTranslation",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the x translation",
     "translation": ""
   },
-  "8568b6b8d219ec2dccfd76cc5430aedb": {
-    "translationKey": "8568b6b8d219ec2dccfd76cc5430aedb",
+  "97b68a6e6b1f3045f6d9b768a028edda": {
+    "translationKey": "97b68a6e6b1f3045f6d9b768a028edda",
     "projectPath": [
-      "0",
-      "3386",
-      "3434",
-      "3435",
+      "@niuee/board",
+      "default",
+      "restrictYTranslation",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3435",
-      "restrictYTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictYTranslation",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the y translation",
     "translation": ""
   },
-  "2dce828acba745c960318ca3e75f4e38": {
-    "translationKey": "2dce828acba745c960318ca3e75f4e38",
+  "a084117addcaa0b2127b6b8c8d53796f": {
+    "translationKey": "a084117addcaa0b2127b6b8c8d53796f",
     "projectPath": [
-      "0",
-      "3386",
-      "3434",
-      "3436",
+      "@niuee/board",
+      "default",
+      "restrictYTranslation",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3436",
-      "restrictYTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictYTranslation",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the y translation",
     "translation": ""
   },
-  "00db858520c58f2227ee0437b5b307bc": {
-    "translationKey": "00db858520c58f2227ee0437b5b307bc",
+  "e70861984bee1000350aaacb374aeec3": {
+    "translationKey": "e70861984bee1000350aaacb374aeec3",
     "projectPath": [
-      "0",
-      "3386",
-      "3438",
-      "3439",
+      "@niuee/board",
+      "default",
+      "restrictRotation",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3439",
-      "restrictRotation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRotation",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the rotation",
     "translation": ""
   },
-  "595a4684a4c3901d4ec6ccc2a3dee2fc": {
-    "translationKey": "595a4684a4c3901d4ec6ccc2a3dee2fc",
+  "d080c27ac31ad29e2dd827519682eb88": {
+    "translationKey": "d080c27ac31ad29e2dd827519682eb88",
     "projectPath": [
-      "0",
-      "3386",
-      "3438",
-      "3440",
+      "@niuee/board",
+      "default",
+      "restrictRotation",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3440",
-      "restrictRotation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRotation",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the rotation",
     "translation": ""
   },
-  "7ac528a5a148b3ee8f86ae3326a3c2d0": {
-    "translationKey": "7ac528a5a148b3ee8f86ae3326a3c2d0",
+  "73a330586a5c2518902867c6005bb0ff": {
+    "translationKey": "73a330586a5c2518902867c6005bb0ff",
     "projectPath": [
-      "0",
-      "3386",
-      "3442",
-      "3443",
+      "@niuee/board",
+      "default",
+      "restrictZoom",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3443",
-      "restrictZoom",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictZoom",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the zoom",
     "translation": ""
   },
-  "3fcf1bdc00da68d7381a2508c8d6bbe8": {
-    "translationKey": "3fcf1bdc00da68d7381a2508c8d6bbe8",
+  "73f69dd547cdfc6a0aa4166f445247ce": {
+    "translationKey": "73f69dd547cdfc6a0aa4166f445247ce",
     "projectPath": [
-      "0",
-      "3386",
-      "3442",
-      "3444",
+      "@niuee/board",
+      "default",
+      "restrictZoom",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3444",
-      "restrictZoom",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictZoom",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the zoom",
     "translation": ""
   },
-  "03e51d5f9001a611545e2857df450b0d": {
-    "translationKey": "03e51d5f9001a611545e2857df450b0d",
+  "47189dd4ceb9c8508a2197d47c8acb96": {
+    "translationKey": "47189dd4ceb9c8508a2197d47c8acb96",
     "projectPath": [
-      "0",
-      "3386",
-      "3446",
-      "3447",
+      "@niuee/board",
+      "default",
+      "restrictRelativeXTranslation",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3447",
-      "restrictRelativeXTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRelativeXTranslation",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the relative x translation",
     "translation": ""
   },
-  "c8b3cbd51b487090eb57059e6541f400": {
-    "translationKey": "c8b3cbd51b487090eb57059e6541f400",
+  "fa3db0aff78d004c197c19593073e16c": {
+    "translationKey": "fa3db0aff78d004c197c19593073e16c",
     "projectPath": [
-      "0",
-      "3386",
-      "3446",
-      "3448",
+      "@niuee/board",
+      "default",
+      "restrictRelativeXTranslation",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3448",
-      "restrictRelativeXTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRelativeXTranslation",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the relative x translation",
     "translation": ""
   },
-  "94b1d66f658adc8a2a9f5b570c40e0b7": {
-    "translationKey": "94b1d66f658adc8a2a9f5b570c40e0b7",
+  "763d45aa46019bceb554a379e8114c52": {
+    "translationKey": "763d45aa46019bceb554a379e8114c52",
     "projectPath": [
-      "0",
-      "3386",
-      "3450",
-      "3451",
+      "@niuee/board",
+      "default",
+      "restrictRelativeYTranslation",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3451",
-      "restrictRelativeYTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRelativeYTranslation",
+    "kind": "getSignature",
     "originalText": "get the flag indicating if the board is restricting the relative y translation",
     "translation": ""
   },
-  "4ac6c7154e5df40bfef9016057cef590": {
-    "translationKey": "4ac6c7154e5df40bfef9016057cef590",
+  "510e9fa8ed5180d6f4aad21e92480576": {
+    "translationKey": "510e9fa8ed5180d6f4aad21e92480576",
     "projectPath": [
-      "0",
-      "3386",
-      "3450",
-      "3452",
+      "@niuee/board",
+      "default",
+      "restrictRelativeYTranslation",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3452",
-      "restrictRelativeYTranslation",
-      "comments",
-      "index-0"
-    ],
+    "name": "restrictRelativeYTranslation",
+    "kind": "setSignature",
     "originalText": "set the flag indicating if the board is restricting the relative y translation",
     "translation": ""
   },
-  "fd17aaef91887731737639db38e29e82": {
-    "translationKey": "fd17aaef91887731737639db38e29e82",
+  "fd3edcf26152d014a56b1cc3ce2cf2b9": {
+    "translationKey": "fd3edcf26152d014a56b1cc3ce2cf2b9",
     "projectPath": [
-      "0",
-      "3386",
-      "3454",
-      "3455",
+      "@niuee/board",
+      "default",
+      "maxHalfTransHeight",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3455",
-      "maxHalfTransHeight",
-      "comments",
-      "index-0"
-    ],
+    "name": "maxHalfTransHeight",
+    "kind": "getSignature",
     "originalText": "get the half of the maximum translation height the board is allowing for the camera to move",
     "translation": ""
   },
-  "c70affabefebbc5049a9bd76c858be87": {
-    "translationKey": "c70affabefebbc5049a9bd76c858be87",
+  "5d1c6d1f3399e8e81015cb53a883a2bb": {
+    "translationKey": "5d1c6d1f3399e8e81015cb53a883a2bb",
     "projectPath": [
-      "0",
-      "3386",
-      "3454",
-      "3456",
+      "@niuee/board",
+      "default",
+      "maxHalfTransHeight",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3456",
-      "maxHalfTransHeight",
-      "comments",
-      "index-0"
-    ],
+    "name": "maxHalfTransHeight",
+    "kind": "setSignature",
     "originalText": "set the half of the maximum translation height the board is allowing for the camera to move",
     "translation": ""
   },
-  "d255469508bc8923d649582948f20d39": {
-    "translationKey": "d255469508bc8923d649582948f20d39",
+  "be3dedec0f31fd5b28c807b172d98ad6": {
+    "translationKey": "be3dedec0f31fd5b28c807b172d98ad6",
     "projectPath": [
-      "0",
-      "3386",
-      "3458",
-      "3459",
+      "@niuee/board",
+      "default",
+      "maxHalfTransWidth",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3459",
-      "maxHalfTransWidth",
-      "comments",
-      "index-0"
-    ],
+    "name": "maxHalfTransWidth",
+    "kind": "getSignature",
     "originalText": "get the half of the maximum translation width the board is allowing for the camera to move",
     "translation": ""
   },
-  "5c3eebced67573b46985985f154b356a": {
-    "translationKey": "5c3eebced67573b46985985f154b356a",
+  "e86332ee2b5e7884e0fe8af3f57397c6": {
+    "translationKey": "e86332ee2b5e7884e0fe8af3f57397c6",
     "projectPath": [
-      "0",
-      "3386",
-      "3458",
-      "3460",
+      "@niuee/board",
+      "default",
+      "maxHalfTransWidth",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3460",
-      "maxHalfTransWidth",
-      "comments",
-      "index-0"
-    ],
+    "name": "maxHalfTransWidth",
+    "kind": "setSignature",
     "originalText": "set the half of the maximum translation width the board is allowing for the camera to move",
     "translation": ""
   },
-  "7460b0b1ffe06e277e10f5dad61dd3c4": {
-    "translationKey": "7460b0b1ffe06e277e10f5dad61dd3c4",
+  "81628a2641e64739615cd7a361bc3d6d": {
+    "translationKey": "81628a2641e64739615cd7a361bc3d6d",
     "projectPath": [
-      "0",
-      "3386",
-      "3462",
-      "3463",
+      "@niuee/board",
+      "default",
+      "debugMode",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3463",
-      "debugMode",
-      "comments",
-      "index-0"
-    ],
+    "name": "debugMode",
+    "kind": "getSignature",
     "originalText": "Get the flag indicating if the board is in debug mode",
     "translation": ""
   },
-  "28e61c18d353ab0d5a2edb2c2911a8e8": {
-    "translationKey": "28e61c18d353ab0d5a2edb2c2911a8e8",
+  "94c48b61019f75f2a7922315e5e440d3": {
+    "translationKey": "94c48b61019f75f2a7922315e5e440d3",
     "projectPath": [
-      "0",
-      "3386",
-      "3462",
-      "3464",
+      "@niuee/board",
+      "default",
+      "debugMode",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3464",
-      "debugMode",
-      "comments",
-      "index-0"
-    ],
+    "name": "debugMode",
+    "kind": "setSignature",
     "originalText": "Set the flag indicating if the board is in debug mode",
     "translation": ""
   },
-  "8becab7475e69a9d4bdf72dcc74ba4ab": {
-    "translationKey": "8becab7475e69a9d4bdf72dcc74ba4ab",
+  "0ae5280ce626731319bb03ac35b7a58f": {
+    "translationKey": "0ae5280ce626731319bb03ac35b7a58f",
     "projectPath": [
-      "0",
-      "3386",
-      "3466",
-      "3467",
+      "@niuee/board",
+      "default",
+      "camera",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3467",
-      "camera",
-      "comments",
-      "index-0"
-    ],
+    "name": "camera",
+    "kind": "getSignature",
     "originalText": "Get the internal camera the board is using",
     "translation": ""
   },
-  "14b7181f8c74f43228821cb80ce5124c": {
-    "translationKey": "14b7181f8c74f43228821cb80ce5124c",
+  "cc9ab1d74d7dd920b282c939ce9374b2": {
+    "translationKey": "cc9ab1d74d7dd920b282c939ce9374b2",
     "projectPath": [
-      "0",
-      "3386",
-      "3468",
-      "3469",
+      "@niuee/board",
+      "default",
+      "touchStrategy",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3469",
-      "touchStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "touchStrategy",
+    "kind": "getSignature",
     "originalText": "Get the current strategy the board is using for touch events",
     "translation": ""
   },
-  "650f6ad464441e1157802b0f178444c0": {
-    "translationKey": "650f6ad464441e1157802b0f178444c0",
+  "1d038836ba23a1550005fb0c51ade857": {
+    "translationKey": "1d038836ba23a1550005fb0c51ade857",
     "projectPath": [
-      "0",
-      "3386",
-      "3468",
-      "3470",
+      "@niuee/board",
+      "default",
+      "touchStrategy",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3470",
-      "touchStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "touchStrategy",
+    "kind": "setSignature",
     "originalText": "Set the current strategy the board is using for touch events",
     "translation": ""
   },
-  "a8a3545a5029d10eef3193d3d66fc54b": {
-    "translationKey": "a8a3545a5029d10eef3193d3d66fc54b",
+  "80d09fab61d5f3ca6c008e7a239985a5": {
+    "translationKey": "80d09fab61d5f3ca6c008e7a239985a5",
     "projectPath": [
-      "0",
-      "3386",
-      "3472",
-      "3473",
+      "@niuee/board",
+      "default",
+      "trackpadStrategy",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3473",
-      "trackpadStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "trackpadStrategy",
+    "kind": "getSignature",
     "originalText": "Get the current strategy the board is using for trackpad events",
     "translation": ""
   },
-  "380c7e13322dffcb29020be3f39e5672": {
-    "translationKey": "380c7e13322dffcb29020be3f39e5672",
+  "5b490212c68096ee19c8737bd41b285b": {
+    "translationKey": "5b490212c68096ee19c8737bd41b285b",
     "projectPath": [
-      "0",
-      "3386",
-      "3472",
-      "3474",
+      "@niuee/board",
+      "default",
+      "trackpadStrategy",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3474",
-      "trackpadStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "trackpadStrategy",
+    "kind": "setSignature",
     "originalText": "Set the current strategy the board is using for trackpad events",
     "translation": ""
   },
-  "193de21905e7fd8da812e01d06036309": {
-    "translationKey": "193de21905e7fd8da812e01d06036309",
+  "bc82f032b042808ea71cd3f2679f659d": {
+    "translationKey": "bc82f032b042808ea71cd3f2679f659d",
     "projectPath": [
-      "0",
-      "3386",
-      "3476",
-      "3477",
+      "@niuee/board",
+      "default",
+      "keyboardMouseStrategy",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3477",
-      "keyboardMouseStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "keyboardMouseStrategy",
+    "kind": "getSignature",
     "originalText": "Get the current strategy the board is using for keyboard and mouse events",
     "translation": ""
   },
-  "9ae68ff8f5d2f8ede0379c839331f99d": {
-    "translationKey": "9ae68ff8f5d2f8ede0379c839331f99d",
+  "8d342a63e3f7fbb9c622d65b556cd762": {
+    "translationKey": "8d342a63e3f7fbb9c622d65b556cd762",
     "projectPath": [
-      "0",
-      "3386",
-      "3476",
-      "3478",
+      "@niuee/board",
+      "default",
+      "keyboardMouseStrategy",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3478",
-      "keyboardMouseStrategy",
-      "comments",
-      "index-0"
-    ],
+    "name": "keyboardMouseStrategy",
+    "kind": "setSignature",
     "originalText": "Set the current strategy the board is using for keyboard and mouse events",
     "translation": ""
   },
-  "60bc13053a677ec442051c8d073b8b27": {
-    "translationKey": "60bc13053a677ec442051c8d073b8b27",
+  "d9bcccf18801305bd5f0995bf3e9f671": {
+    "translationKey": "d9bcccf18801305bd5f0995bf3e9f671",
     "projectPath": [
-      "0",
-      "3386",
-      "3480",
-      "3481",
+      "@niuee/board",
+      "default",
+      "verticalGridSize",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3481",
-      "verticalGridSize",
-      "comments",
-      "index-0"
-    ],
+    "name": "verticalGridSize",
+    "kind": "getSignature",
     "originalText": "Get the current strategy the board is using for camera events; currently this property has no effect",
     "translation": ""
   },
-  "db2de681e0bca0cade72e27734c1206a": {
-    "translationKey": "db2de681e0bca0cade72e27734c1206a",
+  "fc620ea79e2ebbe393057b9b921b6078": {
+    "translationKey": "fc620ea79e2ebbe393057b9b921b6078",
     "projectPath": [
-      "0",
-      "3386",
-      "3480",
-      "3482",
+      "@niuee/board",
+      "default",
+      "verticalGridSize",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3482",
-      "verticalGridSize",
-      "comments",
-      "index-0"
-    ],
+    "name": "verticalGridSize",
+    "kind": "setSignature",
     "originalText": "Set the current strategy the board is using for camera events; currently this has no effect",
     "translation": ""
   },
-  "c4ad43b94fc017871b76ad1763fe5b70": {
-    "translationKey": "c4ad43b94fc017871b76ad1763fe5b70",
+  "f3305351d64acc79d626dc619a042764": {
+    "translationKey": "f3305351d64acc79d626dc619a042764",
     "projectPath": [
-      "0",
-      "3386",
-      "3484",
-      "3485",
+      "@niuee/board",
+      "default",
+      "horizontalGridSize",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3485",
-      "horizontalGridSize",
-      "comments",
-      "index-0"
-    ],
+    "name": "horizontalGridSize",
+    "kind": "getSignature",
     "originalText": "Get the current strategy the board is using for camera events; currently this property has no effect",
     "translation": ""
   },
-  "4eb66f31603ab870ffd590919d0d72c9": {
-    "translationKey": "4eb66f31603ab870ffd590919d0d72c9",
+  "dd9bfd843ae1330099e44afdbf9e386f": {
+    "translationKey": "dd9bfd843ae1330099e44afdbf9e386f",
     "projectPath": [
-      "0",
-      "3386",
-      "3484",
-      "3486",
+      "@niuee/board",
+      "default",
+      "horizontalGridSize",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3486",
-      "horizontalGridSize",
-      "comments",
-      "index-0"
-    ],
+    "name": "horizontalGridSize",
+    "kind": "setSignature",
     "originalText": "Set the current strategy the board is using for camera events; currently this property has no effect",
     "translation": ""
   },
-  "cbeb0c884466b762ed04fd079af43c72": {
-    "translationKey": "cbeb0c884466b762ed04fd079af43c72",
+  "4744d85693ef94751d9c10186437a483": {
+    "translationKey": "4744d85693ef94751d9c10186437a483",
     "projectPath": [
-      "0",
-      "3386",
-      "3488",
-      "3489",
+      "@niuee/board",
+      "default",
+      "displayGrid",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3489",
-      "displayGrid",
-      "comments",
-      "index-0"
-    ],
+    "name": "displayGrid",
+    "kind": "getSignature",
     "originalText": "Set the flag indicating if the board is displaying the grid",
     "translation": ""
   },
-  "130777f85bf92ff9bc15297bae0588e5": {
-    "translationKey": "130777f85bf92ff9bc15297bae0588e5",
+  "67c2d8102b93ce3953fd6d20bd85f83f": {
+    "translationKey": "67c2d8102b93ce3953fd6d20bd85f83f",
     "projectPath": [
-      "0",
-      "3386",
-      "3488",
-      "3490",
+      "@niuee/board",
+      "default",
+      "displayGrid",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3490",
-      "displayGrid",
-      "comments",
-      "index-0"
-    ],
+    "name": "displayGrid",
+    "kind": "setSignature",
     "originalText": "Get the flag indicating if the board is displaying the grid",
     "translation": ""
   },
-  "7dc11811f0a920b4b92fb09c9f12a7e3": {
-    "translationKey": "7dc11811f0a920b4b92fb09c9f12a7e3",
+  "c08441a715374650ce6c7ecd4b2e455d": {
+    "translationKey": "c08441a715374650ce6c7ecd4b2e455d",
     "projectPath": [
-      "0",
-      "3386",
-      "3492",
-      "3493",
+      "@niuee/board",
+      "default",
+      "displayRuler",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3493",
-      "displayRuler",
-      "comments",
-      "index-0"
-    ],
+    "name": "displayRuler",
+    "kind": "getSignature",
     "originalText": "Get the flag indicating if the board is displaying the ruler",
     "translation": ""
   },
-  "bb1b87d825afeb2141799fe343efe66a": {
-    "translationKey": "bb1b87d825afeb2141799fe343efe66a",
+  "df5c1de0db52d8b1630f9d0685fcf2da": {
+    "translationKey": "df5c1de0db52d8b1630f9d0685fcf2da",
     "projectPath": [
-      "0",
-      "3386",
-      "3492",
-      "3494",
+      "@niuee/board",
+      "default",
+      "displayRuler",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3494",
-      "displayRuler",
-      "comments",
-      "index-0"
-    ],
+    "name": "displayRuler",
+    "kind": "setSignature",
     "originalText": "Set the flag indicating if the board is displaying the ruler",
     "translation": ""
   },
-  "109909efb5b0db268d8f6b587e976041": {
-    "translationKey": "109909efb5b0db268d8f6b587e976041",
+  "9ad38e91425abbf984c61672938ec91e": {
+    "translationKey": "9ad38e91425abbf984c61672938ec91e",
     "projectPath": [
-      "0",
-      "3386",
-      "3496",
-      "3497",
+      "@niuee/board",
+      "default",
+      "limitEntireViewPort",
+      "getSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3497",
-      "limitEntireViewPort",
-      "comments",
-      "index-0"
-    ],
+    "name": "limitEntireViewPort",
+    "kind": "getSignature",
     "originalText": "Get the flag indicating if the board is limiting the entire view port",
     "translation": ""
   },
-  "566954c3e880db99b734586fc78e7bb7": {
-    "translationKey": "566954c3e880db99b734586fc78e7bb7",
+  "68dadf8d559044afe4603be60f0086a3": {
+    "translationKey": "68dadf8d559044afe4603be60f0086a3",
     "projectPath": [
-      "0",
-      "3386",
-      "3496",
-      "3498",
+      "@niuee/board",
+      "default",
+      "limitEntireViewPort",
+      "setSignature",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3498",
-      "limitEntireViewPort",
-      "comments",
-      "index-0"
-    ],
+    "name": "limitEntireViewPort",
+    "kind": "setSignature",
     "originalText": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",
     "translation": ""
   },
-  "648ad1969a854857c08fda794fba4ab6": {
-    "translationKey": "648ad1969a854857c08fda794fba4ab6",
+  "eacda2e1cc4af5a2f862aa3f1c319117": {
+    "translationKey": "eacda2e1cc4af5a2f862aa3f1c319117",
     "projectPath": [
-      "0",
-      "3386",
-      "3500",
-      "3501",
+      "@niuee/board",
+      "default",
+      "bindFunctions",
+      "bindFunctions",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3501",
-      "bindFunctions",
-      "comments",
-      "index-0"
-    ],
+    "name": "bindFunctions",
+    "kind": "callSignature",
     "originalText": "Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)",
     "translation": ""
   },
-  "59cf5029347fa6dd59e5d00a2157d55c": {
-    "translationKey": "59cf5029347fa6dd59e5d00a2157d55c",
+  "f3a0e11eb25a8af1a49413b7fea13b36": {
+    "translationKey": "f3a0e11eb25a8af1a49413b7fea13b36",
     "projectPath": [
-      "0",
-      "3386",
-      "3502",
-      "3503",
+      "@niuee/board",
+      "default",
+      "adjustZoomLevelBaseOnDimensions",
+      "adjustZoomLevelBaseOnDimensions",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3503",
-      "adjustZoomLevelBaseOnDimensions",
-      "comments",
-      "index-0"
-    ],
+    "name": "adjustZoomLevelBaseOnDimensions",
+    "kind": "callSignature",
     "originalText": "The callback function for the window resize event",
     "translation": ""
   },
-  "a1eb624514b7ff98dfacf28bd62cc827": {
-    "translationKey": "a1eb624514b7ff98dfacf28bd62cc827",
+  "487bd9faeb152b8f79d5d011ea028edf": {
+    "translationKey": "487bd9faeb152b8f79d5d011ea028edf",
     "projectPath": [
-      "0",
-      "3386",
-      "3504",
-      "3505",
+      "@niuee/board",
+      "default",
+      "adjustZoomLevelBoundsBaseOnWidth",
+      "adjustZoomLevelBoundsBaseOnWidth",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3505",
-      "adjustZoomLevelBoundsBaseOnWidth",
-      "comments",
-      "index-0"
-    ],
+    "name": "adjustZoomLevelBoundsBaseOnWidth",
+    "kind": "callSignature",
     "originalText": "Adjust the zoom level bounds based on the width of the canvas",
     "translation": ""
   },
-  "b0145961ca8324f8c18b6b55e1195484": {
-    "translationKey": "b0145961ca8324f8c18b6b55e1195484",
+  "bfe9421c3e3d5187d1df4defe9964c1b": {
+    "translationKey": "bfe9421c3e3d5187d1df4defe9964c1b",
     "projectPath": [
-      "0",
-      "3386",
-      "3506",
-      "3507",
+      "@niuee/board",
+      "default",
+      "adjustZoomLevelBoundsBaseOnHeight",
+      "adjustZoomLevelBoundsBaseOnHeight",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3507",
-      "adjustZoomLevelBoundsBaseOnHeight",
-      "comments",
-      "index-0"
-    ],
+    "name": "adjustZoomLevelBoundsBaseOnHeight",
+    "kind": "callSignature",
     "originalText": "Adjust the zoom level bounds based on the height of the canvas",
     "translation": ""
   },
-  "578d945c42e59e233cfe8c41aa546385": {
-    "translationKey": "578d945c42e59e233cfe8c41aa546385",
+  "59a1b0e319df16db38ccf41ce9e0a20f": {
+    "translationKey": "59a1b0e319df16db38ccf41ce9e0a20f",
     "projectPath": [
-      "0",
-      "3386",
-      "3510",
-      "3511",
+      "@niuee/board",
+      "default",
+      "step",
+      "step",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3511",
-      "step",
-      "comments",
-      "index-0"
-    ],
+    "name": "step",
+    "kind": "callSignature",
     "originalText": "This function can be passed directly to the requestAnimationFrame to enable the extra functionalities of a board. (Or be called to step the board in a custom step function)",
     "translation": ""
   },
-  "4a142d6365bc9b5a7347e6317334d4c7": {
-    "translationKey": "4a142d6365bc9b5a7347e6317334d4c7",
+  "5413b35807513718394789fb106cfd2b": {
+    "translationKey": "5413b35807513718394789fb106cfd2b",
     "projectPath": [
-      "0",
-      "3386",
-      "3513",
-      "3514",
+      "@niuee/board",
+      "default",
+      "registerEventListeners",
+      "registerEventListeners",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3514",
-      "registerEventListeners",
-      "comments",
-      "index-0"
-    ],
+    "name": "registerEventListeners",
+    "kind": "callSignature",
     "originalText": "Register the event listeners this is called in the constructor; This is also where the board setup the control input strategies",
     "translation": ""
   },
-  "d903552c4af771daa70add2248aaf7ca": {
-    "translationKey": "d903552c4af771daa70add2248aaf7ca",
+  "c4685b3c28facbe8da11c266eb0b3e18": {
+    "translationKey": "c4685b3c28facbe8da11c266eb0b3e18",
     "projectPath": [
-      "0",
-      "3386",
-      "3515",
-      "3516",
+      "@niuee/board",
+      "default",
+      "removeEventListeners",
+      "removeEventListeners",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3516",
-      "removeEventListeners",
-      "comments",
-      "index-0"
-    ],
+    "name": "removeEventListeners",
+    "kind": "callSignature",
     "originalText": "Remove the event listeners; This is called in the disconnectedCallback; this is for easier clean up if you're using frontend frameworks\nthat maange the lifecycle of the component",
     "translation": ""
   },
-  "6a70b708d5d85c5808fba18e0ce41a1c": {
-    "translationKey": "6a70b708d5d85c5808fba18e0ce41a1c",
+  "bc0bb9f724bd724fc1a13cc270a330f9": {
+    "translationKey": "bc0bb9f724bd724fc1a13cc270a330f9",
     "projectPath": [
-      "0",
-      "3386",
-      "3517",
-      "3518",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationJSONPath": [
-      "3518",
+      "@niuee/board",
+      "default",
       "pointerMoveHandler",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "This is only for demonstration purposes.",
-    "translation": ""
-  },
-  "7cadd82b1b645e7a6e128e880a86f3be": {
-    "translationKey": "7cadd82b1b645e7a6e128e880a86f3be",
-    "projectPath": [
-      "0",
-      "3386",
-      "3520",
-      "3521",
+      "pointerMoveHandler",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3521",
+    "name": "pointerMoveHandler",
+    "kind": "callSignature",
+    "originalText": "This is only for demonstration purposes.",
+    "translation": ""
+  },
+  "19a5d2b71fd4437f0e5dc7c8b5c516bf": {
+    "translationKey": "19a5d2b71fd4437f0e5dc7c8b5c516bf",
+    "projectPath": [
+      "@niuee/board",
+      "default",
       "pointerDownHandler",
-      "comments",
-      "index-0"
-    ],
-    "originalText": "This is only for demonstration purposes.",
-    "translation": ""
-  },
-  "cf66c82e4ae7f7fbf6d11a48abb542c3": {
-    "translationKey": "cf66c82e4ae7f7fbf6d11a48abb542c3",
-    "projectPath": [
-      "0",
-      "3386",
-      "3523",
-      "3524",
+      "pointerDownHandler",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3524",
+    "name": "pointerDownHandler",
+    "kind": "callSignature",
+    "originalText": "This is only for demonstration purposes.",
+    "translation": ""
+  },
+  "c604320ac7d990f319a618b092990a13": {
+    "translationKey": "c604320ac7d990f319a618b092990a13",
+    "projectPath": [
+      "@niuee/board",
+      "default",
       "getCoordinateConversionFn",
-      "comments",
-      "index-0"
+      "getCoordinateConversionFn",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
     ],
+    "name": "getCoordinateConversionFn",
+    "kind": "callSignature",
     "originalText": "This was used in the legacy way to handle inputs from user for the panning, zooming and rotating to work.",
     "translation": ""
   },
-  "b7b3545526dbe5beb7b74a76aa77bc93": {
-    "translationKey": "b7b3545526dbe5beb7b74a76aa77bc93",
+  "f0b65d9d0b1116fa234eab35e7f80a8d": {
+    "translationKey": "f0b65d9d0b1116fa234eab35e7f80a8d",
     "projectPath": [
-      "0",
-      "3386",
-      "3529",
-      "3530",
+      "@niuee/board",
+      "default",
+      "getInternalCanvas",
+      "getInternalCanvas",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3530",
-      "getInternalCanvas",
-      "comments",
-      "index-0"
-    ],
+    "name": "getInternalCanvas",
+    "kind": "callSignature",
     "originalText": "Get the internal canvas element this board is attached to.",
     "translation": ""
   },
-  "e28035cbaf14b5cc372909242ee4dcb9": {
-    "translationKey": "e28035cbaf14b5cc372909242ee4dcb9",
+  "70084f030a40c48017ecced7a1035c10": {
+    "translationKey": "70084f030a40c48017ecced7a1035c10",
     "projectPath": [
-      "0",
-      "3386",
-      "3531",
-      "3532",
+      "@niuee/board",
+      "default",
+      "getCamera",
+      "getCamera",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3532",
-      "getCamera",
-      "comments",
-      "index-0"
-    ],
+    "name": "getCamera",
+    "kind": "callSignature",
     "originalText": "Get the internal camera",
     "translation": ""
   },
-  "f4c8575df3c8ddfc43b7bd76b251702e": {
-    "translationKey": "f4c8575df3c8ddfc43b7bd76b251702e",
+  "72935c4cc66e1b5b8250112261f4590f": {
+    "translationKey": "72935c4cc66e1b5b8250112261f4590f",
     "projectPath": [
-      "0",
-      "3386",
-      "3533",
-      "3534",
+      "@niuee/board",
+      "default",
+      "convertWindowPoint2ViewPortPoint",
+      "convertWindowPoint2ViewPortPoint",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3534",
-      "convertWindowPoint2ViewPortPoint",
-      "comments",
-      "index-0"
-    ],
+    "name": "convertWindowPoint2ViewPortPoint",
+    "kind": "callSignature",
     "originalText": "This is to convert a point in a window coordinate to view port coordinate",
     "translation": ""
   },
-  "dcc224bb6400d40a5c7bd3dcf9139036": {
-    "translationKey": "dcc224bb6400d40a5c7bd3dcf9139036",
+  "8d33fb0133116fd4728332a58153658a": {
+    "translationKey": "8d33fb0133116fd4728332a58153658a",
     "projectPath": [
-      "0",
-      "3386",
-      "3537",
-      "3538",
+      "@niuee/board",
+      "default",
+      "convertWindowPoint2WorldCoord",
+      "convertWindowPoint2WorldCoord",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3538",
-      "convertWindowPoint2WorldCoord",
-      "comments",
-      "index-0"
-    ],
+    "name": "convertWindowPoint2WorldCoord",
+    "kind": "callSignature",
     "originalText": "This is to convert a point in a window coordinate (directly returned by the mouse event top left corner is (0, 0)) to world coordinate",
     "translation": ""
   },
-  "179f4d8017c689c8e1c55f68b8e69055": {
-    "translationKey": "179f4d8017c689c8e1c55f68b8e69055",
+  "2a385507459b5e18d7a73f6789561fdb": {
+    "translationKey": "2a385507459b5e18d7a73f6789561fdb",
     "projectPath": [
-      "0",
-      "3386",
-      "3540",
-      "3541",
+      "@niuee/board",
+      "default",
+      "drawAxis",
+      "drawAxis",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3541",
-      "drawAxis",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawAxis",
+    "kind": "callSignature",
     "originalText": "Draw the X and Y axis starting from the origin to the max translation height and width",
     "translation": ""
   },
-  "0461217d5372ba05c9aa240d56a6f476": {
-    "translationKey": "0461217d5372ba05c9aa240d56a6f476",
+  "3e7ba45604ebc78a6f36238203a83f21": {
+    "translationKey": "3e7ba45604ebc78a6f36238203a83f21",
     "projectPath": [
-      "0",
-      "3386",
-      "3544",
-      "3545",
+      "@niuee/board",
+      "default",
+      "drawReferenceCircle",
+      "drawReferenceCircle",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3545",
-      "drawReferenceCircle",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawReferenceCircle",
+    "kind": "callSignature",
     "originalText": "Draw a green circle at the given position",
     "translation": ""
   },
-  "a74a53c7dd06ac4778f4163c6f63e887": {
-    "translationKey": "a74a53c7dd06ac4778f4163c6f63e887",
+  "b902fb382b112860e1cd958a532c15dd": {
+    "translationKey": "b902fb382b112860e1cd958a532c15dd",
     "projectPath": [
-      "0",
-      "3386",
-      "3548",
-      "3549",
+      "@niuee/board",
+      "default",
+      "drawBoundingBox",
+      "drawBoundingBox",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3549",
-      "drawBoundingBox",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawBoundingBox",
+    "kind": "callSignature",
     "originalText": "Draw a blue bounding box at the max translation height and width",
     "translation": ""
   },
-  "924cdbf9430ee6ef76e51f709c49e6ef": {
-    "translationKey": "924cdbf9430ee6ef76e51f709c49e6ef",
+  "c4d4f80513f02a3ec52518bc65f20d2d": {
+    "translationKey": "c4d4f80513f02a3ec52518bc65f20d2d",
     "projectPath": [
-      "0",
-      "3386",
-      "3551",
-      "3552",
+      "@niuee/board",
+      "default",
+      "drawCrossHair",
+      "drawCrossHair",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3552",
-      "drawCrossHair",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawCrossHair",
+    "kind": "callSignature",
     "originalText": "Draw a cross hair at the given position",
     "translation": ""
   },
-  "0de2e515eb14513c2a8bc42e2b04bd2d": {
-    "translationKey": "0de2e515eb14513c2a8bc42e2b04bd2d",
+  "db5c4df17bc333faac03a3420ebca620": {
+    "translationKey": "db5c4df17bc333faac03a3420ebca620",
     "projectPath": [
-      "0",
-      "3386",
-      "3557",
-      "3558",
+      "@niuee/board",
+      "default",
+      "drawCameraCenterWithCrossHair",
+      "drawCameraCenterWithCrossHair",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3558",
-      "drawCameraCenterWithCrossHair",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawCameraCenterWithCrossHair",
+    "kind": "callSignature",
     "originalText": "Draw a cross hair at the center of the camera (which is the center of the view port aka the canvas element)",
     "translation": ""
   },
-  "bd74e1dc4a19688484b57b50669319d4": {
-    "translationKey": "bd74e1dc4a19688484b57b50669319d4",
+  "1d4b91f8c0ad0fb51c7c8675bbd487d0": {
+    "translationKey": "1d4b91f8c0ad0fb51c7c8675bbd487d0",
     "projectPath": [
-      "0",
-      "3386",
-      "3561",
-      "3562",
+      "@niuee/board",
+      "default",
+      "drawGrid",
+      "drawGrid",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3562",
-      "drawGrid",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawGrid",
+    "kind": "callSignature",
     "originalText": "Draw a grid on to the canvas with dynamic width and height",
     "translation": ""
   },
-  "c6313f66b37c026964146e0296c901de": {
-    "translationKey": "c6313f66b37c026964146e0296c901de",
+  "ea04d3d83d173949cb36bfff6ec7c5eb": {
+    "translationKey": "ea04d3d83d173949cb36bfff6ec7c5eb",
     "projectPath": [
-      "0",
-      "3386",
-      "3564",
-      "3565",
+      "@niuee/board",
+      "default",
+      "drawRuler",
+      "drawRuler",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3565",
-      "drawRuler",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawRuler",
+    "kind": "callSignature",
     "originalText": "Draw rulers in both the horizontal and vertical direction marking the cooridnates; the width and height are aligned with the grid.",
     "translation": ""
   },
-  "f853b045ed174c061a6cdaec61174d51": {
-    "translationKey": "f853b045ed174c061a6cdaec61174d51",
+  "fae9bb9389c95676b2060c5a951fc7a8": {
+    "translationKey": "fae9bb9389c95676b2060c5a951fc7a8",
     "projectPath": [
-      "0",
-      "3386",
-      "3567",
-      "3568",
+      "@niuee/board",
+      "default",
+      "drawPositionText",
+      "drawPositionText",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3568",
-      "drawPositionText",
-      "comments",
-      "index-0"
-    ],
+    "name": "drawPositionText",
+    "kind": "callSignature",
     "originalText": "Draw a position text at the given position",
     "translation": ""
   },
-  "d8835bde91e89f735ee9b409615c33cb": {
-    "translationKey": "d8835bde91e89f735ee9b409615c33cb",
+  "2ddbe197d0a58703d758ecdf8736c21b": {
+    "translationKey": "2ddbe197d0a58703d758ecdf8736c21b",
     "projectPath": [
-      "0",
-      "3386",
-      "3573",
-      "3574",
+      "@niuee/board",
+      "default",
+      "resetCamera",
+      "resetCamera",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3574",
-      "resetCamera",
-      "comments",
-      "index-0"
-    ],
+    "name": "resetCamera",
+    "kind": "callSignature",
     "originalText": "Reset the camera to the default position and zoom level. This is soon to be deprecated",
     "translation": ""
   },
-  "be380cf00db7c372d0a9819d18578d7e": {
-    "translationKey": "be380cf00db7c372d0a9819d18578d7e",
+  "abf13a6ede1174e0c47fb59626fb2ada": {
+    "translationKey": "abf13a6ede1174e0c47fb59626fb2ada",
     "projectPath": [
-      "0",
-      "3386",
-      "3575",
-      "3576",
+      "@niuee/board",
+      "default",
+      "spinCameraWithAnimation",
+      "spinCameraWithAnimation",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3576",
-      "spinCameraWithAnimation",
-      "comments",
-      "index-0"
-    ],
+    "name": "spinCameraWithAnimation",
+    "kind": "callSignature",
     "originalText": "Spin camera to a certain angle with animation. This is soon to be deprecated.",
     "translation": ""
   },
-  "746257bfa275cef6f83ebb012f553eab": {
-    "translationKey": "746257bfa275cef6f83ebb012f553eab",
+  "be6ee892648a7d22839d0f84c4205fa1": {
+    "translationKey": "be6ee892648a7d22839d0f84c4205fa1",
     "projectPath": [
-      "0",
-      "3386",
-      "3594",
-      "3595",
+      "@niuee/board",
+      "default",
+      "on",
+      "on",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationJSONPath": [
-      "3595",
-      "on",
-      "comments",
-      "index-0"
-    ],
+    "name": "on",
+    "kind": "callSignature",
     "originalText": "Subscribe to the camera update event. The events fire only when the camera is actually move not the when the command is issued.",
     "translation": ""
   }

@@ -10,32 +10,43 @@ if(l10nCode == undefined){
 try{
     const data = JSON.parse(readFileSync(resolve(`./doc-jsons/staging`, `api-raw.json`), 'utf8')); 
     const prodTranslationPath = resolve(`./doc-jsons/prod/${l10nCode}`, `translationItems.json`);
+    const curStagingEditFile = resolve(`./doc-jsons/staging/${l10nCode}`, `editThisFile.json`);
     const prodReadMEPath = resolve(`./doc-jsons/prod/${l10nCode}`, `README.md`);
     if(data == undefined){
         console.log("raw api data is not found")
         process.exit(1);
     }
     const res = parse(data);
-    const editThisList = [];
+    const editThisList = {};
+    const translationKeys = Object.keys(res.translationObject);
+    for (const key of translationKeys) {
+        const editThisItem = {
+            translationKeys: key,
+        };
+        editThisItem.kind = res.translationObject[key].kind;
+        if(res.translationObject[key].kind == "group" || res.translationObject[key].kind == "category"){
+            editThisItem.belongsTo = res.translationObject[key].belongsTo;
+        } else {
+            editThisItem.name = res.translationObject[key].name;
+        }
+        editThisItem.originalText = res.translationObject[key].originalText;
+        editThisItem.translation = res.translationObject[key].translation;
+        editThisList[key] = editThisItem;
+    }
     if(existsSync(prodTranslationPath)){
         const prodTranslation = JSON.parse(readFileSync(resolve(`./doc-jsons/prod/${l10nCode}`, `translationItems.json`), 'utf8'));
-        const translationKeys = Object.keys(res.translationObject);
-        for (const key of translationKeys) {
-            if(prodTranslation[key] !== undefined && prodTranslation[key].originalText == res.translationObject[key].originalText){
-                res.translationObject[key].translation = prodTranslation[key].translation;
+        for (const key of Object.keys(prodTranslation)) {
+            if(editThisList[key] != undefined && prodTranslation[key].translation != "" && prodTranslation[key].originalText == editThisList[key].originalText){
+                editThisList[key].translation = prodTranslation[key].translation;
             }
-            const editThisItem = {
-                translationKeys: key,
-            };
-            editThisItem.kind = res.translationObject[key].kind;
-            if(res.translationObject[key].kind == "group" || res.translationObject[key].kind == "category"){
-                editThisItem.belongsTo = res.translationObject[key].belongsTo;
-            } else {
-                editThisItem.name = res.translationObject[key].name;
+        }
+    }
+    if(existsSync(curStagingEditFile)){
+        const stagingEditFile = JSON.parse(readFileSync(curStagingEditFile, 'utf8'));
+        for (const editItemKey of Object.keys(stagingEditFile)) {
+            if(editThisList[editItemKey] !== undefined && stagingEditFile[editItemKey].translation != "" && stagingEditFile[editItemKey].originalText == editThisList[editItemKey].originalText){
+                editThisList[editItemKey].translation = stagingEditFile[editItemKey].translation;
             }
-            editThisItem.originalText = res.translationObject[key].originalText;
-            editThisItem.translation = res.translationObject[key].translation;
-            editThisList.push(editThisItem);
         }
     }
     if(existsSync(prodReadMEPath)){
