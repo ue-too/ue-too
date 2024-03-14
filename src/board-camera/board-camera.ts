@@ -79,13 +79,10 @@ export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
 
 /**
  * @category Board Camera
- * @translation test string
+ * @translation This is the backbone of the canvas panning and a lot of other stuff that is made easy by the camera.
  */
 export default class BoardCamera {
 
-    /**!SECTION
-     * @translation test string for position
-     */
     private position: Point;
     private zoomLevel: number;
     private rotation: number;
@@ -143,10 +140,6 @@ export default class BoardCamera {
         return this._restrictRotationFromGesture;
     }
 
-    /**
-     * 
-     * @translation this is the board camera
-     */
     constructor(position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         if (!this.zoomLevelValid(zoomLevel)){
             throw new InvalidZoomLevelError("zoom level cannot be less than or equal to 0");
@@ -209,7 +202,7 @@ export default class BoardCamera {
 
     /**
      * @group Camera Position Operations
-     * @translation another test string
+     * @translation Set the position of the camera from gesture input of user; this is different from the setPosition method in that it takes into account the restrictions on the camera
      */
     setPositionFromGesture(position: Point): boolean{
         this.releasePositionFromLockedObject();

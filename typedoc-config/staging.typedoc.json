@@ -1,7 +1,7 @@
 {
   "plugin": ["typedoc-material-theme", "../scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links"],
   "themeColor": "#ffffff",
-  "categoryOrder": ["Board", "Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
+  "categoryOrder": ["Board", "Board Camera","Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
   "entryPointStrategy": "merge",
   "navigation": {
     "includeCategories": true

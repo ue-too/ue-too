@@ -92,6 +92,8 @@ export function getTranslationItemsAsObject(flatList){
                     translationKey: category.translationKey,
                     projectPath: category.projectPath,
                     translationJSONPath: category.translationJSONPath,
+                    belongsTo: item.name,
+                    kind: "category",
                     originalText: category.originalText,
                     translation: "",
                 };
@@ -103,6 +105,8 @@ export function getTranslationItemsAsObject(flatList){
                     translationKey: group.translationKey,
                     projectPath: group.projectPath,
                     translationJSONPath: group.translationJSONPath,
+                    belongsTo: item.name,
+                    kind: "group",
                     originalText: group.originalText,
                     translation: "",
                 };
@@ -114,6 +118,8 @@ export function getTranslationItemsAsObject(flatList){
                     translationKey: comment.translationKey,
                     projectPath: comment.projectPath,
                     translationJSONPath: comment.translationJSONPath,
+                    name: item.name,
+                    kind: item.kind,
                     originalText: comment.originalText,
                     translation: "",
                 };
@@ -141,7 +147,6 @@ export function flatten(node){
     }
     return list; 
 }
-
 
 export function dfs(node, path, flatList, structure){
     if (node == undefined){
