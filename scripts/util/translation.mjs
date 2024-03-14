@@ -59,7 +59,7 @@ export function parseRawTranslation(tree, translationObject){
 export function parse(dataNode){
     const flatList = {};
     const structure = {};
-    const tree = {"0": dfs(dataNode, [], flatList, structure)};
+    const tree = {"@niuee/board": dfs(dataNode, ["@niuee/board"], flatList, structure)};
     const translationItems = getTranslationItem(flatList);
     const translationObject = getTranslationItemsAsObject(flatList);
     return {tree: tree, flatList: flatList, translationItems: translationItems, translationObject: translationObject, structure: structure};
@@ -155,7 +155,7 @@ export function dfs(node, path, flatList, structure){
     if((node.flags && "isExternal" in node.flags && node.flags.isExternal)){
         return undefined;
     }
-    path.push(node.id.toString());
+    // path.push(node.id.toString());
     const res = Object.create(node);
     res.path = [...path];
 
@@ -191,19 +191,27 @@ export function dfs(node, path, flatList, structure){
 
     if(res.children){
         for (let child of res.children){
-            res[child.id.toString()] = dfs(child, [...path], flatList, structure);
+            path.push(child.name);
+            res[child.name] = dfs(child, [...path], flatList, structure);
+            path.pop();
         }
     }
     if (res.signatures){
         res.signatures.forEach((signature)=>{
-            res[signature.id.toString()] = dfs(signature, [...path], flatList, structure);
+            path.push(signature.name);
+            res[signature.name] = dfs(signature, [...path], flatList, structure);
+            path.pop();
         });
     }
     if(res.getSignature){
-        res[res.getSignature.id.toString()] = dfs(res.getSignature, [...path], flatList, structure);
+        path.push("getSignature");
+        res["getSignature"] = dfs(res.getSignature, [...path], flatList, structure);
+        path.pop();
     }
     if(res.setSignature){
-        res[res.setSignature.id.toString()] = dfs(res.setSignature, [...path], flatList, structure);
+        path.push("setSignature");
+        res["setSignature"] = dfs(res.setSignature, [...path], flatList, structure);
+        path.pop();
     }
     return res;
 }
