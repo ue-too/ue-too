@@ -9,8 +9,7 @@ export * from "./util";
 export * from "./v-dial";
 export {default as BoardCamera} from "./board-camera";
 export {default as BoardElement} from "./board-element";
-import Board from "./boardify";
-export default Board;
+export {default as Board } from "./boardify";
 
 export type Point = {
     x: number,

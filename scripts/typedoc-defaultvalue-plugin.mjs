@@ -18,6 +18,18 @@ export const load = function ({ application, options }) {
         saveDefaultValues
     );
 
+    // application.converter.on(Converter.EVENT_RESOLVE, (context, reflection)=>{
+
+    //     if(reflection.comment && reflection.comment.blockTags !== undefined && reflection.comment.blockTags.length > 0){
+    //         reflection.comment.blockTags.forEach((blockTag)=>{
+    //             if(blockTag.tag == "@translation"){
+    //                 console.log(reflection.comment);
+    //                 console.log(blockTag.content);
+    //             }
+    //         });
+    //     }
+    // })
+
     function saveDefaultValues(_context, reflection) {
         const node =
             reflection.project.getSymbolFromReflection(reflection)

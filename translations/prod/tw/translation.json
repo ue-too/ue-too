@@ -1,0 +1,1618 @@
+{
+  "6bacf2b7ccc556eb54ed4a0c1199443d": {
+    "humanReadablePath": "categories > index-0 > title",
+    "kind": "category",
+    "originalText": "Board",
+    "translation": "板班",
+    "projectPath": [
+      "categories",
+      "index-0",
+      "title"
+    ],
+    "translationKey": "6bacf2b7ccc556eb54ed4a0c1199443d"
+  },
+  "b84be7b89409b4ac1aa4c26077c4adaa": {
+    "humanReadablePath": "categories > index-1 > title",
+    "kind": "category",
+    "originalText": "Board Camera",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-1",
+      "title"
+    ],
+    "translationKey": "b84be7b89409b4ac1aa4c26077c4adaa"
+  },
+  "2ed5b22ad408fdc855abbaca68127e63": {
+    "humanReadablePath": "categories > index-2 > title",
+    "kind": "category",
+    "originalText": "Trackpad Strategy",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-2",
+      "title"
+    ],
+    "translationKey": "2ed5b22ad408fdc855abbaca68127e63"
+  },
+  "b17feedeac4ab3d13fbac5b6ff94b3e5": {
+    "humanReadablePath": "categories > index-3 > title",
+    "kind": "category",
+    "originalText": "Keyboard-Mouse Strategy",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-3",
+      "title"
+    ],
+    "translationKey": "b17feedeac4ab3d13fbac5b6ff94b3e5"
+  },
+  "0c99b751ec2a5da76fba7c5986a2eb88": {
+    "humanReadablePath": "categories > index-4 > title",
+    "kind": "category",
+    "originalText": "Touch Strategy",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-4",
+      "title"
+    ],
+    "translationKey": "0c99b751ec2a5da76fba7c5986a2eb88"
+  },
+  "c03d4d4c5c208f4f8c5d506870354cde": {
+    "humanReadablePath": "categories > index-5 > title",
+    "kind": "category",
+    "originalText": "Easing Functions",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-5",
+      "title"
+    ],
+    "translationKey": "c03d4d4c5c208f4f8c5d506870354cde"
+  },
+  "56b3ab4e7ee3d6090542c38e06b34106": {
+    "humanReadablePath": "categories > index-6 > title",
+    "kind": "category",
+    "originalText": "Other",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-6",
+      "title"
+    ],
+    "translationKey": "56b3ab4e7ee3d6090542c38e06b34106"
+  },
+  "da6ae5c67c01507acb345e4021ff40dd": {
+    "humanReadablePath": "BoardCamera > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the backbone of the canvas panning and a lot of other stuff that is made easy by the camera.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-1",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "da6ae5c67c01507acb345e4021ff40dd"
+  },
+  "22582fedaa5f371b9f420a207983c95d": {
+    "humanReadablePath": "BoardCamera > _restrictRotationFromGesture > translation comments > index-0 > text",
+    "kind": "property",
+    "originalText": "restrict on rotation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-1",
+      "children",
+      "index-3",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "translationKey": "22582fedaa5f371b9f420a207983c95d"
+  },
+  "c856a35aa687ddbaacbfdafc18e83c40": {
+    "humanReadablePath": "BoardCamera > clampPoint > clampPoint > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Clamp a point within the boundaries of the world",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-1",
+      "children",
+      "index-32",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c856a35aa687ddbaacbfdafc18e83c40"
+  },
+  "0f6d0578c1756629426c2b4aa433ff0e": {
+    "humanReadablePath": "BoardCamera > setPositionFromGesture > setPositionFromGesture > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Set the position of the camera from gesture input of user; this is different from the setPosition method in that it takes into account the restrictions on the camera",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-1",
+      "children",
+      "index-85",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "0f6d0578c1756629426c2b4aa433ff0e"
+  },
+  "5823708cf0c8ce4195eb2ab185c2f5fd": {
+    "humanReadablePath": "BoardElement > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is a translation needed text",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "5823708cf0c8ce4195eb2ab185c2f5fd"
+  },
+  "eec45a791d1287bb2b6dcca0e6ef89e8": {
+    "humanReadablePath": "BoardElement > step > step > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "this is the text",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "children",
+      "index-369",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "eec45a791d1287bb2b6dcca0e6ef89e8"
+  },
+  "2981bb63d08354c8b498f82ca227e08c": {
+    "humanReadablePath": "DefaultBoardTrackpadStrategy > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-12",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "2981bb63d08354c8b498f82ca227e08c"
+  },
+  "f975f61cc05f2e39ea92d83ba56c4d33": {
+    "humanReadablePath": "TwoFingerPanPinchZoom > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-36",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "f975f61cc05f2e39ea92d83ba56c4d33"
+  },
+  "910d2b020bf6be98ea5b1c00d48c4be5": {
+    "humanReadablePath": "TwoFingerPanPinchZoomLimitEntireView > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-37",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "910d2b020bf6be98ea5b1c00d48c4be5"
+  },
+  "cbe2bc98aff601fd806bbe1c732f2c3b": {
+    "humanReadablePath": "default > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "Default Export of the @niuee/board package. <br/>",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "cbe2bc98aff601fd806bbe1c732f2c3b"
+  },
+  "b59cc7120c5fa46a6241143f8949b080": {
+    "humanReadablePath": "default > translation block comments > index-0 > text",
+    "kind": "class",
+    "originalText": "Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.\n\nHowever, this does not apply if you are using the cdn or bundled version of the package.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "comment",
+      "blockTags",
+      "index-1",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "b59cc7120c5fa46a6241143f8949b080"
+  },
+  "8d0ba79a82cb770039e6e5612b615368": {
+    "humanReadablePath": "default > constructor > new default > translation comments > index-0 > text",
+    "kind": "constructorSignature",
+    "originalText": "Board constructor",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-0",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "8d0ba79a82cb770039e6e5612b615368"
+  },
+  "9a6e6c25276afd8b6f43848212560ec6": {
+    "humanReadablePath": "default > attributeObserver > translation comments > index-0 > text",
+    "kind": "property",
+    "originalText": "The observer mainly for the width and height of the canvas element",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-16",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9a6e6c25276afd8b6f43848212560ec6"
+  },
+  "9f390ae2219e33c1e9d035a7703fb0ae": {
+    "humanReadablePath": "default > camera > camera > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the internal camera the board is using",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-21",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9f390ae2219e33c1e9d035a7703fb0ae"
+  },
+  "b59321664ab15b06fa7b7eccbb140630": {
+    "humanReadablePath": "default > debugMode > debugMode > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the flag indicating if the board is in debug mode",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-22",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "b59321664ab15b06fa7b7eccbb140630"
+  },
+  "d88ea57390396d2dae9305877ff32f4a": {
+    "humanReadablePath": "default > debugMode > debugMode > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the flag indicating if the board is in debug mode",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-22",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "d88ea57390396d2dae9305877ff32f4a"
+  },
+  "7bbfe383a22a3fcfbd0074066b20a462": {
+    "humanReadablePath": "default > displayGrid > displayGrid > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Set the flag indicating if the board is displaying the grid",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-23",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7bbfe383a22a3fcfbd0074066b20a462"
+  },
+  "4797633afbfb812c4729bea4aa1d14f4": {
+    "humanReadablePath": "default > displayGrid > displayGrid > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Get the flag indicating if the board is displaying the grid",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-23",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "4797633afbfb812c4729bea4aa1d14f4"
+  },
+  "0d4c03bd08c8d3eb37f4f00030fdb102": {
+    "humanReadablePath": "default > displayRuler > displayRuler > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the flag indicating if the board is displaying the ruler",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-24",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "0d4c03bd08c8d3eb37f4f00030fdb102"
+  },
+  "4287ccc9019f9c0aee36fafc94a2e09a": {
+    "humanReadablePath": "default > displayRuler > displayRuler > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the flag indicating if the board is displaying the ruler",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-24",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "4287ccc9019f9c0aee36fafc94a2e09a"
+  },
+  "305df4dc3015ff436d2dd765e7e3cc6d": {
+    "humanReadablePath": "default > fullScreen > fullScreen > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is in full screen mode",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-25",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "305df4dc3015ff436d2dd765e7e3cc6d"
+  },
+  "9b119c1d1b0a30dd2b7b89fbba4a74fe": {
+    "humanReadablePath": "default > fullScreen > fullScreen > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is in full screen mode; this will also effect the width and height of the canvas",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-25",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9b119c1d1b0a30dd2b7b89fbba4a74fe"
+  },
+  "8ff0995b85c66e0140bf44a19fd95b79": {
+    "humanReadablePath": "default > height > accessor comments > index-0 > text",
+    "kind": "accessor",
+    "originalText": "This is a test accessor description for height",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-26",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "8ff0995b85c66e0140bf44a19fd95b79"
+  },
+  "7a8ec93f1eadde7ed602ceb8b3323c15": {
+    "humanReadablePath": "default > height > height > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the height of the canvas element the board is attached to",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-26",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7a8ec93f1eadde7ed602ceb8b3323c15"
+  },
+  "41384c9bae8e30c33d6c00548fe7e026": {
+    "humanReadablePath": "default > height > height > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-26",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "41384c9bae8e30c33d6c00548fe7e026"
+  },
+  "4b9603a7b8cabe22714bdbbfe2d23f3b": {
+    "humanReadablePath": "default > horizontalGridSize > horizontalGridSize > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the current strategy the board is using for camera events; currently this property has no effect",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-27",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "4b9603a7b8cabe22714bdbbfe2d23f3b"
+  },
+  "b405067df0f813a07aaa6de1d8236d05": {
+    "humanReadablePath": "default > horizontalGridSize > horizontalGridSize > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the current strategy the board is using for camera events; currently this property has no effect",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-27",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "b405067df0f813a07aaa6de1d8236d05"
+  },
+  "87349cba247fff97bfb8f9b2196e1de0": {
+    "humanReadablePath": "default > keyboardMouseStrategy > keyboardMouseStrategy > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the current strategy the board is using for keyboard and mouse events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-28",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "87349cba247fff97bfb8f9b2196e1de0"
+  },
+  "78d7ebacbd1095e6f43af4bf878cba44": {
+    "humanReadablePath": "default > keyboardMouseStrategy > keyboardMouseStrategy > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the current strategy the board is using for keyboard and mouse events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-28",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "78d7ebacbd1095e6f43af4bf878cba44"
+  },
+  "6995b7a303a125a4d4f75be228a75b79": {
+    "humanReadablePath": "default > limitEntireViewPort > limitEntireViewPort > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the flag indicating if the board is limiting the entire view port",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-29",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6995b7a303a125a4d4f75be228a75b79"
+  },
+  "6f893ab92eb5b55e21f5cd2a4714d5d1": {
+    "humanReadablePath": "default > limitEntireViewPort > limitEntireViewPort > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-29",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6f893ab92eb5b55e21f5cd2a4714d5d1"
+  },
+  "345ac7f16c7d678b3f99beffa0bbb045": {
+    "humanReadablePath": "default > maxHalfTransHeight > maxHalfTransHeight > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the half of the maximum translation height the board is allowing for the camera to move",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-30",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "345ac7f16c7d678b3f99beffa0bbb045"
+  },
+  "68b244c43de8bbd8bfcdc038b01e4e62": {
+    "humanReadablePath": "default > maxHalfTransHeight > maxHalfTransHeight > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the half of the maximum translation height the board is allowing for the camera to move",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-30",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "68b244c43de8bbd8bfcdc038b01e4e62"
+  },
+  "7c2e94a6782965f718a5c94c96d4ef7e": {
+    "humanReadablePath": "default > maxHalfTransWidth > maxHalfTransWidth > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the half of the maximum translation width the board is allowing for the camera to move",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-31",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7c2e94a6782965f718a5c94c96d4ef7e"
+  },
+  "dfe5c405f83146e66be8455ff30f37e4": {
+    "humanReadablePath": "default > maxHalfTransWidth > maxHalfTransWidth > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the half of the maximum translation width the board is allowing for the camera to move",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-31",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "dfe5c405f83146e66be8455ff30f37e4"
+  },
+  "15bb76c5ebee356649bfc8a4013fb545": {
+    "humanReadablePath": "default > restrictRelativeXTranslation > restrictRelativeXTranslation > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the relative x translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-32",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "15bb76c5ebee356649bfc8a4013fb545"
+  },
+  "d32223ee911cce17ef26f2c368888cad": {
+    "humanReadablePath": "default > restrictRelativeXTranslation > restrictRelativeXTranslation > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the relative x translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-32",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "d32223ee911cce17ef26f2c368888cad"
+  },
+  "710ad401592d93e66e803f287268db09": {
+    "humanReadablePath": "default > restrictRelativeYTranslation > restrictRelativeYTranslation > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the relative y translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-33",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "710ad401592d93e66e803f287268db09"
+  },
+  "15ebcf13e7230a14f37b10391e4386d6": {
+    "humanReadablePath": "default > restrictRelativeYTranslation > restrictRelativeYTranslation > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the relative y translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-33",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "15ebcf13e7230a14f37b10391e4386d6"
+  },
+  "9eeb8c62efcc31244088214f8d0534f6": {
+    "humanReadablePath": "default > restrictRotation > restrictRotation > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the rotation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-34",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9eeb8c62efcc31244088214f8d0534f6"
+  },
+  "818a06694d3a8f442768b410b237a524": {
+    "humanReadablePath": "default > restrictRotation > restrictRotation > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the rotation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-34",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "818a06694d3a8f442768b410b237a524"
+  },
+  "52af3ff8ab0b3109e16b419c6393317e": {
+    "humanReadablePath": "default > restrictXTranslation > restrictXTranslation > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the x translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-35",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "52af3ff8ab0b3109e16b419c6393317e"
+  },
+  "59b5e7f3a666b2aff04f96be4a27f616": {
+    "humanReadablePath": "default > restrictXTranslation > restrictXTranslation > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the x translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-35",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "59b5e7f3a666b2aff04f96be4a27f616"
+  },
+  "0778f5b55e4a948a4df2bd53623bfb5d": {
+    "humanReadablePath": "default > restrictYTranslation > restrictYTranslation > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the y translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-36",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "0778f5b55e4a948a4df2bd53623bfb5d"
+  },
+  "384d7bb701ca38d79029fdd81c4bf343": {
+    "humanReadablePath": "default > restrictYTranslation > restrictYTranslation > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the y translation",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-36",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "384d7bb701ca38d79029fdd81c4bf343"
+  },
+  "dd29ab4bbc0c45b054050b6bd1b71db5": {
+    "humanReadablePath": "default > restrictZoom > restrictZoom > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the flag indicating if the board is restricting the zoom",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-37",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "dd29ab4bbc0c45b054050b6bd1b71db5"
+  },
+  "de8a65fb184bd6fea414e049367011c4": {
+    "humanReadablePath": "default > restrictZoom > restrictZoom > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the flag indicating if the board is restricting the zoom",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-37",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "de8a65fb184bd6fea414e049367011c4"
+  },
+  "6de1dea8cbc914a4ec9f3fe9de00220b": {
+    "humanReadablePath": "default > stepControl > stepControl > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "set the flag indicating if the board is handing over the control of the step function",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-38",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6de1dea8cbc914a4ec9f3fe9de00220b"
+  },
+  "6c98b696b3f985a03c4451f9829a4020": {
+    "humanReadablePath": "default > stepControl > stepControl > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "get the flag indicating if the board is handing over the control of the step function",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-38",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6c98b696b3f985a03c4451f9829a4020"
+  },
+  "fdc97d853eec65df683d3b0ace4ce598": {
+    "humanReadablePath": "default > touchStrategy > touchStrategy > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the current strategy the board is using for touch events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-39",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "fdc97d853eec65df683d3b0ace4ce598"
+  },
+  "cd964fb0fc80abb555dd824fa3bbf0bb": {
+    "humanReadablePath": "default > touchStrategy > touchStrategy > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the current strategy the board is using for touch events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-39",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "cd964fb0fc80abb555dd824fa3bbf0bb"
+  },
+  "6c0d2b0c867bbf1359588d68b08b128d": {
+    "humanReadablePath": "default > trackpadStrategy > trackpadStrategy > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the current strategy the board is using for trackpad events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-40",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6c0d2b0c867bbf1359588d68b08b128d"
+  },
+  "d65acab2eb3ca40088b81e3afc88ebb2": {
+    "humanReadablePath": "default > trackpadStrategy > trackpadStrategy > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the current strategy the board is using for trackpad events",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-40",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "d65acab2eb3ca40088b81e3afc88ebb2"
+  },
+  "7e30e83ccc0d1d5b20728a9341eab65f": {
+    "humanReadablePath": "default > verticalGridSize > verticalGridSize > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Get the current strategy the board is using for camera events; currently this property has no effect",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-41",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7e30e83ccc0d1d5b20728a9341eab65f"
+  },
+  "a1d569b4c9b08ad444259a01d304280b": {
+    "humanReadablePath": "default > verticalGridSize > verticalGridSize > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Set the current strategy the board is using for camera events; currently this has no effect",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-41",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "a1d569b4c9b08ad444259a01d304280b"
+  },
+  "0a350972939f62273d402aa7508e5d1d": {
+    "humanReadablePath": "default > width > width > translation comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "get the width of the canvas element the board is attached to",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-42",
+      "getSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "0a350972939f62273d402aa7508e5d1d"
+  },
+  "e81dfce11e82995a484c7fa26fed0230": {
+    "humanReadablePath": "default > width > width > translation comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "set the width of the canvas element the board is attached to; if the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-42",
+      "setSignature",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e81dfce11e82995a484c7fa26fed0230"
+  },
+  "6ecc9a5fa69ff8ceb5a3791eb89c82e9": {
+    "humanReadablePath": "default > adjustZoomLevelBaseOnDimensions > adjustZoomLevelBaseOnDimensions > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "The callback function for the window resize event",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-43",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "6ecc9a5fa69ff8ceb5a3791eb89c82e9"
+  },
+  "eecc3637c5c66148238c7dc635b78783": {
+    "humanReadablePath": "default > adjustZoomLevelBoundsBaseOnHeight > adjustZoomLevelBoundsBaseOnHeight > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Adjust the zoom level bounds based on the height of the canvas",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-44",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "eecc3637c5c66148238c7dc635b78783"
+  },
+  "50e5dcccf11e992b054f57eed806cebd": {
+    "humanReadablePath": "default > adjustZoomLevelBoundsBaseOnWidth > adjustZoomLevelBoundsBaseOnWidth > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Adjust the zoom level bounds based on the width of the canvas",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-45",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "50e5dcccf11e992b054f57eed806cebd"
+  },
+  "75b434ecf978f778b07b56757d922efe": {
+    "humanReadablePath": "default > attributeCallBack > attributeCallBack > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two)",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-46",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "75b434ecf978f778b07b56757d922efe"
+  },
+  "5a04aa36156927d25b7c54afe4002203": {
+    "humanReadablePath": "default > bindFunctions > bindFunctions > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-47",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "5a04aa36156927d25b7c54afe4002203"
+  },
+  "92bdaeb47c2db5f08a96daf6417cb3e4": {
+    "humanReadablePath": "default > convertWindowPoint2ViewPortPoint > convertWindowPoint2ViewPortPoint > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This is to convert a point in a window coordinate to view port coordinate",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-49",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "92bdaeb47c2db5f08a96daf6417cb3e4"
+  },
+  "d644643bfd6c877cf681ef213e7323d3": {
+    "humanReadablePath": "default > convertWindowPoint2WorldCoord > convertWindowPoint2WorldCoord > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This is to convert a point in a window coordinate (directly returned by the mouse event top left corner is (0, 0)) to world coordinate",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-50",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "d644643bfd6c877cf681ef213e7323d3"
+  },
+  "561c2d4fb6d5c043095349a41d18285c": {
+    "humanReadablePath": "default > drawAxis > drawAxis > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw the X and Y axis starting from the origin to the max translation height and width",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-52",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "561c2d4fb6d5c043095349a41d18285c"
+  },
+  "51cc7093285e0e197d3b0406e47428b0": {
+    "humanReadablePath": "default > drawBoundingBox > drawBoundingBox > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a blue bounding box at the max translation height and width",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-53",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "51cc7093285e0e197d3b0406e47428b0"
+  },
+  "205645db3e6e21fcba27f9a100d9c1e3": {
+    "humanReadablePath": "default > drawCameraCenterWithCrossHair > drawCameraCenterWithCrossHair > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a cross hair at the center of the camera (which is the center of the view port aka the canvas element)",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-54",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "205645db3e6e21fcba27f9a100d9c1e3"
+  },
+  "c8fac2aa01af077bd524bb308902a8a8": {
+    "humanReadablePath": "default > drawCrossHair > drawCrossHair > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a cross hair at the given position",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-55",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c8fac2aa01af077bd524bb308902a8a8"
+  },
+  "dc8a0c3d91545ca62bdb996feebfb9d1": {
+    "humanReadablePath": "default > drawGrid > drawGrid > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a grid on to the canvas with dynamic width and height",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-56",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "dc8a0c3d91545ca62bdb996feebfb9d1"
+  },
+  "48e401a67e430bb0cfb23e7692410ef6": {
+    "humanReadablePath": "default > drawPositionText > drawPositionText > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a position text at the given position",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-57",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "48e401a67e430bb0cfb23e7692410ef6"
+  },
+  "5b662503cb100a88e8e89f40a55ad837": {
+    "humanReadablePath": "default > drawReferenceCircle > drawReferenceCircle > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw a green circle at the given position",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-58",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "5b662503cb100a88e8e89f40a55ad837"
+  },
+  "fe4a3a9450300b3ecbb6cce047be9c15": {
+    "humanReadablePath": "default > drawRuler > drawRuler > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Draw rulers in both the horizontal and vertical direction marking the cooridnates; the width and height are aligned with the grid.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-59",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "fe4a3a9450300b3ecbb6cce047be9c15"
+  },
+  "e40705595853e00e7ce83d17895867d8": {
+    "humanReadablePath": "default > getCamera > getCamera > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Get the internal camera",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-60",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e40705595853e00e7ce83d17895867d8"
+  },
+  "2e3128dd637f3a74f7664cdec69cdbff": {
+    "humanReadablePath": "default > getCoordinateConversionFn > getCoordinateConversionFn > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This was used in the legacy way to handle inputs from user for the panning, zooming and rotating to work.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-62",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "2e3128dd637f3a74f7664cdec69cdbff"
+  },
+  "ca674049580f32c4d8d05c2897f9dd5e": {
+    "humanReadablePath": "default > getInternalCanvas > getInternalCanvas > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Get the internal canvas element this board is attached to.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-63",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "ca674049580f32c4d8d05c2897f9dd5e"
+  },
+  "732b90d7bb44f556e0f6ac6b070b6f81": {
+    "humanReadablePath": "default > on > on > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Subscribe to the camera update event. The events fire only when the camera is actually move not the when the command is issued.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-65",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "732b90d7bb44f556e0f6ac6b070b6f81"
+  },
+  "839eb9eec2b236d069bd52f2f3dd63c2": {
+    "humanReadablePath": "default > pointerDownHandler > pointerDownHandler > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This is only for demonstration purposes.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-66",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "839eb9eec2b236d069bd52f2f3dd63c2"
+  },
+  "cb3b4b60c51f0eafecb731fbac533a84": {
+    "humanReadablePath": "default > pointerMoveHandler > pointerMoveHandler > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This is only for demonstration purposes.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-67",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "cb3b4b60c51f0eafecb731fbac533a84"
+  },
+  "9d546e21c654592521346358c580dcd3": {
+    "humanReadablePath": "default > registerEventListeners > registerEventListeners > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Register the event listeners this is called in the constructor; This is also where the board setup the control input strategies",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-68",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9d546e21c654592521346358c580dcd3"
+  },
+  "44758d52e6728f435e8bc4a26046a0a3": {
+    "humanReadablePath": "default > removeEventListeners > removeEventListeners > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Remove the event listeners; This is called in the disconnectedCallback; this is for easier clean up if you're using frontend frameworks\nthat maange the lifecycle of the component",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-69",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "44758d52e6728f435e8bc4a26046a0a3"
+  },
+  "7e825b688df742b99bffe9a11d0efe49": {
+    "humanReadablePath": "default > resetCamera > resetCamera > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Reset the camera to the default position and zoom level. This is soon to be deprecated",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-70",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7e825b688df742b99bffe9a11d0efe49"
+  },
+  "3042ecb0ec76a404cd756cec0f342adc": {
+    "humanReadablePath": "default > spinCameraWithAnimation > spinCameraWithAnimation > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Spin camera to a certain angle with animation. This is soon to be deprecated.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-72",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "3042ecb0ec76a404cd756cec0f342adc"
+  },
+  "1b676d5da58766252537da85e397e650": {
+    "humanReadablePath": "default > step > step > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function can be passed directly to the requestAnimationFrame to enable the extra functionalities of a board. (Or be called to step the board in a custom step function)",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-41",
+      "children",
+      "index-73",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "1b676d5da58766252537da85e397e650"
+  },
+  "4decc704972cafd6345185b8495336a8": {
+    "humanReadablePath": "BoardTrackpadStrategy > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "this is a test string for interface",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-47",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "4decc704972cafd6345185b8495336a8"
+  },
+  "46888186885151ec3007bb36523969d1": {
+    "humanReadablePath": "Boundaries > translation comments > index-0 > text",
+    "kind": "typeAlias",
+    "originalText": "need to translate boundaries text",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-51",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "46888186885151ec3007bb36523969d1"
+  }
+}

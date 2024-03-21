@@ -132,4 +132,5 @@ dist
 build
 
 docs-staging
-doc-jsons/staging
+
+translations/staging

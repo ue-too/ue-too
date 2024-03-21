@@ -174,7 +174,7 @@ export class CameraMoveCommand implements CameraChangeCommand {
     constructor(private camera: BoardCamera, private diff: Point) { }
 
     execute(): boolean {
-        return this.camera.moveWithClampFromGesture(this.diff);
+        return this.camera.moveWithClampFromGesture(this.diff).moved;
     }
 
     get commandPayload(): CameraPanCommandPayload {
