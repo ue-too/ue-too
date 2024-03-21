@@ -291,10 +291,31 @@ export function getComment(node){
             node.comment.blockTags = node.comment.blockTags.filter((comment)=>{
                 return comment.tag !== "@translation";
             });
-            if(node.comment.blockTags.length === 0){
-                delete node.comment.blockTags;
-            }
-
+            node.comment.blockTags.forEach((comment, blockTagIndex)=>{
+                if(comment.tag !== "@translationBlock"){
+                    return;
+                }
+                comment.content.forEach((content, index)=>{
+                    if(content.kind !== "text"){
+                        return;
+                    }
+                    const item = {};
+                    item.originalText = content.text;
+                    item.translation = "";
+                    item.flatPath = [];
+                    item.flatPath.push(`${node.id}`);
+                    item.flatPath.push(`${node.name}`);
+                    item.flatPath.push("comments");
+                    item.flatPath.push(`index-${index}`);
+                    item.projectPath = [...node.path, "comment", "blockTags",`index-${blockTagIndex}`, "content", `index-${index}`, "text"];
+                    item.kind = reflectionMapping(node);
+                    const locationIdentifier = crypto.createHash('md5').update(`${item.flatPath.join("")}${item.originalText}${item.kind}`).digest('hex');
+                    item.translationKey = crypto.createHash('md5').update(`${item.projectPath.join("")}${item.originalText}${item.kind}`).digest('hex');
+                    item.locationIdentifier = locationIdentifier;
+                    res.push(item);
+                });
+                comment.tag = "";
+            });
         }
     }
     return res;

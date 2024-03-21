@@ -10,13 +10,16 @@ import { CameraListener } from "../camera-change-command/camera-observer";
 import { calculateOrderOfMagnitude } from "../util";
 
 /**
- * @translation Default Export of the @niuee/board package. <br/>
+ * @translation This is the recommended way to use the library. @niuee/board provides a custom web component (BoardElement) as an alternative.
+ * However, the canvas element is attached to the shadow dom of the BoardElement, 
+ * which makes it harder to use css to directly alter the styling of the canvas element.
+ * 
  * 
  *
  * @category Board
- * @example
+ * @translationBlock Usage
  * ```typescript
- * import Board from "@niuee/board";
+ * import { Board } from "@niuee/board";
  * 
  * // or however you prefer to get a canvas element that is already in the DOM
  * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
@@ -33,11 +36,9 @@ import { calculateOrderOfMagnitude } from "../util";
  * //.
  * }
  * ```
- * @translation Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.
+ * @translationBlock Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.
  * 
  * However, this does not apply if you are using the cdn or bundled version of the package.
- * @customtag test line position
- * @example
  * ```typescript
  * import {Board} from "@niuee/board/boardify";
  * ```
@@ -157,14 +158,19 @@ export default class Board {
 
     /**
      * @group Attribute
-     * @translation get the flag indicating if the board is in full screen mode
+     * @accessorDescription Toggle full screen mode.
+     * 
+     * what happen to second line.
+     * ```typescript
+     * const board = new Board(canvasElement);
+     * ```
      */
     get fullScreen(): boolean {
         return this._fullScreenFlag;
     }
 
     /**
-     * @translation set the flag indicating if the board is in full screen mode; this will also effect the width and height of the canvas
+     * @accessorDescription Line from setter.
      */
     set fullScreen(value: boolean) {
         this._fullScreenFlag = value;
@@ -176,15 +182,14 @@ export default class Board {
 
     /**
      * @group Attribute
-     * @translation get the width of the canvas element the board is attached to
+     * @accessorDescription The width of the canvas element the board is attached to. This stay in sync with the view port width of the camera.
      */
     get width(): number {
         return this._canvas.width;
     }
 
     /**
-     * 
-     * @translation set the width of the canvas element the board is attached to; if the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated
+     * @translation If the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated.
      */
     set width(value: number) {
         this._canvas.width = value;
@@ -199,14 +204,14 @@ export default class Board {
 
     /**
      * @group Attribute
-     * @translation get the height of the canvas element the board is attached to
+     * @accessorDescription The height of the canvas element the board is attached to. This stay in sync with the view port height of the camera. 
      */
     get height(): number {
         return this._canvas.height;
     }
 
     /**
-     * @translation set the height of the canvas element the board is attached to; if the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated
+     * @translation If the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated.
      */
     set height(value: number) {
         console.log("set height value", value);
@@ -221,32 +226,24 @@ export default class Board {
     }
 
     /**
-     * 
-     * @translation get the flag indicating if the board is handing over the control of the step function
+     * @accessorDescription The flag for step control handover. If this is set to true, the board will not call requestAnimationFrame by itself.
      */
     set stepControl(value: boolean){
         this._handOverStepControl = value;
     }
 
-    /**
-     * @translation set the flag indicating if the board is handing over the control of the step function
-     */
     get stepControl(): boolean{ 
         return this._handOverStepControl;
     }
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the x translation
+     * @accessorDescription The flag indicating if the board is restricting the x translation.
      */
     get restrictXTranslation(): boolean{ 
         return this._camera.restrictXTranslationFromGesture;
     }
     
-    /**
-     * 
-     * @translation set the flag indicating if the board is restricting the x translation
-     */
     set restrictXTranslation(value: boolean){
         if(value){
             this._camera.lockXTranslationFromGesture();
@@ -257,7 +254,7 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the y translation
+     * @accessorDescription The flag indicating if the board is restricting the y translation.
      */
     get restrictYTranslation(): boolean{
         return this._camera.restrictYTranslationFromGesture;
@@ -265,7 +262,6 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation set the flag indicating if the board is restricting the y translation
      */
     set restrictYTranslation(value: boolean){
         if(value){
@@ -277,15 +273,12 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the rotation
+     * @accessorDescription The flag indicating if the board is restricting the rotation.
      */
     get restrictRotation(): boolean{
         return this._camera.restrictRotationFromGesture;
     }
 
-    /**
-     * @translation set the flag indicating if the board is restricting the rotation
-     */
     set restrictRotation(value: boolean){
         if(value){
             this._camera.lockRotationFromGesture();
@@ -296,15 +289,12 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the zoom
+     * @accessorDescription The flag indicating if the board is restricting the zoom.
      */
     get restrictZoom(): boolean{
         return this._camera.restrictZoomFromGesture;
     }
 
-    /**
-     * @translation set the flag indicating if the board is restricting the zoom
-     */
     set restrictZoom(value: boolean){
         if(value){
             this._camera.lockZoomFromGesture();
@@ -315,15 +305,12 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the relative x translation
+     * @accessorDescription The flag indicating if the board is restricting the relative x translation.
      */
     get restrictRelativeXTranslation(): boolean{
         return this._camera.restrictRelativeXTranslationFromGesture;
     }
 
-    /**
-     * @translation set the flag indicating if the board is restricting the relative x translation
-     */
     set restrictRelativeXTranslation(value: boolean){
         if(value){
             this._camera.lockRelativeXTranslationFromGesture();
@@ -334,15 +321,12 @@ export default class Board {
 
     /**
      * @group Restriction
-     * @translation get the flag indicating if the board is restricting the relative y translation
+     * @accessorDescription The flag indicating if the board is restricting the relative y translation.
      */
     get restrictRelativeYTranslation(): boolean{
         return this._camera.restrictRelativeYTranslationFromGesture;
     }
 
-    /**
-     * @translation set the flag indicating if the board is restricting the relative y translation
-     */
     set restrictRelativeYTranslation(value: boolean){
         if(value){
             this._camera.lockRelativeYTranslationFromGesture();
@@ -353,7 +337,7 @@ export default class Board {
 
     /**
      * @group Attribute
-     * @translation get the half of the maximum translation height the board is allowing for the camera to move
+     * @accessorDescription The half of the maximum translation height the board is allowing for the camera to move.
      */
     get maxHalfTransHeight(): number | undefined{
         const boundaries = this._camera.getBoundaries();
@@ -363,16 +347,13 @@ export default class Board {
         return undefined;
     }
 
-    /**
-     * @translation set the half of the maximum translation height the board is allowing for the camera to move
-     */
     set maxHalfTransHeight(value: number){
         this._camera.setVerticalBoundaries(-value, value);
     }
 
     /**
      * @group Attribute
-     * @translation get the half of the maximum translation width the board is allowing for the camera to move
+     * @accessorDescription The half of the maximum translation width the board is allowing for the camera to move.
      */
     get maxHalfTransWidth(): number | undefined{
         const boundaries = this._camera.getBoundaries();
@@ -382,30 +363,24 @@ export default class Board {
         return undefined;
     }
     
-    /**
-     * @translation set the half of the maximum translation width the board is allowing for the camera to move
-     */
     set maxHalfTransWidth(value: number){
         this._camera.setHorizontalBoundaries(-value, value);
     }
 
     /**
      * @group Debug Tools
-     * @translation Get the flag indicating if the board is in debug mode
+     * @accessorDescription The flag indicating if the board is in debug mode.
      */
     get debugMode(): boolean{
         return this._debugMode;
     }
 
-    /**
-     * @translation Set the flag indicating if the board is in debug mode
-     */
     set debugMode(value: boolean){
         this._debugMode = value;
     }
 
     /**
-     * @translation Get the internal camera the board is using
+     * @accessorDescription The camera for the board
      */
     get camera(): BoardCamera{
         return this._camera;
@@ -413,7 +388,7 @@ export default class Board {
 
     /**
      * @group Control Strategy
-     * @translation Set the current strategy the board is using for touch events 
+     * @accessorDescription The current strategy the board is using for touch events 
      */ 
     set touchStrategy(strategy: BoardTouchStrategy){
         this._touchStrategy.tearDown();
@@ -422,16 +397,13 @@ export default class Board {
         this._touchStrategy.setUp();
     }
 
-    /**
-     * @translation Get the current strategy the board is using for touch events 
-     */
     get touchStrategy(): BoardTouchStrategy{
         return this._touchStrategy;
     }
 
     /**
      * @group Control Strategy
-     * @translation Set the current strategy the board is using for trackpad events
+     * @accessorDescription The current strategy the board is using for trackpad events
      */
     set trackpadStrategy(strategy: BoardTrackpadStrategy){
         this._trackpadStrategy.tearDown();
@@ -440,16 +412,13 @@ export default class Board {
         this._trackpadStrategy.setUp();
     }
 
-    /**
-     * @group Control Strategy
-     * @translation Get the current strategy the board is using for trackpad events
-     */
     get trackpadStrategy(): BoardTrackpadStrategy{
         return this._trackpadStrategy;
     }
 
     /**
-     * @translation Set the current strategy the board is using for keyboard and mouse events
+     * @group Control Strategy
+     * @accessorDescription The current strategy the board is using for keyboard and mouse events
      */
     set keyboardMouseStrategy(strategy: BoardKMStrategy){
         this._keyboardMouseStrategy.tearDown();
@@ -458,16 +427,13 @@ export default class Board {
         this._keyboardMouseStrategy.setUp();
     }
 
-    /**
-     * @group Control Strategy
-     * @translation Get the current strategy the board is using for keyboard and mouse events
-     */
     get keyboardMouseStrategy(): BoardKMStrategy{
         return this._keyboardMouseStrategy;
     }
 
     /**
-     * @translation Set the current strategy the board is using for camera events; currently this has no effect
+     * @group Debug Tools
+     * @accessorDescription The gap size between the horizontal lines of the grid. Currently has no effect.
      */
     set verticalGridSize(value: number){
         if(value < 0) {
@@ -476,17 +442,13 @@ export default class Board {
         this._verticalGridSize = value;
     }
 
-    /**
-     * @group Debug Tools
-     * @translation Get the current strategy the board is using for camera events; currently this property has no effect
-     */
     get verticalGridSize(): number{
         return this._verticalGridSize;
     }
 
     /**
      * @group Debug Tools
-     * @translation Set the current strategy the board is using for camera events; currently this property has no effect
+     * @accessorDescription The gap size between the vertical lines of the grid. Currently has no effect.
      */
     set horizontalGridSize(value: number){
         if(value < 0) {
@@ -495,47 +457,37 @@ export default class Board {
         this._horizontalGridSize = value;
     }
 
-    /**
-     * @group Debug Tools
-     * @translation Get the current strategy the board is using for camera events; currently this property has no effect
-     */
     get horizontalGridSize(): number{
         return this._horizontalGridSize;
     }
 
     /**
      * @group Debug Tools
-     * @translation Set the flag indicating if the board is displaying the grid
+     * @accessorDescription The flag indicating if the board is displaying the grid
      */
     get displayGrid(): boolean{
         return this._displayGrid;
     }
 
-    /**
-     * @translation Get the flag indicating if the board is displaying the grid
-     */
     set displayGrid(value: boolean){
         this._displayGrid = value;
     }
 
     /**
      * @group Debug Tools
-     * @translation Get the flag indicating if the board is displaying the ruler
+     * @accessorDescription The flag indicating if the board is displaying the ruler
      */
     get displayRuler(): boolean{
         return this._displayRuler;
     }
 
-    /**
-     * @translation Set the flag indicating if the board is displaying the ruler
-     */
     set displayRuler(value: boolean){
         this._displayRuler = value;
     }
 
     /**
      * @group Attribute
-     * @translation Set the flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well
+     * @accessorDescription The flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well
      */
     set limitEntireViewPort(value: boolean){
         this._limitEntireViewPort = value;
@@ -547,9 +499,6 @@ export default class Board {
         }
     }
 
-    /**
-     * @translation Get the flag indicating if the board is limiting the entire view port
-     */
     get limitEntireViewPort(): boolean{
         return this._limitEntireViewPort;
     }

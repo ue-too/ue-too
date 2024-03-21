@@ -129,7 +129,7 @@ describe("Camera translation Movements", ()=>{
     test("Translate camera given a delta translation vector", ()=>{
         const moveDeltaVector = {x: 10, y: 10};
         const actualRes = camera.move(moveDeltaVector);
-        expect(actualRes).toBe(true);
+        expect(actualRes.success).toBe(true);
         expect(camera.getPosition()).toEqual({x: 10, y: 10});
     });
 
@@ -145,7 +145,7 @@ describe("Camera translation Movements", ()=>{
         camera.setHorizontalBoundaries(-500, 300);
         camera.setVerticalBoundaries(-500, 300);
         const actualRes = camera.move(moveDeltaVector);
-        expect(actualRes).toBe(false);
+        expect(actualRes.success).toBe(false);
         expect(camera.getPosition()).toEqual({x: 0, y: 0});
     });
 });

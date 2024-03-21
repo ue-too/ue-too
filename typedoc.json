@@ -1,11 +1,11 @@
 {
-  "plugin": ["typedoc-material-theme", "./scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links"],
+  "plugin": ["typedoc-material-theme", "./scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links", "@niuee/typedoc-plugin-translation", "@niuee/typedoc-plugin-custom-theme"],
   "themeColor": "#ffffff",
+  "theme": "translation-theme",
   "categoryOrder": ["Board", "Board Camera", "Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
   "readme": "./README.md",
   "entryPoints": ["./src/index.ts"],
   "navigation": {
     "includeCategories": true
   },
-  "json": "./doc-jsons/staging/api-raw.json",
 }
