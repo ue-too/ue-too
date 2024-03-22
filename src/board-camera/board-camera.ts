@@ -1009,7 +1009,7 @@ export default class BoardCamera {
         if(this.zoomLevelLimits == undefined){
             this.zoomLevelLimits = {min: undefined, max: undefined};
         }
-        if((this.zoomLevelLimits.max != undefined && this.zoomLevelLimits.max < minZoomLevel) || this._zoomLevel < minZoomLevel){
+        if((this.zoomLevelLimits.max != undefined && this.zoomLevelLimits.max < minZoomLevel)){
             return false;
         }
         this.zoomLevelLimits.min = minZoomLevel;
