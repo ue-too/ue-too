@@ -1,7 +1,7 @@
 import BoardElement from "../board-element/board-element";
 import Board from "../boardify/board";
 import { PointCal } from "point2point";
-import { CameraObserver } from "../camera-change-command/camera-observer";
+import BoardCamera from "../board-camera/board-camera";
 
 /**
  * @category Trackpad Strategy
@@ -18,15 +18,15 @@ export interface BoardTrackpadStrategy {
 
 export class TwoFingerPanPinchZoom implements BoardTrackpadStrategy {
 
-    private cameraObserver: CameraObserver;
+    private camera: BoardCamera;
     private SCROLL_SENSATIVITY: number = 0.005;
     private canvas: BoardElement;
     private _disabled: boolean = false;
     private _limitEntireViewPort: boolean = true;
 
-    constructor(canvas: BoardElement, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
+    constructor(canvas: BoardElement, camera: BoardCamera, limitEntireViewPort: boolean = true){
         this.canvas = canvas;
-        this.cameraObserver = cameraObserver;
+        this.camera = camera;
         this.scrollHandler = this.scrollHandler.bind(this);
         this._limitEntireViewPort = limitEntireViewPort;
     }
@@ -69,14 +69,14 @@ export class TwoFingerPanPinchZoom implements BoardTrackpadStrategy {
             const diff = {x: e.deltaX, y: e.deltaY};
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
-            this.cameraObserver.panCamera(diffInWorld);
+            this.camera.moveWithClampFromGesture(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
             const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
             const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
-            this.cameraObserver.zoomCamera(zoomLevel, anchorPoint);
+            this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
         }
 
     }
@@ -86,15 +86,15 @@ export class TwoFingerPanPinchZoomLimitEntireView implements BoardTrackpadStrate
 
     private SCROLL_SENSATIVITY: number;
     private canvas: BoardElement;
-    private cameraObserver: CameraObserver;
+    private camera: BoardCamera;
     private _disabled: boolean = false;
 
     private _limitEntireViewPort: boolean = true;
 
-    constructor(canvas: BoardElement, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
+    constructor(canvas: BoardElement, camera: BoardCamera, limitEntireViewPort: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.canvas = canvas;
-        this.cameraObserver = cameraObserver;
+        this.camera = camera;
         this._limitEntireViewPort = limitEntireViewPort;
         this.scrollHandler = this.scrollHandler.bind(this);
     }
@@ -139,9 +139,9 @@ export class TwoFingerPanPinchZoomLimitEntireView implements BoardTrackpadStrate
             let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.canvas.getCamera().getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.canvas.getCamera().getZoomLevel());
             if(this._limitEntireViewPort){
-                this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
+                this.camera.moveWithClampEntireViewPortFromGesture(diffInWorld);
             } else {
-                this.cameraObserver.panCamera(diffInWorld);
+                this.camera.moveWithClampFromGesture(diffInWorld);
             }
 
         } else {
@@ -151,9 +151,9 @@ export class TwoFingerPanPinchZoomLimitEntireView implements BoardTrackpadStrate
             const anchorPoint = this.canvas.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
             const zoomLevel = this.canvas.getCamera().getZoomLevel() - (this.canvas.getCamera().getZoomLevel() * zoomAmount * 5);
             if(this._limitEntireViewPort){
-                this.cameraObserver.zoomCameraLimitEntireViewPort(zoomLevel, anchorPoint);
+                this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
             } else {
-                this.cameraObserver.zoomCamera(zoomLevel, anchorPoint);
+                this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
             }
         }
     }
@@ -163,16 +163,14 @@ export class DefaultBoardTrackpadStrategy implements BoardTrackpadStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private canvas: HTMLCanvasElement;
-    private board: Board;
-    private cameraObserver: CameraObserver;
+    private camera: BoardCamera;
     private _disabled: boolean = false;
     private _limitEntireViewPort: boolean = true;
 
-    constructor(canvas: HTMLCanvasElement, board: Board, cameraObserver: CameraObserver, limitEntireViewPort: boolean = true){
+    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.canvas = canvas;
-        this.board = board;
-        this.cameraObserver = cameraObserver;
+        this.camera = camera;
         this._limitEntireViewPort = limitEntireViewPort;
         this.scrollHandler = this.scrollHandler.bind(this);
     }
@@ -214,24 +212,24 @@ export class DefaultBoardTrackpadStrategy implements BoardTrackpadStrategy {
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
             const diff = {x: e.deltaX, y: e.deltaY};
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.board.getCamera().getRotation());
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.board.getCamera().getZoomLevel());
+            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
             // this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
             if(this._limitEntireViewPort){
-                this.cameraObserver.panCameraLimitEntireViewPort(diffInWorld);
+                this.camera.moveWithClampEntireViewPortFromGesture(diffInWorld);
             } else {
-                this.cameraObserver.panCamera(diffInWorld);
+                this.camera.moveWithClampFromGesture(diffInWorld);
             }
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            const anchorPoint = this.board.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom},cursorPosition);
-            const zoomLevel = this.board.getCamera().getZoomLevel() - (this.board.getCamera().getZoomLevel() * zoomAmount * 5);
+            const anchorPoint = PointCal.flipYAxis(PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}));
+            const zoomLevel = this.camera.getZoomLevel() - (this.camera.getZoomLevel() * zoomAmount * 5);
             if(this._limitEntireViewPort){
-                this.cameraObserver.zoomCameraLimitEntireViewPort(zoomLevel, anchorPoint);
+                this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
             } else {
-                this.cameraObserver.zoomCamera(zoomLevel, anchorPoint);
+                this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
             }
         }
     }

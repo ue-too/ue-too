@@ -1,8 +1,8 @@
-import { PointCal } from "point2point";
-import { Point } from "..";
+import { PointCal, Point } from "point2point";
+import { CameraObserver } from "../camera-change-command/camera-observer";
 import { EaseFunctions } from "../ease-functions";
 import { EaseFunction } from "../ease-functions";
-
+import { CameraEventMapping, CameraState } from "../camera-change-command/camera-observer";
 
 /**
  * @category Board Camera
@@ -113,6 +113,7 @@ export default class BoardCamera {
 
     private _restrictXTranslationFromGesture: boolean = false;
 
+    private _observer: CameraObserver;
     /**
      * @group Restriction
      */
@@ -174,6 +175,7 @@ export default class BoardCamera {
         this._rotation = rotation;
         this._viewPortHeight = viewPortHeight;
         this._viewPortWidth = viewPortWidth;
+        this._observer = new CameraObserver();
         this.positionAnimation = {
             animationPercentage: 1.1,
             easingFn: undefined,
@@ -512,7 +514,9 @@ export default class BoardCamera {
             return false;
         }
         this.cancelZoomAnimation();
+        const deltaZoomAmount = zoomLevel - this._zoomLevel;
         this._zoomLevel = zoomLevel;
+        this._observer.notifyOnZoomChange(deltaZoomAmount, this.position, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return true;
     }
 
@@ -525,7 +529,9 @@ export default class BoardCamera {
         }
         this.cancelZoomAnimation();
         zoomLevel = this.clampZoomLevel(zoomLevel);
+        const deltaZoomAmount = zoomLevel - this._zoomLevel;
         this._zoomLevel = zoomLevel;
+        this._observer.notifyOnZoomChange(deltaZoomAmount, this.position, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
     }
 
     /**
@@ -550,28 +556,31 @@ export default class BoardCamera {
         if(!this.lockPositionOnObject){
             let anchorInWorldAfterZoom = this.convert2WorldSpace(anchorInViewPort);
             const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-            const res = this.moveWithClampEntireViewPortFromGesture(diff);
+            this.moveWithClampEntireViewPortFromGesture(diff);
         }
+        this._observer.notifyOnZoomChange(deltaZoomAmount, anchorInViewPort, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return {success: true, deltaZoomAmount: deltaZoomAmount, resultingZoomLevel: zoomLevel};
     }
 
     /**
      * @group Camera Zoom Operations
      * */
-    setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): boolean{
+    setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel: number, anchorInViewPort: Point): CameraZoomResult{
         if(this._restrictZoomFromGesture){
-            return false;
+            return {success: false};
         }
         this.cancelZoomAnimation();
         let originalAnchorInWorld = this.convert2WorldSpace(anchorInViewPort);
         zoomLevel = this.clampZoomLevel(zoomLevel);
+        const deltaZoomAmount = zoomLevel - this._zoomLevel;
         this._zoomLevel = zoomLevel;
         if(!this.lockPositionOnObject){
             let anchorInWorldAfterZoom = this.convert2WorldSpace(anchorInViewPort);
             const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
             this.moveWithClampFromGesture(diff);
         }
-        return true;
+        this._observer.notifyOnZoomChange(deltaZoomAmount, anchorInViewPort, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+        return {success: true, deltaZoomAmount: deltaZoomAmount, resultingZoomLevel: this._zoomLevel};
     }
 
     /**
@@ -726,6 +735,7 @@ export default class BoardCamera {
             return {success: false};
         }
         this._position = PointCal.addVector(this._position, delta);
+        this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return {success: true, deltaPosition: delta, resultingPosition: this._position};
     }
 
@@ -760,6 +770,7 @@ export default class BoardCamera {
         if(moveRes.success){
             this.releaseFromLockedObject();
             this.cancelAnimations();
+            this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return moveRes;
         } else {
             return {success: false};
@@ -781,6 +792,7 @@ export default class BoardCamera {
         }
         const actualDelta = PointCal.subVector(clampedTarget, this._position);
         this._position = clampedTarget;
+        this._observer.notifyOnPositionChange(actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return {moved: true, actualDelta: actualDelta};
     }
 
@@ -815,6 +827,7 @@ export default class BoardCamera {
         if(res.moved){
             this.releaseFromLockedObject();
             this.cancelAnimations();
+            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         }
         return res;
     }
@@ -851,6 +864,7 @@ export default class BoardCamera {
         this.cancelAnimations();
         const res = this.moveWithClampEntireViewPort(delta);
         if(res.moved){
+            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return {success: res.moved, deltaPosition: res.actualDelta, resultingPosition: this._position};
         }
         return {success: false}
@@ -870,6 +884,7 @@ export default class BoardCamera {
         }
         const actualDelta = PointCal.subVector(clampedTarget, this._position);
         this._position = clampedTarget;
+        this._observer.notifyOnPositionChange(actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return {moved: true, actualDelta: actualDelta};
     }
 
@@ -928,6 +943,15 @@ export default class BoardCamera {
      * @group Camera Rotation Operations
      * @translation Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.
      * */
+    spin(deltaAngle: number){
+        // in radians
+        this._rotation = this.normalizeAngleZero2TwoPI(this._rotation + deltaAngle);
+    }
+
+    /**
+     * @group Camera Rotation Operations
+     * @translation Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.
+     * */
     spinDeg(deltaAngle: number){
         // in degrees
         this.spin(deltaAngle * Math.PI / 180);
@@ -940,7 +964,8 @@ export default class BoardCamera {
      * */
     spinDegFromGesture(deltaAngle: number){
         // in degrees
-        return this.spinFromGesture(deltaAngle * Math.PI / 180);
+        const res = this.spinFromGesture(deltaAngle * Math.PI / 180);
+        return res;
     }
 
     /**
@@ -956,16 +981,8 @@ export default class BoardCamera {
         this.releaseRotationFromLockedObject();
         this.cancelAnimations();
         this.spin(deltaAngle);
+        this._observer.notifyOnRotationChange(deltaAngle, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         return true;
-    }
-
-    /**
-     * @group Camera Rotation Operations
-     * @translation Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.
-     * */
-    spin(deltaAngle: number){
-        // in radians
-        this._rotation = this.normalizeAngleZero2TwoPI(this._rotation + deltaAngle);
     }
 
     /**
@@ -1362,6 +1379,10 @@ export default class BoardCamera {
             return false;
         }
         return true;
+    }
+
+    on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
+        this._observer.on(eventName, callback);
     }
 
 }

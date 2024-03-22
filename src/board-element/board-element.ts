@@ -1,12 +1,11 @@
-import BoardCamera from "../board-camera";
+import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {BoardTouchStrategy, TwoFingerPanZoom} from "../touch-strategy/touch-strategy";
+import {BoardTouchStrategy, TwoFingerPanZoomForBoardElement} from "../touch-strategy/touch-strategy";
 import { BoardTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "../trackpad-strategy/trackpad-strategy";
 import { DefaultBoardElementKMStrategy, BoardKMStrategy } from "../km-strategy/km-strategy";
 import * as AttributeChangeCommands from "../attribute-change-command";
 import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
-import { CameraListener } from "../camera-change-command/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
@@ -72,14 +71,13 @@ export default class BoardElement extends HTMLElement{
         this.maxTransHalfHeight = 5000;
         this.maxTransHalfWidth = 5000;
 
-        this._cameraObserver = new CameraObserver(this._camera);
 
         this.attachShadow({mode: "open"});
         this.bindFunctions();
 
-        this._touchStrategy = new TwoFingerPanZoom(this, this._cameraObserver);
-        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._cameraObserver);
-        this._keyboardMouseStrategy = new DefaultBoardElementKMStrategy(this, this._cameraObserver);
+        this._touchStrategy = new TwoFingerPanZoomForBoardElement(this, this._camera);
+        this._trackpadStrategy = new TwoFingerPanPinchZoomLimitEntireView(this, this._camera);
+        this._keyboardMouseStrategy = new DefaultBoardElementKMStrategy(this, this._camera);
 
         this.windowsResizeObserver = new ResizeObserver(this.windowResizeHandler.bind(this));
 
@@ -740,14 +738,6 @@ export default class BoardElement extends HTMLElement{
         this.attributeCommands.set("horizontal-grid-size", new AttributeChangeCommands.SetHorizontalGridSizeCommand(this));
         this.attributeCommands.set("ruler", new AttributeChangeCommands.ToggleRulerCommand(this));
         this.attributeCommands.set("grid", new AttributeChangeCommands.ToggleGridCommand(this));
-    }
-
-    subscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.subscribe(listener);
-    }
-
-    unsubscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.unsubscribe(listener);
     }
 
     on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
