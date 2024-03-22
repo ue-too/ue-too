@@ -183,7 +183,7 @@ export default class Board {
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
         if(this._limitEntireViewPort){
-            this.adjustZoomLevelBoundsBaseOnWidth();
+            this.adjustZoomLevelBaseOnDimensions();
         }
     }
 
@@ -199,7 +199,6 @@ export default class Board {
      * @translation If the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated.
      */
     set height(value: number) {
-        console.log("set height value", value);
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
         if(this._limitEntireViewPort){
@@ -331,6 +330,57 @@ export default class Board {
 
     set maxHalfTransHeight(value: number){
         this._camera.setVerticalBoundaries(-value, value);
+        if(this._limitEntireViewPort){
+            this.adjustZoomLevelBoundsBaseOnHeight();
+        }
+    }
+
+    setMaxTransHeightAlignedMax(value: number){
+        const curBoundaries = this._camera.getBoundaries();
+        const curMax = curBoundaries == undefined ? undefined: curBoundaries.max;
+        const curVerticalMax = curMax == undefined ? undefined: curMax.y;
+        if(curVerticalMax == undefined){
+            this._camera.setVerticalBoundaries(-value, value);
+        } else {
+            this._camera.setVerticalBoundaries(curVerticalMax - value * 2, curVerticalMax);
+        }
+        this.adjustZoomLevelBoundsBaseOnHeight();
+    }
+
+    setMaxTransHeightAlignedMin(value: number){
+        const curBoundaries = this._camera.getBoundaries();
+        const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
+        const curVerticalMin = curMin == undefined ? undefined: curMin.y;
+        if(curVerticalMin == undefined){
+            this._camera.setVerticalBoundaries(-value, value);
+        } else {
+            this._camera.setVerticalBoundaries(curVerticalMin, curVerticalMin + value * 2);
+        }
+        this.adjustZoomLevelBoundsBaseOnHeight();
+    }
+
+    setMaxTransWidthAlignedMax(value: number){
+        const curBoundaries = this._camera.getBoundaries();
+        const curMax = curBoundaries == undefined ? undefined: curBoundaries.max;
+        const curHorizontalMax = curMax == undefined ? undefined: curMax.x;
+        if(curHorizontalMax == undefined){
+            this._camera.setHorizontalBoundaries(-value, value);
+        } else {
+            this._camera.setHorizontalBoundaries(curHorizontalMax - value * 2, curHorizontalMax);
+        }
+        this.adjustZoomLevelBoundsBaseOnWidth();
+    }
+
+    setMaxTransWidthAlignedMin(value: number){
+        const curBoundaries = this._camera.getBoundaries();
+        const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
+        const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
+        if(curHorizontalMin == undefined){
+            this._camera.setHorizontalBoundaries(-value, value);
+        } else {
+            this._camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
+        }
+        this.adjustZoomLevelBoundsBaseOnWidth();
     }
 
     /**
@@ -504,9 +554,10 @@ export default class Board {
     adjustZoomLevelBaseOnDimensions(){
         const minZoomLevelHeight = this._canvas.height / (this.maxHalfTransHeight * 2);
         const minZoomLevelWidth = this._canvas.width / (this.maxHalfTransWidth * 2);
-        const minZoomLevel = Math.min(minZoomLevelHeight, minZoomLevelWidth);
+        const minZoomLevel = Math.max(minZoomLevelHeight, minZoomLevelWidth);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
+            console.log("min zoom level set to", this._camera.getZoomLevelLimits().min);
         }
     }
 
@@ -515,6 +566,10 @@ export default class Board {
      * @translation Adjust the zoom level bounds based on the width of the canvas
      */
     adjustZoomLevelBoundsBaseOnWidth(){
+        if(this.maxHalfTransWidth == undefined){
+            console.log("due to maxHalfTransWidth not being set, the zoom level bounds cannot be adjusted based on the width of the canvas");
+            return;
+        }
         const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
@@ -526,6 +581,9 @@ export default class Board {
      * @translation Adjust the zoom level bounds based on the height of the canvas
      */
     adjustZoomLevelBoundsBaseOnHeight(){
+        if(this.maxHalfTransHeight == undefined){
+            return;
+        }
         const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
@@ -557,7 +615,8 @@ export default class Board {
         // this._canvas.width = this._canvas.width;
         // this._canvas.height = this._canvas.height;
         this._context.resetTransform();
-        this._context.clearRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2);
+        const curBoundaries = this._camera.getBoundaries();
+        this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2);
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
@@ -629,6 +688,7 @@ export default class Board {
      */
     pointerDownHandler(e: PointerEvent) {
         console.log("clicked at", this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
+        console.log("camera boundaries", this._camera.getBoundaries());
     }
 
     /**
@@ -689,19 +749,26 @@ export default class Board {
      * @param zoomLevel 
      */
     drawAxis(context: CanvasRenderingContext2D, zoomLevel: number): void{
+        const curBoundaries = this._camera.getBoundaries();
+        const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
+        const curMinX = curMin == undefined ? undefined: curMin.x;
+        const curMinY = curMin == undefined ? undefined: curMin.y;
+        if(curMinX == undefined || curMinY == undefined || this.maxHalfTransHeight == undefined || this.maxHalfTransWidth == undefined){
+            return;
+        }
         context.lineWidth = 1 / zoomLevel;
         // y axis
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(0, -this.maxHalfTransHeight);
+        context.lineTo(0, -curMinY + (-this.maxHalfTransHeight * 2));
         context.stroke();
         
         // x axis
         context.beginPath();
         context.strokeStyle = `rgba(220, 59, 59, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(this.maxHalfTransWidth, 0);
+        context.lineTo(curMinX + this.maxHalfTransWidth * 2, 0);
         context.stroke();
     }
 
@@ -725,10 +792,17 @@ export default class Board {
      * @param context 
      */
     drawBoundingBox(context: CanvasRenderingContext2D): void{
+        const curBoundaries = this._camera.getBoundaries();
+        const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
+        const curMinX = curMin == undefined ? undefined: curMin.x;
+        const curMinY = curMin == undefined ? undefined: curMin.y;
+        if(curMinX == undefined || curMinY == undefined || this.maxHalfTransHeight == undefined || this.maxHalfTransWidth == undefined){
+            return;
+        }
         context.beginPath();
         context.strokeStyle = "blue";
         context.lineWidth = 100;
-        context.roundRect(-this.maxHalfTransWidth, -this.maxHalfTransHeight, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2, 5);
+        context.roundRect(curMinX, -curMinY, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2, 5);
         context.stroke();
         context.lineWidth = 3;
     }
