@@ -1,5 +1,4 @@
 import { Point } from "point2point";
-import BoardCamera from "../board-camera";
 
 export type CameraPanEventPayload = {
     diff: Point;
@@ -18,16 +17,6 @@ export type CameraEventMapping = {
     "pan": CameraPanEventPayload,
     "zoom": CameraZoomEventPayload,
     "rotate": CameraRotateEventPayload
-}
-
-export interface CameraListener {
-    notifyChange(cameraInfo: CameraUpdateNotification): void;
-}
-
-export class CameraLogger {
-    notifyChange(cameraInfo: CameraUpdateNotification): void {
-        // console.log(cameraInfo);
-    }
 }
 
 export type CameraRotateCommandPayload = {
@@ -66,80 +55,38 @@ export type CameraChangeEventName = "pan" | "zoom" | "rotate";
 export type CallbackList<K extends keyof CameraEventMapping> = ((event: CameraEventMapping[K], cameraState: CameraState)=>void)[];
 export class CameraObserver {
 
-    private subscribers: CameraListener[] = [];
-    private camera: BoardCamera;
     private panCallbackList: CallbackList<"pan"> = [];
     private zoomCallbackList: CallbackList<"zoom"> = [];
     private rotateCallbackList: CallbackList<"rotate"> = [];
 
-    constructor(camera: BoardCamera) {
-        this.camera = camera;
-    }
-    
-    executeCommand(command: CameraChangeCommand): void {
-        const res = command.execute();
-        if(!res) return;
-        const payload = command.commandPayload;
-
-        const rotation = this.camera.getRotation();
-        const position = this.camera.getPosition();
-        const zoomLevel = this.camera.getZoomLevel();
-
-        switch(payload.type){
-        case "pan":
-            this.panCallbackList.forEach((callback) => callback(payload, {position: position, zoomLevel: zoomLevel, rotation: rotation}));
-            break;
-        case "zoom":
-            this.zoomCallbackList.forEach((callback) => callback(payload, {position: position, zoomLevel: zoomLevel, rotation: rotation}));
-            break;
-        case "rotate":
-            this.rotateCallbackList.forEach((callback) => callback(payload, {position: position, zoomLevel: zoomLevel, rotation: rotation}));
-            break;
-        }
+    constructor() {
     }
 
-    zoomCamera(zoomAmount: number, anchorPoint: Point): void {
-        this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomAmount, anchorPoint);
-    }
-
-    zoomCameraLimitEntireViewPort(zoomAmount: number, anchorPoint: Point): void {
-        const res = this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomAmount, anchorPoint);
-        if(res.success){
-            this.zoomCallbackList.forEach((callback) => {
-                callback({deltaZoomAmount: res.deltaZoomAmount, anchorPoint: anchorPoint}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
-            });
-        }
-    }
-
-    panCamera(diff: Point): void {
-        this.camera.moveWithClampFromGesture(diff);
-    }
-
-    panCameraLimitEntireViewPort(diff: Point): void {
-        const res = this.camera.moveWithClampEntireViewPortFromGesture(diff);
-        if(res.success){
+    notifyOnPositionChange(delta: Point, cameraState: CameraState): Promise<void> {
+        return new Promise((resolve, reject) => {
             this.panCallbackList.forEach((callback) => {
-                callback({diff: res.deltaPosition}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+                callback({diff: delta}, cameraState);
             });
-        }
+            resolve();
+        });
     }
 
-    rotateCamera(deltaRotation: number): void {
-        // deltaRotation is in degrees
-        const res = this.camera.spinDegFromGesture(deltaRotation);
-        if(res){
+    notifyOnZoomChange(deltaZoomAmount: number, anchorPoint: Point, cameraState: CameraState): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.zoomCallbackList.forEach((callback) => {
+                callback({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint}, cameraState);
+            });
+            resolve();
+        });
+    }
+
+    notifyOnRotationChange(deltaRotation: number, cameraState: CameraState): Promise<void> {
+        return new Promise((resolve, reject) => {
             this.rotateCallbackList.forEach((callback) => {
-                callback({deltaRotation: deltaRotation}, {position: this.camera.getPosition(), zoomLevel: this.camera.getZoomLevel(), rotation: this.camera.getRotation()});
+                callback({deltaRotation: deltaRotation}, cameraState);
             });
-        }
-    }
-    
-    subscribe(subscriber: CameraListener): void {
-        this.subscribers.push(subscriber);
-    }
-
-    unsubscribe(subscriber: CameraListener): void {
-        this.subscribers = this.subscribers.filter((s) => s !== subscriber);
+            resolve();
+        });
     }
 
     on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
@@ -162,88 +109,4 @@ export class CameraObserver {
         this.rotateCallbackList = [];
     }
     
-}
-
-export interface CameraChangeCommand {
-    execute(): boolean;
-    commandPayload: CameraCommandPayload;
-}
-
-export class CameraMoveCommand implements CameraChangeCommand {
-
-    constructor(private camera: BoardCamera, private diff: Point) { }
-
-    execute(): boolean {
-        return this.camera.moveWithClampFromGesture(this.diff).moved;
-    }
-
-    get commandPayload(): CameraPanCommandPayload {
-        return {
-            type: "pan",
-            diff: this.diff
-        }
-    }
-}
-
-export class CameraMoveLimitEntireViewPortCommand implements CameraChangeCommand {
-    
-    constructor(private camera: BoardCamera, private diff: Point) { }
-
-    execute(): boolean {
-        return this.camera.moveWithClampEntireViewPortFromGesture(this.diff).success;
-    }
-
-    get commandPayload(): CameraPanCommandPayload {
-        return {
-            type: "pan",
-            diff: this.diff
-        }
-    }
-}
-
-export class CameraZoomCommand implements CameraChangeCommand {
-    constructor(private camera: BoardCamera, private zoomAmount: number, private anchorPoint: Point) { }
-
-    execute(): boolean {
-        return this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint);
-    }
-
-    get commandPayload(): CameraZoomCommandPayload {
-        return {
-            type: "zoom",
-            deltaZoomAmount: this.zoomAmount,
-            anchorPoint: this.anchorPoint
-        }
-    }
-}
-
-export class CameraZoomLimitEntireViewPortCommand implements CameraChangeCommand {
-    constructor(private camera: BoardCamera, private zoomAmount: number, private anchorPoint: Point) { }
-
-    execute(): boolean {
-        return this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(this.zoomAmount, this.anchorPoint).success;
-    }
-
-    get commandPayload(): CameraZoomCommandPayload {
-        return {
-            type: "zoom",
-            deltaZoomAmount: this.zoomAmount,
-            anchorPoint: this.anchorPoint
-        }
-    }
-}
-
-export class CameraRotateCommand implements CameraChangeCommand {
-    constructor(private camera: BoardCamera, private deltaRotation: number) { }
-
-    execute(): boolean {
-        return this.camera.spinFromGesture(this.deltaRotation);
-    }
-
-    get commandPayload(): CameraRotateCommandPayload {
-        return {
-            type: "rotate",
-            deltaRotation: this.deltaRotation
-        }
-    }
 }

@@ -7,10 +7,9 @@ export * from "./touch-strategy";
 export * from "./trackpad-strategy";
 export * from "./util";
 export * from "./v-dial";
-export {default as BoardCamera} from "./board-camera";
 export {default as BoardElement} from "./board-element";
 export {default as Board } from "./boardify";
-
+export {default as BoardCamera } from "./board-camera";
 export type Point = {
     x: number,
     y: number,

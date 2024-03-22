@@ -1,11 +1,10 @@
-import BoardCamera from "../board-camera";
+import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {BoardTouchStrategy, TwoFingerPanZoomForBoard} from "../touch-strategy";
+import {BoardTouchStrategy, TwoFingerPanZoom} from "../touch-strategy";
 import { BoardTrackpadStrategy, DefaultBoardTrackpadStrategy} from "../trackpad-strategy";
 import { BoardKMStrategy, DefaultBoardKMStrategy } from "../km-strategy";
-import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
-import { CameraListener } from "../camera-change-command/camera-observer";
+import { CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
@@ -51,7 +50,6 @@ export default class Board {
     private _context: CanvasRenderingContext2D;
 
     private _camera: BoardCamera;
-    private _cameraObserver: CameraObserver;
 
     private requestRef: number;
     private _handOverStepControl: boolean = true;
@@ -94,26 +92,16 @@ export default class Board {
         this.maxHalfTransHeight = 5000;
         this.maxHalfTransWidth = 5000;
         this.adjustZoomLevelBaseOnDimensions();
-        // let minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
-        // if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-        //     this._camera.setMinZoomLevel(minZoomLevel);
-        // }
-        // minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
-        // if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-        //     this._camera.setMinZoomLevel(minZoomLevel);
-        // }
-
-        this._cameraObserver = new CameraObserver(this._camera);
 
         this.bindFunctions();
 
-        this._touchStrategy = new TwoFingerPanZoomForBoard(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
-        this._trackpadStrategy = new DefaultBoardTrackpadStrategy(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
-        this._keyboardMouseStrategy = new DefaultBoardKMStrategy(this._canvas, this, this._cameraObserver, this._limitEntireViewPort);
+        this._touchStrategy = new TwoFingerPanZoom(this._canvas, this._camera, this._limitEntireViewPort);
+        this._trackpadStrategy = new DefaultBoardTrackpadStrategy(this._canvas, this._camera, this._limitEntireViewPort);
+        this._keyboardMouseStrategy = new DefaultBoardKMStrategy(this._canvas, this._camera, this._limitEntireViewPort);
 
         this._debugMode = false;
 
-        this.attributeObserver = new MutationObserver(this.attributeCallBack.bind(this));
+        this.attributeObserver = new MutationObserver(this.attributeCallBack);
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
         this.attributeObserver.observe(this._canvas, {attributes: true});
@@ -145,7 +133,7 @@ export default class Board {
                 } else if(mutation.attributeName === "height"){
                     // console.log("height changed");
                     this._camera.setViewPortHeight(this._canvas.height);
-                    if(this._limitEntireViewPort){
+                    if(this._limitEntireViewPort && this.maxHalfTransHeight != undefined){
                         const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
                         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
                             this._camera.setMinZoomLevel(minZoomLevel);
@@ -195,10 +183,7 @@ export default class Board {
         this._canvas.width = value;
         this._camera.setViewPortWidth(value);
         if(this._limitEntireViewPort){
-            const minZoomLevel = value / (this.maxHalfTransWidth * 2);
-            if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-                this._camera.setMinZoomLevel(minZoomLevel);
-            }
+            this.adjustZoomLevelBoundsBaseOnWidth();
         }
     }
 
@@ -218,10 +203,7 @@ export default class Board {
         this._canvas.height = value;
         this._camera.setViewPortHeight(value);
         if(this._limitEntireViewPort){
-            const minZoomLevel = value / (this.maxHalfTransHeight * 2);
-            if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
-                this._camera.setMinZoomLevel(minZoomLevel);
-            }
+            this.adjustZoomLevelBaseOnDimensions();
         }
     }
 
@@ -377,6 +359,7 @@ export default class Board {
 
     set debugMode(value: boolean){
         this._debugMode = value;
+        this._keyboardMouseStrategy.debugMode = value;
     }
 
     /**
@@ -509,6 +492,7 @@ export default class Board {
     bindFunctions(){
         this.step = this.step.bind(this);
         this.windowResizeHandler = this.windowResizeHandler.bind(this);
+        this.attributeCallBack = this.attributeCallBack.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
     }
@@ -556,6 +540,8 @@ export default class Board {
             cancelAnimationFrame(this.requestRef);
         }
         this.removeEventListeners();
+        this.windowResizeObserver.disconnect();
+        this.attributeObserver.disconnect();
     }
 
     /**
@@ -627,6 +613,7 @@ export default class Board {
         this._canvas.removeEventListener('pointerdown', this.pointerDownHandler);
     }
 
+    
     /**
      * @translation This is only for demonstration purposes.
      * @param e 
@@ -1031,14 +1018,6 @@ export default class Board {
         return this._context;
     }
 
-    subscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.subscribe(listener);
-    }
-
-    unsubscribeToCameraUpdate(listener: CameraListener){
-        this._cameraObserver.unsubscribe(listener);
-    }
-
     /**
      * @group Camera Control
      * @translation Subscribe to the camera update event. The events fire only when the camera is actually move not the when the command is issued.
@@ -1046,11 +1025,7 @@ export default class Board {
      * @param callback 
      */
     on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
-        this._cameraObserver.on(eventName, callback);
-    }
-
-    clearCameraUpdateCallbacks(){
-        this._cameraObserver.clearCallbacks();
+        this.camera.on(eventName, callback);
     }
 
     windowResizeHandler(){
