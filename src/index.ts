@@ -4,7 +4,6 @@ export * from "./ease-functions";
 export * from "./kmt-strategy";
 export * from "./touch-strategy";
 export * from "./util";
-export * from "./v-dial";
 export {default as Board } from "./boardify";
 export {default as BoardCamera } from "./board-camera";
 export type Point = {
