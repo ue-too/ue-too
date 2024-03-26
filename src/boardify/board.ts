@@ -67,6 +67,7 @@ export default class Board {
 
     private _displayGrid: boolean = false;
     private _displayRuler: boolean = false;
+    private _alignCoordinateSystem: boolean = false;
 
     /**
      * @translation The observer mainly for the width and height of the canvas element
@@ -163,6 +164,15 @@ export default class Board {
             this.width = window.innerWidth;
             this.height = window.innerHeight;
         }
+    }
+
+    get alignCoordinateSystem(): boolean{
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(value: boolean){
+        this._alignCoordinateSystem = value;
+        this._keyboardMouseTrackpadStrategy.alignCoordinateSystem = value;
     }
 
     /**
@@ -601,8 +611,13 @@ export default class Board {
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
-        this._context.rotate(this._camera.getRotation());
-        this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
+        if (this._alignCoordinateSystem){
+            this._context.rotate(-this._camera.getRotation());
+            this._context.translate(-this._camera.getPosition().x,  -this._camera.getPosition().y);
+        } else {
+            this._context.rotate(this._camera.getRotation());
+            this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
+        }
 
         this._camera.step(deltaTime);
 
@@ -708,7 +723,11 @@ export default class Board {
      */
     convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
         const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
+        if(this._alignCoordinateSystem) {
+            return {x: res.x, y: res.y};
+        } else {
+            return {x: res.x, y: -res.y};
+        }
     }
 
     /**
@@ -717,8 +736,13 @@ export default class Board {
      * @returns 
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
-        const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-        return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        if(this._alignCoordinateSystem){
+            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
+            return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        } else {
+            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
+            return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        }
     }
 
     /**
@@ -740,7 +764,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(0, -curMinY + (-this.maxHalfTransHeight * 2));
+        if(this._alignCoordinateSystem){
+            context.lineTo(0, curMinY + (this.maxHalfTransHeight * 2));
+        } else {
+            context.lineTo(0, -curMinY - (this.maxHalfTransHeight * 2));
+        }
         context.stroke();
         
         // x axis
@@ -761,7 +789,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         // context.moveTo(pos.x, -pos.y);
-        context.arc(pos.x, -pos.y, 5, 0, 2 * Math.PI);
+        if(this._alignCoordinateSystem){
+            context.arc(pos.x, pos.y, 5, 0, 2 * Math.PI);
+        } else {
+            context.arc(pos.x, -pos.y, 5, 0, 2 * Math.PI);
+        }
         context.stroke();
     }
 
@@ -781,7 +813,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = "blue";
         context.lineWidth = 100;
-        context.roundRect(curMinX, -curMinY, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2, 5);
+        if(this._alignCoordinateSystem){
+            context.roundRect(curMinX, curMinY, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2, 5);
+        } else {
+            context.roundRect(curMinX, -curMinY, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2, 5);
+        }
         context.stroke();
         context.lineWidth = 3;
     }
@@ -801,10 +837,17 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = color;
         context.lineWidth = 2 / this._camera.getZoomLevel();
-        context.moveTo(pos.x - halfSize, -pos.y);
-        context.lineTo(pos.x + halfSize, -pos.y);
-        context.moveTo(pos.x, -pos.y - halfSize);
-        context.lineTo(pos.x, -pos.y + halfSize);
+        if(this._alignCoordinateSystem){
+            context.moveTo(pos.x - halfSize, pos.y);
+            context.lineTo(pos.x + halfSize, pos.y);
+            context.moveTo(pos.x, pos.y - halfSize);
+            context.lineTo(pos.x, pos.y + halfSize);
+        } else {
+            context.moveTo(pos.x - halfSize, -pos.y);
+            context.lineTo(pos.x + halfSize, -pos.y);
+            context.moveTo(pos.x, -pos.y - halfSize);
+            context.lineTo(pos.x, -pos.y + halfSize);
+        }
         context.stroke();
         context.lineWidth = 3;
     }
@@ -1036,7 +1079,11 @@ export default class Board {
         offset = offset / this._camera.getZoomLevel();
         context.font = `${20 / this._camera.getZoomLevel()}px Arial`;
         context.fillStyle = color;
-        context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
+        if(this._alignCoordinateSystem){
+            context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, pos.y + offset);
+        } else {
+            context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
+        }
     }
 
     /**
