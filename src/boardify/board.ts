@@ -2,7 +2,7 @@ import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
 import { BoardTouchStrategy, TwoFingerPanZoom } from "../touch-strategy";
-import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../km-strategy";
+import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../kmt-strategy";
 import { CameraState, CameraEventMapping } from "../camera-observer/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
