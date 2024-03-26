@@ -1,6 +1,6 @@
 export * from "./board-camera";
 export * from "./attribute-change-command";
-export * from "./camera-change-command";
+export * from "./camera-observer";
 export * from "./ease-functions";
 export * from "./km-strategy";
 export * from "./touch-strategy";

@@ -5,7 +5,7 @@ import {BoardTouchStrategy, TwoFingerPanZoomForBoardElement} from "../touch-stra
 import { BoardTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "../trackpad-strategy/trackpad-strategy";
 import { DefaultBoardElementKMStrategy, BoardKMStrategy } from "../km-strategy/km-strategy";
 import * as AttributeChangeCommands from "../attribute-change-command";
-import { CameraObserver, CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
+import { CameraObserver, CameraState, CameraEventMapping} from "../camera-observer/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 

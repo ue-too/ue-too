@@ -4,7 +4,7 @@ import { PointCal } from "point2point";
 import {BoardTouchStrategy, TwoFingerPanZoom} from "../touch-strategy";
 import { BoardTrackpadStrategy, DefaultBoardTrackpadStrategy} from "../trackpad-strategy";
 import { BoardKMStrategy, DefaultBoardKMStrategy } from "../km-strategy";
-import { CameraState, CameraEventMapping} from "../camera-change-command/camera-observer";
+import { CameraState, CameraEventMapping} from "../camera-observer/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
