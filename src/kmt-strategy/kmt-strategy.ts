@@ -125,7 +125,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             }
             const target = {x: e.clientX, y: e.clientY};
             let diff = PointCal.subVector(this.dragStartPoint, target);
-            diff = {x: diff.x, y: -diff.y};
+            if(!this._alignCoordinateSystem){
+                diff = {x: diff.x, y: -diff.y};
+            }
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
             if(this._limitEntireViewPort){

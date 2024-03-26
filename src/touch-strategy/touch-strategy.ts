@@ -17,6 +17,7 @@ export interface BoardTouchStrategyLegacy {
 export interface BoardTouchStrategy {
     disabled: boolean;
     limitEntireViewPort: boolean;
+    alignCoordinateSystem: boolean;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -31,10 +32,11 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
     private camera: BoardCamera;
     private _disabled: boolean = false;
     private _limitEntireViewPort: boolean = true;
+    private _alignCoordinateSystem: boolean;
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true){
+    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
         this.canvas = canvas;
         this.camera = camera;
         this.touchcancelHandler = this.touchcancelHandler.bind(this);
@@ -42,6 +44,7 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
         this.touchstartHandler = this.touchstartHandler.bind(this);
         this._limitEntireViewPort = limitEntireViewPort;
+        this._alignCoordinateSystem = alignCoordinateSystem;
     }
 
     get limitEntireViewPort(): boolean {
@@ -54,6 +57,14 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     get disabled(): boolean {
         return this._disabled;
+    }
+
+    get alignCoordinateSystem(): boolean {
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(alignCoordinateSystem: boolean){
+        this._alignCoordinateSystem = alignCoordinateSystem;
     }
 
     disableStrategy(): void {
@@ -117,7 +128,11 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
                 let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
                 let distDiff = this.dragStartDist - touchPointDist;
                 let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-                midPoint = PointCal.flipYAxis(PointCal.subVector(midPoint, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}));
+                if(!this._alignCoordinateSystem){
+                    midPoint = PointCal.flipYAxis(PointCal.subVector(midPoint, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}));
+                } else {
+                    midPoint = PointCal.subVector(midPoint, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top});
+                }
                 let zoomAmount = distDiff * 0.1 * this.camera.getZoomLevel() * this.ZOOM_SENSATIVITY;
                 if(this._limitEntireViewPort){
                     this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomAmount, midPoint);
@@ -126,8 +141,11 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
                 }
                 this.touchPoints = [startPoint, endPoint];
             } else {
-                const diff = PointCal.subVector(this.touchPoints[0], startPoint);
-                let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
+                let diff = PointCal.subVector(this.touchPoints[0], startPoint);
+                if(!this._alignCoordinateSystem){
+                    diff.y = -diff.y;
+                }
+                let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
                 diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 0.5);
                 if(this._limitEntireViewPort){
@@ -208,7 +226,7 @@ export class TwoFingerPanZoomLegacy implements BoardTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoom implements BoardTouchStrategyLegacy {
+export class OneFingerPanTwoFingerZoomLegacy implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
@@ -282,13 +300,14 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategyLegacy {
     }
 }
 
-export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
+export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;
     private canvas: HTMLCanvasElement;
     private _limitEntireViewPort: boolean;
     private _disabled: boolean;
+    private _alignCoordinateSystem: boolean;
     private zoomStartDist: number;
 
     private isDragging: boolean = false;
@@ -298,7 +317,7 @@ export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(controlCamera: BoardCamera, canvas: HTMLCanvasElement){
+    constructor(controlCamera: BoardCamera, canvas: HTMLCanvasElement, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
         this.controlCamera = controlCamera;
         this.canvas = canvas;
         this._disabled = false;
@@ -306,7 +325,8 @@ export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
         this.zoomStartDist = 0;
         this.isDragging = false;
         this.dragStartPoint = {x: 0, y: 0};
-        this._limitEntireViewPort = true;
+        this._limitEntireViewPort = limitEntireViewPort;
+        this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindListeners();
     }
 
@@ -361,6 +381,14 @@ export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
         return this._disabled;
     }
 
+    get alignCoordinateSystem(): boolean {
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(alignCoordinateSystem: boolean){
+        this._alignCoordinateSystem = alignCoordinateSystem;
+    }
+
     touchstartHandler(e: TouchEvent){
         if(this._disabled) {
             return;
@@ -408,15 +436,22 @@ export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
             let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
             let distDiff = this.zoomStartDist - touchPointDist;
             let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-            midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, midPoint);
+            if(this._alignCoordinateSystem){
+                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, midPoint);
+            } else {
+                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
+            }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.getZoomLevel() * this.ZOOM_SENSATIVITY;
             this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
         } else if(e.targetTouches.length == 1 && this.isDragging){
             let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            const diff = PointCal.subVector(this.dragStartPoint, touchPoint);
-            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.controlCamera.getRotation());
+            let diff = PointCal.subVector(this.dragStartPoint, touchPoint);
+            if(!this._alignCoordinateSystem){
+                diff.y = -diff.y;
+            }
+            let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.getZoomLevel());
             this.controlCamera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = touchPoint;
@@ -426,6 +461,10 @@ export class OneFingerPanTwoFingerZoomForBoard implements BoardTouchStrategy {
 
     convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
         const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
+        if(this._alignCoordinateSystem) {
+            return {x: res.x, y: res.y};
+        } else {
+            return {x: res.x, y: -res.y};
+        }
     }
 }
