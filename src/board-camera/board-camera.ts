@@ -1,8 +1,8 @@
 import { PointCal, Point } from "point2point";
-import { CameraObserver } from "../camera-change-command/camera-observer";
+import { CameraObserver } from "../camera-observer/camera-observer";
 import { EaseFunctions } from "../ease-functions";
 import { EaseFunction } from "../ease-functions";
-import { CameraEventMapping, CameraState } from "../camera-change-command/camera-observer";
+import { CameraEventMapping, CameraState } from "../camera-observer/camera-observer";
 
 /**
  * @category Board Camera

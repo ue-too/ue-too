@@ -7,7 +7,7 @@ import BoardCamera from "../board-camera/board-camera";
 /**
  * @category Keyboard-Mouse Strategy
  */
-export interface BoardKMStrategy {
+export interface BoardKMTStrategy {
     limitEntireViewPort: boolean;
     disabled: boolean;
     debugMode: boolean;
@@ -18,7 +18,7 @@ export interface BoardKMStrategy {
 }
 
 
-export class DefaultBoardElementKMStrategy implements BoardKMStrategy {
+export class DefaultBoardElementKMStrategy implements BoardKMTStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
@@ -126,7 +126,7 @@ export class DefaultBoardElementKMStrategy implements BoardKMStrategy {
     }
 }
 
-export class DefaultBoardKMStrategy implements BoardKMStrategy {
+export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
@@ -147,6 +147,7 @@ export class DefaultBoardKMStrategy implements BoardKMStrategy {
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
+        this.scrollHandler = this.scrollHandler.bind(this);
     }
 
     get limitEntireViewPort(): boolean {
@@ -169,12 +170,14 @@ export class DefaultBoardKMStrategy implements BoardKMStrategy {
         this.canvas.addEventListener('pointerdown', this.pointerDownHandler);
         this.canvas.addEventListener('pointerup', this.pointerUpHandler);
         this.canvas.addEventListener('pointermove', this.pointerMoveHandler);
+        this.canvas.addEventListener('wheel', this.scrollHandler);
     }
 
     tearDown(): void {
         this.canvas.removeEventListener('pointerdown', this.pointerDownHandler);
         this.canvas.removeEventListener('pointerup', this.pointerUpHandler);
         this.canvas.removeEventListener('pointermove', this.pointerMoveHandler);
+        this.canvas.removeEventListener('wheel', this.scrollHandler);
     }
 
     pointerDownHandler(e: PointerEvent){
@@ -213,7 +216,11 @@ export class DefaultBoardKMStrategy implements BoardKMStrategy {
             return;
         }
         if (e.pointerType == "mouse" && this.isDragging){
-            this.canvas.style.cursor = "grabbing";
+            if (this._debugMode) {
+                this.canvas.style.cursor = "none";
+            } else {
+                this.canvas.style.cursor = "grabbing";
+            }
             const target = {x: e.clientX, y: e.clientY};
             let diff = PointCal.subVector(this.dragStartPoint, target);
             diff = {x: diff.x, y: -diff.y};
@@ -227,6 +234,38 @@ export class DefaultBoardKMStrategy implements BoardKMStrategy {
             this.dragStartPoint = target;
         }
     }
+
+    scrollHandler(e: WheelEvent){
+        if(this._disabled) return;
+        e.preventDefault();
+        const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
+        if (!e.ctrlKey){
+            //NOTE this is panning the camera
+            // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
+            // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
+            const diff = {x: e.deltaX, y: e.deltaY};
+            let diffInWorld = PointCal.rotatePoint(PointCal.flipYAxis(diff), this.camera.getRotation());
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
+            // this.cameraObserver.executeCommand(new CameraMoveLimitEntireViewPortCommand(this.canvas.getCamera(), diffInWorld));
+            if(this._limitEntireViewPort){
+                this.camera.moveWithClampEntireViewPortFromGesture(diffInWorld);
+            } else {
+                this.camera.moveWithClampFromGesture(diffInWorld);
+            }
+        } else {
+            //NOTE this is zooming the camera
+            // console.log("zooming");
+            const cursorPosition = {x: e.clientX, y: e.clientY};
+            const anchorPoint = PointCal.flipYAxis(PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}));
+            const zoomLevel = this.camera.getZoomLevel() - (this.camera.getZoomLevel() * zoomAmount * 5);
+            if(this._limitEntireViewPort){
+                this.camera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
+            } else {
+                this.camera.setZoomLevelWithClampFromGestureAtAnchorPoint(zoomLevel, anchorPoint);
+            }
+        }
+    }
+
     get disabled(): boolean {
         return this._disabled;
     }
