@@ -147,12 +147,26 @@ export default [
   {
     // distribution for direct browser usage
     input: 'src/index.ts',
-    output: {
+    output: [
+    {
       file: 'dist/board.js',
       format: 'esm',
       name: 'board',
       sourcemap: true,
     },
+    {
+      file: 'build/umd/index.js',
+      format: 'umd',
+      name: "Board",
+      sourcemap: false
+    },
+    {
+      file: 'build/iife/index.js',
+      format: 'iife',
+      name: "Board",
+      sourcemap: false
+    }
+    ],
     plugins: [
       resolve(),
       typescript({

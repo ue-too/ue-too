@@ -666,7 +666,7 @@ export default class Board {
      * @param e 
      */
     pointerDownHandler(e: PointerEvent) {
-        console.log("clicked at", this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
+        console.log("clicked at", PointCal.flipYAxis(this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY})));
         console.log("camera boundaries", this._camera.getBoundaries());
     }
 

@@ -3,7 +3,7 @@
   "version": "0.0.2",
   "description": "",
   "main": "./build/index.cjs",
-  "module": "./build/index.js",
+  "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "scripts": {
     "rollup": "rollup -c --bundleConfigAsCjs",
