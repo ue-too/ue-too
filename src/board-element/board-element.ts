@@ -3,7 +3,7 @@ import { Point } from "..";
 import { PointCal } from "point2point";
 import {BoardTouchStrategy, TwoFingerPanZoomForBoardElement} from "../touch-strategy/touch-strategy";
 import { BoardTrackpadStrategy, TwoFingerPanPinchZoomLimitEntireView} from "../trackpad-strategy/trackpad-strategy";
-import { DefaultBoardElementKMStrategy, BoardKMStrategy } from "../km-strategy/km-strategy";
+import { DefaultBoardElementKMStrategy, BoardKMTStrategy } from "../km-strategy/km-strategy";
 import * as AttributeChangeCommands from "../attribute-change-command";
 import { CameraObserver, CameraState, CameraEventMapping} from "../camera-observer/camera-observer";
 
@@ -45,7 +45,7 @@ export default class BoardElement extends HTMLElement{
 
     private _touchStrategy: BoardTouchStrategy;
     private _trackpadStrategy: BoardTrackpadStrategy;
-    private _keyboardMouseStrategy: BoardKMStrategy;
+    private _keyboardMouseStrategy: BoardKMTStrategy;
 
     private _debugMode: boolean = false;
     private mousePos: Point = {x: 0, y: 0};
@@ -254,11 +254,11 @@ export default class BoardElement extends HTMLElement{
         return this._trackpadStrategy;
     }
 
-    set keyboardMouseStrategy(strategy: BoardKMStrategy){
+    set keyboardMouseStrategy(strategy: BoardKMTStrategy){
         this._keyboardMouseStrategy = strategy;
     }
 
-    get keyboardMouseStrategy(): BoardKMStrategy{
+    get keyboardMouseStrategy(): BoardKMTStrategy{
         return this._keyboardMouseStrategy;
     }
 

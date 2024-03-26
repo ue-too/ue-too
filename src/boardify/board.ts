@@ -1,10 +1,9 @@
 import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import {BoardTouchStrategy, TwoFingerPanZoom} from "../touch-strategy";
-import { BoardTrackpadStrategy, DefaultBoardTrackpadStrategy} from "../trackpad-strategy";
-import { BoardKMStrategy, DefaultBoardKMStrategy } from "../km-strategy";
-import { CameraState, CameraEventMapping} from "../camera-observer/camera-observer";
+import { BoardTouchStrategy, TwoFingerPanZoom } from "../touch-strategy";
+import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../km-strategy";
+import { CameraState, CameraEventMapping } from "../camera-observer/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
@@ -56,8 +55,7 @@ export default class Board {
     private lastUpdateTime: number;
 
     private _touchStrategy: BoardTouchStrategy;
-    private _trackpadStrategy: BoardTrackpadStrategy;
-    private _keyboardMouseStrategy: BoardKMStrategy;
+    private _keyboardMouseTrackpadStrategy: BoardKMTStrategy;
 
     private _limitEntireViewPort: boolean = true;
 
@@ -96,8 +94,7 @@ export default class Board {
         this.bindFunctions();
 
         this._touchStrategy = new TwoFingerPanZoom(this._canvas, this._camera, this._limitEntireViewPort);
-        this._trackpadStrategy = new DefaultBoardTrackpadStrategy(this._canvas, this._camera, this._limitEntireViewPort);
-        this._keyboardMouseStrategy = new DefaultBoardKMStrategy(this._canvas, this._camera, this._limitEntireViewPort);
+        this._keyboardMouseTrackpadStrategy = new DefaultBoardKMTStrategy(this._canvas, this._camera, this._limitEntireViewPort);
 
         this._debugMode = false;
 
@@ -409,7 +406,7 @@ export default class Board {
 
     set debugMode(value: boolean){
         this._debugMode = value;
-        this._keyboardMouseStrategy.debugMode = value;
+        this._keyboardMouseTrackpadStrategy.debugMode = value;
     }
 
     /**
@@ -436,32 +433,17 @@ export default class Board {
 
     /**
      * @group Control Strategy
-     * @accessorDescription The current strategy the board is using for trackpad events
-     */
-    set trackpadStrategy(strategy: BoardTrackpadStrategy){
-        this._trackpadStrategy.tearDown();
-        strategy.limitEntireViewPort = this._limitEntireViewPort;
-        this._trackpadStrategy = strategy;
-        this._trackpadStrategy.setUp();
-    }
-
-    get trackpadStrategy(): BoardTrackpadStrategy{
-        return this._trackpadStrategy;
-    }
-
-    /**
-     * @group Control Strategy
      * @accessorDescription The current strategy the board is using for keyboard and mouse events
      */
-    set keyboardMouseStrategy(strategy: BoardKMStrategy){
-        this._keyboardMouseStrategy.tearDown();
+    set keyboardMouseStrategy(strategy: BoardKMTStrategy){
+        this._keyboardMouseTrackpadStrategy.tearDown();
         strategy.limitEntireViewPort = this._limitEntireViewPort;
-        this._keyboardMouseStrategy = strategy;
-        this._keyboardMouseStrategy.setUp();
+        this._keyboardMouseTrackpadStrategy = strategy;
+        this._keyboardMouseTrackpadStrategy.setUp();
     }
 
-    get keyboardMouseStrategy(): BoardKMStrategy{
-        return this._keyboardMouseStrategy;
+    get keyboardMouseStrategy(): BoardKMTStrategy{
+        return this._keyboardMouseTrackpadStrategy;
     }
 
     /**
@@ -524,9 +506,8 @@ export default class Board {
      */
     set limitEntireViewPort(value: boolean){
         this._limitEntireViewPort = value;
-        this._trackpadStrategy.limitEntireViewPort = value;
         this._touchStrategy.limitEntireViewPort = value;
-        this._keyboardMouseStrategy.limitEntireViewPort = value;
+        this._keyboardMouseTrackpadStrategy.limitEntireViewPort = value;
         if(value){
             this.adjustZoomLevelBaseOnDimensions();
         }
@@ -653,9 +634,8 @@ export default class Board {
      * @translation Register the event listeners this is called in the constructor; This is also where the board setup the control input strategies
      * */
     registerEventListeners(){
-        this._trackpadStrategy.setUp();
         this._touchStrategy.setUp();
-        this._keyboardMouseStrategy.setUp();
+        this._keyboardMouseTrackpadStrategy.setUp();
         this._canvas.addEventListener('pointermove', this.pointerMoveHandler);
         this._canvas.addEventListener('pointerdown', this.pointerDownHandler);
     }
@@ -665,9 +645,8 @@ export default class Board {
      * that maange the lifecycle of the component
      */
     removeEventListeners(){
-        this._trackpadStrategy.tearDown();
         this._touchStrategy.tearDown();
-        this._keyboardMouseStrategy.tearDown();
+        this._keyboardMouseTrackpadStrategy.tearDown();
         this._canvas.removeEventListener('pointermove', this.pointerMoveHandler);
         this._canvas.removeEventListener('pointerdown', this.pointerDownHandler);
     }
