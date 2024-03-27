@@ -883,16 +883,21 @@ export default class Board {
         let subDivisor = divisor / 10;
         let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
-        let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
-        let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
+        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.floor(topLeftCorner.y / subDivisor) * subDivisor : Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor : Math.floor(topLeftCorner.y / subDivisor) * subDivisor;;
 
         for(let i = minHorizontalSmallTick; i <= maxHorizontalSmallTick; i += subDivisor){
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
             context.lineWidth = 0.5 / this._camera.getZoomLevel();
-            context.moveTo(i, -topLeftCorner.y);
-            context.lineTo(i, -topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            if(this._alignCoordinateSystem){
+                context.moveTo(i, topLeftCorner.y);
+                context.lineTo(i, topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            } else {
+                context.moveTo(i, -topLeftCorner.y);
+                context.lineTo(i, -topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            }
             context.stroke();
         }
         for(let i = minVerticalSmallTick; i <= maxVerticalSmallTick; i += subDivisor){
@@ -900,8 +905,13 @@ export default class Board {
             context.strokeStyle = "black";
             context.fillStyle = "black";
             context.lineWidth = 0.5 / this._camera.getZoomLevel();
-            context.moveTo(topLeftCorner.x, -i);
-            context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), -i);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(topLeftCorner.x, -i);
+                context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), -i);
+            } else {
+                context.moveTo(topLeftCorner.x, i);
+                context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), i);
+            }
             context.stroke();
         }
     }
@@ -929,15 +939,15 @@ export default class Board {
         let subDivisor = divisor / 10;
         let minHorizontalLargeTick = Math.ceil(topLeftCorner.x / divisor) * divisor;
         let maxHorizontalLargeTick = Math.floor(topRightCorner.x / divisor) * divisor;
-        let minVerticalLargeTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / divisor) * divisor : Math.ceil(bottomLeftCorner.y / divisor) * divisor;
+        let minVerticalLargeTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / divisor) * divisor : Math.floor(bottomLeftCorner.y / divisor) * divisor;
         let maxVerticalLargeTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / divisor) * divisor : Math.ceil(topLeftCorner.y / divisor) * divisor;
         let minHorizontalMediumTick = Math.ceil(topLeftCorner.x / halfDivisor) * halfDivisor;
         let maxHorizontalMediumTick = Math.floor(topRightCorner.x / halfDivisor) * halfDivisor;
-        let minVerticalMediumTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor : Math.ceil(bottomLeftCorner.y / halfDivisor) * halfDivisor;
+        let minVerticalMediumTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor : Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor;
         let maxVerticalMediumTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor : Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor;
         let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
-        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / subDivisor) * subDivisor : Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / subDivisor) * subDivisor : Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor;
         let maxVerticalSmallTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor : Math.ceil(topLeftCorner.y / subDivisor) * subDivisor;
        
         let divisorInActualPixel = divisor * this._camera.getZoomLevel();
