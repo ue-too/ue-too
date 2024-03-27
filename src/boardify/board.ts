@@ -929,16 +929,16 @@ export default class Board {
         let subDivisor = divisor / 10;
         let minHorizontalLargeTick = Math.ceil(topLeftCorner.x / divisor) * divisor;
         let maxHorizontalLargeTick = Math.floor(topRightCorner.x / divisor) * divisor;
-        let minVerticalLargeTick = Math.ceil(topLeftCorner.y / divisor) * divisor;
-        let maxVerticalLargeTick = Math.floor(bottomLeftCorner.y / divisor) * divisor;
+        let minVerticalLargeTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / divisor) * divisor : Math.ceil(bottomLeftCorner.y / divisor) * divisor;
+        let maxVerticalLargeTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / divisor) * divisor : Math.ceil(topLeftCorner.y / divisor) * divisor;
         let minHorizontalMediumTick = Math.ceil(topLeftCorner.x / halfDivisor) * halfDivisor;
         let maxHorizontalMediumTick = Math.floor(topRightCorner.x / halfDivisor) * halfDivisor;
-        let minVerticalMediumTick = Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor;
-        let maxVerticalMediumTick = Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor;
+        let minVerticalMediumTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor : Math.ceil(bottomLeftCorner.y / halfDivisor) * halfDivisor;
+        let maxVerticalMediumTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor : Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor;
         let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
-        let minVerticalSmallTick = Math.ceil(topLeftCorner.y / subDivisor) * subDivisor;
-        let maxVerticalSmallTick = Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / subDivisor) * subDivisor : Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor : Math.ceil(topLeftCorner.y / subDivisor) * subDivisor;
        
         let divisorInActualPixel = divisor * this._camera.getZoomLevel();
         let halfDivisorInActualPixel = halfDivisor * this._camera.getZoomLevel();
@@ -958,14 +958,16 @@ export default class Board {
             context.lineWidth = 5 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 50 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
-            }
-            context.moveTo(resPoint.x, resPoint.y);
-            if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -50 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
@@ -973,11 +975,11 @@ export default class Board {
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
             if(!this._alignCoordinateSystem){
                 resPoint = PointCal.addVector(resPoint, {x: 0, y: -height / 2 - height * 0.2})
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , -resPoint.y);
             } else {
                 resPoint = PointCal.addVector(resPoint, {x: 0, y: height / 2 + height * 0.2})
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , resPoint.y);
             }
-            context.fillText(`${i.toFixed(0)}`, resPoint.x , resPoint.y);
             context.stroke();
         }
         for(let i = minVerticalLargeTick; i <= maxVerticalLargeTick; i += divisor){
@@ -987,14 +989,16 @@ export default class Board {
             context.lineWidth = 5 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -50 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
-            context.moveTo(resPoint.x, resPoint.y);
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 50 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
             }
-            context.lineTo(resPoint.x, resPoint.y);
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
@@ -1002,9 +1006,10 @@ export default class Board {
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             resPoint = PointCal.addVector(resPoint, {x: textDimensions.width / 2 + textDimensions.width * 0.3, y: 0});
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, -resPoint.y);
+            } else {
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, resPoint.y);
             }
-            context.fillText(`${i.toFixed(0)}`, resPoint.x, resPoint.y);
             context.stroke();
         }
         for(let i = minHorizontalMediumTick; i <= maxHorizontalMediumTick; i += halfDivisor){
@@ -1015,14 +1020,16 @@ export default class Board {
             context.lineWidth = 3 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 25 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
-            context.moveTo(resPoint.x, resPoint.y);
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -25 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
             }
-            context.lineTo(resPoint.x, resPoint.y);
             context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             if(halfDivisorInActualPixel > midBaseLineTextDimensions.width * 2) {
@@ -1047,14 +1054,16 @@ export default class Board {
             context.lineWidth = 3 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -25 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
-            context.moveTo(resPoint.x, resPoint.y);
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 25 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
             }
-            context.lineTo(resPoint.x, resPoint.y);
             context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
@@ -1077,14 +1086,16 @@ export default class Board {
             context.lineWidth = 1 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 12.5 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
-            context.moveTo(resPoint.x, resPoint.y);
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -12.5 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
             }
-            context.lineTo(resPoint.x, resPoint.y);
             context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             if(subDivisorInActualPixel > subBaseLineTextDimensions.width * 2) {
@@ -1109,14 +1120,16 @@ export default class Board {
             context.lineWidth = 1 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -12.5 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
             }
-            context.moveTo(resPoint.x, resPoint.y);
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 12.5 / this._camera.getZoomLevel()));
             if(!this._alignCoordinateSystem){
-                resPoint = PointCal.flipYAxis(resPoint);
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
             }
-            context.lineTo(resPoint.x, resPoint.y);
             context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
