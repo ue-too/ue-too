@@ -126,7 +126,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             const target = {x: e.clientX, y: e.clientY};
             let diff = PointCal.subVector(this.dragStartPoint, target);
             if(!this._alignCoordinateSystem){
-                diff = {x: diff.x, y: -diff.y};
+                diff = PointCal.flipYAxis(diff);
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
@@ -147,9 +147,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
-            const diff = {x: e.deltaX, y: e.deltaY};
+            let diff = {x: e.deltaX, y: e.deltaY};
             if(!this._alignCoordinateSystem){
-                diff.y = -diff.y;
+                diff = PointCal.flipYAxis(diff);
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.getZoomLevel());
@@ -166,7 +166,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             let anchorPoint = PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top});
             if(!this._alignCoordinateSystem){
                 anchorPoint = PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom});
-                anchorPoint = {x: anchorPoint.x, y: -anchorPoint.y};
+                anchorPoint = PointCal.flipYAxis(anchorPoint);
             }
             const zoomLevel = this.camera.getZoomLevel() - (this.camera.getZoomLevel() * zoomAmount * 5);
             if(this._limitEntireViewPort){
