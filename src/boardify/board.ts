@@ -1,7 +1,7 @@
 import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import { BoardTouchStrategy, TwoFingerPanZoom } from "../touch-strategy";
+import { BoardTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom } from "../touch-strategy";
 import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../kmt-strategy";
 import { CameraState, CameraEventMapping } from "../camera-observer/camera-observer";
 
@@ -67,7 +67,7 @@ export default class Board {
 
     private _displayGrid: boolean = false;
     private _displayRuler: boolean = false;
-    private _alignCoordinateSystem: boolean = false;
+    private _alignCoordinateSystem: boolean = true;
 
     /**
      * @translation The observer mainly for the width and height of the canvas element
@@ -94,8 +94,8 @@ export default class Board {
 
         this.bindFunctions();
 
-        this._touchStrategy = new TwoFingerPanZoom(this._canvas, this._camera, this._limitEntireViewPort);
-        this._keyboardMouseTrackpadStrategy = new DefaultBoardKMTStrategy(this._canvas, this._camera, this._limitEntireViewPort);
+        this._touchStrategy = new OneFingerPanTwoFingerZoom(this._canvas, this._camera, this._limitEntireViewPort, this._alignCoordinateSystem);
+        this._keyboardMouseTrackpadStrategy = new DefaultBoardKMTStrategy(this._canvas, this._camera, this._limitEntireViewPort, this._alignCoordinateSystem);
 
         this._debugMode = false;
 
