@@ -75,6 +75,10 @@ jobs:
           git add package.json
           git commit -m "chore: bump ${{github.event.inputs.version-type}} version to ${{ steps.get-version.outputs.version }}"
           git push
+      - name: Determine release branch
+        id: get-branch
+        run: |
+          echo "branch=release/${{ steps.get-version.outputs.version }}" >> $GITHUB_OUTPUT
       - name: Create release
         env:
           GH_TOKEN: ${{ secrets.PAT }}
@@ -83,6 +87,7 @@ jobs:
           gh release create "$tag" \
               --repo="$GITHUB_REPOSITORY" \
               --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --target="${{ steps.get-branch.outputs.branch }}" \
               --generate-notes
               for file in ./dist/*; do
                 gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
