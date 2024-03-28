@@ -67,6 +67,7 @@ export default class Board {
 
     private _displayGrid: boolean = false;
     private _displayRuler: boolean = false;
+    private _alignCoordinateSystem: boolean = false;
 
     /**
      * @translation The observer mainly for the width and height of the canvas element
@@ -163,6 +164,15 @@ export default class Board {
             this.width = window.innerWidth;
             this.height = window.innerHeight;
         }
+    }
+
+    get alignCoordinateSystem(): boolean{
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(value: boolean){
+        this._alignCoordinateSystem = value;
+        this._keyboardMouseTrackpadStrategy.alignCoordinateSystem = value;
     }
 
     /**
@@ -601,8 +611,13 @@ export default class Board {
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
         this._context.scale(this._camera.getZoomLevel(), this._camera.getZoomLevel());
-        this._context.rotate(this._camera.getRotation());
-        this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
+        if (this._alignCoordinateSystem){
+            this._context.rotate(-this._camera.getRotation());
+            this._context.translate(-this._camera.getPosition().x,  -this._camera.getPosition().y);
+        } else {
+            this._context.rotate(this._camera.getRotation());
+            this._context.translate(-this._camera.getPosition().x,  this._camera.getPosition().y);
+        }
 
         this._camera.step(deltaTime);
 
@@ -708,7 +723,11 @@ export default class Board {
      */
     convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
         const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        return {x: res.x, y: -res.y};
+        if(this._alignCoordinateSystem) {
+            return {x: res.x, y: res.y};
+        } else {
+            return {x: res.x, y: -res.y};
+        }
     }
 
     /**
@@ -717,8 +736,13 @@ export default class Board {
      * @returns 
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
-        const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-        return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        if(this._alignCoordinateSystem){
+            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
+            return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        } else {
+            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
+            return this._camera.convert2WorldSpace(pointInCameraViewPort);
+        }
     }
 
     /**
@@ -740,7 +764,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         context.moveTo(0, 0);
-        context.lineTo(0, -curMinY + (-this.maxHalfTransHeight * 2));
+        if(this._alignCoordinateSystem){
+            context.lineTo(0, curMinY + (this.maxHalfTransHeight * 2));
+        } else {
+            context.lineTo(0, -curMinY - (this.maxHalfTransHeight * 2));
+        }
         context.stroke();
         
         // x axis
@@ -761,7 +789,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = `rgba(87, 173, 72, 0.8)`;
         // context.moveTo(pos.x, -pos.y);
-        context.arc(pos.x, -pos.y, 5, 0, 2 * Math.PI);
+        if(this._alignCoordinateSystem){
+            context.arc(pos.x, pos.y, 5, 0, 2 * Math.PI);
+        } else {
+            context.arc(pos.x, -pos.y, 5, 0, 2 * Math.PI);
+        }
         context.stroke();
     }
 
@@ -781,7 +813,11 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = "blue";
         context.lineWidth = 100;
-        context.roundRect(curMinX, -curMinY, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2, 5);
+        if(this._alignCoordinateSystem){
+            context.roundRect(curMinX, curMinY, this.maxHalfTransWidth * 2, this.maxHalfTransHeight * 2, 5);
+        } else {
+            context.roundRect(curMinX, -curMinY, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2, 5);
+        }
         context.stroke();
         context.lineWidth = 3;
     }
@@ -801,10 +837,17 @@ export default class Board {
         context.beginPath();
         context.strokeStyle = color;
         context.lineWidth = 2 / this._camera.getZoomLevel();
-        context.moveTo(pos.x - halfSize, -pos.y);
-        context.lineTo(pos.x + halfSize, -pos.y);
-        context.moveTo(pos.x, -pos.y - halfSize);
-        context.lineTo(pos.x, -pos.y + halfSize);
+        if(this._alignCoordinateSystem){
+            context.moveTo(pos.x - halfSize, pos.y);
+            context.lineTo(pos.x + halfSize, pos.y);
+            context.moveTo(pos.x, pos.y - halfSize);
+            context.lineTo(pos.x, pos.y + halfSize);
+        } else {
+            context.moveTo(pos.x - halfSize, -pos.y);
+            context.lineTo(pos.x + halfSize, -pos.y);
+            context.moveTo(pos.x, -pos.y - halfSize);
+            context.lineTo(pos.x, -pos.y + halfSize);
+        }
         context.stroke();
         context.lineWidth = 3;
     }
@@ -840,16 +883,21 @@ export default class Board {
         let subDivisor = divisor / 10;
         let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
-        let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
-        let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
+        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.floor(topLeftCorner.y / subDivisor) * subDivisor : Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor : Math.floor(topLeftCorner.y / subDivisor) * subDivisor;;
 
         for(let i = minHorizontalSmallTick; i <= maxHorizontalSmallTick; i += subDivisor){
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
             context.lineWidth = 0.5 / this._camera.getZoomLevel();
-            context.moveTo(i, -topLeftCorner.y);
-            context.lineTo(i, -topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            if(this._alignCoordinateSystem){
+                context.moveTo(i, topLeftCorner.y);
+                context.lineTo(i, topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            } else {
+                context.moveTo(i, -topLeftCorner.y);
+                context.lineTo(i, -topLeftCorner.y + this.height / this._camera.getZoomLevel());
+            }
             context.stroke();
         }
         for(let i = minVerticalSmallTick; i <= maxVerticalSmallTick; i += subDivisor){
@@ -857,8 +905,13 @@ export default class Board {
             context.strokeStyle = "black";
             context.fillStyle = "black";
             context.lineWidth = 0.5 / this._camera.getZoomLevel();
-            context.moveTo(topLeftCorner.x, -i);
-            context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), -i);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(topLeftCorner.x, -i);
+                context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), -i);
+            } else {
+                context.moveTo(topLeftCorner.x, i);
+                context.lineTo(topLeftCorner.x + this.width / this._camera.getZoomLevel(), i);
+            }
             context.stroke();
         }
     }
@@ -886,16 +939,16 @@ export default class Board {
         let subDivisor = divisor / 10;
         let minHorizontalLargeTick = Math.ceil(topLeftCorner.x / divisor) * divisor;
         let maxHorizontalLargeTick = Math.floor(topRightCorner.x / divisor) * divisor;
-        let minVerticalLargeTick = Math.ceil(bottomLeftCorner.y / divisor) * divisor;
-        let maxVerticalLargeTick = Math.floor(topLeftCorner.y / divisor) * divisor;
+        let minVerticalLargeTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / divisor) * divisor : Math.floor(bottomLeftCorner.y / divisor) * divisor;
+        let maxVerticalLargeTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / divisor) * divisor : Math.ceil(topLeftCorner.y / divisor) * divisor;
         let minHorizontalMediumTick = Math.ceil(topLeftCorner.x / halfDivisor) * halfDivisor;
         let maxHorizontalMediumTick = Math.floor(topRightCorner.x / halfDivisor) * halfDivisor;
-        let minVerticalMediumTick = Math.ceil(bottomLeftCorner.y / halfDivisor) * halfDivisor;
-        let maxVerticalMediumTick = Math.floor(topLeftCorner.y / halfDivisor) * halfDivisor;
+        let minVerticalMediumTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor : Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor;
+        let maxVerticalMediumTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / halfDivisor) * halfDivisor : Math.ceil(topLeftCorner.y / halfDivisor) * halfDivisor;
         let minHorizontalSmallTick = Math.ceil(topLeftCorner.x / subDivisor) * subDivisor;
         let maxHorizontalSmallTick = Math.floor(topRightCorner.x / subDivisor) * subDivisor;
-        let minVerticalSmallTick = Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
-        let maxVerticalSmallTick = Math.floor(topLeftCorner.y / subDivisor) * subDivisor;
+        let minVerticalSmallTick = this._alignCoordinateSystem ? Math.ceil(topLeftCorner.y / subDivisor) * subDivisor : Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor;
+        let maxVerticalSmallTick = this._alignCoordinateSystem ? Math.floor(bottomLeftCorner.y / subDivisor) * subDivisor : Math.ceil(topLeftCorner.y / subDivisor) * subDivisor;
        
         let divisorInActualPixel = divisor * this._camera.getZoomLevel();
         let halfDivisorInActualPixel = halfDivisor * this._camera.getZoomLevel();
@@ -914,15 +967,29 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 5 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 50 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -50 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
-            context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+            if(!this._alignCoordinateSystem){
+                resPoint = PointCal.addVector(resPoint, {x: 0, y: -height / 2 - height * 0.2})
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , -resPoint.y);
+            } else {
+                resPoint = PointCal.addVector(resPoint, {x: 0, y: height / 2 + height * 0.2})
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , resPoint.y);
+            }
             context.stroke();
         }
         for(let i = minVerticalLargeTick; i <= maxVerticalLargeTick; i += divisor){
@@ -931,15 +998,28 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 5 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -50 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 50 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.textAlign = "center";
             context.textBaseline = "middle";
             context.font = `bold ${20 / this._camera.getZoomLevel()}px Helvetica`;
             
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
-            context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+            resPoint = PointCal.addVector(resPoint, {x: textDimensions.width / 2 + textDimensions.width * 0.3, y: 0});
+            if(!this._alignCoordinateSystem){
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, -resPoint.y);
+            } else {
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, resPoint.y);
+            }
             context.stroke();
         }
         for(let i = minHorizontalMediumTick; i <= maxHorizontalMediumTick; i += halfDivisor){
@@ -949,16 +1029,30 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 3 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 25 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -25 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.font = `${15 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             if(halfDivisorInActualPixel > midBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
-                context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+                if(!this._alignCoordinateSystem){
+                    resPoint = PointCal.addVector(resPoint, {x: 0, y: -height / 2 - height * 0.2});
+                    resPoint = PointCal.flipYAxis(resPoint);
+                } else {
+                    resPoint = PointCal.addVector(resPoint, {x: 0, y: height / 2 + height * 0.2});
+                }
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , resPoint.y);
             }
             context.stroke();
         }
@@ -969,16 +1063,28 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 3 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -25 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 25 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.font = `${18 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
             if(halfDivisorInActualPixel > midBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+                resPoint = PointCal.addVector(resPoint, {x: textDimensions.width / 2 + textDimensions.width * 0.3, y: 0});
+                if(!this._alignCoordinateSystem){
+                    resPoint = PointCal.flipYAxis(resPoint);
+                }
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, resPoint.y );
             }
             context.stroke();
         }
@@ -989,16 +1095,30 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 1 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, 12.5 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(topDownDirection, -12.5 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.font = `${10 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             if(subDivisorInActualPixel > subBaseLineTextDimensions.width * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
                 const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
-                context.fillText(`${i.toFixed(0)}`, resPoint.x , -(resPoint.y - height / 2 - height * 0.2));
+                if(!this._alignCoordinateSystem){
+                    resPoint = PointCal.addVector(resPoint, {x: 0, y: -height / 2 - height * 0.2});
+                    resPoint = PointCal.flipYAxis(resPoint);
+                } else {
+                    resPoint = PointCal.addVector(resPoint, {x: 0, y: height / 2 + height * 0.2});
+                }
+                context.fillText(`${i.toFixed(0)}`, resPoint.x , resPoint.y);
             }
             context.stroke();
         }
@@ -1009,16 +1129,28 @@ export default class Board {
             context.fillStyle = "black";
             context.lineWidth = 1 / this._camera.getZoomLevel();
             let resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, -12.5 / this._camera.getZoomLevel()));
-            context.moveTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.moveTo(resPoint.x, -resPoint.y);
+            } else {
+                context.moveTo(resPoint.x, resPoint.y);
+            }
             resPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(leftRightDirection, 12.5 / this._camera.getZoomLevel()));
-            context.lineTo(resPoint.x, -resPoint.y);
+            if(!this._alignCoordinateSystem){
+                context.lineTo(resPoint.x, -resPoint.y);
+            } else {
+                context.lineTo(resPoint.x, resPoint.y);
+            }
             context.font = `${12 / this._camera.getZoomLevel()}px Helvetica`;
             const textDimensions = context.measureText(`${i.toFixed(0)}`);
             const height = textDimensions.fontBoundingBoxAscent + textDimensions.fontBoundingBoxDescent;
             if(subDivisorInActualPixel > subBaseLineHeight * 2) {
                 context.textAlign = "center";
                 context.textBaseline = "middle";
-                context.fillText(`${i.toFixed(0)}`, resPoint.x +  textDimensions.width / 2 + textDimensions.width * 0.3, -resPoint.y );
+                resPoint = PointCal.addVector(resPoint, {x: textDimensions.width / 2 + textDimensions.width * 0.3, y: 0});
+                if(!this._alignCoordinateSystem){
+                    resPoint = PointCal.flipYAxis(resPoint);
+                }
+                context.fillText(`${i.toFixed(0)}`, resPoint.x, resPoint.y );
             }
             context.stroke();
         }
@@ -1036,7 +1168,11 @@ export default class Board {
         offset = offset / this._camera.getZoomLevel();
         context.font = `${20 / this._camera.getZoomLevel()}px Arial`;
         context.fillStyle = color;
-        context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
+        if(this._alignCoordinateSystem){
+            context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, pos.y + offset);
+        } else {
+            context.fillText(`x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`, pos.x + offset, -pos.y - offset);
+        }
     }
 
     /**
