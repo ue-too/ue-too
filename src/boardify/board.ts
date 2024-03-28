@@ -543,9 +543,20 @@ export default class Board {
      * @translation The callback function for the window resize event
      */
     adjustZoomLevelBaseOnDimensions(){
+        const width = this.maxHalfTransWidth * 2;
+        const height = this.maxHalfTransHeight * 2;
+        const widthWidthProjection = Math.abs(width * Math.cos(this._camera.getRotation()));
+        const heightWidthProjection = Math.abs(height * Math.cos(this._camera.getRotation()));
+        const widthHeightProjection = Math.abs(width * Math.sin(this._camera.getRotation()));
+        const heightHeightProjection = Math.abs(height * Math.sin(this._camera.getRotation()));
+        const minZoomLevelWidthWidth = this._canvas.width / widthWidthProjection;
+        const minZoomLevelHeightWidth = this._canvas.width / heightWidthProjection;
+        const minZoomLevelWidthHeight = this._canvas.height / widthHeightProjection;
+        const minZoomLevelHeightHeight = this._canvas.height / heightHeightProjection;
+
         const minZoomLevelHeight = this._canvas.height / (this.maxHalfTransHeight * 2);
         const minZoomLevelWidth = this._canvas.width / (this.maxHalfTransWidth * 2);
-        const minZoomLevel = Math.max(minZoomLevelHeight, minZoomLevelWidth);
+        const minZoomLevel = Math.max(minZoomLevelHeight, minZoomLevelWidth, minZoomLevelWidthWidth, minZoomLevelHeightWidth, minZoomLevelWidthHeight, minZoomLevelHeightHeight);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
             console.log("min zoom level set to", this._camera.getZoomLevelLimits().min);
@@ -561,7 +572,9 @@ export default class Board {
             console.log("due to maxHalfTransWidth not being set, the zoom level bounds cannot be adjusted based on the width of the canvas");
             return;
         }
-        const minZoomLevel = this._canvas.width / (this.maxHalfTransWidth * 2);
+        const widthWidthProjection = Math.abs(this.maxHalfTransWidth * 2 * Math.cos(this._camera.getRotation()));
+        const widthHeightProjection = Math.abs(this.maxHalfTransWidth * 2 * Math.sin(this._camera.getRotation()));
+        const minZoomLevel = Math.max(this._canvas.width / widthWidthProjection, this._canvas.height / widthHeightProjection);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
         }
@@ -575,7 +588,12 @@ export default class Board {
         if(this.maxHalfTransHeight == undefined){
             return;
         }
-        const minZoomLevel = this._canvas.height / (this.maxHalfTransHeight * 2);
+        const heightWidthProjection = Math.abs(this.maxHalfTransHeight * 2 * Math.cos(this._camera.getRotation()));
+        const heightHeightProjection = Math.abs(this.maxHalfTransHeight * 2 * Math.sin(this._camera.getRotation()));
+        const minZoomLevelHeightWidth = this._canvas.width / heightWidthProjection;
+        const minZoomLevelHeightHeight = this._canvas.height / heightHeightProjection;
+        const minZoomLevel = Math.max(minZoomLevelHeightWidth, minZoomLevelHeightHeight);
+
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
         }
