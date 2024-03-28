@@ -291,3 +291,99 @@ If there is no clamping then the command would not take effect if the destinatio
 For example you can call the `moveWithClampFromGesture(delta: {x: number, y: number})` to "move" the camera to a position clamped inside the boundaries from gesture so that the restrictions imposed would limit this command. 
 
 The [documentation](https://niuee.github.io/board/index.html) has all the apis listed.
+
+## Camera Attributes
+
+### `restrict-{x-translation | y-translation | rotation | zoom}`
+This is to restrict any kind of input from the gestures (mouse-keyboard input, trackpad gesture, touch points) to move, rotate, or zoom the canvas.<br/>
+For Example, to limit the absolute x direction translation set the attribute restrict-x-translation on the html tag.
+
+This will restrict the ability to pan the canvas in x-direction.
+
+```javascript
+board.restrictXTranslation = true;
+```
+
+### `restrict-relative-{x-translation | y-translation}`
+This is to restrict any kind of input from the gestures (mouse-keyboard input, trackpad gesture, touch points) to move relative to the camera viewport.
+X is the left and right direction of the view port and Y is the up and down direction.
+
+```javascript
+board.restrictRelativeYTranslation = true;
+```
+
+### `full-screen`
+This is to set the dimensions of the canvas to be the same as `window.innerHeight` and `window.innerWidth`.<br/>
+This will override the `width` and `height` attribute.
+
+```javascript
+board.fullScreen = true;
+```
+
+### `width`
+
+This will change the width of the canvas element. 
+The Board class instance also listens to the attribute change of the underlying canvas element. So if you can also change the width of the canvas element; the board class instance will take care of the change under the hood.
+```javascript
+board.width = 300;
+```
+OR
+```html
+<canvas width="300"></canvas>
+```
+
+#### `height`
+
+This is to set the height of the canvas.
+This is similar to the width attribute. The board also listens to the height change of the canvas element it controls; you can change the height using JavasScript or directly in html.
+```javascript
+board.height = 300;
+```
+OR
+```html
+<canvas height="300"></canvas>
+```
+
+#### `control-step`
+This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically. Default is "true"(meaning that the canvas element would not call rAF itself the user would have to "control the step function"; I know it's kind of confusing I am still working on the name though)
+
+Setting this attribute to false the canvas would handle the calling of rAF and the user would just get the pan, zoom, and rotate functionality automatically. However, in this mode you would probably have to go into the source code of the canvas and add stuff to the step function to actually acheive anything.
+```javascript
+board.stepControl = false;
+```
+
+#### `debug-mode`
+This would switch on the debug mode for the canvas. Currently, the debug mode is drawing the reference circle in green, the axis in their respective color, the bounding box in blue. The cursor icon would be replaced with a red crosshair and at the top right to the crosshair would be the position of the cursor in world coordinate.
+
+The `Board` way.
+```javascript
+board.debugMode = true;
+```
+
+#### `max-half-trans-width`
+This is to set the horizontal boundaries for the viewport. (where the camera can move to) Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Left and right both gets the same value. The entire horizontal boundary is then 2 * half width wide. 
+
+```javascript
+board.maxHalfTransWidth = 1000;
+```
+
+#### `max-half-trans-height`
+This is to set the vertical boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Top and bottom both gets the same value. The entire vertical boundary is then 2 * half width wide. 
+
+The `Board` way.
+```javascript
+board.maxHalfTransHeight = 1000;
+```
+
+#### `grid`
+This is to toggle the grid displayed on the canvas. The spacing currently is not adjustable; it is the same as the ruler (it flexible depending on the zoom).
+
+```javascript
+board.displayGrid = true;
+```
+
+#### `ruler`
+This is to toggle the ruler displayed on the canvas. The spacing depends on the zoom level.
+```javascript
+board.displayRuler = true;
+```
