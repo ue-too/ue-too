@@ -1,6 +1,6 @@
 {
   "name": "@niuee/board",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "./build/index.cjs",
   "module": "./build/index.mjs",
