@@ -1,19 +1,13 @@
 import BoardCamera from "../board-camera/board-camera";
 import { Point } from "..";
 import { PointCal } from "point2point";
-import { BoardTouchStrategy, TwoFingerPanZoom, OneFingerPanTwoFingerZoom } from "../touch-strategy";
+import { BoardTouchStrategy, OneFingerPanTwoFingerZoom } from "../touch-strategy";
 import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../kmt-strategy";
 import { CameraState, CameraEventMapping } from "../camera-observer/camera-observer";
 
 import { calculateOrderOfMagnitude } from "../util";
 
 /**
- * @translation This is the recommended way to use the library. @niuee/board provides a custom web component (BoardElement) as an alternative.
- * However, the canvas element is attached to the shadow dom of the BoardElement, 
- * which makes it harder to use css to directly alter the styling of the canvas element.
- * 
- * 
- *
  * @category Board
  * @translationBlock Usage
  * ```typescript
@@ -34,9 +28,8 @@ import { calculateOrderOfMagnitude } from "../util";
  * //.
  * }
  * ```
- * @translationBlock Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.
+ * @translationBlock Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though.
  * 
- * However, this does not apply if you are using the cdn or bundled version of the package.
  * ```typescript
  * import {Board} from "@niuee/board/boardify";
  * ```
@@ -75,11 +68,6 @@ export default class Board {
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
 
-    /**
-     * @translation Board constructor
-     * @constructor
-     * @param {HTMLCanvasElement} canvas - The canvas element for the board to extend its capabilities
-     */
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
         this._context = canvas.getContext("2d");
@@ -113,8 +101,6 @@ export default class Board {
 
     /**
      * @translation Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two) 
-     * @param mutationsList 
-     * @param observer 
      */
     attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
@@ -155,9 +141,6 @@ export default class Board {
         return this._fullScreenFlag;
     }
 
-    /**
-     * @accessorDescription Line from setter.
-     */
     set fullScreen(value: boolean) {
         this._fullScreenFlag = value;
         if(this._fullScreenFlag){
@@ -166,6 +149,11 @@ export default class Board {
         }
     }
 
+    /**
+     * @group Attribute
+     * @accessorDescription Align the coordinate system to the canvas element; this is useful when you want to draw on the canvas element directly.
+     * The default is true.
+     */
     get alignCoordinateSystem(): boolean{
         return this._alignCoordinateSystem;
     }
@@ -215,6 +203,7 @@ export default class Board {
 
     /**
      * @accessorDescription The flag for step control handover. If this is set to true, the board will not call requestAnimationFrame by itself.
+     * The default is false.
      */
     set stepControl(value: boolean){
         this._handOverStepControl = value;
@@ -445,14 +434,14 @@ export default class Board {
      * @group Control Strategy
      * @accessorDescription The current strategy the board is using for keyboard and mouse events
      */
-    set keyboardMouseStrategy(strategy: BoardKMTStrategy){
+    set keyboardMouseTrackpadStrategy(strategy: BoardKMTStrategy){
         this._keyboardMouseTrackpadStrategy.tearDown();
         strategy.limitEntireViewPort = this._limitEntireViewPort;
         this._keyboardMouseTrackpadStrategy = strategy;
         this._keyboardMouseTrackpadStrategy.setUp();
     }
 
-    get keyboardMouseStrategy(): BoardKMTStrategy{
+    get keyboardMouseTrackpadStrategy(): BoardKMTStrategy{
         return this._keyboardMouseTrackpadStrategy;
     }
 
@@ -699,7 +688,7 @@ export default class Board {
      * @param e 
      */
     pointerDownHandler(e: PointerEvent) {
-        console.log("clicked at", this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY}));
+        console.log("clicked at", PointCal.flipYAxis(this.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY})));
         console.log("camera boundaries", this._camera.getBoundaries());
     }
 
