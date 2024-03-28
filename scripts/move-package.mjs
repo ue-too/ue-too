@@ -1,6 +1,6 @@
 import data from "../package.json" assert { type: "json" };
 data.main = "./index.cjs";
-data.module = "./index.js";
+data.module = "./index.mjs";
 data.types = "./index.d.ts";
 data.scripts = { test: "echo \"Error: no test specified\" && exit 1"};
 
