@@ -5,7 +5,7 @@ const l10nCode = process.argv[2];
 try{
     if (!l10nCode) {
         cpSync(resolve("./", "docs-staging/en"), resolve("./", "docs/"), {recursive: true});
-        cpSync(resolve("./", `translations/staging/en`), resolve("./", `translations/prod/en`), {recursive: true});
+        // cpSync(resolve("./", `translations/staging/en`), resolve("./", `translations/prod/en`), {recursive: true});
     } else {
         cpSync(resolve("./", `docs-staging/${l10nCode}`), resolve("./", `docs/${l10nCode}`), {recursive: true});
         cpSync(resolve("./", `translations/staging/${l10nCode}`), resolve("./", `translations/prod/${l10nCode}`), {recursive: true});
