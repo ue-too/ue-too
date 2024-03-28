@@ -30,7 +30,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
 
-    constructor(canvas: HTMLCanvasElement, camera:BoardCamera, limitEntireViewPort: boolean = true, debugMode: boolean = false, alignCoordinateSystem: boolean = false){
+    constructor(canvas: HTMLCanvasElement, camera:BoardCamera, limitEntireViewPort: boolean = true, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.isDragging = false;
         this.canvas = canvas;
