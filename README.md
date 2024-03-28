@@ -332,7 +332,7 @@ OR
 <canvas width="300"></canvas>
 ```
 
-#### `height`
+### `height`
 
 This is to set the height of the canvas.
 This is similar to the width attribute. The board also listens to the height change of the canvas element it controls; you can change the height using JavasScript or directly in html.
@@ -344,7 +344,7 @@ OR
 <canvas height="300"></canvas>
 ```
 
-#### `control-step`
+### `control-step`
 This is to prevent the canvas from calling the `window.requestAnimationFrame` automatically. Default is "true"(meaning that the canvas element would not call rAF itself the user would have to "control the step function"; I know it's kind of confusing I am still working on the name though)
 
 Setting this attribute to false the canvas would handle the calling of rAF and the user would just get the pan, zoom, and rotate functionality automatically. However, in this mode you would probably have to go into the source code of the canvas and add stuff to the step function to actually acheive anything.
@@ -352,7 +352,7 @@ Setting this attribute to false the canvas would handle the calling of rAF and t
 board.stepControl = false;
 ```
 
-#### `debug-mode`
+### `debug-mode`
 This would switch on the debug mode for the canvas. Currently, the debug mode is drawing the reference circle in green, the axis in their respective color, the bounding box in blue. The cursor icon would be replaced with a red crosshair and at the top right to the crosshair would be the position of the cursor in world coordinate.
 
 The `Board` way.
@@ -360,14 +360,14 @@ The `Board` way.
 board.debugMode = true;
 ```
 
-#### `max-half-trans-width`
+### `max-half-trans-width`
 This is to set the horizontal boundaries for the viewport. (where the camera can move to) Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Left and right both gets the same value. The entire horizontal boundary is then 2 * half width wide. 
 
 ```javascript
 board.maxHalfTransWidth = 1000;
 ```
 
-#### `max-half-trans-height`
+### `max-half-trans-height`
 This is to set the vertical boundaries for the viewport. Currently, the boundaries are set mirrored at the origin. Hence the "half" in the attribute name. Top and bottom both gets the same value. The entire vertical boundary is then 2 * half width wide. 
 
 The `Board` way.
@@ -375,14 +375,14 @@ The `Board` way.
 board.maxHalfTransHeight = 1000;
 ```
 
-#### `grid`
+### `grid`
 This is to toggle the grid displayed on the canvas. The spacing currently is not adjustable; it is the same as the ruler (it flexible depending on the zoom).
 
 ```javascript
 board.displayGrid = true;
 ```
 
-#### `ruler`
+### `ruler`
 This is to toggle the ruler displayed on the canvas. The spacing depends on the zoom level.
 ```javascript
 board.displayRuler = true;
