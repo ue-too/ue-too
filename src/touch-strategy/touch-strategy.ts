@@ -36,7 +36,7 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
+    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = true){
         this.canvas = canvas;
         this.camera = camera;
         this.touchcancelHandler = this.touchcancelHandler.bind(this);
@@ -317,7 +317,7 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(controlCamera: BoardCamera, canvas: HTMLCanvasElement, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
+    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
         this.controlCamera = controlCamera;
         this.canvas = canvas;
         this._disabled = false;
@@ -442,18 +442,28 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
                 midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
             }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.getZoomLevel() * this.ZOOM_SENSATIVITY;
-            this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
+            if(this._limitEntireViewPort){
+                this.controlCamera.setZoomLevelWithClampEntireViewPortFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
+            } else {
+                this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
+            }
+            // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
         } else if(e.targetTouches.length == 1 && this.isDragging){
             let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let diff = PointCal.subVector(this.dragStartPoint, touchPoint);
             if(!this._alignCoordinateSystem){
-                diff.y = -diff.y;
+                diff = PointCal.flipYAxis(diff);
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.getRotation());
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.getZoomLevel());
-            this.controlCamera.moveWithClampFromGesture(diffInWorld);
+            if(this._limitEntireViewPort){
+                this.controlCamera.moveWithClampEntireViewPortFromGesture(diffInWorld);
+            } else {
+                this.controlCamera.moveWithClampFromGesture(diffInWorld);
+            }
+            // this.controlCamera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;
         }
