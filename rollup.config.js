@@ -158,13 +158,13 @@ export default [
       file: 'build/umd/index.js',
       format: 'umd',
       name: "Board",
-      sourcemap: false
+      sourcemap: true
     },
     {
       file: 'build/iife/index.js',
       format: 'iife',
       name: "Board",
-      sourcemap: false
+      sourcemap: true
     }
     ],
     plugins: [
