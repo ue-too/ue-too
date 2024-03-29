@@ -10,6 +10,9 @@ export interface BoardKMTStrategy {
     disabled: boolean;
     debugMode: boolean;
     alignCoordinateSystem: boolean;
+    panDisabled: boolean;
+    zoomDisabled: boolean;
+    rotateDisabled: boolean;
     setUp(): void;
     tearDown(): void;
     enableStrategy(): void;
@@ -29,6 +32,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _limitEntireViewPort: boolean;
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
+    private _panDisabled: boolean = false;
+    private _zoomDisabled: boolean = false;
+    private _rotateDisabled: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, camera:BoardCamera, limitEntireViewPort: boolean = true, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
@@ -66,6 +72,30 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set alignCoordinateSystem(value: boolean){
         this._alignCoordinateSystem = value;
+    }
+
+    get panDisabled(): boolean {
+        return this._panDisabled;
+    }
+
+    set panDisabled(value: boolean){
+        this._panDisabled = value;
+    }
+
+    get zoomDisabled(): boolean {
+        return this._zoomDisabled;
+    }
+
+    set zoomDisabled(value: boolean){
+        this._zoomDisabled = value;
+    }
+
+    get rotateDisabled(): boolean {
+        return this._rotateDisabled;
+    }
+
+    set rotateDisabled(value: boolean){
+        this._rotateDisabled = value;
     }
 
     setUp(): void {
@@ -117,7 +147,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        if (e.pointerType == "mouse" && this.isDragging){
+        if (e.pointerType == "mouse" && this.isDragging && !this._panDisabled){
             if (this._debugMode) {
                 this.canvas.style.cursor = "none";
             } else {
@@ -144,6 +174,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         e.preventDefault();
         const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
         if (!e.ctrlKey){
+            if(this._panDisabled){
+                return;
+            }
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
@@ -162,6 +195,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
+            if(this._zoomDisabled){
+                return;
+            }
             const cursorPosition = {x: e.clientX, y: e.clientY};
             let anchorPoint = PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top});
             if(!this._alignCoordinateSystem){
