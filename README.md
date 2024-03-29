@@ -43,17 +43,17 @@ npm install @niuee/board
 ```
 
 ### Download From Github
-Download the bundled JavaScript in the releases(我不懂這個是要下載哪裡。例如 ./dist 裡面的嗎？) and put it in the same directory for other JavaScript to import.
+Download the bundled JavaScript (board.js) in the [releases](https://github.com/niuee/board/releases/) and put it in the same directory for other JavaScript to import.
 ```javascript
 import { Board } from "./board.js";
 ```
 
-### Use From CDN
+### Import From jsdelivr
 ```javascript
 import { Board } from "https://cdn.jsdelivr.net/npm/@niuee/board@latest/index.mjs";
 ```
 
-### Use From iife bundle
+### Use iife bundle
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
 ```
