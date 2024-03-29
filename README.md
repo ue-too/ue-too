@@ -2,7 +2,7 @@
     board
 </h1>
 <p align="center">
-    board supercharges your canvas element giving it the capabilities to pan, zoom, rotate, and much more.
+    board supercharges your html canvas element giving it the capabilities to pan, zoom, rotate, and much more.
 </p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@niuee/board">
@@ -26,7 +26,7 @@
 
 </p>
 
-This is not a drawing canvas library like the excalidraw or tl;draw, but a library where you can build on top of to make an app like excalidraw.
+This is not a drawing canvas library like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
 
 [Demo](https://vntchang.dev/vCanvasDemo/)
 _The demo version is rather old and outdated but it showcases the basic functionalities so I am keeping it here. I will replace it with the newer version later on when it's stable_
