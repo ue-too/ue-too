@@ -1,19 +1,20 @@
 {
     "compilerOptions": {
         "target": "es6",
+        "baseUrl": "./src",
         "esModuleInterop": true,
         "outDir": "./build",
         "strict": false,
         "moduleResolution": "node",
-        // "sourceMap": true,
+        "paths": {
+            "*": ["*", "/*"]
+        },
         "resolveJsonModule": true,
-        // "declaration": true,
-        // "declarationDir": "build",
         "lib": ["es6", "dom"],
         "typeRoots": ["node_modules/@types"],
         "noEmitOnError": true,
         "noImplicitAny": true
     },
-    "include": ["src/**/*", "tests/index.test.ts"],
+    "include": [ "src/**/*" ],
     "exclude": ["node_modules", "**/*.test.ts", "dist", "build"]
 }
