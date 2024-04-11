@@ -1,13 +1,14 @@
 {
     "compilerOptions": {
         "target": "es6",
-        "baseUrl": "./src",
+        "baseUrl": "./",
         "esModuleInterop": true,
         "outDir": "./build",
         "strict": false,
         "moduleResolution": "node",
         "paths": {
-            "*": ["*", "/*"]
+            "src": ["src"],
+            "src/*": ["src/*"]
         },
         "resolveJsonModule": true,
         "lib": ["es6", "dom"],
