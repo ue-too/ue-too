@@ -80,6 +80,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set panDisabled(value: boolean){
         this._panDisabled = value;
+        if(value){
+            this.canvas.style.cursor = "auto";
+            this.isDragging = false;
+            this.dragStartPoint = {x: 0, y: 0};
+        }
     }
 
     get zoomDisabled(): boolean {
@@ -113,13 +118,18 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     }
 
     pointerDownHandler(e: PointerEvent){
-        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey)){
+        if(this._disabled){
+            return;
+        }
+        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey) && !this._panDisabled){
             this.isDragging = true;
             this.dragStartPoint = {x: e.clientX, y: e.clientY};
         }
     }
 
     disableStrategy(): void {
+        this.isDragging = false;
+        this.dragStartPoint = {x: 0, y: 0};
         this._disabled = true;
     }
 
