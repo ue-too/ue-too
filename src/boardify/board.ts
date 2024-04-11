@@ -1,11 +1,11 @@
-import BoardCamera from "../board-camera/board-camera";
-import { Point } from "..";
+import BoardCamera from "src/board-camera";
+import { Point } from "src";
 import { PointCal } from "point2point";
-import { BoardTouchStrategy, OneFingerPanTwoFingerZoom } from "../touch-strategy";
-import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "../kmt-strategy";
-import { CameraState, CameraEventMapping } from "../camera-observer/camera-observer";
+import { BoardTouchStrategy, OneFingerPanTwoFingerZoom } from "src/touch-strategy";
+import { BoardKMTStrategy, DefaultBoardKMTStrategy } from "src/kmt-strategy";
+import { CameraState, CameraEventMapping } from "src/camera-observer";
+import { calculateOrderOfMagnitude } from "src/util";
 
-import { calculateOrderOfMagnitude } from "../util";
 
 /**
  * @category Board
@@ -612,7 +612,7 @@ export default class Board {
 
         // this._canvas.width = this._canvas.width;
         // this._canvas.height = this._canvas.height;
-        this._context.resetTransform();
+        this._context.reset();
         const curBoundaries = this._camera.getBoundaries();
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, this.maxHalfTransWidth * 2, -this.maxHalfTransHeight * 2);
 

@@ -2,12 +2,9 @@
 import typescript from '@rollup/plugin-typescript';
 // import typescript from 'rollup-plugin-typescript2';
 import resolve from '@rollup/plugin-node-resolve';
-import dts from "rollup-plugin-dts";
 import terser from "@rollup/plugin-terser";
-import generatePackageJson from 'rollup-plugin-generate-package-json';
 import path from 'path';
 const packageJson = require("./package.json");
-
 
 
 const fs = require('fs');
@@ -17,18 +14,11 @@ const plugins = [
     typescript({
       tsconfig: './tsconfig.json',
       declaration: false,
-      // useTsconfigDeclarationDir: true,
     }),
     terser({
       mangle: false,
     }),
 ]
-
-export const getComponentsFolders = (entry) => {
-   const dirs = fs.readdirSync(entry)
-   const dirsWithoutIndex = dirs.filter(name => name !== 'index.ts' && name !== 'utils')
-   return dirsWithoutIndex
-};
 
 export const getComponentsFoldersRecursive = (entry) => {
   const finalListOfDirs = [];
@@ -53,7 +43,6 @@ export const getComponentsFoldersRecursive = (entry) => {
 
 console.log(getComponentsFoldersRecursive('./src'));
 
-
 const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
   return {
     input: `src/${folder}/index.ts`,
@@ -63,6 +52,11 @@ const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
       sourcemap: true,
       format: 'esm',
     },
+    // {
+    //   file: `build/${folder}/index.cjs`,
+    //   sourcemap: true,
+    //   format: 'cjs',
+    // }
     ],
     plugins: [
         ...plugins,
@@ -70,53 +64,9 @@ const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
   };
 });
 
-const packageJsonFile = getComponentsFolders('./src').map((folder) => {
-  return {
-    input: `src/${folder}/index.ts`,
-    output: {
-      file: `build/${folder}/cjs/index.js`,
-      sourcemap: true,
-      format: 'cjs',
-    },
-    plugins: [
-      resolve(),
-      typescript(),
-      generatePackageJson({
-        outputFolder: `build/${folder}`,
-        baseContents: {
-          name: `${packageJson.name}/${folder}`,
-          private: true,
-          main: "./cjs/index.js", // --> points to cjs format entry point of whole library
-          module: "./esm/index.js", // --> points to esm format entry point of individual component
-          types: "./index.d.ts", // --> points to types definition file of individual component
-        },
-     }),
-    ],
-  };
-});
-
-const types = getComponentsFoldersRecursive('./src').map((folder) => {
-  return {
-    input: `src/${folder}/index.ts`,
-    output: {
-      file: `build/${folder}/index.d.ts`,
-      format: "es",
-    },
-    plugins: [
-      dts.default(),
-    ],
-  };
-
-});
-// folderBuilds.push(...types);
-
-
-// console.log(folderBuilds);
-
 export default [
   ...folderBuilds,
-  // ...types,
-  // ...packageJsonFile,
+  // the overarching package build
   {
     input: 'src/index.ts',
     output: [{
@@ -134,11 +84,7 @@ export default [
     ],
     plugins: [
       resolve(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: true,
-        declarationDir: "./build",
-      }),
+      typescript(),
       terser({
         mangle: false,
       }),
@@ -158,13 +104,13 @@ export default [
       file: 'build/umd/index.js',
       format: 'umd',
       name: "Board",
-      sourcemap: false
+      sourcemap: true
     },
     {
       file: 'build/iife/index.js',
       format: 'iife',
       name: "Board",
-      sourcemap: false
+      sourcemap: true
     }
     ],
     plugins: [

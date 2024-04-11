@@ -8,3 +8,4 @@ import { writeFileSync, copyFileSync } from "fs";
 writeFileSync("./build/package.json", JSON.stringify(data, null, 2));
 
 copyFileSync("./README.md", "./build/README.md");
+copyFileSync("./LICENSE.txt", "./build/LICENSE.txt");
