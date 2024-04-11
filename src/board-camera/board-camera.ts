@@ -650,6 +650,13 @@ export default class BoardCamera {
         return this._position;
     }
 
+    set position(position: Point){
+        if(!this.withinBoundaries(position)){
+            return;
+        }
+        this._position = position;
+    }
+
     getZoomLevel(): number{
         return this._zoomLevel;
     }
