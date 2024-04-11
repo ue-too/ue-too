@@ -18,6 +18,9 @@ export interface BoardTouchStrategy {
     disabled: boolean;
     limitEntireViewPort: boolean;
     alignCoordinateSystem: boolean;
+    panDisabled: boolean;
+    zoomDisabled: boolean;
+    rotateDisabled: boolean;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -33,6 +36,9 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
     private _disabled: boolean = false;
     private _limitEntireViewPort: boolean = true;
     private _alignCoordinateSystem: boolean;
+    private _panDisabled: boolean = false;
+    private _zoomDisabled: boolean = false;
+    private _rotateDisabled: boolean = false;
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
@@ -65,6 +71,30 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     set alignCoordinateSystem(alignCoordinateSystem: boolean){
         this._alignCoordinateSystem = alignCoordinateSystem;
+    }
+
+    set panDisabled(panDisabled: boolean){
+        this._panDisabled = panDisabled;
+    }
+
+    get panDisabled(): boolean {
+        return this._panDisabled;
+    }
+
+    set zoomDisabled(zoomDisabled: boolean){
+        this._zoomDisabled = zoomDisabled;
+    }
+
+    get zoomDisabled(): boolean {
+        return this._zoomDisabled;
+    }
+
+    set rotateDisabled(rotateDisabled: boolean){
+        this._rotateDisabled = rotateDisabled;
+    }
+
+    get rotateDisabled(): boolean {
+        return this._rotateDisabled;
     }
 
     disableStrategy(): void {
@@ -125,6 +155,7 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
             let angleDiff = PointCal.angleFromA2B(deltaStartPoint, deltaEndPoint);
             let panZoom = Math.abs(angleDiff) > 20 * Math.PI / 180 ? "ZOOMING" : "PANNING";
             if(panZoom == "ZOOMING"){
+                if(this._zoomDisabled){return;}
                 let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
                 let distDiff = this.dragStartDist - touchPointDist;
                 let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
@@ -141,6 +172,7 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
                 }
                 this.touchPoints = [startPoint, endPoint];
             } else {
+                if(this._panDisabled){return;}
                 let diff = PointCal.subVector(this.touchPoints[0], startPoint);
                 if(!this._alignCoordinateSystem){
                     diff.y = -diff.y;
@@ -308,6 +340,9 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
     private _limitEntireViewPort: boolean;
     private _disabled: boolean;
     private _alignCoordinateSystem: boolean;
+    private _panDisabled: boolean = false;
+    private _zoomDisabled: boolean = false;
+    private _rotateDisabled: boolean = false;
     private zoomStartDist: number;
 
     private isDragging: boolean = false;
@@ -389,6 +424,30 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
         this._alignCoordinateSystem = alignCoordinateSystem;
     }
 
+    get panDisabled(): boolean {
+        return this._panDisabled;
+    }
+
+    set panDisabled(panDisabled: boolean){
+        this._panDisabled = panDisabled;
+    }
+
+    get zoomDisabled(): boolean {
+        return this._zoomDisabled;
+    }
+
+    set zoomDisabled(zoomDisabled: boolean){
+        this._zoomDisabled = zoomDisabled;
+    }
+
+    get rotateDisabled(): boolean {
+        return this._rotateDisabled;
+    }
+
+    set rotateDisabled(rotateDisabled: boolean){
+        this._rotateDisabled = rotateDisabled;
+    }
+
     touchstartHandler(e: TouchEvent){
         if(this._disabled) {
             return;
@@ -431,6 +490,9 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
+            if(this._zoomDisabled){
+                return;
+            }
             let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
             let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
@@ -450,7 +512,7 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
-        } else if(e.targetTouches.length == 1 && this.isDragging){
+        } else if(e.targetTouches.length == 1 && this.isDragging && !this._panDisabled){
             let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
             let diff = PointCal.subVector(this.dragStartPoint, touchPoint);
             if(!this._alignCoordinateSystem){
