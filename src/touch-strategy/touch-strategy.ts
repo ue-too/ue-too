@@ -1,7 +1,9 @@
-import BoardCamera from "../board-camera/board-camera";
-import Board from "../boardify/board";
 import { PointCal } from "point2point";
-import { Point } from "..";
+import { Point } from "src";
+import BoardCameraV1 from "src/board-camera/board-camera";
+import { BoardCamera } from "src/board-camera/interface";
+import { PanHandler } from "src/board-camera/pan";
+import { ZoomHandler } from "src/board-camera/zoom";
 
 export interface BoardTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
@@ -27,12 +29,23 @@ export interface BoardTouchStrategy {
     tearDown(): void;
 }
 
+export interface BoardTouchStrategyV2 {
+    disabled: boolean;
+    alignCoordinateSystem: boolean;
+    panDisabled: boolean;
+    zoomDisabled: boolean;
+    rotateDisabled: boolean;
+    enableStrategy(): void;
+    disableStrategy(): void;
+    setUp(): void;
+    tearDown(): void;
+}
 export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private canvas: HTMLCanvasElement;
     private dragStartDist: number;
-    private camera: BoardCamera;
+    private camera: BoardCameraV1;
     private _disabled: boolean = false;
     private _limitEntireViewPort: boolean = true;
     private _alignCoordinateSystem: boolean;
@@ -42,7 +55,7 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, camera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, camera: BoardCameraV1, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = true){
         this.canvas = canvas;
         this.camera = camera;
         this.touchcancelHandler = this.touchcancelHandler.bind(this);
@@ -195,12 +208,12 @@ export class TwoFingerPanZoom implements BoardTouchStrategy {
 export class TwoFingerPanZoomLegacy implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
-    private controlCamera: BoardCamera;
+    private controlCamera: BoardCameraV1;
     private dragStartDist: number;
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(controlCamera: BoardCamera){
+    constructor(controlCamera: BoardCameraV1){
         this.controlCamera = controlCamera;
     }
 
@@ -261,7 +274,7 @@ export class TwoFingerPanZoomLegacy implements BoardTouchStrategyLegacy {
 export class OneFingerPanTwoFingerZoomLegacy implements BoardTouchStrategyLegacy {
 
     private touchPoints: Point[];
-    private controlCamera: BoardCamera;
+    private controlCamera: BoardCameraV1;
     private zoomStartDist: number;
 
     private isDragging: boolean = false;
@@ -271,7 +284,7 @@ export class OneFingerPanTwoFingerZoomLegacy implements BoardTouchStrategyLegacy
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(controlCamera: BoardCamera){
+    constructor(controlCamera: BoardCameraV1){
         this.controlCamera = controlCamera;
     }
 
@@ -335,7 +348,7 @@ export class OneFingerPanTwoFingerZoomLegacy implements BoardTouchStrategyLegacy
 export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
 
     private touchPoints: Point[];
-    private controlCamera: BoardCamera;
+    private controlCamera: BoardCameraV1;
     private canvas: HTMLCanvasElement;
     private _limitEntireViewPort: boolean;
     private _disabled: boolean;
@@ -352,7 +365,7 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = false){
+    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCameraV1, limitEntireViewPort: boolean = true, alignCoordinateSystem: boolean = true){
         this.controlCamera = controlCamera;
         this.canvas = canvas;
         this._disabled = false;
@@ -525,6 +538,204 @@ export class OneFingerPanTwoFingerZoom implements BoardTouchStrategy {
             } else {
                 this.controlCamera.moveWithClampFromGesture(diffInWorld);
             }
+            // this.controlCamera.moveWithClampFromGesture(diffInWorld);
+            this.dragStartPoint = touchPoint;
+            this.tapPoint = null;
+        }
+    }
+
+    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
+        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
+        if(this._alignCoordinateSystem) {
+            return {x: res.x, y: res.y};
+        } else {
+            return {x: res.x, y: -res.y};
+        }
+    }
+}
+
+export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
+
+    private touchPoints: Point[];
+    private controlCamera: BoardCamera;
+    private canvas: HTMLCanvasElement;
+    private _disabled: boolean;
+    private _alignCoordinateSystem: boolean;
+    private _panDisabled: boolean = false;
+    private _zoomDisabled: boolean = false;
+    private _rotateDisabled: boolean = false;
+    private zoomStartDist: number;
+
+    private _panHandler: PanHandler;
+    private _zoomHandler: ZoomHandler;
+
+    private isDragging: boolean = false;
+    private dragStartPoint: Point;
+    private tapPoint: Point;
+
+
+    private ZOOM_SENSATIVITY: number = 0.005;
+
+    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, panHandler: PanHandler, zoomHandler: ZoomHandler, alignCoordinateSystem: boolean = true){
+        this.controlCamera = controlCamera;
+        this.canvas = canvas;
+        this._disabled = false;
+        this.touchPoints = [];
+        this.zoomStartDist = 0;
+        this.isDragging = false;
+        this.dragStartPoint = {x: 0, y: 0};
+        this._alignCoordinateSystem = alignCoordinateSystem;
+        
+        this._panHandler = panHandler;
+        this._zoomHandler = zoomHandler;
+
+        this.bindListeners();
+    }
+
+    bindListeners(): void{
+        this.touchstartHandler = this.touchstartHandler.bind(this);
+        this.touchendHandler = this.touchendHandler.bind(this);
+        this.touchcancelHandler = this.touchcancelHandler.bind(this);
+        this.touchmoveHandler = this.touchmoveHandler.bind(this);
+    }
+
+    resetAttributes(): void{
+        this.touchPoints = [];
+        this.zoomStartDist = 0;
+        this.isDragging = false;
+        this.dragStartPoint = null;
+        this.tapPoint = null;
+    }
+
+    enableStrategy(): void {
+        this._disabled = false;
+    }
+
+    disableStrategy(): void {
+        this.resetAttributes();
+        this._disabled = true;
+    }
+
+    setUp(): void {
+        this.canvas.addEventListener('touchstart', this.touchstartHandler);
+        this.canvas.addEventListener('touchend', this.touchendHandler);
+        this.canvas.addEventListener('touchcancel', this.touchcancelHandler);
+        this.canvas.addEventListener('touchmove', this.touchmoveHandler);
+    }
+
+    tearDown(): void {
+        this.resetAttributes();
+        this.canvas.removeEventListener('touchstart', this.touchstartHandler);
+        this.canvas.removeEventListener('touchend', this.touchendHandler);
+        this.canvas.removeEventListener('touchcancel', this.touchcancelHandler);
+        this.canvas.removeEventListener('touchmove', this.touchmoveHandler);
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    get alignCoordinateSystem(): boolean {
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(alignCoordinateSystem: boolean){
+        this._alignCoordinateSystem = alignCoordinateSystem;
+    }
+
+    get panDisabled(): boolean {
+        return this._panDisabled;
+    }
+
+    set panDisabled(panDisabled: boolean){
+        this._panDisabled = panDisabled;
+    }
+
+    get zoomDisabled(): boolean {
+        return this._zoomDisabled;
+    }
+
+    set zoomDisabled(zoomDisabled: boolean){
+        this._zoomDisabled = zoomDisabled;
+    }
+
+    get rotateDisabled(): boolean {
+        return this._rotateDisabled;
+    }
+
+    set rotateDisabled(rotateDisabled: boolean){
+        this._rotateDisabled = rotateDisabled;
+    }
+
+    touchstartHandler(e: TouchEvent){
+        if(this._disabled) {
+            return;
+        }
+        e.preventDefault();
+        if(e.targetTouches.length === 2){
+            this.isDragging = false;
+            let firstTouchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            let secondTouchPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
+            this.zoomStartDist = PointCal.distanceBetweenPoints(firstTouchPoint, secondTouchPoint);
+            this.touchPoints = [firstTouchPoint, secondTouchPoint];
+        } else if (e.targetTouches.length === 1){
+            this.tapPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            this.tapPoint = this.controlCamera.convertFromViewPort2WorldSpace(this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, this.tapPoint));
+            this.isDragging = true;
+            this.dragStartPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+        }
+    }
+
+    touchcancelHandler(e: TouchEvent){
+        if(this._disabled) {
+            return;
+        }
+        this.isDragging = false;
+        this.touchPoints = [];
+    }
+
+    touchendHandler(e: TouchEvent){
+        if(this._disabled) {
+            return;
+        }
+        this.isDragging = false;
+        this.touchPoints = [];
+    }
+
+    touchmoveHandler(e: TouchEvent){
+        if(this._disabled) {
+            return;
+        }
+        e.preventDefault();
+        if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
+            //NOTE Touch Zooming
+            if(this._zoomDisabled){
+                return;
+            }
+            let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
+            let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
+            let distDiff = this.zoomStartDist - touchPointDist;
+            let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
+            if(this._alignCoordinateSystem){
+                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, midPoint);
+            } else {
+                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
+            }
+            let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
+            this._zoomHandler.zoomToAt(this.controlCamera.zoomLevel - zoomAmount, midPoint);
+            // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
+            this.touchPoints = [startPoint, endPoint];
+            this.tapPoint = null;
+        } else if(e.targetTouches.length == 1 && this.isDragging && !this._panDisabled){
+            let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            let diff = PointCal.subVector(this.dragStartPoint, touchPoint);
+            if(!this._alignCoordinateSystem){
+                diff = PointCal.flipYAxis(diff);
+            }
+            let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
+            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
+            this._panHandler.panBy(diffInWorld);
             // this.controlCamera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;

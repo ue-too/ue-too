@@ -1,4 +1,5 @@
 import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace } from "../../src/board-camera";
+import { clampRotation, RotationLimits, rotationWithinLimits } from "../../src/board-camera/utils/rotation";
 
 describe("withinBoundaries", () => {
 
@@ -46,6 +47,40 @@ describe("normalizeAngleZero2TwoPI", () => {
     });
 });
 
+describe("angle clamping", ()=>{
+
+    test("should return the same angle if it is within the limits", ()=>{
+        const limits:RotationLimits = {start: 0, end: Math.PI, ccw: true, startAsTieBreaker: true};
+        expect(clampRotation(0, limits)).toBe(0);
+        expect(clampRotation(Math.PI, limits)).toBe(Math.PI);
+        expect(clampRotation(Math.PI / 2, limits)).toBe(Math.PI / 2);
+
+    });
+
+    test("should return the clamped angle if out of limits with tie", ()=>{
+        const limits:RotationLimits = {start: 0, end: Math.PI, ccw: true, startAsTieBreaker: true};
+        expect(clampRotation(-Math.PI / 2, limits)).toBe(0);
+        expect(clampRotation(Math.PI * 3 / 2, limits)).toBeCloseTo(0);
+    });
+
+    test("counter-clockwise rotation limits crossing the 0 degree mark", ()=>{
+        const limits: RotationLimits = {start: (360 - 45) * Math.PI / 180, end: 45 * Math.PI / 180, ccw: true, startAsTieBreaker: true};
+        expect(clampRotation(0, limits)).toBe(0);
+        expect(clampRotation(50 * Math.PI / 180, limits)).toBe(45 * Math.PI / 180);
+        expect(clampRotation(330 * Math.PI / 180, limits)).toBeCloseTo(330 * Math.PI / 180);
+        expect(clampRotation(300 * Math.PI / 180, limits)).toBe(315 * Math.PI / 180);
+        expect(clampRotation(-50 * Math.PI / 180, limits)).toBe(315 * Math.PI / 180);
+    });
+
+    test("clockwise rotation limits crossing the 0 degree mark", ()=>{
+        const limits: RotationLimits = {start: 45 * Math.PI / 180, end: 315 * Math.PI / 180, ccw: false, startAsTieBreaker: true};
+        expect(clampRotation(0, limits)).toBe(0);
+        expect(clampRotation(50 * Math.PI / 180, limits)).toBe(45 * Math.PI / 180);
+        expect(clampRotation(-50 * Math.PI / 180, limits)).toBe(315 * Math.PI / 180);
+    });
+
+});
+
 describe("calculate the minimum angle span from an angle to another", () => {
 
     test("a full revolution meaning no angle span", () => {
@@ -61,6 +96,10 @@ describe("calculate the minimum angle span from an angle to another", () => {
 
     test("testing the angle span that rotating clockwise is smaller than rotating counter clockwise", ()=>{
         expect(angleSpan(0, 270 * Math.PI / 180)).toBeCloseTo(-90 * Math.PI / 180);
+    });
+
+    test("testing the angle span that cross the 0 degree mark", ()=>{
+        expect(angleSpan(22.5 * Math.PI / 180, -22.5 * Math.PI / 180)).toBeCloseTo(- 45 * Math.PI / 180);
     });
 });
 
@@ -86,4 +125,5 @@ describe("coordinate conversion", () => {
         expect(testRes2.x).toBeCloseTo(expectedRes.x);
         expect(testRes2.y).toBeCloseTo(expectedRes.y);
     });
+    
 });

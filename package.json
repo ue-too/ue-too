@@ -18,6 +18,7 @@
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
+    "count-lines": "git ls-files ./src | xargs wc -l",
     "test": "jest"
   },
   "repository": {

@@ -29,8 +29,8 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
     return leftSide && rightSide && topSide && bottomSide;
 }
 
-export function clampPoint(point: Point, boundaries: Boundaries): Point{
-    if(withinBoundaries(point, boundaries)){
+export function clampPoint(point: Point, boundaries: Boundaries | undefined): Point{
+    if(withinBoundaries(point, boundaries) || boundaries == undefined){
         return point;
     }
     let manipulatePoint = {x: point.x, y: point.y};
@@ -55,7 +55,10 @@ export function clampPoint(point: Point, boundaries: Boundaries): Point{
     return manipulatePoint;
 }
 
-export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries, cameraZoomLevel: number, cameraRotation: number): Point{
+export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries | undefined, cameraZoomLevel: number, cameraRotation: number): Point{
+    if(boundaries == undefined){
+        return point;
+    }
     let topLeftCorner = convert2WorldSpaceWRT(point, {x: 0, y: viewPortHeight}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
     let bottomLeftCorner = convert2WorldSpaceWRT(point, {x: 0, y: 0}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
     let topRightCorner = convert2WorldSpaceWRT(point, {x: viewPortWidth, y: viewPortHeight}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);

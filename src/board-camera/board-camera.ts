@@ -91,7 +91,7 @@ export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
  * camera.setPosition({x: 0, y: 0});
  * ```
  */
-export default class BoardCamera {
+export default class BoardCameraV1 {
 
     private _position: Point;
     private _zoomLevel: number;
@@ -777,7 +777,7 @@ export default class BoardCamera {
         if(moveRes.success){
             this.releaseFromLockedObject();
             this.cancelAnimations();
-            this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return moveRes;
         } else {
             return {success: false};
@@ -834,7 +834,7 @@ export default class BoardCamera {
         if(res.moved){
             this.releaseFromLockedObject();
             this.cancelAnimations();
-            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         }
         return res;
     }
@@ -871,7 +871,7 @@ export default class BoardCamera {
         this.cancelAnimations();
         const res = this.moveWithClampEntireViewPort(delta);
         if(res.moved){
-            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return {success: res.moved, deltaPosition: res.actualDelta, resultingPosition: this._position};
         }
         return {success: false}

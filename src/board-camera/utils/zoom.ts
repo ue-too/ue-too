@@ -1,8 +1,8 @@
 
 export type ZoomLevelLimits = {min?: number, max?: number};
 
-export function clampZoomLevel(zoomLevel: number, zoomLevelLimits: ZoomLevelLimits): number{
-    if(zoomLevelWithinLimits(zoomLevel, zoomLevelLimits)){
+export function clampZoomLevel(zoomLevel: number, zoomLevelLimits?: ZoomLevelLimits): number{
+    if(zoomLevelWithinLimits(zoomLevel, zoomLevelLimits) || zoomLevelLimits === undefined){
         return zoomLevel;
     }
     if(zoomLevelLimits.max){
@@ -14,7 +14,10 @@ export function clampZoomLevel(zoomLevel: number, zoomLevelLimits: ZoomLevelLimi
     return zoomLevel;
 }
 
-export function zoomLevelWithinLimits(zoomLevel: number, zoomLevelLimits: ZoomLevelLimits): boolean{
+export function zoomLevelWithinLimits(zoomLevel: number, zoomLevelLimits?: ZoomLevelLimits): boolean{
+    if(zoomLevelLimits === undefined){
+        return true;
+    }
     if(zoomLevel <= 0 || (zoomLevelLimits !== undefined && 
     ((zoomLevelLimits.max !== undefined && zoomLevelLimits.max < zoomLevel) || 
         (zoomLevelLimits.min !== undefined && zoomLevelLimits.min > zoomLevel)

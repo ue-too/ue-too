@@ -2,7 +2,7 @@ import { Point } from "src";
 import { PointCal } from "point2point";
 
 export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Point, viewPortWidth: number, viewPortHeight: number, cameraZoomLevel: number, cameraRotation: number): Point{
-    // the center point is in the world space
+    // the target position is the position of the camera in world space
     // the coordinate for the interest point is in view port space where bottom left corner is the origin 
     let cameraFrameCenter = {x: viewPortWidth / 2, y: viewPortHeight / 2};
     let delta2Point = PointCal.subVector(interestPoint, cameraFrameCenter);

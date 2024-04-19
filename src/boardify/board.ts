@@ -69,6 +69,7 @@ export default class Board {
     private windowResizeObserver: ResizeObserver;
 
     constructor(canvas: HTMLCanvasElement){
+        console.log("test output");
         this._canvas = canvas;
         this._context = canvas.getContext("2d");
         this._camera = new BoardCamera();
