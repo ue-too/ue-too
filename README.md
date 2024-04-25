@@ -249,7 +249,6 @@ board.on("zoom", zoomCallback);
 // zoom event payload looks like
 // {
 //     deltaZoomAmount: number;
-//     anchorPoint: Point;
 // }
 ```
 

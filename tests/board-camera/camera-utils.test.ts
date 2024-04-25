@@ -1,5 +1,7 @@
 import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace } from "../../src/board-camera";
-import { clampRotation, RotationLimits, rotationWithinLimits } from "../../src/board-camera/utils/rotation";
+import { clampRotation, RotationLimits } from "../../src/board-camera/utils/rotation";
+
+import { Boundaries, halfTranslationWidthOf, translationWidthOf, translationHeightOf, halfTranslationHeightOf } from "../../src/board-camera/utils/position";
 
 describe("withinBoundaries", () => {
 
@@ -29,6 +31,28 @@ describe("withinBoundaries", () => {
         expect(withinBoundaries({x: 0, y: 0}, {max: {x: -1}})).toBe(false);
     });
         
+});
+
+describe("get the translation dimensions from boundaries", () => {
+    
+    test("translation width from boundaries", ()=>{
+        let boundaries: Boundaries | undefined = undefined;
+
+        expect(translationWidthOf(boundaries)).toBe(undefined);
+        boundaries = {min: {x: 0}, max: {x: 10}};
+        expect(translationWidthOf(boundaries)).toBe(10);
+        expect(halfTranslationWidthOf(boundaries)).toBe(5);
+    });
+
+    test("translation height from boundaries", ()=>{
+        let boundaries: Boundaries | undefined = undefined;
+
+        expect(translationHeightOf(boundaries)).toBe(undefined);
+        boundaries = {min: {y: 0}, max: {y: 10}};
+        expect(translationHeightOf(boundaries)).toBe(10);
+        expect(halfTranslationHeightOf(boundaries)).toBe(5);
+    });
+
 });
 
 describe("normalizeAngleZero2TwoPI", () => {

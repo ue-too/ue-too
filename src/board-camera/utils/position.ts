@@ -1,8 +1,12 @@
 import { Point } from "src";
-import { Boundaries } from "src/board-camera";
 import { PointCal } from "point2point";
 
 import { convert2WorldSpaceWRT } from "./coordinate-conversion";
+
+export type Boundaries = {
+    min?: {x?: number, y?: number};
+    max?: {x?: number, y?: number};
+}
 
 export function withinBoundaries(point: Point, boundaries: Boundaries | undefined): boolean{
     if(boundaries == undefined){
@@ -29,6 +33,19 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
     return leftSide && rightSide && topSide && bottomSide;
 }
 
+export function boundariesFullyDefined(boundaries: Boundaries | undefined): boolean{
+    if(boundaries == undefined){
+        return false;
+    }
+    if(boundaries.max == undefined || boundaries.min == undefined){
+        return false;
+    }
+    if(boundaries.max.x == undefined || boundaries.max.y == undefined || boundaries.min.x == undefined || boundaries.min.y == undefined){
+        return false;
+    }
+    return true;
+}
+
 export function clampPoint(point: Point, boundaries: Boundaries | undefined): Point{
     if(withinBoundaries(point, boundaries) || boundaries == undefined){
         return point;
@@ -53,6 +70,30 @@ export function clampPoint(point: Point, boundaries: Boundaries | undefined): Po
         }
     }
     return manipulatePoint;
+}
+
+export function translationWidthOf(boundaries: Boundaries | undefined): number | undefined{
+    if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.x == undefined || boundaries.max.x == undefined){
+        return undefined;
+    }
+    return boundaries.max.x - boundaries.min.x;
+}
+
+export function halfTranslationWidthOf(boundaries: Boundaries): number | undefined{
+    const translationWidth = translationWidthOf(boundaries);
+    return translationWidth != undefined ? translationWidth / 2 : undefined;
+}
+
+export function translationHeightOf(boundaries: Boundaries | undefined): number | undefined{
+    if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.y == undefined || boundaries.max.y == undefined){
+        return undefined;
+    }
+    return boundaries.max.y - boundaries.min.y;
+}
+
+export function halfTranslationHeightOf(boundaries: Boundaries): number | undefined{
+    const translationHeight = translationHeightOf(boundaries);
+    return translationHeight != undefined ? translationHeight / 2 : undefined;
 }
 
 export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries | undefined, cameraZoomLevel: number, cameraRotation: number): Point{

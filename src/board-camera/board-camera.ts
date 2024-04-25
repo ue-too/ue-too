@@ -3,15 +3,7 @@ import { CameraObserver } from "../camera-observer/camera-observer";
 import { EaseFunctions } from "../ease-functions";
 import { EaseFunction } from "../ease-functions";
 import { CameraEventMapping, CameraState } from "../camera-observer/camera-observer";
-
-/**
- * @category Board Camera
- * @translation need to translate boundaries text
- */
-export type Boundaries = {
-    min?: {x?: number, y?: number};
-    max?: {x?: number, y?: number};
-}
+import { Boundaries } from "./utils";
 
 /**
  * @category Board Camera

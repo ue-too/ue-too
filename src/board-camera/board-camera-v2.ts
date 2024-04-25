@@ -37,14 +37,6 @@ export class BoardCameraV2 implements BoardCamera {
         return this._boundaries;
     }
 
-    get zoomBoundaries(): ZoomLevelLimits | undefined{
-        return this._zoomBoundaries;
-    }
-
-    get rotationBoundaries(): RotationLimits | undefined{
-        return this._rotationBoundaries;
-    }
-
     set boundaries(boundaries: Boundaries | undefined){
         this._boundaries = boundaries;
     }
@@ -88,6 +80,44 @@ export class BoardCameraV2 implements BoardCamera {
         return this._zoomLevel;
     }
 
+    get zoomBoundaries(): ZoomLevelLimits | undefined{
+        return this._zoomBoundaries;
+    }
+
+    set zoomBoundaries(zoomBoundaries: ZoomLevelLimits | undefined){
+        if(zoomBoundaries !== undefined && zoomBoundaries.min !== undefined && zoomBoundaries.max !== undefined && zoomBoundaries.min > zoomBoundaries.max){
+            let temp = zoomBoundaries.max;
+            zoomBoundaries.max = zoomBoundaries.min;
+            zoomBoundaries.min = temp;
+        }
+        this._zoomBoundaries = zoomBoundaries;
+    }
+
+    setMaxZoomLevel(maxZoomLevel: number){
+        if(this._zoomBoundaries == undefined){
+            this._zoomBoundaries = {min: undefined, max: undefined};
+        }
+        if((this._zoomBoundaries.min != undefined && this._zoomBoundaries.min > maxZoomLevel) || this._zoomLevel > maxZoomLevel){
+            return false;
+        }
+        this._zoomBoundaries.max = maxZoomLevel;
+        return true
+    }
+
+    setMinZoomLevel(minZoomLevel: number){
+        if(this._zoomBoundaries == undefined){
+            this._zoomBoundaries = {min: undefined, max: undefined};
+        }
+        if((this._zoomBoundaries.max != undefined && this._zoomBoundaries.max < minZoomLevel)){
+            return false;
+        }
+        this._zoomBoundaries.min = minZoomLevel;
+        if(this._zoomLevel < minZoomLevel){
+            this._zoomLevel = minZoomLevel;
+        }
+        return true;
+    }
+
     setZoomLevel(zoomLevel: number){
         if(zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
             if(this._zoomBoundaries !== undefined && this._zoomBoundaries.max !== undefined && clampZoomLevel(zoomLevel, this._zoomBoundaries) == this._zoomBoundaries.max && this._zoomLevel == this._zoomBoundaries.max){
@@ -106,6 +136,19 @@ export class BoardCameraV2 implements BoardCamera {
         return this._rotation;
     }
 
+    get rotationBoundaries(): RotationLimits | undefined{
+        return this._rotationBoundaries;
+    }
+
+    set rotationBoundaries(rotationBoundaries: RotationLimits | undefined){
+        if(rotationBoundaries !== undefined && rotationBoundaries.start !== undefined && rotationBoundaries.end !== undefined && rotationBoundaries.start > rotationBoundaries.end){
+            let temp = rotationBoundaries.end;
+            rotationBoundaries.end = rotationBoundaries.start;
+            rotationBoundaries.start = temp;
+        }
+        this._rotationBoundaries = rotationBoundaries;
+    }
+
     setRotation(rotation: number){
         if(rotationWithinLimits(rotation, this._rotationBoundaries)){
             rotation = normalizeAngleZero2TwoPI(rotation);
@@ -122,6 +165,14 @@ export class BoardCameraV2 implements BoardCamera {
 
     convertFromViewPort2WorldSpace(point: Point): Point{
         return convert2WorldSpace(point, this._viewPortWidth, this._viewPortHeight, this._position, this._zoomLevel, this._rotation);
+    }
+    
+    invertFromWorldSpace2ViewPort(point: Point): Point{
+        let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this._viewPortHeight / 2};
+        let delta2Point = PointCal.subVector(point, this._position);
+        delta2Point = PointCal.rotatePoint(delta2Point, -this._rotation);
+        delta2Point = PointCal.multiplyVectorByScalar(delta2Point, this._zoomLevel);
+        return PointCal.addVector(cameraFrameCenter, delta2Point);
     }
 
     setHorizontalBoundaries(min: number, max: number){
@@ -152,15 +203,6 @@ export class BoardCameraV2 implements BoardCamera {
         }
         this._boundaries.min.y = min;
         this._boundaries.max.y = max;
-    }
-
-    set zoomBoundaries(zoomBoundaries: ZoomLevelLimits | undefined){
-        if(zoomBoundaries !== undefined && zoomBoundaries.min !== undefined && zoomBoundaries.max !== undefined && zoomBoundaries.min > zoomBoundaries.max){
-            let temp = zoomBoundaries.max;
-            zoomBoundaries.max = zoomBoundaries.min;
-            zoomBoundaries.min = temp;
-        }
-        this._zoomBoundaries = zoomBoundaries;
     }
 
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): void {

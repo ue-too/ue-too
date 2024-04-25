@@ -35,6 +35,8 @@ export interface BoardTouchStrategyV2 {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
+    panHandler: PanHandler;
+    zoomHandler: ZoomHandler;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -665,6 +667,24 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
     set rotateDisabled(rotateDisabled: boolean){
         this._rotateDisabled = rotateDisabled;
+    }
+
+    set panHandler(panHandler: PanHandler){
+        this._panHandler = panHandler;
+        this._panHandler.camera = this.controlCamera;
+    }
+
+    get panHandler(): PanHandler {
+        return this._panHandler;
+    }
+
+    set zoomHandler(zoomHandler: ZoomHandler){
+        this._zoomHandler = zoomHandler;
+        this._zoomHandler.camera = this.controlCamera;
+    }
+
+    get zoomHandler(): ZoomHandler {
+        return this._zoomHandler;
     }
 
     touchstartHandler(e: TouchEvent){

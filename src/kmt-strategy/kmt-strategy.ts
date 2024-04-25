@@ -1,8 +1,8 @@
 import { PointCal } from "point2point";
 import { Point } from "..";
 import BoardCameraV1, { BoardCamera } from "src/board-camera";
-import { PanHandler, PanRig } from "src/board-camera/pan";
-import { ZoomHandler, ZoomRig } from "src/board-camera/zoom";
+import { PanHandler } from "src/board-camera/pan";
+import { ZoomHandler } from "src/board-camera/zoom";
 
 /**
  * @category Keyboard-Mouse Strategy
@@ -28,6 +28,8 @@ export interface BoardKMTStrategyV2 {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
+    panHandler: PanHandler;
+    zoomHandler: ZoomHandler;
     setUp(): void;
     tearDown(): void;
     enableStrategy(): void;
@@ -42,8 +44,8 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
     private dragStartPoint: Point;
     private canvas: HTMLCanvasElement;
     private camera: BoardCamera;
-    private panHandler: PanHandler;
-    private zoomHandler: ZoomHandler;
+    private _panHandler: PanHandler;
+    private _zoomHandler: ZoomHandler;
     private _disabled: boolean;
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
@@ -62,8 +64,8 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.scrollHandler = this.scrollHandler.bind(this);
-        this.panHandler = panHandler;
-        this.zoomHandler = zoomHandler;
+        this._panHandler = panHandler;
+        this._zoomHandler = zoomHandler;
     }
 
     get debugMode(): boolean {
@@ -109,6 +111,22 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
 
     set rotateDisabled(value: boolean){
         this._rotateDisabled = value;
+    }
+
+    get panHandler(): PanHandler {
+        return this._panHandler;
+    }
+
+    set panHandler(value: PanHandler){
+        this._panHandler = value;
+    }
+
+    get zoomHandler(): ZoomHandler {
+        return this._zoomHandler;
+    }
+
+    set zoomHandler(value: ZoomHandler){
+        this._zoomHandler = value;
     }
 
     setUp(): void {
@@ -178,7 +196,7 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.zoomLevel);
-            this.panHandler.panBy(diffInWorld);
+            this._panHandler.panBy(diffInWorld);
             this.dragStartPoint = target;
         }
     }
@@ -200,7 +218,7 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.camera.zoomLevel);
-            this.panHandler.panBy(diffInWorld);
+            this._panHandler.panBy(diffInWorld);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
@@ -214,7 +232,7 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
                 anchorPoint = PointCal.flipYAxis(anchorPoint);
             }
             const zoomLevel = this.camera.zoomLevel - (this.camera.zoomLevel * zoomAmount * 5);
-            this.zoomHandler.zoomToAt(zoomLevel, anchorPoint);
+            this._zoomHandler.zoomToAt(zoomLevel, anchorPoint);
         }
     }
 
