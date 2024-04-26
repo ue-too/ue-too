@@ -8,13 +8,11 @@ import { Point } from 'src';
 import { PointCal } from 'point2point';
 
 import { CameraEvent, CameraState } from 'src/camera-observer';
-import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
-import { drawReferenceCircle } from 'src/boardify/utils';
+import {  minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
+import { BoardStateObserver } from 'src/boardify/camera-sync-observer';
+
 export class BoardV2 {
     
-    private _camera: BoardCamera;
-    private _panHandler: PanController;
-    private _zoomHandler: ZoomController;
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
 
@@ -24,6 +22,8 @@ export class BoardV2 {
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
 
+    private boardStateObserver: BoardStateObserver;
+
     private lastUpdateTime: number = 0;
 
     private attributeObserver: MutationObserver;
@@ -31,15 +31,17 @@ export class BoardV2 {
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
-        this._camera = new BoardCameraV2();
-        this._camera.viewPortWidth = canvas.width;
-        this._camera.viewPortHeight = canvas.height;
-        this._camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
+        this.boardStateObserver = new BoardStateObserver(new BoardCameraV2());
+        this.boardStateObserver.camera.viewPortHeight = canvas.height;
+        this.boardStateObserver.camera.viewPortWidth = canvas.width;
+        this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
         // this._camera.zoomBoundaries = {min: 0.1, max: 10};
         this._context = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-        this._panHandler = new PanRig(this._camera);
-        this._zoomHandler = new ZoomRig(this._camera, this._panHandler);
+        let panHandler = new PanRig();
+        this.boardStateObserver.panHandler = panHandler;
+        let zoomHandler = new ZoomRig(panHandler);
+        this.boardStateObserver.zoomHandler = zoomHandler;
 
         this.bindFunctions();
 
@@ -49,10 +51,11 @@ export class BoardV2 {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this._camera, this._panHandler, this._zoomHandler);
-        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this._camera, this._panHandler, this._zoomHandler);
+        this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
+        this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
+        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
+        this.boardStateObserver.subscribeToCamera(this._touchStrategy);
         this.registerEventListeners();
-
     }
 
     private registerEventListeners(){
@@ -79,7 +82,7 @@ export class BoardV2 {
 
     set width(width: number){
         this._canvas.width = width;
-        this._camera.viewPortWidth = width;
+        this.boardStateObserver.camera.viewPortWidth = width;
     }
 
     get width(): number {
@@ -88,7 +91,7 @@ export class BoardV2 {
 
     set height(height: number){
         this._canvas.height = height;
-        this._camera.viewPortHeight = height;
+        this.boardStateObserver.camera.viewPortHeight = height;
     }
 
     get height(): number {
@@ -118,27 +121,60 @@ export class BoardV2 {
     }
 
     set limitEntireViewPort(value: boolean){
-        this._panHandler.limitEntireViewPort = value;
+        this.boardStateObserver.panHandler.limitEntireViewPort = value;
         if(value){
-            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
 
     get limitEntireViewPort(): boolean{
-        return this._panHandler.limitEntireViewPort;
+        return this.boardStateObserver.panHandler.limitEntireViewPort;
     }
 
     set kmtStrategy(strategy: BoardKMTStrategyV2){
+        if(strategy.canvas !== this._canvas){
+            return;
+        }
         this._kmtStrategy.tearDown();
         strategy.setUp();
         this._kmtStrategy = strategy;
+        this._kmtStrategy.panHandler = this.boardStateObserver.panHandler;
+        this._kmtStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
+    }
+
+    set touchStrategy(strategy: BoardTouchStrategyV2){
+        this._touchStrategy.tearDown();
+        strategy.setUp();
+        this._touchStrategy = strategy;
+        this._touchStrategy.panHandler = this.boardStateObserver.panHandler;
+        this._touchStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
     }
 
     get camera(): BoardCamera{
-        return this._camera;
+        return this.boardStateObserver.camera;
+    }
+
+    set camera(camera: BoardCamera){
+        this.boardStateObserver.camera = camera;
+    }
+
+    set panHandler(handler: PanController){
+        this.boardStateObserver.panHandler = handler;
+    }
+
+    get panHandler(): PanController{
+        return this.boardStateObserver.panHandler;
+    }
+
+    set zoomHandler(handler: ZoomController){
+        this.boardStateObserver.zoomHandler = handler;
+    }
+
+    get zoomHandler(): ZoomController{
+        return this.boardStateObserver.zoomHandler;
     }
 
     public step(timestamp: number){
@@ -148,20 +184,22 @@ export class BoardV2 {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        const curBoundaries = this._camera.boundaries;
+        const curBoundaries = this.boardStateObserver.camera.boundaries;
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
-        this._context.scale(this._camera.zoomLevel, this._camera.zoomLevel);
+        this._context.scale(this.boardStateObserver.camera.zoomLevel, this.boardStateObserver.camera.zoomLevel);
         if (this._alignCoordinateSystem){
-            this._context.rotate(-this._camera.rotation);
-            this._context.translate(-this._camera.position.x,  -this._camera.position.y);
+            this._context.rotate(-this.boardStateObserver.camera.rotation);
+            this._context.translate(-this.boardStateObserver.camera.position.x,  -this.boardStateObserver.camera.position.y);
         } else {
-            this._context.rotate(this._camera.rotation);
-            this._context.translate(-this._camera.position.x,  this._camera.position.y);
+            this._context.rotate(this.boardStateObserver.camera.rotation);
+            this._context.translate(-this.boardStateObserver.camera.position.x,  this.boardStateObserver.camera.position.y);
         }
 
-        drawReferenceCircle(this._context, {x: 30, y: 20}, this._alignCoordinateSystem);
+        // drawReferenceCircle(this._context, {x: 30, y: 20}, this._alignCoordinateSystem);
+        // drawBoundingBox(this._context, curBoundaries, this._alignCoordinateSystem);
+        // drawAxis(this._context, curBoundaries, this.boardStateObserver.camera.zoomLevel, this._alignCoordinateSystem);
     }
 
     private convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
@@ -176,23 +214,23 @@ export class BoardV2 {
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
         if(this._alignCoordinateSystem){
             const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-            return this._camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
+            return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
         } else {
             const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-            return this._camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
+            return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
         }
     }
 
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): void {
-        this._camera.on(eventName, callback);
+        this.boardStateObserver.camera.on(eventName, callback);
     }
 
     get maxHalfTransHeight(): number | undefined{
-        return halfTranslationHeightOf(this._camera.boundaries);
+        return halfTranslationHeightOf(this.boardStateObserver.camera.boundaries);
     }
 
     get maxHalfTransWidth(): number | undefined{
-        return halfTranslationWidthOf(this._camera.boundaries);
+        return halfTranslationWidthOf(this.boardStateObserver.camera.boundaries);
     }
 
     private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
@@ -200,20 +238,20 @@ export class BoardV2 {
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
                     // console.log("width changed");
-                    this._camera.viewPortWidth = this._canvas.width;
+                    this.boardStateObserver.camera.viewPortWidth = this._canvas.width;
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 } else if(mutation.attributeName === "height"){
                     // console.log("height changed");
-                    this._camera.viewPortHeight = this._canvas.height;
+                    this.boardStateObserver.camera.viewPortHeight = this._canvas.height;
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 }
@@ -229,18 +267,18 @@ export class BoardV2 {
     }
 
     setMaxTransWidthAlignedMin(value: number){
-        const curBoundaries = this._camera.boundaries;
+        const curBoundaries = this.boardStateObserver.camera.boundaries;
         const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
         const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
         if(curHorizontalMin == undefined){
-            this._camera.setHorizontalBoundaries(-value, value);
+            this.boardStateObserver.camera.setHorizontalBoundaries(-value, value);
         } else {
-            this._camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
+            this.boardStateObserver.camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
         }
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-            if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            if(zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }

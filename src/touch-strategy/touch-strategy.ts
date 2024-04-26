@@ -1,9 +1,10 @@
 import { PointCal } from "point2point";
-import { Point } from "src";
+import { BoardCameraSubscriber, Point } from "src";
 import BoardCameraV1 from "src/board-camera/board-camera";
 import { BoardCamera } from "src/board-camera/interface";
 import { PanHandler } from "src/board-camera/pan";
 import { ZoomHandler } from "src/board-camera/zoom";
+
 
 export interface BoardTouchStrategyLegacy {
     touchstartHandler(e: TouchEvent, bottomLeftCorner: Point): void;
@@ -37,6 +38,10 @@ export interface BoardTouchStrategyV2 {
     rotateDisabled: boolean;
     panHandler: PanHandler;
     zoomHandler: ZoomHandler;
+    camera: BoardCamera;
+    updateCamera(camera: BoardCamera): void;
+    updatePanHandler(panHandler: PanHandler): void;
+    updateZoomHandler(zoomHandler: ZoomHandler): void;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -671,7 +676,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
     set panHandler(panHandler: PanHandler){
         this._panHandler = panHandler;
-        this._panHandler.camera = this.controlCamera;
     }
 
     get panHandler(): PanHandler {
@@ -680,11 +684,22 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
     set zoomHandler(zoomHandler: ZoomHandler){
         this._zoomHandler = zoomHandler;
-        this._zoomHandler.camera = this.controlCamera;
     }
 
     get zoomHandler(): ZoomHandler {
         return this._zoomHandler;
+    }
+
+    get camera(): BoardCamera {
+        return this.controlCamera;
+    }
+
+    set camera(camera: BoardCamera){
+        this.controlCamera = camera;
+    }
+
+    updateCamera(camera: BoardCamera): void {
+        this.controlCamera = camera;
     }
 
     touchstartHandler(e: TouchEvent){
@@ -743,7 +758,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
                 midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
             }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
-            this._zoomHandler.zoomToAt(this.controlCamera.zoomLevel - zoomAmount, midPoint);
+            this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
@@ -755,7 +770,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
-            this._panHandler.panBy(diffInWorld);
+            this._panHandler.panCameraBy(this.camera, diffInWorld);
             // this.controlCamera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;
@@ -769,5 +784,13 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
         } else {
             return {x: res.x, y: -res.y};
         }
+    }
+
+    updatePanHandler(panHandler: PanHandler): void {
+        this._panHandler = panHandler;
+    }
+
+    updateZoomHandler(zoomHandler: ZoomHandler): void {
+        this._zoomHandler = zoomHandler;
     }
 }

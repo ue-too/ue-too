@@ -547,6 +547,7 @@ export default class Board {
         const minZoomLevelHeight = this._canvas.height / (this.maxHalfTransHeight * 2);
         const minZoomLevelWidth = this._canvas.width / (this.maxHalfTransWidth * 2);
         const minZoomLevel = Math.max(minZoomLevelHeight, minZoomLevelWidth, minZoomLevelWidthWidth, minZoomLevelHeightWidth, minZoomLevelWidthHeight, minZoomLevelHeightHeight);
+        console.log(minZoomLevel);
         if(this._camera.getZoomLevelLimits().min == undefined || minZoomLevel > this._camera.getZoomLevelLimits().min){
             this._camera.setMinZoomLevel(minZoomLevel);
             console.log("min zoom level set to", this._camera.getZoomLevelLimits().min);

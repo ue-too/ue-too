@@ -1,15 +1,22 @@
-import { Point } from "src";
+import { BoardCameraSubscriber, BoardStateObserver, Point } from "src";
 import { BoardCamera } from "../interface";
 import { PointCal } from "point2point";
 
 import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/position";
 
-export interface PanHandler {
-    nextHandler?: PanHandler;
+export interface PanHandlerLegacy {
+    nextHandler?: PanHandlerLegacy;
     camera: BoardCamera;
-    chainHandler(handler: PanHandler): PanHandler;
+    chainHandler(handler: PanHandlerLegacy): PanHandlerLegacy;
     panTo(destination: Point): void
     panBy(delta: Point): void
+}
+
+export interface PanHandler {
+    nextHandler?: PanHandler;
+    chainHandler(handler: PanHandler): PanHandler;
+    panCameraTo(camera: BoardCamera,destination: Point): void
+    panCameraBy(camera: BoardCamera, delta: Point): void
 }
 
 export interface PanController extends PanHandler {
@@ -23,19 +30,11 @@ export interface PanController extends PanHandler {
 export abstract class PanHandlerBoilerPlate implements PanHandler {
 
     protected _nextHandler?: PanHandler;
-    protected _camera: BoardCamera;
 
-    constructor(camera: BoardCamera){
-        this._camera = camera;
+    constructor(nextHandler: PanHandler | undefined = undefined) {
+        this._nextHandler = nextHandler;
     }
 
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
-    }
-
-    get camera(): BoardCamera {
-        return this._camera;
-    }
 
     set nextHandler(handler: PanHandler | undefined) {
         this._nextHandler = handler;
@@ -50,15 +49,15 @@ export abstract class PanHandlerBoilerPlate implements PanHandler {
         return handler;
     }
 
-    panTo(destination: Point): void {
+    panCameraTo(camera: BoardCamera, destination: Point): void {
         if(this._nextHandler){
-            this._nextHandler.panTo(destination);
+            this._nextHandler.panCameraTo(camera, destination);
         }
     }
 
-    panBy(delta: Point): void {
+    panCameraBy(camera: BoardCamera, delta: Point): void {
         if(this._nextHandler){
-            this._nextHandler.panBy(delta);
+            this._nextHandler.panCameraBy(camera, delta);
         }
     }
 }
@@ -66,21 +65,16 @@ export abstract class PanHandlerBoilerPlate implements PanHandler {
 export class BasePanHandler extends PanHandlerBoilerPlate {
 
 
-    constructor(camera: BoardCamera, nextHandler: PanHandler | undefined = undefined) {
-        super(camera);
-        this._camera = camera;
+    constructor(nextHandler: PanHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
+    override panCameraTo(camera: BoardCamera, destination: Point): void{
+        camera.setPosition(destination);
     }
 
-    override panTo(destination: Point): void{
-        this._camera.setPosition(destination);
-    }
-
-    override panBy(diff: Point): void {
-        this._camera.setPosition(PointCal.addVector(this._camera.position, diff));
+    override panCameraBy(camera: BoardCamera, diff: Point): void {
+        camera.setPosition(PointCal.addVector(camera.position, diff));
     }
 }
 
@@ -88,12 +82,8 @@ class ClampHandler extends PanHandlerBoilerPlate {
 
     private _entireViewPort: boolean = false;
 
-    constructor(camera: BoardCamera) {
-        super(camera);
-    }
-
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
+    constructor(nextHandler: PanHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
     set entireViewPort(entireViewPort: boolean) {
@@ -104,20 +94,20 @@ class ClampHandler extends PanHandlerBoilerPlate {
         return this._entireViewPort;
     }
 
-    panTo(destination: Point): void {
-        let actualDest = clampPoint(destination, this._camera.boundaries);
+    panCameraTo(camera: BoardCamera, destination: Point): void {
+        let actualDest = clampPoint(destination, camera.boundaries);
         if(this._entireViewPort){
-            actualDest = clampPointEntireViewPort(destination, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation);
+            actualDest = clampPointEntireViewPort(destination, camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation);
         }
-        super.panTo(actualDest);
+        super.panCameraTo(camera, actualDest);
     }
 
-    panBy(delta: Point): void {
-        let actualDelta = PointCal.subVector(clampPoint(PointCal.addVector(this._camera.position, delta), this._camera.boundaries), this._camera.position);
+    panCameraBy(camera: BoardCamera, delta: Point): void {
+        let actualDelta = PointCal.subVector(clampPoint(PointCal.addVector(camera.position, delta), camera.boundaries), camera.position);
         if(this._entireViewPort){
-            actualDelta = PointCal.subVector(clampPointEntireViewPort(PointCal.addVector(this._camera.position, delta), this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation), this._camera.position);
+            actualDelta = PointCal.subVector(clampPointEntireViewPort(PointCal.addVector(camera.position, delta), camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation), camera.position);
         }
-        super.panBy(actualDelta);
+        super.panCameraBy(camera, actualDelta);
     }
 
 }
@@ -129,8 +119,8 @@ class PanWithRestriction extends PanHandlerBoilerPlate {
     private _restrictRelativeXTranslation: boolean = false;
     private _restrictRelativeYTranslation: boolean = false;
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: PanHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
     set restrictXTranslation(restrictXTranslation: boolean) {
@@ -149,11 +139,7 @@ class PanWithRestriction extends PanHandlerBoilerPlate {
         this._restrictRelativeYTranslation = restrictRelativeYTranslation;
     }
 
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
-    }
-
-    convertDeltaToComplyWithRestriction(delta: Point): Point {
+    convertDeltaToComplyWithRestriction(camera: BoardCamera, delta: Point): Point {
         if(this._restrictXTranslation && this._restrictYTranslation){
             return {x: 0, y: 0};
         }
@@ -167,31 +153,31 @@ class PanWithRestriction extends PanHandlerBoilerPlate {
             delta.y = 0;
         }
         if(this._restrictRelativeXTranslation){
-            const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, this._camera.rotation);
+            const upDirection =  PointCal.rotatePoint({x: 0, y: 1}, camera.rotation);
             const value = PointCal.dotProduct(upDirection, delta);
             delta = PointCal.multiplyVectorByScalar(upDirection, value);
         }
         if(this._restrictRelativeYTranslation){
-            const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, this._camera.rotation);
+            const rightDirection =  PointCal.rotatePoint({x: 1, y: 0}, camera.rotation);
             const value = PointCal.dotProduct(rightDirection, delta);
             delta = PointCal.multiplyVectorByScalar(rightDirection, value);
         }
         return delta;
     }
 
-    override panTo(destination: Point): void {
-        let delta = PointCal.subVector(destination, this._camera.position);
-        delta = this.convertDeltaToComplyWithRestriction(delta);
+    override panCameraTo(camera: BoardCamera, destination: Point): void {
+        let delta = PointCal.subVector(destination, camera.position);
+        delta = this.convertDeltaToComplyWithRestriction(camera, delta);
         if (delta.x === 0 && delta.y === 0) {
             return;
         }
-        const dest = PointCal.addVector(this._camera.position, delta);
-        super.panTo(dest);
+        const dest = PointCal.addVector(camera.position, delta);
+        super.panCameraTo(camera, dest);
     }
 
-    override panBy(delta: Point): void {
-       delta = this.convertDeltaToComplyWithRestriction(delta);
-       super.panBy(delta);
+    override panCameraBy(camera: BoardCamera, delta: Point): void {
+       delta = this.convertDeltaToComplyWithRestriction(camera, delta);
+       super.panCameraBy(camera, delta);
     }
 }
 
@@ -205,13 +191,6 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
     private baseHandler: BasePanHandler;
     private clampHandler: ClampHandler;
     private restrictionHandler: PanWithRestriction;
-
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
-        this.baseHandler.camera = camera;
-        this.clampHandler.camera = camera;
-        this.restrictionHandler.camera = camera;
-    }
 
     set restrictRelativeXTranslation(restrictRelativeXTranslation: boolean) {
         this.restrictionHandler.restrictRelativeXTranslation = restrictRelativeXTranslation;
@@ -233,25 +212,12 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
         this.clampHandler.entireViewPort = limitEntireViewPort;
     }
 
-    constructor(camera: BoardCamera) {
-        super(camera);
-        this.baseHandler = new BasePanHandler(camera);
-        this.clampHandler = new ClampHandler(camera);
-        this.restrictionHandler = new PanWithRestriction(camera);
+    constructor() {
+        super();
+        this.baseHandler = new BasePanHandler();
+        this.clampHandler = new ClampHandler();
+        this.restrictionHandler = new PanWithRestriction();
         this.restrictionHandler.chainHandler(this.clampHandler).chainHandler(this.baseHandler);
-    }
-
-    override panTo(destination: Point): void {
-        this.restrictionHandler.panTo(destination);
-        if(this.nextHandler){
-            this.nextHandler.panTo(destination);
-        }
-    }
-
-    override panBy(delta: Point): void {
-       this.restrictionHandler.panBy(delta); 
-       if(this.nextHandler){
-           this.nextHandler.panBy(delta);
-       }
+        this.nextHandler = this.restrictionHandler;
     }
 }

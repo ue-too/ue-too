@@ -33,6 +33,23 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
     return leftSide && rightSide && topSide && bottomSide;
 }
 
+export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
+    if(boundaries == undefined){
+        return true;
+    }
+    const minX = boundaries.min?.x;
+    const maxX = boundaries.max?.x;
+    if (minX != undefined && maxX != undefined && minX >= maxX){
+        return false;
+    }
+    const minY = boundaries.min?.y;
+    const maxY = boundaries.max?.y;
+    if (minY != undefined && maxY != undefined && minY >= maxY){
+        return false;
+    }
+    return true;
+}
+
 export function boundariesFullyDefined(boundaries: Boundaries | undefined): boolean{
     if(boundaries == undefined){
         return false;

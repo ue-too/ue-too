@@ -1,6 +1,16 @@
 
 export type ZoomLevelLimits = {min?: number, max?: number};
 
+export function isValidZoomLevelLimits(zoomLevelLimits: ZoomLevelLimits | undefined): boolean{
+    if(zoomLevelLimits === undefined){
+        return true;
+    }
+    if(zoomLevelLimits.min !== undefined && zoomLevelLimits.max !== undefined && zoomLevelLimits.min > zoomLevelLimits.max){
+        return false;
+    }
+    return true;
+}
+
 export function clampZoomLevel(zoomLevel: number, zoomLevelLimits?: ZoomLevelLimits): number{
     if(zoomLevelWithinLimits(zoomLevel, zoomLevelLimits) || zoomLevelLimits === undefined){
         return zoomLevel;

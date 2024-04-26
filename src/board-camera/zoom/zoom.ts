@@ -1,4 +1,4 @@
-import { Point } from "src";
+import { BoardCameraSubscriber, Point } from "src";
 import { BoardCamera } from "src/board-camera/interface";
 import { convert2WorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
@@ -7,12 +7,11 @@ import { PanController, PanHandler } from "src/board-camera/pan/pan";
 
 export interface ZoomHandler {
     nextHandler?: ZoomHandler;
-    camera: BoardCamera;
     chainHandler(handler: ZoomHandler): ZoomHandler;
-    zoomTo(targetZoom: number): void;
-    zoomBy(delta: number): void;
-    zoomToAt(to: number, at: Point): void;
-    zoomByAt(delta: number, at: Point): void;
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void;
+    zoomCameraBy(camera: BoardCamera, delta: number): void;
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void;
+    zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void;
 }
 
 export interface ZoomController extends ZoomHandler {
@@ -20,19 +19,11 @@ export interface ZoomController extends ZoomHandler {
 }
 
 export abstract class ZoomHandlerBoilerPlate implements ZoomHandler {
-    private _nextHandler?: ZoomHandler;
-    protected _camera: BoardCamera;
 
-    constructor(camera: BoardCamera){
-        this._camera = camera;
-    }
+    protected _nextHandler?: ZoomHandler;
 
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
-    }
-
-    get camera(): BoardCamera {
-        return this._camera;
+    constructor(nextHandler: ZoomHandler | undefined = undefined) {
+        this._nextHandler = nextHandler;
     }
 
     set nextHandler(handler: ZoomHandler | undefined) {
@@ -48,27 +39,27 @@ export abstract class ZoomHandlerBoilerPlate implements ZoomHandler {
         return handler;
     }
 
-    zoomTo(targetZoom: number): void {
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void {
         if(this._nextHandler){
-            this._nextHandler.zoomTo(targetZoom);
+            this._nextHandler.zoomCameraTo(camera, targetZoom);
         }
     }
 
-    zoomBy(delta: number): void {
+    zoomCameraBy(camera: BoardCamera, delta: number): void {
         if(this._nextHandler){
-            this._nextHandler.zoomBy(delta);
+            this._nextHandler.zoomCameraBy(camera, delta);
         }
     }
 
-    zoomToAt(to: number, at: Point): void {
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
         if(this._nextHandler){
-            this._nextHandler.zoomToAt(to, at);
+            this._nextHandler.zoomCameraToAt(camera, to, at);
         }
     }
 
-    zoomByAt(delta: number, at: Point): void {
+    zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void {
         if(this._nextHandler){
-            this._nextHandler.zoomByAt(delta, at);
+            this._nextHandler.zoomCameraByAt(camera, delta, at);
         }
     }
 }
@@ -77,71 +68,70 @@ export class BaseZoomHandler extends ZoomHandlerBoilerPlate {
 
     private basePanHandler: PanHandler;
 
-    constructor(camera: BoardCamera, basePanHandler: PanHandler) {
-        super(camera);
+    constructor(basePanHandler: PanHandler, nextHandler: ZoomHandler | undefined = undefined) {
+        super(nextHandler);
         this.basePanHandler = basePanHandler;
-        this.basePanHandler.camera = camera;
     }
 
-    zoomTo(targetZoom: number): void{
-        this._camera.setZoomLevel(targetZoom);
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void{
+        camera.setZoomLevel(targetZoom);
     }
 
-    zoomBy(diff: number): void {
-        const curZoomLevel = this._camera.zoomLevel;
+    zoomCameraBy(camera: BoardCamera, diff: number): void {
+        const curZoomLevel = camera.zoomLevel;
         const targetZoom = curZoomLevel + diff;
-        this._camera.setZoomLevel(targetZoom);
+        camera.setZoomLevel(targetZoom);
     }
 
-    zoomToAt(to: number, at: Point): void {
-        let originalAnchorInWorld = convert2WorldSpace(at, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
-        const originalZoomLevel = this._camera.zoomLevel;
-        this._camera.setZoomLevel(to);
-        let anchorInWorldAfterZoom = convert2WorldSpace(at, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
+        let originalAnchorInWorld = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
+        const originalZoomLevel = camera.zoomLevel;
+        camera.setZoomLevel(to);
+        let anchorInWorldAfterZoom = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        this.basePanHandler.panBy(diff);
+        this.basePanHandler.panCameraBy(camera, diff);
     }
 
-    zoomByAt(delta: number, at: Point): void {
-        let originalAnchorInWorld = convert2WorldSpace(at, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
-        const originalZoomLevel = this._camera.zoomLevel;
+    zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void {
+        let originalAnchorInWorld = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
+        const originalZoomLevel = camera.zoomLevel;
         const targetZoom = originalZoomLevel + delta;
-        this._camera.setZoomLevel(targetZoom);
-        let anchorInWorldAfterZoom = convert2WorldSpace(at, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
+        camera.setZoomLevel(targetZoom);
+        let anchorInWorldAfterZoom = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        this.basePanHandler.panBy(diff);
+        this.basePanHandler.panCameraBy(camera, diff);
     }
 }
 
 export class ZoomClampHandler extends ZoomHandlerBoilerPlate{
     
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: ZoomHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
-    zoomTo(targetZoom: number): void{
-        targetZoom = clampZoomLevel(targetZoom, this._camera.zoomBoundaries);
-        super.zoomTo(targetZoom);
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void{
+        targetZoom = clampZoomLevel(targetZoom, camera.zoomBoundaries);
+        super.zoomCameraTo(camera, targetZoom);
     }
 
-    zoomBy(diff: number): void {
-        let targetZoom = this._camera.zoomLevel + diff;
-        targetZoom = clampZoomLevel(targetZoom, this._camera.zoomBoundaries);
-        diff = targetZoom - this._camera.zoomLevel;
-        super.zoomBy(diff);
+    zoomCameraBy(camera: BoardCamera, diff: number): void {
+        let targetZoom = camera.zoomLevel + diff;
+        targetZoom = clampZoomLevel(targetZoom, camera.zoomBoundaries);
+        diff = targetZoom - camera.zoomLevel;
+        super.zoomCameraBy(camera, diff);
     }
 
-    zoomToAt(to: number, at: Point): void {
-        to = clampZoomLevel(to, this._camera.zoomBoundaries);
-        super.zoomToAt(to, at);
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
+        to = clampZoomLevel(to, camera.zoomBoundaries);
+        super.zoomCameraToAt(camera, to, at);
     }
 
-    zoomByAt(delta: number, at: Point): void {
-        let targetZoom = this._camera.zoomLevel + delta;
-        targetZoom = clampZoomLevel(targetZoom, this._camera.zoomBoundaries);
-        delta = targetZoom - this._camera.zoomLevel;
-        super.zoomByAt(delta, at);
+    zoomByAt(camera: BoardCamera, delta: number, at: Point): void {
+        let targetZoom = camera.zoomLevel + delta;
+        targetZoom = clampZoomLevel(targetZoom, camera.zoomBoundaries);
+        delta = targetZoom - camera.zoomLevel;
+        super.zoomCameraByAt(camera, delta, at);
     }
 }
 
@@ -149,8 +139,8 @@ export class ZoomRestrictionHandler extends ZoomHandlerBoilerPlate{
 
     private _restrictZoom: boolean = false;
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: ZoomHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
     set restrictZoom(restrictZoom: boolean){
@@ -161,55 +151,48 @@ export class ZoomRestrictionHandler extends ZoomHandlerBoilerPlate{
         return this._restrictZoom;
     }
 
-    zoomTo(targetZoom: number): void{
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void{
         if(this._restrictZoom){
             return;
         }
-        if(this.nextHandler !== undefined){
-            this.nextHandler.zoomTo(targetZoom);
-        }
+        super.zoomCameraTo(camera, targetZoom);
     }
 
-    zoomBy(diff: number): void {
+    zoomCameraBy(camera: BoardCamera, diff: number): void {
         if(this._restrictZoom){
             return;
         }
-        if(this.nextHandler !== undefined){
-            this.nextHandler.zoomBy(diff);
-        }
+        super.zoomCameraBy(camera, diff);
     }
 
-    zoomToAt(to: number, at: Point): void {
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
         if(this._restrictZoom){
             return;
         }
-        if(this.nextHandler !== undefined){
-            this.nextHandler.zoomToAt(to, at);
-        }
+        super.zoomCameraToAt(camera, to, at);
     }
 
-    zoomByAt(delta: number, at: Point): void {
+    zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void {
         if(this._restrictZoom){
             return;
         }
-        if(this.nextHandler !== undefined){
-            this.nextHandler.zoomByAt(delta, at);
-        }
+        super.zoomCameraByAt(camera, delta, at);
     }
 }
 
-export class ZoomRig extends ZoomHandlerBoilerPlate {
+export class ZoomRig extends ZoomHandlerBoilerPlate implements ZoomController{
 
     private _baseHandler: BaseZoomHandler;
     private _clampHandler: ZoomClampHandler;
     private _restrictionHandler: ZoomRestrictionHandler;
 
-    constructor(camera: BoardCamera, basePanHandler: PanHandler) {
-        super(camera);
-        this._baseHandler = new BaseZoomHandler(camera, basePanHandler);
-        this._clampHandler = new ZoomClampHandler(camera);
-        this._restrictionHandler = new ZoomRestrictionHandler(camera);
+    constructor(basePanHandler: PanHandler, nextHandler: ZoomHandler | undefined = undefined) {
+        super(nextHandler);
+        this._baseHandler = new BaseZoomHandler(basePanHandler);
+        this._clampHandler = new ZoomClampHandler();
+        this._restrictionHandler = new ZoomRestrictionHandler();
         this._restrictionHandler.chainHandler(this._clampHandler).chainHandler(this._baseHandler);
+        this._nextHandler = this._restrictionHandler;
     }
 
     set restrictZoom(restrict: boolean) {
@@ -220,31 +203,19 @@ export class ZoomRig extends ZoomHandlerBoilerPlate {
         return this._restrictionHandler.restrictZoom;
     }
 
-    zoomTo(targetZoom: number): void {
-        this._restrictionHandler.zoomTo(targetZoom);
-        if(this.nextHandler){
-            this.nextHandler.zoomTo(targetZoom);
-        }
+    zoomCameraTo(camera: BoardCamera, targetZoom: number): void {
+        super.zoomCameraTo(camera, targetZoom);
     }
 
-    zoomBy(delta: number): void {
-        this._restrictionHandler.zoomBy(delta);
-        if(this.nextHandler){
-            this.nextHandler.zoomBy(delta);
-        }
+    zoomCameraBy(camera: BoardCamera, delta: number): void {
+        super.zoomCameraBy(camera, delta);
     }
 
-    zoomByAt(delta: number, at: Point): void {
-        this._restrictionHandler.zoomByAt(delta, at);
-        if(this.nextHandler){
-            this.nextHandler.zoomByAt(delta, at);
-        }
+    zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void {
+        super.zoomCameraByAt(camera, delta, at);
     }
 
-    zoomToAt(to: number, at: Point): void {
-        this._restrictionHandler.zoomToAt(to, at);
-        if(this.nextHandler){
-            this.nextHandler.zoomToAt(to, at);
-        }
+    zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
+        super.zoomCameraToAt(camera, to, at);
     }
 }
