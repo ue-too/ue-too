@@ -152,8 +152,13 @@ export class BoardV2 {
         this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
         this.boardStateObserver.subscribeToPanHandler(this._kmtStrategy);
         this.boardStateObserver.subscribeToZoomHandler(this._kmtStrategy);
+        this._kmtStrategy.camera = this.boardStateObserver.camera;
         this._kmtStrategy.panHandler = this.boardStateObserver.panHandler;
         this._kmtStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
+    }
+
+    get kmtStrategy(): BoardKMTStrategyV2{
+        return this._kmtStrategy;
     }
 
     set touchStrategy(strategy: BoardTouchStrategyV2){
@@ -166,8 +171,13 @@ export class BoardV2 {
         this.boardStateObserver.subscribeToCamera(this._touchStrategy);
         this.boardStateObserver.subscribeToPanHandler(this._touchStrategy);
         this.boardStateObserver.subscribeToZoomHandler(this._touchStrategy);
+        this._touchStrategy.camera = this.boardStateObserver.camera;
         this._touchStrategy.panHandler = this.boardStateObserver.panHandler;
         this._touchStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
+    }
+
+    get touchStrategy(): BoardTouchStrategyV2{
+        return this._touchStrategy;
     }
 
     get camera(): BoardCamera{
@@ -278,6 +288,12 @@ export class BoardV2 {
         if(this._fullScreen){
             this.width = window.innerWidth;
             this.height = window.innerHeight;
+            if(this.panHandler.limitEntireViewPort){
+                const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+                if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                    this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
+                }
+            }
         }
     }
 
