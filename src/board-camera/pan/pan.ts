@@ -15,7 +15,7 @@ export interface PanHandlerLegacy {
 export interface PanHandler {
     nextHandler?: PanHandler;
     chainHandler(handler: PanHandler): PanHandler;
-    panCameraTo(camera: BoardCamera,destination: Point): void
+    panCameraTo(camera: BoardCamera, destination: Point): void
     panCameraBy(camera: BoardCamera, delta: Point): void
 }
 
@@ -25,6 +25,7 @@ export interface PanController extends PanHandler {
     restrictYTranslation: boolean;
     restrictRelativeXTranslation: boolean;
     restrictRelativeYTranslation: boolean;
+    restrictTranslation: boolean;
 }
 
 export abstract class PanHandlerBoilerPlate implements PanHandler {
@@ -127,16 +128,32 @@ class PanWithRestriction extends PanHandlerBoilerPlate {
         this._restrictXTranslation = restrictXTranslation;
     }
 
+    get restrictXTranslation(): boolean {
+        return this._restrictXTranslation;
+    }
+
     set restrictYTranslation(restrictYTranslation: boolean) {
         this._restrictYTranslation = restrictYTranslation;
+    }
+
+    get restrictYTranslation(): boolean {
+        return this._restrictYTranslation;
     }
 
     set restrictRelativeXTranslation(restrictRelativeXTranslation: boolean) {
         this._restrictRelativeXTranslation = restrictRelativeXTranslation;
     }
 
+    get restrictRelativeXTranslation(): boolean {
+        return this._restrictRelativeXTranslation;
+    }
+
     set restrictRelativeYTranslation(restrictRelativeYTranslation: boolean) {
         this._restrictRelativeYTranslation = restrictRelativeYTranslation;
+    }
+
+    get restrictRelativeYTranslation(): boolean {
+        return this._restrictRelativeYTranslation;
     }
 
     convertDeltaToComplyWithRestriction(camera: BoardCamera, delta: Point): Point {
@@ -183,11 +200,6 @@ class PanWithRestriction extends PanHandlerBoilerPlate {
 
 export class PanRig extends PanHandlerBoilerPlate implements PanController {
 
-    private _limitEntireViewPort: boolean = false;
-    private _restrictXTranslation: boolean = false;
-    private _restrictYTranslation: boolean = false;
-    private _restrictRelativeXTranslation: boolean = false;
-    private _restrictRelativeYTranslation: boolean = false;
     private baseHandler: BasePanHandler;
     private clampHandler: ClampHandler;
     private restrictionHandler: PanWithRestriction;
@@ -206,6 +218,32 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
 
     set restrictYTranslation(restrictYTranslation: boolean) {
         this.restrictionHandler.restrictYTranslation = restrictYTranslation;
+    }
+
+    set restrictTranslation(restrictTranslation: boolean) {
+        console.log("setting", restrictTranslation);
+        this.restrictionHandler.restrictXTranslation = restrictTranslation;
+        this.restrictionHandler.restrictYTranslation = restrictTranslation;
+    }
+
+    get restrictTranslation(): boolean {
+        return this.restrictionHandler.restrictXTranslation;
+    }
+
+    get restrictXTranslation(): boolean {
+        return this.restrictionHandler.restrictXTranslation;
+    }
+
+    get restrictYTranslation(): boolean {
+        return this.restrictionHandler.restrictYTranslation;
+    }
+
+    get restrictRelativeXTranslation(): boolean {
+        return this.restrictionHandler.restrictRelativeXTranslation;
+    }
+
+    get restrictRelativeYTranslation(): boolean {
+        return this.restrictionHandler.restrictRelativeYTranslation;
     }
 
     set limitEntireViewPort(limitEntireViewPort: boolean) {

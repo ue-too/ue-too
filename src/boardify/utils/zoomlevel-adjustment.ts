@@ -7,7 +7,7 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
     if(width == undefined || height == undefined){
         return undefined;
     }
-    console.log(canvasHeight, canvasWidth);
+    // console.log(canvasHeight, canvasWidth);
     const widthWidthProjection = Math.abs(width * Math.cos(cameraRotation));
     const heightWidthProjection = Math.abs(height * Math.cos(cameraRotation));
     const widthHeightProjection = Math.abs(width * Math.sin(cameraRotation));

@@ -130,6 +130,8 @@ export class CameraObserver {
     
 }
 
+export type UnSubscribe = () => void;
+
 export class CameraObserverV2 {
 
     private panCallbackList: CallbackListV2<"pan"> = [];
@@ -166,18 +168,19 @@ export class CameraObserverV2 {
         });
     }
 
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): void {
+    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
         switch (eventName){
         case "pan":
             this.panCallbackList.push(callback as (event: CameraEvent["pan"], cameraState: CameraState)=>void);
-            break;
+            return ()=>{this.panCallbackList = this.panCallbackList.filter((cb) => cb !== callback)};
         case "zoom":
             this.zoomCallbackList.push(callback as (event: CameraEvent["zoom"], cameraState: CameraState)=>void);
-            break;
+            return ()=>{this.zoomCallbackList = this.zoomCallbackList.filter((cb) => cb !== callback)};
         case "rotate":
             this.rotateCallbackList.push(callback as (event: CameraEvent["rotate"], cameraState: CameraState)=>void);
-            break;
+            return ()=>{this.rotateCallbackList = this.rotateCallbackList.filter((cb) => cb !== callback)};
         }
+        return ()=>{};
     }
 
     clearCallbacks(): void {

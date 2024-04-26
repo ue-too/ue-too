@@ -1,6 +1,6 @@
 import { Point } from 'src';
 import { Boundaries } from 'src/board-camera';
-import { CameraObserverV2 } from 'src/camera-observer';
+import { CameraObserverV2, UnSubscribe } from 'src/camera-observer';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { zoomLevelWithinLimits, ZoomLevelLimits, clampZoomLevel } from 'src/board-camera/utils/zoom';
 import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRotation } from 'src/board-camera/utils/rotation';
@@ -205,8 +205,8 @@ export class BoardCameraV2 implements BoardCamera {
         this._boundaries.max.y = max;
     }
 
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): void {
-        this._observer.on(eventName, callback);
+    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
+        return this._observer.on(eventName, callback);
     }
      
 }

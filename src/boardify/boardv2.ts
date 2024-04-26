@@ -7,7 +7,7 @@ import { BoardTouchStrategyV2, DefaultTouchStrategy } from 'src/touch-strategy';
 import { Point } from 'src';
 import { PointCal } from 'point2point';
 
-import { CameraEvent, CameraState } from 'src/camera-observer';
+import { CameraEvent, CameraState, UnSubscribe } from 'src/camera-observer';
 import {  minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { BoardStateObserver } from 'src/boardify/camera-sync-observer';
 
@@ -53,8 +53,12 @@ export class BoardV2 {
 
         this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
         this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
+        this.boardStateObserver.subscribeToPanHandler(this._kmtStrategy);
+        this.boardStateObserver.subscribeToZoomHandler(this._kmtStrategy);
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
         this.boardStateObserver.subscribeToCamera(this._touchStrategy);
+        this.boardStateObserver.subscribeToPanHandler(this._touchStrategy);
+        this.boardStateObserver.subscribeToZoomHandler(this._touchStrategy);
         this.registerEventListeners();
     }
 
@@ -120,6 +124,10 @@ export class BoardV2 {
         }
     }
 
+    get context(): CanvasRenderingContext2D{
+        return this._context;
+    }
+
     set limitEntireViewPort(value: boolean){
         this.boardStateObserver.panHandler.limitEntireViewPort = value;
         if(value){
@@ -135,20 +143,29 @@ export class BoardV2 {
     }
 
     set kmtStrategy(strategy: BoardKMTStrategyV2){
-        if(strategy.canvas !== this._canvas){
-            return;
-        }
         this._kmtStrategy.tearDown();
+        this.boardStateObserver.unsubscribeToCamera(this._kmtStrategy);
+        this.boardStateObserver.unsubscribeToPanHandler(this._kmtStrategy);
+        this.boardStateObserver.unsubscribeToZoomHandler(this._kmtStrategy);
         strategy.setUp();
         this._kmtStrategy = strategy;
+        this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
+        this.boardStateObserver.subscribeToPanHandler(this._kmtStrategy);
+        this.boardStateObserver.subscribeToZoomHandler(this._kmtStrategy);
         this._kmtStrategy.panHandler = this.boardStateObserver.panHandler;
         this._kmtStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
     }
 
     set touchStrategy(strategy: BoardTouchStrategyV2){
         this._touchStrategy.tearDown();
+        this.boardStateObserver.unsubscribeToCamera(this._touchStrategy);
+        this.boardStateObserver.unsubscribeToPanHandler(this._touchStrategy);
+        this.boardStateObserver.unsubscribeToZoomHandler(this._touchStrategy);
         strategy.setUp();
         this._touchStrategy = strategy;
+        this.boardStateObserver.subscribeToCamera(this._touchStrategy);
+        this.boardStateObserver.subscribeToPanHandler(this._touchStrategy);
+        this.boardStateObserver.subscribeToZoomHandler(this._touchStrategy);
         this._touchStrategy.panHandler = this.boardStateObserver.panHandler;
         this._touchStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
     }
@@ -158,6 +175,8 @@ export class BoardV2 {
     }
 
     set camera(camera: BoardCamera){
+        camera.viewPortHeight = this._canvas.height;
+        camera.viewPortWidth = this._canvas.width;
         this.boardStateObserver.camera = camera;
     }
 
@@ -196,10 +215,6 @@ export class BoardV2 {
             this._context.rotate(this.boardStateObserver.camera.rotation);
             this._context.translate(-this.boardStateObserver.camera.position.x,  this.boardStateObserver.camera.position.y);
         }
-
-        // drawReferenceCircle(this._context, {x: 30, y: 20}, this._alignCoordinateSystem);
-        // drawBoundingBox(this._context, curBoundaries, this._alignCoordinateSystem);
-        // drawAxis(this._context, curBoundaries, this.boardStateObserver.camera.zoomLevel, this._alignCoordinateSystem);
     }
 
     private convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
@@ -221,8 +236,8 @@ export class BoardV2 {
         }
     }
 
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): void {
-        this.boardStateObserver.camera.on(eventName, callback);
+    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
+        return this.boardStateObserver.camera.on(eventName, callback);
     }
 
     get maxHalfTransHeight(): number | undefined{
