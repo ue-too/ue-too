@@ -9,7 +9,7 @@ import { PointCal } from 'point2point';
 import { CameraEvent, CameraState } from 'src/camera-observer';
 import { BoardCamera } from 'src/board-camera/interface';
 
-export class BoardCameraV2 implements BoardCamera {
+export default class BoardCameraV2 implements BoardCamera {
 
     private _position: Point;
     private _rotation: number;

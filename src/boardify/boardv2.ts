@@ -1,4 +1,4 @@
-import { BoardCamera, BoardCameraV2 } from 'src/board-camera';
+import BoardCameraV2, { BoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camera/utils/position';
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
@@ -87,6 +87,16 @@ export class BoardV2 {
     set width(width: number){
         this._canvas.width = width;
         this.boardStateObserver.camera.viewPortWidth = width;
+        // console.log("changed the width of the canvas");
+        // console.log("limit entire view port", this.boardStateObserver.panHandler.limitEntireViewPort);
+        if(this.boardStateObserver.panHandler.limitEntireViewPort){
+            // console.log("change the min zoom level due to the limit entire view port");
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                // console.log("setting min zoom level in width");
+                this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
     }
 
     get width(): number {
@@ -96,6 +106,12 @@ export class BoardV2 {
     set height(height: number){
         this._canvas.height = height;
         this.boardStateObserver.camera.viewPortHeight = height;
+        if(this.boardStateObserver.panHandler.limitEntireViewPort){
+            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
     }
 
     get height(): number {
@@ -288,12 +304,6 @@ export class BoardV2 {
         if(this._fullScreen){
             this.width = window.innerWidth;
             this.height = window.innerHeight;
-            if(this.panHandler.limitEntireViewPort){
-                const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
-                if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
-                    this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
-                }
-            }
         }
     }
 

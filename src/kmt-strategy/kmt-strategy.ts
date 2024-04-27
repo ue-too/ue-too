@@ -1,6 +1,6 @@
 import { PointCal } from "point2point";
 import { Board, Point } from "..";
-import BoardCameraV1, { BoardCamera } from "src/board-camera";
+import { BoardCamera, BoardCameraV1 } from "src/board-camera";
 import { PanHandler } from "src/board-camera/pan";
 import { ZoomHandler } from "src/board-camera/zoom";
 import { BoardCameraSubscriber, BoardPanHandlerSubscriber, BoardZoomHandlerSubscriber} from "src/boardify";
@@ -57,6 +57,7 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
     private _panDisabled: boolean = false;
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
+    private _keyController: Map<string, boolean> = new Map<string, boolean>();
 
     constructor(canvas: HTMLCanvasElement, camera:BoardCamera, panHandler: PanHandler, zoomHandler: ZoomHandler, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
@@ -65,12 +66,9 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
         this._camera = camera;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
-        this.pointerDownHandler = this.pointerDownHandler.bind(this);
-        this.pointerUpHandler = this.pointerUpHandler.bind(this);
-        this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
-        this.scrollHandler = this.scrollHandler.bind(this);
         this._panHandler = panHandler;
         this._zoomHandler = zoomHandler;
+        this.bindFunctions();
     }
 
     get debugMode(): boolean {
@@ -151,6 +149,9 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
         this.canvas.addEventListener('pointerup', this.pointerUpHandler);
         this.canvas.addEventListener('pointermove', this.pointerMoveHandler);
         this.canvas.addEventListener('wheel', this.scrollHandler);
+        window.addEventListener('keydown', this.keypressHandler);
+        window.addEventListener('keyup', this.keyupHandler);
+        this.setupKeyController([" "]);
     }
 
     tearDown(): void {
@@ -158,13 +159,30 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
         this.canvas.removeEventListener('pointerup', this.pointerUpHandler);
         this.canvas.removeEventListener('pointermove', this.pointerMoveHandler);
         this.canvas.removeEventListener('wheel', this.scrollHandler);
+        window.removeEventListener('keydown', this.keypressHandler);
+        window.removeEventListener('keyup', this.keyupHandler);
+    }
+
+    bindFunctions(): void {
+        this.pointerDownHandler = this.pointerDownHandler.bind(this);
+        this.pointerUpHandler = this.pointerUpHandler.bind(this);
+        this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
+        this.scrollHandler = this.scrollHandler.bind(this);
+        this.keypressHandler = this.keypressHandler.bind(this);
+        this.keyupHandler = this.keyupHandler.bind(this);
+    }
+
+    setupKeyController(keys: string[]): void {
+        keys.forEach((key) => {
+            this._keyController.set(key, false);
+        });
     }
 
     pointerDownHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey) && !this._panDisabled){
+        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey || this._keyController.get(" ")) && !this._panDisabled){
             this.isDragging = true;
             this.dragStartPoint = {x: e.clientX, y: e.clientY};
         }
@@ -250,6 +268,23 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
             }
             const zoomLevel = this._camera.zoomLevel - (this._camera.zoomLevel * zoomAmount * 5);
             this._zoomHandler.zoomCameraToAt(this.camera, zoomLevel, anchorPoint);
+        }
+    }
+
+    keypressHandler(e: KeyboardEvent){
+        // console.log("key pressed is spacebar", e.key == " ");
+        if(this._keyController.has(e.key) && this._keyController.get(e.key) == false){
+            e.preventDefault();
+            this._keyController.set(e.key, true);
+        }
+    }
+
+    keyupHandler(e: KeyboardEvent){
+        if(this._keyController.has(e.key) && this._keyController.get(e.key) == true){
+            e.preventDefault();
+            this._keyController.set(e.key, false);
+            this.isDragging = false;
+            this.canvas.style.cursor = "auto";
         }
     }
 

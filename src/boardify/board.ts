@@ -1,4 +1,4 @@
-import BoardCamera from "src/board-camera";
+import {BoardCameraV1} from "src/board-camera";
 import { Point } from "src";
 import { PointCal } from "point2point";
 import { BoardTouchStrategy, OneFingerPanTwoFingerZoom } from "src/touch-strategy";
@@ -41,7 +41,7 @@ export default class Board {
     private _canvas: HTMLCanvasElement; 
     private _context: CanvasRenderingContext2D;
 
-    private _camera: BoardCamera;
+    private _camera: BoardCameraV1;
 
     private requestRef: number;
     private _handOverStepControl: boolean = true;
@@ -72,7 +72,7 @@ export default class Board {
         console.log("test output");
         this._canvas = canvas;
         this._context = canvas.getContext("2d");
-        this._camera = new BoardCamera();
+        this._camera = new BoardCameraV1();
         this._camera.setMaxZoomLevel(5);
         this._camera.setMinZoomLevel(0.01);
         this._camera.setViewPortWidth(this._canvas.width);
@@ -412,7 +412,7 @@ export default class Board {
     /**
      * @accessorDescription The camera for the board
      */
-    get camera(): BoardCamera{
+    get camera(): BoardCameraV1{
         return this._camera;
     }
 
@@ -720,7 +720,7 @@ export default class Board {
      * @group Internal Attributes 
      * @translation Get the internal camera
      */
-    getCamera(): BoardCamera {
+    getCamera(): BoardCameraV1 {
         return this._camera;
     }
 

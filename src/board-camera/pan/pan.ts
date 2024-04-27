@@ -221,7 +221,7 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
     }
 
     set restrictTranslation(restrictTranslation: boolean) {
-        console.log("setting", restrictTranslation);
+        // console.log("setting", restrictTranslation);
         this.restrictionHandler.restrictXTranslation = restrictTranslation;
         this.restrictionHandler.restrictYTranslation = restrictTranslation;
     }
@@ -248,6 +248,10 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
 
     set limitEntireViewPort(limitEntireViewPort: boolean) {
         this.clampHandler.entireViewPort = limitEntireViewPort;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this.clampHandler.entireViewPort;
     }
 
     constructor() {
