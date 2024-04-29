@@ -9,9 +9,9 @@ import { PointCal } from 'point2point';
 
 import { CameraEvent, CameraState, UnSubscribe } from 'src/camera-observer';
 import {  minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
-import { BoardStateObserver } from 'src/boardify/camera-sync-observer';
+import { BoardStateObserver } from 'src/boardify/board-state-observer';
 
-export class BoardV2 {
+export default class BoardV2 {
     
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;

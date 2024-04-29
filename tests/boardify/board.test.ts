@@ -1,5 +1,5 @@
 import { BoardCameraV2, PanRig } from "../../src";
-import { BoardV2 } from "../../src/boardify";
+import BoardV2 from "../../src/boardify/boardv2";
 // import { createCanvas } from 'canvas';
 import * as ResizeObserverModule from 'resize-observer-polyfill';
 
