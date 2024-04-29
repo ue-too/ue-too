@@ -8,7 +8,8 @@
         "moduleResolution": "node",
         "paths": {
             "src": ["src"],
-            "src/*": ["src/*"]
+            "src/*": ["src/*"],
+            "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
         },
         "resolveJsonModule": true,
         "lib": ["es6", "dom"],

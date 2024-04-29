@@ -3,15 +3,7 @@ import { CameraObserver } from "../camera-observer/camera-observer";
 import { EaseFunctions } from "../ease-functions";
 import { EaseFunction } from "../ease-functions";
 import { CameraEventMapping, CameraState } from "../camera-observer/camera-observer";
-
-/**
- * @category Board Camera
- * @translation need to translate boundaries text
- */
-export type Boundaries = {
-    min?: {x?: number, y?: number};
-    max?: {x?: number, y?: number};
-}
+import { Boundaries } from "./utils";
 
 /**
  * @category Board Camera
@@ -91,7 +83,7 @@ export type CameraRotateRes = CameraRotateSuccessRes | CameraRotateFailureRes;
  * camera.setPosition({x: 0, y: 0});
  * ```
  */
-export default class BoardCamera {
+export default class BoardCameraV1 {
 
     private _position: Point;
     private _zoomLevel: number;
@@ -650,6 +642,13 @@ export default class BoardCamera {
         return this._position;
     }
 
+    set position(position: Point){
+        if(!this.withinBoundaries(position)){
+            return;
+        }
+        this._position = position;
+    }
+
     getZoomLevel(): number{
         return this._zoomLevel;
     }
@@ -770,7 +769,7 @@ export default class BoardCamera {
         if(moveRes.success){
             this.releaseFromLockedObject();
             this.cancelAnimations();
-            this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(delta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return moveRes;
         } else {
             return {success: false};
@@ -827,7 +826,7 @@ export default class BoardCamera {
         if(res.moved){
             this.releaseFromLockedObject();
             this.cancelAnimations();
-            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
         }
         return res;
     }
@@ -864,7 +863,7 @@ export default class BoardCamera {
         this.cancelAnimations();
         const res = this.moveWithClampEntireViewPort(delta);
         if(res.moved){
-            this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
+            // this._observer.notifyOnPositionChange(res.actualDelta, {position: this._position, zoomLevel: this._zoomLevel, rotation: this._rotation});
             return {success: res.moved, deltaPosition: res.actualDelta, resultingPosition: this._position};
         }
         return {success: false}

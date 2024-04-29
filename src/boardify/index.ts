@@ -1,3 +1,6 @@
-import Board from "./board";
 export * from "./board";
-export default Board;
+export * from "./boardv2";
+export * from "./utils";
+export * from "./board-state-observer";
+export { default as BoardV1 } from "./board";
+export { default } from "./boardv2";
