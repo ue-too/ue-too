@@ -1,5 +1,6 @@
 import { getRandom, getRandomPoint } from "..";
-import BoardCamera, { InvalidZoomLevelError } from "../../src/board-camera";
+import { InvalidZoomLevelError } from "../../src/board-camera";
+import BoardCamera from "../../src/board-camera/board-camera";
 import { Point } from "../../src";
 
 describe("Initialize a BoardCamera object", ()=>{

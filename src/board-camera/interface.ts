@@ -1,0 +1,32 @@
+import { Point } from "src";
+import { CameraObserverV2, UnSubscribe } from "src/camera-observer";
+
+import { RotationLimits } from "src/board-camera/utils/rotation";
+import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
+
+import { CameraEvent, CameraState } from "src/camera-observer";
+
+type Boundaries = {
+    min?: {x?: number, y?: number};
+    max?: {x?: number, y?: number};
+}
+
+export interface BoardCamera {
+    position: Point;
+    rotation: number;
+    zoomLevel: number;
+    viewPortWidth: number;
+    viewPortHeight: number;
+    boundaries?: Boundaries;
+    zoomBoundaries?: ZoomLevelLimits;
+    rotationBoundaries?: RotationLimits;
+    observer: CameraObserverV2;
+    setPosition(destination: Point): void;
+    setZoomLevel(zoomLevel: number): void;
+    setRotation(rotation: number): void;
+    setMinZoomLevel(minZoomLevel: number): void;
+    setHorizontalBoundaries(min: number, max: number): void;
+    setVerticalBoundaries(min: number, max: number): void;
+    convertFromViewPort2WorldSpace(point: Point): Point;
+    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe;
+}

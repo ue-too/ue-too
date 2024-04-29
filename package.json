@@ -18,6 +18,7 @@
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
+    "count-lines": "git ls-files ./src | xargs wc -l",
     "test": "jest"
   },
   "repository": {
@@ -37,9 +38,12 @@
     "@rollup/plugin-terser": "^0.4.3",
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/jest": "^29.5.1",
+    "@types/node": "^20.12.7",
+    "canvas": "^2.11.2",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.7.0",
     "point2point": "^0.0.95",
+    "resize-observer-polyfill": "^1.5.1",
     "rollup": "^3.26.2",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
