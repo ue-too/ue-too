@@ -86,7 +86,7 @@ export default [
       resolve(),
       typescript(),
       terser({
-        mangle: false,
+        mangle: true,
       }),
     ],
   },
