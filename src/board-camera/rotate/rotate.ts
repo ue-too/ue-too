@@ -3,10 +3,9 @@ import { BoardCamera } from "src/board-camera/interface"
 
 export interface RotationHandler {
     nextHandler?: RotationHandler;
-    camera: BoardCamera;
     chainHandler(handler: RotationHandler): RotationHandler;
-    rotateTo(targetRotation: number): void
-    rotateBy(delta: number): void
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void
+    rotateCameraBy(camera: BoardCamera, delta: number): void
 }
 
 export interface RotationController extends RotationHandler {
@@ -15,19 +14,10 @@ export interface RotationController extends RotationHandler {
 
 export abstract class RotationHandlerBoilerPlate implements RotationHandler {
 
-    protected _camera: BoardCamera;
     private _nextHandler?: RotationHandler;
 
-    constructor(camera: BoardCamera){
-        this._camera = camera;
-    }
-
-    set camera(camera: BoardCamera) {
-        this._camera = camera;
-    }
-
-    get camera(): BoardCamera {
-        return this._camera;
+    constructor(nextHandler: RotationHandler | undefined = undefined) {
+        this._nextHandler = nextHandler;
     }
 
     set nextHandler(handler: RotationHandler | undefined) {
@@ -43,15 +33,15 @@ export abstract class RotationHandlerBoilerPlate implements RotationHandler {
         return handler;
     }
 
-    rotateTo(targetRotation: number): void {
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void {
         if(this._nextHandler){
-            this._nextHandler.rotateTo(targetRotation);
+            this._nextHandler.rotateCameraTo(camera, targetRotation);
         }
     }
 
-    rotateBy(delta: number): void {
+    rotateCameraBy(camera: BoardCamera, delta: number): void {
         if(this._nextHandler){
-            this._nextHandler.rotateBy(delta);
+            this._nextHandler.rotateCameraBy(camera, delta);
         }
     }
 
@@ -59,20 +49,20 @@ export abstract class RotationHandlerBoilerPlate implements RotationHandler {
 
 export class BaseRotationHandler extends RotationHandlerBoilerPlate{
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: RotationHandler | undefined = undefined) {
+        super();
     }
 
-    rotateTo(targetRotation: number): void{
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void{
         targetRotation = normalizeAngleZero2TwoPI(targetRotation);
-        this._camera.setRotation(targetRotation);
+        camera.setRotation(targetRotation);
     }
 
-    rotateBy(diff: number): void {
-        const curRotation = this._camera.rotation;
+    rotateCameraBy(camera: BoardCamera, diff: number): void {
+        const curRotation = camera.rotation;
         const targetRotation = normalizeAngleZero2TwoPI(curRotation + diff);
         diff = angleSpan(curRotation, targetRotation);
-        this._camera.setRotation(targetRotation);
+        camera.setRotation(targetRotation);
     }
 }
 
@@ -80,8 +70,8 @@ export class RotationRestrictionHandler extends RotationHandlerBoilerPlate{
 
     private _restrictRotation: boolean = false;
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: RotationHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
     get restrictRotation(): boolean{
@@ -92,40 +82,40 @@ export class RotationRestrictionHandler extends RotationHandlerBoilerPlate{
         this._restrictRotation = restrictRotation;
     }
 
-    rotateBy(diff: number): void {
+    rotateCameraBy(camera: BoardCamera, diff: number): void {
         if(this._restrictRotation){
             return;
         }
-        super.rotateBy(diff);
+        super.rotateCameraBy(camera, diff);
     }
 
-    rotateTo(targetRotation: number): void {
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void {
         if(this._restrictRotation){
             return;
         }
-        super.rotateTo(targetRotation);
+        super.rotateCameraTo(camera, targetRotation);
     }
 }
 
 export class RotationClampHandler extends RotationHandlerBoilerPlate{
     
 
-    constructor(camera: BoardCamera) {
-        super(camera);
+    constructor(nextHandler: RotationHandler | undefined = undefined) {
+        super(nextHandler);
     }
 
-    rotateBy(diff: number): void {
-        const curRotation = this._camera.rotation;
+    rotateCameraBy(camera: BoardCamera, diff: number): void {
+        const curRotation = camera.rotation;
         let targetRotation = normalizeAngleZero2TwoPI(curRotation + diff);
-        targetRotation = clampRotation(targetRotation, this._camera.rotationBoundaries); 
+        targetRotation = clampRotation(targetRotation, camera.rotationBoundaries); 
         diff = angleSpan(curRotation, targetRotation);
-        super.rotateBy(diff);
+        super.rotateCameraBy(camera, diff);
     }
 
-    rotateTo(targetRotation: number): void {
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void {
         targetRotation = normalizeAngleZero2TwoPI(targetRotation);
-        targetRotation = clampRotation(targetRotation, this._camera.rotationBoundaries);
-        super.rotateTo(targetRotation);
+        targetRotation = clampRotation(targetRotation, camera.rotationBoundaries);
+        super.rotateCameraTo(camera, targetRotation);
     }
 }
 
@@ -135,21 +125,20 @@ export class RotateRig extends RotationHandlerBoilerPlate {
     private _clampHandler: RotationClampHandler;
     private _restrictionHandler: RotationRestrictionHandler;
 
-    constructor(camera: BoardCamera) {
-        super(camera);
-        this._restrictionHandler = new RotationRestrictionHandler(camera);
-        this._baseHandler = new BaseRotationHandler(camera);
-        this._clampHandler = new RotationClampHandler(camera);
-        this._restrictionHandler.chainHandler(this._clampHandler).chainHandler(this._baseHandler);
+    constructor(nextHandler: RotationHandler | undefined = undefined) {
+        super(nextHandler);
+        this._baseHandler = new BaseRotationHandler();
+        this._clampHandler = new RotationClampHandler(this._baseHandler);
+        this._restrictionHandler = new RotationRestrictionHandler(this._clampHandler);
     }
 
-    rotateBy(diff: number): void {
-        this._restrictionHandler.rotateBy(diff);
-        super.rotateBy(diff);
+    rotateCameraBy(camera: BoardCamera, diff: number): void {
+        this._restrictionHandler.rotateCameraBy(camera, diff);
+        super.rotateCameraBy(camera, diff);
     }
 
-    rotateTo(targetRotation: number): void {
-        this._restrictionHandler.rotateTo(targetRotation);
-        super.rotateTo(targetRotation);
+    rotateCameraTo(camera: BoardCamera, targetRotation: number): void {
+        this._restrictionHandler.rotateCameraTo(camera, targetRotation);
+        super.rotateCameraTo(camera, targetRotation);
     }
 }
