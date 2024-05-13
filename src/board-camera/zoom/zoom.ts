@@ -66,11 +66,15 @@ export abstract class ZoomHandlerBoilerPlate implements ZoomHandler {
 
 export class BaseZoomHandler extends ZoomHandlerBoilerPlate {
 
-    private basePanHandler: PanHandler;
+    private panHandler: PanHandler;
 
-    constructor(basePanHandler: PanHandler, nextHandler: ZoomHandler | undefined = undefined) {
+    constructor(panHandler: PanHandler, nextHandler: ZoomHandler | undefined = undefined) {
         super(nextHandler);
-        this.basePanHandler = basePanHandler;
+        this.panHandler = panHandler;
+    }
+
+    set nextHandler(handler: ZoomHandler | undefined) {
+        this._nextHandler = undefined;
     }
 
     zoomCameraTo(camera: BoardCamera, targetZoom: number): void{
@@ -89,7 +93,7 @@ export class BaseZoomHandler extends ZoomHandlerBoilerPlate {
         camera.setZoomLevel(to);
         let anchorInWorldAfterZoom = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        this.basePanHandler.panCameraBy(camera, diff);
+        this.panHandler.panCameraBy(camera, diff);
     }
 
     zoomCameraByAt(camera: BoardCamera, delta: number, at: Point): void {
@@ -99,7 +103,7 @@ export class BaseZoomHandler extends ZoomHandlerBoilerPlate {
         camera.setZoomLevel(targetZoom);
         let anchorInWorldAfterZoom = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        this.basePanHandler.panCameraBy(camera, diff);
+        this.panHandler.panCameraBy(camera, diff);
     }
 }
 
