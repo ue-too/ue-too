@@ -3,7 +3,7 @@ import { Point } from "src";
 import { BoardCamera } from "src/board-camera/interface";
 import { PanHandler } from "src/board-camera/pan";
 import { ZoomHandler } from "src/board-camera/zoom";
-
+import { BoardInputEvent, InputCallBackList } from "src/input-observer";
 export interface BoardTouchStrategyV2 {
     disabled: boolean;
     alignCoordinateSystem: boolean;
@@ -20,6 +20,7 @@ export interface BoardTouchStrategyV2 {
     disableStrategy(): void;
     setUp(): void;
     tearDown(): void;
+    onInput<K extends keyof BoardInputEvent>(event: K, callback: (event: BoardInputEvent[K])=>void): void;
 }
 
 export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
@@ -43,6 +44,9 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
 
     private ZOOM_SENSATIVITY: number = 0.005;
+
+    private panInputCallBackList: InputCallBackList<"pan"> = [];
+    private zoomInputCallBackList: InputCallBackList<"zoom"> = [];
 
     constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, panHandler: PanHandler, zoomHandler: ZoomHandler, alignCoordinateSystem: boolean = true){
         this.controlCamera = controlCamera;
@@ -219,6 +223,9 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
                 midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
             }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
+            this.zoomInputCallBackList.forEach((callback)=>{
+                callback({deltaZoomAmount: zoomAmount, anchorPoint: midPoint});
+            });
             this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
@@ -231,6 +238,9 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
+            this.panInputCallBackList.forEach((callback)=>{
+                callback({diff: diffInWorld});
+            });
             this._panHandler.panCameraBy(this.camera, diffInWorld);
             // this.controlCamera.moveWithClampFromGesture(diffInWorld);
             this.dragStartPoint = touchPoint;
@@ -253,5 +263,20 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
     updateZoomHandler(zoomHandler: ZoomHandler): void {
         this._zoomHandler = zoomHandler;
+    }
+
+    onInput<K extends keyof BoardInputEvent>(event: K, callback: (event: BoardInputEvent[K]) => void): void {
+        switch(event){
+        case "pan":
+            this.panInputCallBackList.push(callback as (event: BoardInputEvent["pan"])=>void);
+            break;
+        case "zoom":
+            this.zoomInputCallBackList.push(callback as (event: BoardInputEvent["zoom"])=>void);
+            break;
+        case "rotate":
+            break;
+        default:
+            throw new Error("Invalid event type");
+        }
     }
 }

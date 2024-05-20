@@ -3,6 +3,8 @@ import { Point } from "..";
 import { BoardCamera } from "src/board-camera";
 import { PanHandler } from "src/board-camera/pan";
 import { ZoomHandler } from "src/board-camera/zoom";
+
+import { BoardInputEvent, InputCallBackList } from "src/input-observer";
 /**
  * @category Keyboard-Mouse Strategy
  */
@@ -24,8 +26,8 @@ export interface BoardKMTStrategyV2 {
     updateCamera(camera: BoardCamera): void;
     updatePanHandler(panHandler: PanHandler): void;
     updateZoomHandler(zoomHandler: ZoomHandler): void;
+    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=>void): void 
 }
-
 
 export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
 
@@ -43,6 +45,8 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
     private _keyController: Map<string, boolean> = new Map<string, boolean>();
+    private panInputCallBackList: InputCallBackList<"pan">;
+    private zoomInputCallBackList: InputCallBackList<"zoom">;
 
     constructor(canvas: HTMLCanvasElement, camera:BoardCamera, panHandler: PanHandler, zoomHandler: ZoomHandler, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
@@ -54,6 +58,8 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
         this._panHandler = panHandler;
         this._zoomHandler = zoomHandler;
         this.bindFunctions();
+        this.panInputCallBackList = [];
+        this.zoomInputCallBackList = [];
     }
 
     get debugMode(): boolean {
@@ -216,6 +222,9 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
+            this.panInputCallBackList.forEach((callback) => {
+                callback({diff: diffInWorld});
+            });
             this._panHandler.panCameraBy(this._camera, diffInWorld);
             this.dragStartPoint = target;
         }
@@ -238,6 +247,9 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
+            this.panInputCallBackList.forEach((callback) => {
+                callback({diff: diffInWorld});
+            });
             this._panHandler.panCameraBy(this._camera, diffInWorld);
         } else {
             //NOTE this is zooming the camera
@@ -252,6 +264,9 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
                 anchorPoint = PointCal.flipYAxis(anchorPoint);
             }
             const zoomLevel = this._camera.zoomLevel - (this._camera.zoomLevel * zoomAmount * 5);
+            this.zoomInputCallBackList.forEach((callback) => {
+                callback({deltaZoomAmount: zoomLevel - this._camera.zoomLevel, anchorPoint: anchorPoint});
+            });
             this._zoomHandler.zoomCameraToAt(this.camera, zoomLevel, anchorPoint);
         }
     }
@@ -287,5 +302,20 @@ export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
 
     get disabled(): boolean {
         return this._disabled;
+    }
+
+    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=>void): void {
+        switch(eventName){
+        
+        case "pan":
+            this.panInputCallBackList.push(callback as (event: BoardInputEvent["pan"])=>void);
+            break;
+        case "zoom":
+            this.zoomInputCallBackList.push(callback as (event: BoardInputEvent["zoom"])=>void);
+            break;
+        default:
+            throw new Error("Invalid input event name");
+            break;
+        }
     }
 }

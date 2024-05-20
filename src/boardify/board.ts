@@ -1,10 +1,10 @@
 import BoardCameraV2, { BoardCamera } from 'src/board-camera';
-import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camera/utils/position';
+import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
 import { BoardKMTStrategyV2, DefaultBoardKMTStrategyV2 } from 'src/kmt-strategy';
 import { BoardTouchStrategyV2, DefaultTouchStrategy } from 'src/touch-strategy';
-import { Point } from 'src';
+import { BoardInputEvent, Point } from 'src/index';
 import { PointCal } from 'point2point';
 
 import { CameraEvent, CameraState, UnSubscribe } from 'src/camera-observer';
@@ -36,7 +36,12 @@ export default class Board {
         this.boardStateObserver.camera.viewPortWidth = canvas.width;
         this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
         // this._camera.zoomBoundaries = {min: 0.1, max: 10};
-        this._context = canvas.getContext('2d') as CanvasRenderingContext2D;
+        let context = canvas.getContext('2d');
+        if(context == null){
+            throw new Error("Canvas 2d context is null");
+        }
+
+        this._context = context;
 
         let panHandler = new PanRig();
         this.boardStateObserver.panHandler = panHandler;
@@ -231,6 +236,9 @@ export default class Board {
 
         this._context.reset();
         const curBoundaries = this.boardStateObserver.camera.boundaries;
+        if (!boundariesFullyDefined(curBoundaries)){
+            throw new Error("Boundaries are not fully defined");
+        }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
@@ -265,6 +273,10 @@ export default class Board {
 
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
         return this.boardStateObserver.camera.on(eventName, callback);
+    }
+
+    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=> void): void {
+        this._kmtStrategy.onInput(eventName, callback);
     }
 
     get maxHalfTransHeight(): number | undefined{

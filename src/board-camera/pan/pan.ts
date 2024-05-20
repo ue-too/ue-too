@@ -79,7 +79,7 @@ export class BasePanHandler extends PanHandlerBoilerPlate {
     }
 }
 
-class ClampHandler extends PanHandlerBoilerPlate {
+export class ClampHandler extends PanHandlerBoilerPlate {
 
     private _entireViewPort: boolean = false;
 
@@ -113,7 +113,7 @@ class ClampHandler extends PanHandlerBoilerPlate {
 
 }
 
-class PanWithRestriction extends PanHandlerBoilerPlate {
+export class PanWithRestriction extends PanHandlerBoilerPlate {
 
     private _restrictXTranslation: boolean = false;
     private _restrictYTranslation: boolean = false;
@@ -261,5 +261,6 @@ export class PanRig extends PanHandlerBoilerPlate implements PanController {
         this.restrictionHandler = new PanWithRestriction();
         this.restrictionHandler.chainHandler(this.clampHandler).chainHandler(this.baseHandler);
         this.nextHandler = this.restrictionHandler;
+        console.log("testing map");
     }
 }

@@ -1,4 +1,4 @@
-import { normalizeAngleZero2TwoPI, rotationWithinLimits, angleSpan, clampRotation } from "src/board-camera/utils/rotation";
+import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "src/board-camera/utils/rotation";
 import { BoardCamera } from "src/board-camera/interface"
 
 export interface RotationHandler {
