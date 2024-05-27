@@ -119,11 +119,19 @@ export class RotationClampHandler extends RotationHandlerBoilerPlate{
     }
 }
 
-export class RotateRig extends RotationHandlerBoilerPlate {
+export class RotationRig extends RotationHandlerBoilerPlate implements RotationController {
 
     private _baseHandler: BaseRotationHandler;
     private _clampHandler: RotationClampHandler;
     private _restrictionHandler: RotationRestrictionHandler;
+
+    get restrictRotation(): boolean{
+        return this._restrictionHandler.restrictRotation;
+    }
+
+    set restrictRotation(restrictRotation: boolean){
+        this._restrictionHandler.restrictRotation = restrictRotation;
+    }
 
     constructor(nextHandler: RotationHandler | undefined = undefined) {
         super(nextHandler);

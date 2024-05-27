@@ -2,15 +2,18 @@ import BoardCameraV2, { BoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
+import { RotationRig, RotationController } from 'src/board-camera/rotation';
 import { BoardKMTStrategyV2, DefaultBoardKMTStrategyV2 } from 'src/kmt-strategy';
 import { BoardTouchStrategyV2, DefaultTouchStrategy } from 'src/touch-strategy';
 import { BoardInputEvent, Point } from 'src/index';
 import { PointCal } from 'point2point';
 
 import { CameraEvent, CameraState, UnSubscribe } from 'src/camera-observer';
-import {  minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
+import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
+import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
+import { InputControlCenter, SimpleRelay } from 'src/control-center';
 export default class Board {
     
     private _canvas: HTMLCanvasElement;
@@ -23,11 +26,14 @@ export default class Board {
     private _fullScreen: boolean = false;
 
     private boardStateObserver: BoardStateObserver;
+    private boardInputObserver: InputObserver;
 
     private lastUpdateTime: number = 0;
 
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
+
+    private _controlCenter: InputControlCenter;
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
@@ -44,9 +50,8 @@ export default class Board {
         this._context = context;
 
         let panHandler = new PanRig();
-        this.boardStateObserver.panHandler = panHandler;
         let zoomHandler = new ZoomRig(panHandler);
-        this.boardStateObserver.zoomHandler = zoomHandler;
+        let rotationHandler = new RotationRig();
 
         this.bindFunctions();
 
@@ -56,16 +61,14 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
+        this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler));
+
+        this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
         this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
-        this.boardStateObserver.subscribeToPanHandler(this._kmtStrategy);
-        this.boardStateObserver.subscribeToZoomHandler(this._kmtStrategy);
-        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardStateObserver.panHandler, this.boardStateObserver.zoomHandler);
+
+        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
         this.boardStateObserver.subscribeToCamera(this._touchStrategy);
-        this.boardStateObserver.subscribeToPanHandler(this._touchStrategy);
-        this.boardStateObserver.subscribeToZoomHandler(this._touchStrategy);
         this.registerEventListeners();
-        console.log("board constructed");
     }
 
     private registerEventListeners(){
@@ -95,7 +98,7 @@ export default class Board {
         this.boardStateObserver.camera.viewPortWidth = width;
         // console.log("changed the width of the canvas");
         // console.log("limit entire view port", this.boardStateObserver.panHandler.limitEntireViewPort);
-        if(this.boardStateObserver.panHandler.limitEntireViewPort){
+        if(this.boardInputObserver.controlCenter.panController.limitEntireViewPort){
             // console.log("change the min zoom level due to the limit entire view port");
             const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -112,7 +115,7 @@ export default class Board {
     set height(height: number){
         this._canvas.height = height;
         this.boardStateObserver.camera.viewPortHeight = height;
-        if(this.boardStateObserver.panHandler.limitEntireViewPort){
+        if(this.boardInputObserver.controlCenter.panController.limitEntireViewPort){
             const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
@@ -151,7 +154,7 @@ export default class Board {
     }
 
     set limitEntireViewPort(value: boolean){
-        this.boardStateObserver.panHandler.limitEntireViewPort = value;
+        this.boardInputObserver.controlCenter.panController.limitEntireViewPort = value;
         if(value){
             const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -161,22 +164,16 @@ export default class Board {
     }
 
     get limitEntireViewPort(): boolean{
-        return this.boardStateObserver.panHandler.limitEntireViewPort;
+        return this.boardInputObserver.controlCenter.panController.limitEntireViewPort;
     }
 
     set kmtStrategy(strategy: BoardKMTStrategyV2){
         this._kmtStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._kmtStrategy);
-        this.boardStateObserver.unsubscribeToPanHandler(this._kmtStrategy);
-        this.boardStateObserver.unsubscribeToZoomHandler(this._kmtStrategy);
         strategy.setUp();
         this._kmtStrategy = strategy;
         this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
-        this.boardStateObserver.subscribeToPanHandler(this._kmtStrategy);
-        this.boardStateObserver.subscribeToZoomHandler(this._kmtStrategy);
         this._kmtStrategy.camera = this.boardStateObserver.camera;
-        this._kmtStrategy.panHandler = this.boardStateObserver.panHandler;
-        this._kmtStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
     }
 
     get kmtStrategy(): BoardKMTStrategyV2{
@@ -186,16 +183,10 @@ export default class Board {
     set touchStrategy(strategy: BoardTouchStrategyV2){
         this._touchStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._touchStrategy);
-        this.boardStateObserver.unsubscribeToPanHandler(this._touchStrategy);
-        this.boardStateObserver.unsubscribeToZoomHandler(this._touchStrategy);
         strategy.setUp();
         this._touchStrategy = strategy;
         this.boardStateObserver.subscribeToCamera(this._touchStrategy);
-        this.boardStateObserver.subscribeToPanHandler(this._touchStrategy);
-        this.boardStateObserver.subscribeToZoomHandler(this._touchStrategy);
         this._touchStrategy.camera = this.boardStateObserver.camera;
-        this._touchStrategy.panHandler = this.boardStateObserver.panHandler;
-        this._touchStrategy.zoomHandler = this.boardStateObserver.zoomHandler;
     }
 
     get touchStrategy(): BoardTouchStrategyV2{
@@ -213,11 +204,11 @@ export default class Board {
     }
 
     set panHandler(handler: PanController){
-        this.boardStateObserver.panHandler = handler;
+        this.boardInputObserver.controlCenter.panController = handler;
     }
 
     get panHandler(): PanController{
-        return this.boardStateObserver.panHandler;
+        return this.boardInputObserver.controlCenter.panController;
     }
 
     set zoomHandler(handler: ZoomController){
@@ -226,6 +217,20 @@ export default class Board {
 
     get zoomHandler(): ZoomController{
         return this.boardStateObserver.zoomHandler;
+    }
+
+    set controlCenter(controlCenter: InputControlCenter){
+        let tempPanHandler = this.boardInputObserver.controlCenter.panController;
+        let tempZoomHandler = this.boardInputObserver.controlCenter.zoomController;
+        let tempRotationHandler = this.boardInputObserver.controlCenter.rotationController;
+        controlCenter.panController = tempPanHandler;
+        controlCenter.zoomController = tempZoomHandler;
+        controlCenter.rotationController = tempRotationHandler;
+        this.boardInputObserver.controlCenter = controlCenter;
+    }
+
+    get controlCenter(): InputControlCenter{
+        return this.boardInputObserver.controlCenter;
     }
 
     public step(timestamp: number){
@@ -275,8 +280,8 @@ export default class Board {
         return this.boardStateObserver.camera.on(eventName, callback);
     }
 
-    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=> void): void {
-        this._kmtStrategy.onInput(eventName, callback);
+    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=> void): UnsubscribeToInput {
+        return this.boardInputObserver.onInput(eventName, callback);
     }
 
     get maxHalfTransHeight(): number | undefined{

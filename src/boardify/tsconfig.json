@@ -4,6 +4,6 @@
         // your overridden compiler options
         "strict": false
     },
-    "include": ["*.ts"],
+    "include": ["*.ts", "../input-observer/board-control-state.ts"],
     // "exclude": ["../**/*"]
 }
