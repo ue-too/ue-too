@@ -15,12 +15,5 @@ describe("board state synchronization", () => {
         expect(board.touchStrategy.camera).toBe(altCamera);
     });
 
-    test("switching board pan handler would sync between the different input strategies", ()=>{
-        const board = new BoardV2(document.createElement("canvas"));
-        const altPanHandler = new PanRig();
-        board.panHandler = altPanHandler;
-        expect(board.kmtStrategy.panHandler).toBe(altPanHandler);
-        expect(board.touchStrategy.panHandler).toBe(altPanHandler);
-    });
 
 });

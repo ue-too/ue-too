@@ -142,12 +142,12 @@ export class CameraObserverV2 {
     }
 
     async notifyPositionChange(delta: Point, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.panCallbackList.forEach((callback) => {
+        // return new Promise((resolve, reject) => {
+            queueMicrotask(()=>{this.panCallbackList.forEach((callback) => {
                 callback({ diff: delta }, cameraState);
-            });
-            resolve();
-        });
+            });});
+        //     resolve();
+        // });
     }
 
     async notifyZoomChange(deltaZoomAmount: number, cameraState: CameraState): Promise<void> {

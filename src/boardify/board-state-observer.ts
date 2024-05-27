@@ -1,4 +1,4 @@
-import { BoardCamera } from "src/board-camera";
+import { BoardCamera, RotationHandler } from "src/board-camera";
 import { PanController, PanHandler, ZoomHandler, ZoomController } from "src/board-camera";
 
 export interface BoardCameraSubscriber {
@@ -13,15 +13,21 @@ export interface BoardZoomHandlerSubscriber {
     updateZoomHandler(zoomHandler: ZoomHandler): void;
 }
 
+export interface BoardRotationHandlerSubscriber {
+    updateRotationHandler(rotationHandler: RotationHandler): void;
+}
+
 export class BoardStateObserver {
     
     private _camera: BoardCamera;
     private _panHandler: PanController; 
     private _zoomHandler: ZoomController;
+    private _rotationHandler: RotationHandler;
 
     private cameraSubscribers: BoardCameraSubscriber[] = [];
     private panHandlerSubscribers: BoardPanHandlerSubscriber[] = [];
     private zoomHandlerSubscribers: BoardZoomHandlerSubscriber[] = [];
+    private rotationHandlerSubscribers: BoardRotationHandlerSubscriber[] = [];
 
     constructor(camera: BoardCamera){
         this._camera = camera;
@@ -51,6 +57,13 @@ export class BoardStateObserver {
         this.zoomHandlerSubscribers = this.zoomHandlerSubscribers.filter((sub) => sub !== subscriber);
     }
 
+    subscribeToRotationHandler(subscriber: BoardRotationHandlerSubscriber): ()=> void{
+        this.rotationHandlerSubscribers.push(subscriber);
+        return () => {
+            this.rotationHandlerSubscribers = this.rotationHandlerSubscribers.filter((sub) => sub !== subscriber);
+        }
+    }
+
     get camera(): BoardCamera{
         return this._camera;
     }
@@ -78,6 +91,15 @@ export class BoardStateObserver {
         this.notifyZoomHandlerChange();
     }
 
+    get rotationHandler(): RotationHandler{
+        return this._rotationHandler;
+    }
+
+    set rotationHandler(rotationHandler: RotationHandler){
+        this._rotationHandler = rotationHandler;
+        this.notifyRotationHandlerChange();
+    }
+
     notifyCameraChange(){
         this.cameraSubscribers.forEach((sub) => sub.updateCamera(this._camera));
     }
@@ -88,6 +110,10 @@ export class BoardStateObserver {
     
     notifyZoomHandlerChange(){
         this.zoomHandlerSubscribers.forEach((sub) => sub.updateZoomHandler(this._zoomHandler));
+    }
+
+    notifyRotationHandlerChange(){
+        this.rotationHandlerSubscribers.forEach((sub) => sub.updateRotationHandler(this._rotationHandler));
     }
     
 }

@@ -1,21 +1,15 @@
 import { PointCal } from "point2point";
 import { Point } from "src";
 import { BoardCamera } from "src/board-camera/interface";
-import { PanHandler } from "src/board-camera/pan";
-import { ZoomHandler } from "src/board-camera/zoom";
-
+import { InputCallBackList, InputObserver } from "src/input-observer";
 export interface BoardTouchStrategyV2 {
     disabled: boolean;
     alignCoordinateSystem: boolean;
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    panHandler: PanHandler;
-    zoomHandler: ZoomHandler;
     camera: BoardCamera;
     updateCamera(camera: BoardCamera): void;
-    updatePanHandler(panHandler: PanHandler): void;
-    updateZoomHandler(zoomHandler: ZoomHandler): void;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -34,8 +28,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
     private _rotateDisabled: boolean = false;
     private zoomStartDist: number;
 
-    private _panHandler: PanHandler;
-    private _zoomHandler: ZoomHandler;
+    private inputObserver: InputObserver;
 
     private isDragging: boolean = false;
     private dragStartPoint: Point;
@@ -44,7 +37,10 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
 
     private ZOOM_SENSATIVITY: number = 0.005;
 
-    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, panHandler: PanHandler, zoomHandler: ZoomHandler, alignCoordinateSystem: boolean = true){
+    private panInputCallBackList: InputCallBackList<"pan"> = [];
+    private zoomInputCallBackList: InputCallBackList<"zoom"> = [];
+
+    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, inputObserver: InputObserver,alignCoordinateSystem: boolean = true){
         this.controlCamera = controlCamera;
         this.canvas = canvas;
         this._disabled = false;
@@ -53,9 +49,8 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
         this.isDragging = false;
         this.dragStartPoint = {x: 0, y: 0};
         this._alignCoordinateSystem = alignCoordinateSystem;
-        
-        this._panHandler = panHandler;
-        this._zoomHandler = zoomHandler;
+
+        this.inputObserver = inputObserver;
 
         this.bindListeners();
     }
@@ -135,22 +130,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
         this._rotateDisabled = rotateDisabled;
     }
 
-    set panHandler(panHandler: PanHandler){
-        this._panHandler = panHandler;
-    }
-
-    get panHandler(): PanHandler {
-        return this._panHandler;
-    }
-
-    set zoomHandler(zoomHandler: ZoomHandler){
-        this._zoomHandler = zoomHandler;
-    }
-
-    get zoomHandler(): ZoomHandler {
-        return this._zoomHandler;
-    }
-
     get camera(): BoardCamera {
         return this.controlCamera;
     }
@@ -219,7 +198,8 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
                 midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
             }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
-            this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
+            this.inputObserver.notifyOnZoom(this.controlCamera, -zoomAmount, midPoint);
+            // this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
@@ -231,8 +211,8 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
-            this._panHandler.panCameraBy(this.camera, diffInWorld);
-            // this.controlCamera.moveWithClampFromGesture(diffInWorld);
+            this.inputObserver.notifyOnPan(this.controlCamera, diffInWorld);
+            // this._panHandler.panCameraBy(this.camera, diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;
         }
@@ -245,13 +225,5 @@ export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
         } else {
             return {x: res.x, y: -res.y};
         }
-    }
-
-    updatePanHandler(panHandler: PanHandler): void {
-        this._panHandler = panHandler;
-    }
-
-    updateZoomHandler(zoomHandler: ZoomHandler): void {
-        this._zoomHandler = zoomHandler;
     }
 }
