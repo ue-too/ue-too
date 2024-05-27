@@ -31,20 +31,12 @@ This library saves you from the hassle of manually implementing panning, zooming
 
 [Demo](https://vntchang.dev/vCanvasDemo/)
 _The demo version is rather old and outdated but it showcases the basic functionalities so I am keeping it here. I will replace it with the newer version later on when it's stable_
+[CodeSandbox Link](https://codesandbox.io/p/sandbox/board-example-y2dycd?layout=%257B%2522sidebarPanel%2522%253A%2522EXPLORER%2522%252C%2522rootPanelGroup%2522%253A%257B%2522direction%2522%253A%2522horizontal%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522id%2522%253A%2522ROOT_LAYOUT%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522clw2y7l7v00063b6iiev37bos%2522%252C%2522sizes%2522%253A%255B100%252C0%255D%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522EDITOR%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522id%2522%253A%2522clw2y7l7v00023b6ikchwe6hz%2522%257D%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522SHELLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522id%2522%253A%2522clw2y7l7v00033b6ikl1vhmzw%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522DEVTOOLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522id%2522%253A%2522clw2y7l7v00053b6iwbyc1zfu%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%252C%2522sizes%2522%253A%255B46.32162767975171%252C53.67837232024829%255D%257D%252C%2522tabbedPanels%2522%253A%257B%2522clw2y7l7v00023b6ikchwe6hz%2522%253A%257B%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clw2y7l7v00013b6iiagi3t0j%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fsrc%252Findex.html%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%252C%257B%2522id%2522%253A%2522clw4g5a2x00023b6icusokwho%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522FILE%2522%252C%2522initialSelections%2522%253A%255B%257B%2522startLineNumber%2522%253A15%252C%2522startColumn%2522%253A29%252C%2522endLineNumber%2522%253A15%252C%2522endColumn%2522%253A29%257D%255D%252C%2522filepath%2522%253A%2522%252Fsrc%252Findex.mjs%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%255D%252C%2522id%2522%253A%2522clw2y7l7v00023b6ikchwe6hz%2522%252C%2522activeTabId%2522%253A%2522clw4g5a2x00023b6icusokwho%2522%257D%252C%2522clw2y7l7v00053b6iwbyc1zfu%2522%253A%257B%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clw2y7l7v00043b6ic6f06neh%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522UNASSIGNED_PORT%2522%252C%2522port%2522%253A0%252C%2522path%2522%253A%2522%252F%2522%257D%255D%252C%2522id%2522%253A%2522clw2y7l7v00053b6iwbyc1zfu%2522%252C%2522activeTabId%2522%253A%2522clw2y7l7v00043b6ic6f06neh%2522%257D%252C%2522clw2y7l7v00033b6ikl1vhmzw%2522%253A%257B%2522tabs%2522%253A%255B%255D%252C%2522id%2522%253A%2522clw2y7l7v00033b6ikl1vhmzw%2522%257D%257D%252C%2522showDevtools%2522%253Atrue%252C%2522showShells%2522%253Afalse%252C%2522showSidebar%2522%253Atrue%252C%2522sidebarPanelSize%2522%253A15%257D) You Can try it out to see if it's for you.
 
 ## Docs
 - [Documentation](https://niuee.github.io/board/index.html) (Still in its early stages; a lot of things are still not documented properly.)
 
 - [Design Document](https://hackmd.io/@niuee/ByKskjAUp)
-
-## From version 0.0.5 to 0.0.6
-There is another major revamp in version 0.0.6. 
-1. The movement of the board camera is delegated to the respective handler for pan, zoom, and rotation. 
-2. There is a board state manager to sync the essential states the board including the camera between the different input strategies.
-3. The board camera is now abstracted to an interface `BoardCamera`.
-4. The current exports stays the same as much as possible. The `BoardCamera` exported class in 0.0.5 is now `BoardCameraV1` in 0.0.6.
-5. The current recommended implementation of `BoardCamera` is the class `BoardCameraV2` so the default export of `@niuee/board/board-camera` is now changed to `BoardCameraV2` instead of `BoardCameraV1`.
-6. The original `Board` class is now `BoardV1`. There is a new class `BoardV2` that uses the `BoardCameraV2` and many other updates. So `BoardV2` is recommended over `BoardV1` and `BoardV1` would be phased out in future versions. The default export of the path `@niuee/board/boardify` is `BoardV2` instead of `BoardV1`.
 
 ## Installation and Usage
 ### Package manager
@@ -84,7 +76,7 @@ const newBoard = new Board.Board(canvasElement);
 ## Key Features
 - Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse)
 - Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work.
-- Rich API for board camera. (You can do a lot of cool stuff with the camera)
+- Rich API for board camera. (You can do a lot of cool stuff with the camera e.g. animating the camera moving along a path, zooming and rotating can also be animated)
 
 ## Bare Minimum Example
 
