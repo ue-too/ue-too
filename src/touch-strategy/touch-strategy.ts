@@ -2,7 +2,7 @@ import { PointCal } from "point2point";
 import { Point } from "src";
 import { BoardCamera } from "src/board-camera/interface";
 import { InputCallBackList, InputObserver } from "src/input-observer";
-export interface BoardTouchStrategyV2 {
+export interface BoardTouchStrategy {
     disabled: boolean;
     alignCoordinateSystem: boolean;
     panDisabled: boolean;
@@ -16,7 +16,7 @@ export interface BoardTouchStrategyV2 {
     tearDown(): void;
 }
 
-export class DefaultTouchStrategy implements BoardTouchStrategyV2 {
+export class DefaultTouchStrategy implements BoardTouchStrategy {
 
     private touchPoints: Point[];
     private controlCamera: BoardCamera;

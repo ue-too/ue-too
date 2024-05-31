@@ -3,8 +3,8 @@ import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
 import { RotationRig, RotationController } from 'src/board-camera/rotation';
-import { BoardKMTStrategyV2, DefaultBoardKMTStrategyV2 } from 'src/kmt-strategy';
-import { BoardTouchStrategyV2, DefaultTouchStrategy } from 'src/touch-strategy';
+import { BoardKMTStrategy, DefaultBoardKMTStrategy } from 'src/kmt-strategy';
+import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
 import { BoardInputEvent, Point } from 'src/index';
 import { PointCal } from 'point2point';
 
@@ -14,13 +14,18 @@ import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
 import { InputControlCenter, SimpleRelay } from 'src/control-center';
+
+/**
+ * @category Board
+ * @translationBlock This is the overall board class that is used to manage the canvas and the camera. 
+ */
 export default class Board {
     
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
 
-    private _kmtStrategy: BoardKMTStrategyV2;
-    private _touchStrategy: BoardTouchStrategyV2;
+    private _kmtStrategy: BoardKMTStrategy;
+    private _touchStrategy: BoardTouchStrategy;
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
@@ -32,8 +37,6 @@ export default class Board {
 
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
-
-    private _controlCenter: InputControlCenter;
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
@@ -63,7 +66,7 @@ export default class Board {
 
         this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler));
 
-        this._kmtStrategy = new DefaultBoardKMTStrategyV2(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
         this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
@@ -167,7 +170,7 @@ export default class Board {
         return this.boardInputObserver.controlCenter.panController.limitEntireViewPort;
     }
 
-    set kmtStrategy(strategy: BoardKMTStrategyV2){
+    set kmtStrategy(strategy: BoardKMTStrategy){
         this._kmtStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._kmtStrategy);
         strategy.setUp();
@@ -176,11 +179,11 @@ export default class Board {
         this._kmtStrategy.camera = this.boardStateObserver.camera;
     }
 
-    get kmtStrategy(): BoardKMTStrategyV2{
+    get kmtStrategy(): BoardKMTStrategy{
         return this._kmtStrategy;
     }
 
-    set touchStrategy(strategy: BoardTouchStrategyV2){
+    set touchStrategy(strategy: BoardTouchStrategy){
         this._touchStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._touchStrategy);
         strategy.setUp();
@@ -189,7 +192,7 @@ export default class Board {
         this._touchStrategy.camera = this.boardStateObserver.camera;
     }
 
-    get touchStrategy(): BoardTouchStrategyV2{
+    get touchStrategy(): BoardTouchStrategy{
         return this._touchStrategy;
     }
 

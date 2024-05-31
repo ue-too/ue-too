@@ -4,7 +4,7 @@
   "theme": "translation-theme",
   "categoryOrder": ["Board", "Board Camera", "Trackpad Strategy", "Keyboard-Mouse Strategy", "Touch Strategy", "Easing Functions", "*"],
   "readme": "./README.md",
-  "entryPoints": ["./src/index.ts"],
+  "entryPoints": ["./src/index.ts", "./src/control-center/index.ts"],
   "navigation": {
     "includeCategories": true
   },
