@@ -1,16 +1,8 @@
-import { BoardCameraSubscriber, BoardStateObserver, Point } from "src";
+import { Point } from "src";
 import { BoardCamera } from "../interface";
 import { PointCal } from "point2point";
 
 import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/position";
-
-export interface PanHandlerLegacy {
-    nextHandler?: PanHandlerLegacy;
-    camera: BoardCamera;
-    chainHandler(handler: PanHandlerLegacy): PanHandlerLegacy;
-    panTo(destination: Point): void
-    panBy(delta: Point): void
-}
 
 export interface PanHandler {
     nextHandler?: PanHandler;
@@ -79,7 +71,7 @@ export class BasePanHandler extends PanHandlerBoilerPlate {
     }
 }
 
-class ClampHandler extends PanHandlerBoilerPlate {
+export class ClampHandler extends PanHandlerBoilerPlate {
 
     private _entireViewPort: boolean = false;
 
@@ -113,7 +105,7 @@ class ClampHandler extends PanHandlerBoilerPlate {
 
 }
 
-class PanWithRestriction extends PanHandlerBoilerPlate {
+export class PanWithRestriction extends PanHandlerBoilerPlate {
 
     private _restrictXTranslation: boolean = false;
     private _restrictYTranslation: boolean = false;

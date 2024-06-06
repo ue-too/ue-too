@@ -1,0 +1,9 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        // your overridden compiler options
+        "strict": false
+    },
+    "include": ["*.ts", "../input-observer/board-control-state.ts"],
+    // "exclude": ["../**/*"]
+}

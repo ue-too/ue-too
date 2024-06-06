@@ -5,6 +5,8 @@ export * from "./ease-functions";
 export * from "./kmt-strategy";
 export * from "./touch-strategy";
 export * from "./util";
+export * from "./input-observer";
+export * from "./control-center";
 export { default as Board } from "./boardify";
 export { default as BoardCameraV2 } from "./board-camera";
 export type Point = {
