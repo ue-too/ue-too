@@ -72,66 +72,12 @@ export type CameraChangeEventName = "pan" | "zoom" | "rotate";
 
 export type CallbackList<K extends keyof CameraEventMapping> = ((event: CameraEventMapping[K], cameraState: CameraState)=>void)[];
 export type CallbackListV2<K extends keyof CameraEvent> = ((event: CameraEvent[K], cameraState: CameraState)=>void)[];
-export class CameraObserver {
-
-    private panCallbackList: CallbackList<"pan"> = [];
-    private zoomCallbackList: CallbackList<"zoom"> = [];
-    private rotateCallbackList: CallbackList<"rotate"> = [];
-
-    constructor() {
-    }
-
-    notifyOnPositionChange(delta: Point, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.panCallbackList.forEach((callback) => {
-                callback({diff: delta}, cameraState);
-            });
-            resolve();
-        });
-    }
-
-    notifyOnZoomChange(deltaZoomAmount: number, anchorPoint: Point, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.zoomCallbackList.forEach((callback) => {
-                callback({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint}, cameraState);
-            });
-            resolve();
-        });
-    }
-
-    notifyOnRotationChange(deltaRotation: number, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.rotateCallbackList.forEach((callback) => {
-                callback({deltaRotation: deltaRotation}, cameraState);
-            });
-            resolve();
-        });
-    }
-
-    on<K extends keyof CameraEventMapping>(eventName: K, callback: (event: CameraEventMapping[K], cameraState: CameraState)=>void): void {
-        switch (eventName){
-        case "pan":
-            this.panCallbackList.push(callback as (event: CameraEventMapping["pan"], cameraState: CameraState)=>void);
-            break;
-        case "zoom":
-            this.zoomCallbackList.push(callback as (event: CameraEventMapping["zoom"], cameraState: CameraState)=>void);
-            break;
-        case "rotate":
-            this.rotateCallbackList.push(callback as (event: CameraEventMapping["rotate"], cameraState: CameraState)=>void);
-            break;
-        }
-    }
-
-    clearCallbacks(): void {
-        this.panCallbackList = [];
-        this.zoomCallbackList = [];
-        this.rotateCallbackList = [];
-    }
-    
-}
 
 export type UnSubscribe = () => void;
 
+/**
+ * @category Camera Observer
+ */
 export class CameraObserverV2 {
 
     private panCallbackList: CallbackListV2<"pan"> = [];

@@ -2,7 +2,7 @@ import BoardCameraV2, { BoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
-import { RotationRig, RotationController } from 'src/board-camera/rotation';
+import { RotationRig } from 'src/board-camera/rotation';
 import { BoardKMTStrategy, DefaultBoardKMTStrategy } from 'src/kmt-strategy';
 import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
 import { BoardInputEvent, Point } from 'src/index';
@@ -17,7 +17,30 @@ import { InputControlCenter, SimpleRelay } from 'src/control-center';
 
 /**
  * @category Board
- * @translationBlock This is the overall board class that is used to manage the canvas and the camera. 
+ * @translationBlock Usage
+ * ```typescript
+ * import { Board } from "@niuee/board";
+ * 
+ * // however you prefer to get a canvas element that is already in the DOM
+ * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
+ * const board = new Board(canvasElement);
+ * 
+ * const stepFn = board.getStepFunction(); 
+ * const context = board.getContext();
+ * 
+ * function step(timestamp: number){
+ *    stepFn(timestamp);
+ * // do other stuff after the board has stepped
+ * //.
+ * //.
+ * //.
+ * }
+ * ```
+ * @translationBlock Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
+ * 
+ * ```typescript
+ * import {Board} from "@niuee/board/boardify";
+ * ```
  */
 export default class Board {
     
@@ -44,7 +67,6 @@ export default class Board {
         this.boardStateObserver.camera.viewPortHeight = canvas.height;
         this.boardStateObserver.camera.viewPortWidth = canvas.width;
         this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
-        // this._camera.zoomBoundaries = {min: 0.1, max: 10};
         let context = canvas.getContext('2d');
         if(context == null){
             throw new Error("Canvas 2d context is null");
@@ -84,6 +106,20 @@ export default class Board {
         this._kmtStrategy.tearDown();
     }
 
+    /**
+     * @group LifeCycle
+     * @translationBlock This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.
+     */
+    setup(){
+        this.registerEventListeners();
+        this.windowResizeObserver.observe(document.body);
+        this.attributeObserver.observe(this._canvas, {attributes: true});
+    }
+
+    /**
+     * @group LifeCycle
+     * @translationBlock This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer. 
+     */
     tearDown(){
         this.removeEventListeners();
         this.windowResizeObserver.disconnect();
@@ -96,6 +132,10 @@ export default class Board {
         this.windowResizeHandler = this.windowResizeHandler.bind(this);
     }
 
+    /**
+     * @translationBlock This is in sync with the canvas width and the camera view port width. This is not the board's width.
+     * If the limitEntireViewPort is set to true, the min zoom level is updated based on the width of the canvas.
+     */
     set width(width: number){
         this._canvas.width = width;
         this.boardStateObserver.camera.viewPortWidth = width;
@@ -115,6 +155,10 @@ export default class Board {
         return this._canvas.width;
     }
 
+    /**
+     * @translationBlock This is in sync with the canvas height and the camera view port height. This is not the board's height.
+     * If the limitEntireViewPort is set to true, the min zoom level is updated based on the height.
+     */
     set height(height: number){
         this._canvas.height = height;
         this.boardStateObserver.camera.viewPortHeight = height;
@@ -130,6 +174,9 @@ export default class Board {
         return this._canvas.height;
     }
 
+    /**
+     * @translationBlock This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.
+     */
     set alignCoordinateSystem(align: boolean){
         this._alignCoordinateSystem = align;
         this._kmtStrategy.alignCoordinateSystem = align;
@@ -140,6 +187,10 @@ export default class Board {
         return this._alignCoordinateSystem;
     }
 
+    /**
+     * @translationBlock Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.
+     * If set to true the width and height of the board will resize with the window.
+     */
     get fullScreen(): boolean {
         return this._fullScreen;
     }
@@ -152,10 +203,17 @@ export default class Board {
         }
     }
 
+    /**
+     * @translationBlock The context used to draw stuff on the canvas.
+     */
     get context(): CanvasRenderingContext2D{
         return this._context;
     }
 
+    /**
+     * @translationBlock Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.
+     * If set to false, only the center of the camera is bounded by the boundaries.
+     */
     set limitEntireViewPort(value: boolean){
         this.boardInputObserver.controlCenter.panController.limitEntireViewPort = value;
         if(value){
@@ -170,6 +228,10 @@ export default class Board {
         return this.boardInputObserver.controlCenter.panController.limitEntireViewPort;
     }
 
+    /**
+     * @translationBlock The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
+     * You can implement your own strategy by implementing the BoardKMTStrategy interface.
+     */
     set kmtStrategy(strategy: BoardKMTStrategy){
         this._kmtStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._kmtStrategy);
@@ -183,6 +245,10 @@ export default class Board {
         return this._kmtStrategy;
     }
 
+    /**
+     * @translationBlock The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.
+     * You can implement your own strategy by implementing the BoardTouchStrategy interface.
+     */
     set touchStrategy(strategy: BoardTouchStrategy){
         this._touchStrategy.tearDown();
         this.boardStateObserver.unsubscribeToCamera(this._touchStrategy);
@@ -196,6 +262,10 @@ export default class Board {
         return this._touchStrategy;
     }
 
+    /**
+     * @translationBlock The underlying camera of the board. The camera of the board can be switched.
+     * The boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.
+     */
     get camera(): BoardCamera{
         return this.boardStateObserver.camera;
     }
@@ -206,6 +276,10 @@ export default class Board {
         this.boardStateObserver.camera = camera;
     }
 
+    /**
+     * @translationBlock The pan handler of the board. The pan handler is responsible for handling the pan events issued to the camera.
+     * It has the final say on how the camera should move. Restrictions and clamping behavior are implemented in the pan handler.
+     */
     set panHandler(handler: PanController){
         this.boardInputObserver.controlCenter.panController = handler;
     }
@@ -214,6 +288,10 @@ export default class Board {
         return this.boardInputObserver.controlCenter.panController;
     }
 
+    /**
+     * @translationBlock The zoom handler of the board. The zoom handler is responsible for handling the zoom events issued to the camera.
+     * It has the final say on how the camera should zoom. Restrictions and clamping behavior are implemented in the zoom handler.
+     */
     set zoomHandler(handler: ZoomController){
         this.boardStateObserver.zoomHandler = handler;
     }
@@ -222,6 +300,11 @@ export default class Board {
         return this.boardStateObserver.zoomHandler;
     }
 
+    /**
+     * @translationBlock The control center of the board. The control center is responsible for handling the input events and dispatch the events to the pan, zoom, and rotation handlers.
+     * This exists to decouple the input events from the camera. The control center is the middle man. The default control center is just a simple relay. You can implement a control center
+     * that takes in other inputs. For example, an input to start camera animations.
+     */
     set controlCenter(controlCenter: InputControlCenter){
         let tempPanHandler = this.boardInputObserver.controlCenter.panController;
         let tempZoomHandler = this.boardInputObserver.controlCenter.zoomController;
@@ -236,6 +319,10 @@ export default class Board {
         return this.boardInputObserver.controlCenter;
     }
 
+    /**
+     * @translationBlock This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.
+     * @param timestamp 
+     */
     public step(timestamp: number){
 
         let deltaTime = timestamp - this.lastUpdateTime;
@@ -245,7 +332,7 @@ export default class Board {
         this._context.reset();
         const curBoundaries = this.boardStateObserver.camera.boundaries;
         if (!boundariesFullyDefined(curBoundaries)){
-            throw new Error("Boundaries are not fully defined");
+            throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
         }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
@@ -269,6 +356,11 @@ export default class Board {
         }
     }
 
+    /**
+     * @translationBlock Converts a point from window coordinates to world coordinates.
+     * @param clickPointInWindow The point in window coordinates to convert.
+     * @returns The converted point in world coordinates.
+     */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
         if(this._alignCoordinateSystem){
             const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
@@ -279,18 +371,37 @@ export default class Board {
         }
     }
 
+    /**
+     * @translationBlock Add an camera movement event listener. The events are "pan", "zoom", and "rotate".
+     * @param eventName The event name to listen for. The events are "pan", "zoom", and "rotate".
+     * @param callback The callback function to call when the event is triggered. The event provided to the callback is different for the different events.
+     * @returns The converted point in world coordinates.
+     */
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
         return this.boardStateObserver.camera.on(eventName, callback);
     }
 
+    /**
+     * @translationBlock Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events. 
+     * Input event does not necesarily mean that the camera will move. The input event is the event that is triggered when the user interacts with the board.
+     * @param eventName 
+     * @param callback 
+     * @returns 
+     */
     onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=> void): UnsubscribeToInput {
         return this.boardInputObserver.onInput(eventName, callback);
     }
 
+    /**
+     * @translationBlock The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.
+     */
     get maxHalfTransHeight(): number | undefined{
         return halfTranslationHeightOf(this.boardStateObserver.camera.boundaries);
     }
 
+    /**
+     * @translationBlock The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.
+     */
     get maxHalfTransWidth(): number | undefined{
         return halfTranslationWidthOf(this.boardStateObserver.camera.boundaries);
     }

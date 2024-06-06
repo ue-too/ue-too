@@ -4,7 +4,7 @@ import { BoardCamera } from "src/board-camera";
 
 import { InputObserver } from "src/input-observer/input-observer";
 /**
- * @category Keyboard-Mouse Strategy
+ * @category Input Strategy
  */
 export interface BoardKMTStrategy {
     disabled: boolean;

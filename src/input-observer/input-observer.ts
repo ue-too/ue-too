@@ -25,6 +25,10 @@ export type BoardInputEvent = {
 
 export type InputCallBackList<K extends keyof BoardInputEvent> = ((event: BoardInputEvent[K])=>void)[];
 
+/**
+ * @category Input Observer
+ * @translationBlock This is the observer class that listens to input events and notifies the control center.
+ */
 export class InputObserver {
 
     private panCallbackList: InputCallBackList<"pan"> = [];

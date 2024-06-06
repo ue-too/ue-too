@@ -16,6 +16,9 @@ export interface BoardTouchStrategy {
     tearDown(): void;
 }
 
+/**
+ * @category Input Strategy
+ */
 export class DefaultTouchStrategy implements BoardTouchStrategy {
 
     private touchPoints: Point[];
