@@ -3,7 +3,7 @@
     "humanReadablePath": "categories > index-0 > title",
     "kind": "category",
     "originalText": "Board",
-    "translation": "",
+    "translation": "板班",
     "projectPath": [
       "categories",
       "index-0",
@@ -11,187 +11,88 @@
     ],
     "translationKey": "6bacf2b7ccc556eb54ed4a0c1199443d"
   },
-  "b84be7b89409b4ac1aa4c26077c4adaa": {
+  "71b9a8b348831c72c65b166e7459a685": {
     "humanReadablePath": "categories > index-1 > title",
     "kind": "category",
-    "originalText": "Board Camera",
-    "translation": "",
+    "originalText": "Input Strategy",
+    "translation": "輸入策略",
     "projectPath": [
       "categories",
       "index-1",
       "title"
     ],
-    "translationKey": "b84be7b89409b4ac1aa4c26077c4adaa"
+    "translationKey": "71b9a8b348831c72c65b166e7459a685"
   },
-  "de8717acafc1e5961408f1e71276e4a6": {
+  "503b49a64ba94521e6e4d70cac1e2251": {
     "humanReadablePath": "categories > index-2 > title",
     "kind": "category",
-    "originalText": "Keyboard-Mouse Strategy",
-    "translation": "",
+    "originalText": "Camera Observer",
+    "translation": "相機觀察者",
     "projectPath": [
       "categories",
       "index-2",
       "title"
     ],
-    "translationKey": "de8717acafc1e5961408f1e71276e4a6"
+    "translationKey": "503b49a64ba94521e6e4d70cac1e2251"
   },
-  "164e4cb7edb9506cce0aabeca73e4aa0": {
+  "9c0d0419aae9d04c232971844fd45bc3": {
     "humanReadablePath": "categories > index-3 > title",
     "kind": "category",
-    "originalText": "Touch Strategy",
-    "translation": "",
+    "originalText": "Input Observer",
+    "translation": "輸入觀察者",
     "projectPath": [
       "categories",
       "index-3",
       "title"
     ],
-    "translationKey": "164e4cb7edb9506cce0aabeca73e4aa0"
+    "translationKey": "9c0d0419aae9d04c232971844fd45bc3"
   },
-  "72db773aa1c5d29066c57eff96955b9c": {
+  "35d487ba5b6f57d81e3b52f2ed3ea2a9": {
     "humanReadablePath": "categories > index-4 > title",
     "kind": "category",
-    "originalText": "Easing Functions",
-    "translation": "",
+    "originalText": "Other",
+    "translation": "其他",
     "projectPath": [
       "categories",
       "index-4",
       "title"
     ],
-    "translationKey": "72db773aa1c5d29066c57eff96955b9c"
+    "translationKey": "35d487ba5b6f57d81e3b52f2ed3ea2a9"
   },
-  "a7641f22eabe38bcd0606543566cdf90": {
+  "c03d4d4c5c208f4f8c5d506870354cde": {
     "humanReadablePath": "categories > index-5 > title",
     "kind": "category",
-    "originalText": "Other",
-    "translation": "",
+    "originalText": "Easing Functions",
+    "translation": "減緩函數",
     "projectPath": [
       "categories",
       "index-5",
       "title"
     ],
-    "translationKey": "a7641f22eabe38bcd0606543566cdf90"
+    "translationKey": "c03d4d4c5c208f4f8c5d506870354cde"
   },
-  "535284762ac52fced07e8d032052b453": {
+  "0c5445caa5847b7cf17d8a6b59dc5ce1": {
     "humanReadablePath": "Board > groups > index-4 > title",
     "kind": "group",
-    "originalText": "Attribute",
-    "translation": "",
+    "originalText": "LifeCycle",
+    "translation": "生命週期相關",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
       "groups",
       "index-4",
       "title"
     ],
-    "translationKey": "535284762ac52fced07e8d032052b453"
+    "translationKey": "0c5445caa5847b7cf17d8a6b59dc5ce1"
   },
-  "a1113888f94feb44383dc8c4c85a3e16": {
-    "humanReadablePath": "Board > groups > index-5 > title",
-    "kind": "group",
-    "originalText": "Camera Control",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-5",
-      "title"
-    ],
-    "translationKey": "a1113888f94feb44383dc8c4c85a3e16"
-  },
-  "b2f5d67f42979aa4b1086d895dd61795": {
-    "humanReadablePath": "Board > groups > index-6 > title",
-    "kind": "group",
-    "originalText": "Control Strategy",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-6",
-      "title"
-    ],
-    "translationKey": "b2f5d67f42979aa4b1086d895dd61795"
-  },
-  "de29854bbc6f3dbab561e3001c8ba435": {
-    "humanReadablePath": "Board > groups > index-7 > title",
-    "kind": "group",
-    "originalText": "Debug Tools",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-7",
-      "title"
-    ],
-    "translationKey": "de29854bbc6f3dbab561e3001c8ba435"
-  },
-  "db507f5b6e3c6c5e205a583149a7839d": {
-    "humanReadablePath": "Board > groups > index-8 > title",
-    "kind": "group",
-    "originalText": "Internal Attributes",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-8",
-      "title"
-    ],
-    "translationKey": "db507f5b6e3c6c5e205a583149a7839d"
-  },
-  "c2c0d93e9d25581c5091d9f41cc46ab3": {
-    "humanReadablePath": "Board > groups > index-9 > title",
-    "kind": "group",
-    "originalText": "Restriction",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-9",
-      "title"
-    ],
-    "translationKey": "c2c0d93e9d25581c5091d9f41cc46ab3"
-  },
-  "7d808a7bb6fd5b52f7e64dda7b6863b9": {
-    "humanReadablePath": "Board > groups > index-10 > title",
-    "kind": "group",
-    "originalText": "Zoom Level",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "groups",
-      "index-10",
-      "title"
-    ],
-    "translationKey": "7d808a7bb6fd5b52f7e64dda7b6863b9"
-  },
-  "367de9e1ef0aab1f188b9ab7dd4af7cc": {
-    "humanReadablePath": "Board > translation comments > index-0 > text",
-    "kind": "class",
-    "originalText": "This is the recommended way to use the library. @niuee/board provides a custom web component (BoardElement) as an alternative.\nHowever, the canvas element is attached to the shadow dom of the BoardElement, \nwhich makes it harder to use css to directly alter the styling of the canvas element.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "367de9e1ef0aab1f188b9ab7dd4af7cc"
-  },
-  "7fc312dab58650857e2a02bb5ea34b48": {
+  "03f2d23c7660f8fe7b28611a6a93854a": {
     "humanReadablePath": "Board > translation block comments > index-0 > text",
     "kind": "class",
     "originalText": "Usage\n",
-    "translation": "",
+    "translation": "用法\n",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
       "comment",
       "blockTags",
       "index-0",
@@ -199,16 +100,16 @@
       "index-0",
       "text"
     ],
-    "translationKey": "7fc312dab58650857e2a02bb5ea34b48"
+    "translationKey": "03f2d23c7660f8fe7b28611a6a93854a"
   },
-  "65cd62539a75fd8f0b4988b1b1daf252": {
+  "b3cb2d37d49e7d96b70b193f7c9c0e5d": {
     "humanReadablePath": "Board > translation block comments > index-0 > text",
     "kind": "class",
-    "originalText": "Alternatively you can import the board class as a named import from a subdirectory; this shaves off the bundle size a bit.\n\nHowever, this does not apply if you are using the cdn or bundled version of the package.\n",
-    "translation": "",
+    "originalText": "Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.\n\n",
+    "translation": "你也可以從子目錄導入 board 類別（像是 material UI 那樣）；這樣可以稍微減小 bundle 的大小，但減小的並不多。因為 board 幾乎是整個函式庫的重點。\n\n",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
       "comment",
       "blockTags",
       "index-1",
@@ -216,1124 +117,159 @@
       "index-0",
       "text"
     ],
-    "translationKey": "65cd62539a75fd8f0b4988b1b1daf252"
+    "translationKey": "b3cb2d37d49e7d96b70b193f7c9c0e5d"
   },
-  "36e4480e526c80980ddd7c6a849db61d": {
-    "humanReadablePath": "Board > constructor > new Board > translation comments > index-0 > text",
-    "kind": "constructorSignature",
-    "originalText": "Board constructor",
-    "translation": "",
+  "f5f1b693b8ae5781e55593688c64b1e8": {
+    "humanReadablePath": "Board > alignCoordinateSystem > alignCoordinateSystem > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.",
+    "translation": "這個決定座標軸是否與 HTML Canvas 是一致的，預設是一致的。",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
       "children",
-      "index-0",
-      "signatures",
-      "index-0",
+      "index-12",
+      "setSignature",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "36e4480e526c80980ddd7c6a849db61d"
+    "translationKey": "f5f1b693b8ae5781e55593688c64b1e8"
   },
-  "6000b7e1308f2f8fe29b739831df91d4": {
-    "humanReadablePath": "Board > attributeObserver > translation comments > index-0 > text",
-    "kind": "property",
-    "originalText": "The observer mainly for the width and height of the canvas element",
-    "translation": "",
+  "e6367bc7377cf120b823000c862fe073": {
+    "humanReadablePath": "Board > camera > camera > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The underlying camera of the board. The camera of the board can be switched.\nThe boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.",
+    "translation": "這個是 board 底層的相機，它控制著整個 board 應該顯示的畫面。board 的邊界是屬於相機屬性，這表示你可以有不同邊界的相機，然後可以在執行時切換它們，讓你迅速切換成不同的畫面。",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
+      "children",
+      "index-13",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e6367bc7377cf120b823000c862fe073"
+  },
+  "870ca09df3eaef13cbe7997c589661e1": {
+    "humanReadablePath": "Board > context > context > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The context used to draw stuff on the canvas.",
+    "translation": "這是用來畫圖的 `context` ，跟普通 `canvas` 的 `context` 一樣。",
+    "projectPath": [
+      "children",
+      "index-4",
       "children",
       "index-14",
+      "getSignature",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "6000b7e1308f2f8fe29b739831df91d4"
+    "translationKey": "870ca09df3eaef13cbe7997c589661e1"
   },
-  "157934a8fc732264184d4221f10bb8f9": {
-    "humanReadablePath": "Board > camera > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The camera for the board",
-    "translation": "",
+  "f99a0db60b990f589e26e80b0c7bd144": {
+    "humanReadablePath": "Board > controlCenter > controlCenter > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The control center of the board. The control center is responsible for handling the input events and dispatch the events to the pan, zoom, and rotation handlers.\nThis exists to decouple the input events from the camera. The control center is the middle man. The default control center is just a simple relay. You can implement a control center\nthat takes in other inputs. For example, an input to start camera animations.",
+    "translation": "這是 board 的控制中心，它負責處理輸入事件並將事件分發給 pan、zoom 和 rotation 處理者。它存在是為了將輸入事件與相機解耦，而控制中心是中間人。預設的控制中心只是一個簡單的中繼站（馬上轉傳沒有做任何處理）。你可以實作一個控制中心，讓它接收其他輸入。例如，接收用於啟動相機動畫的輸入。（我之後會補上範例）",
     "projectPath": [
       "children",
-      "index-1",
+      "index-4",
+      "children",
+      "index-15",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "f99a0db60b990f589e26e80b0c7bd144"
+  },
+  "8703b2340c22c0030dcbecec82f72578": {
+    "humanReadablePath": "Board > fullScreen > fullScreen > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.\nIf set to true the width and height of the board will resize with the window.",
+    "translation": "決定 board 是否要全螢幕。如果設為 true，board 的寬和高會分別設為視窗的內寬和內高。如果設為 true，board 的寬和高會隨著視窗的變化而變化。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-16",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "8703b2340c22c0030dcbecec82f72578"
+  },
+  "2013dad1366e13d339e44962ab9c91ae": {
+    "humanReadablePath": "Board > height > height > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is in sync with the canvas height and the camera view port height. This is not the board's height.\nIf the limitEntireViewPort is set to true, the min zoom level is updated based on the height.",
+    "translation": "視窗的高度，這個高度會跟 canvas 的高度和相機的視窗高度同步。這不是 board 的高度。如果 limitEntireViewPort 設為 true，最小縮放等級會根據高度更新。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-17",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "2013dad1366e13d339e44962ab9c91ae"
+  },
+  "5e1b12a6039c974ab9e4c250f97967a8": {
+    "humanReadablePath": "Board > kmtStrategy > kmtStrategy > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. \nYou can implement your own strategy by implementing the BoardKMTStrategy interface.",
+    "translation": "這是 board 用來處理鍵盤和滑鼠事件的策略。預設策略是 DefaultBoardKMTStrategy。你可以實作自己的策略，只要跟著 BoardKMTStrategy 介面實作就好。所有輸入策略都會將使用者輸入轉換成輸入事件並傳給輸入觀察者去做下一步的處置。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-18",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "5e1b12a6039c974ab9e4c250f97967a8"
+  },
+  "cd4e8e35c182c55920d6ce1d94816904": {
+    "humanReadablePath": "Board > limitEntireViewPort > limitEntireViewPort > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.\nIf set to false, only the center of the camera is bounded by the boundaries.",
+    "translation": "這個屬性會影響相機在邊界的移動準則，如果是 true 的話，整個視窗不會超出邊界。如果是 false 的話，只有相機的中心會受到邊界的限制。",
+    "projectPath": [
+      "children",
+      "index-4",
       "children",
       "index-19",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "157934a8fc732264184d4221f10bb8f9"
-  },
-  "5ecaa43350f87b0b13d2382efee460a3": {
-    "humanReadablePath": "Board > debugMode > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is in debug mode.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-20",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "5ecaa43350f87b0b13d2382efee460a3"
-  },
-  "1962253cfa5a225010db98251f2d45af": {
-    "humanReadablePath": "Board > displayGrid > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is displaying the grid",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-21",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "1962253cfa5a225010db98251f2d45af"
-  },
-  "7c2d7e386fe148d308f64d6fa11cc4c5": {
-    "humanReadablePath": "Board > displayRuler > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is displaying the ruler",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-22",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "7c2d7e386fe148d308f64d6fa11cc4c5"
-  },
-  "46a632c60687c7feb2a0a4b7ce11c460": {
-    "humanReadablePath": "Board > fullScreen > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "Toggle full screen mode.\n\nwhat happen to second line.\n",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-23",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "46a632c60687c7feb2a0a4b7ce11c460"
-  },
-  "a20e4d33fb0ab2fe230c4d6575bac953": {
-    "humanReadablePath": "Board > fullScreen > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "Line from setter.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-23",
-      "comment",
-      "summary",
-      "index-2",
-      "text"
-    ],
-    "translationKey": "a20e4d33fb0ab2fe230c4d6575bac953"
-  },
-  "b640856f210abd9b9e4165631c07a79b": {
-    "humanReadablePath": "Board > height > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The height of the canvas element the board is attached to. This stay in sync with the view port height of the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-24",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "b640856f210abd9b9e4165631c07a79b"
-  },
-  "cc760cf7ba8b6dac68a3d2673d7f04cc": {
-    "humanReadablePath": "Board > height > height > translation comments > index-0 > text",
-    "kind": "setSignature",
-    "originalText": "If the height cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-24",
       "setSignature",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "cc760cf7ba8b6dac68a3d2673d7f04cc"
-  },
-  "0e4155b6c733a46b33f0b18b5b3e0b42": {
-    "humanReadablePath": "Board > horizontalGridSize > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The gap size between the vertical lines of the grid. Currently has no effect.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-25",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "0e4155b6c733a46b33f0b18b5b3e0b42"
-  },
-  "81fdeebbf2b3d0f1b597763cd378d436": {
-    "humanReadablePath": "Board > keyboardMouseStrategy > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The current strategy the board is using for keyboard and mouse events",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-26",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "81fdeebbf2b3d0f1b597763cd378d436"
-  },
-  "80c2f43ef26ee5b1a41432f386f190b2": {
-    "humanReadablePath": "Board > limitEntireViewPort > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is limiting the entire view port; this will set the input strategy's limitEntireViewPort property as well",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-27",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "80c2f43ef26ee5b1a41432f386f190b2"
-  },
-  "97475daac1959dfe9bdfb63af6bfcd34": {
-    "humanReadablePath": "Board > maxHalfTransHeight > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The half of the maximum translation height the board is allowing for the camera to move.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-28",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "97475daac1959dfe9bdfb63af6bfcd34"
-  },
-  "f86d451c72031de64080ef24d372c72a": {
-    "humanReadablePath": "Board > maxHalfTransWidth > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The half of the maximum translation width the board is allowing for the camera to move.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-29",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "f86d451c72031de64080ef24d372c72a"
-  },
-  "4bec7796f7243f8cad7faff431450cbc": {
-    "humanReadablePath": "Board > restrictRelativeXTranslation > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the relative x translation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-30",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "4bec7796f7243f8cad7faff431450cbc"
-  },
-  "08bc7b64b5153ffd65ec90b2efd5d4a6": {
-    "humanReadablePath": "Board > restrictRelativeYTranslation > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the relative y translation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-31",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "08bc7b64b5153ffd65ec90b2efd5d4a6"
-  },
-  "4e2536c2145090d9742940618ba2c257": {
-    "humanReadablePath": "Board > restrictRotation > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the rotation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-32",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "4e2536c2145090d9742940618ba2c257"
-  },
-  "a9f099727514da5087098b4e0f879995": {
-    "humanReadablePath": "Board > restrictXTranslation > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the x translation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-33",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "a9f099727514da5087098b4e0f879995"
-  },
-  "fcf52ea3de3fcf97d567f5614a66864a": {
-    "humanReadablePath": "Board > restrictYTranslation > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the y translation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-34",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "fcf52ea3de3fcf97d567f5614a66864a"
-  },
-  "05231362bbae20d2a11c359c23cddcf3": {
-    "humanReadablePath": "Board > restrictZoom > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag indicating if the board is restricting the zoom.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-35",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "05231362bbae20d2a11c359c23cddcf3"
-  },
-  "0918eb8e5f108ab444b58815cf37117d": {
-    "humanReadablePath": "Board > stepControl > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The flag for step control handover. If this is set to true, the board will not call requestAnimationFrame by itself.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-36",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "0918eb8e5f108ab444b58815cf37117d"
-  },
-  "75bab60d29f773792a6c9f0977222cdd": {
-    "humanReadablePath": "Board > touchStrategy > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The current strategy the board is using for touch events",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-37",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "75bab60d29f773792a6c9f0977222cdd"
-  },
-  "6c1344adae5712f90228d9b6e2acebad": {
-    "humanReadablePath": "Board > verticalGridSize > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The gap size between the horizontal lines of the grid. Currently has no effect.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-38",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "6c1344adae5712f90228d9b6e2acebad"
-  },
-  "f28ac1477ad924b91b77c09b3d8056a9": {
-    "humanReadablePath": "Board > width > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The width of the canvas element the board is attached to. This stay in sync with the view port width of the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-39",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "f28ac1477ad924b91b77c09b3d8056a9"
-  },
-  "ce3e1927e16887fe51b404072014c836": {
-    "humanReadablePath": "Board > width > width > translation comments > index-0 > text",
-    "kind": "setSignature",
-    "originalText": "If the width cause the min zoom level to be greater than the current min zoom level, the min zoom level will be updated.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-39",
-      "setSignature",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "ce3e1927e16887fe51b404072014c836"
-  },
-  "47e7db33d3ae2c4f264ee2885f5602bf": {
-    "humanReadablePath": "Board > adjustZoomLevelBaseOnDimensions > adjustZoomLevelBaseOnDimensions > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "The callback function for the window resize event",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-40",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "47e7db33d3ae2c4f264ee2885f5602bf"
-  },
-  "7a62eec22044f7e26d27011db1e8d945": {
-    "humanReadablePath": "Board > adjustZoomLevelBoundsBaseOnHeight > adjustZoomLevelBoundsBaseOnHeight > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Adjust the zoom level bounds based on the height of the canvas",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-41",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "7a62eec22044f7e26d27011db1e8d945"
-  },
-  "e14a6491294dc7d6d67678b8248bd9cd": {
-    "humanReadablePath": "Board > adjustZoomLevelBoundsBaseOnWidth > adjustZoomLevelBoundsBaseOnWidth > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Adjust the zoom level bounds based on the width of the canvas",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-42",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "e14a6491294dc7d6d67678b8248bd9cd"
-  },
-  "d4c07c495d2956ee6453116846f5fc9b": {
-    "humanReadablePath": "Board > attributeCallBack > attributeCallBack > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Responsible for when the width and height of the canvas changes updating the camera's view port width and height (syncing the two)",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-43",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "d4c07c495d2956ee6453116846f5fc9b"
-  },
-  "364250902b187199663dbd1a8add9b19": {
-    "humanReadablePath": "Board > bindFunctions > bindFunctions > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Bind the function to the class (mainly the event listensers and the step function; those used as the callback for the event listeners and requestAnimationFrame)",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-44",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "364250902b187199663dbd1a8add9b19"
-  },
-  "19b6bec5cd253e9f649fe83b6c620956": {
-    "humanReadablePath": "Board > convertWindowPoint2ViewPortPoint > convertWindowPoint2ViewPortPoint > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is to convert a point in a window coordinate to view port coordinate",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-45",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "19b6bec5cd253e9f649fe83b6c620956"
-  },
-  "18e1448a59b57ac51bff0d4ad1655a72": {
-    "humanReadablePath": "Board > convertWindowPoint2WorldCoord > convertWindowPoint2WorldCoord > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is to convert a point in a window coordinate (directly returned by the mouse event top left corner is (0, 0)) to world coordinate",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-46",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "18e1448a59b57ac51bff0d4ad1655a72"
-  },
-  "c77ef7094dafd1220fe1b367590cf3bd": {
-    "humanReadablePath": "Board > drawAxis > drawAxis > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw the X and Y axis starting from the origin to the max translation height and width",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-48",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "c77ef7094dafd1220fe1b367590cf3bd"
-  },
-  "68e648b8536079b7d1a6ddc6be379691": {
-    "humanReadablePath": "Board > drawBoundingBox > drawBoundingBox > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a blue bounding box at the max translation height and width",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-49",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "68e648b8536079b7d1a6ddc6be379691"
-  },
-  "bd5bb3ce59afec865025cdfe8dc137fe": {
-    "humanReadablePath": "Board > drawCameraCenterWithCrossHair > drawCameraCenterWithCrossHair > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a cross hair at the center of the camera (which is the center of the view port aka the canvas element)",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-50",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "bd5bb3ce59afec865025cdfe8dc137fe"
-  },
-  "7d8199cf25eb514c3f3ae91e855ec9ce": {
-    "humanReadablePath": "Board > drawCrossHair > drawCrossHair > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a cross hair at the given position",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-51",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "7d8199cf25eb514c3f3ae91e855ec9ce"
-  },
-  "3e0699d8f9ea3edcca8047aa87fc8a9d": {
-    "humanReadablePath": "Board > drawGrid > drawGrid > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a grid on to the canvas with dynamic width and height",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-52",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "3e0699d8f9ea3edcca8047aa87fc8a9d"
-  },
-  "8e5cacc3831bb9afefdc4f235bca5b53": {
-    "humanReadablePath": "Board > drawPositionText > drawPositionText > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a position text at the given position",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-53",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "8e5cacc3831bb9afefdc4f235bca5b53"
-  },
-  "b0c394ff9c0f5b8b3429585104219b3b": {
-    "humanReadablePath": "Board > drawReferenceCircle > drawReferenceCircle > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw a green circle at the given position",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-54",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "b0c394ff9c0f5b8b3429585104219b3b"
-  },
-  "2c0adfc9df3aa386a00699f8e6245556": {
-    "humanReadablePath": "Board > drawRuler > drawRuler > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Draw rulers in both the horizontal and vertical direction marking the cooridnates; the width and height are aligned with the grid.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-55",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "2c0adfc9df3aa386a00699f8e6245556"
-  },
-  "e332adecfc947dbeafa7b5b9f961a130": {
-    "humanReadablePath": "Board > getCamera > getCamera > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Get the internal camera",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-56",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "e332adecfc947dbeafa7b5b9f961a130"
-  },
-  "971dcf2f1e8fc46b9ba443a73d292f2e": {
-    "humanReadablePath": "Board > getCoordinateConversionFn > getCoordinateConversionFn > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This was used in the legacy way to handle inputs from user for the panning, zooming and rotating to work.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-58",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "971dcf2f1e8fc46b9ba443a73d292f2e"
-  },
-  "56db7ce2346c2d861c368f90a151df51": {
-    "humanReadablePath": "Board > getInternalCanvas > getInternalCanvas > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Get the internal canvas element this board is attached to.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-59",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "56db7ce2346c2d861c368f90a151df51"
-  },
-  "fa1aed05233a37d18caf2ebbbe604eec": {
-    "humanReadablePath": "Board > on > on > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Subscribe to the camera update event. The events fire only when the camera is actually move not the when the command is issued.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-61",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "fa1aed05233a37d18caf2ebbbe604eec"
-  },
-  "a10cfd94279ef848361ce33946e93ccb": {
-    "humanReadablePath": "Board > pointerDownHandler > pointerDownHandler > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is only for demonstration purposes.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-62",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "a10cfd94279ef848361ce33946e93ccb"
-  },
-  "023e14892f46a2323ca8b89c16a45d8b": {
-    "humanReadablePath": "Board > pointerMoveHandler > pointerMoveHandler > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is only for demonstration purposes.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-63",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "023e14892f46a2323ca8b89c16a45d8b"
-  },
-  "de1ef85238ed8f53dfb23077bcdd7713": {
-    "humanReadablePath": "Board > registerEventListeners > registerEventListeners > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Register the event listeners this is called in the constructor; This is also where the board setup the control input strategies",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-64",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "de1ef85238ed8f53dfb23077bcdd7713"
-  },
-  "75f1e8022d5ef40dcfab9fe7125d27fd": {
-    "humanReadablePath": "Board > removeEventListeners > removeEventListeners > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Remove the event listeners; This is called in the disconnectedCallback; this is for easier clean up if you're using frontend frameworks\nthat maange the lifecycle of the component",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-65",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "75f1e8022d5ef40dcfab9fe7125d27fd"
-  },
-  "902875747f120b2abc9e3cc80cc5065f": {
-    "humanReadablePath": "Board > resetCamera > resetCamera > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Reset the camera to the default position and zoom level. This is soon to be deprecated",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-66",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "902875747f120b2abc9e3cc80cc5065f"
-  },
-  "8bbcca421b337dfe321b8eb570aae6f8": {
-    "humanReadablePath": "Board > spinCameraWithAnimation > spinCameraWithAnimation > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Spin camera to a certain angle with animation. This is soon to be deprecated.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-72",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "8bbcca421b337dfe321b8eb570aae6f8"
-  },
-  "a8b260e6e405609ed038c563efc66219": {
-    "humanReadablePath": "Board > step > step > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This function can be passed directly to the requestAnimationFrame to enable the extra functionalities of a board. (Or be called to step the board in a custom step function)",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-1",
-      "children",
-      "index-73",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "a8b260e6e405609ed038c563efc66219"
-  },
-  "05c6ceb6642dde1731f0603d83f96431": {
-    "humanReadablePath": "BoardCamera > groups > index-3 > title",
-    "kind": "group",
-    "originalText": "Camera Attribute Bounds",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-3",
-      "title"
-    ],
-    "translationKey": "05c6ceb6642dde1731f0603d83f96431"
-  },
-  "b2f138522d333b709d4f3c69101d8a85": {
-    "humanReadablePath": "BoardCamera > groups > index-4 > title",
-    "kind": "group",
-    "originalText": "Camera Attribute Checks",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-4",
-      "title"
-    ],
-    "translationKey": "b2f138522d333b709d4f3c69101d8a85"
-  },
-  "287f6db40c8d248f327dc4c2ffcae661": {
-    "humanReadablePath": "BoardCamera > groups > index-5 > title",
-    "kind": "group",
-    "originalText": "Camera Attribute Helper Functions",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-5",
-      "title"
-    ],
-    "translationKey": "287f6db40c8d248f327dc4c2ffcae661"
-  },
-  "27a4972589a574b7b77784f491525cc0": {
-    "humanReadablePath": "BoardCamera > groups > index-6 > title",
-    "kind": "group",
-    "originalText": "Camera Attributes",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-6",
-      "title"
-    ],
-    "translationKey": "27a4972589a574b7b77784f491525cc0"
-  },
-  "81e6e0b11b644bff449fdfd213dd5dc1": {
-    "humanReadablePath": "BoardCamera > groups > index-7 > title",
-    "kind": "group",
-    "originalText": "Camera Helper Functions",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-7",
-      "title"
-    ],
-    "translationKey": "81e6e0b11b644bff449fdfd213dd5dc1"
-  },
-  "5330bee3bf28aa70c1156811858334eb": {
-    "humanReadablePath": "BoardCamera > groups > index-8 > title",
-    "kind": "group",
-    "originalText": "Camera Operations",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-8",
-      "title"
-    ],
-    "translationKey": "5330bee3bf28aa70c1156811858334eb"
-  },
-  "376f7aa65c30300f68cbacbb9625660d": {
-    "humanReadablePath": "BoardCamera > groups > index-9 > title",
-    "kind": "group",
-    "originalText": "Camera Position Operations",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-9",
-      "title"
-    ],
-    "translationKey": "376f7aa65c30300f68cbacbb9625660d"
-  },
-  "3b660cd87c5f56d2727b0acc0a85c4e3": {
-    "humanReadablePath": "BoardCamera > groups > index-10 > title",
-    "kind": "group",
-    "originalText": "Camera Rotation Operations",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-10",
-      "title"
-    ],
-    "translationKey": "3b660cd87c5f56d2727b0acc0a85c4e3"
-  },
-  "46b490251dabcfd03792e8c6ae8d5907": {
-    "humanReadablePath": "BoardCamera > groups > index-11 > title",
-    "kind": "group",
-    "originalText": "Camera Zoom Operations",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-11",
-      "title"
-    ],
-    "translationKey": "46b490251dabcfd03792e8c6ae8d5907"
-  },
-  "d2f07a31f8e4180eca496c9f3ea4c6b2": {
-    "humanReadablePath": "BoardCamera > groups > index-12 > title",
-    "kind": "group",
-    "originalText": "Camera Zooming Operations",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-12",
-      "title"
-    ],
-    "translationKey": "d2f07a31f8e4180eca496c9f3ea4c6b2"
-  },
-  "34564086667f09c3d927c1fd7a66f5b4": {
-    "humanReadablePath": "BoardCamera > groups > index-13 > title",
-    "kind": "group",
-    "originalText": "Clamping",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-13",
-      "title"
-    ],
-    "translationKey": "34564086667f09c3d927c1fd7a66f5b4"
-  },
-  "fde9c2986893fd2474013a6bac8a93ff": {
-    "humanReadablePath": "BoardCamera > groups > index-14 > title",
-    "kind": "group",
-    "originalText": "Restriction",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "groups",
-      "index-14",
-      "title"
-    ],
-    "translationKey": "fde9c2986893fd2474013a6bac8a93ff"
-  },
-  "300e9380fbe06643109ce3ade0d39199": {
-    "humanReadablePath": "BoardCamera > translation block comments > index-0 > text",
-    "kind": "class",
-    "originalText": "This is the backbone of the canvas panning and a lot of other stuff that is made easy by the camera.\nThis would normally be retrieved from the board class as this camera is not that useful without the board.\n\nExample Usage: \n",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
       "comment",
       "blockTags",
       "index-0",
@@ -1341,794 +277,269 @@
       "index-0",
       "text"
     ],
-    "translationKey": "300e9380fbe06643109ce3ade0d39199"
+    "translationKey": "cd4e8e35c182c55920d6ce1d94816904"
   },
-  "e06ee690e22d2a025a6fee6e32e0ca31": {
-    "humanReadablePath": "BoardCamera > boundaries > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The boundaries of the camera. If undefined, the camera has no boundaries. \nThe vertical and the horizontal boundaries are independent of each other. The max and min of the boundaries are also independent of each other.",
-    "translation": "",
+  "1f38c9f1d09395bd3988b6ddf2a99ed4": {
+    "humanReadablePath": "Board > maxHalfTransHeight > maxHalfTransHeight > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.",
+    "translation": "相機能夠在垂直方向移動的最大距離。",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
+      "children",
+      "index-20",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "1f38c9f1d09395bd3988b6ddf2a99ed4"
+  },
+  "e7ec0f4e2454def92f7950b0fea00543": {
+    "humanReadablePath": "Board > maxHalfTransWidth > maxHalfTransWidth > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.",
+    "translation": "相機能夠在水平方向移動的最大距離。",
+    "projectPath": [
+      "children",
+      "index-4",
       "children",
       "index-21",
+      "getSignature",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "e06ee690e22d2a025a6fee6e32e0ca31"
+    "translationKey": "e7ec0f4e2454def92f7950b0fea00543"
   },
-  "8114e04ec4a1975622c579ac41bdd605": {
-    "humanReadablePath": "BoardCamera > viewPortHeight > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The height of the view port of the camera.",
-    "translation": "",
+  "4412252ac4718dad951a0459f98865bc": {
+    "humanReadablePath": "Board > panHandler > panHandler > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The pan handler of the board. The pan handler is responsible for handling the pan events issued to the camera.\nIt has the final say on how the camera should move. Restrictions and clamping behavior are implemented in the pan handler.",
+    "translation": "平移的處理者，負責處理平移事件。它對相機的移動行為模式有最終的決定權。所有的限制和平移的箝制行為都是在這個處理者中實作的。",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
       "children",
-      "index-31",
+      "index-22",
+      "setSignature",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "8114e04ec4a1975622c579ac41bdd605"
+    "translationKey": "4412252ac4718dad951a0459f98865bc"
   },
-  "66d269421432f9d8b3e59b029df241cc": {
-    "humanReadablePath": "BoardCamera > viewPortWidth > accessor comments > index-0 > text",
-    "kind": "accessor",
-    "originalText": "The width of the view port of the camera.",
-    "translation": "",
+  "ac26c9efd1463528e67a334a4536d93f": {
+    "humanReadablePath": "Board > touchStrategy > touchStrategy > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.\nYou can implement your own strategy by implementing the BoardTouchStrategy interface.",
+    "translation": "這是 board 用來處理觸控事件的策略。預設策略是 DefaultBoardTouchStrategy。你可以實作自己的策略，只要跟著 BoardTouchStrategy 介面實作就好。所有輸入策略都會將使用者輸入轉換成輸入事件並傳給輸入觀察者去做下一步的處置。",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
       "children",
-      "index-32",
+      "index-23",
+      "setSignature",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "66d269421432f9d8b3e59b029df241cc"
+    "translationKey": "ac26c9efd1463528e67a334a4536d93f"
   },
-  "810dfd88c00fa862c5e8520a14cfeaa4": {
-    "humanReadablePath": "BoardCamera > cameraPositionLockedOnObject > cameraPositionLockedOnObject > translation comments > index-0 > text",
+  "b3349587dd0eba92ef1b6cb7ab29331f": {
+    "humanReadablePath": "Board > width > width > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is in sync with the canvas width and the camera view port width. This is not the board's width.\nIf the limitEntireViewPort is set to true, the min zoom level is updated based on the width of the canvas.",
+    "translation": "視窗的寬度，這個寬度會跟 canvas 的寬度和相機的視窗寬度同步。這不是 board 的寬度。如果 limitEntireViewPort 設為 true，最小縮放等級會根據寬度更新。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-24",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "b3349587dd0eba92ef1b6cb7ab29331f"
+  },
+  "e70105ab9b55d3f7fb2fa0a689c1595c": {
+    "humanReadablePath": "Board > zoomHandler > zoomHandler > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The zoom handler of the board. The zoom handler is responsible for handling the zoom events issued to the camera.\nIt has the final say on how the camera should zoom. Restrictions and clamping behavior are implemented in the zoom handler.",
+    "translation": "縮放的處理者，負責處理縮放事件。它對相機的縮放行為模式有最終的決定權。所有的限制和縮放的箝制行為都是在這個處理者中實作的。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-25",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e70105ab9b55d3f7fb2fa0a689c1595c"
+  },
+  "2ff4f44f92273924c6b8a35a59982012": {
+    "humanReadablePath": "Board > convertWindowPoint2WorldCoord > convertWindowPoint2WorldCoord > translation block comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "Indicating if the camera is locked onto an object position wise.",
-    "translation": "",
+    "originalText": "Converts a point from window coordinates to world coordinates.",
+    "translation": "將視窗中的座標轉換成世界座標",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
       "children",
-      "index-34",
+      "index-29",
       "signatures",
       "index-0",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "810dfd88c00fa862c5e8520a14cfeaa4"
+    "translationKey": "2ff4f44f92273924c6b8a35a59982012"
   },
-  "c0fe70cfbc3b6043f4ee2d3d8a907435": {
-    "humanReadablePath": "BoardCamera > cameraRotationLockedOnObject > cameraRotationLockedOnObject > translation comments > index-0 > text",
+  "9f20911649577e34491fc6d2cd11a16d": {
+    "humanReadablePath": "Board > on > on > translation block comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "Indicating if the camera is locked onto an object rotation wise.",
-    "translation": "",
+    "originalText": "Add an camera movement event listener. The events are \"pan\", \"zoom\", and \"rotate\".",
+    "translation": "監聽相機的移動事件。可以監聽的事件有 \"pan\" （平移）、\"zoom\"（縮放） 和 \"rotate\"（旋轉）。",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
+      "children",
+      "index-30",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "9f20911649577e34491fc6d2cd11a16d"
+  },
+  "1325dd3798556978b9eeca4b21e0348f": {
+    "humanReadablePath": "Board > onInput > onInput > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Add an input event listener. The events are \"pan\", \"zoom\", and \"rotate\". This is different from the camera event listener as this is for input events. \nInput event does not necesarily mean that the camera will move. The input event is the event that is triggered when the user interacts with the board.",
+    "translation": "監聽 board 的使用者輸入事件，可以監聽的事件有 \"pan\"（平移）、\"zoom\"（縮放）和 \"rotate\"（旋轉）。這跟相機的移動事件不同，這是針對使用者輸入的事件。\n使用者輸入事件不一定會導致相機移動，這只是使用者與 board 互動時觸發的事件。",
+    "projectPath": [
+      "children",
+      "index-4",
+      "children",
+      "index-31",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "1325dd3798556978b9eeca4b21e0348f"
+  },
+  "5ab09ffb90c86a2b9b3dcb805140a776": {
+    "humanReadablePath": "Board > setup > setup > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.",
+    "translation": "這是給 board 去重新設置事件監聽器，並且啟動 resize observer 和 attribute observer。（目前不是很穩定建議不要使用這個因為 contructor 就會設置好需要的東西了）",
+    "projectPath": [
+      "children",
+      "index-4",
       "children",
       "index-35",
       "signatures",
       "index-0",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "c0fe70cfbc3b6043f4ee2d3d8a907435"
+    "translationKey": "5ab09ffb90c86a2b9b3dcb805140a776"
   },
-  "daab35b291a30f4de0c77a10d6396c19": {
-    "humanReadablePath": "BoardCamera > clampPoint > clampPoint > translation comments > index-0 > text",
+  "6dbe78e6c1aad4d669e22fb774209a58": {
+    "humanReadablePath": "Board > step > step > translation block comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "Clamp a point within the boundaries of the world. Without taking into account the entire view port of the camera.",
-    "translation": "",
+    "originalText": "This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.",
+    "translation": "這是 board 用來推進動畫的函式，這個函式會在每一個動畫幀被呼叫。這個函式負責更新 canvas 的內容和相機的狀推進",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
       "children",
-      "index-40",
+      "index-36",
       "signatures",
       "index-0",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "daab35b291a30f4de0c77a10d6396c19"
+    "translationKey": "6dbe78e6c1aad4d669e22fb774209a58"
   },
-  "9f49a4253d1f87ad887e7e4ac19810d5": {
-    "humanReadablePath": "BoardCamera > clampPointEntireViewPort > clampPointEntireViewPort > translation comments > index-0 > text",
+  "5586f967bb43f1a0a3c3af36109fc6e6": {
+    "humanReadablePath": "Board > tearDown > tearDown > translation block comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "Clamp a point with the entire view port of the camera taken into account.",
-    "translation": "",
+    "originalText": "This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer.",
+    "translation": "這是用來清理 board 的函式，它會移除所有的事件監聽器，並且斷開 resize observer 和 attribute observer。",
     "projectPath": [
       "children",
-      "index-2",
+      "index-4",
       "children",
-      "index-41",
+      "index-37",
       "signatures",
       "index-0",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "9f49a4253d1f87ad887e7e4ac19810d5"
+    "translationKey": "5586f967bb43f1a0a3c3af36109fc6e6"
   },
-  "5b2ca6876bfc98a15dac179b06073d0e": {
-    "humanReadablePath": "BoardCamera > convert2WorldSpace > convert2WorldSpace > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Convert a point from the view port space to the world space. The bottom left corner of the view port is the origin of the view port coordinate.",
-    "translation": "",
+  "a6ab4c4abca12dec912f4f176ae40713": {
+    "humanReadablePath": "InputObserver > translation block comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the observer class that listens to input events and notifies the control center.",
+    "translation": "這是使用者輸入觀察者，它監聽使用者輸入事件並通知控制中心。",
     "projectPath": [
       "children",
-      "index-2",
-      "children",
-      "index-44",
-      "signatures",
-      "index-0",
+      "index-11",
       "comment",
-      "summary",
+      "blockTags",
+      "index-0",
+      "content",
       "index-0",
       "text"
     ],
-    "translationKey": "5b2ca6876bfc98a15dac179b06073d0e"
-  },
-  "22734c21c778dfefcb62274699495881": {
-    "humanReadablePath": "BoardCamera > convert2WorldSpaceWRT > convert2WorldSpaceWRT > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Convert a point that is relative to the center point in the view port space to the world space. \nFor example if you have a point and you want to know that the world space coordinate of a point that appears to the right of the point in the view port space.\nThen the point is the center point and the point you want to convert is the interest point. (Interest point is relative to the center point in the view port space)\nThe center point is in world space.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-45",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "22734c21c778dfefcb62274699495881"
-  },
-  "f7a80e0e12f1f853eca7268001316b51": {
-    "humanReadablePath": "BoardCamera > getAngleSpan > getAngleSpan > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Get the analge span (radian) between the current rotation and the given angle. Positive is counter clockwise and negative is clockwise.\nThe range is from -Math.PI to Math.PI.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-46",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "f7a80e0e12f1f853eca7268001316b51"
-  },
-  "04fc28226662f4b495511c43e574f3cc": {
-    "humanReadablePath": "BoardCamera > getAngleSpanDeg > getAngleSpanDeg > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Get the analge span (degree) between the current rotation and the given angle. Positive is counter clockwise and negative is clockwise.\nThe range is from -180 degrees to 180 degrees.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-47",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "04fc28226662f4b495511c43e574f3cc"
-  },
-  "7a5db38f26596315253aab27fc512ea4": {
-    "humanReadablePath": "BoardCamera > invertFromWorldSpace > invertFromWorldSpace > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Convert a point from the world space to the view port space. The bottom left corner of the view port is the origin of the view port coordinate.\nAnything negative and larger than the view port width or height is outside the view port.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-56",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "7a5db38f26596315253aab27fc512ea4"
-  },
-  "d39df6f34d6467b5780f1cbefa92912c": {
-    "humanReadablePath": "BoardCamera > lockOnto > lockOnto > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Lock the camera onto an object. This means the camera will follow the object and rotate with the object.\nThere is a optimal zoom level for the object, the camera will zoom in and out to maintain the optimal zoom level.\nHowever, this is not locked user can still zoom in and out and still maintain lock on position and rotation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-57",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "d39df6f34d6467b5780f1cbefa92912c"
-  },
-  "57a41582366b1010ace1f18fa8e77bb0": {
-    "humanReadablePath": "BoardCamera > lockOntoWithTransition > lockOntoWithTransition > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is basically the same as the ",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-58",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "57a41582366b1010ace1f18fa8e77bb0"
-  },
-  "38724802ee029944191e2094aa5eb6b1": {
-    "humanReadablePath": "BoardCamera > lockOntoWithTransition > lockOntoWithTransition > translation comments > index-2 > text",
-    "kind": "callSignature",
-    "originalText": " function but with transition animation.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-58",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-2",
-      "text"
-    ],
-    "translationKey": "38724802ee029944191e2094aa5eb6b1"
-  },
-  "9fef1f0fab588a95d1843bcdef380e8a": {
-    "humanReadablePath": "BoardCamera > move > move > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Move the camera by a specific delta. This is bound by the boundaries of the camera. \nIf the delta cause the camera to go out of the boundaries, the camera will not move and the method will return false.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-66",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "9fef1f0fab588a95d1843bcdef380e8a"
-  },
-  "3dfb591e35ffd5c3fc33d2fa090abbc1": {
-    "humanReadablePath": "BoardCamera > moveFromGesture > moveFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is the same as the ",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-67",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "3dfb591e35ffd5c3fc33d2fa090abbc1"
-  },
-  "cd1b38af21d4f404e574e4e764ed7148": {
-    "humanReadablePath": "BoardCamera > moveFromGesture > moveFromGesture > translation comments > index-2 > text",
-    "kind": "callSignature",
-    "originalText": " method but it takes into account the restrictions on the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-67",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-2",
-      "text"
-    ],
-    "translationKey": "cd1b38af21d4f404e574e4e764ed7148"
-  },
-  "8cf1c095aac53d16649a26946700cfa9": {
-    "humanReadablePath": "BoardCamera > moveWithClamp > moveWithClamp > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Move the camera by a specific delta. \nDifferent from ",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-68",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "8cf1c095aac53d16649a26946700cfa9"
-  },
-  "11329ca1e3a9ee7ded7dbaa3cc0cbadd": {
-    "humanReadablePath": "BoardCamera > moveWithClamp > moveWithClamp > translation comments > index-2 > text",
-    "kind": "callSignature",
-    "originalText": " method if the delta cause the camera to go out of the boundaries, \nthe camera will still move, only if the camera is already at the boundaries, the camera will not move and the method will return false.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-68",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-2",
-      "text"
-    ],
-    "translationKey": "11329ca1e3a9ee7ded7dbaa3cc0cbadd"
-  },
-  "18d838eb8e29b3497ac3339420179786": {
-    "humanReadablePath": "BoardCamera > moveWithClampEntireViewPort > moveWithClampEntireViewPort > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Move the camera given a delta vector. If the delta vector causes the camera to go out of the boundaries (the entire view port is taken into consideration),\nthe camera will move to the furthest point within the boundaries (for the entire view port). This is _not_ affected by the restrictions imposed on the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-69",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "18d838eb8e29b3497ac3339420179786"
-  },
-  "d52d2e027e913515213cd7a425258fe7": {
-    "humanReadablePath": "BoardCamera > moveWithClampEntireViewPortFromGesture > moveWithClampEntireViewPortFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Move the camera given a delta vector. If the delta vector causes the camera to go out of the boundaries (the entire view port is taken into consideration),\nthe camera will move to the furthest point within the boundaries (for the entire view port). This is affected by the restrictions imposed on the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-70",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "d52d2e027e913515213cd7a425258fe7"
-  },
-  "6d1aa1273b970ac4ab183f196260a781": {
-    "humanReadablePath": "BoardCamera > moveWithClampFromGesture > moveWithClampFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "This is the same as the ",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-71",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "6d1aa1273b970ac4ab183f196260a781"
-  },
-  "d3c3712259b21e7d76dbabe6e8c1c4e6": {
-    "humanReadablePath": "BoardCamera > moveWithClampFromGesture > moveWithClampFromGesture > translation comments > index-2 > text",
-    "kind": "callSignature",
-    "originalText": " method but it takes into account the restrictions on the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-71",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-2",
-      "text"
-    ],
-    "translationKey": "d3c3712259b21e7d76dbabe6e8c1c4e6"
-  },
-  "c9f4bd0870b17b56eb928f53e2bb2744": {
-    "humanReadablePath": "BoardCamera > normalizeAngleZero2TwoPI > normalizeAngleZero2TwoPI > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Normalize an angle (radian) to be between 0 and 2 * Math.PI",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-72",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "c9f4bd0870b17b56eb928f53e2bb2744"
-  },
-  "fe94f17960988ffc76ff5b1a0aac83bc": {
-    "humanReadablePath": "BoardCamera > releaseFromLockedObject > releaseFromLockedObject > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Indicating if the camera is locked onto an object zoom level wise.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-75",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "fe94f17960988ffc76ff5b1a0aac83bc"
-  },
-  "dc8da54ff6c577c8727c77166924894e": {
-    "humanReadablePath": "BoardCamera > releasePositionFromLockedObject > releasePositionFromLockedObject > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Release the camera from being locked onto an object position wise.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-83",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "dc8da54ff6c577c8727c77166924894e"
-  },
-  "9031115225213493f0a6d2dda92c646d": {
-    "humanReadablePath": "BoardCamera > releaseRotationFromLockedObject > releaseRotationFromLockedObject > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Release the camera from being locked onto an object rotation wise.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-84",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "9031115225213493f0a6d2dda92c646d"
-  },
-  "782949bf5015ef89b4f94cc3007d8ae0": {
-    "humanReadablePath": "BoardCamera > resetCamera > resetCamera > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Reset the camera to its default position, rotation and zoom level.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-85",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "782949bf5015ef89b4f94cc3007d8ae0"
-  },
-  "fd7b29f393a3be3c40c150bad1b5d4f2": {
-    "humanReadablePath": "BoardCamera > resetZoomLevel > resetZoomLevel > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Reset the zoom level of the camera to 1.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-87",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "fd7b29f393a3be3c40c150bad1b5d4f2"
-  },
-  "80bcd32e8c084cdb35476067a2472bf8": {
-    "humanReadablePath": "BoardCamera > setMaxZoomLevel > setMaxZoomLevel > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Set the maximum zoom level of the camera. The bigger the zoom level the larger the object appears.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-89",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "80bcd32e8c084cdb35476067a2472bf8"
-  },
-  "63d11b98bbb719544477c298283631f2": {
-    "humanReadablePath": "BoardCamera > setMinZoomLevel > setMinZoomLevel > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Set the minimum zoom level of the camera. The smaller the zoom level the smaller the object appears.\nThe zoom level cannot be less than or equal to 0. 0 would shrink the object to nothing, and negative would flip the object.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-90",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "63d11b98bbb719544477c298283631f2"
-  },
-  "b00e2316f01d93426d6e20e2472e2a95": {
-    "humanReadablePath": "BoardCamera > setPosition > setPosition > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Set the position of the camera to a specific point. This is bound by the boundaries of the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-91",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "b00e2316f01d93426d6e20e2472e2a95"
-  },
-  "3beacaf70a7067d3c1be79b82d7ca6da": {
-    "humanReadablePath": "BoardCamera > setPositionFromGesture > setPositionFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Set the position of the camera from gesture input of user; this is different from the setPosition method in that it takes into account the restrictions on the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-92",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "3beacaf70a7067d3c1be79b82d7ca6da"
-  },
-  "717d50f8ebef2fa223fcbb949a8d1150": {
-    "humanReadablePath": "BoardCamera > setPositionWithClamp > setPositionWithClamp > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Set the position of the camera to a specific point. This is bound by the boundaries of the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-94",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "717d50f8ebef2fa223fcbb949a8d1150"
-  },
-  "0317bc208aa722188cae8aa0246a2d94": {
-    "humanReadablePath": "BoardCamera > spin > spin > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-114",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "0317bc208aa722188cae8aa0246a2d94"
-  },
-  "cbf6e446080870716095e30320a6a236": {
-    "humanReadablePath": "BoardCamera > spinDeg > spinDeg > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-115",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "cbf6e446080870716095e30320a6a236"
-  },
-  "4597531514107082d03614c9dd10a944": {
-    "humanReadablePath": "BoardCamera > spinDegFromGesture > spinDegFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Rotate the camera by a specific angle (degree). Positive angle is counter clockwise and negative angle is clockwise.\nThis is affected by the restrictRotationFromGesture attribute.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-116",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "4597531514107082d03614c9dd10a944"
-  },
-  "fddf2f5ebd9a4d5419f0f84e8bb2d866": {
-    "humanReadablePath": "BoardCamera > spinFromGesture > spinFromGesture > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Rotate the camera by a specific angle (radian). Positive angle is counter clockwise and negative angle is clockwise.\nThis is affected by the restrictRotationFromGesture attribute.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-117",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "fddf2f5ebd9a4d5419f0f84e8bb2d866"
-  },
-  "6e6217fed2360b20e756f0768de34399": {
-    "humanReadablePath": "BoardCamera > withinBoundaries > withinBoundaries > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Check if a point is within the boundaries of the camera.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-126",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "6e6217fed2360b20e756f0768de34399"
-  },
-  "901afa7530a87af4b0c495b853340c5f": {
-    "humanReadablePath": "BoardCamera > zoomLevelValid > zoomLevelValid > translation comments > index-0 > text",
-    "kind": "callSignature",
-    "originalText": "Check if the zoom level is valid",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-2",
-      "children",
-      "index-127",
-      "signatures",
-      "index-0",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "901afa7530a87af4b0c495b853340c5f"
-  },
-  "6606c9d239d782337ff63c9e5f4f2dc2": {
-    "humanReadablePath": "Boundaries > translation comments > index-0 > text",
-    "kind": "typeAlias",
-    "originalText": "need to translate boundaries text",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-14",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "6606c9d239d782337ff63c9e5f4f2dc2"
+    "translationKey": "a6ab4c4abca12dec912f4f176ae40713"
   }
 }

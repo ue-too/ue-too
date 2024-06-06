@@ -3,13 +3,9 @@ import { CameraObserverV2, UnSubscribe } from "src/camera-observer";
 
 import { RotationLimits } from "src/board-camera/utils/rotation";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
+import { Boundaries } from "src/board-camera/utils/position";
 
 import { CameraEvent, CameraState } from "src/camera-observer";
-
-type Boundaries = {
-    min?: {x?: number, y?: number};
-    max?: {x?: number, y?: number};
-}
 
 export interface BoardCamera {
     position: Point;

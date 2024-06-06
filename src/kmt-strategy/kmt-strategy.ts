@@ -4,9 +4,9 @@ import { BoardCamera } from "src/board-camera";
 
 import { InputObserver } from "src/input-observer/input-observer";
 /**
- * @category Keyboard-Mouse Strategy
+ * @category Input Strategy
  */
-export interface BoardKMTStrategyV2 {
+export interface BoardKMTStrategy {
     disabled: boolean;
     debugMode: boolean;
     alignCoordinateSystem: boolean;
@@ -22,7 +22,7 @@ export interface BoardKMTStrategyV2 {
     updateCamera(camera: BoardCamera): void;
 }
 
-export class DefaultBoardKMTStrategyV2 implements BoardKMTStrategyV2 {
+export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private SCROLL_SENSATIVITY: number;
     private isDragging: boolean;
