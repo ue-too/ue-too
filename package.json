@@ -5,6 +5,7 @@
   "main": "./build/index.cjs",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
+  "type": "module",
   "scripts": {
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "pnpm run rollup && pnpm run gen-declaration && pnpm run move-package",
@@ -19,6 +20,7 @@
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
     "count-lines": "git ls-files ./src | xargs wc -l",
+    "dev": "pnpm exec vite",
     "test": "jest"
   },
   "repository": {
@@ -52,6 +54,7 @@
     "typedoc": "0.25.9",
     "typedoc-material-theme": "^1.0.2",
     "typedoc-plugin-mdn-links": "^3.1.17",
-    "typescript": "^5.0.3"
+    "typescript": "^5.0.3",
+    "vite": "^5.4.2"
   }
 }
