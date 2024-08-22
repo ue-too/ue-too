@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@niuee/bounce':
+        specifier: ^0.0.4
+        version: 0.0.4
       '@niuee/typedoc-plugin-custom-theme':
         specifier: ^0.0.3
         version: 0.0.3(typedoc@0.25.9(typescript@5.3.3))
@@ -494,6 +497,9 @@ packages:
 
   '@material/material-color-utilities@0.2.7':
     resolution: {integrity: sha512-0FCeqG6WvK4/Cc06F/xXMd/pv4FeisI0c1tUpBbfhA2n9Y8eZEv4Karjbmf2ZqQCPUWMrGp8A571tCjizxoTiQ==}
+
+  '@niuee/bounce@0.0.4':
+    resolution: {integrity: sha512-HSB6lF28nZ69SJQXp0/8aGjrO3I7YXf8B7SSl72CNdWYPk2vmqTfDhxUYemxwyC4eO4ao1OUBOeYAO8WN6XE+g==}
 
   '@niuee/typedoc-plugin-custom-theme@0.0.3':
     resolution: {integrity: sha512-A4J+pKRmkZMLLS/NgXXs7F+N7MzPfjmCOmGyQIIyL7P5KCzunwe5/JJsa+f1yNEfOYYUMY3hZndpxgvX1mmCwg==}
@@ -1692,6 +1698,9 @@ packages:
     resolution: {integrity: sha512-B7+VDyb8Tl6oMJT9oSO2CW8XC/T4UcJGrwOVoNGwOQsQYhlpfajmrMj5xeejqaASq3V/EqThyOeATEOMuSEXiA==}
     engines: {node: '>=12'}
 
+  point2point@0.0.93:
+    resolution: {integrity: sha512-kO27XKR7TqwhtpYcLEAjcdkHoXuMIOZhGUuz8UCbj9ZtLhhhTKL1gLOogIpXFz5TUfRag3zX7fpIW5kdqMftlw==}
+
   point2point@0.0.95:
     resolution: {integrity: sha512-8aahc+BLo86ZnUSQbPlCcqBW3MINnxmVqmfs3qORtNwTJKLlocZkqujB07H9PbmINRqV8R5G3R3KJlMTrXnImQ==}
 
@@ -2668,6 +2677,10 @@ snapshots:
       - supports-color
 
   '@material/material-color-utilities@0.2.7': {}
+
+  '@niuee/bounce@0.0.4':
+    dependencies:
+      point2point: 0.0.93
 
   '@niuee/typedoc-plugin-custom-theme@0.0.3(typedoc@0.25.9(typescript@5.3.3))':
     dependencies:
@@ -4012,6 +4025,8 @@ snapshots:
   plimit-lit@1.6.1:
     dependencies:
       queue-lit: 1.5.2
+
+  point2point@0.0.93: {}
 
   point2point@0.0.95: {}
 
