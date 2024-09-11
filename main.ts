@@ -1,5 +1,5 @@
 import "./devserver/media";
-import Board, { drawAxis, drawRuler } from "./src/boardify";
+import Board, { drawAxis, drawRuler, drawGrid } from "./src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./devserver/drawing-util";
 import { drawLine } from "./devserver/utils";
@@ -25,8 +25,9 @@ function step(timestamp: number){
     drawYAxis(board.context, board.camera.zoomLevel);
     board.context.lineWidth = 1 / board.camera.zoomLevel;
 
-    // const fourCorners = calculateTopFourCorners();
-    // drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    const fourCorners = calculateTopFourCorners();
+    drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    drawGrid(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
 
     requestAnimationFrame(step);
 }
@@ -34,10 +35,10 @@ function step(timestamp: number){
 step(0);
 
 function calculateTopFourCorners(){
-    const topLeft = board.camera.convertFromViewPort2WorldSpace({x: 0, y: 0});
-    const topRight = board.camera.convertFromViewPort2WorldSpace({x: board.camera.viewPortWidth, y: 0});
-    const bottomLeft = board.camera.convertFromViewPort2WorldSpace({x: 0, y: board.camera.viewPortHeight});
-    const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: board.camera.viewPortWidth, y: board.camera.viewPortHeight});
+    const topLeft = board.camera.convertFromViewPort2WorldSpace({x: -canvas.width / 2, y: -canvas.height / 2});
+    const topRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: -canvas.height / 2});
+    const bottomLeft = board.camera.convertFromViewPort2WorldSpace({x: -canvas.width / 2, y: canvas.height / 2});
+    const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: canvas.height / 2});
     return {topLeft, topRight, bottomLeft, bottomRight};
 }
 

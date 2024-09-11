@@ -86,18 +86,11 @@ export function drawAxis(context: CanvasRenderingContext2D, boundaries: Boundari
 }
 
 // argument points are in world space
-export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number, viewPortWidth: number, viewPortHeight: number): void{
-    // let topLeftCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left};
-    // topLeftCorner = this.convertWindowPoint2WorldCoord(topLeftCorner);
-    // let topRightCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().right};
-    // topRightCorner = this.convertWindowPoint2WorldCoord(topRightCorner);
-    // let bottomLeftCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left};
-    // bottomLeftCorner = this.convertWindowPoint2WorldCoord(bottomLeftCorner);
-    // let bottomRightCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().right};
-    // bottomRightCorner = this.convertWindowPoint2WorldCoord(bottomRightCorner);
+export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
     let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
     let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
     let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
+    let height = PointCal.distanceBetweenPoints(topLeftCorner, bottomLeftCorner);
     let orderOfMagnitude = calculateOrderOfMagnitude(width);
     let divisor = Math.pow(10, orderOfMagnitude);
     let subDivisor = divisor / 10;
@@ -106,46 +99,33 @@ export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point
     let minVerticalSmallTick = alignCoordinateSystem ? Math.floor(topLeftCorner.y / subDivisor) * subDivisor : Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor;
     let maxVerticalSmallTick = alignCoordinateSystem ? Math.ceil(bottomLeftCorner.y / subDivisor) * subDivisor : Math.floor(topLeftCorner.y / subDivisor) * subDivisor;;
 
+    // vertical lines
     for(let i = minHorizontalSmallTick; i <= maxHorizontalSmallTick; i += subDivisor){
+        const startPoint = PointCal.addVector({x: i, y: topLeftCorner.y}, PointCal.multiplyVectorByScalar(leftRightDirection, subDivisor));
+        const endPoint = PointCal.addVector({x: i, y: bottomLeftCorner.y}, PointCal.multiplyVectorByScalar(leftRightDirection, subDivisor));
         context.beginPath();
         context.strokeStyle = "black";
         context.fillStyle = "black";
         context.lineWidth = 0.5 / cameraZoomLevel;
-        if(alignCoordinateSystem){
-            context.moveTo(i, topLeftCorner.y);
-            context.lineTo(i, topLeftCorner.y + viewPortHeight / cameraZoomLevel);
-        } else {
-            context.moveTo(i, -topLeftCorner.y);
-            context.lineTo(i, -topLeftCorner.y + viewPortHeight / cameraZoomLevel);
-        }
+        context.moveTo(startPoint.x, startPoint.y);
+        context.lineTo(endPoint.x, endPoint.y);
         context.stroke();
     }
     for(let i = minVerticalSmallTick; i <= maxVerticalSmallTick; i += subDivisor){
+        const startPoint = PointCal.addVector({x: topLeftCorner.x, y: i}, PointCal.multiplyVectorByScalar(topDownDirection, subDivisor));
+        const endPoint = PointCal.addVector({x: topRightCorner.x, y: i}, PointCal.multiplyVectorByScalar(topDownDirection, subDivisor));
         context.beginPath();
         context.strokeStyle = "black";
         context.fillStyle = "black";
         context.lineWidth = 0.5 / cameraZoomLevel;
-        if(!alignCoordinateSystem){
-            context.moveTo(topLeftCorner.x, -i);
-            context.lineTo(topLeftCorner.x + width / cameraZoomLevel, -i);
-        } else {
-            context.moveTo(topLeftCorner.x, i);
-            context.lineTo(topLeftCorner.x + width / cameraZoomLevel, i);
-        }
+        context.moveTo(startPoint.x, startPoint.y);
+        context.lineTo(endPoint.x, endPoint.y);
         context.stroke();
     }
 }
 
 // argument points are in world space
 export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
-        // let topLeftCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left};
-        // topLeftCorner = this.convertWindowPoint2WorldCoord(topLeftCorner);
-        // let topRightCorner = {y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().right};
-        // topRightCorner = this.convertWindowPoint2WorldCoord(topRightCorner);
-        // let bottomLeftCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left};
-        // bottomLeftCorner = this.convertWindowPoint2WorldCoord(bottomLeftCorner);
-        // let bottomRightCorner = {y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().right};
-        // bottomRightCorner = this.convertWindowPoint2WorldCoord(bottomRightCorner);
         let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
         let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
         let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
@@ -250,7 +230,7 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         const mediumHorizontalStep = Math.ceil((maxHorizontalMediumTick - minHorizontalMediumTick) / halfDivisor);
         for(let index = 0; index <= mediumHorizontalStep; index++ ){
             const i = minHorizontalMediumTick + index * halfDivisor;
-            if(i % divisor == 0) continue;
+            if(Math.floor(i * scaling) % Math.floor(divisor * scaling )== 0) continue;
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
@@ -286,7 +266,7 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         const mediumVerticalStep = Math.ceil((maxVerticalMediumTick - minVerticalMediumTick) / halfDivisor);
         for(let index = 0; index <= mediumVerticalStep; index++){
             const i = minVerticalMediumTick + index * halfDivisor;
-            if(i % divisor == 0) continue;
+            if(Math.floor(i * scaling) % Math.floor(divisor * scaling)== 0) continue;
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
@@ -320,7 +300,7 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         const smallHorizontalStep = Math.ceil((maxHorizontalSmallTick - minHorizontalSmallTick) / subDivisor);
         for(let index = 0; index <= smallHorizontalStep; index++){
             const i = minHorizontalSmallTick + index * subDivisor;
-            if(i % divisor == 0 || i % halfDivisor == 0) continue;
+            if(Math.floor(i * scaling) % Math.floor(divisor * scaling) == 0 || Math.floor(i * scaling) % Math.floor(halfDivisor * scaling) == 0) continue;
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
@@ -356,7 +336,7 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         const smallVerticalStep = Math.ceil((maxVerticalSmallTick - minVerticalSmallTick) / subDivisor);
         for(let index = 0; index <= smallVerticalStep; index++){
             const i = minVerticalSmallTick + index * subDivisor;
-            if(i % divisor == 0 || i % halfDivisor == 0) continue;
+            if(Math.floor(i * scaling) % Math.floor(divisor * scaling) == 0 || Math.floor(i * scaling) % Math.floor(halfDivisor * scaling) == 0) continue;
             context.beginPath();
             context.strokeStyle = "black";
             context.fillStyle = "black";
