@@ -1,8 +1,8 @@
-import "./devserver/media";
-import Board, { drawAxis, drawRuler, drawGrid } from "./src/boardify";
+import "./media";
+import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
-import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./devserver/drawing-util";
-import { drawLine } from "./devserver/utils";
+import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
+import { drawLine } from "./utils";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
