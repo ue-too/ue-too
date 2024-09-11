@@ -1,4 +1,4 @@
-import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace } from "../../src/board-camera";
+import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace, convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from "../../src/board-camera";
 import { clampRotation, RotationLimits } from "../../src/board-camera/utils/rotation";
 
 import { Boundaries, halfTranslationWidthOf, translationWidthOf, translationHeightOf, halfTranslationHeightOf } from "../../src/board-camera/utils/position";
@@ -137,6 +137,15 @@ describe("coordinate conversion", () => {
         expect(testRes2.y).toBeCloseTo(-390);
     });
 
+    test("Convert point within camera view to world space with the camera position as view port origin", ()=>{
+        const testRes = convert2WorldSpaceAnchorAtCenter({x: -400, y: -400},  {x: 30, y: 50}, 10, -45 * Math.PI / 180);
+        expect(testRes.x).toBeCloseTo(30 - (800 / (Math.sqrt(2) * 10)));
+        expect(testRes.y).toBeCloseTo(50);
+        const testRes2 = convert2WorldSpaceAnchorAtCenter({x: -400, y: -400}, {x: 10, y: 10}, 1, 0);
+        expect(testRes2.x).toBeCloseTo(-390);
+        expect(testRes2.y).toBeCloseTo(-390);
+    });
+
     test("Convert point within world space to camera view", ()=>{
         const point = {x: 10, y: 30};
         const cameraCenterInViewPort = {x: 500, y: 500};
@@ -146,6 +155,18 @@ describe("coordinate conversion", () => {
         const test2Point = {x: 10, y: 50};
         const testRes2 = invertFromWorldSpace(test2Point, 1000, 1000, {x: 30, y: 50}, 1, -45 * Math.PI / 180);
         const expectedRes = {x: 500 - 20 / Math.sqrt(2), y: 500 - 20 / Math.sqrt(2)};
+        expect(testRes2.x).toBeCloseTo(expectedRes.x);
+        expect(testRes2.y).toBeCloseTo(expectedRes.y);
+    });
+
+    test("Convert point within world space to camera view with camera position as viewport origin", ()=>{
+        const point = {x: 10, y: 30};
+        const testRes = convert2ViewPortSpaceAnchorAtCenter(point, {x: 30, y: 50}, 1, 0);
+        expect(testRes.x).toBeCloseTo(-20);
+        expect(testRes.y).toBeCloseTo(-20);
+        const test2Point = {x: 10, y: 50};
+        const testRes2 = convert2ViewPortSpaceAnchorAtCenter(test2Point, {x: 30, y: 50}, 1, -45 * Math.PI / 180);
+        const expectedRes = {x: - 20 / Math.sqrt(2), y: - 20 / Math.sqrt(2)};
         expect(testRes2.x).toBeCloseTo(expectedRes.x);
         expect(testRes2.y).toBeCloseTo(expectedRes.y);
     });

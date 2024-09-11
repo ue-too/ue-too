@@ -347,28 +347,19 @@ export default class Board {
         }
     }
 
-    private convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        if(this._alignCoordinateSystem) {
-            return {x: res.x, y: res.y};
-        } else {
-            return {x: res.x, y: -res.y};
-        }
-    }
-
     /**
      * @translationBlock Converts a point from window coordinates to world coordinates.
      * @param clickPointInWindow The point in window coordinates to convert.
      * @returns The converted point in world coordinates.
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
-        if(this._alignCoordinateSystem){
-            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().top, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-            return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
-        } else {
-            const pointInCameraViewPort = this.convertWindowPoint2ViewPortPoint({y: this._canvas.getBoundingClientRect().bottom, x: this._canvas.getBoundingClientRect().left}, clickPointInWindow);
-            return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInCameraViewPort);
+        const boundingRect = this._canvas.getBoundingClientRect();
+        const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
+        const pointInViewPort = PointCal.subVector(clickPointInWindow, cameraCenterInWindow);
+        if(!this._alignCoordinateSystem){
+            pointInViewPort.y = -pointInViewPort.y;
         }
+        return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInViewPort);
     }
 
     /**
