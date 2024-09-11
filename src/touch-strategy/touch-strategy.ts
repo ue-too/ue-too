@@ -158,7 +158,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             this.touchPoints = [firstTouchPoint, secondTouchPoint];
         } else if (e.targetTouches.length === 1){
             this.tapPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            this.tapPoint = this.controlCamera.convertFromViewPort2WorldSpace(this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, this.tapPoint));
+            const boundingRect = this.canvas.getBoundingClientRect();
+            const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+            const tapPointInWindow = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            const tapPointInViewPort = PointCal.subVector(tapPointInWindow, cameraCenterInWindow); 
+            this.tapPoint = this.controlCamera.convertFromViewPort2WorldSpace(tapPointInViewPort);
             this.isDragging = true;
             this.dragStartPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
         }
@@ -195,22 +199,24 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
             let distDiff = this.zoomStartDist - touchPointDist;
             let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-            if(this._alignCoordinateSystem){
-                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top}, midPoint);
-            } else {
-                midPoint = this.convertWindowPoint2ViewPortPoint({x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom}, midPoint);
+            const boundingRect = this.canvas.getBoundingClientRect();
+            const midPointInWindow = {x: midPoint.x, y: midPoint.y};
+            const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+            const midPointInViewPort = PointCal.subVector(midPointInWindow, cameraCenterInWindow);
+            if(!this._alignCoordinateSystem){
+                midPointInViewPort.y = -midPointInViewPort.y;
             }
             let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
-            this.inputObserver.notifyOnZoom(this.controlCamera, -zoomAmount, midPoint);
+            this.inputObserver.notifyOnZoom(this.controlCamera, -zoomAmount, midPointInViewPort);
             // this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
             this.tapPoint = null;
         } else if(e.targetTouches.length == 1 && this.isDragging && !this._panDisabled){
             let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            let diff = PointCal.subVector(this.dragStartPoint, touchPoint);
+            const diff = PointCal.subVector(this.dragStartPoint, touchPoint);
             if(!this._alignCoordinateSystem){
-                diff = PointCal.flipYAxis(diff);
+                diff.y = -diff.y;
             }
             let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
@@ -218,15 +224,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             // this._panHandler.panCameraBy(this.camera, diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;
-        }
-    }
-
-    convertWindowPoint2ViewPortPoint(bottomLeftCornerOfCanvas: Point, clickPointInWindow: Point): Point {
-        const res = PointCal.subVector(clickPointInWindow, bottomLeftCornerOfCanvas);
-        if(this._alignCoordinateSystem) {
-            return {x: res.x, y: res.y};
-        } else {
-            return {x: res.x, y: -res.y};
         }
     }
 }

@@ -21,6 +21,22 @@ export function convert2WorldSpace(point: Point, viewPortWidth: number, viewPort
     return PointCal.addVector(cameraPosition, delta2Point);
 }
 
+// the origin of the view port is at the camera position; the point is in view port space (relative to the camera position)
+export function convert2WorldSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
+    const scaledBack = PointCal.multiplyVectorByScalar(point, 1 / cameraZoomLevel);
+    const rotatedBack = PointCal.rotatePoint(scaledBack, cameraRotation);
+    const withOffset = PointCal.addVector(rotatedBack, cameraPosition);
+    return withOffset;
+}
+
+// the origin of the view port is at the camera position; the point is in world space; the returned point is in view port space (relative to the camera position)
+export function convert2ViewPortSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
+    const withOffset = PointCal.subVector(point, cameraPosition);
+    const scaled = PointCal.multiplyVectorByScalar(withOffset, cameraZoomLevel);
+    const rotated = PointCal.rotatePoint(scaled, -cameraRotation);
+    return rotated;
+}
+
 export function invertFromWorldSpace(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
     let cameraFrameCenter = {x: viewPortWidth / 2, y: viewPortHeight / 2};
     let delta2Point = PointCal.subVector(point, cameraPosition);

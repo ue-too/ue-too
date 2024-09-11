@@ -88,10 +88,9 @@ export class BaseZoomHandler extends ZoomHandlerBoilerPlate {
     }
 
     zoomCameraToAt(camera: BoardCamera, to: number, at: Point): void {
-        let originalAnchorInWorld = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
-        const originalZoomLevel = camera.zoomLevel;
+        let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
         camera.setZoomLevel(to);
-        let anchorInWorldAfterZoom = convert2WorldSpace(at, camera.viewPortWidth, camera.viewPortHeight, camera.position, camera.zoomLevel, camera.rotation);
+        let anchorInWorldAfterZoom = camera.convertFromViewPort2WorldSpace(at);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
         this.panHandler.panCameraBy(camera, diff);
     }
