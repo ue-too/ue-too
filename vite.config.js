@@ -9,4 +9,7 @@ export default defineConfig({
             "@server": resolve(__dirname, "../server/src"),
         },
     },
+    server: {
+        strictPort: true,
+    }
 });

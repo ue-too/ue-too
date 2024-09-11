@@ -66,7 +66,7 @@ function toggleRecording() {
 }
 
 function startRecording() {
-    let options = {mimeType: 'video/mp4'};
+    let options = {mimeType: 'video/webm'};
     recordedBlobs = [];
     try {
         mediaRecorder = new MediaRecorder(stream, options);

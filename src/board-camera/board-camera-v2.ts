@@ -4,7 +4,7 @@ import { CameraObserverV2, UnSubscribe } from 'src/camera-observer';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { zoomLevelWithinLimits, ZoomLevelLimits, clampZoomLevel } from 'src/board-camera/utils/zoom';
 import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRotation } from 'src/board-camera/utils/rotation';
-import { convert2WorldSpace } from 'src/board-camera/utils/coordinate-conversion';
+import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
 import { CameraEvent, CameraState } from 'src/camera-observer';
 import { BoardCamera } from 'src/board-camera/interface';
@@ -164,7 +164,11 @@ export default class BoardCameraV2 implements BoardCamera {
     }
 
     convertFromViewPort2WorldSpace(point: Point): Point{
-        return convert2WorldSpace(point, this._viewPortWidth, this._viewPortHeight, this._position, this._zoomLevel, this._rotation);
+        return convert2WorldSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
+    }
+
+    convertFromWorldSpace2ViewPort(point: Point): Point{
+        return convert2ViewPortSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
     
     invertFromWorldSpace2ViewPort(point: Point): Point{
