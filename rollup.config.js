@@ -84,7 +84,11 @@ export default [
     ],
     plugins: [
       resolve(),
-      typescript(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+        exclude: ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*"],
+        declaration: true,
+      }),
       terser({
         mangle: true,
       }),
