@@ -15,12 +15,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Publish Package to npmjs
-    if: startsWith(github.ref, 'refs/heads/release/')
+    if: startsWith(github.ref, 'refs/heads/main/')
     steps:
       - name: Fail if branch is not main
-        if: (github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/heads/release/'))
+        if: (github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/heads/main/'))
         run: |
-          echo "This workflow should not be triggered with workflow_dispatch on a branch other than release"
+          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
           exit 1
       - uses: actions/checkout@v4
         with:
