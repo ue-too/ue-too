@@ -188,9 +188,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 this.canvas.style.cursor = "grabbing";
             }
             const target = {x: e.clientX, y: e.clientY};
-            let diff = PointCal.subVector(this.dragStartPoint, target);
+            const diff = PointCal.subVector(this.dragStartPoint, target);
             if(!this._alignCoordinateSystem){
-                diff = PointCal.flipYAxis(diff);
+                diff.y = -diff.y;
             }
             let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
@@ -210,9 +210,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             //NOTE this is panning the camera
             // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
             // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
-            let diff = {x: e.deltaX, y: e.deltaY};
+            const diff = {x: e.deltaX, y: e.deltaY};
             if(!this._alignCoordinateSystem){
-                diff = PointCal.flipYAxis(diff);
+                diff.y = -diff.y;
             }
             let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
             diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
@@ -224,10 +224,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 return;
             }
             const cursorPosition = {x: e.clientX, y: e.clientY};
-            let anchorPoint = PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().top});
+            // anchor point is in view port space (relative to the camera position)
+            const boundingRect = this._canvas.getBoundingClientRect();
+            const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
+            const anchorPoint = PointCal.subVector(cursorPosition, cameraCenterInWindow);
             if(!this._alignCoordinateSystem){
-                anchorPoint = PointCal.subVector(cursorPosition, {x: this.canvas.getBoundingClientRect().left, y: this.canvas.getBoundingClientRect().bottom});
-                anchorPoint = PointCal.flipYAxis(anchorPoint);
+                anchorPoint.y = -anchorPoint.y;
             }
             // const zoomLevel = this._camera.zoomLevel - (this._camera.zoomLevel * zoomAmount * 5);
             this.inputObserver.notifyOnZoom(this._camera, -(this._camera.zoomLevel * zoomAmount * 5), anchorPoint);
