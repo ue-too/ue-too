@@ -1,5 +1,5 @@
 import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace, convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from "../../src/board-camera";
-import { clampRotation, RotationLimits } from "../../src/board-camera/utils/rotation";
+import { clampRotation, RotationLimits, rotationWithinBoundary, RotationBoundary } from "../../src/board-camera/utils/rotation";
 
 import { Boundaries, halfTranslationWidthOf, translationWidthOf, translationHeightOf, halfTranslationHeightOf } from "../../src/board-camera/utils/position";
 
@@ -31,6 +31,36 @@ describe("withinBoundaries", () => {
         expect(withinBoundaries({x: 0, y: 0}, {max: {x: -1}})).toBe(false);
     });
         
+});
+
+describe("rotation boundaries testing", ()=>{
+    test("should return true if the rotation is within the boundaries", ()=>{
+        const rotationBoundaries: RotationBoundary = {start: 0, end: Math.PI, positiveDirection: true, startAsTieBreaker: true};
+        expect(rotationWithinBoundary(0, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(Math.PI, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(Math.PI / 2, rotationBoundaries)).toBe(true);
+    });
+
+    test("should return false if the rotation is outside the boundaries", ()=>{
+        const rotationBoundaries: RotationBoundary = {start: 0, end: Math.PI, positiveDirection: true, startAsTieBreaker: true};
+        expect(rotationWithinBoundary(-Math.PI / 2, rotationBoundaries)).toBe(false);
+        expect(rotationWithinBoundary(Math.PI * 3 / 2, rotationBoundaries)).toBe(false);
+    });
+
+    test("should still work if the boundaries cross the 0 degree mark", ()=>{
+        const rotationBoundaries: RotationBoundary = {start: (360 - 45) * Math.PI / 180, end: 45 * Math.PI / 180, positiveDirection: true, startAsTieBreaker: true};
+        expect(rotationWithinBoundary(0, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(50 * Math.PI / 180, rotationBoundaries)).toBe(false);
+        expect(rotationWithinBoundary(330 * Math.PI / 180, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(300 * Math.PI / 180, rotationBoundaries)).toBe(false);
+        expect(rotationWithinBoundary(-50 * Math.PI / 180, rotationBoundaries)).toBe(false);
+        expect(rotationWithinBoundary(315 * Math.PI / 180, rotationBoundaries)).toBe(true);
+    });
+
+    test("should return false if the rotation is outside the boundaries", ()=>{
+        const rotationBoundaries: RotationBoundary = {start: (360 - 45) * Math.PI / 180, end: 45 * Math.PI / 180, positiveDirection: true, startAsTieBreaker: true};
+        expect(rotationWithinBoundary(50 * Math.PI / 180, rotationBoundaries)).toBe(false);
+    });
 });
 
 describe("get the translation dimensions from boundaries", () => {
