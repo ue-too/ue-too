@@ -16,7 +16,7 @@ let bottomRightCorner = {x: 100, y: 150};
 let bottomLeftCorner = {x: -100, y: 150};
 
 const viewPortrotationKeyframees: Keyframe<number>[] = [
-    {percentage: 0, value: 0, easingFn: EasingFunctions.easeInOutSine},
+    {percentage: 0, value: 0, easingFn: EasingFunctions.linear},
     {percentage: 1, value: 90 * Math.PI / 180, easingFn: EasingFunctions.easeInOutSine}
 ];
 
