@@ -1,4 +1,5 @@
 export type RotationLimits = {start: number, end: number, ccw: boolean, startAsTieBreaker: boolean};
+export type RotationBoundary = {start: number, end: number, positiveDirection: boolean, startAsTieBreaker: boolean};
 
 export function clampRotation(rotation: number, rotationLimits?: RotationLimits): number{
     if(rotationWithinLimits(rotation, rotationLimits) || rotationLimits === undefined){
@@ -29,6 +30,28 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
         return false;
     }
     return true;
+}
+
+export function rotationWithinBoundary(rotation: number, rotationBoundary: RotationBoundary): boolean {
+    const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
+
+    let angleFromStart = normalizedRotation - normalizeAngleZero2TwoPI(rotationBoundary.start);
+    if (angleFromStart < 0){
+        angleFromStart += (Math.PI * 2);
+    }
+    if (!rotationBoundary.positiveDirection && angleFromStart > 0){
+        angleFromStart = Math.PI * 2 - angleFromStart;
+    }
+
+    let angleRange = normalizeAngleZero2TwoPI(rotationBoundary.end) - normalizeAngleZero2TwoPI(rotationBoundary.start);
+    if(angleRange < 0){
+        angleRange += (Math.PI * 2);
+    }
+    if(!rotationBoundary.positiveDirection && angleRange > 0){
+        angleRange = Math.PI * 2 - angleRange;
+    }
+
+    return angleRange >= angleFromStart;
 }
 
 export function normalizeAngleZero2TwoPI(angle: number){
