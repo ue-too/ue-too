@@ -31,6 +31,7 @@ export default class BoardCameraV2 implements BoardCamera {
         this._viewPortHeight = viewPortHeight;
         this._viewPortWidth = viewPortWidth;
         this._observer = cameraObserver;
+        this._zoomBoundaries = {min: 0.1, max: 10};
     }
 
     get boundaries(): Boundaries | undefined{
