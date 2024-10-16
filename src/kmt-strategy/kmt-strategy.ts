@@ -13,13 +13,11 @@ export interface BoardKMTStrategy {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    camera: BoardCamera;
     canvas: HTMLCanvasElement;
     setUp(): void;
     tearDown(): void;
     enableStrategy(): void;
     disableStrategy(): void;
-    updateCamera(camera: BoardCamera): void;
 }
 
 export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
@@ -28,7 +26,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private isDragging: boolean;
     private dragStartPoint: Point;
     private _canvas: HTMLCanvasElement;
-    private _camera: BoardCamera;
     private _disabled: boolean;
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
@@ -39,11 +36,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private inputObserver: InputObserver;
 
-    constructor(canvas: HTMLCanvasElement, camera:BoardCamera, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this.SCROLL_SENSATIVITY = 0.005;
         this.isDragging = false;
         this._canvas = canvas;
-        this._camera = camera;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
@@ -93,14 +89,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set rotateDisabled(value: boolean){
         this._rotateDisabled = value;
-    }
-
-    get camera(): BoardCamera {
-        return this._camera;
-    }
-
-    set camera(value: BoardCamera){
-        this._camera = value;
     }
 
     get canvas(): HTMLCanvasElement {
@@ -192,9 +180,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             if(!this._alignCoordinateSystem){
                 diff.y = -diff.y;
             }
-            let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
-            this.inputObserver.notifyOnPan(this._camera, diffInWorld);
+            this.inputObserver.notifyOnPan(diff);
             this.dragStartPoint = target;
         }
     }
@@ -214,9 +200,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             if(!this._alignCoordinateSystem){
                 diff.y = -diff.y;
             }
-            let diffInWorld = PointCal.rotatePoint(diff, this._camera.rotation);
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this._camera.zoomLevel);
-            this.inputObserver.notifyOnPan(this._camera, diffInWorld);
+            this.inputObserver.notifyOnPan(diff);
         } else {
             //NOTE this is zooming the camera
             // console.log("zooming");
@@ -232,7 +216,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 anchorPoint.y = -anchorPoint.y;
             }
             // const zoomLevel = this._camera.zoomLevel - (this._camera.zoomLevel * zoomAmount * 5);
-            this.inputObserver.notifyOnZoom(this._camera, -(this._camera.zoomLevel * zoomAmount * 5), anchorPoint);
+            this.inputObserver.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
         }
     }
 
@@ -253,9 +237,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
     }
 
-    updateCamera(camera: BoardCamera): void {
-        this._camera = camera;
-    }
 
     get disabled(): boolean {
         return this._disabled;

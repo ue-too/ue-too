@@ -86,13 +86,11 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler));
+        this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera));
 
-        this._kmtStrategy = new DefaultBoardKMTStrategy(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
-        this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(this._canvas, this.boardInputObserver);
 
-        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardStateObserver.camera, this.boardInputObserver);
-        this.boardStateObserver.subscribeToCamera(this._touchStrategy);
+        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         this.registerEventListeners();
     }
 
@@ -234,11 +232,8 @@ export default class Board {
      */
     set kmtStrategy(strategy: BoardKMTStrategy){
         this._kmtStrategy.tearDown();
-        this.boardStateObserver.unsubscribeToCamera(this._kmtStrategy);
         strategy.setUp();
         this._kmtStrategy = strategy;
-        this.boardStateObserver.subscribeToCamera(this._kmtStrategy);
-        this._kmtStrategy.camera = this.boardStateObserver.camera;
     }
 
     get kmtStrategy(): BoardKMTStrategy{
@@ -251,11 +246,8 @@ export default class Board {
      */
     set touchStrategy(strategy: BoardTouchStrategy){
         this._touchStrategy.tearDown();
-        this.boardStateObserver.unsubscribeToCamera(this._touchStrategy);
         strategy.setUp();
         this._touchStrategy = strategy;
-        this.boardStateObserver.subscribeToCamera(this._touchStrategy);
-        this._touchStrategy.camera = this.boardStateObserver.camera;
     }
 
     get touchStrategy(): BoardTouchStrategy{

@@ -8,8 +8,6 @@ export interface BoardTouchStrategy {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    camera: BoardCamera;
-    updateCamera(camera: BoardCamera): void;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -22,7 +20,6 @@ export interface BoardTouchStrategy {
 export class DefaultTouchStrategy implements BoardTouchStrategy {
 
     private touchPoints: Point[];
-    private controlCamera: BoardCamera;
     private canvas: HTMLCanvasElement;
     private _disabled: boolean;
     private _alignCoordinateSystem: boolean;
@@ -43,8 +40,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
     private panInputCallBackList: InputCallBackList<"pan"> = [];
     private zoomInputCallBackList: InputCallBackList<"zoom"> = [];
 
-    constructor(canvas: HTMLCanvasElement, controlCamera: BoardCamera, inputObserver: InputObserver,alignCoordinateSystem: boolean = true){
-        this.controlCamera = controlCamera;
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver,alignCoordinateSystem: boolean = true){
         this.canvas = canvas;
         this._disabled = false;
         this.touchPoints = [];
@@ -133,18 +129,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         this._rotateDisabled = rotateDisabled;
     }
 
-    get camera(): BoardCamera {
-        return this.controlCamera;
-    }
-
-    set camera(camera: BoardCamera){
-        this.controlCamera = camera;
-    }
-
-    updateCamera(camera: BoardCamera): void {
-        this.controlCamera = camera;
-    }
-
     touchstartHandler(e: TouchEvent){
         if(this._disabled) {
             return;
@@ -158,11 +142,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             this.touchPoints = [firstTouchPoint, secondTouchPoint];
         } else if (e.targetTouches.length === 1){
             this.tapPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            const boundingRect = this.canvas.getBoundingClientRect();
-            const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
-            const tapPointInWindow = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            const tapPointInViewPort = PointCal.subVector(tapPointInWindow, cameraCenterInWindow); 
-            this.tapPoint = this.controlCamera.convertFromViewPort2WorldSpace(tapPointInViewPort);
             this.isDragging = true;
             this.dragStartPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
         }
@@ -206,8 +185,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             if(!this._alignCoordinateSystem){
                 midPointInViewPort.y = -midPointInViewPort.y;
             }
-            let zoomAmount = distDiff * 0.1 * this.controlCamera.zoomLevel * this.ZOOM_SENSATIVITY;
-            this.inputObserver.notifyOnZoom(this.controlCamera, -zoomAmount, midPointInViewPort);
+            this.inputObserver.notifyOnZoom(-distDiff * 0.1 * this.ZOOM_SENSATIVITY, midPointInViewPort);
             // this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
             this.touchPoints = [startPoint, endPoint];
@@ -218,9 +196,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
             if(!this._alignCoordinateSystem){
                 diff.y = -diff.y;
             }
-            let diffInWorld = PointCal.rotatePoint(diff, this.controlCamera.rotation);
-            diffInWorld = PointCal.multiplyVectorByScalar(diffInWorld, 1 / this.controlCamera.zoomLevel);
-            this.inputObserver.notifyOnPan(this.controlCamera, diffInWorld);
+            this.inputObserver.notifyOnPan(diff);
             // this._panHandler.panCameraBy(this.camera, diffInWorld);
             this.dragStartPoint = touchPoint;
             this.tapPoint = null;
