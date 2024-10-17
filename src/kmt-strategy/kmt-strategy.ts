@@ -3,6 +3,8 @@ import { Point } from "..";
 import { BoardCamera } from "src/board-camera";
 
 import { InputObserver } from "src/input-observer/input-observer";
+import { KeyboardMouseInputState } from "./states";
+import { NormalState } from "./states/normal";
 /**
  * @category Input Strategy
  */
@@ -10,10 +12,8 @@ export interface BoardKMTStrategy {
     disabled: boolean;
     debugMode: boolean;
     alignCoordinateSystem: boolean;
-    panDisabled: boolean;
-    zoomDisabled: boolean;
-    rotateDisabled: boolean;
     canvas: HTMLCanvasElement;
+    inputObserver: InputObserver;
     setUp(): void;
     tearDown(): void;
     enableStrategy(): void;
@@ -22,28 +22,21 @@ export interface BoardKMTStrategy {
 
 export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
-    private SCROLL_SENSATIVITY: number;
-    private isDragging: boolean;
-    private dragStartPoint: Point;
     private _canvas: HTMLCanvasElement;
     private _disabled: boolean;
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
-    private _panDisabled: boolean = false;
-    private _zoomDisabled: boolean = false;
-    private _rotateDisabled: boolean = false;
-    private _keyController: Map<string, boolean> = new Map<string, boolean>();
 
-    private inputObserver: InputObserver;
+    private _inputObserver: InputObserver;
+    private _state: KeyboardMouseInputState;
 
     constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
-        this.SCROLL_SENSATIVITY = 0.005;
-        this.isDragging = false;
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
-        this.inputObserver = inputObserver;
+        this._inputObserver = inputObserver;
+        this._state = new NormalState(this);
     }
 
     get debugMode(): boolean {
@@ -62,37 +55,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._alignCoordinateSystem = value;
     }
 
-    get panDisabled(): boolean {
-        return this._panDisabled;
-    }
-
-    set panDisabled(value: boolean){
-        this._panDisabled = value;
-        if(value){
-            this.canvas.style.cursor = "auto";
-            this.isDragging = false;
-            this.dragStartPoint = {x: 0, y: 0};
-        }
-    }
-
-    get zoomDisabled(): boolean {
-        return this._zoomDisabled;
-    }
-
-    set zoomDisabled(value: boolean){
-        this._zoomDisabled = value;
-    }
-
-    get rotateDisabled(): boolean {
-        return this._rotateDisabled;
-    }
-
-    set rotateDisabled(value: boolean){
-        this._rotateDisabled = value;
-    }
-
     get canvas(): HTMLCanvasElement {
         return this._canvas;
+    }
+
+    get inputObserver(): InputObserver {
+        return this._inputObserver;
     }
 
     setUp(): void {
@@ -102,7 +70,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this.canvas.addEventListener('wheel', this.scrollHandler);
         window.addEventListener('keydown', this.keypressHandler);
         window.addEventListener('keyup', this.keyupHandler);
-        this.setupKeyController([" "]);
     }
 
     tearDown(): void {
@@ -123,25 +90,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    setupKeyController(keys: string[]): void {
-        keys.forEach((key) => {
-            this._keyController.set(key, false);
-        });
-    }
-
-    pointerDownHandler(e: PointerEvent){
-        if(this._disabled){
-            return;
-        }
-        if(e.pointerType === "mouse" && (e.button == 1 || e.metaKey || this._keyController.get(" ")) && !this._panDisabled){
-            this.isDragging = true;
-            this.dragStartPoint = {x: e.clientX, y: e.clientY};
-        }
-    }
-
     disableStrategy(): void {
-        this.isDragging = false;
-        this.dragStartPoint = {x: 0, y: 0};
         this._disabled = true;
     }
 
@@ -149,94 +98,40 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._disabled = false;
     }
 
+    pointerDownHandler(e: PointerEvent){
+        if(this._disabled){
+            return;
+        }
+        this._state.pointerDownHandler(e);
+    }
+
     pointerUpHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        if(e.pointerType === "mouse"){
-            if (this.isDragging) {
-                this.isDragging = false;
-            }
-            if (!this._debugMode) {
-                this.canvas.style.cursor = "auto";
-            } else {
-                this.canvas.style.cursor = "none";
-            }
-        }
+        this._state.pointerUpHandler(e);
     }
 
     pointerMoveHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        if (e.pointerType == "mouse" && this.isDragging && !this._panDisabled){
-            if (this._debugMode) {
-                this.canvas.style.cursor = "none";
-            } else {
-                this.canvas.style.cursor = "grabbing";
-            }
-            const target = {x: e.clientX, y: e.clientY};
-            const diff = PointCal.subVector(this.dragStartPoint, target);
-            if(!this._alignCoordinateSystem){
-                diff.y = -diff.y;
-            }
-            this.inputObserver.notifyOnPan(diff);
-            this.dragStartPoint = target;
-        }
+        this._state.pointerMoveHandler(e);
     }
 
     scrollHandler(e: WheelEvent){
         if(this._disabled) return;
         e.preventDefault();
-        const zoomAmount = e.deltaY * this.SCROLL_SENSATIVITY;
-        if (!e.ctrlKey){
-            if(this._panDisabled){
-                return;
-            }
-            //NOTE this is panning the camera
-            // console.log("panning?: ", (Math.abs(e.deltaY) % 40 !== 0 || Math.abs(e.deltaY) == 0) ? "yes": "no");
-            // console.log("panning?", e.deltaMode == 0 ? "yes": "no");
-            const diff = {x: e.deltaX, y: e.deltaY};
-            if(!this._alignCoordinateSystem){
-                diff.y = -diff.y;
-            }
-            this.inputObserver.notifyOnPan(diff);
-        } else {
-            //NOTE this is zooming the camera
-            // console.log("zooming");
-            if(this._zoomDisabled){
-                return;
-            }
-            const cursorPosition = {x: e.clientX, y: e.clientY};
-            // anchor point is in view port space (relative to the camera position)
-            const boundingRect = this._canvas.getBoundingClientRect();
-            const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
-            const anchorPoint = PointCal.subVector(cursorPosition, cameraCenterInWindow);
-            if(!this._alignCoordinateSystem){
-                anchorPoint.y = -anchorPoint.y;
-            }
-            // const zoomLevel = this._camera.zoomLevel - (this._camera.zoomLevel * zoomAmount * 5);
-            this.inputObserver.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
-        }
+        this._state.scrollHandler(e);
     }
 
     keypressHandler(e: KeyboardEvent){
-        // console.log("key pressed is spacebar", e.key == " ");
-        if(this._keyController.has(e.key) && this._keyController.get(e.key) == false){
-            e.preventDefault();
-            this._keyController.set(e.key, true);
-        }
+        this._state.keypressHandler(e);
     }
 
     keyupHandler(e: KeyboardEvent){
-        if(this._keyController.has(e.key) && this._keyController.get(e.key) == true){
-            e.preventDefault();
-            this._keyController.set(e.key, false);
-            this.isDragging = false;
-            this.canvas.style.cursor = "auto";
-        }
+        this._state.keyupHandler(e);
     }
-
 
     get disabled(): boolean {
         return this._disabled;
