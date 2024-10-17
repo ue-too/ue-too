@@ -1,8 +1,7 @@
-import { KeyboardMouseInputState } from './index';
 import { BoardKMTStrategy } from '../kmt-strategy';
 import { Point } from "src/index";
 import { PointCal } from 'point2point';
-import { KeyboardMouseInputStateTemplate } from './index';
+import { KeyboardMouseInputStateTemplate } from './state-template';
 
 export class NormalState extends KeyboardMouseInputStateTemplate {
 
