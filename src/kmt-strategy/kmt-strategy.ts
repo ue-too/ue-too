@@ -1,10 +1,7 @@
-import { PointCal } from "point2point";
-import { Point } from "..";
-import { BoardCamera } from "src/board-camera";
-
 import { InputObserver } from "src/input-observer/input-observer";
 import { KeyboardMouseInputState } from "./states";
 import { NormalState } from "./states/normal";
+
 /**
  * @category Input Strategy
  */
@@ -16,8 +13,6 @@ export interface BoardKMTStrategy {
     inputObserver: InputObserver;
     setUp(): void;
     tearDown(): void;
-    enableStrategy(): void;
-    disableStrategy(): void;
 }
 
 export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
@@ -29,6 +24,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _inputObserver: InputObserver;
     private _state: KeyboardMouseInputState;
+    private stateMap: Map<string, KeyboardMouseInputState>;
 
     constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
@@ -37,6 +33,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this.bindFunctions();
         this._inputObserver = inputObserver;
         this._state = new NormalState(this);
+        this.stateMap = new Map<string, KeyboardMouseInputState>();
     }
 
     get debugMode(): boolean {
@@ -45,6 +42,15 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set debugMode(value: boolean){
         this._debugMode = value;
+    }
+
+    get disabled(): boolean {
+        return this._disabled;
+    }
+
+    set disabled(value: boolean){
+        this._disabled = value;
+        this._state.resetInternalStates();
     }
 
     get alignCoordinateSystem(): boolean {
@@ -90,14 +96,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    disableStrategy(): void {
-        this._disabled = true;
-    }
-
-    enableStrategy(): void {
-        this._disabled = false;
-    }
-
     pointerDownHandler(e: PointerEvent){
         if(this._disabled){
             return;
@@ -133,7 +131,4 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._state.keyupHandler(e);
     }
 
-    get disabled(): boolean {
-        return this._disabled;
-    }
 }

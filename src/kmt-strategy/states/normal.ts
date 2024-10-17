@@ -2,10 +2,10 @@ import { KeyboardMouseInputState } from './index';
 import { BoardKMTStrategy } from '../kmt-strategy';
 import { Point } from "src/index";
 import { PointCal } from 'point2point';
+import { KeyboardMouseInputStateTemplate } from './index';
 
-export class NormalState implements KeyboardMouseInputState {
+export class NormalState extends KeyboardMouseInputStateTemplate {
 
-    private _strategy: BoardKMTStrategy;
     private isDragging: boolean;
     private dragStartPoint: Point;
     private SCROLL_SENSATIVITY: number;
@@ -14,6 +14,7 @@ export class NormalState implements KeyboardMouseInputState {
     private _zoomDisabled: boolean;
 
     constructor(strategy: BoardKMTStrategy){
+        super(strategy);
         this._strategy = strategy;
         this.isDragging = false;
         this.dragStartPoint = {x: 0, y: 0};
@@ -118,7 +119,6 @@ export class NormalState implements KeyboardMouseInputState {
             if(!this._strategy.alignCoordinateSystem){
                 anchorPoint.y = -anchorPoint.y;
             }
-            console.log('anchor point', anchorPoint);
             this._strategy.inputObserver.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
         }
     }
