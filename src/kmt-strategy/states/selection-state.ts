@@ -1,21 +1,21 @@
-import { BoardCamera, Point } from "src/index";
-import { BoardKMTStrategy } from "../kmt-strategy";
+import { BoardCamera } from "src/index";
+import { StateRegistry } from "src/kmt-strategy/states";
 import { KeyboardMouseInputStateTemplate } from "./state-template";
 import { PointCal } from "point2point";
 import { SelectionBox } from "src/drawing-engine/selection-box";
+import { DefaultStateMap } from "./normal";
 
-export class SelectionState extends KeyboardMouseInputStateTemplate {
 
-    private _isDragging: boolean;
+export class SelectionState extends KeyboardMouseInputStateTemplate<DefaultStateMap> {
+
+    private _isSelecting: boolean;
     private _camera: BoardCamera;
-    private _dragStartPoint: Point;
     private _canvas: HTMLCanvasElement;
     private _selectionBox: SelectionBox;
 
-    constructor(strategy: BoardKMTStrategy, camera: BoardCamera, canvas: HTMLCanvasElement, selectionBox: SelectionBox){
-        super(strategy);
-        this._isDragging = false;
-        this._dragStartPoint = {x: 0, y: 0};
+    constructor(stateRegistry: StateRegistry<DefaultStateMap>, camera: BoardCamera, canvas: HTMLCanvasElement, selectionBox: SelectionBox){
+        super(stateRegistry);
+        this._isSelecting = false;
         this._canvas = canvas;
         this._camera = camera;
         this._selectionBox = selectionBox;
@@ -23,7 +23,7 @@ export class SelectionState extends KeyboardMouseInputStateTemplate {
 
     pointerDownHandler(event: PointerEvent): void {
         if(event.pointerType === 'mouse' && event.button === 1) {
-            this._isDragging = true;
+            this._isSelecting = true;
             const boundingBox = this._canvas.getBoundingClientRect();
             const cameraCenterInBrowserFrame = {x: boundingBox.x + boundingBox.width / 2, y: boundingBox.y + boundingBox.height / 2};
             const cursorInBrowserFrame = {x: event.clientX, y: event.clientY};
@@ -33,7 +33,7 @@ export class SelectionState extends KeyboardMouseInputStateTemplate {
     }
 
     pointerMoveHandler(event: PointerEvent): void {
-        if(!this._isDragging){
+        if(!this._isSelecting){
             return;
         }
         const boundingBox = this._canvas.getBoundingClientRect();
@@ -48,7 +48,7 @@ export class SelectionState extends KeyboardMouseInputStateTemplate {
             return;
         }
 
-        this._isDragging = false;
+        this._isSelecting = false;
         this._selectionBox.clearSelection();
         // TODO leaving spaces for future implementation for object batch selection
 
@@ -61,7 +61,7 @@ export class SelectionState extends KeyboardMouseInputStateTemplate {
     }
 
     resetInternalStates(): void {
-        this._isDragging = false;
+        this._isSelecting = false;
         this._selectionBox.clearSelection();
     }
 

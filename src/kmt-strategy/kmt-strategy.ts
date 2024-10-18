@@ -1,7 +1,6 @@
 import { InputObserver } from "src/input-observer/input-observer";
-import { KeyboardMouseInputState } from "./states";
-import { NormalState } from "./states/normal";
-
+import { StateManager } from "./states";
+import { createDefaultInputStateManager, DefaultInputStateManager } from "src/input-state-manager";
 /**
  * @category Input Strategy
  */
@@ -23,17 +22,18 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _alignCoordinateSystem: boolean;
 
     private _inputObserver: InputObserver;
-    private _state: KeyboardMouseInputState;
-    private stateMap: Map<string, KeyboardMouseInputState>;
+    private _stateManager: StateManager;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    private _experimentalInputStateManager: DefaultInputStateManager;
+
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, stateManager: StateManager, experimentalInputStateManager: DefaultInputStateManager, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
-        this._state = new NormalState(this);
-        this.stateMap = new Map<string, KeyboardMouseInputState>();
+        this._stateManager = stateManager;
+        this._experimentalInputStateManager = experimentalInputStateManager;
     }
 
     get debugMode(): boolean {
@@ -50,7 +50,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set disabled(value: boolean){
         this._disabled = value;
-        this._state.resetInternalStates();
+        this._stateManager.state.resetInternalStates();
     }
 
     get alignCoordinateSystem(): boolean {
@@ -100,35 +100,40 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        this._state.pointerDownHandler(e);
+        this._stateManager.state.pointerDownHandler(e);
+        this._experimentalInputStateManager.update("pointerDownHandler", e);
     }
 
     pointerUpHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        this._state.pointerUpHandler(e);
+        this._stateManager.state.pointerUpHandler(e);
+        this._experimentalInputStateManager.update("pointerUpHandler", e);
     }
 
     pointerMoveHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        this._state.pointerMoveHandler(e);
+        this._stateManager.state.pointerMoveHandler(e);
+        this._experimentalInputStateManager.update("pointerMoveHandler", e);
     }
 
     scrollHandler(e: WheelEvent){
         if(this._disabled) return;
         e.preventDefault();
-        this._state.scrollHandler(e);
+        this._stateManager.state.scrollHandler(e);
     }
 
     keypressHandler(e: KeyboardEvent){
-        this._state.keypressHandler(e);
+        this._stateManager.state.keypressHandler(e);
+        this._experimentalInputStateManager.update("keypressHandler", e);
     }
 
     keyupHandler(e: KeyboardEvent){
-        this._state.keyupHandler(e);
+        this._stateManager.state.keyupHandler(e);
+        this._experimentalInputStateManager.update("keyupHandler", e);
     }
 
 }

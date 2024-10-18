@@ -1,17 +1,17 @@
 import { BoardKMTStrategy } from "../kmt-strategy";
-import { KeyboardMouseInputState } from "./index";
+import { KeyboardMouseInputState, StateMap, StateRegistry } from "./index";
 
 function functionNotImplementedWarningMessage(handlerName: string){
     console.log(`this method is a default ${handlerName} you state does not implement it if this is what you want you can ignore this warning`);
 }
 
 // in case the keyboard mouse input state needs new event listeners add it to this class so others can decide whether to implement themselves
-export abstract class KeyboardMouseInputStateTemplate implements KeyboardMouseInputState {
+export abstract class KeyboardMouseInputStateTemplate<T extends StateMap> implements KeyboardMouseInputState {
 
-    protected _strategy: BoardKMTStrategy;
+    protected _stateRegistry: StateRegistry<T>;
 
-    constructor(strategy: BoardKMTStrategy){
-        this._strategy = strategy;
+    constructor(stateRegistry: StateRegistry<T>){
+        this._stateRegistry = stateRegistry;
     }
 
     pointerDownHandler(event: PointerEvent){
