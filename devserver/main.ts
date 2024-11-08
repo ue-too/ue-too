@@ -3,6 +3,7 @@ import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
+import { comboDetec } from "../src/input-state-manager/input-state-manager";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
@@ -41,6 +42,18 @@ function calculateTopFourCorners(){
     const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: canvas.height / 2});
     return {topLeft, topRight, bottomLeft, bottomRight};
 }
+
+let currentCombo = "";
+
+window.addEventListener('keydown', (event)=>{
+    const {nextState, comboDetected} = comboDetec(event.key, currentCombo, "aabb");
+    console.log("nextState: ", nextState);
+    console.log("comboDetected: ", comboDetected);
+    currentCombo = nextState;
+    if(comboDetected){
+        console.log("combo detected");
+    }
+});
 
 canvas.addEventListener('pointerdown', (event)=>{
     const pointInWindow = {x: event.clientX, y: event.clientY};

@@ -344,12 +344,7 @@ export default class Board {
             this._context.translate(-this.boardStateObserver.camera.position.x,  this.boardStateObserver.camera.position.y);
         }
 
-        const dragging = this.experimentalInputStateManager.dragging.active;
-        const spacebarPressed = this.experimentalInputStateManager.keyController.get(" ");
-
-        if(dragging){
-            spacebarPressed ? console.log("dragging with spacebar pressed") : console.log("just normal dragging");
-        }
+        this.experimentalInputStateManager.determine();
     }
 
     /**
