@@ -109,7 +109,7 @@ export function inputStateInterpretationPipelineWithAllInterpretationMet<K exten
     const normalizedSteps = Array.isArray(steps[0]) ? steps[0] : steps as InputStateInterpretation<K>[];
     
     return function(initialInputState: InputStateObject, config: Config[K]): boolean {
-        return normalizedSteps.reduce((acc, step) => acc || step(initialInputState, config), false);
+        return normalizedSteps.reduce((acc, step) => acc && step(initialInputState, config), false);
     }
 }
 
