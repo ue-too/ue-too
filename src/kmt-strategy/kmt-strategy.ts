@@ -124,6 +124,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled) return;
         e.preventDefault();
         this._stateManager.state.scrollHandler(e);
+        this._experimentalInputStateManager.update("scrollHandler", e);
     }
 
     keypressHandler(e: KeyboardEvent){

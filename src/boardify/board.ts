@@ -97,6 +97,10 @@ export default class Board {
         this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, stateRegistry, this.experimentalInputStateManager);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
+        // this._canvas.style.width = this._canvas.width + "px";
+        // this._canvas.style.height = this._canvas.height + "px";
+        // this._canvas.width = window.devicePixelRatio * this._canvas.width;
+        // this._canvas.height = window.devicePixelRatio * this._canvas.height;
         this.registerEventListeners();
     }
 
@@ -328,6 +332,7 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
+        // this._context.scale(window.devicePixelRatio, window.devicePixelRatio);
         const curBoundaries = this.boardStateObserver.camera.boundaries;
         if (!boundariesFullyDefined(curBoundaries)){
             throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
@@ -344,7 +349,6 @@ export default class Board {
             this._context.translate(-this.boardStateObserver.camera.position.x,  this.boardStateObserver.camera.position.y);
         }
 
-        this.experimentalInputStateManager.determine();
     }
 
     /**

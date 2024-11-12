@@ -14,6 +14,7 @@ export type Dragging = {
     active: true;
     delta: Point;
     draggingStartPoint: Point;
+    startWithSpacebar: boolean;
 }
 
 export type DraggingIdle = {
@@ -36,64 +37,107 @@ export type InputStateObject = {
     scroll: Scrolling | ScrollIdle;
 }
 
-export type InputStateInterpretation = (inputState: InputStateObject) => boolean;
+export type PanConfig = {
+    type: "pan";
+    trackPadMode: boolean;
+}
 
-export function keyboardMousePanningInterpretation(inputState: InputStateObject){
-    if(inputState.dragging.active && inputState.keyPressed.get(" ")){
+export type ZoomConfig = {
+    type: "zoom";
+    trackPadMode: boolean;
+}
+
+export type Config = {
+    "pan": PanConfig;
+    "zoom": ZoomConfig;
+}
+
+export type InputStateInterpretationConfig = PanConfig | ZoomConfig;
+
+export type InputStateInterpretation<K extends keyof Config> = (inputState: InputStateObject, config: Config[K]) => boolean;
+
+export function keyboardMousePanningInterpretation(inputState: InputStateObject, config: Config["pan"]){
+    if(inputState.dragging.active && inputState.dragging.startWithSpacebar && inputState.keyPressed.get(" ")){
         console.log("panning with spacebar and left button");
         return true;
     }
     return false;
 }
 
-export function trackpadPanningInterpretation(inputState: InputStateObject){
-    if(inputState.scroll.active && !inputState.scroll.withControlKey){
+export function trackpadPanningInterpretation(inputState: InputStateObject, config: Config["pan"]){
+    if(inputState.scroll.active && !inputState.scroll.withControlKey && config.trackPadMode){
         return true;
     }
     return false;
 }
 
-export function keyboardMouseZoomInterpretation(inputState: InputStateObject){
+export function keyboardMouseZoomInterpretation(inputState: InputStateObject, config: Config["zoom"]){
     if(inputState.scroll.active && inputState.scroll.withControlKey){
         return true;
     }
     return false;
 }
 
+export function trackpadZoomInterpretation(inputState: InputStateObject, config: Config["zoom"]){
+    if(inputState.scroll.active && !inputState.scroll.withControlKey && config.trackPadMode){
+        return true;
+    }
+    return false;
+}
+
+export function keyboardMouseSelectionInterpretation(inputState: InputStateObject, config: Config["pan"]){
+    if(inputState.dragging.active && !inputState.dragging.startWithSpacebar && inputState.keyPressed.get(" ")){
+        console.log("spacebar is pressed during selection");
+        return true;
+    }
+    if(inputState.dragging.active && !inputState.dragging.startWithSpacebar){
+        console.log("selection");
+        return true;
+    }
+    return false;
+}
+
 // Overload signature
-export function inputStateInterpretationPipelineWithAllInterpretationMet(steps: InputStateInterpretation[]): (inputState: InputStateObject) => boolean;
+export function inputStateInterpretationPipelineWithAllInterpretationMet<K extends keyof Config>(steps: InputStateInterpretation<K>[]): InputStateInterpretation<K>;
 // Rest parameters overload
-export function inputStateInterpretationPipelineWithAllInterpretationMet(...steps: InputStateInterpretation[]): (inputState: InputStateObject) => boolean;
+export function inputStateInterpretationPipelineWithAllInterpretationMet<K extends keyof Config>(...steps: InputStateInterpretation<K>[]): (inputState: InputStateObject, config: Config[K]) => boolean;
 // Implementation
-export function inputStateInterpretationPipelineWithAllInterpretationMet(
-    ...steps: InputStateInterpretation[] | [InputStateInterpretation[]]
-): (inputState: InputStateObject) => boolean {
+export function inputStateInterpretationPipelineWithAllInterpretationMet<K extends keyof Config>(
+    ...steps: InputStateInterpretation<K>[] | [InputStateInterpretation<K>[]]
+): (inputState: InputStateObject, config: Config[K]) => boolean {
     // Normalize the arguments to handle both array and rest parameters
-    const normalizedSteps = Array.isArray(steps[0]) ? steps[0] : steps as InputStateInterpretation[];
+    const normalizedSteps = Array.isArray(steps[0]) ? steps[0] : steps as InputStateInterpretation<K>[];
     
-    return function(initialInputState: InputStateObject): boolean {
-        return normalizedSteps.reduce((acc, step) => acc && step(initialInputState), true); // Note: Changed initial value to true
+    return function(initialInputState: InputStateObject, config: Config[K]): boolean {
+        return normalizedSteps.reduce((acc, step) => acc || step(initialInputState, config), false);
     }
 }
 
-export function inputStateInterpretationPipelineWithOneInterpretationMet(steps: InputStateInterpretation[]): (inputState: InputStateObject) => boolean;
-export function inputStateInterpretationPipelineWithOneInterpretationMet(...steps: InputStateInterpretation[]): (inputState: InputStateObject) => boolean;
-export function inputStateInterpretationPipelineWithOneInterpretationMet(...steps: InputStateInterpretation[] | [InputStateInterpretation[]]){
-
-    const normalizedSteps = Array.isArray(steps[0]) ? steps[0] : steps as InputStateInterpretation[];
-
-    return function(initialInputState: InputStateObject){
-        return normalizedSteps.reduce((acc, step) => { return acc || step(initialInputState)}, false);
+// Overload signature
+export function inputStateInterpretationPipelineWithOneInterpretationMet<K extends keyof Config>(steps: InputStateInterpretation<K>[]): InputStateInterpretation<K>;
+// Rest parameters overload
+export function inputStateInterpretationPipelineWithOneInterpretationMet<K extends keyof Config>(...steps: InputStateInterpretation<K>[]): (inputState: InputStateObject, config: Config[K]) => boolean;
+// Implementation
+export function inputStateInterpretationPipelineWithOneInterpretationMet<K extends keyof Config>(
+    ...steps: InputStateInterpretation<K>[] | [InputStateInterpretation<K>[]]
+): (inputState: InputStateObject, config: Config[K]) => boolean {
+    // Normalize the arguments to handle both array and rest parameters
+    const normalizedSteps = Array.isArray(steps[0]) ? steps[0] : steps as InputStateInterpretation<K>[];
+    
+    return function(initialInputState: InputStateObject, config: Config[K]): boolean {
+        return normalizedSteps.reduce((acc, step) => acc || step(initialInputState, config), false);
     }
 }
+
 
 export function createDefaultPanningInterpretation(){
     const steps = [keyboardMousePanningInterpretation, trackpadPanningInterpretation];
-    return inputStateInterpretationPipelineWithAllInterpretationMet(steps);
+    return inputStateInterpretationPipelineWithOneInterpretationMet<"pan">(steps);
 }
 
 export function createDefaultZoomingInterpretation(){
-    return inputStateInterpretationPipelineWithAllInterpretationMet(keyboardMouseZoomInterpretation);
+    const steps = [keyboardMouseZoomInterpretation, trackpadZoomInterpretation];
+    return inputStateInterpretationPipelineWithOneInterpretationMet<"zoom">(steps);
 }
 
 export const defaultPanningInterpretation = createDefaultPanningInterpretation();
@@ -143,14 +187,24 @@ export class DefaultInputStateManager {
             dragging: this.dragging,
             keyPressed: this.keyController,
         }
-        if(defaultPanningInterpretation(inputState)){
-            // panning 
-            console.log("panning");
-            this.dragging = {active: false};
+        this.bundleInterpretation(inputState);
+        this.cleanUp();
+    }
+
+    bundleInterpretation(inputState: InputStateObject){
+        if(defaultPanningInterpretation(inputState, {type: "pan", trackPadMode: true})){
+            // panning
+            // console.log("panning");
+            // this.dragging = {active: false};
             return;
         }
 
-        if(defaultZoomingInterpretation(inputState)){
+        if(keyboardMouseSelectionInterpretation(inputState, {type: "pan", trackPadMode: true})){
+            // selection
+            return;
+        }
+
+        if(defaultZoomingInterpretation(inputState, {type: "zoom", trackPadMode: true})){
             // zooming
             console.log("zooming");
             return;
@@ -176,7 +230,13 @@ export class DefaultInputStateManager {
         const handler = this._handlerMap[type];
         if (handler) {
             handler.execute(event, this);
+            this.determine();
         }
+    }
+
+    cleanUp(){
+        this.scroll = {active: false};
+        this.dragging = {active: false};
     }
 }
 
@@ -215,13 +275,14 @@ export class PointerMoveUpdater implements InputStateUpdater<'pointerMoveHandler
             const cursorPosition = {x: event.clientX, y: event.clientY};
             const boundingRect = inputStateManager.boundingRect;
             const cameraPositionInBrowser = {x: boundingRect.x + boundingRect.width / 2, y: boundingRect.y + boundingRect.height / 2};
-            if(inputStateManager.leftClick.clicked && inputStateManager.leftClick.spacebarPressed){
+            if(inputStateManager.leftClick.clicked){
                 const draggingStartPoint = (inputStateManager.dragging.active ? inputStateManager.dragging.draggingStartPoint : inputStateManager.leftClick.pointInViewPort) || PointCal.subVector(cursorPosition, cameraPositionInBrowser);
-                console.log("activating dragging");
+                // console.log("activating dragging");
                 inputStateManager.dragging = {
                     draggingStartPoint: draggingStartPoint,
                     active: true, 
-                    delta: PointCal.subVector(PointCal.subVector(cursorPosition, cameraPositionInBrowser), draggingStartPoint)
+                    delta: PointCal.subVector(PointCal.subVector(cursorPosition, cameraPositionInBrowser), draggingStartPoint),
+                    startWithSpacebar: inputStateManager.leftClick.spacebarPressed
                 };
             }
         }
@@ -248,9 +309,11 @@ export class ScrollUpdater implements InputStateUpdater<"scrollHandler"> {
     }
 
     execute(event: WheelEvent, inputStateManager: DefaultInputStateManager): void {
+        // console.log("scroll");
         const diff = {x: event.deltaX, y: event.deltaY};
         if(!event.ctrlKey){
             // panning
+            // if it's trackpad mode then this kind of panning input would not be accepted
             inputStateManager.trackpadPan = { active: true, delta: diff };
             inputStateManager.scroll = {
                 active: true,
@@ -268,12 +331,24 @@ export class ScrollUpdater implements InputStateUpdater<"scrollHandler"> {
 }
 
 export class KeypressUpdater implements InputStateUpdater<"keypressHandler"> {
+
+    private currentString: string = "";
+    private combo: string = "clockoutontime";
     constructor(){}
 
     execute(event: KeyboardEvent, inputStateManager: DefaultInputStateManager): void {
         if(inputStateManager.keyController.has(event.key) && inputStateManager.keyController.get(event.key) == false){
             event.preventDefault();
             inputStateManager.keyController.set(event.key, true);
+        }
+        if(event.key === " "){
+            return;
+        }
+        const result = comboDetect(event.key, this.currentString, this.combo);
+        this.currentString = result.nextState;
+        console.log("currentString", this.currentString);
+        if(result.comboDetected){
+            console.log("you should go");
         }
     }
 }
@@ -297,6 +372,7 @@ export function createDefaultInputStateManager(canvas: HTMLCanvasElement) {
         "pointerDownHandler": new PointerDownUpdater(),
         "pointerMoveHandler": new PointerMoveUpdater(),
         "pointerUpHandler": new PointerUpUpdater(),
+        "scrollHandler": new ScrollUpdater(),
         "keypressHandler": new KeypressUpdater(),
         "keyupHandler": new KeyUpUpdater(),
     }
@@ -305,7 +381,7 @@ export function createDefaultInputStateManager(canvas: HTMLCanvasElement) {
 }
 
 
-export function comboDetec(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
+export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
         return {nextState: "", comboDetected: false};
     }
@@ -317,6 +393,9 @@ export function comboDetec(inputKey: string, currentString: string, combo: strin
     }
     if(combo.startsWith(currentString.substring(1))){
         return {nextState: currentString.substring(1) + inputKey, comboDetected: false};
+    }
+    if(combo[0] === inputKey){
+        return {nextState: inputKey, comboDetected: false};
     }
     return {nextState: "", comboDetected: false};
 }
