@@ -61,11 +61,14 @@ export function keyboardMousePanningInterpretation(inputState: InputStateObject,
         console.log("panning with spacebar and left button");
         return true;
     }
+    if(inputState.dragging.active && inputState.dragging.startWithSpacebar && !inputState.keyPressed.get(" ")){
+        // this is when the spacebar is released mid dragging
+    }
     return false;
 }
 
 export function trackpadPanningInterpretation(inputState: InputStateObject, config: Config["pan"]){
-    if(inputState.scroll.active && !inputState.scroll.withControlKey && config.trackPadMode){
+    if(inputState.scroll.active && inputState.scroll.withControlKey && config.trackPadMode){
         return true;
     }
     return false;
@@ -342,6 +345,10 @@ export class KeypressUpdater implements InputStateUpdater<"keypressHandler"> {
             inputStateManager.keyController.set(event.key, true);
         }
         if(event.key === " "){
+            return;
+        }
+        if(event.metaKey){
+            console.log(`${event.key} with meta key`);
             return;
         }
         const result = comboDetect(event.key, this.currentString, this.combo);
