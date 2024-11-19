@@ -1,11 +1,111 @@
+import { Point } from "src/index";
+
+/**
+ * this is the type for the event action
+ * the structure is a mapping from the event to the state transition
+ * it would look like this:
+ * {
+ *  leftPointerUp: (context, event) => 'READY_TO_PAN',
+ * }
+ * 
+ * this is for a single state; how it reacts to the event
+ */
 export type EventAction<EventPayloadMapping, Context, States> = {
     [K in keyof EventPayloadMapping]: (context: Context, event: EventPayloadMapping[K]) => keyof States;
 };
 
-export type StateEventAction<EventPayloadMapping, Context> = {
-    normal: Partial<EventAction<EventPayloadMapping, Context, StateEventAction<EventPayloadMapping, Context>>>;
-    hover: Partial<EventAction<EventPayloadMapping, Context, StateEventAction<EventPayloadMapping, Context>>>;
+/**
+ * this is the type for the state event action
+ * the structure is a mapping from the state to the event action
+ * it would look like this:
+ * {
+ *  normal: {
+ *      leftPointerUp: (context, event) => 'READY_TO_PAN',
+ *  },
+ * }
+ * 
+ * this is for all states; how they react to each event
+ */
+export type StateEventAction<EventPayloadMapping, Context, StateKeys extends string = 'normal' | 'hover'> = {
+    [K in StateKeys]-?: Partial<EventAction<EventPayloadMapping, Context, StateEventAction<EventPayloadMapping, Context, StateKeys>>>;
 }
+
+export type LeftPointerUpEventPayload = {
+    position: Point;
+}
+
+export type LeftPointerDownEventPayload = {
+    position: Point;
+}
+
+export type MiddlePointerDownEventPayload = {
+    position: Point;
+}
+
+export type SpacebarDownEventPayload = {
+}
+
+export type SpacebarUpEventPayload = {
+}
+
+export type PointerMoveEventPayload = {
+    position: Point;
+}
+
+export interface StateContext {
+}
+
+export type UserInputEventPayloadMapping = {
+    leftPointerUp: LeftPointerUpEventPayload;
+    leftPointerDown: LeftPointerDownEventPayload;
+    middlePointerDown: MiddlePointerDownEventPayload;
+    spacebarDown: SpacebarDownEventPayload;
+    spacebarUp: SpacebarUpEventPayload;
+    pointerMove: PointerMoveEventPayload;
+}
+
+export type UserInputStates = 'IDLE' | 'READY_TO_PAN' | 'READY_TO_SELECTION' | 'SELECTION' | 'INITIAL_PAN' | 'PAN';
+
+export type UserInputStateEventAction = StateEventAction<UserInputEventPayloadMapping, StateContext, UserInputStates>;
+
+export const userInputStateEventActionNoOp: UserInputStateEventAction = {
+    IDLE: {},
+    READY_TO_PAN: {},
+    READY_TO_SELECTION: {},
+    SELECTION: {},
+    INITIAL_PAN: {},
+    PAN: {},
+}
+
+export const userInputStateEventAction: UserInputStateEventAction = {
+    IDLE: {
+        leftPointerDown: (context, event) => "READY_TO_SELECTION",
+        spacebarDown: (context, event) => "READY_TO_PAN",
+        middlePointerDown: (context, event) => "INITIAL_PAN",
+    },
+    READY_TO_PAN: {
+        leftPointerDown: (context, event) => "INITIAL_PAN",
+        spacebarUp: (context, event) => "IDLE",
+    },
+    READY_TO_SELECTION: {
+        leftPointerUp: (context, event) => "IDLE",
+        pointerMove: (context, event) => "SELECTION",
+    },
+    SELECTION: {
+        leftPointerUp: (context, event) => "IDLE",
+        pointerMove: (context, event) => "SELECTION",
+    },
+    INITIAL_PAN: {
+        pointerMove: (context, event) => "PAN",
+        spacebarUp: (context, event) => "IDLE",
+    },
+    PAN: {
+        pointerMove: (context, event) => "PAN",
+        leftPointerUp: (context, event) => "READY_TO_PAN",
+        spacebarUp: (context, event) => "IDLE",
+    },
+}
+
 
 export type MouseEventPayload = {
     x: number;
@@ -26,6 +126,7 @@ export type InputContext = {
     currentY: number;
     pressed: boolean;
 }
+
 
 export type InputEventAction = EventAction<InputEventPayloadMapping, InputContext, StateEventAction<InputEventPayloadMapping, InputContext>>;
 
@@ -50,27 +151,34 @@ const inputStateEventActionNoOp: InputStateEventAction = {
     hover: {},
 }
 
-interface StateMachine<States, Events, Context> {
+interface StateMachine<States, Events> {
     switchTo(state: keyof States): void;
     happens<K extends keyof Events>(event: K, payload: Events[K]): void;
 }
 
-export class GenericStateMachine<Events, Context> implements StateMachine<StateEventAction<Events, Context>, Events, Context> {
-    private _currentState: keyof StateEventAction<Events, Context>;
+export class GenericStateMachine<Events, Context, StateKeys extends string> implements StateMachine<StateEventAction<Events, Context, StateKeys>, Events> {
+    private _currentState: keyof StateEventAction<Events, Context, StateKeys>;
     private context: Context;
-    private eventAction: StateEventAction<Events, Context>;
+    private eventAction: StateEventAction<Events, Context, StateKeys>;
 
-    constructor(eventAction: StateEventAction<Events, Context>) {
-        this._currentState = Object.keys(eventAction)[0] as keyof StateEventAction<Events, Context>;
+    constructor(eventAction: StateEventAction<Events, Context, StateKeys>) {
+        this._currentState = Object.keys(eventAction)[0] as keyof StateEventAction<Events, Context, StateKeys>;
         this.eventAction = eventAction;
     }
 
-    get currentState(): keyof StateEventAction<Events, Context> {
+    get currentState(): keyof StateEventAction<Events, Context, StateKeys> {
         return this._currentState;
     }
 
-    switchTo(state: keyof StateEventAction<Events, Context>): void {
+    switchTo(state: keyof StateEventAction<Events, Context, StateKeys>): void {
+        if(this._currentState === state){
+            return;
+        }
+        console.log("--------------------------------");
+        console.log("switching from", this._currentState, "to", state);
         this._currentState = state;
+        console.log("after switching, current state of the state machine", this._currentState);
+        console.log("--------------------------------");
     }
 
     happens<K extends keyof Events>(event: K, payload: Events[K]): void {
@@ -81,10 +189,11 @@ export class GenericStateMachine<Events, Context> implements StateMachine<StateE
     }
 }
 
-const inputStateMachine = new GenericStateMachine<InputEventPayloadMapping, InputContext>(inputStateEventAction);
-inputStateMachine.currentState
+export const userInputStateMachine = new GenericStateMachine<UserInputEventPayloadMapping, StateContext, UserInputStates>(userInputStateEventAction);
 
-class InputStateMachine implements StateMachine<InputStateEventAction, InputEventPayloadMapping, InputContext> {
+const inputStateMachine = new GenericStateMachine<InputEventPayloadMapping, InputContext, 'normal' | 'hover'>(inputStateEventAction);
+
+class InputStateMachine implements StateMachine<InputStateEventAction, InputEventPayloadMapping> {
 
     private currentState: keyof InputStateEventAction;
     private context: InputContext;

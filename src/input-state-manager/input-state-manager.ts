@@ -58,7 +58,7 @@ export type InputStateInterpretation<K extends keyof Config> = (inputState: Inpu
 
 export function keyboardMousePanningInterpretation(inputState: InputStateObject, config: Config["pan"]){
     if(inputState.dragging.active && inputState.dragging.startWithSpacebar && inputState.keyPressed.get(" ")){
-        console.log("panning with spacebar and left button");
+        // console.log("panning with spacebar and left button");
         return true;
     }
     if(inputState.dragging.active && inputState.dragging.startWithSpacebar && !inputState.keyPressed.get(" ")){
@@ -90,11 +90,11 @@ export function trackpadZoomInterpretation(inputState: InputStateObject, config:
 
 export function keyboardMouseSelectionInterpretation(inputState: InputStateObject, config: Config["pan"]){
     if(inputState.dragging.active && !inputState.dragging.startWithSpacebar && inputState.keyPressed.get(" ")){
-        console.log("spacebar is pressed during selection");
+        // console.log("spacebar is pressed during selection");
         return true;
     }
     if(inputState.dragging.active && !inputState.dragging.startWithSpacebar){
-        console.log("selection");
+        // console.log("selection");
         return true;
     }
     return false;
@@ -209,7 +209,7 @@ export class DefaultInputStateManager {
 
         if(defaultZoomingInterpretation(inputState, {type: "zoom", trackPadMode: true})){
             // zooming
-            console.log("zooming");
+            // console.log("zooming");
             return;
         }
     }
@@ -348,14 +348,14 @@ export class KeypressUpdater implements InputStateUpdater<"keypressHandler"> {
             return;
         }
         if(event.metaKey){
-            console.log(`${event.key} with meta key`);
+            // console.log(`${event.key} with meta key`);
             return;
         }
         const result = comboDetect(event.key, this.currentString, this.combo);
         this.currentString = result.nextState;
-        console.log("currentString", this.currentString);
+        // console.log("currentString", this.currentString);
         if(result.comboDetected){
-            console.log("you should go");
+            // console.log("you should go");
         }
     }
 }

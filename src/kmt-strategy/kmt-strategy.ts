@@ -1,6 +1,8 @@
 import { InputObserver } from "src/input-observer/input-observer";
 import { StateManager } from "./states";
 import { createDefaultInputStateManager, DefaultInputStateManager } from "src/input-state-manager";
+import { userInputStateMachine } from "src/being/state";
+
 /**
  * @category Input Strategy
  */
@@ -10,6 +12,7 @@ export interface BoardKMTStrategy {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     inputObserver: InputObserver;
+    stateMachine: typeof userInputStateMachine;
     setUp(): void;
     tearDown(): void;
 }
@@ -25,8 +28,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _stateManager: StateManager;
 
     private _experimentalInputStateManager: DefaultInputStateManager;
+    private _stateMachine: typeof userInputStateMachine;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, stateManager: StateManager, experimentalInputStateManager: DefaultInputStateManager, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, stateManager: StateManager, experimentalInputStateManager: DefaultInputStateManager, debugMode: boolean = false, alignCoordinateSystem: boolean = true, stateMachine: typeof userInputStateMachine = userInputStateMachine){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
@@ -34,6 +38,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._inputObserver = inputObserver;
         this._stateManager = stateManager;
         this._experimentalInputStateManager = experimentalInputStateManager;
+        this._stateMachine = stateMachine;
     }
 
     get debugMode(): boolean {
@@ -69,6 +74,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._inputObserver;
     }
 
+    get stateMachine(): typeof userInputStateMachine {
+        return this._stateMachine;
+    }
+
     setUp(): void {
         this.canvas.addEventListener('pointerdown', this.pointerDownHandler);
         this.canvas.addEventListener('pointerup', this.pointerUpHandler);
@@ -102,6 +111,14 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._stateManager.state.pointerDownHandler(e);
         this._experimentalInputStateManager.update("pointerDownHandler", e);
+        if(e.button === 0){
+            userInputStateMachine.happens("leftPointerDown", {position: {x: e.clientX, y: e.clientY}});
+            return;
+        }
+        // if(e.button === 1){
+        //     userInputStateMachine.happens("middlePointerDown", {position: {x: e.clientX, y: e.clientY}});
+        //     return;
+        // }
     }
 
     pointerUpHandler(e: PointerEvent){
@@ -110,6 +127,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._stateManager.state.pointerUpHandler(e);
         this._experimentalInputStateManager.update("pointerUpHandler", e);
+        if(e.button === 0){
+            userInputStateMachine.happens("leftPointerUp", {position: {x: e.clientX, y: e.clientY}});
+        }
     }
 
     pointerMoveHandler(e: PointerEvent){
@@ -118,6 +138,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._stateManager.state.pointerMoveHandler(e);
         this._experimentalInputStateManager.update("pointerMoveHandler", e);
+        userInputStateMachine.happens("pointerMove", {position: {x: e.clientX, y: e.clientY}});
     }
 
     scrollHandler(e: WheelEvent){
@@ -130,11 +151,17 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     keypressHandler(e: KeyboardEvent){
         this._stateManager.state.keypressHandler(e);
         this._experimentalInputStateManager.update("keypressHandler", e);
+        if(e.key === " "){
+            userInputStateMachine.happens("spacebarDown", {});
+        }
     }
 
     keyupHandler(e: KeyboardEvent){
         this._stateManager.state.keyupHandler(e);
         this._experimentalInputStateManager.update("keyupHandler", e);
+        if(e.key === " "){
+            userInputStateMachine.happens("spacebarUp", {});
+        }
     }
 
 }
