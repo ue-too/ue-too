@@ -146,6 +146,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         e.preventDefault();
         this._stateManager.state.scrollHandler(e);
         this._experimentalInputStateManager.update("scrollHandler", e);
+        if(e.ctrlKey){
+            userInputStateMachine.happens("scrollWithCtrl", {deltaX: e.deltaX, deltaY: e.deltaY});
+        } else {
+            userInputStateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+        }
     }
 
     keypressHandler(e: KeyboardEvent){

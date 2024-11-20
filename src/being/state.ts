@@ -30,6 +30,22 @@ export type StateEventAction<EventPayloadMapping, Context, StateKeys extends str
     [K in StateKeys]-?: Partial<EventAction<EventPayloadMapping, Context, StateEventAction<EventPayloadMapping, Context, StateKeys>>>;
 }
 
+export type StateReactions<EventPayloadMapping, Context, StateKeys extends string = 'normal' | 'hover'> = Partial<EventAction<EventPayloadMapping, Context, StateEventAction<EventPayloadMapping, Context, StateKeys>>>;
+
+export type StateEventActionAcceptingStateReactionInterface<EventPayloadMapping, Context, StateKeys extends string = 'normal' | 'hover'> = {
+    [K in StateKeys]-?: StateReaction<EventPayloadMapping, Context, StateKeys>;
+} 
+
+export interface StateReaction<EventPayloadMapping, Context, StateKeys extends string = 'normal' | 'hover'> {
+    happens<K extends keyof EventPayloadMapping>(context: Context, event: K, payload: EventPayloadMapping[K]): keyof StateEventAction<EventPayloadMapping, Context, StateKeys>;
+}
+
+class Test implements StateReaction<UserInputEventPayloadMapping, StateContext, UserInputStates> {
+    happens<K extends keyof UserInputEventPayloadMapping>(context: StateContext, event: K, payload: UserInputEventPayloadMapping[K]): UserInputStates {
+        return "IDLE";
+    }
+}
+
 export type LeftPointerUpEventPayload = {
     position: Point;
 }
@@ -40,6 +56,11 @@ export type LeftPointerDownEventPayload = {
 
 export type MiddlePointerDownEventPayload = {
     position: Point;
+}
+
+export type ScrollEventPayload = {
+    deltaX: number;
+    deltaY: number;
 }
 
 export type SpacebarDownEventPayload = {
@@ -62,26 +83,21 @@ export type UserInputEventPayloadMapping = {
     spacebarDown: SpacebarDownEventPayload;
     spacebarUp: SpacebarUpEventPayload;
     pointerMove: PointerMoveEventPayload;
+    scrollWithCtrl: ScrollEventPayload;
+    scroll: ScrollEventPayload;
 }
 
 export type UserInputStates = 'IDLE' | 'READY_TO_PAN' | 'READY_TO_SELECTION' | 'SELECTION' | 'INITIAL_PAN' | 'PAN';
 
 export type UserInputStateEventAction = StateEventAction<UserInputEventPayloadMapping, StateContext, UserInputStates>;
 
-export const userInputStateEventActionNoOp: UserInputStateEventAction = {
-    IDLE: {},
-    READY_TO_PAN: {},
-    READY_TO_SELECTION: {},
-    SELECTION: {},
-    INITIAL_PAN: {},
-    PAN: {},
-}
-
 export const userInputStateEventAction: UserInputStateEventAction = {
     IDLE: {
         leftPointerDown: (context, event) => "READY_TO_SELECTION",
         spacebarDown: (context, event) => "READY_TO_PAN",
         middlePointerDown: (context, event) => "INITIAL_PAN",
+        scrollWithCtrl: (context, event) => { console.log("scrollWithCtrl", event); return "IDLE"},
+        scroll: (context, event) => { console.log("scroll", event); return "IDLE"},
     },
     READY_TO_PAN: {
         leftPointerDown: (context, event) => "INITIAL_PAN",
