@@ -87,7 +87,7 @@ export type UserInputEventPayloadMapping = {
     scroll: ScrollEventPayload;
 }
 
-export type UserInputStates = 'IDLE' | 'READY_TO_PAN' | 'READY_TO_SELECTION' | 'SELECTION' | 'INITIAL_PAN' | 'PAN';
+export type UserInputStates = 'IDLE' | 'READY_TO_PAN' | 'READY_TO_SELECTION' | 'SELECTION' | 'INITIAL_PAN' | 'PAN' | 'CALCULATING_POINTER_POSITION';
 
 export type UserInputStateEventAction = StateEventAction<UserInputEventPayloadMapping, StateContext, UserInputStates>;
 
@@ -120,6 +120,9 @@ export const userInputStateEventAction: UserInputStateEventAction = {
         leftPointerUp: (context, event) => "READY_TO_PAN",
         spacebarUp: (context, event) => "IDLE",
     },
+    CALCULATING_POINTER_POSITION: {
+        pointerMove: (context, event) => "PAN",
+    }
 }
 
 
@@ -235,4 +238,34 @@ class InputStateMachine implements StateMachine<InputStateEventAction, InputEven
     switchTo(state: keyof InputStateEventAction): void {
         this.currentState = state;
     }
+
+    leftPointerDown(payload: LeftPointerDownEventPayload): void {
+    }
+
+    blah(payload: LeftPointerDownEventPayload): "EXP_PAN" {
+        return "EXP_PAN";
+    }
+
 }
+
+const inputStateMachine2 = new InputStateMachine(inputStateEventAction);
+
+type ExpEventMapping = {
+    blah: LeftPointerDownEventPayload;
+};
+
+type ExpContext = {};
+
+type ExpStates = "EXP_IDLE" | "EXP_PAN";
+
+type ExpEventAction = StateEventAction<ExpEventMapping, ExpContext, ExpStates>;
+
+const test: ExpEventAction = {
+    EXP_IDLE: {
+        blah: (context, event) => "EXP_IDLE",
+    },
+    EXP_PAN: {
+        blah: inputStateMachine2.blah,
+    }
+}
+

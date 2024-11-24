@@ -1,8 +1,15 @@
 
+/**
+ * StateMachine would contain states and 
+ */
 export interface StateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States;
 }
+
+export type EventAction<EventPayloadMapping, Context, States> = {
+    [K in keyof EventPayloadMapping]: (context: Context, event: EventPayloadMapping[K]) => States;
+};
 
 export class GenericStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
 
@@ -23,10 +30,14 @@ export class GenericStateMachine<EventPayloadMapping, Context, States extends st
     }
 }
 
-export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
+export interface State<EventPayloadMapping, Context, States extends string = 'IDLE', ExternalStates extends string = 'TEMP'> { 
     happens<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States;
+    externalStates: Partial<EventAction<EventPayloadMapping, Context, ExternalStates>>;
 }
 
+// Above are interfaces and type definitions for state machine
+
+// Below are experimental state implementations
 export interface StateContext {
 
 }
@@ -43,46 +54,3 @@ export type EventPayloadMapping = {
         y: number;
     }
 }
-
-export class UserInputIdleState implements State<EventPayloadMapping, StateContext, UserInputState> {
-
-    constructor(){}
-
-    happens<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, StateContext, UserInputState>, event: K, payload: EventPayloadMapping[K], context: StateContext): UserInputState {
-        switch(event) {
-            case "leftPointerDown":
-                return this.handleLeftPointerDown(stateMachine, payload, context);
-        }
-        return "IDLE";
-    }
-
-    handleLeftPointerDown(stateMachine: StateMachine<EventPayloadMapping, StateContext, UserInputState>, payload: EventPayloadMapping["leftPointerDown"], context: StateContext): UserInputState {
-        return "READY_TO_PAN";
-    }
-}
-
-export class UserInputReadyToPanState implements State<EventPayloadMapping, StateContext, UserInputState> {
-
-    constructor(){}
-
-    happens<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, StateContext, UserInputState>, event: K, payload: EventPayloadMapping[K], context: StateContext): UserInputState {
-        switch(event) {
-            case "leftPointerDown":
-                return this.handleLeftPointerDown(stateMachine, payload, context);
-        }
-        return "IDLE";
-    }
-
-    handleLeftPointerDown(stateMachine: StateMachine<EventPayloadMapping, StateContext, UserInputState>, payload: EventPayloadMapping["leftPointerDown"], context: StateContext): UserInputState {
-        return "READY_TO_PAN";
-    }
-}
-
-const userInputStateMachine = new GenericStateMachine<EventPayloadMapping, StateContext, UserInputState>({
-    IDLE: new UserInputIdleState(),
-    READY_TO_PAN: new UserInputReadyToPanState(),
-}, "IDLE");
-
-
-
-
