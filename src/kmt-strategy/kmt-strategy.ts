@@ -50,7 +50,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             },
             "IDLE",
             {
-        initialX: 0,
+                initialX: 0,
                 initialY: 0,
             },
             inputObserver,
