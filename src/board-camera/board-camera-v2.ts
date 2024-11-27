@@ -213,5 +213,10 @@ export default class BoardCameraV2 implements BoardCamera {
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
         return this._observer.on(eventName, callback);
     }
+
+    pointInView(point: Point): boolean {
+
+        return withinBoundaries(point, {});
+    }
      
 }

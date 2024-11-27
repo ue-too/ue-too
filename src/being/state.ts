@@ -96,8 +96,8 @@ export const userInputStateEventAction: UserInputStateEventAction = {
         leftPointerDown: (context, event) => "READY_TO_SELECTION",
         spacebarDown: (context, event) => "READY_TO_PAN",
         middlePointerDown: (context, event) => "INITIAL_PAN",
-        scrollWithCtrl: (context, event) => { console.log("scrollWithCtrl", event); return "IDLE"},
-        scroll: (context, event) => { console.log("scroll", event); return "IDLE"},
+        scrollWithCtrl: (context, event) => "IDLE",
+        scroll: (context, event) => "IDLE",
     },
     READY_TO_PAN: {
         leftPointerDown: (context, event) => "INITIAL_PAN",

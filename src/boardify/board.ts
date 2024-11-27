@@ -3,7 +3,7 @@ import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
 import { RotationRig } from 'src/board-camera/rotation';
-import { BoardKMTStrategy, createDefaultStateRegistry, DefaultBoardKMTStrategy, DefaultStateMap, NormalState, StateRegistry } from 'src/kmt-strategy';
+import { BoardKMTStrategy, DefaultBoardKMTStrategy } from 'src/kmt-strategy';
 import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
 import { BoardInputEvent, Point } from 'src/index';
 import { PointCal } from 'point2point';
@@ -14,8 +14,6 @@ import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
 import { InputControlCenter, SimpleRelay } from 'src/control-center';
-
-import { createDefaultInputStateManager, DefaultInputStateManager } from "src/input-state-manager";
 
 /**
  * @category Board
@@ -63,8 +61,6 @@ export default class Board {
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
     
-    private experimentalInputStateManager: DefaultInputStateManager;
-    
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
         this.boardStateObserver = new BoardStateObserver(new BoardCameraV2());
@@ -92,9 +88,7 @@ export default class Board {
 
         this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera));
 
-        this.experimentalInputStateManager = createDefaultInputStateManager(canvas);
-        const stateRegistry = createDefaultStateRegistry(this.boardInputObserver, canvas, this.boardStateObserver.camera);
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, stateRegistry, this.experimentalInputStateManager);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         // this._canvas.style.width = this._canvas.width + "px";

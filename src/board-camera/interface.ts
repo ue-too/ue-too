@@ -24,5 +24,6 @@ export interface BoardCamera {
     setHorizontalBoundaries(min: number, max: number): void;
     setVerticalBoundaries(min: number, max: number): void;
     convertFromViewPort2WorldSpace(point: Point): Point;
+    // pointInView(point: Point): boolean;
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe;
 }

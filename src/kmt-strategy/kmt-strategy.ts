@@ -1,18 +1,20 @@
 import { InputObserver } from "src/input-observer/input-observer";
-import { StateManager } from "./states";
-import { createDefaultInputStateManager, DefaultInputStateManager } from "src/input-state-manager";
-import { userInputStateMachine } from "src/being/state";
+import { GenericStateMachine } from "src/being/alternative-state";
+import type { BoardEventMapping, BoardContext, BoardStates } from "src/being/input-state-machine";
+import { BoardIdleState, BoardWorld, InitialPanState, PanState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
 
 /**
  * @category Input Strategy
  */
+
+const boardWorld = new BoardWorld();
 export interface BoardKMTStrategy {
     disabled: boolean;
     debugMode: boolean;
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     inputObserver: InputObserver;
-    stateMachine: typeof userInputStateMachine;
+    altStateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
     tearDown(): void;
 }
@@ -25,20 +27,36 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _alignCoordinateSystem: boolean;
 
     private _inputObserver: InputObserver;
-    private _stateManager: StateManager;
 
-    private _experimentalInputStateManager: DefaultInputStateManager;
-    private _stateMachine: typeof userInputStateMachine;
+    private _altStateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, stateManager: StateManager, experimentalInputStateManager: DefaultInputStateManager, debugMode: boolean = false, alignCoordinateSystem: boolean = true, stateMachine: typeof userInputStateMachine = userInputStateMachine){
+    private _keyfirstPressed: Map<string, boolean>;
+    private leftPointerDown: boolean;
+
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
-        this._stateManager = stateManager;
-        this._experimentalInputStateManager = experimentalInputStateManager;
-        this._stateMachine = stateMachine;
+        this._altStateMachine =  new GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>(
+            {
+                IDLE: new BoardIdleState(boardWorld),
+                READY_TO_SELECT: new ReadyToSelectState(),
+                SELECTING: new SelectingState(),
+                READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
+                INITIAL_PAN: new InitialPanState(),
+                PAN: new PanState(),
+            },
+            "IDLE",
+            {
+        initialX: 0,
+                initialY: 0,
+            },
+            inputObserver,
+            canvas
+        );
+        this._keyfirstPressed = new Map();
     }
 
     get debugMode(): boolean {
@@ -55,7 +73,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     set disabled(value: boolean){
         this._disabled = value;
-        this._stateManager.state.resetInternalStates();
     }
 
     get alignCoordinateSystem(): boolean {
@@ -74,8 +91,8 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._inputObserver;
     }
 
-    get stateMachine(): typeof userInputStateMachine {
-        return this._stateMachine;
+    get altStateMachine(): GenericStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+        return this._altStateMachine;
     }
 
     setUp(): void {
@@ -109,26 +126,19 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        this._stateManager.state.pointerDownHandler(e);
-        this._experimentalInputStateManager.update("pointerDownHandler", e);
         if(e.button === 0){
-            userInputStateMachine.happens("leftPointerDown", {position: {x: e.clientX, y: e.clientY}});
-            return;
+            this.leftPointerDown = true;
+            this.altStateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
         }
-        // if(e.button === 1){
-        //     userInputStateMachine.happens("middlePointerDown", {position: {x: e.clientX, y: e.clientY}});
-        //     return;
-        // }
     }
 
     pointerUpHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
-        this._stateManager.state.pointerUpHandler(e);
-        this._experimentalInputStateManager.update("pointerUpHandler", e);
         if(e.button === 0){
-            userInputStateMachine.happens("leftPointerUp", {position: {x: e.clientX, y: e.clientY}});
+            this.leftPointerDown = false;
+            this.altStateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
         }
     }
 
@@ -136,36 +146,37 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        this._stateManager.state.pointerMoveHandler(e);
-        this._experimentalInputStateManager.update("pointerMoveHandler", e);
-        userInputStateMachine.happens("pointerMove", {position: {x: e.clientX, y: e.clientY}});
+        if(this.leftPointerDown){
+            this.altStateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+        }
     }
 
     scrollHandler(e: WheelEvent){
         if(this._disabled) return;
         e.preventDefault();
-        this._stateManager.state.scrollHandler(e);
-        this._experimentalInputStateManager.update("scrollHandler", e);
         if(e.ctrlKey){
-            userInputStateMachine.happens("scrollWithCtrl", {deltaX: e.deltaX, deltaY: e.deltaY});
+            this.altStateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            userInputStateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+            this.altStateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
         }
     }
 
     keypressHandler(e: KeyboardEvent){
-        this._stateManager.state.keypressHandler(e);
-        this._experimentalInputStateManager.update("keypressHandler", e);
+        if(this._keyfirstPressed.has(e.key)){
+            return;
+        }
+        this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            userInputStateMachine.happens("spacebarDown", {});
+            this.altStateMachine.happens("spacebarDown", {});
         }
     }
 
     keyupHandler(e: KeyboardEvent){
-        this._stateManager.state.keyupHandler(e);
-        this._experimentalInputStateManager.update("keyupHandler", e);
+        if(this._keyfirstPressed.has(e.key)){
+            this._keyfirstPressed.delete(e.key);
+        }
         if(e.key === " "){
-            userInputStateMachine.happens("spacebarUp", {});
+            this.altStateMachine.happens("spacebarUp", {});
         }
     }
 
