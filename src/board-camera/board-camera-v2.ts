@@ -1,6 +1,6 @@
 import { Point } from 'src';
 import { Boundaries } from 'src/board-camera';
-import { CameraObserverV2, UnSubscribe } from 'src/camera-observer';
+import { CameraObserver, UnSubscribe } from 'src/camera-observer';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { zoomLevelWithinLimits, ZoomLevelLimits, clampZoomLevel } from 'src/board-camera/utils/zoom';
 import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRotation } from 'src/board-camera/utils/rotation';
@@ -22,9 +22,9 @@ export default class BoardCameraV2 implements BoardCamera {
     private _zoomBoundaries?: ZoomLevelLimits;
     private _rotationBoundaries?: RotationLimits;
 
-    private _observer: CameraObserverV2;
+    private _observer: CameraObserver;
 
-    constructor(cameraObserver: CameraObserverV2 = new CameraObserverV2(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
+    constructor(cameraObserver: CameraObserver = new CameraObserver(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;
@@ -62,7 +62,7 @@ export default class BoardCameraV2 implements BoardCamera {
         return this._position;
     }
 
-    get observer(): CameraObserverV2{
+    get observer(): CameraObserver{
         return this._observer;
     }
 
@@ -215,8 +215,6 @@ export default class BoardCameraV2 implements BoardCamera {
     }
 
     pointInView(point: Point): boolean {
-
         return withinBoundaries(point, {});
     }
-     
 }

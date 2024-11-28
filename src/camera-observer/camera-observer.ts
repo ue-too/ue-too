@@ -4,21 +4,6 @@ export type CameraPanEventPayload = {
     diff: Point;
 }
 
-export type CameraZoomEventPayload = {
-    deltaZoomAmount: number;
-    anchorPoint: Point;
-}
-
-export type CameraRotateEventPayload = {
-    deltaRotation: number;
-}
-
-export type CameraEventMapping = {
-    "pan": CameraPanEventPayload,
-    "zoom": CameraZoomEventPayload,
-    "rotate": CameraRotateEventPayload
-}
-
 export type CameraPanEvent = {
     diff: Point;
 }
@@ -70,19 +55,18 @@ export type CameraCommandPayload = CameraRotateCommandPayload | CameraPanCommand
 
 export type CameraChangeEventName = "pan" | "zoom" | "rotate";
 
-export type CallbackList<K extends keyof CameraEventMapping> = ((event: CameraEventMapping[K], cameraState: CameraState)=>void)[];
-export type CallbackListV2<K extends keyof CameraEvent> = ((event: CameraEvent[K], cameraState: CameraState)=>void)[];
+export type CallbackList<K extends keyof CameraEvent> = ((event: CameraEvent[K], cameraState: CameraState)=>void)[];
 
 export type UnSubscribe = () => void;
 
 /**
  * @category Camera Observer
  */
-export class CameraObserverV2 {
+export class CameraObserver {
 
-    private panCallbackList: CallbackListV2<"pan"> = [];
-    private zoomCallbackList: CallbackListV2<"zoom"> = [];
-    private rotateCallbackList: CallbackListV2<"rotate"> = [];
+    private panCallbackList: CallbackList<"pan"> = [];
+    private zoomCallbackList: CallbackList<"zoom"> = [];
+    private rotateCallbackList: CallbackList<"rotate"> = [];
 
     constructor() {
     }
