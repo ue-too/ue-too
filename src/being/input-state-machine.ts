@@ -197,12 +197,25 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
         return "INITIAL_PAN";
     }
 
-    leftPointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+    leftPointerMoveHandler(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        const delta = {
+            x: context.initialX - payload.x,
+            y: context.initialY - payload.y,
+        };
+        if(!stateMachine.alignCoordinateSystem){
+            delta.y = -delta.y;
+        }
+        stateMachine.inputObserver.notifyOnPan(delta);
+        stateMachine.setContext({
+            initialX: payload.x,
+            initialY: payload.y,
+        });
         return "PAN";
     }
 }
 
 export class PanState implements State<BoardEventMapping, BoardContext, BoardStates> {
+
 
     constructor() {
     }
@@ -229,6 +242,9 @@ export class PanState implements State<BoardEventMapping, BoardContext, BoardSta
             x: context.initialX - payload.x,
             y: context.initialY - payload.y,
         };
+        if(!stateMachine.alignCoordinateSystem){
+            delta.y = -delta.y;
+        }
         stateMachine.inputObserver.notifyOnPan(delta);
         stateMachine.setContext({
             initialX: payload.x,

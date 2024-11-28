@@ -24,6 +24,7 @@ export class GenericStateMachine<EventPayloadMapping, Context, States extends st
     private context: Context;
     private _inputObserver: InputObserver;
     private _canvas: HTMLCanvasElement;
+    private _alignCoordinateSystem: boolean;
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context, inputObserver: InputObserver, canvas: HTMLCanvasElement) {
         this.states = states;
@@ -31,6 +32,15 @@ export class GenericStateMachine<EventPayloadMapping, Context, States extends st
         this.context = context;
         this._inputObserver = inputObserver;
         this._canvas = canvas;
+        this._alignCoordinateSystem = true;
+    }
+
+    set alignCoordinateSystem(value: boolean) {
+        this._alignCoordinateSystem = value;
+    }
+
+    get alignCoordinateSystem(): boolean {
+        return this._alignCoordinateSystem;
     }
 
     switchTo(state: States): void {
