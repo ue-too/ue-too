@@ -1,4 +1,4 @@
-import { EventAction, GenericStateMachine, State, StateMachine } from "./alternative-state";
+import { EventAction, GenericStateMachine, State, StateMachine } from "./interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 

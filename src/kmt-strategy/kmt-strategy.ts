@@ -1,5 +1,5 @@
 import { InputObserver } from "src/input-observer/input-observer";
-import { GenericStateMachine } from "src/being/alternative-state";
+import { GenericStateMachine } from "src/being/interfaces";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/being/input-state-machine";
 import { BoardIdleState, BoardWorld, InitialPanState, PanState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
 
@@ -14,7 +14,7 @@ export interface BoardKMTStrategy {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     inputObserver: InputObserver;
-    altStateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
     tearDown(): void;
 }
@@ -28,7 +28,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _inputObserver: InputObserver;
 
-    private _altStateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    private _stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
     private leftPointerDown: boolean;
@@ -39,7 +39,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
-        this._altStateMachine =  new GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>(
+        this._stateMachine =  new GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>(
             {
                 IDLE: new BoardIdleState(boardWorld),
                 READY_TO_SELECT: new ReadyToSelectState(),
@@ -91,8 +91,8 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._inputObserver;
     }
 
-    get altStateMachine(): GenericStateMachine<BoardEventMapping, BoardContext, BoardStates> {
-        return this._altStateMachine;
+    get stateMachine(): GenericStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+        return this._stateMachine;
     }
 
     setUp(): void {
@@ -128,7 +128,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         if(e.button === 0){
             this.leftPointerDown = true;
-            this.altStateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
         }
     }
 
@@ -138,7 +138,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         if(e.button === 0){
             this.leftPointerDown = false;
-            this.altStateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
         }
     }
 
@@ -147,7 +147,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(this.leftPointerDown){
-            this.altStateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
         }
     }
 
@@ -155,9 +155,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){
-            this.altStateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            this.altStateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
         }
     }
 
@@ -167,7 +167,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            this.altStateMachine.happens("spacebarDown", {});
+            this.stateMachine.happens("spacebarDown", {});
         }
     }
 
@@ -176,7 +176,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.altStateMachine.happens("spacebarUp", {});
+            this.stateMachine.happens("spacebarUp", {});
         }
     }
 

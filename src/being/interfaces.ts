@@ -59,10 +59,6 @@ export class GenericStateMachine<EventPayloadMapping, Context, States extends st
     }
 }
 
-export interface StateWithExternalEvents<EventPayloadMapping, ExternalEventMapping, Context, States extends string = 'IDLE', ExternalStates extends string = 'TEMP'> { 
-    externalEvents: Partial<EventAction<ExternalEventMapping, Context, ExternalStates>>;
-}
-
 // Above are interfaces and type definitions for state machine
 
 // Below are experimental state implementations
