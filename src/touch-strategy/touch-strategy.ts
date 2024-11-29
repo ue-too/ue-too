@@ -1,7 +1,7 @@
 import { PointCal } from "point2point";
 import { Point } from "src";
-import { BoardCamera } from "src/board-camera/interface";
 import { InputCallBackList, InputObserver } from "src/input-observer";
+
 export interface BoardTouchStrategy {
     disabled: boolean;
     alignCoordinateSystem: boolean;

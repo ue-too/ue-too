@@ -1,5 +1,5 @@
 import { Point } from "src";
-import { BoardCamera } from "../interface";
+import type BoardCamera from "../board-camera-v2";
 import { PointCal } from "point2point";
 
 import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/position";

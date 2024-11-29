@@ -7,9 +7,8 @@ import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRo
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
 import { CameraEvent, CameraState } from 'src/camera-observer';
-import { BoardCamera } from 'src/board-camera/interface';
 
-export default class BoardCameraV2 implements BoardCamera {
+export default class BoardCamera {
 
     private _position: Point;
     private _rotation: number;

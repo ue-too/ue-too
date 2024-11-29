@@ -1,6 +1,6 @@
 import { Point } from "src/index";
 import { InputControlCenter } from "src/control-center";
-import { BoardCamera } from "src/board-camera";
+import BoardCamera from "src/board-camera";
 
 export type UnsubscribeToInput = () => void;
 

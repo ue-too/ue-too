@@ -1,9 +1,9 @@
-import { BoardCameraSubscriber, Point } from "src";
-import { BoardCamera } from "src/board-camera/interface";
+import { Point } from "src";
+import type BoardCamera from "../board-camera-v2";
 import { convert2WorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
 import { PointCal } from "point2point";
-import { PanController, PanHandler } from "src/board-camera/pan/pan";
+import type { PanHandler } from "src/board-camera/pan/pan";
 
 export interface ZoomHandler {
     nextHandler?: ZoomHandler;

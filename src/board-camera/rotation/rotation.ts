@@ -1,5 +1,5 @@
 import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "src/board-camera/utils/rotation";
-import { BoardCamera } from "src/board-camera/interface"
+import type BoardCamera from "../board-camera-v2";
 
 export interface RotationHandler {
     nextHandler?: RotationHandler;

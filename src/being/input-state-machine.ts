@@ -1,4 +1,4 @@
-import { EventAction, GenericStateMachine, State, StateMachine } from "./interfaces";
+import { EventAction, State, StateMachine, UserInputStateMachine } from "./interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 
@@ -31,8 +31,12 @@ export type ScrollWithCtrlEventPayload = {
 }
 
 export type BoardContext = {
-    initialX: number;
-    initialY: number;
+    alignCoordinateSystem: boolean;
+    canvas: HTMLCanvasElement;
+    notifyOnPan: (delta: Point) => void;
+    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
+    setInitialCursorPosition: (position: Point) => void;
+    initialCursorPosition: Point;
 }
 
 export type BoardEventMapping = {
@@ -61,7 +65,7 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
         leftPointerDown: () => "READY_TO_SELECT",
-        spacebarDown: () => "READY_TO_PAN_VIA_SPACEBAR",
+        spacebarDown: this.spacebarDownHandler,
         leftPointerMove: (stateMachine, context, payload) => this.leftPointerMoveHandler(stateMachine, context, payload),
         scroll: this.scrollHandler,
         scrollWithCtrl: this.scrollWithCtrlHandler,
@@ -83,19 +87,24 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
         return "IDLE";
     }
 
-    scrollHandler(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollEventPayload): BoardStates {
-        stateMachine.inputObserver.notifyOnPan({x: payload.deltaX, y: payload.deltaY});
+    scrollHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollEventPayload): BoardStates {
+        context.notifyOnPan({x: payload.deltaX, y: payload.deltaY});
         return "IDLE";
     }
 
-    scrollWithCtrlHandler(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollWithCtrlEventPayload): BoardStates {
+    scrollWithCtrlHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollWithCtrlEventPayload): BoardStates {
         const zoomAmount = payload.deltaY * 0.005;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const canvasBoundingRect = stateMachine.canvas.getBoundingClientRect();
+        const canvasBoundingRect = context.canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
         const anchorPoint = PointCal.subVector(cursorPosition, cameraCenterInWindow);
-        stateMachine.inputObserver.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
+        context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
         return "IDLE";
+    }
+
+    spacebarDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: SpaceBarEventPayload): BoardStates {
+        context.canvas.style.cursor = "grab";
+        return "READY_TO_PAN_VIA_SPACEBAR";
     }
 }
 
@@ -150,7 +159,7 @@ export class ReadyToPanViaSpaceBarState implements State<BoardEventMapping, Boar
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        spacebarUp: () => "IDLE",
+        spacebarUp: this.spacebarUpHandler,
         leftPointerDown: this.leftPointerDownHandler,
     }
 
@@ -166,11 +175,14 @@ export class ReadyToPanViaSpaceBarState implements State<BoardEventMapping, Boar
     }
 
     leftPointerDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
-        stateMachine.setContext({
-            initialX: payload.x,
-            initialY: payload.y,
-        });
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.canvas.style.cursor = "grabbing";
         return "INITIAL_PAN";
+    }
+
+    spacebarUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: SpaceBarEventPayload): BoardStates {
+        context.canvas.style.cursor = "default";
+        return "IDLE";
     }
 }
 
@@ -197,19 +209,16 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
         return "INITIAL_PAN";
     }
 
-    leftPointerMoveHandler(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+    leftPointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
         const delta = {
-            x: context.initialX - payload.x,
-            y: context.initialY - payload.y,
+            x: context.initialCursorPosition.x - payload.x,
+            y: context.initialCursorPosition.y - payload.y,
         };
-        if(!stateMachine.alignCoordinateSystem){
+        if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
-        stateMachine.inputObserver.notifyOnPan(delta);
-        stateMachine.setContext({
-            initialX: payload.x,
-            initialY: payload.y,
-        });
+        context.notifyOnPan(delta);
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
         return "PAN";
     }
 }
@@ -221,36 +230,43 @@ export class PanState implements State<BoardEventMapping, BoardContext, BoardSta
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: () => "READY_TO_PAN_VIA_SPACEBAR",
+        leftPointerUp: this.leftPointerUpHandler,
         leftPointerMove: this.leftPointerMoveHandler,
-        spacebarUp: () => "IDLE",
+        spacebarUp: this.spacebarUpHandler, 
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
         return this._eventReactions;
     }
 
-    handles<K extends keyof BoardEventMapping>(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
+    handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
         if(this._eventReactions[event]){
             return this._eventReactions[event](stateMachine, context, payload);
         }
         return "PAN";
     }
 
-    leftPointerMoveHandler(stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+    leftPointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
         const delta = {
-            x: context.initialX - payload.x,
-            y: context.initialY - payload.y,
+            x: context.initialCursorPosition.x - payload.x,
+            y: context.initialCursorPosition.y - payload.y,
         };
-        if(!stateMachine.alignCoordinateSystem){
+        if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
-        stateMachine.inputObserver.notifyOnPan(delta);
-        stateMachine.setContext({
-            initialX: payload.x,
-            initialY: payload.y,
-        });
+        context.notifyOnPan(delta);
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
         return "PAN";
+    }
+
+    spacebarUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: SpaceBarEventPayload): BoardStates {
+        context.canvas.style.cursor = "default";
+        return "IDLE";
+    }
+
+    leftPointerUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.canvas.style.cursor = "grab";
+        return "READY_TO_PAN_VIA_SPACEBAR";
     }
 }
 
@@ -260,8 +276,3 @@ export class BoardWorld implements World {
         return false;
     }
 }
-
-
-const world = new BoardWorld();
-
-

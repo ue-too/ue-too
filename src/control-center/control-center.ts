@@ -1,8 +1,8 @@
-import { BoardCameraV2, Point } from "src/index";
+import { Point } from "src/index";
 import { PanController } from "src/board-camera/pan";
 import { ZoomController } from "src/board-camera/zoom";
 import { RotationController } from "src/board-camera/rotation";
-import { BoardCamera } from "src/board-camera/interface";
+import BoardCamera from "src/board-camera/board-camera-v2";
 import { PointCal } from "point2point";
 
 export interface InputControlCenter {
@@ -21,7 +21,7 @@ export class SimpleRelay implements InputControlCenter {
     private _rotationController: RotationController;
     private _camera: BoardCamera;
 
-    constructor(panHandler: PanController, zoomHandler: ZoomController, rotationHandler: RotationController, camera: BoardCamera = new BoardCameraV2()){
+    constructor(panHandler: PanController, zoomHandler: ZoomController, rotationHandler: RotationController, camera: BoardCamera = new BoardCamera()){
         this._panController = panHandler;
         this._zoomController = zoomHandler;
         this._rotationController = rotationHandler;

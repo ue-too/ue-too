@@ -1,7 +1,8 @@
 import { InputObserver } from "src/input-observer/input-observer";
-import { GenericStateMachine } from "src/being/interfaces";
+import { UserInputStateMachine } from "src/being/interfaces";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/being/input-state-machine";
 import { BoardIdleState, BoardWorld, InitialPanState, PanState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
+import { Point } from "src";
 
 /**
  * @category Input Strategy
@@ -14,7 +15,7 @@ export interface BoardKMTStrategy {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     inputObserver: InputObserver;
-    stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
     tearDown(): void;
 }
@@ -28,10 +29,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _inputObserver: InputObserver;
 
-    private _stateMachine: GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
     private leftPointerDown: boolean;
+    private _initialCursorPosition: Point;
 
     constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
@@ -39,7 +41,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
-        this._stateMachine =  new GenericStateMachine<BoardEventMapping, BoardContext, BoardStates>(
+        this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
             {
                 IDLE: new BoardIdleState(boardWorld),
                 READY_TO_SELECT: new ReadyToSelectState(),
@@ -49,14 +51,25 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 PAN: new PanState(),
             },
             "IDLE",
-            {
-                initialX: 0,
-                initialY: 0,
-            },
-            inputObserver,
-            canvas
+            this
         );
         this._keyfirstPressed = new Map();
+    }
+
+    notifyOnPan(delta: Point){
+        this._inputObserver.notifyOnPan(delta);
+    }
+
+    notifyOnZoom(zoomAmount: number, anchorPoint: Point){
+        this._inputObserver.notifyOnZoom(zoomAmount, anchorPoint);
+    }
+
+    setInitialCursorPosition(position: Point){
+        this._initialCursorPosition = position;
+    }
+
+    get initialCursorPosition(): Point {
+        return this._initialCursorPosition;
     }
 
     get debugMode(): boolean {
@@ -91,7 +104,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._inputObserver;
     }
 
-    get stateMachine(): GenericStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+    get stateMachine(): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
         return this._stateMachine;
     }
 

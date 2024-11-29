@@ -3,7 +3,25 @@ import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
-import { comboDetect } from "../src/input-state-manager/input-state-manager";
+
+export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
+    if(currentString.length > combo.length){
+        return {nextState: "", comboDetected: false};
+    }
+    if(currentString.length === combo.length - 1){
+        return {nextState: "", comboDetected: currentString + inputKey === combo};
+    }
+    if(combo[currentString.length] === inputKey){
+        return {nextState: currentString + inputKey, comboDetected: false};
+    }
+    if(combo.startsWith(currentString.substring(1))){
+        return {nextState: currentString.substring(1) + inputKey, comboDetected: false};
+    }
+    if(combo[0] === inputKey){
+        return {nextState: inputKey, comboDetected: false};
+    }
+    return {nextState: "", comboDetected: false};
+}
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);

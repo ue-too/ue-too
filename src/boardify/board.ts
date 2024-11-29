@@ -1,4 +1,4 @@
-import BoardCameraV2, { BoardCamera } from 'src/board-camera';
+import BoardCamera from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { PanRig, PanController } from 'src/board-camera/pan';
 import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
@@ -63,7 +63,7 @@ export default class Board {
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
-        this.boardStateObserver = new BoardStateObserver(new BoardCameraV2());
+        this.boardStateObserver = new BoardStateObserver(new BoardCamera());
         this.boardStateObserver.camera.viewPortHeight = canvas.height;
         this.boardStateObserver.camera.viewPortWidth = canvas.width;
         this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
