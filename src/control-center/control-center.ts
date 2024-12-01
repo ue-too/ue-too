@@ -6,9 +6,10 @@ import BoardCamera from "src/board-camera/board-camera-v2";
 import { PointCal } from "point2point";
 
 export interface InputControlCenter {
-    panController: PanController;
-    zoomController: ZoomController;
-    rotationController: RotationController;
+    // panController: PanController;
+    // zoomController: ZoomController;
+    // rotationController: RotationController;
+    limitEntireViewPort: boolean;
     notifyPanInput(diff: Point): void;
     notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void;
     notifyRotationInput(deltaRotation: number): void;
@@ -38,6 +39,14 @@ export class SimpleRelay implements InputControlCenter {
 
     get rotationController(): RotationController {
         return this._rotationController;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._panController.limitEntireViewPort;
+    }
+
+    set limitEntireViewPort(limit: boolean){
+        this._panController.limitEntireViewPort = limit;
     }
 
     notifyPanInput(diff: Point): void {

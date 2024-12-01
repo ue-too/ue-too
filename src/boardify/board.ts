@@ -1,7 +1,7 @@
 import BoardCamera from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
-import { PanRig, PanController } from 'src/board-camera/pan';
-import { ZoomRig, ZoomController } from 'src/board-camera/zoom';
+import { PanRig } from 'src/board-camera/pan';
+import { ZoomRig } from 'src/board-camera/zoom';
 import { RotationRig } from 'src/board-camera/rotation';
 import { BoardKMTStrategy, DefaultBoardKMTStrategy } from 'src/kmt-strategy';
 import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
@@ -13,7 +13,7 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
-import { InputControlCenter, SimpleRelay } from 'src/control-center';
+import { InputControlCenter, SimpleRelay, Relay } from 'src/control-center';
 
 /**
  * @category Board
@@ -86,15 +86,29 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        this.boardInputObserver = new InputObserver(new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera));
+        const controlCenter = new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera);
+        const controlCenter2 = new Relay({
+            entireViewPort: true,
+            restrictRelativeXTranslation: false,
+            restrictRelativeYTranslation: false,
+            restrictXTranslation: false,
+            restrictYTranslation: false,
+            restrictZoom: false,
+        }, this.boardStateObserver.camera);
+
+        this.boardInputObserver = new InputObserver(controlCenter2);
 
         this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
+        
+        // TODO: device pixel ratio
         // this._canvas.style.width = this._canvas.width + "px";
         // this._canvas.style.height = this._canvas.height + "px";
         // this._canvas.width = window.devicePixelRatio * this._canvas.width;
         // this._canvas.height = window.devicePixelRatio * this._canvas.height;
+        // TODO: device pixel ratio
+        
         this.registerEventListeners();
     }
 
@@ -143,7 +157,7 @@ export default class Board {
         this.boardStateObserver.camera.viewPortWidth = width;
         // console.log("changed the width of the canvas");
         // console.log("limit entire view port", this.boardStateObserver.panHandler.limitEntireViewPort);
-        if(this.boardInputObserver.controlCenter.panController.limitEntireViewPort){
+        if(this.limitEntireViewPort){
             // console.log("change the min zoom level due to the limit entire view port");
             const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -164,7 +178,7 @@ export default class Board {
     set height(height: number){
         this._canvas.height = height;
         this.boardStateObserver.camera.viewPortHeight = height;
-        if(this.boardInputObserver.controlCenter.panController.limitEntireViewPort){
+        if(this.limitEntireViewPort){
             const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
@@ -217,7 +231,7 @@ export default class Board {
      * If set to false, only the center of the camera is bounded by the boundaries.
      */
     set limitEntireViewPort(value: boolean){
-        this.boardInputObserver.controlCenter.panController.limitEntireViewPort = value;
+        this.boardInputObserver.controlCenter.limitEntireViewPort = value;
         if(value){
             const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -227,7 +241,7 @@ export default class Board {
     }
 
     get limitEntireViewPort(): boolean{
-        return this.boardInputObserver.controlCenter.panController.limitEntireViewPort;
+        return this.boardInputObserver.controlCenter.limitEntireViewPort;
     }
 
     /**
@@ -273,41 +287,11 @@ export default class Board {
     }
 
     /**
-     * @translationBlock The pan handler of the board. The pan handler is responsible for handling the pan events issued to the camera.
-     * It has the final say on how the camera should move. Restrictions and clamping behavior are implemented in the pan handler.
-     */
-    set panHandler(handler: PanController){
-        this.boardInputObserver.controlCenter.panController = handler;
-    }
-
-    get panHandler(): PanController{
-        return this.boardInputObserver.controlCenter.panController;
-    }
-
-    /**
-     * @translationBlock The zoom handler of the board. The zoom handler is responsible for handling the zoom events issued to the camera.
-     * It has the final say on how the camera should zoom. Restrictions and clamping behavior are implemented in the zoom handler.
-     */
-    set zoomHandler(handler: ZoomController){
-        this.boardStateObserver.zoomHandler = handler;
-    }
-
-    get zoomHandler(): ZoomController{
-        return this.boardStateObserver.zoomHandler;
-    }
-
-    /**
      * @translationBlock The control center of the board. The control center is responsible for handling the input events and dispatch the events to the pan, zoom, and rotation handlers.
      * This exists to decouple the input events from the camera. The control center is the middle man. The default control center is just a simple relay. You can implement a control center
      * that takes in other inputs. For example, an input to start camera animations.
      */
     set controlCenter(controlCenter: InputControlCenter){
-        let tempPanHandler = this.boardInputObserver.controlCenter.panController;
-        let tempZoomHandler = this.boardInputObserver.controlCenter.zoomController;
-        let tempRotationHandler = this.boardInputObserver.controlCenter.rotationController;
-        controlCenter.panController = tempPanHandler;
-        controlCenter.zoomController = tempZoomHandler;
-        controlCenter.rotationController = tempRotationHandler;
         this.boardInputObserver.controlCenter = controlCenter;
     }
 

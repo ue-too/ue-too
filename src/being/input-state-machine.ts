@@ -192,7 +192,7 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: () => "READY_TO_PAN_VIA_SPACEBAR",
+        leftPointerUp: this.leftPointerUpHandler,
         leftPointerMove: this.leftPointerMoveHandler,
         spacebarUp: () => "IDLE",
         leftPointerDown: () => "PAN",
@@ -220,6 +220,11 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
         context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         return "PAN";
+    }
+
+    leftPointerUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.canvas.style.cursor = "grab";
+        return "READY_TO_PAN_VIA_SPACEBAR";
     }
 }
 
