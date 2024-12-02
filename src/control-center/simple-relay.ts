@@ -1,16 +1,49 @@
 import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig  } from "src/board-camera/pan/pan-handlers";
-import { createDefaultZoomByAtHandler, createDefaultZoomToAtHandler, ZoomByAtHandlerFunction, ZoomHandlerConfig, ZoomToAtHandlerFunction } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import BoardCamera from "src/board-camera/board-camera-v2";
 import { PointCal } from "point2point";
+import { PanControlStateMachine } from "./pan-control-state-machine";
+import { ZoomControlStateMachine } from "./zoom-control-state-machine";
 
+
+export class RelayControlCenter implements InputControlCenter {
+
+    private _panStateMachine: PanControlStateMachine;
+    private _zoomStateMachine: ZoomControlStateMachine;
+
+    constructor(panStateMachine: PanControlStateMachine, zoomStateMachine: ZoomControlStateMachine){
+        this._panStateMachine = panStateMachine;
+        this._zoomStateMachine = zoomStateMachine;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._panStateMachine.limitEntireViewPort;
+    }
+
+    set limitEntireViewPort(limit: boolean) {
+        this._panStateMachine.limitEntireViewPort = limit;
+    }
+
+    notifyPanInput(delta: Point): void {
+        this._panStateMachine.notifyPanInput(delta);
+    }
+
+    notifyZoomInput(delta: number, at: Point): void {
+        this._zoomStateMachine.notifyZoomByAtInput(delta, at);
+    }
+
+    notifyRotationInput(delta: number): void {
+        console.error("Rotation input is not implemented");
+    }
+}
 
 export type ZoomConfig = {
     restrictZoom: boolean;
 }
 
-export class Relay implements InputControlCenter {
+export class Relay {
 
     private _panHandler: PanByHandlerFunction;
     private _zoomHandler: ZoomToAtHandlerFunction;
@@ -29,7 +62,7 @@ export class Relay implements InputControlCenter {
         this._panHandler(this._camera, diffInWorld, this._config);
     }
 
-    notifyZoomInput(delta: number, at: Point): void {
+    notifyZoomByAtInput(delta: number, at: Point): void {
         const targetZoom = this._camera.zoomLevel + delta * this._camera.zoomLevel;
         this._zoomHandler(this._camera, targetZoom, at, this._config);
     }
@@ -45,5 +78,9 @@ export class Relay implements InputControlCenter {
 
     get limitEntireViewPort(): boolean {
         return this._config.entireViewPort;
+    }
+
+    get camera(): BoardCamera {
+        return this._camera;
     }
 }

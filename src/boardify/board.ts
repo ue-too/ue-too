@@ -13,7 +13,7 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
-import { InputControlCenter, SimpleRelay, Relay } from 'src/control-center';
+import { InputControlCenter, SimpleRelay, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
 /**
  * @category Board
@@ -86,8 +86,7 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        const controlCenter = new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera);
-        const controlCenter2 = new Relay({
+        const stateMachineContext = new Relay({
             entireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
@@ -96,7 +95,13 @@ export default class Board {
             restrictZoom: false,
         }, this.boardStateObserver.camera);
 
-        this.boardInputObserver = new InputObserver(controlCenter2);
+        const panStateMachine = createDefaultPanControlStateMachine(stateMachineContext);
+        const zoomStateMachine = createDefaultZoomControlStateMachine(stateMachineContext);
+        const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
+
+        const controlCenter = new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera);
+
+        this.boardInputObserver = new InputObserver(relayControlCenter);
 
         this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, false);
 

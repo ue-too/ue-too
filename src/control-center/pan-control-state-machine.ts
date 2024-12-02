@@ -1,7 +1,9 @@
-import { Point } from "src/index";
+import { Point, Relay } from "src/index";
 import type { EventAction, StateMachine, State } from "src/being";
 import { TemplateStateMachine } from "src/being";
-import { Relay } from "./simple-relay";
+import { PointCal } from "point2point";
+import BoardCamera from "src/board-camera";
+import { PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
 export type PanControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
 export type PanByInputEventPayload = {
@@ -23,10 +25,9 @@ export type PanEventPayloadMapping = {
 };
 
 export type PanContext = {
-    notifyPanByInput: (delta: Point) => void;
-    notifyPanToInput: (target: Point) => void;
-    notifyZoomToAtInput: (target: number, at: Point) => void; 
-    notifyZoomByAtInput: (delta: number, at: Point) => void;
+    camera: BoardCamera;
+    limitEntireViewPort: boolean;
+    notifyPanInput: (delta: Point) => void;
 };
 
 export class PanControlStateMachine extends TemplateStateMachine<PanEventPayloadMapping, PanContext, PanControlStates> {
@@ -35,6 +36,25 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
         super(states, initialState, context);
     }
 
+    notifyPanInput(diff: Point): void{
+        this.happens("userPanByInput", {diff: diff}, this._context);
+    }
+
+    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void{
+        console.error("Zoom input is not implemented");
+    }
+
+    notifyRotationInput(delta: number): void{
+        console.error("Rotation input is not implemented");
+    }
+
+    set limitEntireViewPort(limit: boolean){
+        this._context.limitEntireViewPort = limit;
+    }
+
+    get limitEntireViewPort(): boolean {
+        return this._context.limitEntireViewPort;
+    }
 }
 
 export class AcceptingUserInputState implements State<PanEventPayloadMapping, PanContext, PanControlStates> {
@@ -60,32 +80,32 @@ export class AcceptingUserInputState implements State<PanEventPayloadMapping, Pa
     }
 
     userPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "ACCEPTING_USER_INPUT";
     }
 
     userPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "ACCEPTING_USER_INPUT";
     }
 
     transitionPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "TRANSITION";
     }
 
     transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "TRANSITION";
     }
 
     lockedOnObjectPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "LOCKED_ON_OBJECT";
     }
 
@@ -112,32 +132,32 @@ export class TransitionState implements State<PanEventPayloadMapping, PanContext
     }
 
     userPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "ACCEPTING_USER_INPUT";
     }
 
     userPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "ACCEPTING_USER_INPUT";
     }
 
     transitionPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "TRANSITION";
     }
 
     transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "TRANSITION";
     }
 
     lockedOnObjectPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "LOCKED_ON_OBJECT";
     }
 
@@ -161,12 +181,12 @@ export class LockedOnObjectState implements State<PanEventPayloadMapping, PanCon
     }
 
     lockedOnObjectPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanByInput(payload.diff);
+        context.notifyPanInput(payload.diff);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanToInput(payload.target);
+        context.notifyPanInput(payload.target);
         return "LOCKED_ON_OBJECT";
     }
 

@@ -26,8 +26,8 @@ export type ZoomEventPayloadMapping = {
 }
 
 export type ZoomContext = {
-    notifyZoomByAtInput: (payload: ZoomByAtInputPayload) => void;
-    notifyZoomToAtInput: (payload: ZoomToAtInputPayload) => void;
+    notifyZoomByAtInput: (delta: number, at: Point) => void;
+    // notifyZoomToAtInput: (to: number, at: Point) => void;
 }
 
 export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
@@ -46,32 +46,28 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
     }
 
     lockedOnObjectZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     userZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
+        context.notifyZoomByAtInput(payload.deltaZoom, payload.anchorPoint);
         return "ACCEPTING_USER_INPUT";
     }
 
     userZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
+        // context.notifyZoomToAtInput(payload.targetZoom, payload.anchorPoint);
         return "ACCEPTING_USER_INPUT";
     }
 
     transitionZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "TRANSITION";
     }
 
     transitionZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "TRANSITION";
     }
     
@@ -98,32 +94,26 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     }
 
     lockedOnObjectZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     userZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "ACCEPTING_USER_INPUT";
     }
 
     userZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "ACCEPTING_USER_INPUT";
     }
 
     transitionZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "TRANSITION";
     }
 
     transitionZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "TRANSITION";
     }
 
@@ -147,22 +137,20 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
     }
 
     lockedOnObjectZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
         return "LOCKED_ON_OBJECT";
     }
 
     userZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlStates {
-        context.notifyZoomByAtInput(payload);
+        context.notifyZoomByAtInput(payload.deltaZoom, payload.anchorPoint);
         return "ACCEPTING_USER_INPUT";
     }
 
     userZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlStates {
-        context.notifyZoomToAtInput(payload);
+        // context.notifyZoomToAtInput(payload.targetZoom, payload.anchorPoint);
         return "ACCEPTING_USER_INPUT";
     }
 }
@@ -171,6 +159,10 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
 
     constructor(states: Record<ZoomControlStates, State<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>>, initialState: ZoomControlStates, context: ZoomContext){
         super(states, initialState, context);
+    }
+
+    notifyZoomByAtInput(delta: number, at: Point): void {
+        this.happens("userZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
     }
 
 }
