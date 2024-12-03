@@ -26,6 +26,10 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 board.limitEntireViewPort = true;
+// board.fullScreen = true;
+// board.camera.setRotation(45 * Math.PI / 180);
+board.camera.setZoomLevel(1);
+board.camera.setPosition({x: 0, y: 0});
 
 const playAnimationButton = document.getElementById("play-animation-btn") as HTMLButtonElement;
 
@@ -39,6 +43,11 @@ function step(timestamp: number){
     lastUpdateTime = timestamp;
     board.context.fillStyle = 'white';
     board.context.fillRect(-5000, -5000, 10000, 10000);
+
+    board.context.beginPath();
+    board.context.arc(0, 100, 10, 0, Math.PI * 2);
+    board.context.fillStyle = 'black';
+    board.context.fill();
     
     drawXAxis(board.context, board.camera.zoomLevel);
     drawYAxis(board.context, board.camera.zoomLevel);
@@ -46,6 +55,12 @@ function step(timestamp: number){
 
     const fourCorners = calculateTopFourCorners();
     drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    // board.context.strokeStyle = 'red';
+    // board.context.beginPath();
+    // board.context.arc(fourCorners.topLeft.x, fourCorners.topLeft.y, 100, 0, Math.PI * 2);
+    // board.context.fillStyle = 'red';
+    // board.context.stroke();
+    // console.log("fourCorners.topLeft", fourCorners.topLeft);
     drawGrid(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
 
     requestAnimationFrame(step);
@@ -54,10 +69,11 @@ function step(timestamp: number){
 step(0);
 
 function calculateTopFourCorners(){
-    const topLeft = board.camera.convertFromViewPort2WorldSpace({x: -canvas.width / 2, y: -canvas.height / 2});
-    const topRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: -canvas.height / 2});
-    const bottomLeft = board.camera.convertFromViewPort2WorldSpace({x: -canvas.width / 2, y: canvas.height / 2});
-    const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: canvas.height / 2});
+    const topLeft = board.camera.convertFromViewPort2WorldSpace({x: (-canvas.width / 2) / window.devicePixelRatio, y: (-canvas.height / 2) / window.devicePixelRatio});
+    const topRight = board.camera.convertFromViewPort2WorldSpace({x: (canvas.width / 2) / window.devicePixelRatio, y: (-canvas.height / 2) / window.devicePixelRatio});
+    const bottomLeft = board.camera.convertFromViewPort2WorldSpace({x: (-canvas.width / 2) / window.devicePixelRatio, y: (canvas.height / 2) / window.devicePixelRatio});
+    const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: (canvas.width / 2) / window.devicePixelRatio, y: (canvas.height / 2) / window.devicePixelRatio});
+    // console.log("topLeft", topLeft);
     return {topLeft, topRight, bottomLeft, bottomRight};
 }
 

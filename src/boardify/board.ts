@@ -63,7 +63,7 @@ export default class Board {
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
-        this.boardStateObserver = new BoardStateObserver(new BoardCamera());
+        this.boardStateObserver = new BoardStateObserver(new BoardCamera(2));
         this.boardStateObserver.camera.viewPortHeight = canvas.height;
         this.boardStateObserver.camera.viewPortWidth = canvas.width;
         this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
@@ -108,10 +108,10 @@ export default class Board {
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         
         // TODO: device pixel ratio
-        // this._canvas.style.width = this._canvas.width + "px";
-        // this._canvas.style.height = this._canvas.height + "px";
-        // this._canvas.width = window.devicePixelRatio * this._canvas.width;
-        // this._canvas.height = window.devicePixelRatio * this._canvas.height;
+        this._canvas.style.width = this._canvas.width + "px";
+        this._canvas.style.height = this._canvas.height + "px";
+        this._canvas.width = window.devicePixelRatio * this._canvas.width;
+        this._canvas.height = window.devicePixelRatio * this._canvas.height;
         // TODO: device pixel ratio
         
         this.registerEventListeners();
@@ -315,7 +315,6 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        // this._context.scale(window.devicePixelRatio, window.devicePixelRatio);
         const curBoundaries = this.boardStateObserver.camera.boundaries;
         if (!boundariesFullyDefined(curBoundaries)){
             throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
@@ -323,6 +322,7 @@ export default class Board {
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
         this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
+        this._context.scale(window.devicePixelRatio, window.devicePixelRatio);
         this._context.scale(this.boardStateObserver.camera.zoomLevel, this.boardStateObserver.camera.zoomLevel);
         if (this._alignCoordinateSystem){
             this._context.rotate(-this.boardStateObserver.camera.rotation);
@@ -340,12 +340,15 @@ export default class Board {
      * @returns The converted point in world coordinates.
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
+        console.log("clickPointInWindow", clickPointInWindow);
         const boundingRect = this._canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
+        console.log("cameraCenterInWindow", cameraCenterInWindow);
         const pointInViewPort = PointCal.subVector(clickPointInWindow, cameraCenterInWindow);
         if(!this._alignCoordinateSystem){
             pointInViewPort.y = -pointInViewPort.y;
         }
+        // const scaledBack = PointCal.multiplyVectorByScalar(pointInViewPort, 1 / window.devicePixelRatio);
         return this.boardStateObserver.camera.convertFromViewPort2WorldSpace(pointInViewPort);
     }
 
