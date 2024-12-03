@@ -60,7 +60,8 @@ const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
     ],
     plugins: [
         ...plugins,
-    ]
+    ],
+    external: ['point2point'],
   };
 });
 
@@ -74,7 +75,7 @@ export default [
       format: 'cjs',
       name: '@niuee/board',
       sourcemap: true,
-    },  
+    },
     {
       file: packageJson.module,
       format: 'esm',

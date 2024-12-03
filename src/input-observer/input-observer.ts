@@ -1,6 +1,6 @@
 import { Point } from "src/index";
 import { InputControlCenter } from "src/control-center";
-import { BoardCamera } from "src/board-camera";
+import BoardCamera from "src/board-camera";
 
 export type UnsubscribeToInput = () => void;
 
@@ -41,22 +41,22 @@ export class InputObserver {
         this._controlCenter = controlCenter;
     }
 
-    notifyOnPan(camera: BoardCamera, diff: Point): void{
-        this._controlCenter.notifyPanInput(camera, diff);
+    notifyOnPan(diff: Point): void{
+        this._controlCenter.notifyPanInput(diff);
         this.panCallbackList.forEach((callback) => {
             queueMicrotask(()=>{callback({diff: diff});});
         });
     }
 
-    notifyOnZoom(camera: BoardCamera, deltaZoomAmount: number, anchorPoint: Point): void{
-        this._controlCenter.notifyZoomInput(camera, deltaZoomAmount, anchorPoint);
+    notifyOnZoom(deltaZoomAmount: number, anchorPoint: Point): void{
+        this._controlCenter.notifyZoomInput(deltaZoomAmount, anchorPoint);
         this.zoomCallbackList.forEach((callback) => {
             queueMicrotask(()=>{callback({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});});
         });
     }
 
     notifyOnRotation(camera: BoardCamera, deltaRotation: number): void{
-        this._controlCenter.notifyRotationInput(camera, deltaRotation);
+        this._controlCenter.notifyRotationInput(deltaRotation);
         this.rotateCallbackList.forEach((callback) => {
             queueMicrotask(()=>{callback({deltaRotation: deltaRotation});});
         });

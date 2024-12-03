@@ -4,6 +4,25 @@ import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 
+export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
+    if(currentString.length > combo.length){
+        return {nextState: "", comboDetected: false};
+    }
+    if(currentString.length === combo.length - 1){
+        return {nextState: "", comboDetected: currentString + inputKey === combo};
+    }
+    if(combo[currentString.length] === inputKey){
+        return {nextState: currentString + inputKey, comboDetected: false};
+    }
+    if(combo.startsWith(currentString.substring(1))){
+        return {nextState: currentString.substring(1) + inputKey, comboDetected: false};
+    }
+    if(combo[0] === inputKey){
+        return {nextState: inputKey, comboDetected: false};
+    }
+    return {nextState: "", comboDetected: false};
+}
+
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 board.limitEntireViewPort = true;
@@ -41,6 +60,18 @@ function calculateTopFourCorners(){
     const bottomRight = board.camera.convertFromViewPort2WorldSpace({x: canvas.width / 2, y: canvas.height / 2});
     return {topLeft, topRight, bottomLeft, bottomRight};
 }
+
+// let currentCombo = "";
+
+// window.addEventListener('keydown', (event)=>{
+//     const {nextState, comboDetected} = comboDetec(event.key, currentCombo, "aabb");
+//     console.log("nextState: ", nextState);
+//     console.log("comboDetected: ", comboDetected);
+//     currentCombo = nextState;
+//     if(comboDetected){
+//         console.log("combo detected");
+//     }
+// });
 
 canvas.addEventListener('pointerdown', (event)=>{
     const pointInWindow = {x: event.clientX, y: event.clientY};
