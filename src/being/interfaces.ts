@@ -80,7 +80,7 @@ export class UserInputStateMachine<EventPayloadMapping, Context, States extends 
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined {
         const nextState = this.states[this.currentState].handles(this, event, payload, this.context);
         if(nextState !== undefined && nextState !== this.currentState){
-            // console.log(this.currentState, "->", nextState);
+            console.log(this.currentState, "->", nextState);
             this.switchTo(nextState);
         }
         return nextState;

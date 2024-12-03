@@ -1,9 +1,9 @@
-import { EventAction, State, StateMachine, UserInputStateMachine } from "./interfaces";
+import { EventAction, State, StateMachine, TemplateState, TemplateStateMachine } from "./interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 
 
-export type BoardStates = "IDLE" | "READY_TO_SELECT" | "SELECTING" | "READY_TO_PAN_VIA_SPACEBAR" | "PAN" | "INITIAL_PAN";
+export type BoardStates = "IDLE" | "READY_TO_SELECT" | "SELECTING" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
 
 export type PointerEventPayload = {
     x: number;
@@ -49,6 +49,9 @@ export type BoardEventMapping = {
     cursorOnElement: CursorStatusUpdateEventPayload;
     scroll: ScrollEventPayload;
     scrollWithCtrl: ScrollWithCtrlEventPayload;
+    middlePointerDown: PointerEventPayload;
+    middlePointerUp: PointerEventPayload;
+    middlePointerMove: PointerEventPayload;
 }
 
 export interface World {
@@ -69,6 +72,7 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
         leftPointerMove: (stateMachine, context, payload) => this.leftPointerMoveHandler(stateMachine, context, payload),
         scroll: this.scrollHandler,
         scrollWithCtrl: this.scrollWithCtrlHandler,
+        middlePointerDown: this.middlePointerDownHandler,
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -93,7 +97,12 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
     }
 
     scrollWithCtrlHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollWithCtrlEventPayload): BoardStates {
-        const zoomAmount = payload.deltaY * 0.005;
+        console.log("raw deltaY", payload.deltaY);
+        let scrollSensitivity = 0.005;
+        if(Math.abs(payload.deltaY) > 100){
+            scrollSensitivity = 0.0005; 
+        }
+        const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
         const canvasBoundingRect = context.canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
@@ -105,6 +114,12 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
     spacebarDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: SpaceBarEventPayload): BoardStates {
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
+    }
+
+    middlePointerDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.canvas.style.cursor = "grabbing";
+        return "READY_TO_PAN_VIA_SCROLL_WHEEL";
     }
 }
 
@@ -228,6 +243,33 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
     }
 }
 
+export class ReadyToPanViaScrollWheelState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
+
+    constructor() {
+        super();
+    }
+
+    private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
+        middlePointerUp: this.middlePointerUpHandler,
+        middlePointerMove: this.middlePointerMoveHandler,
+    }
+
+    get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
+        return this._eventReactions;
+    }
+
+    middlePointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.canvas.style.cursor = "grabbing";
+        return "PAN_VIA_SCROLL_WHEEL";
+    }
+
+    middlePointerUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.canvas.style.cursor = "default";
+        return "IDLE";
+    }
+
+}
+
 export class PanState implements State<BoardEventMapping, BoardContext, BoardStates> {
 
 
@@ -273,6 +315,38 @@ export class PanState implements State<BoardEventMapping, BoardContext, BoardSta
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
     }
+}
+
+export class PanViaScrollWheelState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
+
+    private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
+        middlePointerUp: this.middlePointerUpHandler,
+        middlePointerMove: this.middlePointerMoveHandler,
+    }
+
+    get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
+        return this._eventReactions;
+    }
+
+    middlePointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        const delta = {
+            x: context.initialCursorPosition.x - payload.x,
+            y: context.initialCursorPosition.y - payload.y,
+        };
+        if(!context.alignCoordinateSystem){
+            delta.y = -delta.y;
+        }
+        context.notifyOnPan(delta);
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        return "PAN_VIA_SCROLL_WHEEL";
+    }
+
+    middlePointerUpHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.canvas.style.cursor = "default";
+        return "IDLE";
+    }
+
+
 }
 
 export class BoardWorld implements World {

@@ -1,7 +1,7 @@
 import { InputObserver } from "src/input-observer/input-observer";
 import { UserInputStateMachine } from "src/being/interfaces";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/being/input-state-machine";
-import { BoardIdleState, BoardWorld, InitialPanState, PanState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
+import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
 import { Point } from "src";
 
 /**
@@ -33,6 +33,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _keyfirstPressed: Map<string, boolean>;
     private leftPointerDown: boolean;
+    private middlePointerDown: boolean;
     private _initialCursorPosition: Point;
 
     constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
@@ -49,6 +50,8 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
                 INITIAL_PAN: new InitialPanState(),
                 PAN: new PanState(),
+                READY_TO_PAN_VIA_SCROLL_WHEEL: new ReadyToPanViaScrollWheelState(),
+                PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
             },
             "IDLE",
             this
@@ -142,6 +145,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(e.button === 0){
             this.leftPointerDown = true;
             this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
+            return;
+        }
+        if(e.button === 1){
+            this.middlePointerDown = true;
+            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
+            return;
         }
     }
 
@@ -152,6 +161,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(e.button === 0){
             this.leftPointerDown = false;
             this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
+            return;
+        }
+        if(e.button === 1){
+            this.middlePointerDown = false;
+            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
+            return;
         }
     }
 
@@ -161,6 +176,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         if(this.leftPointerDown){
             this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+            return;
+        }
+        if(this.middlePointerDown){
+            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
+            return;
         }
     }
 
