@@ -25,6 +25,10 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
+canvas.style.width = window.innerWidth + "px";
+canvas.style.height = window.innerHeight + "px";
+canvas.width = window.innerWidth * window.devicePixelRatio;
+canvas.height = window.innerHeight * window.devicePixelRatio;
 board.limitEntireViewPort = true;
 // board.fullScreen = true;
 // board.camera.setRotation(45 * Math.PI / 180);
