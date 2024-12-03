@@ -43,7 +43,7 @@ export type ZoomConfig = {
     restrictZoom: boolean;
 }
 
-export class Relay {
+export class Relay { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panHandler: PanByHandlerFunction;
     private _zoomHandler: ZoomToAtHandlerFunction;
