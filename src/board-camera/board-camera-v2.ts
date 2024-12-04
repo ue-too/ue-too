@@ -23,9 +23,8 @@ export default class BoardCamera {
 
     private _observer: CameraObserver;
 
-    private _devicePixelRatio: number;
 
-    constructor(devicePixelRatio: number = 1, cameraObserver: CameraObserver = new CameraObserver(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
+    constructor(cameraObserver: CameraObserver = new CameraObserver(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;
@@ -33,7 +32,6 @@ export default class BoardCamera {
         this._viewPortWidth = viewPortWidth;
         this._observer = cameraObserver;
         this._zoomBoundaries = {min: 0.1, max: 10};
-        this._devicePixelRatio = devicePixelRatio;
     }
 
     get boundaries(): Boundaries | undefined{
@@ -167,7 +165,6 @@ export default class BoardCamera {
     }
 
     convertFromViewPort2WorldSpace(point: Point): Point{
-        // const scaledBack = PointCal.multiplyVectorByScalar(point, 1 / this._devicePixelRatio);
         return convert2WorldSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
 
