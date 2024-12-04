@@ -23,6 +23,7 @@ export default class BoardCamera {
 
     private _observer: CameraObserver;
 
+
     constructor(cameraObserver: CameraObserver = new CameraObserver(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
         this._position = position;
         this._zoomLevel = zoomLevel;

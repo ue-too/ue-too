@@ -131,6 +131,7 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
         let orderOfMagnitude = calculateOrderOfMagnitude(width);
         let divisor = Math.pow(10, orderOfMagnitude);
+        // console.log("divisor", divisor);
         let halfDivisor = divisor / 2;
         let subDivisor = divisor / 10;
         let scaling = 1;
