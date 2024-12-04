@@ -97,7 +97,7 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
     }
 
     scrollWithCtrlHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: ScrollWithCtrlEventPayload): BoardStates {
-        console.log("raw deltaY", payload.deltaY);
+        // console.log("raw deltaY", payload.deltaY);
         let scrollSensitivity = 0.005;
         if(Math.abs(payload.deltaY) > 100){
             scrollSensitivity = 0.0005; 

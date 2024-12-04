@@ -342,10 +342,10 @@ export default class Board {
      * @returns The converted point in world coordinates.
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
-        console.log("clickPointInWindow", clickPointInWindow);
+        // console.log("clickPointInWindow", clickPointInWindow);
         const boundingRect = this._canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
-        console.log("cameraCenterInWindow", cameraCenterInWindow);
+        // console.log("cameraCenterInWindow", cameraCenterInWindow);
         const pointInViewPort = PointCal.subVector(clickPointInWindow, cameraCenterInWindow);
         if(!this._alignCoordinateSystem){
             pointInViewPort.y = -pointInViewPort.y;
