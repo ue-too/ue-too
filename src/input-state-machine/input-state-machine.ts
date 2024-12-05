@@ -1,4 +1,4 @@
-import { EventAction, State, StateMachine, TemplateState, TemplateStateMachine } from "./interfaces";
+import { EventAction, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 
