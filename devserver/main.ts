@@ -1,4 +1,4 @@
-import "./media";
+// import "./media";
 import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
@@ -41,10 +41,10 @@ board.limitEntireViewPort = true;
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
 
-const playAnimationButton = document.getElementById("play-animation-btn") as HTMLButtonElement;
+// const playAnimationButton = document.getElementById("play-animation-btn") as HTMLButtonElement;
 
-playAnimationButton.onclick = function(){
-};
+// playAnimationButton.onclick = function(){
+// };
 
 let lastUpdateTime = 0;
 function step(timestamp: number){
@@ -104,3 +104,8 @@ canvas.addEventListener('pointerdown', (event)=>{
     const pointInWorld = board.convertWindowPoint2WorldCoord({x: pointInWindow.x, y: pointInWindow.y});
     console.log('point in world space: ', pointInWorld);
 });
+
+// canvas.addEventListener('touchmove', (event)=>{
+//     const pointInWindow = {x: event.touches[0].clientX, y: event.touches[0].clientY};
+//     console.log('point in world space: ', pointInWindow);
+// });

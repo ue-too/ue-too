@@ -2,13 +2,11 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     setContext(context: Context): void;
-    // bubblesUp<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States;
 }
 
 export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
     handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     eventReactions: Partial<EventAction<EventPayloadMapping, Context, States>>;
-    // externalEvents: Partial<EventAction<ExternalEventMapping, Context, ExternalStates>>;
 }
 
 export type EventAction<EventPayloadMapping, Context, States extends string> = {
@@ -34,7 +32,7 @@ export abstract class TemplateStateMachine<EventPayloadMapping, Context, States 
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
         const nextState = this._states[this._currentState].handles(this, event, payload, this._context);
         if(nextState !== undefined && nextState !== this._currentState){
-            // console.log(this._currentState, "->", nextState);
+            console.log(this._currentState, "->", nextState);
             this.switchTo(nextState);
         }
         return nextState;

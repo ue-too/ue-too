@@ -1,6 +1,7 @@
 import { PointCal } from "point2point";
 import { Point } from "src";
 import { InputCallBackList, InputObserver } from "src/input-observer";
+import { TouchPoints, TouchSM } from "src/input-state-machine/touch-state-machine";
 
 export interface BoardTouchStrategy {
     disabled: boolean;
@@ -40,6 +41,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
     private panInputCallBackList: InputCallBackList<"pan"> = [];
     private zoomInputCallBackList: InputCallBackList<"zoom"> = [];
 
+    private touchSM: TouchSM;
+
+    private touchPointss: TouchPoints[] = [];
+    private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
+
     constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver,alignCoordinateSystem: boolean = true){
         this.canvas = canvas;
         this._disabled = false;
@@ -50,6 +56,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         this._alignCoordinateSystem = alignCoordinateSystem;
 
         this.inputObserver = inputObserver;
+        this.touchSM = new TouchSM(this);
 
         this.bindListeners();
     }
@@ -129,10 +136,45 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         this._rotateDisabled = rotateDisabled;
     }
 
+    getCurrentTouchPointsCount(): number {
+        const size = this.touchPointsMap.size;
+        return size;
+    }
+
+    addTouchPoints(points: TouchPoints[]): void {
+        this.touchPointss.push(...points);
+        points.forEach((point)=>{
+            this.touchPointsMap.set(point.ident, {...point});
+        });
+        console.log("-----current touch points -----");
+        console.log(this.touchPointss);
+    }
+
+    removeTouchPoints(identifiers: number[]): void {
+        this.touchPointss = this.touchPointss.filter(p => !identifiers.includes(p.ident));
+        identifiers.forEach((ident)=>{
+            if(this.touchPointsMap.has(ident)){
+                this.touchPointsMap.delete(ident);
+            }
+        });
+        console.log("-----current touch points -----");
+        console.log(this.touchPointss);
+    }
+
+    getTouchPoints(): TouchPoints[] {
+        return this.touchPointss;
+    }
+
     touchstartHandler(e: TouchEvent){
         if(this._disabled) {
             return;
         }
+
+        const pointsAdded: TouchPoints[] = [];
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+        }
+        this.touchSM.happens("touchstart", {points: pointsAdded}, this);
         e.preventDefault();
         if(e.targetTouches.length === 2){
             this.isDragging = false;
@@ -151,6 +193,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         if(this._disabled) {
             return;
         }
+        const pointsRemoved: TouchPoints[] = [];
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+        }
+        this.touchSM.happens("touchend", {points: pointsRemoved}, this);
         this.isDragging = false;
         this.touchPoints = [];
     }
@@ -159,6 +206,12 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         if(this._disabled) {
             return;
         }
+        const pointsRemoved: TouchPoints[] = [];
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+        }
+        console.log("touchend", pointsRemoved);
+        this.touchSM.happens("touchend", {points: pointsRemoved}, this);
         this.isDragging = false;
         this.touchPoints = [];
     }
@@ -167,39 +220,66 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         if(this._disabled) {
             return;
         }
+        const pointsMoved: TouchPoints[] = [];
+        for (let i = 0; i < e.targetTouches.length; i++) {
+            pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
+        }
+        this.touchSM.happens("touchmove", {points: pointsMoved}, this);
         e.preventDefault();
         if(e.targetTouches.length == 2 && this.touchPoints.length == 2){
             //NOTE Touch Zooming
             if(this._zoomDisabled){
                 return;
             }
-            let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
-            let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
-            let distDiff = this.zoomStartDist - touchPointDist;
-            let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
-            const boundingRect = this.canvas.getBoundingClientRect();
-            const midPointInWindow = {x: midPoint.x, y: midPoint.y};
-            const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
-            const midPointInViewPort = PointCal.subVector(midPointInWindow, cameraCenterInWindow);
-            if(!this._alignCoordinateSystem){
-                midPointInViewPort.y = -midPointInViewPort.y;
-            }
-            this.inputObserver.notifyOnZoom(-distDiff * 0.1 * this.ZOOM_SENSATIVITY, midPointInViewPort);
+            // let startPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            // let endPoint = {x: e.targetTouches[1].clientX, y: e.targetTouches[1].clientY};
+            // let touchPointDist = PointCal.distanceBetweenPoints(startPoint, endPoint);
+            // let distDiff = this.zoomStartDist - touchPointDist;
+            // let midPoint = PointCal.linearInterpolation(startPoint, endPoint, 0.5);
+            // const boundingRect = this.canvas.getBoundingClientRect();
+            // const midPointInWindow = {x: midPoint.x, y: midPoint.y};
+            // const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+            // const midPointInViewPort = PointCal.subVector(midPointInWindow, cameraCenterInWindow);
+            // if(!this._alignCoordinateSystem){
+            //     midPointInViewPort.y = -midPointInViewPort.y;
+            // }
+            // this.inputObserver.notifyOnZoom(-distDiff * 0.1 * this.ZOOM_SENSATIVITY, midPointInViewPort);
             // this._zoomHandler.zoomCameraToAt(this.controlCamera, this.controlCamera.zoomLevel - zoomAmount, midPoint);
             // this.controlCamera.setZoomLevelWithClampFromGestureAtAnchorPoint(this.controlCamera.getZoomLevel() - zoomAmount, midPoint);
-            this.touchPoints = [startPoint, endPoint];
-            this.tapPoint = null;
+            // this.touchPoints = [startPoint, endPoint];
+            // this.tapPoint = null;
         } else if(e.targetTouches.length == 1 && this.isDragging && !this._panDisabled){
-            let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
-            const diff = PointCal.subVector(this.dragStartPoint, touchPoint);
-            if(!this._alignCoordinateSystem){
-                diff.y = -diff.y;
-            }
-            this.inputObserver.notifyOnPan(diff);
-            // this._panHandler.panCameraBy(this.camera, diffInWorld);
-            this.dragStartPoint = touchPoint;
-            this.tapPoint = null;
+            // let touchPoint = {x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY};
+            // const diff = PointCal.subVector(this.dragStartPoint, touchPoint);
+            // if(!this._alignCoordinateSystem){
+            //     diff.y = -diff.y;
+            // }
+            // this.inputObserver.notifyOnPan(diff);
+            // // this._panHandler.panCameraBy(this.camera, diffInWorld);
+            // this.dragStartPoint = touchPoint;
+            // this.tapPoint = null;
         }
+    }
+
+    getInitialTouchPointsPositions(idents: number[]): TouchPoints[] {
+        const res: TouchPoints[] = [];
+        idents.forEach((ident)=>{
+            if(this.touchPointsMap.has(ident)){
+                res.push(this.touchPointsMap.get(ident));
+            }
+        });
+        return res; 
+    }
+
+    updateTouchPoints(pointsMoved: TouchPoints[]): void {
+        pointsMoved.forEach((point)=>{
+            if(this.touchPointsMap.has(point.ident)){
+                this.touchPointsMap.set(point.ident, {...point});
+            }
+        })
+    }
+
+    notifyOnPan(delta: Point): void {
+        this.inputObserver.notifyOnPan(delta);
     }
 }
