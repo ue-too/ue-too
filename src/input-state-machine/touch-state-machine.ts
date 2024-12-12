@@ -11,6 +11,8 @@ export type TouchContext = {
     getInitialTouchPointsPositions: (idents: number[]) => TouchPoints[];
     updateTouchPoints: (pointsMoved: TouchPoints[]) => void;
     notifyOnPan: (delta: Point) => void;
+    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
+    canvas: HTMLCanvasElement;
 }
 
 export type TouchPoints = {
@@ -30,8 +32,6 @@ export type TouchEventMapping = {
 }
 
 type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStates>;
-type TouchEventReaction = Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>>;
-
 
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
@@ -88,33 +88,29 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
     }
 
     touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
-       // context.pointsMoved(payload.points);
-       const idents = payload.points.map(p => p.ident);
-       const initialPositions = context.getInitialTouchPointsPositions(idents);
-       const currentPositions = payload.points;
-       const pointsMoved = currentPositions.map((p, index) => ({
-           ident: p.ident,
-           x: p.x - initialPositions[index].x,
-           y: p.y - initialPositions[index].y,
-       }));
-       const initialStartAndEndDistance = PointCal.distanceBetweenPoints(initialPositions[0], initialPositions[1]);
-       const currentStartAndEndDistance = PointCal.distanceBetweenPoints(currentPositions[0], currentPositions[1]);
-       const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
-       const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
-       const deltaStartPoint = pointsMoved[0];
-       let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
+        const idents = payload.points.map(p => p.ident);
+        const initialPositions = context.getInitialTouchPointsPositions(idents);
+        const currentPositions = payload.points;
+        const initialStartAndEndDistance = PointCal.distanceBetweenPoints(initialPositions[0], initialPositions[1]);
+        const currentStartAndEndDistance = PointCal.distanceBetweenPoints(currentPositions[0], currentPositions[1]);
+        const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
+        const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
+        const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
+        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
+        const boundingRect = context.canvas.getBoundingClientRect();
+        const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+        const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
        
-    //    console.log("points before", context.getInitialTouchPointsPositions(idents));
-       context.updateTouchPoints(currentPositions);
-    //    console.log("points after", context.getInitialTouchPointsPositions(idents));
-       switch(panZoom){
-           case "ZOOMING":
-               return "IN_PROGRESS";
-           case "PANNING":
-               context.notifyOnPan(PointCal.subVector(midPoint, currentMidPoint));
-               return "IN_PROGRESS";
-       }
-       return "IN_PROGRESS"; 
+        context.updateTouchPoints(currentPositions);
+        switch(panZoom){
+            case "ZOOMING":
+                context.notifyOnZoom((currentStartAndEndDistance - initialStartAndEndDistance) * 0.005, midPointInViewPort);
+                return "IN_PROGRESS";
+            case "PANNING":
+                context.notifyOnPan(midPointDelta);
+                return "IN_PROGRESS";
+        }
+        return "IN_PROGRESS"; 
     }
 }
 
@@ -131,33 +127,30 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
 
     touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
         // context.pointsMoved(payload.points);
-       const idents = payload.points.map(p => p.ident);
-       const initialPositions = context.getInitialTouchPointsPositions(idents);
-       const currentPositions = payload.points;
-       const pointsMoved = currentPositions.map((p, index) => ({
-           ident: p.ident,
-           x: p.x - initialPositions[index].x,
-           y: p.y - initialPositions[index].y,
-       }));
-       const initialStartAndEndDistance = PointCal.distanceBetweenPoints(initialPositions[0], initialPositions[1]);
-       const currentStartAndEndDistance = PointCal.distanceBetweenPoints(currentPositions[0], currentPositions[1]);
-       const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
-       const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
-       const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
-       let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
+        const idents = payload.points.map(p => p.ident);
+        const initialPositions = context.getInitialTouchPointsPositions(idents);
+        const currentPositions = payload.points;
+        const initialStartAndEndDistance = PointCal.distanceBetweenPoints(initialPositions[0], initialPositions[1]);
+        const currentStartAndEndDistance = PointCal.distanceBetweenPoints(currentPositions[0], currentPositions[1]);
+        const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
+        const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
+        const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
+        const boundingRect = context.canvas.getBoundingClientRect();
+        const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+        const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
+        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
        
-    //    console.log("points before", context.getInitialTouchPointsPositions(idents));
-       context.updateTouchPoints(currentPositions);
-    //    console.log("points after", context.getInitialTouchPointsPositions(idents));
-       switch(panZoom){
+        context.updateTouchPoints(currentPositions);
+        switch(panZoom){
             case "ZOOMING":
-               return "IN_PROGRESS";
+                context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
+                return "IN_PROGRESS";
             case "PANNING":
             //    console.log("PANNING", midPointDelta);
-               context.notifyOnPan(midPointDelta);
-               return "IN_PROGRESS";
-       }
-       return "IN_PROGRESS"; 
+                context.notifyOnPan(midPointDelta);
+                return "IN_PROGRESS";
+        }
+        return "IN_PROGRESS"; 
     }
 
     touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
