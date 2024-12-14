@@ -1,7 +1,7 @@
 import { InputObserver } from "src/input-observer/input-observer";
 import { UserInputStateMachine } from "src/being/interfaces";
-import type { BoardEventMapping, BoardContext, BoardStates } from "src/being/input-state-machine";
-import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/being/input-state-machine";
+import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
+import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
 import { Point } from "src";
 
 /**
