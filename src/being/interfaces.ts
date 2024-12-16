@@ -2,6 +2,7 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     setContext(context: Context): void;
+    states: Record<States, State<EventPayloadMapping, Context, States>>;
 }
 
 export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
@@ -18,11 +19,13 @@ export abstract class TemplateStateMachine<EventPayloadMapping, Context, States 
     protected _currentState: States;
     protected _states: Record<States, State<EventPayloadMapping, Context, States>>;
     protected _context: Context;
+    protected _statesArray: States[];
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context){
         this._states = states;
         this._currentState = initialState;
         this._context = context;
+        this._statesArray = Object.keys(states) as States[];
     }
 
     switchTo(state: States): void {
@@ -45,6 +48,14 @@ export abstract class TemplateStateMachine<EventPayloadMapping, Context, States 
     setContext(context: Context): void {
         this._context = context;
     }
+
+    get possibleStates(): States[] {
+        return this._statesArray;
+    }
+
+    get states(): Record<States, State<EventPayloadMapping, Context, States>> {
+        return this._states;
+    }
 }
 
 export abstract class TemplateState<EventPayloadMapping, Context, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
@@ -60,24 +71,26 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
 
 export class UserInputStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
 
-    private states: Record<States, State<EventPayloadMapping, Context, States>>;
-    private currentState: States;
-    private context: Context;
+    private _states: Record<States, State<EventPayloadMapping, Context, States>>;
+    private _currentState: States;
+    private _context: Context;
+    private _statesArray: States[];
 
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context) {
-        this.states = states;
-        this.currentState = initialState;
-        this.context = context;
+        this._states = states;
+        this._currentState = initialState;
+        this._context = context;
+        this._statesArray = Object.keys(states) as States[];
     }
 
     switchTo(state: States): void {
-        this.currentState = state;
+        this._currentState = state;
     }
 
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined {
-        const nextState = this.states[this.currentState].handles(this, event, payload, this.context);
-        if(nextState !== undefined && nextState !== this.currentState){
+        const nextState = this.states[this._currentState].handles(this, event, payload, this._context);
+            if(nextState !== undefined && nextState !== this._currentState){
             // console.log(this.currentState, "->", nextState);
             this.switchTo(nextState);
         }
@@ -85,6 +98,14 @@ export class UserInputStateMachine<EventPayloadMapping, Context, States extends 
     }
 
     setContext(context: Context): void {
-        this.context = context;
+        this._context = context;
+    }
+
+    get possibleStates(): States[] {
+        return this._statesArray;
+    }
+
+    get states(): Record<States, State<EventPayloadMapping, Context, States>> {
+        return this._states;
     }
 }
