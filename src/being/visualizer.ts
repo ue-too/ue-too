@@ -2,17 +2,30 @@ import { StateMachine } from "./interfaces";
 
 export function placeholder(){};
 
-export function parser<EventPayloadMapping, Context, States extends string>(stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
+export function parseStateMachine<EventPayloadMapping, Context, States extends string>(stateMachine: StateMachine<EventPayloadMapping, Context, States>){
     const states = stateMachine.states;
-    const possibleStates = Object.keys(states);
-    for(const state of possibleStates){
-        const stateObject = states[state as States];
-        const eventReactions = stateObject.eventReactions;
-        for(const event in eventReactions){
-            const eventHandler = eventReactions[event];
-            type returnType = ReturnType<typeof eventHandler>;
-            console.log(event);
+    const possibleStates = stateMachine.possibleStates;
+    possibleStates.forEach(state => {
+        const stateObject = states[state];
+        console.log("--------------------------------");
+        console.log("state: ", state);
+        console.log("can handle:")
+        const entries = Object.entries(stateObject.eventReactions);
+        for (const event in stateObject.eventReactions){
+            if(stateObject.eventReactions[event] === undefined){
+                continue;
+            }
+            console.log("event: ", event);
+            console.log("default target state: ", stateObject.eventReactions[event].defaultTargetState);
+            const eventGuards = stateObject.eventGuards[event];
+            if(eventGuards === undefined){
+                continue;
+            }
+            console.log("event guards: ", eventGuards);
+            for (const guard in eventGuards){
+                console.log("guard: ", guard);
+                console.log("guard condition: ", eventGuards[guard]);
+            }
         }
-    }
-
+    });
 }

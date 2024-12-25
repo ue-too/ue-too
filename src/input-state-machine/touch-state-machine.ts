@@ -1,10 +1,10 @@
 import { PointCal } from "point2point";
 import type { Point} from "src/index";
-import { EventAction, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
+import { EventAction, EventGuards, Guard, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
-export type TouchContext = {
+export interface TouchContext {
     addTouchPoints: (points: TouchPoints[]) => void;
     removeTouchPoints: (idents: number[]) => void;
     getCurrentTouchPointsCount: () => number;
@@ -36,8 +36,27 @@ type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStat
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchstart: this.touchstart,
-        touchend: this.touchend,
+        touchstart: {
+            action: this.touchstart,
+            defaultTargetState: "IDLE",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
+    };
+
+    protected _guards: Guard<"touchPointsCount"> = {
+        touchPointsCount: () => {
+            return true;
+        }
+    };
+
+    protected _eventGuards: Partial<EventGuards<TouchEventMapping, TouchStates, typeof this._guards>> = {
+        touchstart: [{
+            guard: "touchPointsCount",
+            target: "IDLE"
+        }],
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
@@ -52,7 +71,7 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
         context.removeTouchPoints(payload.points.map(p => p.ident));
         if(context.getCurrentTouchPointsCount() === 2){
             return "PENDING";
@@ -64,9 +83,18 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchstart: this.touchstart,
-        touchend: this.touchend,
-        touchmove: this.touchmove,
+        touchstart: {
+            action: this.touchstart,
+            defaultTargetState: "IDLE",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
+        touchmove: {
+            action: this.touchmove,
+            defaultTargetState: "IN_PROGRESS",
+        },
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
@@ -117,8 +145,14 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchmove: this.touchmove,
-        touchend: this.touchend,
+        touchmove: {
+            action: this.touchmove,
+            defaultTargetState: "IN_PROGRESS",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {

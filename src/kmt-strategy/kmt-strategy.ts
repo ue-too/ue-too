@@ -1,5 +1,5 @@
 import { InputObserver } from "src/input-observer/input-observer";
-import { UserInputStateMachine } from "src/being/interfaces";
+import { UserInputStateMachine } from "src/input-state-machine";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
 import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
 import { Point } from "src";
@@ -144,12 +144,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         if(e.button === 0){
             this.leftPointerDown = true;
-            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
         }
         if(e.button === 1){
             this.middlePointerDown = true;
-            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
         }
     }
@@ -160,12 +160,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         if(e.button === 0){
             this.leftPointerDown = false;
-            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
         }
         if(e.button === 1){
             this.middlePointerDown = false;
-            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
         }
     }
@@ -175,11 +175,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(this.leftPointerDown){
-            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY}, this);
             return;
         }
         if(this.middlePointerDown){
-            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
+            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY}, this);
             return;
         }
     }
@@ -188,9 +188,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){
-            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY}, this);
         } else {
-            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY}, this);
         }
     }
 
@@ -200,7 +200,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            this.stateMachine.happens("spacebarDown", {});
+            this.stateMachine.happens("spacebarDown", {}, this);
         }
     }
 
@@ -209,7 +209,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.stateMachine.happens("spacebarUp", {});
+            this.stateMachine.happens("spacebarUp", {}, this);
         }
     }
 

@@ -33,12 +33,12 @@ export type ZoomContext = {
 export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
     private _eventReactions: Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> = {
-        lockedOnObjectZoomByAtInput: this.lockedOnObjectZoomByAtInput,
-        lockedOnObjectZoomToAtInput: this.lockedOnObjectZoomToAtInput,
-        userZoomByAtInput: this.userZoomByAtInput,
-        userZoomToAtInput: this.userZoomToAtInput,
-        transitionZoomByAtInput: this.transitionZoomByAtInput,
-        transitionZoomToAtInput: this.transitionZoomToAtInput,
+        lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
+        userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
+        transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
+        transitionZoomToAtInput: {action: this.transitionZoomToAtInput, defaultTargetState: "TRANSITION"},
     };
 
     get eventReactions(): Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> {
@@ -81,12 +81,12 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     }
 
     private _eventReactions: Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> = {
-        lockedOnObjectZoomByAtInput: this.lockedOnObjectZoomByAtInput,
-        lockedOnObjectZoomToAtInput: this.lockedOnObjectZoomToAtInput,
-        transitionZoomByAtInput: this.transitionZoomByAtInput,
-        transitionZoomToAtInput: this.transitionZoomToAtInput,
-        userZoomByAtInput: this.userZoomByAtInput,
-        userZoomToAtInput: this.userZoomToAtInput,
+        lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
+        transitionZoomToAtInput: {action: this.transitionZoomToAtInput, defaultTargetState: "TRANSITION"},
+        userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
+        userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
 
     get eventReactions(): Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> {
@@ -126,10 +126,10 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
     }
 
     private _eventReactions: Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> = {
-        lockedOnObjectZoomByAtInput: this.lockedOnObjectZoomByAtInput,
-        lockedOnObjectZoomToAtInput: this.lockedOnObjectZoomToAtInput,
-        userZoomByAtInput: this.userZoomByAtInput,
-        userZoomToAtInput: this.userZoomToAtInput,
+        lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
+        userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
+        userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
 
     get eventReactions(): Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> {

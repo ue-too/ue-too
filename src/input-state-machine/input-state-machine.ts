@@ -1,4 +1,4 @@
-import { EventAction, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
+import { EventAction, EventGuards, GuardEvaluation, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 
@@ -58,32 +58,58 @@ export interface World {
     processPoint(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, point: Point): boolean;
 }
 
-export class BoardIdleState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
     private world: World;
 
     constructor(world: World) {
+        super();
         this.world = world;
     }
 
+    protected _guards: Guard<"isIdle"> = {
+        isIdle: () => true,
+    }
+
+    protected _eventGuards: Partial<EventGuards<BoardEventMapping, BoardStates, Guard>> = {
+        leftPointerDown: [
+            {
+                guard: "isIdle",
+                target: "IDLE",
+            },
+        ],
+    }
+
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerDown: () => "READY_TO_SELECT",
-        spacebarDown: this.spacebarDownHandler,
-        leftPointerMove: (stateMachine, context, payload) => this.leftPointerMoveHandler(stateMachine, context, payload),
-        scroll: this.scrollHandler,
-        scrollWithCtrl: this.scrollWithCtrlHandler,
-        middlePointerDown: this.middlePointerDownHandler,
+        leftPointerDown: {
+            action: this.leftPointerDownHandler,
+            defaultTargetState: "READY_TO_SELECT",
+        },
+        spacebarDown: {
+            action: this.spacebarDownHandler,
+            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
+        },
+        leftPointerMove: {
+            action: this.leftPointerMoveHandler,
+            defaultTargetState: "IDLE",
+        },
+        scroll: {
+            action: this.scrollHandler,
+            defaultTargetState: "IDLE",
+        },
+        scrollWithCtrl: {
+            action: this.scrollWithCtrlHandler,
+            defaultTargetState: "IDLE",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
         return this._eventReactions;
     }
 
-    handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
-        }
-        return "IDLE";
+    leftPointerDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
+        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        return "READY_TO_SELECT";
     }
 
     leftPointerMoveHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
@@ -123,14 +149,21 @@ export class BoardIdleState implements State<BoardEventMapping, BoardContext, Bo
     }
 }
 
-export class ReadyToSelectState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class ReadyToSelectState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
     constructor() {
+        super();
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: () => "IDLE",
-        leftPointerMove: () => "SELECTING",
+        leftPointerUp: {
+            action: () => "IDLE",
+            defaultTargetState: "IDLE",
+        },
+        leftPointerMove: {
+            action: () => "SELECTING",
+            defaultTargetState: "SELECTING",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -139,54 +172,55 @@ export class ReadyToSelectState implements State<BoardEventMapping, BoardContext
 
     handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
         if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
+            return this._eventReactions[event].action(stateMachine, context, payload);
         }
         return "READY_TO_SELECT";
     }
 }
 
-export class SelectingState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class SelectingState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
 
     constructor() {
+        super();
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: () => "IDLE",
-        leftPointerMove: () => "SELECTING",
+        leftPointerUp: {
+            action: () => "IDLE",
+            defaultTargetState: "IDLE",
+        },
+        leftPointerMove: {
+            action: () => "SELECTING",
+            defaultTargetState: "SELECTING",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
         return this._eventReactions;
-    }
-
-    handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
-        }
-        return "SELECTING";
     }
 
 }
 
-export class ReadyToPanViaSpaceBarState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class ReadyToPanViaSpaceBarState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
+
     constructor() {
+        super();
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        spacebarUp: this.spacebarUpHandler,
-        leftPointerDown: this.leftPointerDownHandler,
+        spacebarUp: {
+            action: this.spacebarUpHandler,
+            defaultTargetState: "IDLE",
+        },
+        leftPointerDown: {
+            action: this.leftPointerDownHandler,
+            defaultTargetState: "INITIAL_PAN",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
         return this._eventReactions;
-    }
-
-    handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
-        }
-        return "READY_TO_PAN_VIA_SPACEBAR";
     }
 
     leftPointerDownHandler(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates {
@@ -201,16 +235,29 @@ export class ReadyToPanViaSpaceBarState implements State<BoardEventMapping, Boar
     }
 }
 
-export class InitialPanState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class InitialPanState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
     constructor() {
+        super();
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: this.leftPointerUpHandler,
-        leftPointerMove: this.leftPointerMoveHandler,
-        spacebarUp: () => "IDLE",
-        leftPointerDown: () => "PAN",
+        leftPointerUp: {
+            action: this.leftPointerUpHandler,
+            defaultTargetState: "IDLE",
+        },
+        leftPointerMove: {
+            action: this.leftPointerMoveHandler,
+            defaultTargetState: "PAN",
+        },
+        spacebarUp: {
+            action: () => "IDLE",
+            defaultTargetState: "IDLE",
+        },
+        leftPointerDown: {
+            action: () => "PAN",
+            defaultTargetState: "PAN",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -219,7 +266,7 @@ export class InitialPanState implements State<BoardEventMapping, BoardContext, B
 
     handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
         if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
+            return this._eventReactions[event].action(stateMachine, context, payload);
         }
         return "INITIAL_PAN";
     }
@@ -250,8 +297,14 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<BoardEventMappi
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        middlePointerUp: this.middlePointerUpHandler,
-        middlePointerMove: this.middlePointerMoveHandler,
+        middlePointerUp: {
+            action: this.middlePointerUpHandler,
+            defaultTargetState: "IDLE",
+        },
+        middlePointerMove: {
+            action: this.middlePointerMoveHandler,
+            defaultTargetState: "PAN_VIA_SCROLL_WHEEL",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -270,16 +323,26 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<BoardEventMappi
 
 }
 
-export class PanState implements State<BoardEventMapping, BoardContext, BoardStates> {
+export class PanState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
 
     constructor() {
+        super();
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: this.leftPointerUpHandler,
-        leftPointerMove: this.leftPointerMoveHandler,
-        spacebarUp: this.spacebarUpHandler, 
+        leftPointerUp: {
+            action: this.leftPointerUpHandler,
+            defaultTargetState: "IDLE",
+        },
+        leftPointerMove: {
+            action: this.leftPointerMoveHandler,
+            defaultTargetState: "PAN",
+        },
+        spacebarUp: {
+            action: this.spacebarUpHandler, 
+            defaultTargetState: "IDLE",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -288,7 +351,7 @@ export class PanState implements State<BoardEventMapping, BoardContext, BoardSta
 
     handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
         if(this._eventReactions[event]){
-            return this._eventReactions[event](stateMachine, context, payload);
+            return this._eventReactions[event].action(stateMachine, context, payload);
         }
         return "PAN";
     }
@@ -320,8 +383,14 @@ export class PanState implements State<BoardEventMapping, BoardContext, BoardSta
 export class PanViaScrollWheelState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        middlePointerUp: this.middlePointerUpHandler,
-        middlePointerMove: this.middlePointerMoveHandler,
+        middlePointerUp: {
+            action: this.middlePointerUpHandler,
+            defaultTargetState: "IDLE",
+        },
+        middlePointerMove: {
+            action: this.middlePointerMoveHandler,
+            defaultTargetState: "PAN_VIA_SCROLL_WHEEL",
+        },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -345,13 +414,31 @@ export class PanViaScrollWheelState extends TemplateState<BoardEventMapping, Boa
         context.canvas.style.cursor = "default";
         return "IDLE";
     }
-
-
 }
 
 export class BoardWorld implements World {
     processPoint(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, point: Point): boolean {
         // console.log("Processing point", point);
         return false;
+    }
+}
+
+export class UserInputStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> extends TemplateStateMachine<EventPayloadMapping, Context, States> {
+
+
+    constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context) {
+        super(states, initialState, context);
+    }
+
+    setContext(context: Context): void {
+        this._context = context;
+    }
+
+    get possibleStates(): States[] {
+        return this._statesArray;
+    }
+
+    get states(): Record<States, State<EventPayloadMapping, Context, States>> {
+        return this._states;
     }
 }

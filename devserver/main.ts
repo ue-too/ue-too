@@ -3,6 +3,7 @@ import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
+import { parseStateMachine } from "src/being";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -25,26 +26,23 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
-// canvas.style.width = window.innerWidth + "px";
-// canvas.style.height = window.innerHeight + "px";
-// canvas.width = window.innerWidth * window.devicePixelRatio;
-// canvas.height = window.innerHeight * window.devicePixelRatio;
+const stateMachine = board.kmtStrategy.stateMachine;
+stateMachine.onStateChange((currentState, nextState) => {
+    console.log("state change", currentState, "->", nextState);
+});
 
-board.fullScreen = true;
+parseStateMachine(stateMachine);
+
+stateMachine.onHappens((event, payload, context) => {
+    console.log(event, "happens");
+});
 console.log("viewport width", board.camera.viewPortWidth);
 console.log("viewport height", board.camera.viewPortHeight);
 console.log("canvas width", canvas.width);
 console.log("canvas height", canvas.height);
 board.limitEntireViewPort = true;
-// board.fullScreen = true;
-// board.camera.setRotation(45 * Math.PI / 180);
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
-
-// const playAnimationButton = document.getElementById("play-animation-btn") as HTMLButtonElement;
-
-// playAnimationButton.onclick = function(){
-// };
 
 let lastUpdateTime = 0;
 function step(timestamp: number){
