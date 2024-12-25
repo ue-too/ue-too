@@ -67,17 +67,11 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
         this.world = world;
     }
 
-    protected _guards: Guard<"isIdle"> = {
+    protected _guards: Guard<BoardContext, "isIdle"> = {
         isIdle: () => true,
     }
 
-    protected _eventGuards: Partial<EventGuards<BoardEventMapping, BoardStates, Guard>> = {
-        leftPointerDown: [
-            {
-                guard: "isIdle",
-                target: "IDLE",
-            },
-        ],
+    protected _eventGuards: Partial<EventGuards<BoardEventMapping, BoardStates, BoardContext, Guard<BoardContext>>> = {
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
@@ -126,7 +120,7 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
         // console.log("raw deltaY", payload.deltaY);
         let scrollSensitivity = 0.005;
         if(Math.abs(payload.deltaY) > 100){
-            scrollSensitivity = 0.0005; 
+            scrollSensitivity = 0.0005;
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};

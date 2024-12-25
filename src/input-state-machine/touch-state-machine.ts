@@ -46,16 +46,21 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         },
     };
 
-    protected _guards: Guard<"touchPointsCount"> = {
-        touchPointsCount: () => {
-            return true;
+    protected _guards: Guard<TouchContext, "touchPointsCount"> = {
+        touchPointsCount: (context: TouchContext) => {
+            console.log("touchPointsCount", context.getCurrentTouchPointsCount() === 2);
+            return context.getCurrentTouchPointsCount() === 2;
         }
     };
 
-    protected _eventGuards: Partial<EventGuards<TouchEventMapping, TouchStates, typeof this._guards>> = {
+    protected _eventGuards: Partial<EventGuards<TouchEventMapping, TouchStates, TouchContext, typeof this._guards>> = {
         touchstart: [{
             guard: "touchPointsCount",
-            target: "IDLE"
+            target: "PENDING",
+        }],
+        touchend: [{
+            guard: "touchPointsCount",
+            target: "PENDING",
         }],
     };
 
@@ -65,17 +70,11 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 
     touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.addTouchPoints(payload.points);
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "PENDING";
-        }
         return "IDLE";
     }
 
     touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "PENDING";
-        }
         return "IDLE";
     }
 }

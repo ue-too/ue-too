@@ -26,7 +26,7 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
-const stateMachine = board.kmtStrategy.stateMachine;
+const stateMachine = board.touchStrategy.touchStateMachine;
 stateMachine.onStateChange((currentState, nextState) => {
     console.log("state change", currentState, "->", nextState);
 });

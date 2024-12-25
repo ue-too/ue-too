@@ -142,12 +142,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        if(e.button === 0){
+        if(e.button === 0 && e.pointerType === "mouse"){
             this.leftPointerDown = true;
             this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
         }
-        if(e.button === 1){
+        if(e.button === 1 && e.pointerType === "mouse"){
             this.middlePointerDown = true;
             this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
@@ -158,12 +158,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        if(e.button === 0){
+        if(e.button === 0 && e.pointerType === "mouse"){
             this.leftPointerDown = false;
             this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
         }
-        if(e.button === 1){
+        if(e.button === 1 && e.pointerType === "mouse"){
             this.middlePointerDown = false;
             this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
@@ -174,11 +174,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled){
             return;
         }
-        if(this.leftPointerDown){
+        if(this.leftPointerDown && e.pointerType === "mouse"){
             this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY}, this);
             return;
         }
-        if(this.middlePointerDown){
+        if(this.middlePointerDown && e.pointerType === "mouse"){
             this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY}, this);
             return;
         }

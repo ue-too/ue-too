@@ -13,8 +13,8 @@ export type StateChangeCallback<EventPayloadMapping, Context, States extends str
 export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
     handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     eventReactions: Partial<EventAction<EventPayloadMapping, Context, States>>;
-    guards: Guard;
-    eventGuards: Partial<EventGuards<EventPayloadMapping, States, Guard>>;
+    guards: Guard<Context>;
+    eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
 }
 
 export type EventAction<EventPayloadMapping, Context, States extends string> = {
@@ -24,19 +24,19 @@ export type EventAction<EventPayloadMapping, Context, States extends string> = {
     };
 };
 
-export type GuardEvaluation = () => boolean;
+export type GuardEvaluation<Context> = (context: Context) => boolean;
 
-export type Guard<K extends string = string> = {
-    [P in K]: GuardEvaluation;
+export type Guard<Context, K extends string = string> = {
+    [P in K]: GuardEvaluation<Context>;
 }
 
-export type GuardMapping<G, States extends string> = {
-    guard: G extends Guard<infer K> ? K : never;
+export type GuardMapping<Context, G, States extends string> = {
+    guard: G extends Guard<Context, infer K> ? K : never;
     target: States;
 }
 
-export type EventGuards<EventPayloadMapping, States extends string, T extends Guard> = {
-    [K in keyof EventPayloadMapping]: GuardMapping<T, States>[];
+export type EventGuards<EventPayloadMapping, States extends string, Context, T extends Guard<Context>> = {
+    [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
 }
 
 export abstract class TemplateStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
@@ -104,14 +104,14 @@ type EventReactions<EventPayloadMapping, Context, States extends string> = Parti
 export abstract class TemplateState<EventPayloadMapping, Context, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
 
     abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
-    protected _guards: Guard = {};
-    protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Guard>> = {};
+    protected _guards: Guard<Context> = {};
+    protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {};
 
-    get guards(): Guard {
+    get guards(): Guard<Context> {
         return this._guards;
     }
 
-    get eventGuards(): Partial<EventGuards<EventPayloadMapping, States, Guard>> {
+    get eventGuards(): Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> {
         return this._eventGuards;
     }
 
@@ -121,9 +121,11 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
             const targetState = this.eventReactions[event].defaultTargetState;
             const guardToEvaluate = this._eventGuards[event];
             if(guardToEvaluate){
+                console.log("guardToEvaluate", guardToEvaluate);
                 const target = guardToEvaluate.find((guard)=>{
-                    this.guards[guard.guard]();
+                    return this.guards[guard.guard](context);
                 });
+                console.log("target", target);
                 return target ? target.target : undefined;
             }
             return targetState;

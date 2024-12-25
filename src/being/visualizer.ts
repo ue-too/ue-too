@@ -9,8 +9,7 @@ export function parseStateMachine<EventPayloadMapping, Context, States extends s
         const stateObject = states[state];
         console.log("--------------------------------");
         console.log("state: ", state);
-        console.log("can handle:")
-        const entries = Object.entries(stateObject.eventReactions);
+        console.log("can handle:");
         for (const event in stateObject.eventReactions){
             if(stateObject.eventReactions[event] === undefined){
                 continue;

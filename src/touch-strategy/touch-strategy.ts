@@ -8,6 +8,7 @@ export interface BoardTouchStrategy {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
+    touchStateMachine: TouchSM;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -41,6 +42,10 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         this.touchSM = new TouchSM(this);
 
         this.bindListeners();
+    }
+
+    get touchStateMachine(): TouchSM {
+        return this.touchSM;
     }
 
     bindListeners(): void{
