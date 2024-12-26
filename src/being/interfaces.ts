@@ -11,6 +11,8 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
 export type StateChangeCallback<EventPayloadMapping, Context, States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
 export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
+    uponEnter(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void;
+    uponLeave(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void;
     handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     eventReactions: Partial<EventAction<EventPayloadMapping, Context, States>>;
     guards: Guard<Context>;
@@ -65,7 +67,6 @@ export abstract class TemplateStateMachine<EventPayloadMapping, Context, States 
         this._happensCallbacks.forEach(callback => callback(event, payload, this._context));
         const nextState = this._states[this._currentState].handles(this, event, payload, this._context);
         if(nextState !== undefined && nextState !== this._currentState){
-            // console.log(this._currentState, "->", nextState);
             const originalState = this._currentState;
             this.switchTo(nextState);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
@@ -113,6 +114,14 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
 
     get eventGuards(): Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> {
         return this._eventGuards;
+    }
+
+    uponEnter(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
+        console.log("enter");
+    }
+
+    uponLeave(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
+        console.log('leave');
     }
 
     handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {

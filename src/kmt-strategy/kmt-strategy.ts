@@ -8,7 +8,6 @@ import { Point } from "src";
  * @category Input Strategy
  */
 
-const boardWorld = new BoardWorld();
 export interface BoardKMTStrategy {
     disabled: boolean;
     debugMode: boolean;
@@ -44,7 +43,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._inputObserver = inputObserver;
         this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
             {
-                IDLE: new BoardIdleState(boardWorld),
+                IDLE: new BoardIdleState(),
                 READY_TO_SELECT: new ReadyToSelectState(),
                 SELECTING: new SelectingState(),
                 READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
@@ -200,6 +199,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
+            e.preventDefault();
             this.stateMachine.happens("spacebarDown", {}, this);
         }
     }

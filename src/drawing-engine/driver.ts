@@ -15,12 +15,14 @@ export class Container implements DrawTask {
     }
 
     draw(deltaTime: number): void {
+        this._context.save();
         this._context.translate(this._position.x, this._position.y);
         this._context.rotate(this._rotation);
         this._context.scale(this._scale, this._scale);
         for (const child of this._children) {
             child.draw(deltaTime);
         }
+        this._context.restore();
     }
 }
 

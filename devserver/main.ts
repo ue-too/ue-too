@@ -26,7 +26,9 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
-const stateMachine = board.touchStrategy.touchStateMachine;
+// const stateMachine = board.touchStrategy.touchStateMachine;
+const stateMachine = board.kmtStrategy.stateMachine;
+
 stateMachine.onStateChange((currentState, nextState) => {
     console.log("state change", currentState, "->", nextState);
 });
@@ -34,7 +36,7 @@ stateMachine.onStateChange((currentState, nextState) => {
 parseStateMachine(stateMachine);
 
 stateMachine.onHappens((event, payload, context) => {
-    console.log(event, "happens");
+    console.log("event", event, "happens at ", stateMachine.currentState);
 });
 console.log("viewport width", board.camera.viewPortWidth);
 console.log("viewport height", board.camera.viewPortHeight);

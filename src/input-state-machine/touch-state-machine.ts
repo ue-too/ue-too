@@ -35,6 +35,8 @@ type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStat
 
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
+    private testVariable: string = "test";
+
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
         touchstart: {
             action: this.touchstart,
@@ -47,10 +49,10 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
     };
 
     protected _guards: Guard<TouchContext, "touchPointsCount"> = {
-        touchPointsCount: (context: TouchContext) => {
-            console.log("touchPointsCount", context.getCurrentTouchPointsCount() === 2);
+        touchPointsCount: ((context: TouchContext) => {
+            console.log(this.testVariable);
             return context.getCurrentTouchPointsCount() === 2;
-        }
+        }).bind(this)
     };
 
     protected _eventGuards: Partial<EventGuards<TouchEventMapping, TouchStates, TouchContext, typeof this._guards>> = {
@@ -123,10 +125,10 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
         const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
         const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
-        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
         const boundingRect = context.canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
         const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
+        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
        
         context.updateTouchPoints(currentPositions);
         switch(panZoom){
@@ -159,7 +161,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
     }
 
     touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
-        // context.pointsMoved(payload.points);
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -179,7 +180,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
                 context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
                 return "IN_PROGRESS";
             case "PANNING":
-            //    console.log("PANNING", midPointDelta);
                 context.notifyOnPan(midPointDelta);
                 return "IN_PROGRESS";
         }
