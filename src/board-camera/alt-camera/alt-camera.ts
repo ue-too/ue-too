@@ -1,5 +1,6 @@
 import { PointCal } from "point2point";
-import { Point } from "src/index";
+import { Board, Point } from "src/index";
+import { BoardCamera } from "../interface";
 
 type Transform = {
     a: number;
@@ -10,7 +11,7 @@ type Transform = {
     f: number;
 }
 
-export class AltCamera {
+export class AltCamera  {
 
     private _position: Point;
     private _rotation: number;
@@ -50,5 +51,7 @@ export class AltCamera {
         const d = this._zoomLevel * Math.cos(this._rotation);
         return {a, b, c, d, e, f};
     }
+
+    
 
 }
