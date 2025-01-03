@@ -37,6 +37,9 @@ export type BoardContext = {
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
     setInitialCursorPosition: (position: Point) => void;
     initialCursorPosition: Point;
+    setSelectionStartPoint: (point: Point) => void;
+    setSelectionEndPoint: (point: Point) => void;
+    toggleSelectionBox: (selecting: boolean) => void;
 }
 
 export type BoardEventMapping = {
@@ -56,6 +59,12 @@ export type BoardEventMapping = {
 
 export interface World {
     processPoint(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, point: Point): boolean;
+}
+
+export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasElement): Point {
+    const canvasBoundingRect = canvas.getBoundingClientRect();
+    const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
+    return PointCal.subVector(point, cameraCenterInWindow);
 }
 
 export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
@@ -82,7 +91,10 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
     }
 
     leftPointerDownHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+        console.log("viewportPoint", viewportPoint);
+        context.setSelectionStartPoint(viewportPoint);
+        context.toggleSelectionBox(true);
         return "READY_TO_SELECT";
     }
 
@@ -100,10 +112,6 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: "IDLE",
         },
         scroll: {
             action: this.scrollHandler,
@@ -129,9 +137,7 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const canvasBoundingRect = context.canvas.getBoundingClientRect();
-        const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
-        const anchorPoint = PointCal.subVector(cursorPosition, cameraCenterInWindow);
+        const anchorPoint = convertFromWindow2ViewPort(cursorPosition, context.canvas);
         context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
         return "IDLE";
     }
@@ -154,13 +160,20 @@ export class ReadyToSelectState extends TemplateState<BoardEventMapping, BoardCo
         super();
     }
 
+    leftPointerMove = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+        context.setSelectionEndPoint(viewportPoint);
+        context.toggleSelectionBox(true);
+        return "SELECTING";
+    }).bind(this);
+
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
         leftPointerUp: {
             action: () => "IDLE",
             defaultTargetState: "IDLE",
         },
         leftPointerMove: {
-            action: () => "SELECTING",
+            action: this.leftPointerMove,
             defaultTargetState: "SELECTING",
         },
     }
@@ -169,12 +182,6 @@ export class ReadyToSelectState extends TemplateState<BoardEventMapping, BoardCo
         return this._eventReactions;
     }
 
-    handles<K extends keyof BoardEventMapping>(stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, event: K, payload: BoardEventMapping[K], context: BoardContext): BoardStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event].action(stateMachine, context, payload);
-        }
-        return "READY_TO_SELECT";
-    }
 }
 
 export class SelectingState extends TemplateState<BoardEventMapping, BoardContext, BoardStates> {
@@ -184,13 +191,24 @@ export class SelectingState extends TemplateState<BoardEventMapping, BoardContex
         super();
     }
 
+    leftPointerMoveHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+        context.setSelectionEndPoint(viewportPoint);
+        return "SELECTING";
+    }).bind(this);
+
+    leftPointerUpHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+        context.toggleSelectionBox(false);
+        return "IDLE";
+    }).bind(this);
+
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
         leftPointerUp: {
-            action: () => "IDLE",
+            action: this.leftPointerUpHandler,
             defaultTargetState: "IDLE",
         },
         leftPointerMove: {
-            action: () => "SELECTING",
+            action: this.leftPointerMoveHandler,
             defaultTargetState: "SELECTING",
         },
     }
@@ -440,4 +458,18 @@ export class UserInputStateMachine<EventPayloadMapping, Context, States extends 
     get states(): Record<States, State<EventPayloadMapping, Context, States>> {
         return this._states;
     }
+}
+
+export function createUserInputStateMachine(context: BoardContext): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+    const states = {
+        IDLE: new BoardIdleState(),
+        READY_TO_SELECT: new ReadyToSelectState(),
+        SELECTING: new SelectingState(),
+        READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
+        INITIAL_PAN: new InitialPanState(),
+        PAN: new PanState(),
+        READY_TO_PAN_VIA_SCROLL_WHEEL: new ReadyToPanViaScrollWheelState(),
+        PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
+    }
+    return new UserInputStateMachine(states, "IDLE", context);
 }

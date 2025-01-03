@@ -15,6 +15,8 @@ import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
 import { InputControlCenter, SimpleRelay, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
+import { Container, SelectionBox } from 'src/drawing-engine';
+import { SelectionInputObserver } from 'src/selection-box';
 /**
  * @category Board
  * @translationBlock Usage
@@ -60,6 +62,8 @@ export default class Board {
 
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
+
+    private _drawingEngine: Container;
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
@@ -98,12 +102,12 @@ export default class Board {
         const panStateMachine = createDefaultPanControlStateMachine(stateMachineContext);
         const zoomStateMachine = createDefaultZoomControlStateMachine(stateMachineContext);
         const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
+        const selectionInputObserver = new SelectionInputObserver(this.boardStateObserver.camera, new SelectionBox(this._context));
 
-        const controlCenter = new SimpleRelay(panHandler, zoomHandler, rotationHandler, this.boardStateObserver.camera);
 
         this.boardInputObserver = new InputObserver(relayControlCenter);
 
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, false);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, selectionInputObserver, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         
@@ -171,6 +175,10 @@ export default class Board {
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
+    }
+
+    set drawingEngine(drawingEngine: Container){
+        this._drawingEngine = drawingEngine;
     }
 
     get width(): number {
@@ -438,5 +446,9 @@ export default class Board {
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
+    }
+
+    get selectionBox(): SelectionBox {
+        return this._kmtStrategy.selectionInputObserver.selectionBox;
     }
 }

@@ -17,6 +17,7 @@ export class SelectionBox implements DrawTask{
 
     set startPoint(point: Point){
         this._startPoint = point;
+        this._endPoint = point;
     }
 
     get startPoint(): Point {
@@ -35,10 +36,25 @@ export class SelectionBox implements DrawTask{
         if(!this._selecting){
             return;
         }
+        this._context.save();
         this._context.beginPath();
         this._context.rect(this._startPoint.x, this._startPoint.y, this._endPoint.x - this._startPoint.x, this._endPoint.y - this._startPoint.y);
         this._context.stroke();
         this._context.fill();
+        this._context.restore();
+    }
+
+    drawWithContext(context: CanvasRenderingContext2D, deltaTime: number): void {
+        if(!this._selecting){
+            return;
+        }
+        context.save();
+        context.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        context.beginPath();
+        context.rect(this._startPoint.x, this._startPoint.y, this._endPoint.x - this._startPoint.x, this._endPoint.y - this._startPoint.y);
+        context.stroke();
+        context.fill();
+        context.restore();
     }
 
     startSelection(): void {
@@ -47,5 +63,7 @@ export class SelectionBox implements DrawTask{
 
     clearSelection(): void {
         this._selecting = false;
+        this._startPoint = {x: 0, y: 0};
+        this._endPoint = {x: 0, y: 0};
     }
 }

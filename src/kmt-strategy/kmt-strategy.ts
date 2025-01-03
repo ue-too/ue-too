@@ -3,6 +3,8 @@ import { UserInputStateMachine } from "src/input-state-machine";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
 import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
 import { Point } from "src";
+import { SelectionBox } from "src/drawing-engine";
+import { SelectionInputObserver } from "src/selection-box";
 
 /**
  * @category Input Strategy
@@ -14,6 +16,7 @@ export interface BoardKMTStrategy {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     inputObserver: InputObserver;
+    selectionInputObserver: SelectionInputObserver;
     stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
     tearDown(): void;
@@ -27,7 +30,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _alignCoordinateSystem: boolean;
 
     private _inputObserver: InputObserver;
-
+    private _selectionInputObserver: SelectionInputObserver;
     private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
@@ -35,12 +38,13 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private middlePointerDown: boolean;
     private _initialCursorPosition: Point;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
+        this._selectionInputObserver = selectionInputObserver;
         this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
             {
                 IDLE: new BoardIdleState(),
@@ -56,6 +60,18 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             this
         );
         this._keyfirstPressed = new Map();
+    }
+
+    toggleSelectionBox(value: boolean){
+        this._selectionInputObserver.toggleSelectionBox(value);
+    }
+
+    setSelectionEndPoint(point: Point){
+        this._selectionInputObserver.notifySelectionEndPoint(point);
+    }
+
+    setSelectionStartPoint(point: Point){
+        this._selectionInputObserver.notifySelectionStartPoint(point);
     }
 
     notifyOnPan(delta: Point){
@@ -108,6 +124,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     get stateMachine(): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
         return this._stateMachine;
+    }
+
+    get selectionInputObserver(): SelectionInputObserver {
+        return this._selectionInputObserver;
     }
 
     setUp(): void {
