@@ -1,4 +1,4 @@
-import { AltCamera } from "src/alt-camera";
+import { AltCamera } from "src/board-camera";
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const context = canvas.getContext("2d");
 

@@ -7,7 +7,7 @@ import { Boundaries } from "src/board-camera/utils/position";
 
 import { CameraEvent, CameraState } from "src/camera-observer";
 
-interface BoardCamera {
+export interface BoardCamera {
     position: Point;
     rotation: number;
     zoomLevel: number;
