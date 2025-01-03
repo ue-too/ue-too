@@ -1,10 +1,10 @@
 import { PointCal } from "point2point";
 import type { Point} from "src/index";
-import { EventAction, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
+import { EventAction, EventGuards, Guard, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
-export type TouchContext = {
+export interface TouchContext {
     addTouchPoints: (points: TouchPoints[]) => void;
     removeTouchPoints: (idents: number[]) => void;
     getCurrentTouchPointsCount: () => number;
@@ -35,9 +35,35 @@ type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStat
 
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
+    private testVariable: string = "test";
+
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchstart: this.touchstart,
-        touchend: this.touchend,
+        touchstart: {
+            action: this.touchstart,
+            defaultTargetState: "IDLE",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
+    };
+
+    protected _guards: Guard<TouchContext, "touchPointsCount"> = {
+        touchPointsCount: ((context: TouchContext) => {
+            console.log(this.testVariable);
+            return context.getCurrentTouchPointsCount() === 2;
+        }).bind(this)
+    };
+
+    protected _eventGuards: Partial<EventGuards<TouchEventMapping, TouchStates, TouchContext, typeof this._guards>> = {
+        touchstart: [{
+            guard: "touchPointsCount",
+            target: "PENDING",
+        }],
+        touchend: [{
+            guard: "touchPointsCount",
+            target: "PENDING",
+        }],
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
@@ -46,17 +72,11 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 
     touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.addTouchPoints(payload.points);
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "PENDING";
-        }
         return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "PENDING";
-        }
         return "IDLE";
     }
 }
@@ -64,9 +84,18 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchstart: this.touchstart,
-        touchend: this.touchend,
-        touchmove: this.touchmove,
+        touchstart: {
+            action: this.touchstart,
+            defaultTargetState: "IDLE",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
+        touchmove: {
+            action: this.touchmove,
+            defaultTargetState: "IN_PROGRESS",
+        },
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
@@ -96,10 +125,10 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
         const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
         const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
-        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
         const boundingRect = context.canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
         const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
+        let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
        
         context.updateTouchPoints(currentPositions);
         switch(panZoom){
@@ -117,8 +146,14 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
-        touchmove: this.touchmove,
-        touchend: this.touchend,
+        touchmove: {
+            action: this.touchmove,
+            defaultTargetState: "IN_PROGRESS",
+        },
+        touchend: {
+            action: this.touchend,
+            defaultTargetState: "IDLE",
+        },
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
@@ -126,7 +161,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
     }
 
     touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
-        // context.pointsMoved(payload.points);
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -146,7 +180,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
                 context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
                 return "IN_PROGRESS";
             case "PANNING":
-            //    console.log("PANNING", midPointDelta);
                 context.notifyOnPan(midPointDelta);
                 return "IN_PROGRESS";
         }

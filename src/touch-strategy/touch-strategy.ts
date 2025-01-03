@@ -1,6 +1,6 @@
 import { Point } from "src";
 import { InputObserver } from "src/input-observer";
-import { TouchPoints, TouchSM } from "src/input-state-machine/touch-state-machine";
+import { TouchContext, TouchPoints, TouchSM } from "src/input-state-machine/touch-state-machine";
 
 export interface BoardTouchStrategy {
     disabled: boolean;
@@ -8,6 +8,7 @@ export interface BoardTouchStrategy {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
+    touchStateMachine: TouchSM;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -17,7 +18,7 @@ export interface BoardTouchStrategy {
 /**
  * @category Input Strategy
  */
-export class DefaultTouchStrategy implements BoardTouchStrategy {
+export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
 
     private _canvas: HTMLCanvasElement;
     private _disabled: boolean;
@@ -41,6 +42,10 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
         this.touchSM = new TouchSM(this);
 
         this.bindListeners();
+    }
+
+    get touchStateMachine(): TouchSM {
+        return this.touchSM;
     }
 
     bindListeners(): void{

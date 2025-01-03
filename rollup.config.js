@@ -20,7 +20,7 @@ const plugins = [
     }),
 ]
 
-export const getComponentsFoldersRecursive = (entry) => {
+const getComponentsFoldersRecursive = (entry) => {
   const finalListOfDirs = [];
   const dirs = fs.readdirSync(entry)
   while (dirs.length !== 0){
