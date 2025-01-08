@@ -1,9 +1,8 @@
-import { Point, Relay } from "src/index";
+import { Point } from "src/index";
 import type { EventAction, StateMachine, State } from "src/being";
 import { TemplateState, TemplateStateMachine } from "src/being";
-import { PointCal } from "point2point";
-import BoardCamera from "src/board-camera";
-import { PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
+import { BoardCamera } from "src/board-camera";
+
 export type PanControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
 export type PanByInputEventPayload = {

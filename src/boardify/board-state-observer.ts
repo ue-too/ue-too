@@ -1,4 +1,4 @@
-import BoardCamera from "src/board-camera";
+import { BoardCamera } from "src/board-camera";
 import { RotationHandler } from "src/board-camera";
 import { PanController, PanHandler, ZoomHandler, ZoomController } from "src/board-camera";
 

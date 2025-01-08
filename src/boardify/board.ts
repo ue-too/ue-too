@@ -1,4 +1,4 @@
-import BoardCamera from 'src/board-camera';
+import DefaultBoardCamera, { BoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { PanRig } from 'src/board-camera/pan';
 import { ZoomRig } from 'src/board-camera/zoom';
@@ -13,10 +13,13 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
-import { InputControlCenter, SimpleRelay, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
+import { InputControlCenter, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
 import { Container, SelectionBox } from 'src/drawing-engine';
 import { SelectionInputObserver } from 'src/selection-box';
+
+import { AltCamera } from 'src/board-camera/alt-camera/alt-camera';
+
 /**
  * @category Board
  * @translationBlock Usage
@@ -67,7 +70,7 @@ export default class Board {
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
-        this.boardStateObserver = new BoardStateObserver(new BoardCamera());
+        this.boardStateObserver = new BoardStateObserver(new DefaultBoardCamera());
         this.boardStateObserver.camera.viewPortHeight = canvas.height;
         this.boardStateObserver.camera.viewPortWidth = canvas.width;
         this.boardStateObserver.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
@@ -331,17 +334,8 @@ export default class Board {
         }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
-        this._context.translate( this._canvas.width / 2, this._canvas.height / 2 );
-        this._context.scale(window.devicePixelRatio, window.devicePixelRatio);
-        this._context.scale(this.boardStateObserver.camera.zoomLevel, this.boardStateObserver.camera.zoomLevel);
-        if (this._alignCoordinateSystem){
-            this._context.rotate(-this.boardStateObserver.camera.rotation);
-            this._context.translate(-this.boardStateObserver.camera.position.x,  -this.boardStateObserver.camera.position.y);
-        } else {
-            this._context.rotate(this.boardStateObserver.camera.rotation);
-            this._context.translate(-this.boardStateObserver.camera.position.x,  this.boardStateObserver.camera.position.y);
-        }
-
+        const transfromMatrix = this.boardStateObserver.camera.getTransform(this._canvas.width, this._canvas.height, window.devicePixelRatio, this._alignCoordinateSystem);
+        this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
     }
 
     /**
@@ -350,10 +344,8 @@ export default class Board {
      * @returns The converted point in world coordinates.
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
-        // console.log("clickPointInWindow", clickPointInWindow);
         const boundingRect = this._canvas.getBoundingClientRect();
         const cameraCenterInWindow = {x: boundingRect.left + (boundingRect.right - boundingRect.left) / 2, y: boundingRect.top + (boundingRect.bottom - boundingRect.top) / 2};
-        // console.log("cameraCenterInWindow", cameraCenterInWindow);
         const pointInViewPort = PointCal.subVector(clickPointInWindow, cameraCenterInWindow);
         if(!this._alignCoordinateSystem){
             pointInViewPort.y = -pointInViewPort.y;

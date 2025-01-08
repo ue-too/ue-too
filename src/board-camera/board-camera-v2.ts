@@ -11,6 +11,7 @@ import { BoardCamera } from './interface';
 
 export default class DefaultBoardCamera implements BoardCamera {
 
+    type: string = 'default';
     private _position: Point;
     private _rotation: number;
     private _zoomLevel: number;
@@ -76,6 +77,14 @@ export default class DefaultBoardCamera implements BoardCamera {
             this._position = destination;
             this._observer.notifyPositionChange(diff, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel})
         }
+    }
+
+    setPositionByDelta(delta: Point): void {
+        this.setPosition(PointCal.addVector(this._position, delta));
+    }
+
+    moveByDeltaInViewPort(delta: Point): void {
+        
     }
 
     get zoomLevel(): number{
@@ -151,6 +160,28 @@ export default class DefaultBoardCamera implements BoardCamera {
         this._rotationBoundaries = rotationBoundaries;
     }
 
+    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean) {
+        const tx = canvasWidth / 2;
+        const ty = canvasHeight / 2;
+        const tx2 = -this._position.x;
+        const ty2 = alignCoorindate ? -this._position.y : this._position.y;
+
+        const s = devicePixelRatio;
+        const s2 = this._zoomLevel;
+        const θ = alignCoorindate ? -this._rotation : this._rotation;
+
+        const sin = Math.sin(θ);
+        const cos = Math.cos(θ);
+
+        const a = s2 * s * cos;
+        const b = s2 * s * sin;
+        const c = -s * s2 * sin;
+        const d = s2 * s * cos;
+        const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
+        const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
+        return {a, b, c, d, e, f};
+    }
+
     setRotation(rotation: number){
         if(rotationWithinLimits(rotation, this._rotationBoundaries)){
             rotation = normalizeAngleZero2TwoPI(rotation);
@@ -163,6 +194,11 @@ export default class DefaultBoardCamera implements BoardCamera {
             this._observer.notifyRotationChange(rotation - this._rotation, {position: this._position, rotation: rotation, zoomLevel: this._zoomLevel});
             this._rotation = rotation;
         }
+    }
+
+    // the points are in window space
+    getCameraOriginInWindow(centerInWindow: Point): Point{
+        return centerInWindow;
     }
 
     convertFromViewPort2WorldSpace(point: Point): Point{

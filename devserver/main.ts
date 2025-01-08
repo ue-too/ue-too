@@ -36,7 +36,8 @@ const flowGraph = new FlowGraph("graph");
 
 const layout = new OrthogonalLayout(board.context);
 const result = layout.layout(exampleGraph);
-board.fullScreen = true;
+// board.fullScreen = true;
+// board.camera.setRotation(45 * Math.PI / 180);
 
 drawingEngine.addDrawTask({
     drawWithContext: (context, deltaTime) => {
