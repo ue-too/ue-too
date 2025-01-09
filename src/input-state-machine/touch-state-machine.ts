@@ -50,7 +50,6 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 
     protected _guards: Guard<TouchContext, "touchPointsCount"> = {
         touchPointsCount: ((context: TouchContext) => {
-            console.log(this.testVariable);
             return context.getCurrentTouchPointsCount() === 2;
         }).bind(this)
     };
@@ -108,7 +107,6 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
     }
 
     touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
-        console.log("PENDING touchend", payload.points);
         context.removeTouchPoints(payload.points.map(p => p.ident));
         if(context.getCurrentTouchPointsCount() === 2){
             return "IN_PROGRESS";

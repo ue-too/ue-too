@@ -159,7 +159,6 @@ export class ContextCentricCamera implements BoardCamera {
             this._zoomLevel = minZoomLevel;
         }
         this._zoomBoundaries.min = minZoomLevel;
-        console.log("setMinZoomLevel", minZoomLevel);
         return true;
     }
 
