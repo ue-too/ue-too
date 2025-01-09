@@ -1,8 +1,5 @@
 import DefaultBoardCamera, { BoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
-import { PanRig } from 'src/board-camera/pan';
-import { ZoomRig } from 'src/board-camera/zoom';
-import { RotationRig } from 'src/board-camera/rotation';
 import { BoardKMTStrategy, DefaultBoardKMTStrategy } from 'src/kmt-strategy';
 import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
 import { BoardInputEvent, Point } from 'src/index';
@@ -15,10 +12,8 @@ import { InputObserver, UnsubscribeToInput } from 'src/input-observer';
 
 import { InputControlCenter, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
-import { Container, SelectionBox } from 'src/drawing-engine';
+import { SelectionBox } from 'src/drawing-engine';
 import { SelectionInputObserver } from 'src/selection-box';
-
-import { AltCamera } from 'src/board-camera/alt-camera/alt-camera';
 
 /**
  * @category Board
@@ -65,8 +60,6 @@ export default class Board {
 
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
-
-    private _drawingEngine: Container;
     
     constructor(canvas: HTMLCanvasElement){
         this._canvas = canvas;
@@ -80,10 +73,6 @@ export default class Board {
         }
 
         this._context = context;
-
-        let panHandler = new PanRig();
-        let zoomHandler = new ZoomRig(panHandler);
-        let rotationHandler = new RotationRig();
 
         this.bindFunctions();
 
@@ -107,19 +96,18 @@ export default class Board {
         const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
         const selectionInputObserver = new SelectionInputObserver(this.boardStateObserver.camera, new SelectionBox(this._context));
 
-
         this.boardInputObserver = new InputObserver(relayControlCenter);
 
         this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, this.boardInputObserver, selectionInputObserver, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         
-        // TODO: device pixel ratio
+        // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
         this._canvas.style.height = this._canvas.height + "px";
         this._canvas.width = window.devicePixelRatio * this._canvas.width;
         this._canvas.height = window.devicePixelRatio * this._canvas.height;
-        // TODO: device pixel ratio
+        // NOTE: device pixel ratio
         
         this.registerEventListeners();
     }
@@ -168,20 +156,12 @@ export default class Board {
         this._canvas.width = width * window.devicePixelRatio;
         this._canvas.style.width = width + "px";
         this.boardStateObserver.camera.viewPortWidth = width;
-        // console.log("changed the width of the canvas");
-        // console.log("limit entire view port", this.boardStateObserver.panHandler.limitEntireViewPort);
         if(this.limitEntireViewPort){
-            // console.log("change the min zoom level due to the limit entire view port");
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
-                // console.log("setting min zoom level in width");
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
-    }
-
-    set drawingEngine(drawingEngine: Container){
-        this._drawingEngine = drawingEngine;
     }
 
     get width(): number {
@@ -197,7 +177,7 @@ export default class Board {
         this._canvas.style.height = height + "px";
         this.boardStateObserver.camera.viewPortHeight = height;
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width, this._canvas.height, this.boardStateObserver.camera.rotation);
+            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.boardStateObserver.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.boardStateObserver.camera.zoomBoundaries, targetMinZoomLevel)){
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
@@ -392,9 +372,6 @@ export default class Board {
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    // console.log("width changed");
-                    // console.log("width", this._canvas.width);
-                    // console.log("css width", this._canvas.style.width);
                     this.boardStateObserver.camera.viewPortWidth = parseFloat(this._canvas.style.width);
                     if(this.limitEntireViewPort){
                         const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.boardStateObserver.camera.boundaries, this.boardStateObserver.camera.viewPortWidth, this.boardStateObserver.camera.viewPortHeight, this.boardStateObserver.camera.rotation);
@@ -403,7 +380,6 @@ export default class Board {
                         }
                     }
                 } else if(mutation.attributeName === "height"){
-                    // console.log("height changed");
                     this.boardStateObserver.camera.viewPortHeight = parseFloat(this._canvas.style.height);
                     if(this.limitEntireViewPort){
                         const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.boardStateObserver.camera.boundaries, this.boardStateObserver.camera.viewPortWidth, this.boardStateObserver.camera.viewPortHeight, this.boardStateObserver.camera.rotation);

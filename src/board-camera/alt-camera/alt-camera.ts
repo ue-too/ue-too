@@ -1,10 +1,10 @@
 import { PointCal } from "point2point";
-import { Point, RotationBoundary, rotationWithinBoundary } from "src/index";
-import { withinBoundaries } from "../utils/position";
-import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
+import { Point } from "src/index";
 import { BoardCamera } from "../interface";
 import { CameraEvent, CameraObserver, CameraState, UnSubscribe } from "src/camera-observer";
-import { Boundaries } from "../utils/position";
+import { Boundaries, withinBoundaries } from "../utils/position";
+import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
+import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
 
 type Transform = {
     a: number;
@@ -15,9 +15,8 @@ type Transform = {
     f: number;
 }
 
-export class AltCamera implements BoardCamera {
+export class ContextCentricCamera implements BoardCamera {
 
-    type: string = "alt";
     private _contextPosition: Point;
     private _contextRotation: number;
     private _zoomLevel: number;
@@ -26,9 +25,9 @@ export class AltCamera implements BoardCamera {
     private _observer: CameraObserver;
     private _boundaries: Boundaries;
     private _zoomBoundaries: ZoomLevelLimits;
-    private _rotationBoundaries: RotationBoundary;
+    private _rotationBoundaries: RotationLimits;
 
-    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationBoundary = {start: 0, end: 2 * Math.PI, positiveDirection: true, startAsTieBreaker: false}){
+    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = {start: 0, end: 2 * Math.PI, ccw: true, startAsTieBreaker: false}){
         this._contextRotation = -rotation;
         this._zoomLevel = zoomLevel;
         this._contextPosition  = PointCal.subVector({x: viewPortWidth / 2, y: viewPortHeight / 2}, PointCal.multiplyVectorByScalar(PointCal.rotatePoint(position, -rotation), zoomLevel))
@@ -44,6 +43,14 @@ export class AltCamera implements BoardCamera {
         const x = (this._viewPortWidth / 2 - this._contextPosition.x) / this._zoomLevel;
         const y = (this._viewPortHeight / 2 - this._contextPosition.y) / this._zoomLevel;
         return PointCal.rotatePoint({x, y}, -this._contextRotation);
+    }
+
+    get contextTransform() {
+        return {
+            position: this._contextPosition,
+            rotation: this._contextRotation,
+            zoomLevel: this._zoomLevel
+        }
     }
 
     setPosition(destination: Point): void {
@@ -84,7 +91,7 @@ export class AltCamera implements BoardCamera {
 
     setRotation(rotation: number): void {
         const destination = -rotation;
-        if(rotationWithinBoundary(destination, this._rotationBoundaries)){
+        if(rotationWithinLimits(destination, this._rotationBoundaries)){
             this._contextRotation = destination;
             this._observer.notifyRotationChange(rotation - this._contextRotation, {position: this.position, rotation: rotation, zoomLevel: this.zoomLevel});
         }
@@ -109,11 +116,6 @@ export class AltCamera implements BoardCamera {
         const a = this._zoomLevel * Math.cos(this._contextRotation) * devicePixelRatio;
         const b = Math.sin(this._contextRotation) * this._zoomLevel * devicePixelRatio;
         const d = this._zoomLevel * Math.cos(this._contextRotation) * devicePixelRatio;
-        // context.scale(devicePixelRatio, devicePixelRatio);
-        // context.scale(zoomLevel, zoomLevel);
-        // context.rotate(rotation);
-        // context.translate(position.x, position.y);
-        
         return {a, b, c, d, e, f};
     }
 
@@ -133,12 +135,32 @@ export class AltCamera implements BoardCamera {
         this._viewPortHeight = height;
     }
 
+    get zoomBoundaries(): ZoomLevelLimits {
+        return this._zoomBoundaries;
+    }
+
+    get rotationBoundaries(): RotationLimits {
+        return this._rotationBoundaries;
+    }
+
     viewPortDelta2WorldDelta(delta: Point): Point {
         return delta;
     }
 
-    setMinZoomLevel(minZoomLevel: number): void {
+    setMinZoomLevel(minZoomLevel: number): boolean {
+        if(this._zoomBoundaries == undefined){
+            this._zoomBoundaries = {min: undefined, max: undefined};
+        }
+        if((this._zoomBoundaries.max != undefined && this._zoomBoundaries.max < minZoomLevel)){
+            return false;
+        }
         this._zoomBoundaries.min = minZoomLevel;
+        if(this._zoomLevel < minZoomLevel){
+            this._zoomLevel = minZoomLevel;
+        }
+        this._zoomBoundaries.min = minZoomLevel;
+        console.log("setMinZoomLevel", minZoomLevel);
+        return true;
     }
 
     setHorizontalBoundaries(min: number, max: number): void {

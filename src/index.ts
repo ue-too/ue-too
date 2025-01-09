@@ -11,7 +11,7 @@ export * from "./kmt-strategy";
 export * from "./touch-strategy";
 export * from "./util";
 export { default as Board } from "./boardify";
-export { default as BoardCameraV2 } from "./board-camera";
+export { default as DefaultBoardCamera } from "./board-camera";
 export type Point = {
     x: number,
     y: number,

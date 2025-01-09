@@ -118,7 +118,7 @@ function step(timestamp: number){
     // board.context.fillStyle = 'red';
     // board.context.stroke();
     // console.log("fourCorners.topLeft", fourCorners.topLeft);
-    drawGrid(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    // drawGrid(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
 
 
     requestAnimationFrame(step);

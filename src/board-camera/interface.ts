@@ -8,7 +8,6 @@ import { Boundaries } from "src/board-camera/utils/position";
 import { CameraEvent, CameraState } from "src/camera-observer";
 
 export interface BoardCamera {
-    type: string;
     position: Point;
     rotation: number;
     zoomLevel: number;
@@ -18,6 +17,11 @@ export interface BoardCamera {
     zoomBoundaries?: ZoomLevelLimits;
     rotationBoundaries?: RotationLimits;
     observer: CameraObserver;
+    contextTransform: {
+        position: Point;
+        rotation: number;
+        zoomLevel: number;
+    };
     setPosition(destination: Point): void;
     setPositionByDelta(delta: Point): void;
     setZoomLevel(zoomLevel: number): void;
