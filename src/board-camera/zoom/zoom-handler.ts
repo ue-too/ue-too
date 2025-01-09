@@ -1,5 +1,5 @@
 import type { Point } from "src/index";
-import BoardCamera from "src/board-camera/board-camera-v2";
+import { BoardCamera } from "src/board-camera";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
 import { PointCal } from "point2point";
 import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
@@ -32,10 +32,20 @@ export function createZoomByHandlerChain(...handlers: ZoomByAtHandlerFunction[] 
 
 export function baseZoomToAtHandler(camera: BoardCamera, destination: number, at: Point, config: ZoomHandlerConfig): number {
     let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
+    const beforeZoomLevel = camera.zoomLevel;
     camera.setZoomLevel(destination);
+    const afterZoomLevel = camera.zoomLevel;
     let anchorInWorldAfterZoom = camera.convertFromViewPort2WorldSpace(at);
     const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
     config.panByHandler(camera, diff, config);
+
+    // const cursorWithZoomLevelBefore = PointCal.multiplyVectorByScalar(at, 1 / beforeZoomLevel);
+    // const cursorWithZoomLevelAfter = PointCal.multiplyVectorByScalar(at, 1 / afterZoomLevel);
+    // const sin = Math.sin(camera.rotation);
+    // const cos = Math.cos(camera.rotation);
+    // const deltaX = (cursorWithZoomLevelAfter.y - cursorWithZoomLevelBefore.y) * sin + (cursorWithZoomLevelBefore.x - cursorWithZoomLevelAfter.x) * cos;
+    // const deltaY = (cursorWithZoomLevelBefore.y - cursorWithZoomLevelAfter.y) * cos + (cursorWithZoomLevelBefore.x - cursorWithZoomLevelAfter.x) * sin;
+    // config.panByHandler(camera, {x: deltaX, y: deltaY}, config);
     return destination;
 }
 

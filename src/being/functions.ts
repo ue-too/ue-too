@@ -31,7 +31,6 @@ export function createStateMachine<EventPayloadMapping, Context, States extends 
     const happens = <K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context) => {
         const nextState = states[currentState](stateMachine, event, payload, context);
         if (nextState !== currentState) {
-            console.log(currentState, "->", nextState);
             switchTo(nextState);
         }
     };

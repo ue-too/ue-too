@@ -117,11 +117,11 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
     }
 
     uponEnter(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
-        console.log("enter");
+        // console.log("enter");
     }
 
     uponLeave(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
-        console.log('leave');
+        // console.log('leave');
     }
 
     handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
@@ -130,11 +130,9 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
             const targetState = this.eventReactions[event].defaultTargetState;
             const guardToEvaluate = this._eventGuards[event];
             if(guardToEvaluate){
-                console.log("guardToEvaluate", guardToEvaluate);
                 const target = guardToEvaluate.find((guard)=>{
                     return this.guards[guard.guard](context);
                 });
-                console.log("target", target);
                 return target ? target.target : undefined;
             }
             return targetState;

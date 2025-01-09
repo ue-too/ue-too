@@ -1,5 +1,5 @@
 import { Point } from "src/index";
-import BoardCamera from "src/board-camera";
+import { BoardCamera } from "src/board-camera";
 import { SelectionBox } from "src/drawing-engine";
 
 export class SelectionInputObserver {

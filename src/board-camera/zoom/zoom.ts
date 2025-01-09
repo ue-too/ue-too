@@ -1,5 +1,5 @@
 import { Point } from "src";
-import type BoardCamera from "../board-camera-v2";
+import type { BoardCamera } from "../interface";
 import { convert2WorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
 import { PointCal } from "point2point";

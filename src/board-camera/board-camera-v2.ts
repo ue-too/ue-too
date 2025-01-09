@@ -7,8 +7,9 @@ import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRo
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
 import { CameraEvent, CameraState } from 'src/camera-observer';
+import { BoardCamera } from './interface';
 
-export default class BoardCamera {
+export default class DefaultBoardCamera implements BoardCamera {
 
     private _position: Point;
     private _rotation: number;
@@ -24,14 +25,16 @@ export default class BoardCamera {
     private _observer: CameraObserver;
 
 
-    constructor(cameraObserver: CameraObserver = new CameraObserver(), position: Point = {x: 0, y: 0}, viewPortWidth: number = 1000, viewPortHeight: number = 1000, zoomLevel: number =  1, rotation: number = 0){
+    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = {start: 0, end: 2 * Math.PI, ccw: true, startAsTieBreaker: false}){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;
         this._viewPortHeight = viewPortHeight;
         this._viewPortWidth = viewPortWidth;
-        this._observer = cameraObserver;
-        this._zoomBoundaries = {min: 0.1, max: 10};
+        this._observer = observer;
+        this._zoomBoundaries = zoomLevelBoundaries;
+        this._rotationBoundaries = rotationBoundaries;
+        this._boundaries = boundaries;
     }
 
     get boundaries(): Boundaries | undefined{
@@ -75,6 +78,14 @@ export default class BoardCamera {
             this._position = destination;
             this._observer.notifyPositionChange(diff, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel})
         }
+    }
+
+    setPositionByDelta(delta: Point): void {
+        this.setPosition(PointCal.addVector(this._position, delta));
+    }
+
+    moveByDeltaInViewPort(delta: Point): void {
+        
     }
 
     get zoomLevel(): number{
@@ -150,6 +161,51 @@ export default class BoardCamera {
         this._rotationBoundaries = rotationBoundaries;
     }
 
+    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean) {
+        const tx = canvasWidth / 2;
+        const ty = canvasHeight / 2;
+        const tx2 = -this._position.x;
+        const ty2 = alignCoorindate ? -this._position.y : this._position.y;
+
+        const s = devicePixelRatio;
+        const s2 = this._zoomLevel;
+        const θ = alignCoorindate ? -this._rotation : this._rotation;
+
+        const sin = Math.sin(θ);
+        const cos = Math.cos(θ);
+
+        const a = s2 * s * cos;
+        const b = s2 * s * sin;
+        const c = -s * s2 * sin;
+        const d = s2 * s * cos;
+        const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
+        const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
+        return {a, b, c, d, e, f};
+    }
+
+    get contextTransform() {
+        return this.getContextTransform(this._viewPortWidth, this._viewPortHeight, window.devicePixelRatio);
+    }
+
+    getContextTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number) {
+        const translation = {
+            x: (canvasWidth / 2) - this._position.x * devicePixelRatio * this._zoomLevel,
+            y: (canvasHeight / 2) - (this._position.y * devicePixelRatio * this._zoomLevel)
+        };
+    
+        const scale = {
+            x: devicePixelRatio * this._zoomLevel,
+            y: devicePixelRatio * this._zoomLevel
+        };
+    
+        const rotation = -this._rotation;
+        return {
+            position: translation,
+            rotation: rotation,
+            zoomLevel: scale.x
+        }
+    }
+
     setRotation(rotation: number){
         if(rotationWithinLimits(rotation, this._rotationBoundaries)){
             rotation = normalizeAngleZero2TwoPI(rotation);
@@ -162,6 +218,11 @@ export default class BoardCamera {
             this._observer.notifyRotationChange(rotation - this._rotation, {position: this._position, rotation: rotation, zoomLevel: this._zoomLevel});
             this._rotation = rotation;
         }
+    }
+
+    // the points are in window space
+    getCameraOriginInWindow(centerInWindow: Point): Point{
+        return centerInWindow;
     }
 
     convertFromViewPort2WorldSpace(point: Point): Point{

@@ -2,7 +2,7 @@ import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig  } fr
 import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
-import BoardCamera from "src/board-camera/board-camera-v2";
+import DefaultBoardCamera, { BoardCamera } from "src/board-camera";
 import { PointCal } from "point2point";
 import { PanControlStateMachine } from "./pan-control-state-machine";
 import { ZoomControlStateMachine } from "./zoom-control-state-machine";
@@ -50,7 +50,7 @@ export class Relay { // this is used as a context passed to the pan and zoom sta
     private _config: PanHandlerConfig & ZoomConfig & { panByHandler: PanByHandlerFunction };
     private _camera: BoardCamera;
 
-    constructor(config: PanHandlerConfig & ZoomConfig, camera: BoardCamera = new BoardCamera()){
+    constructor(config: PanHandlerConfig & ZoomConfig, camera: BoardCamera = new DefaultBoardCamera()){
         this._panHandler = createDefaultPanByHandler();
         this._zoomHandler = createDefaultZoomToAtHandler();
         this._config = {...config, panByHandler: this._panHandler};

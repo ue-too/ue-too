@@ -74,8 +74,6 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
     constructor(world: World | undefined = new BoardWorld()) {
         super();
         this.world = world;
-        console.log("world", this.world);
-        console.log("processPoint", this.world.processPoint);
     }
 
     protected _guards: Guard<BoardContext, "isIdle"> = {
@@ -92,14 +90,12 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
 
     leftPointerDownHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
         const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-        console.log("viewportPoint", viewportPoint);
         context.setSelectionStartPoint(viewportPoint);
         context.toggleSelectionBox(true);
         return "READY_TO_SELECT";
     }
 
     leftPointerMoveHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        console.log("world", this.world);
         this.world.processPoint(stateMachine, {x: payload.x, y: payload.y});
         return "IDLE";
     }
