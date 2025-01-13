@@ -1,9 +1,5 @@
 import { Point } from "point2point";
 
-export type CameraPanEventPayload = {
-    diff: Point;
-}
-
 export type CameraPanEvent = {
     diff: Point;
 }
@@ -19,7 +15,7 @@ export type CameraRotateEvent = {
 export type CameraEvent = {
     "pan": CameraPanEvent,
     "zoom": CameraZoomEvent,
-    "rotate": CameraRotateEvent
+    "rotate": CameraRotateEvent,
 }
 
 export type CameraRotateCommandPayload = {
@@ -35,14 +31,6 @@ export type CameraPanCommandPayload = {
 export type CameraZoomCommandPayload = {
     type: "zoom",
     deltaZoomAmount: number,
-    anchorPoint: Point
-}
-
-
-export type CameraUpdateNotification = {
-    position: Point;
-    zoomLevel: number;
-    rotation: number;
 }
 
 export type CameraState = {
@@ -57,6 +45,8 @@ export type CameraChangeEventName = "pan" | "zoom" | "rotate";
 
 export type CallbackList<K extends keyof CameraEvent> = ((event: CameraEvent[K], cameraState: CameraState)=>void)[];
 
+export type ConslidateCallback = (payload: CameraCommandPayload, cameraState: CameraState) => void;
+
 export type UnSubscribe = () => void;
 
 /**
@@ -67,35 +57,39 @@ export class CameraObserver {
     private panCallbackList: CallbackList<"pan"> = [];
     private zoomCallbackList: CallbackList<"zoom"> = [];
     private rotateCallbackList: CallbackList<"rotate"> = [];
+    private consolidateCallbackList: ConslidateCallback[] = [];
 
     constructor() {
     }
 
     async notifyPositionChange(delta: Point, cameraState: CameraState): Promise<void> {
-        // return new Promise((resolve, reject) => {
-            queueMicrotask(()=>{this.panCallbackList.forEach((callback) => {
-                callback({ diff: delta }, cameraState);
-            });});
-        //     resolve();
-        // });
+        queueMicrotask(()=>{this.panCallbackList.forEach((callback) => {
+            callback({ diff: delta }, cameraState);
+        });});
+
+        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
+            callback({type: "pan", diff: delta}, cameraState);
+        });});
     }
 
     async notifyZoomChange(deltaZoomAmount: number, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.zoomCallbackList.forEach((callback) => {
-                callback({ deltaZoomAmount: deltaZoomAmount }, cameraState);
-            });
-            resolve();
-        });
+        queueMicrotask(()=>{this.zoomCallbackList.forEach((callback) => {
+            callback({ deltaZoomAmount: deltaZoomAmount }, cameraState);
+        });});
+
+        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
+            callback({type: "zoom", deltaZoomAmount: deltaZoomAmount}, cameraState);
+        });});
     }
 
     async notifyRotationChange(deltaRotation: number, cameraState: CameraState): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.rotateCallbackList.forEach((callback) => {
-                callback({ deltaRotation: deltaRotation }, cameraState);
-            });
-            resolve();
-        });
+        queueMicrotask(()=>{this.rotateCallbackList.forEach((callback) => {
+            callback({ deltaRotation: deltaRotation }, cameraState);
+        });});
+
+        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
+            callback({type: "rotate", deltaRotation: deltaRotation}, cameraState);
+        });});
     }
 
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
@@ -111,6 +105,11 @@ export class CameraObserver {
             return ()=>{this.rotateCallbackList = this.rotateCallbackList.filter((cb) => cb !== callback)};
         }
         return ()=>{};
+    }
+
+    onAllUpdate(callback: ConslidateCallback): UnSubscribe {
+        this.consolidateCallbackList.push(callback);
+        return ()=>{this.consolidateCallbackList = this.consolidateCallbackList.filter((cb) => cb !== callback)};
     }
 
     clearCallbacks(): void {
