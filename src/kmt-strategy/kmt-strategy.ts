@@ -1,9 +1,8 @@
 import { InputObserver } from "src/input-observer/input-observer";
 import { UserInputStateMachine } from "src/input-state-machine";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
-import { BoardIdleState, BoardWorld, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
+import { BoardIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
 import { Point } from "src";
-import { SelectionBox } from "src/drawing-engine";
 import { SelectionInputObserver } from "src/selection-box";
 
 /**
@@ -22,6 +21,32 @@ export interface BoardKMTStrategy {
     tearDown(): void;
 }
 
+export type MinimumPointerEvent = {
+    button: number;
+    pointerType: string;
+    clientX: number;
+    clientY: number;
+}
+
+export type MinimumWheelEvent = {
+    preventDefault: () => void;
+    deltaX: number;
+    deltaY: number;
+    ctrlKey: boolean;
+    clientX: number;
+    clientY: number;
+}
+
+export type MinimumKeyboardEvent = {
+    preventDefault: () => void;
+    key: string;
+};
+
+export type EventTargetWithPointerEvents = {
+    addEventListener: (type: string, listener: (event: any) => void) => void;
+    removeEventListener: (type: string, listener: (event: any) => void) => void;
+};
+
 export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _canvas: HTMLCanvasElement;
@@ -38,7 +63,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private middlePointerDown: boolean;
     private _initialCursorPosition: Point;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    private _eventTarget: EventTargetWithPointerEvents;
+
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: InputObserver, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
@@ -60,6 +87,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             this
         );
         this._keyfirstPressed = new Map();
+        this._eventTarget = eventTarget;
     }
 
     toggleSelectionBox(value: boolean){
@@ -131,19 +159,23 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     }
 
     setUp(): void {
-        this.canvas.addEventListener('pointerdown', this.pointerDownHandler);
-        this.canvas.addEventListener('pointerup', this.pointerUpHandler);
-        this.canvas.addEventListener('pointermove', this.pointerMoveHandler);
-        this.canvas.addEventListener('wheel', this.scrollHandler);
+        this.addEventListeners(this._eventTarget);
+    }
+
+    addEventListeners(eventTarget: EventTargetWithPointerEvents){
+        eventTarget.addEventListener('pointerdown', this.pointerDownHandler);
+        eventTarget.addEventListener('pointerup', this.pointerUpHandler);
+        eventTarget.addEventListener('pointermove', this.pointerMoveHandler);
+        eventTarget.addEventListener('wheel', this.scrollHandler);
         window.addEventListener('keydown', this.keypressHandler);
         window.addEventListener('keyup', this.keyupHandler);
     }
 
     tearDown(): void {
-        this.canvas.removeEventListener('pointerdown', this.pointerDownHandler);
-        this.canvas.removeEventListener('pointerup', this.pointerUpHandler);
-        this.canvas.removeEventListener('pointermove', this.pointerMoveHandler);
-        this.canvas.removeEventListener('wheel', this.scrollHandler);
+        this._eventTarget.removeEventListener('pointerdown', this.pointerDownHandler);
+        this._eventTarget.removeEventListener('pointerup', this.pointerUpHandler);
+        this._eventTarget.removeEventListener('pointermove', this.pointerMoveHandler);
+        this._eventTarget.removeEventListener('wheel', this.scrollHandler);
         window.removeEventListener('keydown', this.keypressHandler);
         window.removeEventListener('keyup', this.keyupHandler);
     }
@@ -157,7 +189,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    pointerDownHandler(e: PointerEvent){
+    pointerDownHandler(e: MinimumPointerEvent){
         if(this._disabled){
             return;
         }
@@ -173,7 +205,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
     }
 
-    pointerUpHandler(e: PointerEvent){
+    pointerUpHandler(e: MinimumPointerEvent){
         if(this._disabled){
             return;
         }
@@ -189,7 +221,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
     }
 
-    pointerMoveHandler(e: PointerEvent){
+    pointerMoveHandler(e: MinimumPointerEvent){
         if(this._disabled){
             return;
         }
@@ -203,7 +235,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         }
     }
 
-    scrollHandler(e: WheelEvent){
+    scrollHandler(e: MinimumWheelEvent){
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){

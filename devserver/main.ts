@@ -3,7 +3,6 @@ import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
 import { PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
-import { parseStateMachine, parseEventsOfAState } from "src/being";
 import { Container, SelectionBox } from "src/drawing-engine";
 import FlowGraph from "../src/being/flowgraph";
 import ForceGraph from "src/being/forcegraph";
@@ -31,8 +30,6 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 const drawingEngine = new Container(board.context);
-
-const flowGraph = new FlowGraph("graph");
 
 const layout = new OrthogonalLayout(board.context);
 const result = layout.layout(exampleGraph);
@@ -62,28 +59,7 @@ const touchStateMachine = board.touchStrategy.touchStateMachine;
 // parseStateMachine(stateMachine);
 const states = stateMachine.possibleStates;
 
-states.forEach(state => {
-    console.log("state", state);
-    const events = parseEventsOfAState(stateMachine, state);
-    console.log("events", events);
-    flowGraph.addNode(state, state, 'rectangular');
-    events.forEach(event => {
-        flowGraph.addNode(state + event.event, event.event, 'pill');
-    });
-});
-
-states.forEach(state => {
-    const events = parseEventsOfAState(stateMachine, state);
-    events.forEach(event => {
-        if(event.defaultTargetState === "IDLE"){
-            console.log("event", event.event, "of state", state, "should point to IDLE");
-        }
-        flowGraph.addEdge(state, state + event.event);
-        flowGraph.addEdge(state + event.event, event.defaultTargetState);
-    });
-});
-
-board.limitEntireViewPort = true;
+board.limitEntireViewPort = false;
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
 
@@ -97,8 +73,6 @@ function step(timestamp: number){
     board.context.fillStyle = 'white';
     board.context.fillRect(-5000, -5000, 10000, 10000);
 
-    flowGraph.layout();
-    flowGraph.render();
     board.context.beginPath();
     board.context.arc(0, 100, 10, 0, Math.PI * 2);
     board.context.fillStyle = 'black';
