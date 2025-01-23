@@ -39,7 +39,7 @@
   "devDependencies": {
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
-    "@niuee/bounce": "^0.0.4",
+    "@niuee/bounce": "file:../../bounce/build",
     "@niuee/typedoc-plugin-custom-theme": "^0.0.3",
     "@niuee/typedoc-plugin-translation": "^0.0.2",
     "@rollup/plugin-node-resolve": "^15.1.0",

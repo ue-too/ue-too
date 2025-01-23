@@ -9,6 +9,7 @@ export * from "./input-observer";
 export * from "./input-state-machine";
 export * from "./kmt-strategy";
 export * from "./touch-strategy";
+export * from "./selection-box";
 export * from "./util";
 export { default as Board } from "./boardify";
 export { default as DefaultBoardCamera } from "./board-camera";
