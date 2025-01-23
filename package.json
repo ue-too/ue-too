@@ -36,6 +36,12 @@
   "dependencies": {
     "point2point": "^0.0.95"
   },
+  "keywords": [
+    "canvas",
+    "infinite-canvas",
+    "pixi.js",
+    "PIXI"
+  ],
   "devDependencies": {
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.4",
