@@ -1,5 +1,5 @@
 import { Point } from "src/index";
-import { InputControlCenter } from "src/control-center";
+import { createDefaultRelayControlCenter, InputControlCenter, RelayControlCenter } from "src/control-center";
 import BoardCamera from "src/board-camera";
 
 export type UnsubscribeToInput = () => void;
@@ -91,4 +91,8 @@ export class InputObserver {
     set controlCenter(value: InputControlCenter){
         this._controlCenter = value;
     }
+}
+
+export function createDefaultInputObserverWithCamera(camera: BoardCamera){
+    return new InputObserver(createDefaultRelayControlCenter(camera));
 }

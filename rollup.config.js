@@ -14,6 +14,7 @@ const plugins = [
     typescript({
       tsconfig: './tsconfig.json',
       declaration: false,
+      exclude: ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*"],
     }),
     terser({
       mangle: false,
@@ -123,6 +124,7 @@ export default [
       typescript({
         tsconfig: './tsconfig.json',
         declaration: false,
+        exclude: ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*"],
       }),
       terser({
         mangle: false,

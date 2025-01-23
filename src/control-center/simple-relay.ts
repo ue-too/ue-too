@@ -1,11 +1,11 @@
-import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig  } from "src/board-camera/pan/pan-handlers";
+import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig, PanToHandlerFunction  } from "src/board-camera/pan/pan-handlers";
 import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import DefaultBoardCamera, { BoardCamera } from "src/board-camera";
 import { PointCal } from "point2point";
-import { PanControlStateMachine } from "./pan-control-state-machine";
-import { ZoomControlStateMachine } from "./zoom-control-state-machine";
+import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
+import { createDefaultZoomControlStateMachine, ZoomControlStateMachine } from "./zoom-control-state-machine";
 
 
 export class RelayControlCenter implements InputControlCenter {
@@ -25,6 +25,10 @@ export class RelayControlCenter implements InputControlCenter {
     set limitEntireViewPort(limit: boolean) {
         this._panStateMachine.limitEntireViewPort = limit;
     }
+    
+    notifyPanToAnimationInput(target: Point): void {
+        this._panStateMachine.notifyPanToAnimationInput(target);
+    }
 
     notifyPanInput(delta: Point): void {
         this._panStateMachine.notifyPanInput(delta);
@@ -37,6 +41,10 @@ export class RelayControlCenter implements InputControlCenter {
     notifyRotationInput(delta: number): void {
         console.error("Rotation input is not implemented");
     }
+
+    initatePanTransition(): void {
+        this._panStateMachine.initateTransition();
+    }
 }
 
 export type ZoomConfig = {
@@ -45,21 +53,27 @@ export type ZoomConfig = {
 
 export class Relay { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
-    private _panHandler: PanByHandlerFunction;
+    private _panHandlerBy: PanByHandlerFunction;
+    private _panHandlerTo: PanToHandlerFunction;
     private _zoomHandler: ZoomToAtHandlerFunction;
     private _config: PanHandlerConfig & ZoomConfig & { panByHandler: PanByHandlerFunction };
     private _camera: BoardCamera;
 
     constructor(config: PanHandlerConfig & ZoomConfig, camera: BoardCamera = new DefaultBoardCamera()){
-        this._panHandler = createDefaultPanByHandler();
+        this._panHandlerBy = createDefaultPanByHandler();
         this._zoomHandler = createDefaultZoomToAtHandler();
-        this._config = {...config, panByHandler: this._panHandler};
+        this._config = {...config, panByHandler: this._panHandlerBy};
         this._camera = camera;
     }
 
     notifyPanInput(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        this._panHandler(this._camera, diffInWorld, this._config);
+        this._panHandlerBy(this._camera, diffInWorld, this._config);
+    }
+
+    notifyPanToInput(target: Point): void {
+        const deltaInWorld = PointCal.subVector(target, this._camera.position);
+        this._panHandlerBy(this._camera, deltaInWorld, this._config);
     }
 
     notifyZoomByAtInput(delta: number, at: Point): void {
@@ -83,4 +97,22 @@ export class Relay { // this is used as a context passed to the pan and zoom sta
     get camera(): BoardCamera {
         return this._camera;
     }
+}
+
+export function createDefaultRelay(camera: BoardCamera): Relay{
+    return new Relay({
+        entireViewPort: true,
+        restrictRelativeXTranslation: false,
+        restrictRelativeYTranslation: false,
+        restrictXTranslation: false,
+        restrictYTranslation: false,
+        restrictZoom: false,
+    }, camera);
+}
+
+export function createDefaultRelayControlCenter(camera: BoardCamera): InputControlCenter {
+    const context = createDefaultRelay(camera);
+    const panStateMachine = createDefaultPanControlStateMachine(context);
+    const zoomStateMachine = createDefaultZoomControlStateMachine(context);
+    return new RelayControlCenter(panStateMachine, zoomStateMachine);
 }

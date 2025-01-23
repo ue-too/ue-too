@@ -21,12 +21,14 @@ export type PanEventPayloadMapping = {
     "lockedOnObjectPanByInput": PanByInputEventPayload,
     "lockedOnObjectPanToInput": PanToInputEventPayload,
     "unlock": {},
+    "initateTransition": {},
 };
 
 export type PanContext = {
     camera: BoardCamera;
     limitEntireViewPort: boolean;
     notifyPanInput: (delta: Point) => void;
+    notifyPanToInput: (target: Point) => void;
 };
 
 export class PanControlStateMachine extends TemplateStateMachine<PanEventPayloadMapping, PanContext, PanControlStates> {
@@ -39,12 +41,20 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
         this.happens("userPanByInput", {diff: diff}, this._context);
     }
 
+    notifyPanToAnimationInput(target: Point): void{
+        this.happens("transitionPanToInput", {target: target}, this._context);
+    }
+
     notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void{
         console.error("Zoom input is not implemented");
     }
 
     notifyRotationInput(delta: number): void{
         console.error("Rotation input is not implemented");
+    }
+
+    initateTransition(): void{
+        this.happens("initateTransition", {}, this._context);
     }
 
     set limitEntireViewPort(limit: boolean){
@@ -65,10 +75,11 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
     eventReactions: Partial<EventAction<PanEventPayloadMapping, PanContext, PanControlStates>> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
-        transitionPanToInput: {action: this.transitionPanToInputHandler, defaultTargetState: "TRANSITION"},
+        // transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
+        // transitionPanToInput: {action: this.transitionPanToInputHandler, defaultTargetState: "TRANSITION"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
+        initateTransition: {action: this.initateTransitionHandler, defaultTargetState: "TRANSITION"},
     }
 
     userPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
@@ -81,13 +92,17 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
         return "ACCEPTING_USER_INPUT";
     }
 
-    transitionPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.notifyPanInput(payload.diff);
-        return "TRANSITION";
-    }
+    // transitionPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    //     context.notifyPanInput(payload.diff);
+    //     return "TRANSITION";
+    // }
 
-    transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanInput(payload.target);
+    // transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    //     context.notifyPanToInput(payload.target);
+    //     return "TRANSITION";
+    // }
+
+    initateTransitionHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
         return "TRANSITION";
     }
 
@@ -119,6 +134,7 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
     }
 
     userPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+        console.log("userPanByInputHandler");
         context.notifyPanInput(payload.diff);
         return "ACCEPTING_USER_INPUT";
     }
@@ -134,7 +150,7 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
     }
 
     transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.notifyPanInput(payload.target);
+        context.notifyPanToInput(payload.target);
         return "TRANSITION";
     }
 

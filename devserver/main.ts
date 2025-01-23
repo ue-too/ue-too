@@ -1,13 +1,14 @@
-// import "./media";
+import "./media";
 import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
-import { PointCal } from "point2point";
+import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
-import { parseStateMachine, parseEventsOfAState } from "src/being";
 import { Container, SelectionBox } from "src/drawing-engine";
 import FlowGraph from "../src/being/flowgraph";
 import ForceGraph from "src/being/forcegraph";
 import { OrthogonalLayout, exampleGraph } from "src/being/layout";
+import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions } from "@niuee/bounce";
+import { RelayControlCenter } from "src/control-center/simple-relay";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -32,10 +33,31 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 const drawingEngine = new Container(board.context);
 
-const flowGraph = new FlowGraph("graph");
-
 const layout = new OrthogonalLayout(board.context);
 const result = layout.layout(exampleGraph);
+
+const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.easeInOutSine}];
+
+const animation = new Animation(positionKeyframe, (value)=>{
+    (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
+}, new PointAnimationHelper(), 1000);
+
+const resetCameraBtn = document.getElementById("reset-camera-btn") as HTMLButtonElement;
+
+resetCameraBtn.addEventListener("click", ()=>{
+    animation.keyFrames = [{
+        percentage: 0,
+        value: {x: board.camera.position.x, y: board.camera.position.y},
+        easingFn: EasingFunctions.easeInOutSine
+    },
+    {
+        percentage: 1,
+        value: {x: 0, y: 0}
+    }];
+    (board.controlCenter as RelayControlCenter).initatePanTransition();
+    animation.startAnimation();
+});
+
 // board.fullScreen = true;
 // board.camera.setRotation(45 * Math.PI / 180);
 
@@ -51,6 +73,7 @@ drawingEngine.addDrawTask({
     }
 });
 drawingEngine.addDrawTask(board.selectionBox);
+
 // const stateMachine = board.touchStrategy.touchStateMachine;
 const stateMachine = board.kmtStrategy.stateMachine;
 const touchStateMachine = board.touchStrategy.touchStateMachine;
@@ -62,28 +85,7 @@ const touchStateMachine = board.touchStrategy.touchStateMachine;
 // parseStateMachine(stateMachine);
 const states = stateMachine.possibleStates;
 
-states.forEach(state => {
-    console.log("state", state);
-    const events = parseEventsOfAState(stateMachine, state);
-    console.log("events", events);
-    flowGraph.addNode(state, state, 'rectangular');
-    events.forEach(event => {
-        flowGraph.addNode(state + event.event, event.event, 'pill');
-    });
-});
-
-states.forEach(state => {
-    const events = parseEventsOfAState(stateMachine, state);
-    events.forEach(event => {
-        if(event.defaultTargetState === "IDLE"){
-            console.log("event", event.event, "of state", state, "should point to IDLE");
-        }
-        flowGraph.addEdge(state, state + event.event);
-        flowGraph.addEdge(state + event.event, event.defaultTargetState);
-    });
-});
-
-board.limitEntireViewPort = true;
+board.limitEntireViewPort = false;
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
 
@@ -94,11 +96,10 @@ function step(timestamp: number){
     board.step(timestamp);
     const deltaMiliseconds = timestamp - lastUpdateTime;
     lastUpdateTime = timestamp;
+    animation.animate(deltaMiliseconds);
     board.context.fillStyle = 'white';
     board.context.fillRect(-5000, -5000, 10000, 10000);
 
-    flowGraph.layout();
-    flowGraph.render();
     board.context.beginPath();
     board.context.arc(0, 100, 10, 0, Math.PI * 2);
     board.context.fillStyle = 'black';
