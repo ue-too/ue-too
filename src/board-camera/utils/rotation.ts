@@ -24,8 +24,12 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
     if(rotationLimits === undefined){
         return true;
     }
-    const angleSpanFromStart = angleSpan(rotationLimits.start, rotation);
-    const angleSpanFromEnd = angleSpan(rotationLimits.end, rotation);
+    if(normalizeAngleZero2TwoPI(rotationLimits.start) === normalizeAngleZero2TwoPI(rotationLimits.end)){
+        return true;
+    }
+    const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
+    const angleSpanFromStart = angleSpan(rotationLimits.start, normalizedRotation);
+    const angleSpanFromEnd = angleSpan(rotationLimits.end, normalizedRotation);
     if((rotationLimits.ccw && (angleSpanFromStart < 0 || angleSpanFromEnd > 0)) || (!rotationLimits.ccw && (angleSpanFromStart > 0 || angleSpanFromEnd < 0))){
         return false;
     }
