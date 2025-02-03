@@ -4,9 +4,8 @@ import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import DefaultBoardCamera, { BoardCamera } from "src/board-camera";
 import { PointCal } from "point2point";
-import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
-import { createDefaultZoomControlStateMachine, ZoomControlStateMachine } from "./zoom-control-state-machine";
-
+import { createDefaultPanControlStateMachine, PanContext, PanControlStateMachine } from "./pan-control-state-machine";
+import { createDefaultZoomControlStateMachine, ZoomContext, ZoomControlStateMachine } from "./zoom-control-state-machine";
 
 export class RelayControlCenter implements InputControlCenter {
 
@@ -51,7 +50,7 @@ export type ZoomConfig = {
     restrictZoom: boolean;
 }
 
-export class Relay { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
+export class Relay implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panHandlerBy: PanByHandlerFunction;
     private _panHandlerTo: PanToHandlerFunction;
@@ -96,6 +95,10 @@ export class Relay { // this is used as a context passed to the pan and zoom sta
 
     get camera(): BoardCamera {
         return this._camera;
+    }
+
+    get config(): PanHandlerConfig & ZoomConfig {
+        return this._config;
     }
 }
 

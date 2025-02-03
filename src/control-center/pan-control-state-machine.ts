@@ -1,7 +1,7 @@
 import { Point } from "src/index";
 import type { EventAction, StateMachine, State } from "src/being";
 import { TemplateState, TemplateStateMachine } from "src/being";
-import { BoardCamera } from "src/board-camera";
+import { BoardCamera, PanHandlerConfig } from "src/board-camera";
 
 export type PanControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
@@ -25,6 +25,7 @@ export type PanEventPayloadMapping = {
 };
 
 export type PanContext = {
+    config: PanHandlerConfig;
     camera: BoardCamera;
     limitEntireViewPort: boolean;
     notifyPanInput: (delta: Point) => void;

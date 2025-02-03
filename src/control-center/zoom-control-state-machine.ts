@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point, ZoomConfig } from "src/index";
 import { TemplateStateMachine, TemplateState } from "src/being";
 import type { State, StateMachine, EventAction } from "src/being";
 
@@ -26,6 +26,7 @@ export type ZoomEventPayloadMapping = {
 }
 
 export type ZoomContext = {
+    config: ZoomConfig;
     notifyZoomByAtInput: (delta: number, at: Point) => void;
     // notifyZoomToAtInput: (to: number, at: Point) => void;
 }
