@@ -1,5 +1,5 @@
 import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig, PanToHandlerFunction  } from "src/board-camera/pan/pan-handlers";
-import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, ExposedZoomHandlerConfig } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import DefaultBoardCamera, { BoardCamera } from "src/board-camera";
@@ -46,19 +46,15 @@ export class RelayControlCenter implements InputControlCenter {
     }
 }
 
-export type ZoomConfig = {
-    restrictZoom: boolean;
-}
-
 export class Relay implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panHandlerBy: PanByHandlerFunction;
     private _panHandlerTo: PanToHandlerFunction;
     private _zoomHandler: ZoomToAtHandlerFunction;
-    private _config: PanHandlerConfig & ZoomConfig & { panByHandler: PanByHandlerFunction };
+    private _config: PanHandlerConfig & ExposedZoomHandlerConfig & { panByHandler: PanByHandlerFunction };
     private _camera: BoardCamera;
 
-    constructor(config: PanHandlerConfig & ZoomConfig, camera: BoardCamera = new DefaultBoardCamera()){
+    constructor(config: PanHandlerConfig & ExposedZoomHandlerConfig, camera: BoardCamera = new DefaultBoardCamera()){
         this._panHandlerBy = createDefaultPanByHandler();
         this._zoomHandler = createDefaultZoomToAtHandler();
         this._config = {...config, panByHandler: this._panHandlerBy};
@@ -97,8 +93,16 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
         return this._camera;
     }
 
-    get config(): PanHandlerConfig & ZoomConfig {
+    get config(): PanHandlerConfig & ExposedZoomHandlerConfig {
         return this._config;
+    }
+
+    set config(config: PanHandlerConfig & ExposedZoomHandlerConfig){
+        this._config = {...config, panByHandler: this._panHandlerBy};
+    }
+
+    configure(config: Partial<PanHandlerConfig & ExposedZoomHandlerConfig>){
+        this._config = {...this._config, ...config, panByHandler: this._panHandlerBy};
     }
 }
 
