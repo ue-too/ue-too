@@ -46,14 +46,6 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
         this.happens("transitionPanToInput", {target: target}, this._context);
     }
 
-    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void{
-        console.error("Zoom input is not implemented");
-    }
-
-    notifyRotationInput(delta: number): void{
-        console.error("Rotation input is not implemented");
-    }
-
     initateTransition(): void{
         this.happens("initateTransition", {}, this._context);
     }
@@ -76,8 +68,6 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
     eventReactions: Partial<EventAction<PanEventPayloadMapping, PanContext, PanControlStates>> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        // transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
-        // transitionPanToInput: {action: this.transitionPanToInputHandler, defaultTargetState: "TRANSITION"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         initateTransition: {action: this.initateTransitionHandler, defaultTargetState: "TRANSITION"},
@@ -92,16 +82,6 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
         context.notifyPanInput(payload.target);
         return "ACCEPTING_USER_INPUT";
     }
-
-    // transitionPanByInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-    //     context.notifyPanInput(payload.diff);
-    //     return "TRANSITION";
-    // }
-
-    // transitionPanToInputHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-    //     context.notifyPanToInput(payload.target);
-    //     return "TRANSITION";
-    // }
 
     initateTransitionHandler(stateMachine: StateMachine<PanEventPayloadMapping, PanContext, PanControlStates>, context: PanContext, payload: PanByInputEventPayload): PanControlStates {
         return "TRANSITION";

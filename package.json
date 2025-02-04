@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/niuee/board#readme",
   "dependencies": {
-    "@niuee/bounce": "^0.0.4",
+    "@niuee/bounce": "^0.0.5",
     "point2point": "^0.0.95"
   },
   "devDependencies": {

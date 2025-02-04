@@ -39,6 +39,7 @@ const result = layout.layout(exampleGraph);
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.easeInOutSine}];
 
 const animation = new Animation(positionKeyframe, (value)=>{
+    // console.log("animation", value);
     (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
 }, new PointAnimationHelper(), 1000);
 
@@ -109,9 +110,10 @@ function step(timestamp: number){
     drawYAxis(board.context, board.camera.zoomLevel);
     board.context.lineWidth = 1 / board.camera.zoomLevel;
 
+    drawingEngine.drawWithContext(board.context, deltaMiliseconds);
+
     const fourCorners = calculateTopFourCorners();
     drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
-    drawingEngine.drawWithContext(board.context, deltaMiliseconds);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();
