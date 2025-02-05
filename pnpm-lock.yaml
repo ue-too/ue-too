@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@niuee/bounce':
-        specifier: ^0.0.5
-        version: 0.0.5
       point2point:
         specifier: ^0.0.95
         version: 0.0.95
@@ -21,6 +18,9 @@ importers:
       '@babel/traverse':
         specifier: ^7.26.4
         version: 7.26.4
+      '@niuee/bounce':
+        specifier: ^0.0.5
+        version: 0.0.5
       '@niuee/typedoc-plugin-custom-theme':
         specifier: ^0.0.3
         version: 0.0.3(typedoc@0.25.9(typescript@5.7.2))

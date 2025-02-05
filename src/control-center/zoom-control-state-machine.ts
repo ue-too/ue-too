@@ -1,4 +1,4 @@
-import { ExposedZoomHandlerConfig, Point } from "src/index";
+import { BaseZoomHandlerConfig, Point } from "src/index";
 import { TemplateStateMachine, TemplateState } from "src/being";
 import type { State, StateMachine, EventAction } from "src/being";
 
@@ -15,21 +15,34 @@ export type ZoomToAtInputPayload = {
     anchorPoint: Point;
 }
 
+export type ZoomByPayload = {
+    deltaZoom: number;
+}
+
+export type ZoomToPayload = {
+    targetZoom: number;
+}
+
 export type ZoomEventPayloadMapping = {
     "userZoomByAtInput": ZoomByAtInputPayload,
     "userZoomToAtInput": ZoomToAtInputPayload,
     "transitionZoomByAtInput": ZoomByAtInputPayload,
     "transitionZoomToAtInput": ZoomToAtInputPayload,
+    "transitionZoomByAtCenterInput": ZoomByPayload,
+    "transitionZoomToAtCenterInput": ZoomToPayload,
     "lockedOnObjectZoomByAtInput": ZoomByAtInputPayload,
     "lockedOnObjectZoomToAtInput": ZoomToAtInputPayload,
     "unlock": {},
-}
+    "initiateTransition": {},
+};
 
 export type ZoomContext = {
-    config: ExposedZoomHandlerConfig;
+    config: BaseZoomHandlerConfig;
     notifyZoomByAtInput: (delta: number, at: Point) => void;
+    notifyZoomByAtCenterInput: (delta: number) => void;
+    notifyZoomToAtCenterInput: (targetZoom: number) => void;
     // notifyZoomToAtInput: (to: number, at: Point) => void;
-}
+};
 
 export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
@@ -38,8 +51,7 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
-        transitionZoomToAtInput: {action: this.transitionZoomToAtInput, defaultTargetState: "TRANSITION"},
+        initiateTransition: {action: this.initiateTransition, defaultTargetState: "TRANSITION"},
     };
 
     get eventReactions(): Partial<EventAction<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> {
@@ -64,15 +76,9 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
         return "ACCEPTING_USER_INPUT";
     }
 
-    transitionZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtInput"]): ZoomControlStates {
+    initiateTransition(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["initiateTransition"]): ZoomControlStates {
         return "TRANSITION";
     }
-
-    transitionZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlStates {
-        return "TRANSITION";
-    }
-    
-
 }
 
 export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
@@ -86,6 +92,7 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
         transitionZoomToAtInput: {action: this.transitionZoomToAtInput, defaultTargetState: "TRANSITION"},
+        transitionZoomToAtCenterInput: {action: this.transitionZoomToAtCenterInput, defaultTargetState: "TRANSITION"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
@@ -103,6 +110,7 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     }
 
     userZoomByAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlStates {
+        context.notifyZoomByAtInput(payload.deltaZoom, payload.anchorPoint);
         return "ACCEPTING_USER_INPUT";
     }
 
@@ -114,7 +122,17 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         return "TRANSITION";
     }
 
+    transitionZoomByAtCenterInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtCenterInput"]): ZoomControlStates {
+        context.notifyZoomByAtCenterInput(payload.deltaZoom);
+        return "TRANSITION";
+    }
+
     transitionZoomToAtInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlStates {
+        return "TRANSITION";
+    }
+
+    transitionZoomToAtCenterInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtCenterInput"]): ZoomControlStates {
+        context.notifyZoomToAtCenterInput(payload.targetZoom);
         return "TRANSITION";
     }
 
@@ -166,6 +184,17 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
         this.happens("userZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
     }
 
+    notifyZoomByAtInputAnimation(delta: number, at: Point): void {
+        this.happens("transitionZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
+    }
+
+    notifyZoomToAtCenterInput(targetZoom: number): void {
+        this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom}, this._context);
+    }
+
+    initateTransition(): void {
+        this.happens("initiateTransition", {}, this._context);
+    }
 }
 
 
@@ -180,4 +209,3 @@ export function createDefaultZoomControlStates(): Record<ZoomControlStates, Stat
 export function createDefaultZoomControlStateMachine(context: ZoomContext): ZoomControlStateMachine {
     return new ZoomControlStateMachine(createDefaultZoomControlStates(), "ACCEPTING_USER_INPUT", context);
 }
-

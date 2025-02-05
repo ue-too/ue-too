@@ -1,5 +1,5 @@
 import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig, PanToHandlerFunction  } from "src/board-camera/pan/pan-handlers";
-import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, ExposedZoomHandlerConfig } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, BaseZoomHandlerConfig, ZoomToHandlerFunction, createDefaultZoomToOnlyHandler } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import DefaultBoardCamera, { BoardCamera } from "src/board-camera";
@@ -37,12 +37,20 @@ export class RelayControlCenter implements InputControlCenter {
         this._zoomStateMachine.notifyZoomByAtInput(delta, at);
     }
 
+    notifyZoomInputAnimation(targetZoom: number): void {
+        this._zoomStateMachine.notifyZoomToAtCenterInput(targetZoom);
+    }
+
     notifyRotationInput(delta: number): void {
         console.error("Rotation input is not implemented");
     }
 
     initatePanTransition(): void {
         this._panStateMachine.initateTransition();
+    }
+
+    initateZoomTransition(): void {
+        this._zoomStateMachine.initateTransition();
     }
 }
 
@@ -51,12 +59,14 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
     private _panHandlerBy: PanByHandlerFunction;
     private _panHandlerTo: PanToHandlerFunction;
     private _zoomHandler: ZoomToAtHandlerFunction;
-    private _config: PanHandlerConfig & ExposedZoomHandlerConfig & { panByHandler: PanByHandlerFunction };
+    private _pureZoomHandler: ZoomToHandlerFunction;
+    private _config: PanHandlerConfig & BaseZoomHandlerConfig & { panByHandler: PanByHandlerFunction };
     private _camera: BoardCamera;
 
-    constructor(config: PanHandlerConfig & ExposedZoomHandlerConfig, camera: BoardCamera = new DefaultBoardCamera()){
+    constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: BoardCamera = new DefaultBoardCamera()){
         this._panHandlerBy = createDefaultPanByHandler();
         this._zoomHandler = createDefaultZoomToAtHandler();
+        this._pureZoomHandler = createDefaultZoomToOnlyHandler();
         this._config = {...config, panByHandler: this._panHandlerBy};
         this._camera = camera;
     }
@@ -76,6 +86,16 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
         this._zoomHandler(this._camera, targetZoom, at, this._config);
     }
 
+    notifyZoomByAtCenterInput(delta: number): void {
+        const targetZoom = this._camera.zoomLevel + delta * this._camera.zoomLevel;
+        this._zoomHandler(this._camera, targetZoom, {x: this._camera.viewPortWidth / 2, y: this._camera.viewPortHeight / 2}, this._config);
+    }
+
+    notifyZoomToAtCenterInput(targetZoom: number): void {
+        // this._zoomHandler(this._camera, targetZoom, {x: this._camera.viewPortWidth / 2, y: this._camera.viewPortHeight / 2}, this._config);
+        this._pureZoomHandler(this._camera, targetZoom, this._config);
+    }
+
     notifyRotationInput(delta: number): void {
         // TODO: implement rotation
         console.error("Rotation input is not implemented");
@@ -93,15 +113,15 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
         return this._camera;
     }
 
-    get config(): PanHandlerConfig & ExposedZoomHandlerConfig {
+    get config(): PanHandlerConfig & BaseZoomHandlerConfig {
         return this._config;
     }
 
-    set config(config: PanHandlerConfig & ExposedZoomHandlerConfig){
+    set config(config: PanHandlerConfig & BaseZoomHandlerConfig){
         this._config = {...config, panByHandler: this._panHandlerBy};
     }
 
-    configure(config: Partial<PanHandlerConfig & ExposedZoomHandlerConfig>){
+    configure(config: Partial<PanHandlerConfig & BaseZoomHandlerConfig>){
         this._config = {...this._config, ...config, panByHandler: this._panHandlerBy};
     }
 }
