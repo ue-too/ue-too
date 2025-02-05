@@ -25,7 +25,7 @@ export default class DefaultBoardCamera implements BoardCamera {
     private _observer: CameraObserver;
 
 
-    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = {start: 0, end: 2 * Math.PI, ccw: true, startAsTieBreaker: false}){
+    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;

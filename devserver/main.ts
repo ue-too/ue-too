@@ -7,7 +7,7 @@ import { Container, SelectionBox } from "src/drawing-engine";
 import FlowGraph from "../src/being/flowgraph";
 import ForceGraph from "src/being/forcegraph";
 import { OrthogonalLayout, exampleGraph } from "src/being/layout";
-import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions } from "@niuee/bounce";
+import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { RelayControlCenter } from "src/control-center/simple-relay";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
@@ -36,11 +36,24 @@ const drawingEngine = new Container(board.context);
 const layout = new OrthogonalLayout(board.context);
 const result = layout.layout(exampleGraph);
 
-const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.easeInOutSine}];
+const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
+const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
 
 const animation = new Animation(positionKeyframe, (value)=>{
+    // console.log("animation", value);
     (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
 }, new PointAnimationHelper(), 1000);
+
+const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
+    // console.log("zoom level", value);
+    (board.controlCenter as RelayControlCenter).notifyZoomInputAnimation(value);
+}, new NumberAnimationHelper(), 1000);
+
+const compositeAnimation = new CompositeAnimation();
+compositeAnimation.addAnimation("position", animation);
+compositeAnimation.addAnimation("zoom", zoomAnimation);
+// compositeAnimation.addAnimationAdmist("zoom", zoomAnimation, "position", 50);
+// compositeAnimation.addAnimationAfter("zoom", zoomAnimation, "position");
 
 const resetCameraBtn = document.getElementById("reset-camera-btn") as HTMLButtonElement;
 
@@ -54,8 +67,19 @@ resetCameraBtn.addEventListener("click", ()=>{
         percentage: 1,
         value: {x: 0, y: 0}
     }];
+    zoomAnimation.keyFrames = [{
+        percentage: 0,
+        value: board.camera.zoomLevel,
+        easingFn: EasingFunctions.easeInOutSine
+    },
+    {
+        percentage: 1,
+        value: 1,
+        easingFn: EasingFunctions.easeInOutSine
+    }];
     (board.controlCenter as RelayControlCenter).initatePanTransition();
-    animation.startAnimation();
+    (board.controlCenter as RelayControlCenter).initateZoomTransition();
+    compositeAnimation.startAnimation();
 });
 
 // board.fullScreen = true;
@@ -96,7 +120,7 @@ function step(timestamp: number){
     board.step(timestamp);
     const deltaMiliseconds = timestamp - lastUpdateTime;
     lastUpdateTime = timestamp;
-    animation.animate(deltaMiliseconds);
+    compositeAnimation.animate(deltaMiliseconds);
     board.context.fillStyle = 'white';
     board.context.fillRect(-5000, -5000, 10000, 10000);
 
@@ -109,9 +133,10 @@ function step(timestamp: number){
     drawYAxis(board.context, board.camera.zoomLevel);
     board.context.lineWidth = 1 / board.camera.zoomLevel;
 
+    drawingEngine.drawWithContext(board.context, deltaMiliseconds);
+
     const fourCorners = calculateTopFourCorners();
     drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
-    drawingEngine.drawWithContext(board.context, deltaMiliseconds);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();
