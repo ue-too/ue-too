@@ -53,6 +53,17 @@ export function createOnlyZoomByHandlerChain(...handlers: ZoomByHandlerFunction[
     }
 }
 
+// the anchor point is in the viewport space
+export function baseZoomByAtHandler(camera: BoardCamera, delta: number, at: Point, config: CompleteZoomHandlerConfig): number {
+    let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
+    camera.setZoomLevel(camera.zoomLevel + delta);
+    let anchorInWorldAfterZoom = camera.convertFromViewPort2WorldSpace(at);
+    const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+    config.panByHandler(camera, diff, config);
+    return delta;
+}
+
+// the anchor point is in the viewport space
 export function baseZoomToAtHandler(camera: BoardCamera, destination: number, at: Point, config: CompleteZoomHandlerConfig): number {
     let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
     const beforeZoomLevel = camera.zoomLevel;
@@ -72,6 +83,13 @@ export function baseZoomToAtHandler(camera: BoardCamera, destination: number, at
     return destination;
 }
 
+// the anchor point is in the world space
+export function baseZoomToAtWorldHandler(camera: BoardCamera, destination: number, at: Point, config: CompleteZoomHandlerConfig): number {
+    let originalAnchorInViewPort = camera.convertFromWorld2ViewPort(at);
+    
+    return 0;
+}
+
 export function baseZoomToHandler(camera: BoardCamera, destination: number, config: BaseZoomHandlerConfig): number {
     camera.setZoomLevel(destination);
     return destination;
@@ -79,15 +97,6 @@ export function baseZoomToHandler(camera: BoardCamera, destination: number, conf
 
 export function baseZoomByHandler(camera: BoardCamera, delta: number, config: BaseZoomHandlerConfig): number {
     camera.setZoomLevel(camera.zoomLevel + delta);
-    return delta;
-}
-
-export function baseZoomByAtHandler(camera: BoardCamera, delta: number, at: Point, config: CompleteZoomHandlerConfig): number {
-    let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
-    camera.setZoomLevel(camera.zoomLevel + delta);
-    let anchorInWorldAfterZoom = camera.convertFromViewPort2WorldSpace(at);
-    const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-    config.panByHandler(camera, diff, config);
     return delta;
 }
 
