@@ -26,7 +26,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -39,4 +39,5 @@ jobs:
         id: get-branch
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          echo "Branch: ${GITHUB_REF#refs/heads/}"
       
