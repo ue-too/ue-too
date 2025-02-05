@@ -1,15 +1,8 @@
 name:  Build Source Code Only
 
 on:
-  workflow_dispatch:
-    inputs:
-        version-type:
-          type: choice
-          description: Bump Version
-          options: 
-          - major
-          - minor
-          - patch
+  pull_request:
+    branches: [ "main", "dev", "release/**" ]
 
 jobs:
   build:
@@ -17,8 +10,6 @@ jobs:
     name: Build Source Code using Rollup
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
@@ -26,7 +17,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9
       - name: Install dependencies
         run: |
           if [ -f pnpm-lock.yaml ]; then
@@ -35,8 +26,4 @@ jobs:
             pnpm install
           fi
       - run: pnpm build
-      - name: Determine release branch
-        id: get-branch
-        run: |
-          echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
       
