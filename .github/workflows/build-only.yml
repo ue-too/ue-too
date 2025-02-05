@@ -2,7 +2,7 @@ name:  Build Source Code Only
 
 on:
   pull_request:
-    branches: [ "main", "dev", "release/**" ]
+    branches: [ "main", "dev", "version/**" ]
 
 jobs:
   build:
