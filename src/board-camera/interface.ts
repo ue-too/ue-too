@@ -31,6 +31,7 @@ export interface BoardCamera {
     setVerticalBoundaries(min: number, max: number): void;
     getCameraOriginInWindow(centerInWindow: Point): Point;
     convertFromViewPort2WorldSpace(point: Point): Point;
+    convertFromWorld2ViewPort(point: Point): Point;
     getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoordinateSystem: boolean): {a: number, b: number, c: number, d: number, e: number, f: number};
     on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe;
 }

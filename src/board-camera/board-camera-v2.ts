@@ -229,7 +229,7 @@ export default class DefaultBoardCamera implements BoardCamera {
         return convert2WorldSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
 
-    convertFromWorldSpace2ViewPort(point: Point): Point{
+    convertFromWorld2ViewPort(point: Point): Point{
         return convert2ViewPortSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
     

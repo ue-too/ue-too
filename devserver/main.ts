@@ -9,6 +9,8 @@ import ForceGraph from "src/being/forcegraph";
 import { OrthogonalLayout, exampleGraph } from "src/being/layout";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { RelayControlCenter } from "src/control-center/simple-relay";
+import { CompleteZoomHandlerConfig, createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -36,11 +38,30 @@ const drawingEngine = new Container(board.context);
 const layout = new OrthogonalLayout(board.context);
 const result = layout.layout(exampleGraph);
 
+const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
+const panHandler = createDefaultPanByHandler();
+
+const config: CompleteZoomHandlerConfig = {
+    panByHandler: panHandler,
+    entireViewPort: false,
+    restrictZoom: false,
+    restrictXTranslation: false,
+    restrictYTranslation: false,
+    restrictRelativeXTranslation: false,
+    restrictRelativeYTranslation: false,
+}
+
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
 
 const animation = new Animation(positionKeyframe, (value)=>{
-    // console.log("animation", value);
+    console.log("animation", value);
+    const currentVector = PointCal.subVector({x: 0, y: 0}, value);
+    const targetVector = PointCal.subVector({x: 0, y: 0}, board.camera.position);
+    console.log("--------------------------------");
+    console.log("current vector", currentVector);
+    console.log("target vector", targetVector);
+    console.log("angle", PointCal.angleFromA2B(currentVector, targetVector));
     (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
 }, new PointAnimationHelper(), 1000);
 
@@ -56,6 +77,11 @@ compositeAnimation.addAnimation("zoom", zoomAnimation);
 // compositeAnimation.addAnimationAfter("zoom", zoomAnimation, "position");
 
 const resetCameraBtn = document.getElementById("reset-camera-btn") as HTMLButtonElement;
+const experimentalZoomHandlerBtn = document.getElementById("experimental-zoom-handler-btn") as HTMLButtonElement;
+
+experimentalZoomHandlerBtn.addEventListener("click", ()=>{
+    experimentalZoomHandler(board.camera, 1, {x: 0, y: 0}, config);
+});
 
 resetCameraBtn.addEventListener("click", ()=>{
     animation.keyFrames = [{

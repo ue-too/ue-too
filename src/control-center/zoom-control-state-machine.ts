@@ -29,7 +29,7 @@ export type ZoomEventPayloadMapping = {
     "transitionZoomByAtInput": ZoomByAtInputPayload,
     "transitionZoomToAtInput": ZoomToAtInputPayload,
     "transitionZoomByAtCenterInput": ZoomByPayload,
-    "transitionZoomToAtCenterInput": ZoomToPayload,
+    "transitionZoomToAtCenterInput": ZoomToAtInputPayload,
     "lockedOnObjectZoomByAtInput": ZoomByAtInputPayload,
     "lockedOnObjectZoomToAtInput": ZoomToAtInputPayload,
     "unlock": {},
@@ -41,6 +41,8 @@ export type ZoomContext = {
     notifyZoomByAtInput: (delta: number, at: Point) => void;
     notifyZoomByAtCenterInput: (delta: number) => void;
     notifyZoomToAtCenterInput: (targetZoom: number) => void;
+    // this at anchor is in the world space
+    experimentalZoomToAtWorld: (targetZoom: number, at: Point) => void;
     // notifyZoomToAtInput: (to: number, at: Point) => void;
 };
 
@@ -132,7 +134,8 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     }
 
     transitionZoomToAtCenterInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtCenterInput"]): ZoomControlStates {
-        context.notifyZoomToAtCenterInput(payload.targetZoom);
+        // context.notifyZoomToAtCenterInput(payload.targetZoom);
+        context.experimentalZoomToAtWorld(payload.targetZoom, payload.anchorPoint);
         return "TRANSITION";
     }
 
@@ -188,8 +191,8 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
         this.happens("transitionZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
     }
 
-    notifyZoomToAtCenterInput(targetZoom: number): void {
-        this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom}, this._context);
+    notifyZoomToAtCenterInput(targetZoom: number, at: Point): void {
+        this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom, anchorPoint: at}, this._context);
     }
 
     initateTransition(): void {

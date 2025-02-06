@@ -15,7 +15,8 @@ type Transform = {
     f: number;
 }
 
-export class ContextCentricCamera implements BoardCamera {
+// TODO fix the context centric camera; currently the inverted coordinate system is not working
+export class ContextCentricCamera /*implements BoardCamera */{
 
     private _contextPosition: Point;
     private _contextRotation: number;
