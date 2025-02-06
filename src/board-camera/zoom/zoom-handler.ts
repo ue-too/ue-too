@@ -1,5 +1,6 @@
 import type { Point } from "src/index";
 import { BoardCamera } from "src/board-camera";
+import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
 import { PointCal } from "point2point";
 import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
@@ -85,9 +86,28 @@ export function baseZoomToAtHandler(camera: BoardCamera, destination: number, at
 
 // the anchor point is in the world space
 export function baseZoomToAtWorldHandler(camera: BoardCamera, destination: number, at: Point, config: CompleteZoomHandlerConfig): number {
-    let originalAnchorInViewPort = camera.convertFromWorld2ViewPort(at);
-    
-    return 0;
+    let anchorInViewPortBeforeZoom = camera.convertFromWorld2ViewPort(at);
+    camera.setZoomLevel(destination);
+    let anchorInViewPortAfterZoom = camera.convertFromWorld2ViewPort(at);
+    const diffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, anchorInViewPortBeforeZoom);
+    const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, camera.zoomLevel, camera.rotation);
+    // console.log("--------------------------------");
+    // console.log("diffInWorld", diffInWorld);
+    // console.log("camera pos before", camera.position);
+    config.panByHandler(camera, diffInWorld, config);
+    // console.log("camera pos after", camera.position);
+    return destination;
+}
+
+// the anchor point is in the world space
+export function baseZoomByAtWorldHandler(camera: BoardCamera, delta: number, at: Point, config: CompleteZoomHandlerConfig): number {
+    let anchorInViewPortBeforeZoom = camera.convertFromWorld2ViewPort(at);
+    camera.setZoomLevel(camera.zoomLevel + delta);
+    let anchorInViewPortAfterZoom = camera.convertFromWorld2ViewPort(at);
+    const diffInViewPort = PointCal.subVector(anchorInViewPortBeforeZoom, anchorInViewPortAfterZoom);
+    const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, camera.zoomLevel, camera.rotation);
+    config.panByHandler(camera, diffInWorld, config);
+    return delta;
 }
 
 export function baseZoomToHandler(camera: BoardCamera, destination: number, config: BaseZoomHandlerConfig): number {
@@ -154,6 +174,22 @@ export function createDefaultZoomByAtHandler(): ZoomByAtHandlerFunction {
         clampZoomByAtHandler,
         restrictZoomByAtHandler,
         baseZoomByAtHandler,
+    );
+}
+
+export function createDefaultZoomToAtWorldHandler(): ZoomToAtHandlerFunction {
+    return createZoomToHandlerChain(
+        clampZoomToAtHandler,
+        restrictZoomToAtHandler,
+        baseZoomToAtWorldHandler,
+    );
+}
+
+export function createDefaultZoomByAtWorldHandler(): ZoomByAtHandlerFunction {
+    return createZoomByHandlerChain(
+        clampZoomByAtHandler,
+        restrictZoomByAtHandler,
+        baseZoomByAtWorldHandler,
     );
 }
 
