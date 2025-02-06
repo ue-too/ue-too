@@ -1,0 +1,517 @@
+{
+  "6bacf2b7ccc556eb54ed4a0c1199443d": {
+    "humanReadablePath": "categories > index-0 > title",
+    "kind": "category",
+    "originalText": "Board",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-0",
+      "title"
+    ],
+    "translationKey": "6bacf2b7ccc556eb54ed4a0c1199443d"
+  },
+  "71b9a8b348831c72c65b166e7459a685": {
+    "humanReadablePath": "categories > index-1 > title",
+    "kind": "category",
+    "originalText": "Input Strategy",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-1",
+      "title"
+    ],
+    "translationKey": "71b9a8b348831c72c65b166e7459a685"
+  },
+  "503b49a64ba94521e6e4d70cac1e2251": {
+    "humanReadablePath": "categories > index-2 > title",
+    "kind": "category",
+    "originalText": "Camera Observer",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-2",
+      "title"
+    ],
+    "translationKey": "503b49a64ba94521e6e4d70cac1e2251"
+  },
+  "9c0d0419aae9d04c232971844fd45bc3": {
+    "humanReadablePath": "categories > index-3 > title",
+    "kind": "category",
+    "originalText": "Input Observer",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-3",
+      "title"
+    ],
+    "translationKey": "9c0d0419aae9d04c232971844fd45bc3"
+  },
+  "35d487ba5b6f57d81e3b52f2ed3ea2a9": {
+    "humanReadablePath": "categories > index-4 > title",
+    "kind": "category",
+    "originalText": "Other",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-4",
+      "title"
+    ],
+    "translationKey": "35d487ba5b6f57d81e3b52f2ed3ea2a9"
+  },
+  "c03d4d4c5c208f4f8c5d506870354cde": {
+    "humanReadablePath": "categories > index-5 > title",
+    "kind": "category",
+    "originalText": "Easing Functions",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-5",
+      "title"
+    ],
+    "translationKey": "c03d4d4c5c208f4f8c5d506870354cde"
+  },
+  "e3bf9d21b15da56f842e2465da3b5ca0": {
+    "humanReadablePath": "groups > index-4 > title",
+    "kind": "group",
+    "originalText": "Variables",
+    "translation": "",
+    "projectPath": [
+      "groups",
+      "index-4",
+      "title"
+    ],
+    "translationKey": "e3bf9d21b15da56f842e2465da3b5ca0"
+  },
+  "f7b4f80451d034d578203305f0f18914": {
+    "humanReadablePath": "Board > groups > index-4 > title",
+    "kind": "group",
+    "originalText": "LifeCycle",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "groups",
+      "index-4",
+      "title"
+    ],
+    "translationKey": "f7b4f80451d034d578203305f0f18914"
+  },
+  "c2a3207036fbecf024e3113fad8b8320": {
+    "humanReadablePath": "Board > translation block comments > index-0 > text",
+    "kind": "class",
+    "originalText": "Usage\n",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c2a3207036fbecf024e3113fad8b8320"
+  },
+  "724bf4507b30d538c01a79b44e2ad9b4": {
+    "humanReadablePath": "Board > translation block comments > index-0 > text",
+    "kind": "class",
+    "originalText": "Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.\n\n",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "comment",
+      "blockTags",
+      "index-1",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "724bf4507b30d538c01a79b44e2ad9b4"
+  },
+  "dbff56c3adff15937e3a4c616cbb5e43": {
+    "humanReadablePath": "Board > alignCoordinateSystem > alignCoordinateSystem > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-12",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "dbff56c3adff15937e3a4c616cbb5e43"
+  },
+  "8cd6596da16f2d726f0c87106fec2965": {
+    "humanReadablePath": "Board > camera > camera > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The underlying camera of the board. The camera of the board can be switched.\nThe boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-13",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "8cd6596da16f2d726f0c87106fec2965"
+  },
+  "f4e84488dd7165b79872ea301353b47b": {
+    "humanReadablePath": "Board > context > context > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The context used to draw stuff on the canvas.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-14",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "f4e84488dd7165b79872ea301353b47b"
+  },
+  "e917124509b3ba78366883d19f9d8b20": {
+    "humanReadablePath": "Board > controlCenter > controlCenter > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The control center of the board. The control center is responsible for handling the input events and dispatch the events to the pan, zoom, and rotation handlers.\nThis exists to decouple the input events from the camera. The control center is the middle man. The default control center is just a simple relay. You can implement a control center\nthat takes in other inputs. For example, an input to start camera animations.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-15",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e917124509b3ba78366883d19f9d8b20"
+  },
+  "e1c930ccd49420aecded6ad5da283233": {
+    "humanReadablePath": "Board > fullScreen > fullScreen > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.\nIf set to true the width and height of the board will resize with the window.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-16",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "e1c930ccd49420aecded6ad5da283233"
+  },
+  "7ef684398a2511e57753e9ed513cbd06": {
+    "humanReadablePath": "Board > height > height > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is in sync with the canvas height and the camera view port height. This is not the board's height.\nIf the limitEntireViewPort is set to true, the min zoom level is updated based on the height.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-17",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7ef684398a2511e57753e9ed513cbd06"
+  },
+  "72a8e6a111f036cc45acf354be4413fa": {
+    "humanReadablePath": "Board > kmtStrategy > kmtStrategy > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. \nYou can implement your own strategy by implementing the BoardKMTStrategy interface.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-18",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "72a8e6a111f036cc45acf354be4413fa"
+  },
+  "c12c8b7fa546e951809a4b0294732067": {
+    "humanReadablePath": "Board > limitEntireViewPort > limitEntireViewPort > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.\nIf set to false, only the center of the camera is bounded by the boundaries.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-19",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c12c8b7fa546e951809a4b0294732067"
+  },
+  "2261fd4090519266152607e6d9f1de2f": {
+    "humanReadablePath": "Board > maxHalfTransHeight > maxHalfTransHeight > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-20",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "2261fd4090519266152607e6d9f1de2f"
+  },
+  "4e33a1f8c620365a397c6219c3e5ba13": {
+    "humanReadablePath": "Board > maxHalfTransWidth > maxHalfTransWidth > translation block comments > index-0 > text",
+    "kind": "getSignature",
+    "originalText": "The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-21",
+      "getSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "4e33a1f8c620365a397c6219c3e5ba13"
+  },
+  "a812cd9b6eccc1c4aec0b6aae01e0c5b": {
+    "humanReadablePath": "Board > touchStrategy > touchStrategy > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.\nYou can implement your own strategy by implementing the BoardTouchStrategy interface.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-23",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "a812cd9b6eccc1c4aec0b6aae01e0c5b"
+  },
+  "25f3421bc51f8bf5fb3e37a50dd1d2ed": {
+    "humanReadablePath": "Board > width > width > translation block comments > index-0 > text",
+    "kind": "setSignature",
+    "originalText": "This is in sync with the canvas width and the camera view port width. This is not the board's width.\nIf the limitEntireViewPort is set to true, the min zoom level is updated based on the width of the canvas.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-24",
+      "setSignature",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "25f3421bc51f8bf5fb3e37a50dd1d2ed"
+  },
+  "72e7ae8bf2c7958bbd3ff8977d3fe59a": {
+    "humanReadablePath": "Board > convertWindowPoint2WorldCoord > convertWindowPoint2WorldCoord > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Converts a point from window coordinates to world coordinates.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-27",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "72e7ae8bf2c7958bbd3ff8977d3fe59a"
+  },
+  "37e7382fec78e9296f7e5d1670859e35": {
+    "humanReadablePath": "Board > on > on > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Add an camera movement event listener. The events are \"pan\", \"zoom\", and \"rotate\".",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-28",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "37e7382fec78e9296f7e5d1670859e35"
+  },
+  "91ddc5a8b75dd4575fdd7d07441b73bc": {
+    "humanReadablePath": "Board > onInput > onInput > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Add an input event listener. The events are \"pan\", \"zoom\", and \"rotate\". This is different from the camera event listener as this is for input events. \nInput event does not necesarily mean that the camera will move. The input event is the event that is triggered when the user interacts with the board.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-29",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "91ddc5a8b75dd4575fdd7d07441b73bc"
+  },
+  "5622305e0982f0abeb4b1571404a7854": {
+    "humanReadablePath": "Board > setup > setup > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-33",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "5622305e0982f0abeb4b1571404a7854"
+  },
+  "a2eb2215f485738d83d953cc16810df0": {
+    "humanReadablePath": "Board > step > step > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-34",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "a2eb2215f485738d83d953cc16810df0"
+  },
+  "7123ecdbdb037acff9e35b78b2d7fd3b": {
+    "humanReadablePath": "Board > tearDown > tearDown > translation block comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-5",
+      "children",
+      "index-35",
+      "signatures",
+      "index-0",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "7123ecdbdb037acff9e35b78b2d7fd3b"
+  },
+  "a309e160ef3ed2f384c3d9bf1cc70ce9": {
+    "humanReadablePath": "InputObserver > translation block comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the observer class that listens to input events and notifies the control center.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-20",
+      "comment",
+      "blockTags",
+      "index-0",
+      "content",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "a309e160ef3ed2f384c3d9bf1cc70ce9"
+  }
+}

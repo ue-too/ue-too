@@ -130,7 +130,3 @@ dist
 .pnp.*
 
 build
-
-docs-staging
-
-translations/staging
