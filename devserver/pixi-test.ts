@@ -4,6 +4,7 @@ import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
 import { DefaultBoardKMTStrategyWithoutSelection } from 'src/kmt-strategy';
 import { createDefaultInputObserverWithCamera } from 'src/input-observer';
 
+console.log("pixi-test");
 // Asynchronous IIFE
 (async () =>
 {
@@ -18,7 +19,7 @@ import { createDefaultInputObserverWithCamera } from 'src/input-observer';
     // console.log(app.canvas.width, app.canvas.height);
     // app.renderer.events.autoPreventDefault = true;
     
-    const camera = new DefaultBoardCamera({x: 100, y: 100}, 0, 2, app.screen.width, app.screen.height);
+    const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
 
     const kmtStrategy = new DefaultBoardKMTStrategyWithoutSelection(app.canvas, app.canvas, createDefaultInputObserverWithCamera(camera), false, true)
     kmtStrategy.setUp();
@@ -44,7 +45,7 @@ import { createDefaultInputObserverWithCamera } from 'src/input-observer';
 
     // Add to stage.
     // console.log(camera.contextTransform);
-    const transform = camera.getTransform(app.screen.width, app.screen.height, 1, true);
+    const transform = camera.getTransform(1, true);
     app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
 
     app.stage.addChild(bunny);
@@ -66,7 +67,7 @@ import { createDefaultInputObserverWithCamera } from 'src/input-observer';
          * Here we use deltaTime, which is the time elapsed between the frame callbacks
          * to create frame-independent transformation. Keeping the speed consistent.
          */
-        const transform = camera.getTransform(app.screen.width, app.screen.height, 1, true);
+        const transform = camera.getTransform(1, true);
         app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
     });
 })();

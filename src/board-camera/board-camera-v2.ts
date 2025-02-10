@@ -25,7 +25,18 @@ export default class DefaultBoardCamera implements BoardCamera {
     private _observer: CameraObserver;
 
 
-    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
+    /**
+     * @param position The position of the camera in the world coordinate system
+     * @param rotation The rotation of the camera in the world coordinate system
+     * @param zoomLevel The zoom level of the camera
+     * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
+     * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
+     * @param observer The observer of the camera
+     * @param boundaries The boundaries of the camera in the world coordinate system
+     * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
+     * @param rotationBoundaries The boundaries of the rotation of the camera
+     */
+    constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1,  observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;
@@ -161,9 +172,21 @@ export default class DefaultBoardCamera implements BoardCamera {
         this._rotationBoundaries = rotationBoundaries;
     }
 
-    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean) {
-        const tx = canvasWidth / 2;
-        const ty = canvasHeight / 2;
+    /**
+     * @translationBlock The order of the transformation is as follows:
+     * 1. Scale (scale the context using the device pixel ratio)
+     * 2. Translation (move the origin of the context to the center of the canvas)
+     * 3. Rotation (rotate the context negatively the rotation of the camera)
+     * 4. Zoom (scale the context using the zoom level of the camera)
+     * 5. Translation (move the origin of the context to the position of the camera in the context coordinate system)
+     * 
+     * @param devicePixelRatio The device pixel ratio of the canvas
+     * @param alignCoorindate Whether to align the coordinate system to the camera's position
+     * @returns The transformation matrix
+     */
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
+        const tx = devicePixelRatio * this._viewPortWidth / 2;
+        const ty = devicePixelRatio * this._viewPortHeight / 2;
         const tx2 = -this._position.x;
         const ty2 = alignCoorindate ? -this._position.y : this._position.y;
 
@@ -181,29 +204,6 @@ export default class DefaultBoardCamera implements BoardCamera {
         const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
         const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
         return {a, b, c, d, e, f};
-    }
-
-    get contextTransform() {
-        return this.getContextTransform(this._viewPortWidth, this._viewPortHeight, window.devicePixelRatio);
-    }
-
-    getContextTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number) {
-        const translation = {
-            x: (canvasWidth / 2) - this._position.x * devicePixelRatio * this._zoomLevel,
-            y: (canvasHeight / 2) - (this._position.y * devicePixelRatio * this._zoomLevel)
-        };
-    
-        const scale = {
-            x: devicePixelRatio * this._zoomLevel,
-            y: devicePixelRatio * this._zoomLevel
-        };
-    
-        const rotation = -this._rotation;
-        return {
-            position: translation,
-            rotation: rotation,
-            zoomLevel: scale.x
-        }
     }
 
     setRotation(rotation: number){
