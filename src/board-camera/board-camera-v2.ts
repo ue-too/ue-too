@@ -25,6 +25,17 @@ export default class DefaultBoardCamera implements BoardCamera {
     private _observer: CameraObserver;
 
 
+    /**
+     * @param position The position of the camera in the world coordinate system
+     * @param rotation The rotation of the camera in the world coordinate system
+     * @param zoomLevel The zoom level of the camera
+     * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
+     * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
+     * @param observer The observer of the camera
+     * @param boundaries The boundaries of the camera in the world coordinate system
+     * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
+     * @param rotationBoundaries The boundaries of the rotation of the camera
+     */
     constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
         this._position = position;
         this._zoomLevel = zoomLevel;
@@ -162,16 +173,20 @@ export default class DefaultBoardCamera implements BoardCamera {
     }
 
     /**
-     * The order of the transformation is as follows:
-     * 1. Translation (move the origin of the context to the center of the canvas)
-     * 2. Scale (scale the context using the device pixel ratio)
+     * @translationBlock The order of the transformation is as follows:
+     * 1. Scale (scale the context using the device pixel ratio)
+     * 2. Translation (move the origin of the context to the center of the canvas)
      * 3. Rotation (rotate the context negatively the rotation of the camera)
      * 4. Zoom (scale the context using the zoom level of the camera)
      * 5. Translation (move the origin of the context to the position of the camera in the context coordinate system)
+     * 
+     * @param devicePixelRatio The device pixel ratio of the canvas
+     * @param alignCoorindate Whether to align the coordinate system to the camera's position
+     * @returns The transformation matrix
      */
-    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean) {
-        const tx = canvasWidth / 2;
-        const ty = canvasHeight / 2;
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
+        const tx = devicePixelRatio * this._viewPortWidth / 2;
+        const ty = devicePixelRatio * this._viewPortHeight / 2;
         const tx2 = -this._position.x;
         const ty2 = alignCoorindate ? -this._position.y : this._position.y;
 

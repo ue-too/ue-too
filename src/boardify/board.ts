@@ -314,7 +314,7 @@ export default class Board {
         }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
-        const transfromMatrix = this.boardStateObserver.camera.getTransform(this._canvas.width, this._canvas.height, window.devicePixelRatio, this._alignCoordinateSystem);
+        const transfromMatrix = this.boardStateObserver.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
     }
 
