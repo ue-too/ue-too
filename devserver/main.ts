@@ -8,6 +8,7 @@ import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFu
 import { RelayControlCenter } from "src/control-center/simple-relay";
 import { CompleteZoomHandlerConfig, createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
+import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -49,14 +50,11 @@ const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.ca
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
 
 const animation = new Animation(positionKeyframe, (value)=>{
-    console.log("animation", value);
-    const currentVector = PointCal.subVector({x: 0, y: 0}, value);
-    const targetVector = PointCal.subVector({x: 0, y: 0}, board.camera.position);
-    console.log("--------------------------------");
-    console.log("current vector", currentVector);
-    console.log("target vector", targetVector);
-    console.log("angle", PointCal.angleFromA2B(currentVector, targetVector));
-    (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
+    // const pointInWorld = board.camera.convertFromViewPort2WorldSpace(value);
+    // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
+    const worldOriginShouldBeInViewPort = value;
+    const cameraPositionSatisfy = cameraPositionToGet({x: 0, y: 0}, worldOriginShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
+    (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
@@ -78,9 +76,17 @@ experimentalZoomHandlerBtn.addEventListener("click", ()=>{
 });
 
 resetCameraBtn.addEventListener("click", ()=>{
+    const worldOriginInViewPort = board.camera.convertFromWorld2ViewPort({x: 0, y: 0});
+    console.log("originInViewPort", worldOriginInViewPort);
+    const delta = {x: worldOriginInViewPort.x - 0, y: worldOriginInViewPort.y - 0};
+    console.log("delta in viewport", delta);
+    const deltaInWorld = convertDeltaInViewPortToWorldSpace(delta, board.camera.zoomLevel, board.camera.rotation);
+    console.log("delta in world", deltaInWorld);
+    console.log("current camera position", board.camera.position);
+    console.log("target camera position", PointCal.addVector(board.camera.position, deltaInWorld));
     animation.keyFrames = [{
         percentage: 0,
-        value: {x: board.camera.position.x, y: board.camera.position.y},
+        value: {x: worldOriginInViewPort.x, y: worldOriginInViewPort.y},
         easingFn: EasingFunctions.easeInOutSine
     },
     {
