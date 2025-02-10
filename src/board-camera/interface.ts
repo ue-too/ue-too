@@ -17,11 +17,6 @@ export interface BoardCamera {
     zoomBoundaries?: ZoomLevelLimits;
     rotationBoundaries?: RotationLimits;
     observer: CameraObserver;
-    contextTransform: {
-        position: Point;
-        rotation: number;
-        zoomLevel: number;
-    };
     setPosition(destination: Point): void;
     setPositionByDelta(delta: Point): void;
     setZoomLevel(zoomLevel: number): void;

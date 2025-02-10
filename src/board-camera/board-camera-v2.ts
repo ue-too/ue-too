@@ -161,6 +161,14 @@ export default class DefaultBoardCamera implements BoardCamera {
         this._rotationBoundaries = rotationBoundaries;
     }
 
+    /**
+     * The order of the transformation is as follows:
+     * 1. Translation (move the origin of the context to the center of the canvas)
+     * 2. Scale (scale the context using the device pixel ratio)
+     * 3. Rotation (rotate the context negatively the rotation of the camera)
+     * 4. Zoom (scale the context using the zoom level of the camera)
+     * 5. Translation (move the origin of the context to the position of the camera in the context coordinate system)
+     */
     getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean) {
         const tx = canvasWidth / 2;
         const ty = canvasHeight / 2;
@@ -181,29 +189,6 @@ export default class DefaultBoardCamera implements BoardCamera {
         const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
         const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
         return {a, b, c, d, e, f};
-    }
-
-    get contextTransform() {
-        return this.getContextTransform(this._viewPortWidth, this._viewPortHeight, window.devicePixelRatio);
-    }
-
-    getContextTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number) {
-        const translation = {
-            x: (canvasWidth / 2) - this._position.x * devicePixelRatio * this._zoomLevel,
-            y: (canvasHeight / 2) - (this._position.y * devicePixelRatio * this._zoomLevel)
-        };
-    
-        const scale = {
-            x: devicePixelRatio * this._zoomLevel,
-            y: devicePixelRatio * this._zoomLevel
-        };
-    
-        const rotation = -this._rotation;
-        return {
-            position: translation,
-            rotation: rotation,
-            zoomLevel: scale.x
-        }
     }
 
     setRotation(rotation: number){
