@@ -60,3 +60,9 @@ export function convertDeltaInViewPortToWorldSpace(delta: Point, cameraZoomLevel
 export function convertDeltaInWorldToViewPortSpace(delta: Point, cameraZoomLevel: number, cameraRotation: number): Point{
     return PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, -cameraRotation), cameraZoomLevel);
 }
+
+export function cameraPositionToGet(pointInWorld: Point, toPointInViewPort: Point, cameraZoomLevel: number, cameraRotation: number): Point {
+    const scaled = PointCal.multiplyVectorByScalar(toPointInViewPort, 1 / cameraZoomLevel);
+    const rotated = PointCal.rotatePoint(scaled, cameraRotation);
+    return PointCal.subVector(pointInWorld, rotated);
+}
