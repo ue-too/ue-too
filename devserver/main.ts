@@ -4,8 +4,6 @@ import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
-import FlowGraph from "../src/being/flowgraph";
-import ForceGraph from "src/being/forcegraph";
 import { OrthogonalLayout, exampleGraph } from "src/being/layout";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { RelayControlCenter } from "src/control-center/simple-relay";
