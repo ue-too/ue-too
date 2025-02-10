@@ -19,7 +19,7 @@ console.log("pixi-test");
     // console.log(app.canvas.width, app.canvas.height);
     // app.renderer.events.autoPreventDefault = true;
     
-    const camera = new DefaultBoardCamera({x: 100, y: 100}, 0, 2, app.screen.width, app.screen.height);
+    const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
 
     const kmtStrategy = new DefaultBoardKMTStrategyWithoutSelection(app.canvas, app.canvas, createDefaultInputObserverWithCamera(camera), false, true)
     kmtStrategy.setUp();
