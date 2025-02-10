@@ -4,7 +4,6 @@ import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
-import { OrthogonalLayout, exampleGraph } from "src/being/layout";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { RelayControlCenter } from "src/control-center/simple-relay";
 import { CompleteZoomHandlerConfig, createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
@@ -32,9 +31,6 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 const drawingEngine = new Container(board.context);
-
-const layout = new OrthogonalLayout(board.context);
-const result = layout.layout(exampleGraph);
 
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
 const panHandler = createDefaultPanByHandler();
