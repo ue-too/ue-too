@@ -31,6 +31,7 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
+board.camera.setRotation(45 * Math.PI / 180);
 const drawingEngine = new Container(board.context);
 
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
@@ -48,12 +49,13 @@ const config: CompleteZoomHandlerConfig = {
 
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
+const rotationKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.rotation, easingFn: EasingFunctions.linear}];
 
 const animation = new Animation(positionKeyframe, (value)=>{
     // const pointInWorld = board.camera.convertFromViewPort2WorldSpace(value);
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
-    const worldOriginShouldBeInViewPort = value;
-    const cameraPositionSatisfy = cameraPositionToGet({x: 0, y: 0}, worldOriginShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
+    const pointInWorldShouldBeInViewPort = value;
+    const cameraPositionSatisfy = cameraPositionToGet({x: 100, y: 100}, pointInWorldShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
     (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
@@ -62,9 +64,15 @@ const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     (board.controlCenter as RelayControlCenter).notifyZoomInputAnimation(value);
 }, new NumberAnimationHelper(), 1000);
 
+const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
+    // console.log("rotation", value);
+    board.camera.setRotation(value);
+}, new NumberAnimationHelper(), 1000);
+
 const compositeAnimation = new CompositeAnimation();
 compositeAnimation.addAnimation("position", animation);
 compositeAnimation.addAnimation("zoom", zoomAnimation);
+compositeAnimation.addAnimation("rotation", rotationAnimation);
 // compositeAnimation.addAnimationAdmist("zoom", zoomAnimation, "position", 50);
 // compositeAnimation.addAnimationAfter("zoom", zoomAnimation, "position");
 
@@ -76,9 +84,9 @@ experimentalZoomHandlerBtn.addEventListener("click", ()=>{
 });
 
 resetCameraBtn.addEventListener("click", ()=>{
-    const worldOriginInViewPort = board.camera.convertFromWorld2ViewPort({x: 0, y: 0});
-    console.log("originInViewPort", worldOriginInViewPort);
-    const delta = {x: worldOriginInViewPort.x - 0, y: worldOriginInViewPort.y - 0};
+    const pointInWorldInViewport = board.camera.convertFromWorld2ViewPort({x: 100, y: 100});
+    console.log("originInViewPort", pointInWorldInViewport);
+    const delta = {x: pointInWorldInViewport.x - 0, y: pointInWorldInViewport.y - 0};
     console.log("delta in viewport", delta);
     const deltaInWorld = convertDeltaInViewPortToWorldSpace(delta, board.camera.zoomLevel, board.camera.rotation);
     console.log("delta in world", deltaInWorld);
@@ -86,7 +94,7 @@ resetCameraBtn.addEventListener("click", ()=>{
     console.log("target camera position", PointCal.addVector(board.camera.position, deltaInWorld));
     animation.keyFrames = [{
         percentage: 0,
-        value: {x: worldOriginInViewPort.x, y: worldOriginInViewPort.y},
+        value: {x: pointInWorldInViewport.x, y: pointInWorldInViewport.y},
         easingFn: EasingFunctions.easeInOutSine
     },
     {
@@ -103,6 +111,15 @@ resetCameraBtn.addEventListener("click", ()=>{
         value: 1,
         easingFn: EasingFunctions.easeInOutSine
     }];
+    rotationAnimation.keyFrames = [{
+        percentage: 0,
+        value: board.camera.rotation,
+        easingFn: EasingFunctions.easeInOutSine
+    },
+    {
+        percentage: 1,
+        value: 0,
+    }];
     (board.controlCenter as RelayControlCenter).initatePanTransition();
     (board.controlCenter as RelayControlCenter).initateZoomTransition();
     compositeAnimation.startAnimation();
@@ -114,7 +131,7 @@ resetCameraBtn.addEventListener("click", ()=>{
 drawingEngine.addDrawTask({
     drawWithContext: (context, deltaTime) => {
         context.beginPath();
-        context.arc(0, 0, 100, 0, Math.PI * 2);
+        context.arc(100, 100, 50, 0, Math.PI * 2);
         context.fillStyle = 'red';
         context.fill();
     },
@@ -162,7 +179,7 @@ function step(timestamp: number){
     drawingEngine.drawWithContext(board.context, deltaMiliseconds);
 
     const fourCorners = calculateTopFourCorners();
-    drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    // drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();
