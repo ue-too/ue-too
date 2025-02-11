@@ -18,7 +18,7 @@ export type ZoomByAtHandlerFunction = (camera: BoardCamera, delta: number, at: P
 export type ZoomToHandlerFunction = (camera: BoardCamera, destination: number, config: BaseZoomHandlerConfig) => number;
 export type ZoomByHandlerFunction = (camera: BoardCamera, delta: number, config: BaseZoomHandlerConfig) => number;
 
-export function createZoomToHandlerChain(...handlers: ZoomToAtHandlerFunction[] | [ZoomToAtHandlerFunction[]]): ZoomToAtHandlerFunction {
+export function createZoomToAtHandlerChain(...handlers: ZoomToAtHandlerFunction[] | [ZoomToAtHandlerFunction[]]): ZoomToAtHandlerFunction {
     const normalizedHandlers = Array.isArray(handlers[0]) ? handlers[0] : handlers as ZoomToAtHandlerFunction[];
     return (camera: BoardCamera, destination: number, at: Point, config: CompleteZoomHandlerConfig) => {
         return normalizedHandlers.reduce((currentDestination, currentHandler) => {
@@ -27,7 +27,7 @@ export function createZoomToHandlerChain(...handlers: ZoomToAtHandlerFunction[] 
     }
 }
 
-export function createZoomByHandlerChain(...handlers: ZoomByAtHandlerFunction[] | [ZoomByAtHandlerFunction[]]): ZoomByAtHandlerFunction {
+export function createZoomByAtHandlerChain(...handlers: ZoomByAtHandlerFunction[] | [ZoomByAtHandlerFunction[]]): ZoomByAtHandlerFunction {
     const normalizedHandlers = Array.isArray(handlers[0]) ? handlers[0] : handlers as ZoomByAtHandlerFunction[];
     return (camera: BoardCamera, delta: number, at: Point, config: CompleteZoomHandlerConfig) => {
         return normalizedHandlers.reduce((currentDelta, currentHandler) => {
@@ -162,7 +162,7 @@ export function restrictZoomByAtHandler(camera: BoardCamera, delta: number, at: 
 }
 
 export function createDefaultZoomToAtHandler(): ZoomToAtHandlerFunction {
-    return createZoomToHandlerChain(
+    return createZoomToAtHandlerChain(
         clampZoomToAtHandler,
         restrictZoomToAtHandler,
         baseZoomToAtHandler,
@@ -170,7 +170,7 @@ export function createDefaultZoomToAtHandler(): ZoomToAtHandlerFunction {
 }
 
 export function createDefaultZoomByAtHandler(): ZoomByAtHandlerFunction {
-    return createZoomByHandlerChain(
+    return createZoomByAtHandlerChain(
         clampZoomByAtHandler,
         restrictZoomByAtHandler,
         baseZoomByAtHandler,
@@ -178,7 +178,7 @@ export function createDefaultZoomByAtHandler(): ZoomByAtHandlerFunction {
 }
 
 export function createDefaultZoomToAtWorldHandler(): ZoomToAtHandlerFunction {
-    return createZoomToHandlerChain(
+    return createZoomToAtHandlerChain(
         clampZoomToAtHandler,
         restrictZoomToAtHandler,
         baseZoomToAtWorldHandler,
@@ -186,7 +186,7 @@ export function createDefaultZoomToAtWorldHandler(): ZoomToAtHandlerFunction {
 }
 
 export function createDefaultZoomByAtWorldHandler(): ZoomByAtHandlerFunction {
-    return createZoomByHandlerChain(
+    return createZoomByAtHandlerChain(
         clampZoomByAtHandler,
         restrictZoomByAtHandler,
         baseZoomByAtWorldHandler,

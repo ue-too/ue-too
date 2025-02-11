@@ -41,7 +41,7 @@ export function createDefaultPanByHandler(): PanByHandlerFunction {
     return createPanByHandlerChain(restrictPanByHandler, clampByHandler, PanByBaseHandler);
 }
 
-function restrictPanToHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
+export function restrictPanToHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
     let delta = PointCal.subVector(destination, camera.position);
     delta = convertDeltaToComplyWithRestriction(camera, delta, config);
     if (delta.x === 0 && delta.y === 0) {
@@ -51,12 +51,12 @@ function restrictPanToHandler(camera: BoardCamera, destination: Point, config: P
     return dest;
 }
 
-function restrictPanByHandler(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
+export function restrictPanByHandler(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
     delta = convertDeltaToComplyWithRestriction(camera, delta, config);
     return delta;
 }
 
-function clampToHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
+export function clampToHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
     let actualDest = clampPoint(destination, camera.boundaries);
     if(config.entireViewPort){
         actualDest = clampPointEntireViewPort(destination, camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation);
@@ -64,7 +64,7 @@ function clampToHandler(camera: BoardCamera, destination: Point, config: PanHand
     return actualDest;
 }
 
-function clampByHandler(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
+export function clampByHandler(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
     let actualDelta = PointCal.subVector(clampPoint(PointCal.addVector(camera.position, delta), camera.boundaries), camera.position);
     if(config.entireViewPort){
         actualDelta = PointCal.subVector(clampPointEntireViewPort(PointCal.addVector(camera.position, delta), camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation), camera.position);
@@ -78,12 +78,12 @@ function PanByBaseHandler(camera: BoardCamera, delta: Point, config: PanHandlerC
     return delta;
 }
 
-function PanToBaseHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
+export function PanToBaseHandler(camera: BoardCamera, destination: Point, config: PanHandlerConfig): Point {
     camera.setPosition(destination);
     return destination;
 }
 
-function convertDeltaToComplyWithRestriction(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
+export function convertDeltaToComplyWithRestriction(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
     if(config.restrictXTranslation && config.restrictYTranslation){
         return {x: 0, y: 0};
     }
@@ -109,6 +109,6 @@ function convertDeltaToComplyWithRestriction(camera: BoardCamera, delta: Point, 
     return delta;
 }
 
-function convertUserInputDeltaToCameraDelta(camera: BoardCamera, delta: Point): Point {
+export function convertUserInputDeltaToCameraDelta(camera: BoardCamera, delta: Point): Point {
     return PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, camera.rotation), 1 / camera.zoomLevel);
 }
