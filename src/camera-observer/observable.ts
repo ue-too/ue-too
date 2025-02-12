@@ -39,25 +39,25 @@ export class Observable<T extends any[]> {
 }
 
 // Usage example
-const observable = new Observable<[string]>();
+// const observable = new Observable<[string]>();
 
 // Create an AbortController
-const controller = new AbortController();
+// const controller = new AbortController();
 
 // Subscribe with AbortSignal
-const unsubscribe = observable.subscribe(
-  (data) => console.log('Received:', data),
-  { signal: controller.signal }
-);
+// const unsubscribe = observable.subscribe(
+//   (data) => console.log('Received:', data),
+//   { signal: controller.signal }
+// );
 
 // Example notifications
-observable.notify('Hello!'); // Observer will receive this
+// observable.notify('Hello!'); // Observer will receive this
 
 // Abort the subscription
-controller.abort();
+// controller.abort();
 
 // Observer won't receive this notification
-observable.notify('World!');
+// observable.notify('World!');
 
 // Alternative way to unsubscribe using the returned function
 // unsubscribe();
