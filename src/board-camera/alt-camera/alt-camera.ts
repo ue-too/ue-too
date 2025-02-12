@@ -1,7 +1,7 @@
 import { PointCal } from "point2point";
 import { Point } from "src/index";
 import { BoardCamera } from "../interface";
-import { CameraEvent, CameraObserver, CameraState, UnSubscribe } from "src/camera-observer";
+import { CameraEventMap, CameraObserver, CameraState, UnSubscribe } from "src/camera-observer";
 import { Boundaries, withinBoundaries } from "../utils/position";
 import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
 import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
@@ -173,7 +173,7 @@ export class ContextCentricCamera /*implements BoardCamera */{
         this._boundaries.max.y = max;
     }
 
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState) => void): UnSubscribe {
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState) => void): UnSubscribe {
         return this._observer.on(eventName, callback);
     }
 

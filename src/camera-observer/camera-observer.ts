@@ -1,37 +1,36 @@
 import { Point } from "point2point";
+import { Observable, Observer } from "./observable";
 
-export type CameraPanEvent = {
+export type CameraPanEventPayload = {
     diff: Point;
 }
 
-export type CameraZoomEvent = {
+export type CameraZoomEventPayload = {
     deltaZoomAmount: number;
 }
 
-export type CameraRotateEvent = {
+export type CameraRotateEventPayload = {
     deltaRotation: number;
 }
 
-export type CameraEvent = {
-    "pan": CameraPanEvent,
-    "zoom": CameraZoomEvent,
-    "rotate": CameraRotateEvent,
+export type CameraEventMap = {
+    "pan": CameraPanEventPayload,
+    "zoom": CameraZoomEventPayload,
+    "rotate": CameraRotateEventPayload,
+    "all": CameraEvent,
 }
 
-export type CameraRotateCommandPayload = {
+export type CameraRotateEvent = {
     type: "rotate",
-    deltaRotation: number
-}
+} & CameraRotateEventPayload;
 
-export type CameraPanCommandPayload = {
+export type CameraPanEvent = {
     type: "pan",
-    diff: Point
-}
+} & CameraPanEventPayload;
 
-export type CameraZoomCommandPayload = {
+export type CameraZoomEvent = {
     type: "zoom",
-    deltaZoomAmount: number,
-}
+} & CameraZoomEventPayload;
 
 export type CameraState = {
     position: Point;
@@ -39,13 +38,15 @@ export type CameraState = {
     rotation: number;
 }
 
-export type CameraCommandPayload = CameraRotateCommandPayload | CameraPanCommandPayload | CameraZoomCommandPayload;
+export type CameraEvent = CameraRotateEvent | CameraPanEvent | CameraZoomEvent;
 
-export type CameraChangeEventName = "pan" | "zoom" | "rotate";
+export type CameraChangeEventName = "pan" | "zoom" | "rotate" | "all";
 
-export type CallbackList<K extends keyof CameraEvent> = ((event: CameraEvent[K], cameraState: CameraState)=>void)[];
+export type CallbackList<K extends keyof CameraEventMap> = ((event: CameraEventMap[K], cameraState: CameraState)=>void)[];
 
-export type ConslidateCallback = (payload: CameraCommandPayload, cameraState: CameraState) => void;
+export type Callback<K extends keyof CameraEventMap> = (event: CameraEventMap[K], cameraState: CameraState)=>void;
+
+export type ConslidateCallback = (payload: CameraEvent, cameraState: CameraState) => void;
 
 export type UnSubscribe = () => void;
 
@@ -92,19 +93,20 @@ export class CameraObserver {
         });});
     }
 
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
         switch (eventName){
         case "pan":
-            this.panCallbackList.push(callback as (event: CameraEvent["pan"], cameraState: CameraState)=>void);
+            this.panCallbackList.push(callback as (event: CameraEventMap["pan"], cameraState: CameraState)=>void);
             return ()=>{this.panCallbackList = this.panCallbackList.filter((cb) => cb !== callback)};
         case "zoom":
-            this.zoomCallbackList.push(callback as (event: CameraEvent["zoom"], cameraState: CameraState)=>void);
+            this.zoomCallbackList.push(callback as (event: CameraEventMap["zoom"], cameraState: CameraState)=>void);
             return ()=>{this.zoomCallbackList = this.zoomCallbackList.filter((cb) => cb !== callback)};
         case "rotate":
-            this.rotateCallbackList.push(callback as (event: CameraEvent["rotate"], cameraState: CameraState)=>void);
+            this.rotateCallbackList.push(callback as (event: CameraEventMap["rotate"], cameraState: CameraState)=>void);
             return ()=>{this.rotateCallbackList = this.rotateCallbackList.filter((cb) => cb !== callback)};
+        default:
+            throw new Error(`Invalid event name: ${eventName}`);
         }
-        return ()=>{};
     }
 
     onAllUpdate(callback: ConslidateCallback): UnSubscribe {
@@ -118,4 +120,57 @@ export class CameraObserver {
         this.rotateCallbackList = [];
     }
     
+}
+
+export type PanObserver = Callback<"pan">;
+
+export type ZoomObserver = Callback<"zoom">;
+
+export type RotateObserver = Callback<"rotate">;
+
+export type AllObserver = Callback<"all">;
+
+export class CameraObservable {
+
+    private pan: Observable<Parameters<Callback<"pan">>>;
+    private zoom: Observable<Parameters<Callback<"zoom">>>;
+    private rotate: Observable<Parameters<Callback<"rotate">>>;
+    private all: Observable<Parameters<Callback<"all">>>;
+
+    constructor() {
+        this.pan = new Observable<Parameters<Callback<"pan">>>();
+        this.zoom = new Observable<Parameters<Callback<"zoom">>>();
+        this.rotate = new Observable<Parameters<Callback<"rotate">>>();
+        this.all = new Observable<Parameters<Callback<"all">>>();
+    }
+
+    notifyPan(event: CameraEventMap["pan"], cameraState: CameraState): void {
+        this.pan.notify(event, cameraState);
+        this.all.notify({type: "pan", diff: event.diff}, cameraState);
+    }
+
+    notifyZoom(event: CameraEventMap["zoom"], cameraState: CameraState): void {
+        this.zoom.notify(event, cameraState);
+        this.all.notify({type: "zoom", deltaZoomAmount: event.deltaZoomAmount}, cameraState);
+    }
+
+    notifyRotate(event: CameraEventMap["rotate"], cameraState: CameraState): void {
+        this.rotate.notify(event, cameraState);
+        this.all.notify({type: "rotate", deltaRotation: event.deltaRotation}, cameraState);
+    }
+    
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
+        switch (eventName){
+        case "pan":
+            return this.pan.subscribe(callback as Observer<Parameters<Callback<"pan">>>);
+        case "zoom":
+            return this.zoom.subscribe(callback as Observer<Parameters<Callback<"zoom">>>);
+        case "rotate":
+            return this.rotate.subscribe(callback as Observer<Parameters<Callback<"rotate">>>);
+        case "all":
+            return this.all.subscribe(callback as Observer<Parameters<Callback<"all">>>);
+        default:
+            throw new Error(`Invalid event name: ${eventName}`);
+        }
+    }
 }

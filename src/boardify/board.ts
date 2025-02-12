@@ -1,11 +1,11 @@
-import DefaultBoardCamera, { BoardCamera } from 'src/board-camera';
+import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
 import { BoardKMTStrategy, DefaultBoardKMTStrategy, EventTargetWithPointerEvents } from 'src/kmt-strategy';
 import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
 import { Point } from 'src/index';
 import { PointCal } from 'point2point';
 
-import { CameraEvent, CameraState, UnSubscribe } from 'src/camera-observer';
+import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-observer';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput, BoardInputEvent } from 'src/input-observer';
@@ -274,11 +274,11 @@ export default class Board {
      * @translationBlock The underlying camera of the board. The camera of the board can be switched.
      * The boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.
      */
-    get camera(): BoardCamera{
+    get camera(): ObservableBoardCamera{
         return this.boardStateObserver.camera;
     }
 
-    set camera(camera: BoardCamera){
+    set camera(camera: ObservableBoardCamera){
         camera.viewPortHeight = this._canvas.height;
         camera.viewPortWidth = this._canvas.width;
         this.boardStateObserver.camera = camera;
@@ -339,7 +339,7 @@ export default class Board {
      * @param callback The callback function to call when the event is triggered. The event provided to the callback is different for the different events.
      * @returns The converted point in world coordinates.
      */
-    on<K extends keyof CameraEvent>(eventName: K, callback: (event: CameraEvent[K], cameraState: CameraState)=>void): UnSubscribe {
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
         return this.boardStateObserver.camera.on(eventName, callback);
     }
 

@@ -1,5 +1,5 @@
 import "./media";
-import Board, { drawAxis, drawRuler, drawGrid } from "../src/boardify";
+import Board, { drawAxis, drawRuler, drawGrid } from "src/boardify";
 import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
@@ -9,6 +9,7 @@ import { RelayControlCenter } from "src/control-center/simple-relay";
 import { CompleteZoomHandlerConfig, createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
+import type { BoardCamera } from "src/board-camera";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){

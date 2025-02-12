@@ -73,7 +73,8 @@ function clampByHandler(camera: BoardCamera, delta: Point, config: PanHandlerCon
 }
 
 function PanByBaseHandler(camera: BoardCamera, delta: Point, config: PanHandlerConfig): Point {
-    camera.setPositionByDelta(delta);
+    const target = PointCal.addVector(camera.position, delta);
+    camera.setPosition(target);
     return delta;
 }
 
