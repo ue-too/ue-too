@@ -1,4 +1,5 @@
-import { BoardCamera, createHandlerChain } from "src/board-camera";
+import { BoardCamera } from "src/board-camera/interface";
+import { createHandlerChain } from "../utils";
 import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "src/board-camera/utils/rotation";
 
 export type RotationHandlerConfig = {
