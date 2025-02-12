@@ -81,22 +81,16 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     setPosition(destination: Point){
-        if(withinBoundaries(destination, this._boundaries)){
-            const diff = PointCal.subVector(destination, this._position);
-            if(PointCal.magnitude(diff) < 10E-10 && PointCal.magnitude(diff) < 1 / this._zoomLevel){
-                return;
-            }
-            this._position = destination;
-            this._observer.notifyPositionChange(diff, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel})
+        if(!withinBoundaries(destination, this._boundaries)){
+            return false;
         }
-    }
-
-    setPositionByDelta(delta: Point): void {
-        this.setPosition(PointCal.addVector(this._position, delta));
-    }
-
-    moveByDeltaInViewPort(delta: Point): void {
-        
+        const diff = PointCal.subVector(destination, this._position);
+        if(PointCal.magnitude(diff) < 10E-10 && PointCal.magnitude(diff) < 1 / this._zoomLevel){
+            return false;
+        }
+        this._position = destination;
+        this._observer.notifyPositionChange(diff, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel})
+        return true;
     }
 
     get zoomLevel(): number{
@@ -142,17 +136,19 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     setZoomLevel(zoomLevel: number){
-        if(zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
-            if(this._zoomBoundaries !== undefined && this._zoomBoundaries.max !== undefined && clampZoomLevel(zoomLevel, this._zoomBoundaries) == this._zoomBoundaries.max && this._zoomLevel == this._zoomBoundaries.max){
-                return;
-            }
-            if(this._zoomBoundaries !== undefined && this._zoomBoundaries.min !== undefined && clampZoomLevel(zoomLevel, this._zoomBoundaries) == this._zoomBoundaries.min && this._zoomLevel == this._zoomBoundaries.min){
-                return;
-            }
-            const curZoom = this._zoomLevel;
-            this._zoomLevel = zoomLevel;
-            this._observer.notifyZoomChange(this._zoomLevel - curZoom, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel});
+        if(!zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
+            return false;
         }
+        if(this._zoomBoundaries !== undefined && this._zoomBoundaries.max !== undefined && clampZoomLevel(zoomLevel, this._zoomBoundaries) == this._zoomBoundaries.max && this._zoomLevel == this._zoomBoundaries.max){
+            return false;
+        }
+        if(this._zoomBoundaries !== undefined && this._zoomBoundaries.min !== undefined && clampZoomLevel(zoomLevel, this._zoomBoundaries) == this._zoomBoundaries.min && this._zoomLevel == this._zoomBoundaries.min){
+            return false;
+        }
+        const curZoom = this._zoomLevel;
+        this._zoomLevel = zoomLevel;
+        this._observer.notifyZoomChange(this._zoomLevel - curZoom, {position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel});
+        return true;
     }
 
     get rotation(): number{
@@ -207,17 +203,19 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     setRotation(rotation: number){
-        if(rotationWithinLimits(rotation, this._rotationBoundaries)){
-            rotation = normalizeAngleZero2TwoPI(rotation);
-            if(this._rotationBoundaries !== undefined && this._rotationBoundaries.end !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.end && this._rotation == this._rotationBoundaries.end){
-                return;
-            }
-            if(this._rotationBoundaries !== undefined && this.rotationBoundaries.start !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.start && this._rotation == this._rotationBoundaries.start){
-                return;
-            }
-            this._observer.notifyRotationChange(rotation - this._rotation, {position: this._position, rotation: rotation, zoomLevel: this._zoomLevel});
-            this._rotation = rotation;
+        if(!rotationWithinLimits(rotation, this._rotationBoundaries)){
+            return false;
         }
+        rotation = normalizeAngleZero2TwoPI(rotation);
+        if(this._rotationBoundaries !== undefined && this._rotationBoundaries.end !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.end && this._rotation == this._rotationBoundaries.end){
+            return false;
+        }
+        if(this._rotationBoundaries !== undefined && this.rotationBoundaries.start !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.start && this._rotation == this._rotationBoundaries.start){
+            return false;
+        }
+        this._observer.notifyRotationChange(rotation - this._rotation, {position: this._position, rotation: rotation, zoomLevel: this._zoomLevel});
+        this._rotation = rotation;
+        return true;
     }
 
     // the points are in window space

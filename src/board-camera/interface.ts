@@ -20,11 +20,9 @@ export interface BoardCamera {
     boundaries?: Boundaries;
     zoomBoundaries?: ZoomLevelLimits;
     rotationBoundaries?: RotationLimits;
-    observer: CameraObserver;
-    setPosition(destination: Point): void;
-    setPositionByDelta(delta: Point): void;
-    setZoomLevel(zoomLevel: number): void;
-    setRotation(rotation: number): void;
+    setPosition(destination: Point): boolean;
+    setZoomLevel(zoomLevel: number): boolean;
+    setRotation(rotation: number): boolean;
     setMinZoomLevel(minZoomLevel: number): void;
     setHorizontalBoundaries(min: number, max: number): void;
     setVerticalBoundaries(min: number, max: number): void;
