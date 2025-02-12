@@ -81,7 +81,7 @@ const resetCameraBtn = document.getElementById("reset-camera-btn") as HTMLButton
 const experimentalZoomHandlerBtn = document.getElementById("experimental-zoom-handler-btn") as HTMLButtonElement;
 
 experimentalZoomHandlerBtn.addEventListener("click", ()=>{
-    experimentalZoomHandler(board.camera, 1, {x: 0, y: 0}, config);
+    experimentalZoomHandler(1, board.camera, {x: 0, y: 0}, config);
 });
 
 resetCameraBtn.addEventListener("click", ()=>{

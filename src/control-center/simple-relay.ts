@@ -75,27 +75,27 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
 
     notifyPanInput(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        this._panHandlerBy(this._camera, diffInWorld, this._config);
+        this._panHandlerBy(diffInWorld, this._camera, this._config);
     }
 
     notifyPanToInput(target: Point): void {
         const deltaInWorld = PointCal.subVector(target, this._camera.position);
-        this._panHandlerBy(this._camera, deltaInWorld, this._config);
+        this._panHandlerBy(deltaInWorld, this._camera, this._config);
     }
 
     notifyZoomByAtInput(delta: number, at: Point): void {
         const targetZoom = this._camera.zoomLevel + delta * this._camera.zoomLevel;
-        this._zoomHandler(this._camera, targetZoom, at, this._config);
+        this._zoomHandler(targetZoom, this._camera, at, this._config);
     }
 
     notifyZoomByAtCenterInput(delta: number): void {
         const targetZoom = this._camera.zoomLevel + delta * this._camera.zoomLevel;
-        this._zoomHandler(this._camera, targetZoom, {x: this._camera.viewPortWidth / 2, y: this._camera.viewPortHeight / 2}, this._config);
+        this._zoomHandler(targetZoom, this._camera, {x: this._camera.viewPortWidth / 2, y: this._camera.viewPortHeight / 2}, this._config);
     }
 
     notifyZoomToAtCenterInput(targetZoom: number): void {
         // this._zoomHandler(this._camera, targetZoom, {x: this._camera.viewPortWidth / 2, y: this._camera.viewPortHeight / 2}, this._config);
-        this._pureZoomHandler(this._camera, targetZoom, this._config);
+        this._pureZoomHandler(targetZoom, this._camera, this._config);
     }
 
     notifyRotationInput(delta: number): void {
@@ -104,7 +104,7 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
     }
 
     experimentalZoomToAtWorld(targetZoom: number, at: Point): void {
-        this._experimentalZoomHandler(this._camera, targetZoom, at, this._config);
+        this._experimentalZoomHandler(targetZoom, this._camera, at, this._config);
     }
 
     set limitEntireViewPort(limit: boolean){
