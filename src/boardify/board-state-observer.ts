@@ -1,9 +1,9 @@
-import { BoardCamera } from "src/board-camera";
+import { ObservableBoardCamera } from "src/board-camera";
 import { RotationHandler } from "src/board-camera";
 import { PanController, PanHandler, ZoomHandler, ZoomController } from "src/board-camera";
 
 export interface BoardCameraSubscriber {
-    updateCamera(camera: BoardCamera): void;
+    updateCamera(camera: ObservableBoardCamera): void;
 }
 
 export interface BoardPanHandlerSubscriber {
@@ -20,7 +20,7 @@ export interface BoardRotationHandlerSubscriber {
 
 export class BoardStateObserver {
     
-    private _camera: BoardCamera;
+    private _camera: ObservableBoardCamera;
     private _panHandler: PanController; 
     private _zoomHandler: ZoomController;
     private _rotationHandler: RotationHandler;
@@ -30,7 +30,7 @@ export class BoardStateObserver {
     private zoomHandlerSubscribers: BoardZoomHandlerSubscriber[] = [];
     private rotationHandlerSubscribers: BoardRotationHandlerSubscriber[] = [];
 
-    constructor(camera: BoardCamera){
+    constructor(camera: ObservableBoardCamera){
         this._camera = camera;
     }
 
@@ -65,11 +65,11 @@ export class BoardStateObserver {
         }
     }
 
-    get camera(): BoardCamera{
+    get camera(): ObservableBoardCamera{
         return this._camera;
     }
 
-    set camera(camera: BoardCamera){
+    set camera(camera: ObservableBoardCamera){
         this._camera = camera;
         this.notifyCameraChange();
     }
