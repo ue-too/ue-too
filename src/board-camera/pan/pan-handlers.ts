@@ -3,6 +3,7 @@ import type { Point } from "src/index";
 import { BoardCamera } from "src/board-camera";
 import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/position";
 
+
 export type PanHandlerConfig = {
     entireViewPort: boolean;
     restrictXTranslation: boolean;
