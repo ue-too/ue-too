@@ -1,5 +1,5 @@
 import { Point } from "src";
-import { InputObserver } from "src/input-observer";
+import { InputObserver, RawUserInputObservable } from "src/input-observer";
 import { TouchContext, TouchPoints, TouchSM } from "src/input-state-machine/touch-state-machine";
 
 export interface BoardTouchStrategy {
@@ -27,13 +27,13 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
 
-    private inputObserver: InputObserver;
+    private inputObserver: RawUserInputObservable;
 
     private touchSM: TouchSM;
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: InputObserver,alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputObserver: RawUserInputObservable,alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._disabled = false;
         this._alignCoordinateSystem = alignCoordinateSystem;
@@ -204,11 +204,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
     }
 
     notifyOnPan(delta: Point): void {
-        this.inputObserver.notifyOnPan(delta);
+        this.inputObserver.notifyPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this.inputObserver.notifyOnZoom(zoomAmount, anchorPoint);
+        this.inputObserver.notifyZoom(zoomAmount, anchorPoint);
     }
 
     get canvas(): HTMLCanvasElement {

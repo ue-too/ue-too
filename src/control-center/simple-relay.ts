@@ -1,5 +1,5 @@
-import { createDefaultPanByHandler, createDefaultPanToHandler, PanByHandlerFunction, PanHandlerConfig, PanToHandlerFunction  } from "src/board-camera/pan/pan-handlers";
-import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, BaseZoomHandlerConfig, ZoomHandlerConfig, ZoomToHandlerFunction, createDefaultZoomToOnlyHandler, createDefaultZoomToAtWorldHandler, ZoomByAtHandlerFunction, ZoomByHandlerFunction, createDefaultZoomByAtHandler, createDefaultZoomByOnlyHandler, restrictZoomByHandler } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
+import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, BaseZoomHandlerConfig, ZoomHandlerConfig, ZoomToHandlerFunction, createDefaultZoomToOnlyHandler, createDefaultZoomToAtWorldHandler, ZoomByAtHandlerFunction, ZoomByHandlerFunction, createDefaultZoomByAtHandler, createDefaultZoomByOnlyHandler, restrictZoomByHandler, createDefaultZoomByAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { InputControlCenter } from "./control-center";
 import { Point } from "src/index";
 import DefaultBoardCamera, { BoardCamera, RotateByHandlerFunction, RotateToHandlerFunction, RotationHandlerConfig } from "src/board-camera";
@@ -42,6 +42,10 @@ export class RelayControlCenter implements InputControlCenter {
         this._zoomStateMachine.notifyZoomToAtCenterInput(targetZoom, at);
     }
 
+    notifyZoomInputAnimationWorld(targetZoom: number, at: Point = {x: 0, y: 0}): void {
+        this._zoomStateMachine.notifyZoomToAtWorldInput(targetZoom, at);
+    }
+
     notifyRotationInput(delta: number): void {
         console.error("Rotation input is not implemented");
     }
@@ -58,7 +62,6 @@ export class RelayControlCenter implements InputControlCenter {
 export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
-    private _panTo: PanToHandlerFunction;
     private _zoomToAt: ZoomToAtHandlerFunction;
     private _zoomByAt: ZoomByAtHandlerFunction;
     private _zoomTo: ZoomToHandlerFunction;
@@ -72,11 +75,12 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
 
     constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: BoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
-        this._panTo = createDefaultPanToHandler();
         this._zoomToAt = createDefaultZoomToAtHandler();
         this._zoomByAt = createDefaultZoomByAtHandler();
         this._zoomTo = createDefaultZoomToOnlyHandler();
         this._zoomBy = createDefaultZoomByOnlyHandler();
+        this._zoomToAtWorld = createDefaultZoomToAtWorldHandler();
+        this._zoomByAtWorld = createDefaultZoomByAtWorldHandler();
         this._config = {...config, restrictRotation: false};
         this._camera = camera;
     }

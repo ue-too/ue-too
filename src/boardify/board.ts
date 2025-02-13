@@ -8,7 +8,7 @@ import { PointCal } from 'point2point';
 import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-observer';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
-import { InputObserver, UnsubscribeToInput, BoardInputEvent } from 'src/input-observer';
+import { InputObserver, UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputObservable } from 'src/input-observer';
 
 import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
@@ -54,7 +54,7 @@ export default class Board {
     private _fullScreen: boolean = false;
 
     private boardStateObserver: BoardStateObserver;
-    private boardInputObserver: InputObserver;
+    private boardInputObserver: RawUserInputObservable;
 
     private lastUpdateTime: number = 0;
 
@@ -96,7 +96,7 @@ export default class Board {
         const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
         const selectionInputObserver = new SelectionInputObserver(this.boardStateObserver.camera, new SelectionBox(this._context));
 
-        this.boardInputObserver = new InputObserver(relayControlCenter);
+        this.boardInputObserver = new RawUserInputObservable(relayControlCenter);
 
         this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, this.boardInputObserver, selectionInputObserver, false);
 
@@ -284,15 +284,6 @@ export default class Board {
         this.boardStateObserver.camera = camera;
     }
 
-    /**
-     * @translationBlock The control center of the board. The control center is responsible for handling the input events and dispatch the events to the pan, zoom, and rotation handlers.
-     * This exists to decouple the input events from the camera. The control center is the middle man. The default control center is just a simple relay. You can implement a control center
-     * that takes in other inputs. For example, an input to start camera animations.
-     */
-    set controlCenter(controlCenter: InputControlCenter){
-        this.boardInputObserver.controlCenter = controlCenter;
-    }
-
     get controlCenter(): InputControlCenter{
         return this.boardInputObserver.controlCenter;
     }
@@ -350,8 +341,8 @@ export default class Board {
      * @param callback 
      * @returns 
      */
-    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=> void): UnsubscribeToInput {
-        return this.boardInputObserver.onInput(eventName, callback);
+    onInput<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=> void): UnsubscribeToUserRawInput {
+        return this.boardInputObserver.on(eventName, callback);
     }
 
     /**

@@ -62,7 +62,7 @@ const animation = new Animation(positionKeyframe, (value)=>{
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.controlCenter as RelayControlCenter).notifyZoomInputAnimation(value);
+    (board.controlCenter as RelayControlCenter).notifyZoomInputAnimationWorld(value);
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{

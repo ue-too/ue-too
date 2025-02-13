@@ -4,6 +4,6 @@
         // your overridden compiler options
         "strict": true
     },
-    "include": ["*.ts"],
+    "include": ["*.ts", "../util/observable.ts"],
     // "exclude": ["../**/*"]
 }

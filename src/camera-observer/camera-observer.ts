@@ -1,5 +1,5 @@
 import { Point } from "point2point";
-import { Observable, Observer } from "./observable";
+import { Observable, Observer } from "../util/observable";
 
 export type CameraPanEventPayload = {
     diff: Point;
