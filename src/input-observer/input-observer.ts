@@ -119,23 +119,28 @@ export class RawUserInputObservable {
     private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
     private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
+    private all: Observable<Parameters<RawUserInputCallback<"all">>>;
 
     constructor(){
         this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
         this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
         this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
+        this.all = new Observable<Parameters<RawUserInputCallback<"all">>>();
     }
 
     notifyPan(event: RawUserInputEventMap["pan"]): void {
         this.pan.notify(event);
+        this.all.notify({type: "pan", ...event});
     }
 
     notifyZoom(event: RawUserInputEventMap["zoom"]): void {
         this.zoom.notify(event);
+        this.all.notify({type: "zoom", ...event});
     }
 
     notifyRotate(event: RawUserInputEventMap["rotate"]): void {
         this.rotate.notify(event);
+        this.all.notify({type: "rotate", ...event});
     }
     
     on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
@@ -146,8 +151,14 @@ export class RawUserInputObservable {
             return this.zoom.subscribe(callback as Observer<Parameters<RawUserInputCallback<"zoom">>>);
         case "rotate":
             return this.rotate.subscribe(callback as Observer<Parameters<RawUserInputCallback<"rotate">>>);
+        case "all":
+            return this.all.subscribe(callback as Observer<Parameters<RawUserInputCallback<"all">>>);
         default:
             throw new Error("Invalid raw user input event name");
         }
     }
+}
+
+export function createDefaultRawUserInputObservable(): RawUserInputObservable {
+    return new RawUserInputObservable();
 }
