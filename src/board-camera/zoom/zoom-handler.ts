@@ -10,17 +10,17 @@ export type BaseZoomHandlerConfig = {
     restrictZoom: boolean;
 };
 
-export type CompleteZoomHandlerConfig = BaseZoomHandlerConfig & PanHandlerConfig & {
+export type ZoomHandlerConfig = BaseZoomHandlerConfig & PanHandlerConfig & {
     panByHandler: PanByHandlerFunction;
 };
 
-export type ZoomToAtHandlerFunction = (destination: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig) => number;
-export type ZoomByAtHandlerFunction = (delta: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig) => number;
+export type ZoomToAtHandlerFunction = (destination: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig) => number;
+export type ZoomByAtHandlerFunction = (delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig) => number;
 export type ZoomToHandlerFunction = (destination: number, camera: BoardCamera, config: BaseZoomHandlerConfig) => number;
 export type ZoomByHandlerFunction = (delta: number, camera: BoardCamera, config: BaseZoomHandlerConfig) => number;
 
 // the anchor point is in the viewport space
-export function baseZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function baseZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
     camera.setZoomLevel(camera.zoomLevel + delta);
     let anchorInWorldAfterZoom = camera.convertFromViewPort2WorldSpace(at);
@@ -30,7 +30,7 @@ export function baseZoomByAtHandler(delta: number, camera: BoardCamera, at: Poin
 }
 
 // the anchor point is in the viewport space
-export function baseZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function baseZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     let originalAnchorInWorld = camera.convertFromViewPort2WorldSpace(at);
     const beforeZoomLevel = camera.zoomLevel;
     camera.setZoomLevel(destination);
@@ -50,7 +50,7 @@ export function baseZoomToAtHandler(destination: number, camera: BoardCamera, at
 }
 
 // the anchor point is in the world space
-export function baseZoomToAtWorldHandler(destination: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function baseZoomToAtWorldHandler(destination: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     let anchorInViewPortBeforeZoom = camera.convertFromWorld2ViewPort(at);
     camera.setZoomLevel(destination);
     let anchorInViewPortAfterZoom = camera.convertFromWorld2ViewPort(at);
@@ -65,7 +65,7 @@ export function baseZoomToAtWorldHandler(destination: number, camera: BoardCamer
 }
 
 // the anchor point is in the world space
-export function baseZoomByAtWorldHandler(delta: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function baseZoomByAtWorldHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     let anchorInViewPortBeforeZoom = camera.convertFromWorld2ViewPort(at);
     camera.setZoomLevel(camera.zoomLevel + delta);
     let anchorInViewPortAfterZoom = camera.convertFromWorld2ViewPort(at);
@@ -85,7 +85,7 @@ export function baseZoomByHandler(delta: number, camera: BoardCamera, config: Ba
     return delta;
 }
 
-export function clampZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function clampZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     return clampZoomToHandler(destination, camera, config);
 }
 
@@ -114,15 +114,15 @@ export function restrictZoomByHandler(delta: number, camera: BoardCamera, config
     return delta;
 }
 
-export function clampZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function clampZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     return clampZoomByHandler(delta, camera, config);
 }
 
-export function restrictZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function restrictZoomToAtHandler(destination: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     return restrictZoomToHandler(destination, camera, config);
 }
 
-export function restrictZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: CompleteZoomHandlerConfig): number {
+export function restrictZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
     return restrictZoomByHandler(delta, camera, config);
 }
 

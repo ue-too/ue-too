@@ -6,10 +6,10 @@ import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { RelayControlCenter } from "src/control-center/simple-relay";
-import { CompleteZoomHandlerConfig, createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
+import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
-import type { BoardCamera } from "src/board-camera";
+import type { BoardCamera, ZoomHandlerConfig } from "src/board-camera";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -38,9 +38,9 @@ const drawingEngine = new Container(board.context);
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
 const panHandler = createDefaultPanByHandler();
 
-const config: CompleteZoomHandlerConfig = {
+const config: ZoomHandlerConfig = {
     panByHandler: panHandler,
-    entireViewPort: false,
+    limitEntireViewPort: false,
     restrictZoom: false,
     restrictXTranslation: false,
     restrictYTranslation: false,

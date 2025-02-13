@@ -6,7 +6,7 @@ import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/pos
 
 
 export type PanHandlerConfig = {
-    entireViewPort: boolean;
+    limitEntireViewPort: boolean;
     restrictXTranslation: boolean;
     restrictYTranslation: boolean;
     restrictRelativeXTranslation: boolean;
@@ -50,7 +50,7 @@ export function restrictPanByHandler(delta: Point, camera: BoardCamera, config: 
 
 export function clampToHandler(destination: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
     let actualDest = clampPoint(destination, camera.boundaries);
-    if(config.entireViewPort){
+    if(config.limitEntireViewPort){
         actualDest = clampPointEntireViewPort(destination, camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation);
     }
     return actualDest;
@@ -58,7 +58,7 @@ export function clampToHandler(destination: Point, camera: BoardCamera, config: 
 
 export function clampByHandler(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
     let actualDelta = PointCal.subVector(clampPoint(PointCal.addVector(camera.position, delta), camera.boundaries), camera.position);
-    if(config.entireViewPort){
+    if(config.limitEntireViewPort){
         actualDelta = PointCal.subVector(clampPointEntireViewPort(PointCal.addVector(camera.position, delta), camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation), camera.position);
     }
     return actualDelta;

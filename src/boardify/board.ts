@@ -83,7 +83,7 @@ export default class Board {
         this.windowResizeObserver.observe(document.body);
 
         const stateMachineContext = new Relay({
-            entireViewPort: true,
+            limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
             restrictXTranslation: false,
