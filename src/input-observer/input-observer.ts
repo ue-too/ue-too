@@ -116,31 +116,37 @@ export function createDefaultInputObserverWithCamera(camera: BoardCamera){
 }
 
 export class RawUserInputObservable {
+
     private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
     private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
     private all: Observable<Parameters<RawUserInputCallback<"all">>>;
+    private cameraInputControlCener: InputControlCenter;
 
-    constructor(){
+    constructor(inputControlCenter: InputControlCenter){
         this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
         this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
         this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
         this.all = new Observable<Parameters<RawUserInputCallback<"all">>>();
+        this.cameraInputControlCener = inputControlCenter;
     }
 
-    notifyPan(event: RawUserInputEventMap["pan"]): void {
-        this.pan.notify(event);
-        this.all.notify({type: "pan", ...event});
+    notifyPan(diff: Point): void {
+        this.cameraInputControlCener.notifyPanInput(diff);
+        this.pan.notify({diff: diff});
+        this.all.notify({type: "pan", diff: diff});
     }
 
-    notifyZoom(event: RawUserInputEventMap["zoom"]): void {
-        this.zoom.notify(event);
-        this.all.notify({type: "zoom", ...event});
+    notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
+        this.cameraInputControlCener.notifyZoomInput(deltaZoomAmount, anchorPoint);
+        this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
+        this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
     }
 
-    notifyRotate(event: RawUserInputEventMap["rotate"]): void {
-        this.rotate.notify(event);
-        this.all.notify({type: "rotate", ...event});
+    notifyRotate(deltaRotation: number): void {
+        this.cameraInputControlCener.notifyRotationInput(deltaRotation);
+        this.rotate.notify({deltaRotation: deltaRotation});
+        this.all.notify({type: "rotate", deltaRotation: deltaRotation});
     }
     
     on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
@@ -157,8 +163,12 @@ export class RawUserInputObservable {
             throw new Error("Invalid raw user input event name");
         }
     }
+
+    get controlCenter(): InputControlCenter {
+        return this.cameraInputControlCener;
+    }
 }
 
-export function createDefaultRawUserInputObservable(): RawUserInputObservable {
-    return new RawUserInputObservable();
+export function createDefaultRawUserInputObservable(camera: BoardCamera): RawUserInputObservable {
+    return new RawUserInputObservable(createDefaultRelayControlCenter(camera));
 }

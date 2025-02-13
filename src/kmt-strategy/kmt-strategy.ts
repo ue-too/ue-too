@@ -1,4 +1,4 @@
-import { InputObserver } from "src/input-observer/input-observer";
+import { InputObserver, RawUserInputObservable } from "src/input-observer/input-observer";
 import { UserInputStateMachine } from "src/input-state-machine";
 import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
 import { BoardIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
@@ -14,7 +14,7 @@ export interface BoardKMTStrategy {
     debugMode: boolean;
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
-    inputObserver: InputObserver;
+    inputObserver: RawUserInputObservable;
     selectionInputObserver: SelectionInputObserver;
     stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
@@ -55,7 +55,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
 
-    private _inputObserver: InputObserver;
+    private _inputObserver: RawUserInputObservable;
     private _selectionInputObserver: SelectionInputObserver;
     private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
@@ -66,7 +66,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: InputObserver, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: RawUserInputObservable, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
@@ -104,11 +104,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     }
 
     notifyOnPan(delta: Point){
-        this._inputObserver.notifyOnPan(delta);
+        this._inputObserver.notifyPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point){
-        this._inputObserver.notifyOnZoom(zoomAmount, anchorPoint);
+        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
     }
 
     setInitialCursorPosition(position: Point){
@@ -147,7 +147,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._canvas;
     }
 
-    get inputObserver(): InputObserver {
+    get inputObserver(): RawUserInputObservable {
         return this._inputObserver;
     }
 
@@ -275,7 +275,7 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
 
-    private _inputObserver: InputObserver;
+    private _inputObserver: RawUserInputObservable;
     private _selectionInputObserver: SelectionInputObserver;
     private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
@@ -286,7 +286,7 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: InputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: RawUserInputObservable, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
@@ -323,11 +323,11 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
     }
 
     notifyOnPan(delta: Point){
-        this._inputObserver.notifyOnPan(delta);
+        this._inputObserver.notifyPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point){
-        this._inputObserver.notifyOnZoom(zoomAmount, anchorPoint);
+        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
     }
 
     setInitialCursorPosition(position: Point){
@@ -366,7 +366,7 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
         return this._canvas;
     }
 
-    get inputObserver(): InputObserver {
+    get inputObserver(): RawUserInputObservable {
         return this._inputObserver;
     }
 

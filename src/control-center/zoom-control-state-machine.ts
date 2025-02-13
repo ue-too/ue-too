@@ -30,6 +30,7 @@ export type ZoomEventPayloadMapping = {
     "transitionZoomToAtInput": ZoomToAtInputPayload,
     "transitionZoomByAtCenterInput": ZoomByPayload,
     "transitionZoomToAtCenterInput": ZoomToAtInputPayload,
+    "transitionZoomToAtWorldInput": ZoomToAtInputPayload,
     "lockedOnObjectZoomByAtInput": ZoomByAtInputPayload,
     "lockedOnObjectZoomToAtInput": ZoomToAtInputPayload,
     "unlock": {},
@@ -84,6 +85,7 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
         transitionZoomToAtInput: {action: this.transitionZoomToAtInput, defaultTargetState: "TRANSITION"},
         transitionZoomToAtCenterInput: {action: this.transitionZoomToAtCenterInput, defaultTargetState: "TRANSITION"},
+        transitionZoomToAtWorldInput: {action: this.transitionZoomToAtWorldInput, defaultTargetState: "TRANSITION"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
@@ -125,6 +127,12 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     transitionZoomToAtCenterInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtCenterInput"]): ZoomControlStates {
         // context.notifyZoomToAtCenterInput(payload.targetZoom);
         // context.experimentalZoomToAtWorld(payload.targetZoom, payload.anchorPoint);
+        context.zoomToAt(payload.targetZoom, payload.anchorPoint);
+        return "TRANSITION";
+    }
+
+    transitionZoomToAtWorldInput(stateMachine: StateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>, context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtWorldInput"]): ZoomControlStates {
+        context.zoomToAtWorld(payload.targetZoom, payload.anchorPoint);
         return "TRANSITION";
     }
 
@@ -182,6 +190,10 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
 
     notifyZoomToAtCenterInput(targetZoom: number, at: Point): void {
         this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom, anchorPoint: at}, this._context);
+    }
+
+    notifyZoomToAtWorldInput(targetZoom: number, at: Point): void {
+        this.happens("transitionZoomToAtWorldInput", {targetZoom: targetZoom, anchorPoint: at}, this._context);
     }
 
     initateTransition(): void {
