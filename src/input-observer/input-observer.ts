@@ -1,29 +1,47 @@
 import { Point } from "src/index";
 import { createDefaultRelayControlCenter, InputControlCenter, RelayControlCenter } from "src/control-center";
 import BoardCamera from "src/board-camera";
+import { Observable, Observer } from "src/util";
 
-export type UnsubscribeToInput = () => void;
+export type UnsubscribeToUserRawInput = () => void;
 
-export type PanInputEvent = {
+export type RawUserPanInputEventPayload = {
     diff: Point;
 }
 
-export type ZoomInputEvent = {
+export type RawUserPanInputEvent = {
+    type: "pan",
+} & RawUserPanInputEventPayload;
+
+export type RawUserZoomInputEventPayload = {
     deltaZoomAmount: number;
     anchorPoint: Point;
 }
 
-export type RotateInputEvent = {
+export type RawUserZoomInputEvent = {
+    type: "zoom",
+} & RawUserZoomInputEventPayload;
+
+export type RawUserRotateInputEventPayload = {
     deltaRotation: number;
 }
 
-export type BoardInputEvent = {
-    "pan": PanInputEvent,
-    "zoom": ZoomInputEvent,
-    "rotate": RotateInputEvent
+export type RawUserRotateInputEvent = {
+    type: "rotate",
+} & RawUserRotateInputEventPayload;
+
+export type RawUserInputEventMap = {
+    "pan": RawUserPanInputEventPayload,
+    "zoom": RawUserZoomInputEventPayload,
+    "rotate": RawUserRotateInputEventPayload,
+    "all": RawUserInputEvent,
 }
 
-export type InputCallBackList<K extends keyof BoardInputEvent> = ((event: BoardInputEvent[K])=>void)[];
+export type RawUserInputEvent = RawUserPanInputEvent | RawUserZoomInputEvent | RawUserRotateInputEvent;
+
+export type RawUserInputCallbackList<K extends keyof RawUserInputEventMap> = ((event: RawUserInputEventMap[K])=>void)[];
+
+export type RawUserInputCallback<K extends keyof RawUserInputEventMap> = (event: RawUserInputEventMap[K])=>void;
 
 /**
  * @category Input Observer
@@ -31,9 +49,9 @@ export type InputCallBackList<K extends keyof BoardInputEvent> = ((event: BoardI
  */
 export class InputObserver {
 
-    private panCallbackList: InputCallBackList<"pan"> = [];
-    private zoomCallbackList: InputCallBackList<"zoom"> = [];
-    private rotateCallbackList: InputCallBackList<"rotate"> = [];
+    private panCallbackList: RawUserInputCallbackList<"pan"> = [];
+    private zoomCallbackList: RawUserInputCallbackList<"zoom"> = [];
+    private rotateCallbackList: RawUserInputCallbackList<"rotate"> = [];
 
     private _controlCenter: InputControlCenter;
 
@@ -62,20 +80,20 @@ export class InputObserver {
         });
     }
 
-    onInput<K extends keyof BoardInputEvent>(eventName: K, callback: (event: BoardInputEvent[K])=>void): UnsubscribeToInput {
+    onInput<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
         switch (eventName){
         case "pan":
-            this.panCallbackList.push(callback as (event: BoardInputEvent["pan"])=>void);
+            this.panCallbackList.push(callback as (event: RawUserInputEventMap["pan"])=>void);
             return () => {
                 this.panCallbackList = this.panCallbackList.filter((cb) => cb !== callback);
             }
         case "zoom":
-            this.zoomCallbackList.push(callback as (event: BoardInputEvent["zoom"])=>void);
+            this.zoomCallbackList.push(callback as (event: RawUserInputEventMap["zoom"])=>void);
             return () => {
                 this.zoomCallbackList = this.zoomCallbackList.filter((cb) => cb !== callback);
             }
         case "rotate":
-            this.rotateCallbackList.push(callback as (event: BoardInputEvent["rotate"])=>void);
+            this.rotateCallbackList.push(callback as (event: RawUserInputEventMap["rotate"])=>void);
             return () => {
                 this.rotateCallbackList = this.rotateCallbackList.filter((cb) => cb !== callback);
             }
@@ -95,4 +113,41 @@ export class InputObserver {
 
 export function createDefaultInputObserverWithCamera(camera: BoardCamera){
     return new InputObserver(createDefaultRelayControlCenter(camera));
+}
+
+export class RawUserInputObservable {
+    private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
+    private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
+    private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
+
+    constructor(){
+        this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
+        this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
+        this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
+    }
+
+    notifyPan(event: RawUserInputEventMap["pan"]): void {
+        this.pan.notify(event);
+    }
+
+    notifyZoom(event: RawUserInputEventMap["zoom"]): void {
+        this.zoom.notify(event);
+    }
+
+    notifyRotate(event: RawUserInputEventMap["rotate"]): void {
+        this.rotate.notify(event);
+    }
+    
+    on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
+        switch (eventName){
+        case "pan":
+            return this.pan.subscribe(callback as Observer<Parameters<RawUserInputCallback<"pan">>>);
+        case "zoom":
+            return this.zoom.subscribe(callback as Observer<Parameters<RawUserInputCallback<"zoom">>>);
+        case "rotate":
+            return this.rotate.subscribe(callback as Observer<Parameters<RawUserInputCallback<"rotate">>>);
+        default:
+            throw new Error("Invalid raw user input event name");
+        }
+    }
 }
