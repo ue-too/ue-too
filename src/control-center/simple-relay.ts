@@ -55,7 +55,7 @@ export class RelayControlCenter implements InputControlCenter {
     }
 }
 
-export class Relay implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
+export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
     private _panTo: PanToHandlerFunction;
@@ -140,8 +140,8 @@ export class Relay implements PanContext, ZoomContext { // this is used as a con
     }
 }
 
-export function createDefaultRelay(camera: BoardCamera): Relay{
-    return new Relay({
+export function createDefaultCameraRig(camera: BoardCamera): CameraRig{
+    return new CameraRig({
         limitEntireViewPort: true,
         restrictRelativeXTranslation: false,
         restrictRelativeYTranslation: false,
@@ -152,7 +152,7 @@ export function createDefaultRelay(camera: BoardCamera): Relay{
 }
 
 export function createDefaultRelayControlCenter(camera: BoardCamera): InputControlCenter {
-    const context = createDefaultRelay(camera);
+    const context = createDefaultCameraRig(camera);
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
     return new RelayControlCenter(panStateMachine, zoomStateMachine);

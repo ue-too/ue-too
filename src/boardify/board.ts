@@ -10,7 +10,7 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { BoardStateObserver } from 'src/boardify/board-state-observer';
 import { InputObserver, UnsubscribeToInput, BoardInputEvent } from 'src/input-observer';
 
-import { InputControlCenter, RelayControlCenter, Relay, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
+import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
 
 import { SelectionBox } from 'src/drawing-engine';
 import { SelectionInputObserver } from 'src/selection-box';
@@ -82,7 +82,7 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        const stateMachineContext = new Relay({
+        const stateMachineContext = new CameraRig({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
