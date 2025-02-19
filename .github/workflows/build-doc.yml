@@ -54,7 +54,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
-          cd ../board-documentation
+          cd ./board-documentation
           git config --global user.email "vntchang@gmail.com"
           git config --global user.name "niuee"
           git add .
