@@ -59,12 +59,12 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
           cd ./board-documentation
-          git config --global user.name "board-doc-pr"
-          git config --global user.email "board-doc-pr@board.com"
-          git switch -c update-docs
-          git add .
-          git commit -m "Update docs"
-          git push -u origin update-docs
-          echo "Creating pull request..."
-          gh pr create -B main -H update-docs --title "Update docs" --body "Created by Github action from the board repo"
+          # git config --global user.name "board-doc-pr"
+          # git config --global user.email "board-doc-pr@board.com"
+          # git switch -c update-docs
+          # git add .
+          # git commit -m "Update docs"
+          # git push -u origin update-docs
+          # echo "Creating pull request..."
+          # gh pr create -B main -H update-docs --title "Update docs" --body "Created by Github action from the board repo"
         
