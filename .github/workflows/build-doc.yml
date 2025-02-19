@@ -60,11 +60,6 @@ jobs:
           git add .
           git commit -m "Update docs"
           git push -u origin update-docs
-      - name: Create Pull Request
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-        run: |
           echo "Creating pull request..."
-          cd ./board-documentation
           gh pr create -B main -H update-docs --title "Update docs" --body "Created by Github action from the board repo"
         
