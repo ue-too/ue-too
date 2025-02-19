@@ -56,6 +56,7 @@ jobs:
         run: |
           cd ./board-documentation
           git config --global user.name "board-doc-pr"
+          git config --global user.email "board-doc-pr@board.com"
           git switch -c update-docs
           git add .
           git commit -m "Update docs"
