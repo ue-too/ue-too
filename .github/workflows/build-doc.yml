@@ -50,6 +50,26 @@ jobs:
           fi
           pnpm doc:default
           ls ./docs-md
+      - name: Get Published Version
+        id: get-version
+        run: |
+          echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Auto Gen Docs using typedoc-only
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd ./board
+          pnpm doc:typedoc-only
+          git config --global user.name "niuee"
+          git config --global user.email "vntchang@gmail.com"
+          VERSION=$(pnpm pkg get version)
+          git switch -c update-docs-$VERSION
+          git add .
+          git commit -m "Update docs"
+          git push -u origin update-docs-$VERSION
+          echo "Creating pull request..."
+          gh pr create -B main -H update-docs-$VERSION --title "Update docs for $VERSION" --body "Created by Github action from the board repo"
       - name: Copy Docs MD files to Docs Repo
         run: |
           cd ./board
