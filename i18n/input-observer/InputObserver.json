@@ -1,0 +1,33 @@
+{
+    "InputObserver": {
+        "comment": {
+            "summary": [],
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Input Observer"
+                        }
+                    ],
+                    "skipRendering": false
+                },
+                {
+                    "tag": "@translationBlock",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "This is the observer class that listens to input events and notifies the control center."
+                        }
+                    ],
+                    "skipRendering": false
+                }
+            ],
+            "modifierTags": {}
+        },
+        "properties": {},
+        "methods": {},
+        "accessors": {}
+    }
+}

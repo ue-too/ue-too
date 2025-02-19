@@ -26,18 +26,18 @@
 
 </p>
 
-This is not an all-in-one drawing canvas library like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
-This library let you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
+This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
+board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
 
-What `board` is trying to do is very much like what [pixi-viewport](https://github.com/pixijs-userland/pixi-viewport) is doing. But `board` takes a step back, it's not heavily integrated with pixi.js. It can be used with just regular HTML canvas element without pixi.js. However, it also works with canvas that uses [pixi.js](https://github.com/pixijs/pixijs), [fabric.js](https://github.com/fabricjs/fabric.js), and [konva](https://github.com/konvajs/konva).
+What `board` is trying to do is very much like what [pixi-viewport](https://github.com/pixijs-userland/pixi-viewport) is doing. But `board` takes a step back, it's not heavily integrated with pixi.js. It can be used with just regular HTML canvas element without pixi.js, but it also works with canvas that uses [pixi.js](https://github.com/pixijs/pixijs), [fabric.js](https://github.com/fabricjs/fabric.js), and [konva](https://github.com/konvajs/konva).
 
-This is a [CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7) that has a minimal example showcasing the basic functionality that `board` can achieve.
+[CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
 
 There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva.
 
 ## Docs
-- [Documentation](https://niuee.github.io/board/index.html) (still in its early stages; a lot of things are still not documented properly.)
-- [中文文件連結](https://niuee.github.io/board/tw/index.html) (還沒有寫很多，時間真的不太夠)
+- [API Documentation](https://niuee.github.io/board/index.html)
+- [~~中文文件連結~~]() (我把它拔掉了，因為 typedoc 升級之後之前寫的 plugin 就不能用了之後再看看要怎麼 i18n 一下)
 
 ## Installation and Usage
 ### Package manager

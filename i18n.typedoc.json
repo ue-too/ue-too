@@ -1,0 +1,11 @@
+{
+  "plugin": ["typedoc-plugin-mdn-links", "typedoc-plugin-localization"],
+  "categoryOrder": ["Board", "Board Camera", "Input Strategy", "*", "Easing Functions"],
+  "readme": "./README.md",
+  "tsconfig": "./prod.tsconfig.json",
+  "entryPoints": ["./src/index.ts"],
+  "navigation": {
+    "includeCategories": true
+  },
+  "out": "./docs"
+}

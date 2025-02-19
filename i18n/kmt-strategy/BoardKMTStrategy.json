@@ -1,0 +1,22 @@
+{
+    "BoardKMTStrategy": {
+        "comment": {
+            "summary": [],
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Input Strategy"
+                        }
+                    ],
+                    "skipRendering": false
+                }
+            ],
+            "modifierTags": {}
+        },
+        "properties": {},
+        "methods": {}
+    }
+}
