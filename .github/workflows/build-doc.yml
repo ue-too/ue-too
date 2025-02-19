@@ -43,5 +43,5 @@ jobs:
           fi
       - name: Auto Gen Docs MD files using typedoc
         run: |
-          pnpm typedoc
+          ls
 
