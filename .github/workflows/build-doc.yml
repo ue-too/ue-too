@@ -43,4 +43,10 @@ jobs:
           fi
           pnpm typedoc
           ls ./docs-md
-
+      - name: Copy Docs MD files to Docs Repo
+        run: |
+          cd ./board
+          cp -r ./docs-md/* ../board-documentation/docs
+          cd ../board-documentation/docs
+          echo "Current board-documentation/docs:"
+          ls
