@@ -6,9 +6,11 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-only.yml
-    with:
-      node-version: '20.x'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/workflows/build-only.yml
+        with:
+          node-version: '20.x'
     name: Build
 
   additional-steps:
