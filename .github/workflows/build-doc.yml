@@ -8,13 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Docs
-    # if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version')
     steps:
-      - name: Fail if branch is not main
-        # if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')))
+      - name: Set Up
         run: |
-          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
-          exit 1
+          echo "Setting up..."
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
