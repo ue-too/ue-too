@@ -3,7 +3,7 @@
     "extends": ["typedoc/tsdoc.json"],
     "tagDefinitions": [
         {
-            "tagName": "@translation",
+            "tagName": "@description",
             "syntaxKind": "block"
         }
     ]
