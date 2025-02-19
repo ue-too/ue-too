@@ -6,13 +6,13 @@
 </p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@niuee/board">
-        <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;">
+        <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/actions/workflows/node.js.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/node.js.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;">
+        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/blob/main/LICENSE.txt">
-        <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;">
+        <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
 
 </p>
@@ -37,7 +37,7 @@ There are a few more examples in the `devserver` directory. Including how to int
 
 ## Docs
 - [Documentation](https://niuee.github.io/board/index.html) (still in its early stages; a lot of things are still not documented properly.)
-- [中文文件連結](https://niuee.github.io/board/tw/index.html) (還沒有寫很多，時間真的不太夠 ><)
+- [中文文件連結](https://niuee.github.io/board/tw/index.html) (還沒有寫很多，時間真的不太夠)
 
 ## Installation and Usage
 ### Package manager
@@ -67,7 +67,7 @@ In an HTML file use the script tag. (instead of importing from jsdelivr you can 
 <script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
 ```
 
-and then in other JavaScript module you can use the exports of @niuee/board using the name Board.{some export}
+and then in other JavaScript module you can use the exports of @niuee/board using the name Board.some export
 
 For example the constructor for the `Board` class.
 ```javascript
