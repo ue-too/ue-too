@@ -50,22 +50,18 @@ jobs:
           cd ../board-documentation/docs
           echo "Current board-documentation/docs:"
           ls
+      - name: Commit and Push Docs
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd ./board-documentation
+          git config --global user.name "board-doc-pr"
+          git switch -c update-docs
+          git add .
+          git commit -m "Update docs"
+          git push -u origin update-docs
       - name: Create Pull Request
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.PAT }}  # Use the PAT secret
-          script: |
-            const { owner, repo } = context.repo;
-            const title = "Update Docs";
-            const body = "This pull request updates the documentation.";
-            const head = "temp-branch";  // The temporary branch you pushed to
-            const base = "main";  // The base branch you want to merge into
-
-            await github.pulls.create({
-              owner,
-              repo,
-              title,
-              body,
-              head,
-              base,
-            });
+        run: |
+          echo "Creating pull request..."
+          gh pr create -B main -H update-docs --title "Update docs" --body "Created by Github action from the board repo"
+        
