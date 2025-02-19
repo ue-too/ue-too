@@ -53,6 +53,7 @@ jobs:
       - name: Get Published Version
         id: get-version
         run: |
+          cd ./board
           echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Auto Gen Docs using typedoc-only
