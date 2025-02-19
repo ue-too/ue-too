@@ -48,7 +48,7 @@ jobs:
           else
             pnpm install
           fi
-          pnpm typedoc
+          pnpm doc:default
           ls ./docs-md
       - name: Copy Docs MD files to Docs Repo
         run: |
@@ -62,8 +62,8 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT }}
         run: |
           cd ./board-documentation
-          git config --global user.name "board-doc-pr"
-          git config --global user.email "board-doc-pr@board.com"
+          git config --global user.name "niuee"
+          git config --global user.email "vntchang@gmail.com"
           git switch -c update-docs
           git add .
           git commit -m "Update docs"
