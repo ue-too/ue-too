@@ -12,7 +12,7 @@ on:
           - patch
 
 jobs:
-  build:
+  release-package:
     runs-on: ubuntu-latest
     name: Publish Package to npmjs
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version')
@@ -98,3 +98,8 @@ jobs:
               for file in ./dist/*; do
                 gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
               done
+  release-docs:
+    uses: ./.github/workflows/build-doc.yml
+    with:
+      node-version: '20.x'
+    needs: release-package
