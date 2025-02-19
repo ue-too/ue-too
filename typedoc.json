@@ -1,7 +1,5 @@
 {
-  "plugin": ["typedoc-material-theme", "./scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links", "@niuee/typedoc-plugin-translation", "@niuee/typedoc-plugin-custom-theme"],
-  "themeColor": "#ffffff",
-  "theme": "translation-theme",
+  "plugin": ["typedoc-plugin-mdn-links", "typedoc-plugin-markdown"],
   "categoryOrder": ["Board", "Board Camera", "Input Strategy", "*", "Easing Functions"],
   // "readme": "./README.md",
   "tsconfig": "./prod.tsconfig.json",
@@ -9,4 +7,5 @@
   "navigation": {
     "includeCategories": true
   },
+  "out": "./docs-md"
 }

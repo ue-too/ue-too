@@ -106,18 +106,6 @@ export default [
       name: 'board',
       sourcemap: true,
     },
-    {
-      file: 'build/umd/index.js',
-      format: 'umd',
-      name: "Board",
-      sourcemap: true
-    },
-    {
-      file: 'build/iife/index.js',
-      format: 'iife',
-      name: "Board",
-      sourcemap: true
-    }
     ],
     plugins: [
       resolve(),
@@ -125,6 +113,7 @@ export default [
         tsconfig: './tsconfig.json',
         declaration: false,
         exclude: ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*"],
+        outDir: 'dist',
       }),
       terser({
         mangle: false,

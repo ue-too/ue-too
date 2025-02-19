@@ -3,9 +3,16 @@ name:  Build Docs (static MD files)
 on:
   workflow_dispatch:
     
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        description: Node Version
+        required: false
+        default: '20.x'
 
 jobs:
-  build:
+  build-docs:
     runs-on: ubuntu-latest
     name: Build Docs
     steps:
@@ -32,8 +39,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
-      - name: Install dependencies
+          version: 10
+      - name: Auto Gen Docs MD files using typedoc
         run: |
           cd board
           if [ -f pnpm-lock.yaml ]; then
@@ -41,7 +48,26 @@ jobs:
           else
             pnpm install
           fi
-      - name: Auto Gen Docs MD files using typedoc
-        run: |
           pnpm typedoc
-
+          ls ./docs-md
+      - name: Copy Docs MD files to Docs Repo
+        run: |
+          cd ./board
+          cp -r ./docs-md/* ../board-documentation/docs
+          cd ../board-documentation/docs
+          echo "Current board-documentation/docs:"
+          ls
+      - name: Commit and Push Docs
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd ./board-documentation
+          git config --global user.name "board-doc-pr"
+          git config --global user.email "board-doc-pr@board.com"
+          git switch -c update-docs
+          git add .
+          git commit -m "Update docs"
+          git push -u origin update-docs
+          echo "Creating pull request..."
+          gh pr create -B main -H update-docs --title "Update docs" --body "Created by Github action from the board repo"
+        

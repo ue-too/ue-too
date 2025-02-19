@@ -6,7 +6,6 @@ const { compilerOptions } = JSON.parse(readFileSync(new URL('./tsconfig.json', i
 
 export default {
   preset: 'ts-jest',
-  testEnvironment: 'jsdom',
   roots: ["<rootDir>"],
   moduleDirectories: ["node_modules", "<rootDir>"],
   modulePaths: [compilerOptions.baseUrl],
