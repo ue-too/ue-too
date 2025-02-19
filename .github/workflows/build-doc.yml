@@ -50,3 +50,13 @@ jobs:
           cd ../board-documentation/docs
           echo "Current board-documentation/docs:"
           ls
+      - name: Commit and Push Docs
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+        run: |
+          cd ../board-documentation
+          git config --global user.email "vntchang@gmail.com"
+          git config --global user.name "niuee"
+          git add .
+          git commit -m "Update docs"
+          git push
