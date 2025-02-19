@@ -1,25 +1,34 @@
-name:  Build Source Code Only
+name:  Build
 
 on:
   pull_request:
     branches: [ "main", "dev", "release/**" ]
-
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        description: Node Version
+        required: false
+        default: '20.x'
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build Source Code using Rollup
+    name: Rollup Build
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm
+        with:
+          path: board
       - uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: ${{ inputs.node-version }}
           registry-url: 'https://registry.npmjs.org'
       - uses: pnpm/action-setup@v3
         with:
           version: 10
       - name: Install dependencies
         run: |
+          cd ./board
           if [ -f pnpm-lock.yaml ]; then
             pnpm install --frozen-lockfile || pnpm install
           else
