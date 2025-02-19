@@ -34,5 +34,7 @@ jobs:
           else
             pnpm install
           fi
-      - run: pnpm build
+      - run: |
+          cd ./board
+          pnpm build
       

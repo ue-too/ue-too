@@ -6,9 +6,16 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/build-only.yml
-    with:
-      node-version: '20.x'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build
+        uses: ./.github/workflows/build-only.yml
+        with:
+          node-version: '20.x'
+      - name: Test Step
+        run: |
+          echo "Test Step"
+          ls
   build-docs:
     runs-on: ubuntu-latest
     name: Build Docs
