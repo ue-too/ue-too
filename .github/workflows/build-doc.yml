@@ -33,7 +33,7 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 10
-      - name: Install dependencies
+      - name: Auto Gen Docs MD files using typedoc
         run: |
           cd board
           if [ -f pnpm-lock.yaml ]; then
@@ -41,7 +41,6 @@ jobs:
           else
             pnpm install
           fi
-      - name: Auto Gen Docs MD files using typedoc
-        run: |
-          ls
+          pnpm typedoc
+          ls ./docs-md
 
