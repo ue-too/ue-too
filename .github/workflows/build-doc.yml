@@ -35,5 +35,13 @@ jobs:
           version: 8
       - name: Install dependencies
         run: |
-          ls
+          cd board
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile || pnpm install
+          else
+            pnpm install
+          fi
+      - name: Auto Gen Docs MD files using typedoc
+        run: |
+          pnpm typedoc
 
