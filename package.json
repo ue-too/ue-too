@@ -13,6 +13,7 @@
     "sync-package-version": "node ./scripts/sync-package-version.mjs",
     "gen-declaration": "pnpm exec tsc --declaration --emitDeclarationOnly -p prod.tsconfig.json && pnpm exec tsc-alias -p prod.tsconfig.json",
     "doc:default": "pnpm run doc:strip-readme && pnpm exec typedoc",
+    "doc:typedoc-only": "pnpm exec typedoc --options ./typedoc-only.typedoc.json",
     "doc:strip-readme": "node ./scripts/docusaurus-readme.mjs",
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
