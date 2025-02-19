@@ -8,16 +8,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Docs
-    # if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version')
     steps:
-      - name: Fail if branch is not main
-        # if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')))
+      - name: Set Up
         run: |
-          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
-          exit 1
+          echo "Setting up..."
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
+          path: board
+      - name: Checkout Docs Repo
+        run: |
+          echo "Checking out docs repo..."
+      - uses: actions/checkout@v4
+        with:
+          repository: niuee/board-documentation
+          token: ${{ secrets.PAT }}
+          ref: main
+          path: board-documentation
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v3
         with:
@@ -27,4 +34,14 @@ jobs:
         with:
           version: 8
       - name: Install dependencies
-        run: ls
+        run: |
+          cd board
+          if [ -f pnpm-lock.yaml ]; then
+            pnpm install --frozen-lockfile || pnpm install
+          else
+            pnpm install
+          fi
+      - name: Auto Gen Docs MD files using typedoc
+        run: |
+          pnpm typedoc
+
