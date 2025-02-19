@@ -16,6 +16,7 @@
     "doc:inject-translation-json": "run(){ if [ $# -eq 0 ]; then echo \"No Language Code provided. Going for en as default\"; pnpm exec typedoc --options ./typedoc.json --translationMode inject --readme ./trasnlations/en/README.md --out ./docs-staging/en; else echo \"Language Code is: $1\"; pnpm exec typedoc --options ./typedoc.json --l10nCode $1 --readme ./translations/staging/$1/README.md --translationMode inject --out ./docs-staging/$1; fi;}; run",
     "doc:default": "pnpm exec typedoc --options ./typedoc.json --out ./docs-staging/en --translationMode default",
     "doc:move2prod": "node ./scripts/doc-transition.mjs",
+    "doc:strip-readme": "node ./scripts/docusaurus-readme.mjs",
     "increment-major-version": "cd ./build && pnpm version major",
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
