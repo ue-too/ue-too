@@ -3,7 +3,7 @@
   "themeColor": "#ffffff",
   "theme": "translation-theme",
   "categoryOrder": ["Board", "Board Camera", "Input Strategy", "*", "Easing Functions"],
-  "readme": "./README.md",
+  // "readme": "./README.md",
   "tsconfig": "./prod.tsconfig.json",
   "entryPoints": ["./src/index.ts"],
   "navigation": {
