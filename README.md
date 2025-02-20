@@ -6,13 +6,13 @@
 </p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@niuee/board">
-        <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;">
+        <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/actions/workflows/node.js.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/node.js.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;">
+        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/blob/main/LICENSE.txt">
-        <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;">
+        <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
 
 </p>
@@ -26,30 +26,32 @@
 
 </p>
 
-This is not a complete drawing canvas library like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
-This library saves you from the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and math if your not a fan of math.
+This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
+board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
 
-[CodeSandbox Link](https://codesandbox.io/p/sandbox/board-example-y2dycd?layout=%257B%2522sidebarPanel%2522%253A%2522EXPLORER%2522%252C%2522rootPanelGroup%2522%253A%257B%2522direction%2522%253A%2522horizontal%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522id%2522%253A%2522ROOT_LAYOUT%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522UNKNOWN%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522clw2y7l7v00063b6iiev37bos%2522%252C%2522sizes%2522%253A%255B100%252C0%255D%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522EDITOR%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522EDITOR%2522%252C%2522id%2522%253A%2522clw2y7l7v00023b6ikchwe6hz%2522%257D%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522direction%2522%253A%2522horizontal%2522%252C%2522id%2522%253A%2522SHELLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522SHELLS%2522%252C%2522id%2522%253A%2522clw2y7l7v00033b6ikl1vhmzw%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%257D%252C%257B%2522type%2522%253A%2522PANEL_GROUP%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522direction%2522%253A%2522vertical%2522%252C%2522id%2522%253A%2522DEVTOOLS%2522%252C%2522panels%2522%253A%255B%257B%2522type%2522%253A%2522PANEL%2522%252C%2522contentType%2522%253A%2522DEVTOOLS%2522%252C%2522id%2522%253A%2522clw2y7l7v00053b6iwbyc1zfu%2522%257D%255D%252C%2522sizes%2522%253A%255B100%255D%257D%255D%252C%2522sizes%2522%253A%255B46.32162767975171%252C53.67837232024829%255D%257D%252C%2522tabbedPanels%2522%253A%257B%2522clw2y7l7v00023b6ikchwe6hz%2522%253A%257B%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clw2y7l7v00013b6iiagi3t0j%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522FILE%2522%252C%2522filepath%2522%253A%2522%252Fsrc%252Findex.html%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%252C%257B%2522id%2522%253A%2522clw4g5a2x00023b6icusokwho%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522FILE%2522%252C%2522initialSelections%2522%253A%255B%257B%2522startLineNumber%2522%253A15%252C%2522startColumn%2522%253A29%252C%2522endLineNumber%2522%253A15%252C%2522endColumn%2522%253A29%257D%255D%252C%2522filepath%2522%253A%2522%252Fsrc%252Findex.mjs%2522%252C%2522state%2522%253A%2522IDLE%2522%257D%255D%252C%2522id%2522%253A%2522clw2y7l7v00023b6ikchwe6hz%2522%252C%2522activeTabId%2522%253A%2522clw4g5a2x00023b6icusokwho%2522%257D%252C%2522clw2y7l7v00053b6iwbyc1zfu%2522%253A%257B%2522tabs%2522%253A%255B%257B%2522id%2522%253A%2522clw2y7l7v00043b6ic6f06neh%2522%252C%2522mode%2522%253A%2522permanent%2522%252C%2522type%2522%253A%2522UNASSIGNED_PORT%2522%252C%2522port%2522%253A0%252C%2522path%2522%253A%2522%252F%2522%257D%255D%252C%2522id%2522%253A%2522clw2y7l7v00053b6iwbyc1zfu%2522%252C%2522activeTabId%2522%253A%2522clw2y7l7v00043b6ic6f06neh%2522%257D%252C%2522clw2y7l7v00033b6ikl1vhmzw%2522%253A%257B%2522tabs%2522%253A%255B%255D%252C%2522id%2522%253A%2522clw2y7l7v00033b6ikl1vhmzw%2522%257D%257D%252C%2522showDevtools%2522%253Atrue%252C%2522showShells%2522%253Afalse%252C%2522showSidebar%2522%253Atrue%252C%2522sidebarPanelSize%2522%253A15%257D) You Can try it out to see if it's for you.
+What `board` is trying to do is very much like what [pixi-viewport](https://github.com/pixijs-userland/pixi-viewport) is doing. But `board` takes a step back, it's not heavily integrated with pixi.js. It can be used with just regular HTML canvas element without pixi.js, but it also works with canvas that uses [pixi.js](https://github.com/pixijs/pixijs), [fabric.js](https://github.com/fabricjs/fabric.js), and [konva](https://github.com/konvajs/konva).
+
+[CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
+
+There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva.
 
 ## Docs
-- [Documentation](https://niuee.github.io/board/index.html) (Still in its early stages; a lot of things are still not documented properly.)
-- [中文文件連結](https://niuee.github.io/board/tw/index.html) (還在很早期的階段，目前很努力在補齊文件中)
-
-- [Design Document](https://hackmd.io/@niuee/ByKskjAUp)
+- [API Documentation](https://niuee.github.io/board/index.html)
+- [~~中文文件連結~~]() (我把它拔掉了，因為 typedoc 升級之後之前寫的 plugin 就不能用了之後再看看要怎麼 i18n 一下)
 
 ## Installation and Usage
 ### Package manager
+install it using
 ```bash
 npm install @niuee/board
 ```
-and import it in other JavaScript module
-
+and import it like
 ```javascript
-import { BoardV2 } from "@niuee/board";
+import { Board } from "@niuee/board";
 ```
 
 ### Download From Github
-Download the bundled JavaScript (board.js) in the [releases](https://github.com/niuee/board/releases/) of the repository and put it in the your project directory for other JavaScript module to import like this.
+Download the bundled JavaScript (board.js) in the [releases](https://github.com/niuee/board/releases/) page of the repository and put it in the your project directory for other JavaScript module to import like this.
 ```javascript
 import { Board } from "./board.js";
 ```
@@ -65,7 +67,7 @@ In an HTML file use the script tag. (instead of importing from jsdelivr you can 
 <script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
 ```
 
-and then in other JavaScript file you can use the exports of @niuee/board using the name Board.{some export}
+and then in other JavaScript module you can use the exports of @niuee/board using the name Board.some export
 
 For example the constructor for the `Board` class.
 ```javascript
@@ -73,9 +75,10 @@ const newBoard = new Board.Board(canvasElement);
 ```
 
 ## Key Features
-- Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse)
-- Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work.
-- Rich API for board camera. (You can do a lot of cool stuff with the camera e.g. animating the camera moving along a path, zooming and rotating can also be animated)
+- Modularity: you don't have to use everything from this library; take only what you need. (details in the later section)
+- Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse) But you can still tweak how things work.
+- Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (example is on the way)
+- You can use this with pixi.js, fabric.js, Konva; or maybe just html canvas. (example is on the way)
 
 ## Bare Minimum Example
 
@@ -108,9 +111,9 @@ function step(timestamp){
 step(0);
 ```
 
-## How To Use
+## How To Use (Using only HTML canvas)
 The `Board` class extends an existing canvas element in the DOM to have extra capabilities such as pan, zoom, and rotation.
-To instantiate a new board, must have a canvas element in your html.
+To instantiate a new board, you need have a canvas element in your html.
 ```html
 <canvas id="board"></canvas>
 ```
@@ -152,30 +155,33 @@ board.context.arc(10, 10, 5, 0, 2 * Math.PI);
 board.context.stroke();
 ```
 
-This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas.
-
-This is probably a good time to talk about the coordinate system @niuee/board uses.
-
-In Most use cases the default coordinate system would be what you want as you might already be familiar with the canvas API.
-
-In case you want to flip the Y axis so that positive direction for Y axis is point up in the screen.
-
-Set the `alignCoordinateSystem` of the `Board` class to `false`.
-```javascript
-board.alignCoordinateSystem = false;
-```
-
-This would flip the Y axis. There's a catch though. Even though the Y axis is flipped the context that the board uses is still the same as a regular canvas. This means that to draw something in the coordinate of the flipped coordinate system, you would need to flip the Y axis coordinate (negate the coordinate) before feeding it to the `context` to draw.
-
-For example if you want to draw a circle at (30, 30), for the flipped coordinate system, you would need to do it like this.
-```javascript
-// notice the negative sign for the y coordinate
-context.arc(30, -30, 5, 0, Math.PI * 2);
-```
-
-There is also another difference other than the flipped Y axis. The positive direction of an angle is also reversed. For the flipped coordinate system. Positive rotation is counter clockwise. As for the default coordintate system it's the same as the regular canvas API where positive rotation is clockwise.
-
+This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas. (but you can pan and zoom the canvas around)
 
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
-I am setting up a documentation site for examples and explanations of the entire project. Stay tuned.
+## Under the Hood
+How board achieve the effect of infinite canvas is through an abstraction called a camera! It's like the viewport attribute of svg. 
+
+The user controls the position, zoom, and rotation of the camera to see different part of a canvas context.
+
+i.e. if you draw a circle with the center at (100, 100) on the context, if the position of the camera is at (100, 100) the center of the canvas would be the same as the center of the circle on screen.
+
+Everything starts with an user input: like dragging while holding the control key, 2-finger-swipe on trackpad, or 2-finger swipe on touch devices.
+These events are captured by the event listeners added to the canvas element. Then, the event listeners would parse the raw events into events like: `LEFT_POINTER_MOVE`, `SPACEBAR_DOWN`, etc.
+
+These parsed events are then fed into the input state machine to interpret the user's intent. (Essentially, a second layer of parsing.)
+
+The input state machine would spit out something like pan with some distance, or zoom to X scale, etc. 
+
+The event listeners combined with the input state machine is how board maps users input to the control input of the camera.
+If you want custom behavior for example, the default 2-finger-swipe on touch device is panning the camera, if you want to make it 1-finger-drag instead, this is where you would want to look into.
+(you can start by looking into `src/kmt-strategy/kmt-strategy.ts`, `src/input-state-machine.ts` detail documentation will be updated in the future.)
+
+User camera input from the state machine is passed to a input observable. This observable allows users (as in the user of the library not the browser client) to subscribe to the raw camera input.
+The "raw" indicates that all values are in viewport coordinate system instead of context or the "world" space.
+
+The following diagram shows the difference between the "viewport" and the "world" coordinate system.
+
+Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
+![viewport and world coorindate system](./doc-media//coordinate-system.png)
+

@@ -1,0 +1,23 @@
+{
+    "CameraObserver": {
+        "comment": {
+            "summary": [],
+            "blockTags": [
+                {
+                    "tag": "@category",
+                    "content": [
+                        {
+                            "kind": "text",
+                            "text": "Camera Observer"
+                        }
+                    ],
+                    "skipRendering": false
+                }
+            ],
+            "modifierTags": {}
+        },
+        "properties": {},
+        "methods": {},
+        "accessors": {}
+    }
+}

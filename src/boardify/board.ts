@@ -36,7 +36,7 @@ import { SelectionInputObserver } from 'src/selection-box';
  * //.
  * }
  * ```
- * @translationBlock Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
+ * @description Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
  * 
  * ```typescript
  * import {Board} from "@niuee/board/boardify";
@@ -149,8 +149,9 @@ export default class Board {
     }
 
     /**
-     * @translationBlock This is in sync with the canvas width and the camera view port width. This is not the board's width.
-     * If the limitEntireViewPort is set to true, the min zoom level is updated based on the width of the canvas.
+     * @description This is in sync with the canvas width and the camera view port width. This is not the board's width.
+     * If the `limitEntireViewPort` is set to true, the min zoom level is updated based on the width of the canvas.
+     * 
      */
     set width(width: number){
         this._canvas.width = width * window.devicePixelRatio;

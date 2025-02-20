@@ -1,0 +1,36 @@
+{
+    "BaseCamera": {
+        "properties": {},
+        "methods": {
+            "getTransform": {
+                "comment": {
+                    "summary": [],
+                    "blockTags": [
+                        {
+                            "tag": "@translationBlock",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "The order of the transformation is as follows:\n1. Scale (scale the context using the device pixel ratio)\n2. Translation (move the origin of the context to the center of the canvas)\n3. Rotation (rotate the context negatively the rotation of the camera)\n4. Zoom (scale the context using the zoom level of the camera)\n5. Translation (move the origin of the context to the position of the camera in the context coordinate system)"
+                                }
+                            ],
+                            "skipRendering": false
+                        },
+                        {
+                            "tag": "@returns",
+                            "content": [
+                                {
+                                    "kind": "text",
+                                    "text": "The transformation matrix"
+                                }
+                            ],
+                            "skipRendering": false
+                        }
+                    ],
+                    "modifierTags": {}
+                }
+            }
+        },
+        "accessors": {}
+    }
+}

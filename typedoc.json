@@ -1,7 +1,7 @@
 {
   "plugin": ["typedoc-plugin-mdn-links", "typedoc-plugin-markdown"],
   "categoryOrder": ["Board", "Board Camera", "Input Strategy", "*", "Easing Functions"],
-  // "readme": "./README.md",
+  "readme": "./README-for-docusaurus.md",
   "tsconfig": "./prod.tsconfig.json",
   "entryPoints": ["./src/index.ts"],
   "navigation": {
