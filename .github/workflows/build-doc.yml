@@ -62,6 +62,7 @@ jobs:
         run: |
           cd ./board
           pnpm doc:typedoc-only
+          pnpm doc:inject-i18n-prod zh-tw
           git config --global user.name "niuee"
           git config --global user.email "vntchang@gmail.com"
           VERSION=$(pnpm pkg get version | sed 's/^"\(.*\)"$/\1/')
