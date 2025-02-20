@@ -9,7 +9,7 @@
         <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/actions/workflows/node.js.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
+        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/blob/main/LICENSE.txt">
         <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;"/>
