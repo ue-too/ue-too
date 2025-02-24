@@ -1,3 +1,21 @@
+/**
+ * @category being
+ * 
+ * This is the interface for the state machine. The interface takes in a few generic parameters:
+ * 
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - States: The states of the state machine. (all of the possible states that the state machine can be in)
+ * 
+ * The template abstract class TemplateStateMachine implements the basic functionality of the state machine:
+ * 
+ * - switchTo: A function that allows you to switch the state of the state machine.
+ * - happens: A function that allows you to trigger an event on the state machine.
+ * - onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.
+ * - onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.
+ * 
+ * 
+ */
 export interface StateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
@@ -68,7 +86,9 @@ export abstract class TemplateStateMachine<EventPayloadMapping, Context, States 
         const nextState = this._states[this._currentState].handles(this, event, payload, this._context);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
+            this._states[this._currentState].uponLeave(this, this._context);
             this.switchTo(nextState);
+            this._states[this._currentState].uponEnter(this, this._context);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
         return nextState;
