@@ -140,7 +140,6 @@ drawingEngine.addDrawTask({
         console.log("draw", deltaTime);
     }
 });
-drawingEngine.addDrawTask(board.selectionBox);
 
 // const stateMachine = board.touchStrategy.touchStateMachine;
 const stateMachine = board.kmtStrategy.stateMachine;

@@ -94,11 +94,10 @@ export default class Board {
         const panStateMachine = createDefaultPanControlStateMachine(stateMachineContext);
         const zoomStateMachine = createDefaultZoomControlStateMachine(stateMachineContext);
         const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
-        const selectionInputObserver = new SelectionInputObserver(this.boardStateObserver.camera, new SelectionBox(this._context));
 
         this.boardInputObserver = new RawUserInputObservable(relayControlCenter);
 
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, this.boardInputObserver, selectionInputObserver, false);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, relayControlCenter, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         
@@ -406,9 +405,5 @@ export default class Board {
                 this.boardStateObserver.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
-    }
-
-    get selectionBox(): SelectionBox {
-        return this._kmtStrategy.selectionInputObserver.selectionBox;
     }
 }

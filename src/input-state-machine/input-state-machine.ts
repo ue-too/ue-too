@@ -1,6 +1,7 @@
-import { EventAction, EventGuards, GuardEvaluation, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
+import { EventAction, EventGuards, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
+import { BoardContext } from "./board-context";
 
 
 export type BoardStates = "IDLE" | "READY_TO_SELECT" | "SELECTING" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
@@ -28,18 +29,6 @@ export type ScrollWithCtrlEventPayload = {
     deltaY: number;
     x: number;
     y: number;
-}
-
-export type BoardContext = {
-    alignCoordinateSystem: boolean;
-    canvas: HTMLCanvasElement;
-    notifyOnPan: (delta: Point) => void;
-    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
-    setInitialCursorPosition: (position: Point) => void;
-    initialCursorPosition: Point;
-    setSelectionStartPoint: (point: Point) => void;
-    setSelectionEndPoint: (point: Point) => void;
-    toggleSelectionBox: (selecting: boolean) => void;
 }
 
 export type BoardEventMapping = {
@@ -88,12 +77,12 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
         return this._eventReactions;
     }
 
-    leftPointerDownHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-        context.setSelectionStartPoint(viewportPoint);
-        context.toggleSelectionBox(true);
-        return "READY_TO_SELECT";
-    }
+    // leftPointerDownHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+    //     context.setSelectionStartPoint(viewportPoint);
+    //     context.toggleSelectionBox(true);
+    //     return "READY_TO_SELECT";
+    // }
 
     leftPointerMoveHandler = (stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
         this.world.processPoint(stateMachine, {x: payload.x, y: payload.y});
@@ -101,10 +90,10 @@ export class BoardIdleState extends TemplateState<BoardEventMapping, BoardContex
     }
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerDown: {
-            action: this.leftPointerDownHandler,
-            defaultTargetState: "READY_TO_SELECT",
-        },
+        // leftPointerDown: {
+        //     action: this.leftPointerDownHandler,
+        //     defaultTargetState: "READY_TO_SELECT",
+        // },
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -156,22 +145,22 @@ export class ReadyToSelectState extends TemplateState<BoardEventMapping, BoardCo
         super();
     }
 
-    leftPointerMove = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-        context.setSelectionEndPoint(viewportPoint);
-        context.toggleSelectionBox(true);
-        return "SELECTING";
-    }).bind(this);
+    // leftPointerMove = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+    //     context.setSelectionEndPoint(viewportPoint);
+    //     context.toggleSelectionBox(true);
+    //     return "SELECTING";
+    // }).bind(this);
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
         leftPointerUp: {
             action: () => "IDLE",
             defaultTargetState: "IDLE",
         },
-        leftPointerMove: {
-            action: this.leftPointerMove,
-            defaultTargetState: "SELECTING",
-        },
+        // leftPointerMove: {
+        //     action: this.leftPointerMove,
+        //     defaultTargetState: "SELECTING",
+        // },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {
@@ -187,26 +176,26 @@ export class SelectingState extends TemplateState<BoardEventMapping, BoardContex
         super();
     }
 
-    leftPointerMoveHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-        context.setSelectionEndPoint(viewportPoint);
-        return "SELECTING";
-    }).bind(this);
+    // leftPointerMoveHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+    //     context.setSelectionEndPoint(viewportPoint);
+    //     return "SELECTING";
+    // }).bind(this);
 
-    leftPointerUpHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
-        context.toggleSelectionBox(false);
-        return "IDLE";
-    }).bind(this);
+    // leftPointerUpHandler = ((stateMachine: StateMachine<BoardEventMapping, BoardContext, BoardStates>, context: BoardContext, payload: PointerEventPayload): BoardStates => {
+    //     context.toggleSelectionBox(false);
+    //     return "IDLE";
+    // }).bind(this);
 
     private _eventReactions: Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> = {
-        leftPointerUp: {
-            action: this.leftPointerUpHandler,
-            defaultTargetState: "IDLE",
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: "SELECTING",
-        },
+        // leftPointerUp: {
+        //     action: this.leftPointerUpHandler,
+        //     defaultTargetState: "IDLE",
+        // },
+        // leftPointerMove: {
+        //     action: this.leftPointerMoveHandler,
+        //     defaultTargetState: "SELECTING",
+        // },
     }
 
     get eventReactions(): Partial<EventAction<BoardEventMapping, BoardContext, BoardStates>> {

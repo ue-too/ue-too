@@ -1,8 +1,10 @@
-import { InputObserver, RawUserInputObservable } from "src/input-observer/input-observer";
+import { RawUserInputObservable } from "src/input-observer/input-observer";
 import { UserInputStateMachine } from "src/input-state-machine";
-import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
 import { BoardIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
-import { Point } from "src";
+import { ObservableInputTracker} from "src/input-state-machine/board-context";
+import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
+import type { Point } from "src/index";
+import type { InputControlCenter } from "src/control-center/control-center"
 import { SelectionInputObserver } from "src/selection-box";
 
 /**
@@ -14,8 +16,6 @@ export interface BoardKMTStrategy {
     debugMode: boolean;
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
-    inputObserver: RawUserInputObservable;
-    selectionInputObserver: SelectionInputObserver;
     stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
     setUp(): void;
     tearDown(): void;
@@ -55,24 +55,20 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
 
-    private _inputObserver: RawUserInputObservable;
-    private _selectionInputObserver: SelectionInputObserver;
+    private _inputTracker: ObservableInputTracker;
     private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
-    private leftPointerDown: boolean;
-    private middlePointerDown: boolean;
     private _initialCursorPosition: Point;
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: RawUserInputObservable, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, controlCenter: InputControlCenter, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
-        this._inputObserver = inputObserver;
-        this._selectionInputObserver = selectionInputObserver;
+        this._inputTracker = new ObservableInputTracker(canvas, controlCenter);
         this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
             {
                 IDLE: new BoardIdleState(),
@@ -85,30 +81,22 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
             },
             "IDLE",
-            this
+            this._inputTracker
         );
         this._keyfirstPressed = new Map();
         this._eventTarget = eventTarget;
     }
 
-    toggleSelectionBox(value: boolean){
-        this._selectionInputObserver.toggleSelectionBox(value);
-    }
-
-    setSelectionEndPoint(point: Point){
-        this._selectionInputObserver.notifySelectionEndPoint(point);
-    }
-
-    setSelectionStartPoint(point: Point){
-        this._selectionInputObserver.notifySelectionStartPoint(point);
-    }
-
     notifyOnPan(delta: Point){
-        this._inputObserver.notifyPan(delta);
+        this._inputTracker.notifyOnPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point){
-        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
+        this._inputTracker.notifyOnZoom(zoomAmount, anchorPoint);
+    }
+
+    notifyOnRotate(deltaRotation: number){
+        this._inputTracker.notifyOnRotate(deltaRotation);
     }
 
     setInitialCursorPosition(position: Point){
@@ -147,16 +135,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._canvas;
     }
 
-    get inputObserver(): RawUserInputObservable {
-        return this._inputObserver;
+    get inputTracker(): ObservableInputTracker {
+        return this._inputTracker;
     }
 
     get stateMachine(): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
         return this._stateMachine;
-    }
-
-    get selectionInputObserver(): SelectionInputObserver {
-        return this._selectionInputObserver;
     }
 
     setUp(): void {
@@ -195,12 +179,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.leftPointerDown = true;
             this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.middlePointerDown = true;
             this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this);
             return;
         }
@@ -211,12 +193,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.leftPointerDown = false;
             this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.middlePointerDown = false;
             this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this);
             return;
         }
@@ -328,6 +308,10 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point){
         this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
+    }
+
+    notifyOnRotate(deltaRotation: number){
+        this._inputObserver.notifyRotate(deltaRotation);
     }
 
     setInitialCursorPosition(position: Point){
