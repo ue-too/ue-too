@@ -1,14 +1,14 @@
-import { Point } from "src";
-import { InputObserver, RawUserInputObservable } from "src/input-observer";
-import { TouchContext, TouchPoints, TouchSM } from "src/input-state-machine/touch-state-machine";
-
+import { RawUserInputObservable } from "src/input-observer";
+import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
+import type { TouchContext } from "src/input-state-machine/touch-input-context";
+import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
 export interface BoardTouchStrategy {
     disabled: boolean;
     alignCoordinateSystem: boolean;
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    touchStateMachine: TouchSM;
+    touchStateMachine: TouchInputStateMachine;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -18,18 +18,17 @@ export interface BoardTouchStrategy {
 /**
  * @category Input Strategy
  */
-export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
+export class DefaultTouchStrategy implements BoardTouchStrategy {
 
     private _canvas: HTMLCanvasElement;
+    private _touchInputTracker: TouchInputTracker;
     private _disabled: boolean;
     private _alignCoordinateSystem: boolean;
     private _panDisabled: boolean = false;
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
 
-    private inputObserver: RawUserInputObservable;
-
-    private touchSM: TouchSM;
+    private touchSM: TouchInputStateMachine;
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
@@ -37,14 +36,13 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         this._canvas = canvas;
         this._disabled = false;
         this._alignCoordinateSystem = alignCoordinateSystem;
-
-        this.inputObserver = inputObserver;
-        this.touchSM = new TouchSM(this);
+        this._touchInputTracker = new TouchInputTracker(canvas, inputObserver);
+        this.touchSM = new TouchInputStateMachine(this._touchInputTracker);
 
         this.bindListeners();
     }
 
-    get touchStateMachine(): TouchSM {
+    get touchStateMachine(): TouchInputStateMachine {
         return this.touchSM;
     }
 
@@ -119,25 +117,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         this._rotateDisabled = rotateDisabled;
     }
 
-    getCurrentTouchPointsCount(): number {
-        const size = this.touchPointsMap.size;
-        return size;
-    }
-
-    addTouchPoints(points: TouchPoints[]): void {
-        points.forEach((point)=>{
-            this.touchPointsMap.set(point.ident, {...point});
-        });
-    }
-
-    removeTouchPoints(identifiers: number[]): void {
-        identifiers.forEach((ident)=>{
-            if(this.touchPointsMap.has(ident)){
-                this.touchPointsMap.delete(ident);
-            }
-        });
-    }
-
     touchstartHandler(e: TouchEvent){
         if(this._disabled) {
             return;
@@ -147,7 +126,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchstart", {points: pointsAdded}, this);
+        this.touchSM.happens("touchstart", {points: pointsAdded}, this._touchInputTracker);
         e.preventDefault();
     }
 
@@ -159,7 +138,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this);
+        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
     }
 
     touchendHandler(e: TouchEvent){
@@ -170,7 +149,7 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this);
+        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -182,36 +161,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy, TouchContext {
         for (let i = 0; i < e.targetTouches.length; i++) {
             pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
         }
-        this.touchSM.happens("touchmove", {points: pointsMoved}, this);
-    }
-
-    getInitialTouchPointsPositions(idents: number[]): TouchPoints[] {
-        const res: TouchPoints[] = [];
-        idents.forEach((ident)=>{
-            if(this.touchPointsMap.has(ident)){
-                res.push(this.touchPointsMap.get(ident));
-            }
-        });
-        return res; 
-    }
-
-    updateTouchPoints(pointsMoved: TouchPoints[]): void {
-        pointsMoved.forEach((point)=>{
-            if(this.touchPointsMap.has(point.ident)){
-                this.touchPointsMap.set(point.ident, {...point});
-            }
-        });
-    }
-
-    notifyOnPan(delta: Point): void {
-        this.inputObserver.notifyPan(delta);
-    }
-
-    notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this.inputObserver.notifyZoom(zoomAmount, anchorPoint);
-    }
-
-    get canvas(): HTMLCanvasElement {
-        return this._canvas;
+        this.touchSM.happens("touchmove", {points: pointsMoved}, this._touchInputTracker);
     }
 }

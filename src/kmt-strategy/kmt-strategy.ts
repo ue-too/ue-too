@@ -1,8 +1,10 @@
-import { InputObserver, RawUserInputObservable } from "src/input-observer/input-observer";
-import { UserInputStateMachine } from "src/input-state-machine";
-import type { BoardEventMapping, BoardContext, BoardStates } from "src/input-state-machine";
-import { BoardIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
-import { Point } from "src";
+import { RawUserInputObservable } from "src/input-observer/input-observer";
+import { KmtInputStateMachine } from "src/input-state-machine";
+import { KmtIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState, SelectingState } from "src/input-state-machine";
+import { ObservableInputTracker} from "src/input-state-machine/kmt-input-context";
+import type { KmtInputEventMapping, KmtInputContext, KmtInputStates } from "src/input-state-machine";
+import type { Point } from "src/index";
+import type { InputControlCenter } from "src/control-center/control-center"
 import { SelectionInputObserver } from "src/selection-box";
 
 /**
@@ -14,9 +16,7 @@ export interface BoardKMTStrategy {
     debugMode: boolean;
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
-    inputObserver: RawUserInputObservable;
-    selectionInputObserver: SelectionInputObserver;
-    stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    stateMachine: KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
     setUp(): void;
     tearDown(): void;
 }
@@ -55,27 +55,22 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
     private _debugMode: boolean;
     private _alignCoordinateSystem: boolean;
 
-    private _inputObserver: RawUserInputObservable;
-    private _selectionInputObserver: SelectionInputObserver;
-    private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    private _inputTracker: ObservableInputTracker;
+    private _stateMachine: KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
-    private leftPointerDown: boolean;
-    private middlePointerDown: boolean;
-    private _initialCursorPosition: Point;
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputObserver: RawUserInputObservable, selectionInputObserver: SelectionInputObserver, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, controlCenter: InputControlCenter, debugMode: boolean = false, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._debugMode = debugMode;
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
-        this._inputObserver = inputObserver;
-        this._selectionInputObserver = selectionInputObserver;
-        this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
+        this._inputTracker = new ObservableInputTracker(canvas, controlCenter);
+        this._stateMachine =  new KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>(
             {
-                IDLE: new BoardIdleState(),
+                IDLE: new KmtIdleState(),
                 READY_TO_SELECT: new ReadyToSelectState(),
                 SELECTING: new SelectingState(),
                 READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
@@ -85,38 +80,10 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
                 PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
             },
             "IDLE",
-            this
+            this._inputTracker
         );
         this._keyfirstPressed = new Map();
         this._eventTarget = eventTarget;
-    }
-
-    toggleSelectionBox(value: boolean){
-        this._selectionInputObserver.toggleSelectionBox(value);
-    }
-
-    setSelectionEndPoint(point: Point){
-        this._selectionInputObserver.notifySelectionEndPoint(point);
-    }
-
-    setSelectionStartPoint(point: Point){
-        this._selectionInputObserver.notifySelectionStartPoint(point);
-    }
-
-    notifyOnPan(delta: Point){
-        this._inputObserver.notifyPan(delta);
-    }
-
-    notifyOnZoom(zoomAmount: number, anchorPoint: Point){
-        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
-    }
-
-    setInitialCursorPosition(position: Point){
-        this._initialCursorPosition = position;
-    }
-
-    get initialCursorPosition(): Point {
-        return this._initialCursorPosition;
     }
 
     get debugMode(): boolean {
@@ -147,16 +114,12 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         return this._canvas;
     }
 
-    get inputObserver(): RawUserInputObservable {
-        return this._inputObserver;
+    get inputTracker(): ObservableInputTracker {
+        return this._inputTracker;
     }
 
-    get stateMachine(): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+    get stateMachine(): KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
         return this._stateMachine;
-    }
-
-    get selectionInputObserver(): SelectionInputObserver {
-        return this._selectionInputObserver;
     }
 
     setUp(): void {
@@ -195,13 +158,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.leftPointerDown = true;
-            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.middlePointerDown = true;
-            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
     }
@@ -211,13 +172,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.leftPointerDown = false;
-            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.middlePointerDown = false;
-            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
     }
@@ -227,11 +186,11 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             return;
         }
         if(e.buttons === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
         if(e.buttons === 4 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY}, this);
+            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY}, this._inputTracker);
             return;
         }
     }
@@ -240,9 +199,9 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){
-            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY}, this);
+            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY}, this._inputTracker);
         } else {
-            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY}, this);
+            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY}, this._inputTracker);
         }
     }
 
@@ -253,7 +212,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
             e.preventDefault();
-            this.stateMachine.happens("spacebarDown", {}, this);
+            this.stateMachine.happens("spacebarDown", {}, this._inputTracker);
         }
     }
 
@@ -262,7 +221,7 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.stateMachine.happens("spacebarUp", {}, this);
+            this.stateMachine.happens("spacebarUp", {}, this._inputTracker);
         }
     }
 
@@ -277,7 +236,7 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
 
     private _inputObserver: RawUserInputObservable;
     private _selectionInputObserver: SelectionInputObserver;
-    private _stateMachine: UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>;
+    private _stateMachine: KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
 
     private _keyfirstPressed: Map<string, boolean>;
     private leftPointerDown: boolean;
@@ -292,9 +251,9 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
         this._alignCoordinateSystem = alignCoordinateSystem;
         this.bindFunctions();
         this._inputObserver = inputObserver;
-        this._stateMachine =  new UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates>(
+        this._stateMachine =  new KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>(
             {
-                IDLE: new BoardIdleState(),
+                IDLE: new KmtIdleState(),
                 READY_TO_SELECT: new ReadyToSelectState(),
                 SELECTING: new SelectingState(),
                 READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
@@ -328,6 +287,10 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point){
         this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
+    }
+
+    notifyOnRotate(deltaRotation: number){
+        this._inputObserver.notifyRotate(deltaRotation);
     }
 
     setInitialCursorPosition(position: Point){
@@ -370,7 +333,7 @@ export class DefaultBoardKMTStrategyWithoutSelection implements BoardKMTStrategy
         return this._inputObserver;
     }
 
-    get stateMachine(): UserInputStateMachine<BoardEventMapping, BoardContext, BoardStates> {
+    get stateMachine(): KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
         return this._stateMachine;
     }
 
