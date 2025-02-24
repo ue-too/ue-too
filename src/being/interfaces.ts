@@ -1,7 +1,7 @@
 /**
  * @category being
  * 
- * This is the interface for the state machine. The interface takes in a few generic parameters:
+ * @description This is the interface for the state machine. The interface takes in a few generic parameters:
  * 
  * - EventPayloadMapping: A mapping of events to their payloads.
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)

@@ -35,17 +35,17 @@
     ],
     "translationKey": "fa7f497c9348c10457f694a7ea682097"
   },
-  "8418372419c26de6e46a62d8277da863": {
+  "698ac421381b309f76c77618dc52c91b": {
     "humanReadablePath": "categories > index-3 > title",
     "kind": "category",
-    "originalText": "being\n\nThis is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "originalText": "being",
     "translation": "",
     "projectPath": [
       "categories",
       "index-3",
       "title"
     ],
-    "translationKey": "8418372419c26de6e46a62d8277da863"
+    "translationKey": "698ac421381b309f76c77618dc52c91b"
   },
   "72db773aa1c5d29066c57eff96955b9c": {
     "humanReadablePath": "categories > index-4 > title",
@@ -474,5 +474,95 @@
       "text"
     ],
     "translationKey": "7366bd1d8fcf64d4e245ea80805afb6a"
+  },
+  "80e66eff71d10e868e78b806f038e897": {
+    "humanReadablePath": "KmtInputStateMachine > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-17",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "80e66eff71d10e868e78b806f038e897"
+  },
+  "087172288bf8dfca1ddd592f1c3e9eba": {
+    "humanReadablePath": "PanControlStateMachine > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-21",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "087172288bf8dfca1ddd592f1c3e9eba"
+  },
+  "363a3058961d0e5ec3111b77d9b164f8": {
+    "humanReadablePath": "TemplateStateMachine > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-34",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "363a3058961d0e5ec3111b77d9b164f8"
+  },
+  "c72c49c5521449f80781f86201a77fe5": {
+    "humanReadablePath": "TouchInputStateMachine > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-35",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c72c49c5521449f80781f86201a77fe5"
+  },
+  "0a18dccf2d7651b2c9bffb84bf09db3e": {
+    "humanReadablePath": "ZoomControlStateMachine > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-39",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "0a18dccf2d7651b2c9bffb84bf09db3e"
+  },
+  "c8b22c2d77ebe972536f4391cde38b0c": {
+    "humanReadablePath": "StateMachine > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-50",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c8b22c2d77ebe972536f4391cde38b0c"
   }
 }
