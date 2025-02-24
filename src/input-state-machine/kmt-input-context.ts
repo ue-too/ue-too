@@ -2,7 +2,7 @@ import { Point } from "src/index";
 import type { InputControlCenter } from "src/control-center/control-center";
 import { RawUserInputObservable } from "src/input-observer/input-observer";
 
-export interface BoardContext {
+export interface KmtInputContext {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     notifyOnPan: (delta: Point) => void;
@@ -12,7 +12,7 @@ export interface BoardContext {
     initialCursorPosition: Point;
 }
 
-export class ObservableInputTracker implements BoardContext {
+export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
     private _canvas: HTMLCanvasElement;

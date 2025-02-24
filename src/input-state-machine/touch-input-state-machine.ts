@@ -1,19 +1,8 @@
 import { PointCal } from "point2point";
-import type { Point} from "src/index";
 import { EventAction, EventGuards, Guard, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
-
+import { TouchContext } from "./touch-input-context";
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
-export interface TouchContext {
-    addTouchPoints: (points: TouchPoints[]) => void;
-    removeTouchPoints: (idents: number[]) => void;
-    getCurrentTouchPointsCount: () => number;
-    getInitialTouchPointsPositions: (idents: number[]) => TouchPoints[];
-    updateTouchPoints: (pointsMoved: TouchPoints[]) => void;
-    notifyOnPan: (delta: Point) => void;
-    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
-    canvas: HTMLCanvasElement;
-}
 
 export type TouchPoints = {
     ident: number,
@@ -190,7 +179,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
     }
 }
 
-export class TouchSM extends TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates> {
+export class TouchInputStateMachine extends TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates> {
 
     constructor(context: TouchContext) {
         super({

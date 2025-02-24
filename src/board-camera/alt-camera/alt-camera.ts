@@ -1,7 +1,8 @@
 import { PointCal } from "point2point";
 import { Point } from "src/index";
 import { BoardCamera } from "../interface";
-import { CameraEventMap, CameraObserver, CameraState, UnSubscribe } from "src/camera-observer";
+import { CameraEventMap, CameraState, UnSubscribe } from "src/camera-observer";
+import { CameraObservable } from "src/camera-observer";
 import { Boundaries, withinBoundaries } from "../utils/position";
 import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
 import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
@@ -23,12 +24,12 @@ export class ContextCentricCamera /*implements BoardCamera */{
     private _zoomLevel: number;
     private _viewPortWidth: number;
     private _viewPortHeight: number;
-    private _observer: CameraObserver;
+    private _observer: CameraObservable;
     private _boundaries: Boundaries;
     private _zoomBoundaries: ZoomLevelLimits;
     private _rotationBoundaries: RotationLimits;
 
-    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObserver = new CameraObserver(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = {start: 0, end: 2 * Math.PI, ccw: true, startAsTieBreaker: false}){
+    constructor(position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, viewPortWidth: number = 1000, viewPortHeight: number = 1000, observer: CameraObservable = new CameraObservable(), boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = {start: 0, end: 2 * Math.PI, ccw: true, startAsTieBreaker: false}){
         this._contextRotation = -rotation;
         this._zoomLevel = zoomLevel;
         this._contextPosition  = PointCal.subVector({x: viewPortWidth / 2, y: viewPortHeight / 2}, PointCal.multiplyVectorByScalar(PointCal.rotatePoint(position, -rotation), zoomLevel))
@@ -58,7 +59,7 @@ export class ContextCentricCamera /*implements BoardCamera */{
         if(withinBoundaries(destination, this._boundaries)){
             const destinationInAbsoluteCoordinate  = PointCal.subVector({x: this._viewPortWidth / 2, y: this._viewPortHeight / 2}, PointCal.multiplyVectorByScalar(PointCal.rotatePoint(destination, -this.rotation), this._zoomLevel))
             this._contextPosition = destinationInAbsoluteCoordinate;
-            this._observer.notifyPositionChange(PointCal.subVector(destinationInAbsoluteCoordinate, this._contextPosition), {position: this.position, rotation: this.rotation, zoomLevel: this.zoomLevel})
+            // this._observer.notifyPan({diff: PointCal.subVector(destinationInAbsoluteCoordinate, this._contextPosition)})
         }
     }
 
@@ -86,7 +87,7 @@ export class ContextCentricCamera /*implements BoardCamera */{
         if(zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
             const deltaZoom = zoomLevel - this._zoomLevel;
             this._zoomLevel = zoomLevel;
-            this._observer.notifyZoomChange(deltaZoom, {position: this.position, zoomLevel: this._zoomLevel, rotation: this._contextRotation});
+            // this._observer.notifyZoomChange(deltaZoom, {position: this.position, zoomLevel: this._zoomLevel, rotation: this._contextRotation});
         }
     }
 
@@ -94,12 +95,8 @@ export class ContextCentricCamera /*implements BoardCamera */{
         const destination = -rotation;
         if(rotationWithinLimits(destination, this._rotationBoundaries)){
             this._contextRotation = destination;
-            this._observer.notifyRotationChange(rotation - this._contextRotation, {position: this.position, rotation: rotation, zoomLevel: this.zoomLevel});
+            // this._observer.notifyRotationChange(rotation - this._contextRotation, {position: this.position, rotation: rotation, zoomLevel: this.zoomLevel});
         }
-    }
-
-    get observer(): CameraObserver {
-        return this._observer;
     }
 
     get zoomLevel(): number {

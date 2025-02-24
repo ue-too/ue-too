@@ -1,5 +1,5 @@
 import { Point } from "src";
-import { CameraObserver, UnSubscribe } from "src/camera-observer";
+import { UnSubscribe } from "src/camera-observer";
 
 import { RotationLimits } from "src/board-camera/utils/rotation";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";

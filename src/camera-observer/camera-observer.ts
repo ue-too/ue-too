@@ -42,85 +42,11 @@ export type CameraEvent = CameraRotateEvent | CameraPanEvent | CameraZoomEvent;
 
 export type CameraChangeEventName = "pan" | "zoom" | "rotate" | "all";
 
-export type CallbackList<K extends keyof CameraEventMap> = ((event: CameraEventMap[K], cameraState: CameraState)=>void)[];
-
 export type Callback<K extends keyof CameraEventMap> = (event: CameraEventMap[K], cameraState: CameraState)=>void;
 
 export type ConslidateCallback = (payload: CameraEvent, cameraState: CameraState) => void;
 
 export type UnSubscribe = () => void;
-
-/**
- * @category Camera Observer
- */
-export class CameraObserver {
-
-    private panCallbackList: CallbackList<"pan"> = [];
-    private zoomCallbackList: CallbackList<"zoom"> = [];
-    private rotateCallbackList: CallbackList<"rotate"> = [];
-    private consolidateCallbackList: ConslidateCallback[] = [];
-
-    constructor() {
-    }
-
-    async notifyPositionChange(delta: Point, cameraState: CameraState): Promise<void> {
-        queueMicrotask(()=>{this.panCallbackList.forEach((callback) => {
-            callback({ diff: delta }, cameraState);
-        });});
-
-        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
-            callback({type: "pan", diff: delta}, cameraState);
-        });});
-    }
-
-    async notifyZoomChange(deltaZoomAmount: number, cameraState: CameraState): Promise<void> {
-        queueMicrotask(()=>{this.zoomCallbackList.forEach((callback) => {
-            callback({ deltaZoomAmount: deltaZoomAmount }, cameraState);
-        });});
-
-        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
-            callback({type: "zoom", deltaZoomAmount: deltaZoomAmount}, cameraState);
-        });});
-    }
-
-    async notifyRotationChange(deltaRotation: number, cameraState: CameraState): Promise<void> {
-        queueMicrotask(()=>{this.rotateCallbackList.forEach((callback) => {
-            callback({ deltaRotation: deltaRotation }, cameraState);
-        });});
-
-        queueMicrotask(()=>{this.consolidateCallbackList.forEach((callback) => {
-            callback({type: "rotate", deltaRotation: deltaRotation}, cameraState);
-        });});
-    }
-
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
-        switch (eventName){
-        case "pan":
-            this.panCallbackList.push(callback as (event: CameraEventMap["pan"], cameraState: CameraState)=>void);
-            return ()=>{this.panCallbackList = this.panCallbackList.filter((cb) => cb !== callback)};
-        case "zoom":
-            this.zoomCallbackList.push(callback as (event: CameraEventMap["zoom"], cameraState: CameraState)=>void);
-            return ()=>{this.zoomCallbackList = this.zoomCallbackList.filter((cb) => cb !== callback)};
-        case "rotate":
-            this.rotateCallbackList.push(callback as (event: CameraEventMap["rotate"], cameraState: CameraState)=>void);
-            return ()=>{this.rotateCallbackList = this.rotateCallbackList.filter((cb) => cb !== callback)};
-        default:
-            throw new Error(`Invalid event name: ${eventName}`);
-        }
-    }
-
-    onAllUpdate(callback: ConslidateCallback): UnSubscribe {
-        this.consolidateCallbackList.push(callback);
-        return ()=>{this.consolidateCallbackList = this.consolidateCallbackList.filter((cb) => cb !== callback)};
-    }
-
-    clearCallbacks(): void {
-        this.panCallbackList = [];
-        this.zoomCallbackList = [];
-        this.rotateCallbackList = [];
-    }
-    
-}
 
 export type PanObserver = Callback<"pan">;
 
