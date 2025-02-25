@@ -1,13 +1,13 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
-import { KMTEventParser, DefaultKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
-import { TouchEventParser, DefaultTouchEventParser } from 'src/touch-event-parser';
-import { Point } from 'src/index';
+import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
+import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
+import { Point } from 'src/util/misc';
 import { PointCal } from 'point2point';
 
-import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-observer';
+import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publisher';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
-import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputObservable } from 'src/input-observer';
+import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
 import { InputFlowControl, CameraRig, createDefaultRelayControlCenterWithCameraRig } from 'src/input-flow-control';
 
@@ -64,7 +64,7 @@ export default class Board {
     private _fullScreen: boolean = false;
 
     private cameraRig: CameraRig;
-    private boardInputObserver: RawUserInputObservable;
+    private boardInputPublisher: RawUserInputPublisher;
 
     private lastUpdateTime: number = 0;
 
@@ -101,11 +101,11 @@ export default class Board {
             restrictZoom: false,
         }, camera);
 
-        this.boardInputObserver = new RawUserInputObservable(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
+        this.boardInputPublisher = new RawUserInputPublisher(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
 
-        this._kmtParser = new DefaultKMTEventParser(canvas, eventTarget, this.boardInputObserver, false);
+        this._kmtParser = new VanillaKMTEventParser(canvas, eventTarget, this.boardInputPublisher, false);
 
-        this._touchParser = new DefaultTouchEventParser(this._canvas, this.boardInputObserver);
+        this._touchParser = new VanillaTouchEventParser(this._canvas, this.boardInputPublisher);
         
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
@@ -154,9 +154,9 @@ export default class Board {
     }
 
     /**
+     * @group Properties
      * @description This is in sync with the canvas width and the camera view port width. This is not the board's width.
      * If the `limitEntireViewPort` is set to true, the min zoom level is updated based on the width of the canvas.
-     * 
      */
     set width(width: number){
         this._canvas.width = width * window.devicePixelRatio;
@@ -175,6 +175,7 @@ export default class Board {
     }
 
     /**
+     * @group Properties
      * @description This is in sync with the canvas height and the camera view port height. This is not the board's height.
      * If the limitEntireViewPort is set to true, the min zoom level is updated based on the height.
      */
@@ -276,7 +277,7 @@ export default class Board {
      * If set to false, only the center of the camera is bounded by the boundaries.
      */
     set limitEntireViewPort(value: boolean){
-        this.boardInputObserver.controlCenter.limitEntireViewPort = value;
+        this.cameraRig.limitEntireViewPort = value;
         if(value){
             const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, this._canvas.width, this._canvas.height, this.camera.rotation);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -286,7 +287,7 @@ export default class Board {
     }
 
     get limitEntireViewPort(): boolean{
-        return this.boardInputObserver.controlCenter.limitEntireViewPort;
+        return this.cameraRig.limitEntireViewPort;
     }
 
     /**
@@ -332,7 +333,7 @@ export default class Board {
     }
 
     get controlCenter(): InputFlowControl{
-        return this.boardInputObserver.controlCenter;
+        return this.boardInputPublisher.controlCenter;
     }
 
     /**
@@ -389,7 +390,7 @@ export default class Board {
      * @returns 
      */
     onInput<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=> void): UnsubscribeToUserRawInput {
-        return this.boardInputObserver.on(eventName, callback);
+        return this.boardInputPublisher.on(eventName, callback);
     }
 
     /**

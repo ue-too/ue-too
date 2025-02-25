@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 import { BoardCamera } from "src/board-camera";
 import { SelectionBox } from "src/drawing-engine";
 

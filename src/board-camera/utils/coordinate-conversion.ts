@@ -1,4 +1,4 @@
-import { Point } from "src";
+import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
 
 export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Point, viewPortWidth: number, viewPortHeight: number, cameraZoomLevel: number, cameraRotation: number): Point{

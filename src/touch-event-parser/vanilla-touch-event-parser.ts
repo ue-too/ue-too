@@ -1,4 +1,4 @@
-import { RawUserInputObservable } from "src/input-observer";
+import { RawUserInputPublisher } from "src/raw-input-publisher";
 import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
 
@@ -22,7 +22,7 @@ type MininumTouchEvent = {
 /**
  * @category Input Strategy
  */
-export class DefaultTouchEventParser implements TouchEventParser {
+export class VanillaTouchEventParser implements TouchEventParser {
 
     private _canvas: HTMLCanvasElement;
     private _touchInputTracker: TouchInputTracker;
@@ -35,7 +35,7 @@ export class DefaultTouchEventParser implements TouchEventParser {
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._disabled = false;
         this._touchInputTracker = new TouchInputTracker(canvas, inputPublisher);

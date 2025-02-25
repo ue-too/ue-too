@@ -1,4 +1,4 @@
-import { Point } from "point2point";
+import { Point } from "src/util/misc";
 import { Observable, Observer, SubscriptionOptions } from "../util/observable";
 
 export type CameraPanEventPayload = {

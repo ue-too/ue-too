@@ -1,4 +1,4 @@
-import { Point } from "src";
+import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
 
 import { convert2WorldSpaceWRT } from "./coordinate-conversion";

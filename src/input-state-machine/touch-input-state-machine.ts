@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import { BaseContext, EventAction, EventGuards, Guard, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
+import { EventAction, EventGuards, Guard, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 import { TouchContext } from "./touch-input-context";
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 

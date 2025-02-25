@@ -1,4 +1,4 @@
-import { Point } from 'src';
+import { Point } from 'src/util/misc';
 import { Boundaries } from 'src/board-camera';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { zoomLevelWithinLimits, ZoomLevelLimits, clampZoomLevel } from 'src/board-camera/utils/zoom';

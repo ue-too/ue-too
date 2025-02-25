@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import type { Point } from "src/index";
+import type { Point } from "src/util/misc";
 import { BoardCamera } from "src/board-camera/interface";
 import { createHandlerChain } from "src/board-camera/utils";
 import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/position";

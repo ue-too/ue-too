@@ -1,8 +1,8 @@
 import { KmtInputStateMachine } from "src/input-state-machine";
-import { KmtIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState } from "src/input-state-machine";
+import { KmtIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState } from "src/input-state-machine";
 import { ObservableInputTracker} from "src/input-state-machine/kmt-input-context";
 import type { KmtInputEventMapping, KmtInputContext, KmtInputStates } from "src/input-state-machine";
-import { RawUserInputObservable } from "src/input-observer/input-observer";
+import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 
 /**
  * @category Input Strategy
@@ -44,7 +44,7 @@ export type EventTargetWithPointerEvents = {
     removeEventListener: (type: string, listener: (event: any) => void) => void;
 };
 
-export class DefaultKMTEventParser implements KMTEventParser {
+export class VanillaKMTEventParser implements KMTEventParser {
 
     private _disabled: boolean;
     private _debugMode: boolean;
@@ -56,7 +56,7 @@ export class DefaultKMTEventParser implements KMTEventParser {
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputPublisher: RawUserInputObservable, debugMode: boolean = false){
+    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents, inputPublisher: RawUserInputPublisher, debugMode: boolean = false){
         this._debugMode = debugMode;
         this.bindFunctions();
         this._inputTracker = new ObservableInputTracker(canvas, inputPublisher);

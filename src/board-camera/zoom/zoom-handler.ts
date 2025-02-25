@@ -1,4 +1,4 @@
-import type { Point } from "src/index";
+import type { Point } from "src/util/misc";
 import { BoardCamera } from "src/board-camera";
 import { createHandlerChain } from "src/board-camera/utils";
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";

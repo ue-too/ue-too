@@ -1,1 +1,1 @@
-export * from "./touch-strategy";
+export * from "./vanilla-touch-event-parser";

@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 import type { EventAction, StateMachine, State, BaseContext } from "src/being";
 import { TemplateState, TemplateStateMachine } from "src/being";
 import { BoardCamera, PanHandlerConfig } from "src/board-camera";

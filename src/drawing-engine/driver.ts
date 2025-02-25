@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 export interface DrawTask {
     draw(deltaTime: number): void;
     drawWithContext(context: CanvasRenderingContext2D, deltaTime: number): void;

@@ -5,7 +5,7 @@ import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
-import { RelayControlCenter } from "src/input-flow-control/simple-relay";
+import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
 import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
@@ -33,7 +33,7 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
-board.alignCoordinateSystem = false;
+// board.alignCoordinateSystem = false;
 console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
@@ -59,12 +59,12 @@ const animation = new Animation(positionKeyframe, (value)=>{
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
     const pointInWorldShouldBeInViewPort = value;
     const cameraPositionSatisfy = cameraPositionToGet({x: 100, y: 100}, pointInWorldShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
-    (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(cameraPositionSatisfy);
+    (board.controlCenter as FlowControlWithAnimationAndLockInput).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.controlCenter as RelayControlCenter).notifyZoomInputAnimationWorld(value);
+    (board.controlCenter as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
@@ -123,8 +123,8 @@ resetCameraBtn.addEventListener("click", ()=>{
         percentage: 1,
         value: 0,
     }];
-    (board.controlCenter as RelayControlCenter).initatePanTransition();
-    (board.controlCenter as RelayControlCenter).initateZoomTransition();
+    (board.controlCenter as FlowControlWithAnimationAndLockInput).initatePanTransition();
+    (board.controlCenter as FlowControlWithAnimationAndLockInput).initateZoomTransition();
     compositeAnimation.startAnimation();
 });
 
@@ -144,8 +144,8 @@ drawingEngine.addDrawTask({
 });
 
 // const stateMachine = board.touchStrategy.touchStateMachine;
-const stateMachine = board.kmtStrategy.stateMachine;
-const touchStateMachine = board.touchStrategy.touchStateMachine;
+const stateMachine = board.kmtParser.stateMachine;
+const touchStateMachine = board.touchParser.touchStateMachine;
 
 // stateMachine.onStateChange((currentState, nextState) => {
 //     console.log("state change", currentState, "->", nextState);

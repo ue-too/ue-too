@@ -1,4 +1,4 @@
-import { Point } from "src";
+import { Point } from "src/util/misc";
 import { calculateOrderOfMagnitude } from "src/util";
 import { Boundaries } from "src/board-camera";
 import { boundariesFullyDefined, translationHeightOf, translationWidthOf } from "src/board-camera/utils/position";

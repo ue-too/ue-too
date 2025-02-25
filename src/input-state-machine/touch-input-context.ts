@@ -1,6 +1,6 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 import { TouchPoints } from "./touch-input-state-machine";
-import { RawUserInputObservable } from "src/input-observer";
+import { RawUserInputPublisher } from "src/raw-input-publisher";
 import { BaseContext } from "src/being/interfaces";
 
 export interface TouchContext extends BaseContext{
@@ -17,12 +17,12 @@ export interface TouchContext extends BaseContext{
 
 export class TouchInputTracker implements TouchContext {
 
-    private _inputPublisher: RawUserInputObservable;
+    private _inputPublisher: RawUserInputPublisher;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
     private _canvas: HTMLCanvasElement;
     private _alignCoordinateSystem: boolean;
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable) {
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher) {
         this._canvas = canvas;
         this._inputPublisher = inputPublisher;
         this._alignCoordinateSystem = true;

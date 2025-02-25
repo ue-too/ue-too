@@ -1,14 +1,28 @@
 import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
-import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, BaseZoomHandlerConfig, ZoomHandlerConfig, ZoomToHandlerFunction, createDefaultZoomToOnlyHandler, createDefaultZoomToAtWorldHandler, ZoomByAtHandlerFunction, ZoomByHandlerFunction, createDefaultZoomByAtHandler, createDefaultZoomByOnlyHandler, restrictZoomByHandler, createDefaultZoomByAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
-import { InputFlowControl } from "./control-center";
-import { Point } from "src/index";
-import DefaultBoardCamera, { BoardCamera, createDefaultRotateByHandler, createDefaultRotateToHandler, ObservableBoardCamera, RotateByHandlerFunction, RotateToHandlerFunction, RotationHandlerConfig } from "src/board-camera";
+
+import { 
+    createDefaultZoomToAtHandler, 
+    ZoomToAtHandlerFunction, 
+    BaseZoomHandlerConfig, 
+    ZoomToHandlerFunction, 
+    createDefaultZoomToOnlyHandler, 
+    createDefaultZoomToAtWorldHandler, 
+    ZoomByAtHandlerFunction, 
+    ZoomByHandlerFunction, 
+    createDefaultZoomByAtHandler, 
+    createDefaultZoomByOnlyHandler, 
+    createDefaultZoomByAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
+
+import { InputFlowControl } from "./interface";
+import { Point } from "src/util/misc";
+import DefaultBoardCamera, {createDefaultRotateByHandler, createDefaultRotateToHandler, ObservableBoardCamera, RotateByHandlerFunction, RotateToHandlerFunction, RotationHandlerConfig } from "src/board-camera";
 import { PointCal } from "point2point";
 import { createDefaultPanControlStateMachine, PanContext, PanControlStateMachine } from "./pan-control-state-machine";
 import { createDefaultZoomControlStateMachine, ZoomContext, ZoomControlStateMachine } from "./zoom-control-state-machine";
 
 export type CameraRigConfig = PanHandlerConfig & BaseZoomHandlerConfig & RotationHandlerConfig;
-export class RelayControlCenter implements InputFlowControl {
+
+export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
 
     private _panStateMachine: PanControlStateMachine;
     private _zoomStateMachine: ZoomControlStateMachine;
@@ -18,13 +32,13 @@ export class RelayControlCenter implements InputFlowControl {
         this._zoomStateMachine = zoomStateMachine;
     }
 
-    get limitEntireViewPort(): boolean {
-        return this._panStateMachine.limitEntireViewPort;
-    }
+    // get limitEntireViewPort(): boolean {
+    //     return this._panStateMachine.limitEntireViewPort;
+    // }
 
-    set limitEntireViewPort(limit: boolean) {
-        this._panStateMachine.limitEntireViewPort = limit;
-    }
+    // set limitEntireViewPort(limit: boolean) {
+    //     this._panStateMachine.limitEntireViewPort = limit;
+    // }
     
     notifyPanToAnimationInput(target: Point): void {
         this._panStateMachine.notifyPanToAnimationInput(target);
@@ -175,11 +189,11 @@ export function createDefaultRelayControlCenter(camera: ObservableBoardCamera): 
     const context = createDefaultCameraRig(camera);
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
-    return new RelayControlCenter(panStateMachine, zoomStateMachine);
+    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine);
 }
 
 export function createDefaultRelayControlCenterWithCameraRig(cameraRig: CameraRig): InputFlowControl {
     const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
     const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
-    return new RelayControlCenter(panStateMachine, zoomStateMachine);
+    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine);
 }

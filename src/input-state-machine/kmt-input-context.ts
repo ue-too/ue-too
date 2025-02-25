@@ -1,6 +1,6 @@
-import { BaseContext, Point } from "src/index";
-import type { InputFlowControl } from "src/input-flow-control/control-center";
-import { RawUserInputObservable } from "src/input-observer/input-observer";
+import { Point } from "src/util/misc";
+import { BaseContext } from "src/being";
+import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 
 export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
@@ -16,10 +16,10 @@ export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
     private _canvas: HTMLCanvasElement;
-    private _inputPublisher: RawUserInputObservable;
+    private _inputPublisher: RawUserInputPublisher;
     private _initialCursorPosition: Point;
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable){
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher){
         this._alignCoordinateSystem = true;
         this._canvas = canvas;
         this._inputPublisher = inputPublisher;

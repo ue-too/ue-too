@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 import { createDefaultRelayControlCenter, InputFlowControl } from "src/input-flow-control";
 import BoardCamera from "src/board-camera";
 import { Observable, Observer } from "src/util";
@@ -41,7 +41,7 @@ export type RawUserInputEvent = RawUserPanInputEvent | RawUserZoomInputEvent | R
 
 export type RawUserInputCallback<K extends keyof RawUserInputEventMap> = (event: RawUserInputEventMap[K])=>void;
 
-export class RawUserInputObservable {
+export class RawUserInputPublisher {
 
     private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
@@ -95,6 +95,6 @@ export class RawUserInputObservable {
     }
 }
 
-export function createDefaultRawUserInputObservable(camera: BoardCamera): RawUserInputObservable {
-    return new RawUserInputObservable(createDefaultRelayControlCenter(camera));
+export function createDefaultRawUserInputPublisher(camera: BoardCamera): RawUserInputPublisher {
+    return new RawUserInputPublisher(createDefaultRelayControlCenter(camera));
 }

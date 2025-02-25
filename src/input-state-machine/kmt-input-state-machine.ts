@@ -1,5 +1,5 @@
 import { BaseContext, EventAction, EventGuards, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
-import { Point } from "../index";
+import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
 

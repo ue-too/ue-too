@@ -1,10 +1,10 @@
-import { Point } from "src";
-import { UnSubscribe } from "src/camera-observer";
+import { Point } from "src/util/misc";
+import { UnSubscribe } from "src/camera-update-publisher";
 
 import { RotationLimits } from "src/board-camera/utils/rotation";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
 import { Boundaries } from "src/board-camera/utils/position";
-import { CameraEventMap, CameraState } from "src/camera-observer";
+import { CameraEventMap, CameraState } from "src/camera-update-publisher";
 import { SubscriptionOptions } from "src/util/observable";
 
 export interface ObservableBoardCamera extends BoardCamera {

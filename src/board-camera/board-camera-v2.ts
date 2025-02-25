@@ -1,12 +1,12 @@
-import { Point } from 'src';
+import { Point } from 'src/util/misc';
 import { Boundaries } from 'src/board-camera';
-import { CameraUpdatePublisher, UnSubscribe } from 'src/camera-observer';
+import { CameraUpdatePublisher, UnSubscribe } from 'src/camera-update-publisher';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
 import { RotationLimits } from 'src/board-camera/utils/rotation';
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
-import { CameraEventMap, CameraState } from 'src/camera-observer';
+import { CameraEventMap, CameraState } from 'src/camera-update-publisher';
 import { ObservableBoardCamera } from 'src/board-camera/interface';
 import BaseCamera from 'src/board-camera/base-camera';
 import { SubscriptionOptions } from 'src/util/observable';

@@ -1,4 +1,4 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
 import { DrawTask } from "./driver";
 
 export class SelectionBox implements DrawTask{
