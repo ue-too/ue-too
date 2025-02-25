@@ -1,6 +1,6 @@
 import { Point } from "src/index";
 import { TemplateStateMachine, TemplateState } from "src/being";
-import type { State, EventAction } from "src/being";
+import type { State, EventAction, BaseContext } from "src/being";
 
 export type ZoomControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
@@ -37,7 +37,7 @@ export type ZoomEventPayloadMapping = {
     "initiateTransition": {},
 };
 
-export type ZoomContext = {
+export interface ZoomContext extends BaseContext {
     zoomToAt: (targetZoom: number, at: Point) => void;
     zoomByAt: (delta: number, at: Point) => void;
     zoomTo: (targetZoom: number) => void;

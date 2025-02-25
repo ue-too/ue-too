@@ -20,11 +20,7 @@ export type TouchEventMapping = {
     touchend: TouchEventPayload;
 }
 
-type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStates>;
-
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
-
-    private testVariable: string = "test";
 
     private _eventReactions: EventAction<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
@@ -147,7 +143,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         return this._eventReactions;
     }
 
-    // TODO: align coordinate system
     touchmove(context: TouchContext, payload: TouchEventPayload): TouchStates {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);

@@ -7,8 +7,8 @@ export * from "./drawing-engine"
 export * from "./ease-functions";
 export * from "./input-observer";
 export * from "./input-state-machine";
-export * from "./kmt-strategy";
-export * from "./touch-strategy";
+export * from "./kmt-event-parser";
+export * from "./touch-event-parser";
 export * from "./selection-box";
 export * from "./util";
 export { default as Board } from "./boardify";

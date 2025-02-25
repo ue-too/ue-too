@@ -1,7 +1,8 @@
 import { RawUserInputObservable } from "src/input-observer";
 import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
-export interface BoardTouchStrategy {
+
+export interface TouchEventParser {
     disabled: boolean;
     alignCoordinateSystem: boolean;
     panDisabled: boolean;
@@ -21,7 +22,7 @@ type MininumTouchEvent = {
 /**
  * @category Input Strategy
  */
-export class DefaultTouchStrategy implements BoardTouchStrategy {
+export class DefaultTouchEventParser implements TouchEventParser {
 
     private _canvas: HTMLCanvasElement;
     private _touchInputTracker: TouchInputTracker;

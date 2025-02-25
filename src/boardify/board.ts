@@ -1,7 +1,7 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
-import { BoardKMTStrategy, DefaultBoardKMTStrategy, EventTargetWithPointerEvents } from 'src/kmt-strategy';
-import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
+import { KMTEventParser, DefaultKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
+import { TouchEventParser, DefaultTouchEventParser } from 'src/touch-event-parser';
 import { Point } from 'src/index';
 import { PointCal } from 'point2point';
 
@@ -57,8 +57,8 @@ export default class Board {
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
 
-    private _kmtStrategy: BoardKMTStrategy;
-    private _touchStrategy: BoardTouchStrategy;
+    private _kmtStrategy: KMTEventParser;
+    private _touchStrategy: TouchEventParser;
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
@@ -103,9 +103,9 @@ export default class Board {
 
         this.boardInputObserver = new RawUserInputObservable(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
 
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, this.boardInputObserver, false);
+        this._kmtStrategy = new DefaultKMTEventParser(canvas, eventTarget, this.boardInputObserver, false);
 
-        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
+        this._touchStrategy = new DefaultTouchEventParser(this._canvas, this.boardInputObserver);
         
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
@@ -294,13 +294,13 @@ export default class Board {
      * @description The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
      * You can implement your own strategy by implementing the BoardKMTStrategy interface.
      */
-    set kmtStrategy(strategy: BoardKMTStrategy){
+    set kmtStrategy(strategy: KMTEventParser){
         this._kmtStrategy.tearDown();
         strategy.setUp();
         this._kmtStrategy = strategy;
     }
 
-    get kmtStrategy(): BoardKMTStrategy{
+    get kmtStrategy(): KMTEventParser{
         return this._kmtStrategy;
     }
 
@@ -308,13 +308,13 @@ export default class Board {
      * @description The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.
      * You can implement your own strategy by implementing the BoardTouchStrategy interface.
      */
-    set touchStrategy(strategy: BoardTouchStrategy){
+    set touchStrategy(strategy: TouchEventParser){
         this._touchStrategy.tearDown();
         strategy.setUp();
         this._touchStrategy = strategy;
     }
 
-    get touchStrategy(): BoardTouchStrategy{
+    get touchStrategy(): TouchEventParser{
         return this._touchStrategy;
     }
 

@@ -1,6 +1,6 @@
 import DefaultBoardCamera from 'src/board-camera';
 import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
-import { DefaultBoardKMTStrategy } from 'src/kmt-strategy';
+import { DefaultKMTEventParser } from 'src/kmt-event-parser';
 import { createDefaultRawUserInputObservable } from 'src/input-observer';
 
 console.log("pixi-test");
@@ -20,7 +20,7 @@ console.log("pixi-test");
     
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
 
-    const kmtStrategy = new DefaultBoardKMTStrategy(app.canvas, app.canvas, createDefaultRawUserInputObservable(camera), false)
+    const kmtStrategy = new DefaultKMTEventParser(app.canvas, app.canvas, createDefaultRawUserInputObservable(camera), false)
     kmtStrategy.setUp();
     // app.renderer.events.rootBoundary.addEventMapping
     // app.stage.hitArea = app.screen;

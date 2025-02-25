@@ -152,6 +152,12 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
     configure(config: Partial<CameraRigConfig>){
         this._config = {...this._config, ...config};
     }
+
+    cleanup(): void {
+    }
+
+    setup(): void {
+    }
 }
 
 export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig{

@@ -1,5 +1,5 @@
 import { Point } from "src/index";
-import type { EventAction, StateMachine, State } from "src/being";
+import type { EventAction, StateMachine, State, BaseContext } from "src/being";
 import { TemplateState, TemplateStateMachine } from "src/being";
 import { BoardCamera, PanHandlerConfig } from "src/board-camera";
 
@@ -24,7 +24,7 @@ export type PanEventPayloadMapping = {
     "initateTransition": {},
 };
 
-export type PanContext = {
+export interface PanContext extends BaseContext {
     camera: BoardCamera;
     limitEntireViewPort: boolean;
     panBy: (delta: Point) => void;

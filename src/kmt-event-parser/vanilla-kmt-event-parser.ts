@@ -8,7 +8,7 @@ import { RawUserInputObservable } from "src/input-observer/input-observer";
  * @category Input Strategy
  */
 
-export interface BoardKMTStrategy {
+export interface KMTEventParser {
     disabled: boolean;
     debugMode: boolean;
     alignCoordinateSystem: boolean;
@@ -44,9 +44,8 @@ export type EventTargetWithPointerEvents = {
     removeEventListener: (type: string, listener: (event: any) => void) => void;
 };
 
-export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
+export class DefaultKMTEventParser implements KMTEventParser {
 
-    // private _canvas: HTMLCanvasElement;
     private _disabled: boolean;
     private _debugMode: boolean;
 
