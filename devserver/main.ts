@@ -34,6 +34,7 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
+console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();

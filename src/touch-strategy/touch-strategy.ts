@@ -1,8 +1,6 @@
 import { RawUserInputObservable } from "src/input-observer";
 import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
-import type { TouchContext } from "src/input-state-machine/touch-input-context";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
-import { InputFlowControl } from "src/input-flow-control/control-center";
 export interface BoardTouchStrategy {
     disabled: boolean;
     alignCoordinateSystem: boolean;
@@ -16,6 +14,10 @@ export interface BoardTouchStrategy {
     tearDown(): void;
 }
 
+type MininumTouchEvent = {
+
+};
+
 /**
  * @category Input Strategy
  */
@@ -24,7 +26,6 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
     private _canvas: HTMLCanvasElement;
     private _touchInputTracker: TouchInputTracker;
     private _disabled: boolean;
-    private _alignCoordinateSystem: boolean;
     private _panDisabled: boolean = false;
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
@@ -36,8 +37,8 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
     constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._disabled = false;
-        this._alignCoordinateSystem = alignCoordinateSystem;
         this._touchInputTracker = new TouchInputTracker(canvas, inputPublisher);
+        this._touchInputTracker.alignCoordinateSystem = alignCoordinateSystem;
         this.touchSM = new TouchInputStateMachine(this._touchInputTracker);
 
         this.bindListeners();
@@ -87,11 +88,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
     }
 
     get alignCoordinateSystem(): boolean {
-        return this._alignCoordinateSystem;
+        return this._touchInputTracker.alignCoordinateSystem;
     }
 
     set alignCoordinateSystem(alignCoordinateSystem: boolean){
-        this._alignCoordinateSystem = alignCoordinateSystem;
+        this._touchInputTracker.alignCoordinateSystem = alignCoordinateSystem;
     }
 
     get panDisabled(): boolean {

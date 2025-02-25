@@ -9,6 +9,7 @@ export interface TouchContext {
     updateTouchPoints: (pointsMoved: TouchPoints[]) => void;
     notifyOnPan: (delta: Point) => void;
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
+    alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
 }
 
@@ -17,10 +18,12 @@ export class TouchInputTracker implements TouchContext {
     private _inputPublisher: RawUserInputObservable;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
     private _canvas: HTMLCanvasElement;
+    private _alignCoordinateSystem: boolean;
 
     constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable) {
         this._canvas = canvas;
         this._inputPublisher = inputPublisher;
+        this._alignCoordinateSystem = true;
     }
 
     addTouchPoints(points: TouchPoints[]): void {
@@ -72,6 +75,14 @@ export class TouchInputTracker implements TouchContext {
 
     get canvas(): HTMLCanvasElement {
         return this._canvas;
+    }
+
+    get alignCoordinateSystem(): boolean {
+        return this._alignCoordinateSystem;
+    }
+
+    set alignCoordinateSystem(value: boolean) {
+        this._alignCoordinateSystem = value;
     }
 }
 

@@ -1,6 +1,5 @@
-
 import DefaultBoardCamera from 'src/board-camera';
-import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
+import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
 import { DefaultBoardKMTStrategy } from 'src/kmt-strategy';
 import { createDefaultRawUserInputObservable } from 'src/input-observer';
 
@@ -21,7 +20,7 @@ console.log("pixi-test");
     
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
 
-    const kmtStrategy = new DefaultBoardKMTStrategy(app.canvas, app.canvas, createDefaultRawUserInputObservable(camera), false, true)
+    const kmtStrategy = new DefaultBoardKMTStrategy(app.canvas, app.canvas, createDefaultRawUserInputObservable(camera), false)
     kmtStrategy.setUp();
     // app.renderer.events.rootBoundary.addEventMapping
     // app.stage.hitArea = app.screen;
@@ -37,7 +36,6 @@ console.log("pixi-test");
 
     // Load the bunny texture.
     const texture = await Assets.load('https://pixijs.com/assets/bunny.png');
-
     // Create a new Sprite from an image path.
     const bunny = new Sprite(texture);
 

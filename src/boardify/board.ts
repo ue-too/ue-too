@@ -11,6 +11,19 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputObservable
 
 import { InputFlowControl, CameraRig, createDefaultRelayControlCenterWithCameraRig } from 'src/input-flow-control';
 
+
+const methodsToFlip: Record<string, number[]> = {
+    fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
+    strokeRect: [1],
+    fillText: [1],
+    strokeText: [1],
+    lineTo: [1],
+    moveTo: [1],
+    quadraticCurveTo: [1, 3],
+    bezierCurveTo: [1, 3, 5],
+    arc: [1]
+};
+
 /**
  * @category Board
  * 
@@ -183,6 +196,8 @@ export default class Board {
 
     /**
      * @description This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.
+     * If you set this to true, the coordinate system will be aligned with the one of the HTML canvas element.
+     * If you change this value during runtime, you should update the context to be aligned with the new coordinate system. (just call board.context again)
      */
     set alignCoordinateSystem(align: boolean){
         this._alignCoordinateSystem = align;
@@ -195,8 +210,8 @@ export default class Board {
     }
 
     /**
-     * @description Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.
-     * If set to true the width and height of the board will resize with the window.
+     * @description Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively, 
+     * and the width and height of the board will resize with the window.
      */
     get fullScreen(): boolean {
         return this._fullScreen;
@@ -211,9 +226,49 @@ export default class Board {
     }
 
     /**
-     * @description The context used to draw stuff on the canvas.
+     * @description The context used to draw on the canvas.
+     * If alignCoordinateSystem is false, this returns a proxy that automatically
+     * negates y-coordinates for relevant drawing methods.
      */
-    get context(): CanvasRenderingContext2D{
+    get context(): CanvasRenderingContext2D {
+        if (!this._alignCoordinateSystem) {
+            return new Proxy(this._context, {
+                get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
+                    const value = Reflect.get(target, prop, target);
+                    
+                    // Check if this is a method that needs y-coordinate flipping
+                    if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
+                        return function(...args: any[]) {
+                            // Create a copy of the arguments
+                            const newArgs = [...args];
+                            
+                            // Flip the y-coordinates based on methodsToFlip configuration
+                            const yIndices = methodsToFlip[prop];
+                            for (const index of yIndices) {
+                                if (index < newArgs.length) {
+                                    newArgs[index] = -newArgs[index];
+                                }
+                            }
+                            
+                            // Call the original method with the modified arguments
+                            return value.apply(target, newArgs);
+                        };
+                    }
+                    
+                    // Return the original value for properties and methods that don't need modification
+                    if (typeof value === 'function') {
+                        return function(...args: any[]) {
+                            return value.apply(target, args);
+                        };
+                    }
+                    
+                    return value;
+                },
+                set(target, prop, value): boolean {
+                    return Reflect.set(target, prop, value);
+                }
+            });
+        }
         return this._context;
     }
 
