@@ -147,6 +147,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         return this._eventReactions;
     }
 
+    // TODO: align coordinate system
     touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);

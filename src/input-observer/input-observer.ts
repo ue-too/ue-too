@@ -1,5 +1,5 @@
 import { Point } from "src/index";
-import { createDefaultRelayControlCenter, InputControlCenter, RelayControlCenter } from "src/control-center";
+import { createDefaultRelayControlCenter, InputFlowControl } from "src/input-flow-control";
 import BoardCamera from "src/board-camera";
 import { Observable, Observer } from "src/util";
 
@@ -47,9 +47,9 @@ export class RawUserInputObservable {
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
     private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
     private all: Observable<Parameters<RawUserInputCallback<"all">>>;
-    private cameraInputControlCener: InputControlCenter;
+    private cameraInputControlCener: InputFlowControl;
 
-    constructor(inputControlCenter: InputControlCenter){
+    constructor(inputControlCenter: InputFlowControl){
         this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
         this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
         this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
@@ -90,7 +90,7 @@ export class RawUserInputObservable {
         }
     }
 
-    get controlCenter(): InputControlCenter {
+    get controlCenter(): InputFlowControl {
         return this.cameraInputControlCener;
     }
 }

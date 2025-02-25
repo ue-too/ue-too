@@ -58,3 +58,11 @@ export const rotateTo = createHandlerChain(
     clampRotateToHandler,
     restrictRotateToHandler]
 );
+
+export function createDefaultRotateByHandler(): RotateByHandlerFunction {
+    return createHandlerChain([baseRotateByHandler, clampRotateByHandler, restrictRotateByHandler]);
+}
+
+export function createDefaultRotateToHandler(): RotateToHandlerFunction {
+    return createHandlerChain([baseRotateToHandler, clampRotateToHandler, restrictRotateToHandler]);
+}

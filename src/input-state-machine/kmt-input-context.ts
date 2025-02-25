@@ -1,5 +1,5 @@
 import { Point } from "src/index";
-import type { InputControlCenter } from "src/control-center/control-center";
+import type { InputFlowControl } from "src/input-flow-control/control-center";
 import { RawUserInputObservable } from "src/input-observer/input-observer";
 
 export interface KmtInputContext {
@@ -16,13 +16,13 @@ export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
     private _canvas: HTMLCanvasElement;
-    private _inputObserver: RawUserInputObservable;
+    private _inputPublisher: RawUserInputObservable;
     private _initialCursorPosition: Point;
 
-    constructor(canvas: HTMLCanvasElement, controlCenter: InputControlCenter){
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable){
         this._alignCoordinateSystem = true;
         this._canvas = canvas;
-        this._inputObserver = new RawUserInputObservable(controlCenter);
+        this._inputPublisher = inputPublisher;
         this._initialCursorPosition = {x: 0, y: 0};
     }
 
@@ -38,16 +38,20 @@ export class ObservableInputTracker implements KmtInputContext {
         return this._initialCursorPosition;
     }
 
+    set alignCoordinateSystem(value: boolean){
+        this._alignCoordinateSystem = value;
+    }
+
     notifyOnPan(delta: Point): void {
-        this._inputObserver.notifyPan(delta);
+        this._inputPublisher.notifyPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
+        this._inputPublisher.notifyZoom(zoomAmount, anchorPoint);
     }
 
     notifyOnRotate(deltaRotation: number): void {
-        this._inputObserver.notifyRotate(deltaRotation);
+        this._inputPublisher.notifyRotate(deltaRotation);
     }
 
     setInitialCursorPosition(position: Point): void {

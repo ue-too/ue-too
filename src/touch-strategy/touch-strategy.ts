@@ -2,6 +2,7 @@ import { RawUserInputObservable } from "src/input-observer";
 import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
 import type { TouchContext } from "src/input-state-machine/touch-input-context";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
+import { InputFlowControl } from "src/input-flow-control/control-center";
 export interface BoardTouchStrategy {
     disabled: boolean;
     alignCoordinateSystem: boolean;
@@ -32,11 +33,11 @@ export class DefaultTouchStrategy implements BoardTouchStrategy {
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: RawUserInputObservable,alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable, alignCoordinateSystem: boolean = true){
         this._canvas = canvas;
         this._disabled = false;
         this._alignCoordinateSystem = alignCoordinateSystem;
-        this._touchInputTracker = new TouchInputTracker(canvas, inputObserver);
+        this._touchInputTracker = new TouchInputTracker(canvas, inputPublisher);
         this.touchSM = new TouchInputStateMachine(this._touchInputTracker);
 
         this.bindListeners();

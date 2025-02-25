@@ -2,7 +2,7 @@ export * from "./being";
 export * from "./board-camera";
 export * from "./boardify";
 export * from "./camera-observer";
-export * from "./control-center";
+export * from "./input-flow-control";
 export * from "./drawing-engine"
 export * from "./ease-functions";
 export * from "./input-observer";

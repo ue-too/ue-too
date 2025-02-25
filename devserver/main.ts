@@ -5,7 +5,7 @@ import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
-import { RelayControlCenter } from "src/control-center/simple-relay";
+import { RelayControlCenter } from "src/input-flow-control/simple-relay";
 import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
@@ -32,7 +32,8 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
-board.camera.setRotation(45 * Math.PI / 180);
+board.camera.setRotation(0 * Math.PI / 180);
+board.alignCoordinateSystem = false;
 const drawingEngine = new Container(board.context);
 
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
@@ -179,7 +180,7 @@ function step(timestamp: number){
     drawingEngine.drawWithContext(board.context, deltaMiliseconds);
 
     const fourCorners = calculateTopFourCorners();
-    // drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();

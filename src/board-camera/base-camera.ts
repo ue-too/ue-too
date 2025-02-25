@@ -7,6 +7,17 @@ import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter }
 import { PointCal } from 'point2point';
 import { BoardCamera } from './interface';
 
+/**
+ * @category board camera
+ * 
+ * @description This is the base class for the camera. It is used to create a camera that can be used to view a board.
+ * 
+ * If there's only one class that you want to use in this library, it is this one. The is the back bone of the board camera system.
+ * 
+ * With the {@link CameraRig} class, you can create a camera system that can be used to achieve the infinite canvas effect.
+ * 
+ * This class is not observable (you can not register a callback for camera state changes). If you need to observe the camera state, use the {@link DefaultBoardCamera} class instead.
+ */
 export default class BaseCamera implements BoardCamera {
 
     private _position: Point;
@@ -70,6 +81,15 @@ export default class BaseCamera implements BoardCamera {
         return this._position;
     }
 
+    /**
+     * @description This function is used to set the position of the camera.
+     * @param destination The destination point of the camera.
+     * @returns Whether the position is set successfully.
+     * 
+     * @description This function has a guard that checks if the destination point is within the boundaries of the camera.
+     * If the destination point is not within the boundaries, the function will return false and the position will not be updated.
+     * If the destination point is within the boundaries, the function will return true and the position will be updated.
+     */
     setPosition(destination: Point){
         if(!withinBoundaries(destination, this._boundaries)){
             return false;
@@ -124,6 +144,15 @@ export default class BaseCamera implements BoardCamera {
         return true;
     }
 
+    /**
+     * @description This function is used to set the zoom level of the camera.
+     * @param zoomLevel The zoom level of the camera.
+     * @returns Whether the zoom level is set successfully.
+     * 
+     * @description This function has a guard that checks if the zoom level is within the boundaries of the camera.
+     * If the zoom level is not within the boundaries, the function will return false and the zoom level will not be updated.
+     * If the zoom level is within the boundaries, the function will return true and the zoom level will be updated.
+     */
     setZoomLevel(zoomLevel: number){
         if(!zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
             return false;

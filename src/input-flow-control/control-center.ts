@@ -1,6 +1,6 @@
 import { Point } from "src/index";
 
-export interface InputControlCenter {
+export interface InputFlowControl {
     limitEntireViewPort: boolean;
     notifyPanInput(diff: Point): void;
     notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void;

@@ -110,7 +110,11 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
 
 
     scrollHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: ScrollEventPayload): KmtInputStates {
-        context.notifyOnPan({x: payload.deltaX, y: payload.deltaY});
+        const delta = {...payload}
+        if(!context.alignCoordinateSystem){
+            delta.deltaY = -delta.deltaY;
+        }
+        context.notifyOnPan({x: delta.deltaX, y: delta.deltaY});
         return "IDLE";
     }
 
@@ -123,6 +127,9 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
         const anchorPoint = convertFromWindow2ViewPort(cursorPosition, context.canvas);
+        if(!context.alignCoordinateSystem){
+            anchorPoint.y = -anchorPoint.y;
+        }
         context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
         return "IDLE";
     }
@@ -445,7 +452,7 @@ export class KmtInputStateMachine<EventPayloadMapping, Context, States extends s
     }
 }
 
-export function createKmtInputStateMachine(context: KmtInputContext): KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export function createKmtInputStateMachine(context: KmtInputContext): TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
     const states = {
         IDLE: new KmtIdleState(),
         READY_TO_SELECT: new ReadyToSelectState(),
@@ -456,5 +463,5 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         READY_TO_PAN_VIA_SCROLL_WHEEL: new ReadyToPanViaScrollWheelState(),
         PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
     }
-    return new KmtInputStateMachine(states, "IDLE", context);
+    return new TemplateStateMachine(states, "IDLE", context);
 }

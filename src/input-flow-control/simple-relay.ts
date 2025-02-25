@@ -1,14 +1,14 @@
 import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
 import { createDefaultZoomToAtHandler, ZoomToAtHandlerFunction, BaseZoomHandlerConfig, ZoomHandlerConfig, ZoomToHandlerFunction, createDefaultZoomToOnlyHandler, createDefaultZoomToAtWorldHandler, ZoomByAtHandlerFunction, ZoomByHandlerFunction, createDefaultZoomByAtHandler, createDefaultZoomByOnlyHandler, restrictZoomByHandler, createDefaultZoomByAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
-import { InputControlCenter } from "./control-center";
+import { InputFlowControl } from "./control-center";
 import { Point } from "src/index";
-import DefaultBoardCamera, { BoardCamera, RotateByHandlerFunction, RotateToHandlerFunction, RotationHandlerConfig } from "src/board-camera";
+import DefaultBoardCamera, { BoardCamera, createDefaultRotateByHandler, createDefaultRotateToHandler, ObservableBoardCamera, RotateByHandlerFunction, RotateToHandlerFunction, RotationHandlerConfig } from "src/board-camera";
 import { PointCal } from "point2point";
 import { createDefaultPanControlStateMachine, PanContext, PanControlStateMachine } from "./pan-control-state-machine";
 import { createDefaultZoomControlStateMachine, ZoomContext, ZoomControlStateMachine } from "./zoom-control-state-machine";
 
 export type CameraRigConfig = PanHandlerConfig & BaseZoomHandlerConfig & RotationHandlerConfig;
-export class RelayControlCenter implements InputControlCenter {
+export class RelayControlCenter implements InputFlowControl {
 
     private _panStateMachine: PanControlStateMachine;
     private _zoomStateMachine: ZoomControlStateMachine;
@@ -71,9 +71,9 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
     private _rotateBy: RotateByHandlerFunction;
     private _rotateTo: RotateToHandlerFunction;
     private _config: CameraRigConfig;
-    private _camera: BoardCamera;
+    private _camera: ObservableBoardCamera;
 
-    constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: BoardCamera = new DefaultBoardCamera()){
+    constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
         this._zoomToAt = createDefaultZoomToAtHandler();
         this._zoomByAt = createDefaultZoomByAtHandler();
@@ -81,6 +81,8 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
         this._zoomBy = createDefaultZoomByOnlyHandler();
         this._zoomToAtWorld = createDefaultZoomToAtWorldHandler();
         this._zoomByAtWorld = createDefaultZoomByAtWorldHandler();
+        this._rotateBy = createDefaultRotateByHandler();
+        this._rotateTo = createDefaultRotateToHandler();
         this._config = {...config, restrictRotation: false};
         this._camera = camera;
     }
@@ -119,6 +121,14 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
         this._panBy(deltaInWorld, this._camera, this._config);
     }
 
+    rotateBy(delta: number): void {
+        this._rotateBy(delta, this._camera, this._config);
+    }
+
+    rotateTo(target: number): void {
+        this._rotateTo(target, this._camera, this._config);
+    }
+
     set limitEntireViewPort(limit: boolean){
         this._config.limitEntireViewPort = limit;
     }
@@ -127,7 +137,7 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
         return this._config.limitEntireViewPort;
     }
 
-    get camera(): BoardCamera {
+    get camera(): ObservableBoardCamera {
         return this._camera;
     }
 
@@ -144,7 +154,7 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
     }
 }
 
-export function createDefaultCameraRig(camera: BoardCamera): CameraRig{
+export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig{
     return new CameraRig({
         limitEntireViewPort: true,
         restrictRelativeXTranslation: false,
@@ -155,9 +165,15 @@ export function createDefaultCameraRig(camera: BoardCamera): CameraRig{
     }, camera);
 }
 
-export function createDefaultRelayControlCenter(camera: BoardCamera): InputControlCenter {
+export function createDefaultRelayControlCenter(camera: ObservableBoardCamera): InputFlowControl {
     const context = createDefaultCameraRig(camera);
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
+    return new RelayControlCenter(panStateMachine, zoomStateMachine);
+}
+
+export function createDefaultRelayControlCenterWithCameraRig(cameraRig: CameraRig): InputFlowControl {
+    const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
+    const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
     return new RelayControlCenter(panStateMachine, zoomStateMachine);
 }

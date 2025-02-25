@@ -9,7 +9,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-observer';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputObservable } from 'src/input-observer';
 
-import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
+import { InputFlowControl, CameraRig, createDefaultRelayControlCenterWithCameraRig } from 'src/input-flow-control';
 
 /**
  * @category Board
@@ -34,10 +34,9 @@ import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanCont
  * }
  * ```
  * Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
- * This is a new line.
  * 
  * ```typescript
- * import {Board} from "@niuee/board/boardify";
+ * import { Board } from "@niuee/board/boardify";
  * ```
  */
 export default class Board {
@@ -51,8 +50,7 @@ export default class Board {
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
 
-    // private boardStateObserver: BoardStateObserver;
-    private _camera: ObservableBoardCamera;
+    private cameraRig: CameraRig;
     private boardInputObserver: RawUserInputObservable;
 
     private lastUpdateTime: number = 0;
@@ -62,10 +60,10 @@ export default class Board {
     
     constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents = canvas){
         this._canvas = canvas;
-        this._camera = new DefaultBoardCamera();
-        this._camera.viewPortHeight = canvas.height;
-        this._camera.viewPortWidth = canvas.width;
-        this._camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
+        const camera = new DefaultBoardCamera();
+        camera.viewPortHeight = canvas.height;
+        camera.viewPortWidth = canvas.width;
+        camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
         let context = canvas.getContext('2d');
         if(context == null){
             throw new Error("Canvas 2d context is null");
@@ -81,22 +79,18 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        const stateMachineContext = new CameraRig({
+        this.cameraRig = new CameraRig({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
             restrictXTranslation: false,
             restrictYTranslation: false,
             restrictZoom: false,
-        }, this._camera);
+        }, camera);
 
-        const panStateMachine = createDefaultPanControlStateMachine(stateMachineContext);
-        const zoomStateMachine = createDefaultZoomControlStateMachine(stateMachineContext);
-        const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
+        this.boardInputObserver = new RawUserInputObservable(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
 
-        this.boardInputObserver = new RawUserInputObservable(relayControlCenter);
-
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, relayControlCenter, false);
+        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, this.boardInputObserver, false);
 
         this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
         
@@ -154,11 +148,11 @@ export default class Board {
     set width(width: number){
         this._canvas.width = width * window.devicePixelRatio;
         this._canvas.style.width = width + "px";
-        this._camera.viewPortWidth = width;
+        this.camera.viewPortWidth = width;
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
@@ -174,11 +168,11 @@ export default class Board {
     set height(height: number){
         this._canvas.height = height * window.devicePixelRatio;
         this._canvas.style.height = height + "px";
-        this._camera.viewPortHeight = height;
+        this.camera.viewPortHeight = height;
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this._camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
@@ -230,9 +224,9 @@ export default class Board {
     set limitEntireViewPort(value: boolean){
         this.boardInputObserver.controlCenter.limitEntireViewPort = value;
         if(value){
-            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, this._canvas.width, this._canvas.height, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
@@ -274,16 +268,16 @@ export default class Board {
      * The boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.
      */
     get camera(): ObservableBoardCamera{
-        return this._camera;
+        return this.cameraRig.camera;
     }
 
     set camera(camera: ObservableBoardCamera){
         camera.viewPortHeight = this._canvas.height / window.devicePixelRatio;
         camera.viewPortWidth = this._canvas.width / window.devicePixelRatio;
-        this._camera = camera;
+        this.camera = camera;
     }
 
-    get controlCenter(): InputControlCenter{
+    get controlCenter(): InputFlowControl{
         return this.boardInputObserver.controlCenter;
     }
 
@@ -298,13 +292,13 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        const curBoundaries = this._camera.boundaries;
+        const curBoundaries = this.camera.boundaries;
         if (!boundariesFullyDefined(curBoundaries)){
             throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
         }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
-        const transfromMatrix = this._camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
+        const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
     }
 
@@ -320,7 +314,7 @@ export default class Board {
         if(!this._alignCoordinateSystem){
             pointInViewPort.y = -pointInViewPort.y;
         }
-        return this._camera.convertFromViewPort2WorldSpace(pointInViewPort);
+        return this.camera.convertFromViewPort2WorldSpace(pointInViewPort);
     }
 
     /**
@@ -330,7 +324,7 @@ export default class Board {
      * @returns The converted point in world coordinates.
      */
     on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
-        return this._camera.on(eventName, callback);
+        return this.camera.on(eventName, callback);
     }
 
     /**
@@ -348,33 +342,33 @@ export default class Board {
      * @description The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.
      */
     get maxHalfTransHeight(): number | undefined{
-        return halfTranslationHeightOf(this._camera.boundaries);
+        return halfTranslationHeightOf(this.camera.boundaries);
     }
 
     /**
      * @description The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.
      */
     get maxHalfTransWidth(): number | undefined{
-        return halfTranslationWidthOf(this._camera.boundaries);
+        return halfTranslationWidthOf(this.camera.boundaries);
     }
 
     private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    this._camera.viewPortWidth = parseFloat(this._canvas.style.width);
+                    this.camera.viewPortWidth = parseFloat(this._canvas.style.width);
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 } else if(mutation.attributeName === "height"){
-                    this._camera.viewPortHeight = parseFloat(this._canvas.style.height);
+                    this.camera.viewPortHeight = parseFloat(this._canvas.style.height);
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 }
@@ -390,18 +384,18 @@ export default class Board {
     }
 
     setMaxTransWidthAlignedMin(value: number){
-        const curBoundaries = this._camera.boundaries;
+        const curBoundaries = this.camera.boundaries;
         const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
         const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
         if(curHorizontalMin == undefined){
-            this._camera.setHorizontalBoundaries(-value, value);
+            this.camera.setHorizontalBoundaries(-value, value);
         } else {
-            this._camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
+            this.camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
         }
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-            if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }

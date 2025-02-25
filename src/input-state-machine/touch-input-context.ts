@@ -14,13 +14,13 @@ export interface TouchContext {
 
 export class TouchInputTracker implements TouchContext {
 
-    private _inputObserver: RawUserInputObservable;
+    private _inputPublisher: RawUserInputObservable;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
     private _canvas: HTMLCanvasElement;
 
-    constructor(canvas: HTMLCanvasElement, inputObserver: RawUserInputObservable) {
+    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputObservable) {
         this._canvas = canvas;
-        this._inputObserver = inputObserver;
+        this._inputPublisher = inputPublisher;
     }
 
     addTouchPoints(points: TouchPoints[]): void {
@@ -45,7 +45,10 @@ export class TouchInputTracker implements TouchContext {
         const res: TouchPoints[] = [];
         idents.forEach((ident)=>{
             if(this._touchPointsMap.has(ident)){
-                res.push(this._touchPointsMap.get(ident));
+                const point = this._touchPointsMap.get(ident);
+                if(point){
+                    res.push(point);
+                }
             }
         });
         return res; 
@@ -60,11 +63,11 @@ export class TouchInputTracker implements TouchContext {
     }
 
     notifyOnPan(delta: Point): void {
-        this._inputObserver.notifyPan(delta);
+        this._inputPublisher.notifyPan(delta);
     }
 
     notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this._inputObserver.notifyZoom(zoomAmount, anchorPoint);
+        this._inputPublisher.notifyZoom(zoomAmount, anchorPoint);
     }
 
     get canvas(): HTMLCanvasElement {

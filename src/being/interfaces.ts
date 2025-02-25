@@ -1,6 +1,7 @@
 /**
  * @category being
  * 
+ * 
  * @description This is the interface for the state machine. The interface takes in a few generic parameters:
  * 
  * - EventPayloadMapping: A mapping of events to their payloads.
@@ -59,7 +60,7 @@ export type EventGuards<EventPayloadMapping, States extends string, Context, T e
     [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
 }
 
-export abstract class TemplateStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
+export class TemplateStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
 
     protected _currentState: States;
     protected _states: Record<States, State<EventPayloadMapping, Context, States>>;
