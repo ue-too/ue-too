@@ -165,9 +165,15 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         context.updateTouchPoints(currentPositions);
         switch(panZoom){
             case "ZOOMING":
+                if(!context.alignCoordinateSystem){
+                    midPointInViewPort.y = -midPointInViewPort.y;
+                }
                 context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
                 return "IN_PROGRESS";
             case "PANNING":
+                if(!context.alignCoordinateSystem){
+                    midPointDelta.y = -midPointDelta.y;
+                }
                 context.notifyOnPan(midPointDelta);
                 return "IN_PROGRESS";
         }
