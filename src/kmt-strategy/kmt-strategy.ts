@@ -2,7 +2,6 @@ import { KmtInputStateMachine } from "src/input-state-machine";
 import { KmtIdleState, InitialPanState, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState, ReadyToSelectState } from "src/input-state-machine";
 import { ObservableInputTracker} from "src/input-state-machine/kmt-input-context";
 import type { KmtInputEventMapping, KmtInputContext, KmtInputStates } from "src/input-state-machine";
-import type { InputFlowControl } from "src/input-flow-control/control-center"
 import { RawUserInputObservable } from "src/input-observer/input-observer";
 
 /**
@@ -65,7 +64,6 @@ export class DefaultBoardKMTStrategy implements BoardKMTStrategy {
         this._stateMachine =  new KmtInputStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>(
             {
                 IDLE: new KmtIdleState(),
-                READY_TO_SELECT: new ReadyToSelectState(),
                 READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
                 INITIAL_PAN: new InitialPanState(),
                 PAN: new PanState(),

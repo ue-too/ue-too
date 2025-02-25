@@ -21,7 +21,7 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     setContext(context: Context): void;
-    states: Record<States, State<EventPayloadMapping, Context, States>>;
+    states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<EventPayloadMapping, Context, States>): void;
     possibleStates: States[];
     onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void;
@@ -154,7 +154,7 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
                 const target = guardToEvaluate.find((guard)=>{
                     return this.guards[guard.guard](context);
                 });
-                return target ? target.target : undefined;
+                return target ? target.target : targetState;
             }
             return targetState;
         }

@@ -4,7 +4,7 @@ import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
 
 
-export type KmtInputStates = "IDLE" | "READY_TO_SELECT" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
+export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
 
 export type PointerEventPayload = {
     x: number;
@@ -56,44 +56,26 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
-export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL";
 
-    private world: World;
+export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> {
 
-    constructor(world: World | undefined = new BoardWorld()) {
+    constructor() {
         super();
-        this.world = world;
     }
 
     protected _guards: Guard<KmtInputContext, "isIdle"> = {
         isIdle: () => true,
     }
 
-    protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtInputStates, KmtInputContext, Guard<KmtInputContext>>> = {
+    protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtIdleStatePossibleTargetStates, KmtInputContext, Guard<KmtInputContext>>> = {
     }
 
-
-    get eventReactions(): Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> {
+    get eventReactions(): Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates>> {
         return this._eventReactions;
     }
 
-    // leftPointerDownHandler = (stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates => {
-    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-    //     context.setSelectionStartPoint(viewportPoint);
-    //     context.toggleSelectionBox(true);
-    //     return "READY_TO_SELECT";
-    // }
-
-    leftPointerMoveHandler = (stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates => {
-        this.world.processPoint(stateMachine, {x: payload.x, y: payload.y});
-        return "IDLE";
-    }
-
-    private _eventReactions: EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
-        // leftPointerDown: {
-        //     action: this.leftPointerDownHandler,
-        //     defaultTargetState: "READY_TO_SELECT",
-        // },
+    private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates>> = {
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -108,8 +90,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         },
     }
 
-
-    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtInputStates {
+    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtIdleStatePossibleTargetStates {
         const delta = {...payload}
         if(!context.alignCoordinateSystem){
             delta.deltaY = -delta.deltaY;
@@ -118,8 +99,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return "IDLE";
     }
 
-    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtInputStates {
-        // console.log("raw deltaY", payload.deltaY);
+    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtIdleStatePossibleTargetStates {
         let scrollSensitivity = 0.005;
         if(Math.abs(payload.deltaY) > 100){
             scrollSensitivity = 0.0005;
@@ -134,43 +114,50 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return "IDLE";
     }
 
-    spacebarDownHandler(context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
+    spacebarDownHandler(context: KmtInputContext, payload: SpaceBarEventPayload): KmtIdleStatePossibleTargetStates {
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
     }
 
-    middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): KmtIdleStatePossibleTargetStates {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         context.canvas.style.cursor = "grabbing";
         return "READY_TO_PAN_VIA_SCROLL_WHEEL";
     }
 }
 
-export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
+type SelectionContext = {
+    setSelectionEndPoint: (point: Point) => void;
+    toggleSelectionBox: (show: boolean) => void;
+    canvas: HTMLCanvasElement;
+}
+
+export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> {
 
     constructor() {
         super();
     }
 
-    // leftPointerMove = ((stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates => {
-    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-    //     context.setSelectionEndPoint(viewportPoint);
-    //     context.toggleSelectionBox(true);
-    //     return "SELECTING";
-    // }).bind(this);
+    leftPointerMove = ((context: SelectionContext, payload: PointerEventPayload): ReadyToSelectStatePossibleTargetStates => {
+        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
+        context.setSelectionEndPoint(viewportPoint);
+        context.toggleSelectionBox(true);
+        return "SELECTING";
+    }).bind(this);
 
-    private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> = {
+    private _eventReactions: Partial<EventAction<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates>> = {
         leftPointerUp: {
             action: () => "IDLE",
             defaultTargetState: "IDLE",
         },
-        // leftPointerMove: {
-        //     action: this.leftPointerMove,
-        //     defaultTargetState: "SELECTING",
-        // },
+        leftPointerMove: {
+            action: this.leftPointerMove,
+            defaultTargetState: "SELECTING",
+        },
     }
 
-    get eventReactions(): Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> {
+    get eventReactions(): Partial<EventAction<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates>> {
         return this._eventReactions;
     }
 
@@ -292,7 +279,6 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
 
 export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
-
     constructor() {
         super();
     }
@@ -406,7 +392,6 @@ export class KmtInputStateMachine<EventPayloadMapping, Context, States extends s
 export function createKmtInputStateMachine(context: KmtInputContext): TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
     const states = {
         IDLE: new KmtIdleState(),
-        READY_TO_SELECT: new ReadyToSelectState(),
         READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
         INITIAL_PAN: new InitialPanState(),
         PAN: new PanState(),
@@ -415,18 +400,3 @@ export function createKmtInputStateMachine(context: KmtInputContext): TemplateSt
     }
     return new TemplateStateMachine(states, "IDLE", context);
 }
-
-export type PartialKmtInputEventMapping = {
-    leftPointerDown: PointerEventPayload;
-};
-
-export function createKmtInputStateMachinePartial(context: KmtInputContext): TemplateStateMachine<PartialKmtInputEventMapping, KmtInputContext, PartialKmtInputStates> {
-    const states = {
-        "IDLE": new KmtIdleState(),
-    };
-    return new TemplateStateMachine(states, "IDLE", context);
-}
-
-type PartialKmtInputStates = "IDLE";
-
-
