@@ -1,7 +1,9 @@
 import { Point } from "src/index";
 import { TouchPoints } from "./touch-input-state-machine";
 import { RawUserInputObservable } from "src/input-observer";
-export interface TouchContext {
+import { BaseContext } from "src/being/interfaces";
+
+export interface TouchContext extends BaseContext{
     addTouchPoints: (points: TouchPoints[]) => void;
     removeTouchPoints: (idents: number[]) => void;
     getCurrentTouchPointsCount: () => number;
@@ -83,6 +85,12 @@ export class TouchInputTracker implements TouchContext {
 
     set alignCoordinateSystem(value: boolean) {
         this._alignCoordinateSystem = value;
+    }
+
+    cleanup(): void {
+    }
+
+    setup(): void {
     }
 }
 

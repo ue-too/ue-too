@@ -1,4 +1,4 @@
-import { EventAction, EventGuards, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
+import { BaseContext, EventAction, EventGuards, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "../index";
 import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
@@ -130,6 +130,8 @@ type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
 type SelectionContext = {
     setSelectionEndPoint: (point: Point) => void;
     toggleSelectionBox: (show: boolean) => void;
+    cleanup: () => void;
+    setup: () => void;
     canvas: HTMLCanvasElement;
 }
 
@@ -369,7 +371,7 @@ export class BoardWorld implements World {
     }
 }
 
-export class KmtInputStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> extends TemplateStateMachine<EventPayloadMapping, Context, States> {
+export class KmtInputStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> extends TemplateStateMachine<EventPayloadMapping, Context, States> {
 
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context) {

@@ -17,7 +17,11 @@
  * 
  * 
  */
-export interface StateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> {
+export interface BaseContext {
+    setup(): void;
+    cleanup(): void;
+}
+export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     setContext(context: Context): void;
@@ -27,9 +31,9 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
     onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void;
 }
 
-export type StateChangeCallback<EventPayloadMapping, Context, States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
+export type StateChangeCallback<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
-export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
+export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context): void;
     uponLeave(context: Context): void;
     handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
@@ -38,29 +42,29 @@ export interface State<EventPayloadMapping, Context, States extends string = 'ID
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
 }
 
-export type EventAction<EventPayloadMapping, Context, States extends string> = {
+export type EventAction<EventPayloadMapping, Context extends BaseContext, States extends string> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
         action: (context: Context, event: EventPayloadMapping[K]) => States; 
         defaultTargetState: States;
     };
 };
 
-export type GuardEvaluation<Context> = (context: Context) => boolean;
+export type GuardEvaluation<Context extends BaseContext> = (context: Context) => boolean;
 
-export type Guard<Context, K extends string = string> = {
+export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
 }
 
-export type GuardMapping<Context, G, States extends string> = {
+export type GuardMapping<Context extends BaseContext, G, States extends string> = {
     guard: G extends Guard<Context, infer K> ? K : never;
     target: States;
 }
 
-export type EventGuards<EventPayloadMapping, States extends string, Context, T extends Guard<Context>> = {
+export type EventGuards<EventPayloadMapping, States extends string, Context extends BaseContext, T extends Guard<Context>> = {
     [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
 }
 
-export class TemplateStateMachine<EventPayloadMapping, Context, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
+export class TemplateStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
 
     protected _currentState: States;
     protected _states: Record<States, State<EventPayloadMapping, Context, States>>;
@@ -120,10 +124,10 @@ export class TemplateStateMachine<EventPayloadMapping, Context, States extends s
     }
 }
 
-type EventReactions<EventPayloadMapping, Context, States extends string> = EventAction<EventPayloadMapping, Context, States>;
+type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = EventAction<EventPayloadMapping, Context, States>;
 
 
-export abstract class TemplateState<EventPayloadMapping, Context, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
+export abstract class TemplateState<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
 
     abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     protected _guards: Guard<Context> = {};

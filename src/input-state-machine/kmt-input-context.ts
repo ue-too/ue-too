@@ -1,8 +1,8 @@
-import { Point } from "src/index";
+import { BaseContext, Point } from "src/index";
 import type { InputFlowControl } from "src/input-flow-control/control-center";
 import { RawUserInputObservable } from "src/input-observer/input-observer";
 
-export interface KmtInputContext {
+export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
     notifyOnPan: (delta: Point) => void;
@@ -57,6 +57,11 @@ export class ObservableInputTracker implements KmtInputContext {
     setInitialCursorPosition(position: Point): void {
         this._initialCursorPosition = position;
     }
-    
+
+    cleanup(): void {
+    }
+
+    setup(): void {
+    }
 }
 
