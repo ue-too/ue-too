@@ -1,6 +1,6 @@
 import { Point } from 'src';
 import { Boundaries } from 'src/board-camera';
-import { CameraObservable, UnSubscribe } from 'src/camera-observer';
+import { CameraUpdatePublisher, UnSubscribe } from 'src/camera-observer';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
 import { RotationLimits } from 'src/board-camera/utils/rotation';
@@ -9,10 +9,11 @@ import { PointCal } from 'point2point';
 import { CameraEventMap, CameraState } from 'src/camera-observer';
 import { ObservableBoardCamera } from 'src/board-camera/interface';
 import BaseCamera from 'src/board-camera/base-camera';
+import { SubscriptionOptions } from 'src/util/observable';
 export default class DefaultBoardCamera implements ObservableBoardCamera {
 
     private _baseCamera: BaseCamera;
-    private _observer: CameraObservable;
+    private _observer: CameraUpdatePublisher;
     /**
      * @param position The position of the camera in the world coordinate system
      * @param rotation The rotation of the camera in the world coordinate system
@@ -26,7 +27,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      */
     constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
         this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
-        this._observer = new CameraObservable();
+        this._observer = new CameraUpdatePublisher();
     }
 
     get boundaries(): Boundaries | undefined{
@@ -207,8 +208,8 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         this._baseCamera.boundaries.max.y = max;
     }
 
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
-        return this._observer.on(eventName, callback);
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
+        return this._observer.on(eventName, callback, options);
     }
 
     pointInView(point: Point): boolean {

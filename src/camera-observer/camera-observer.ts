@@ -1,5 +1,5 @@
 import { Point } from "point2point";
-import { Observable, Observer } from "../util/observable";
+import { Observable, Observer, SubscriptionOptions } from "../util/observable";
 
 export type CameraPanEventPayload = {
     diff: Point;
@@ -56,7 +56,7 @@ export type RotateObserver = Callback<"rotate">;
 
 export type AllObserver = Callback<"all">;
 
-export class CameraObservable {
+export class CameraUpdatePublisher {
 
     private pan: Observable<Parameters<Callback<"pan">>>;
     private zoom: Observable<Parameters<Callback<"zoom">>>;
@@ -85,16 +85,16 @@ export class CameraObservable {
         this.all.notify({type: "rotate", deltaRotation: event.deltaRotation}, cameraState);
     }
     
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
         switch (eventName){
         case "pan":
-            return this.pan.subscribe(callback as Observer<Parameters<Callback<"pan">>>);
+            return this.pan.subscribe(callback as Observer<Parameters<Callback<"pan">>>, options);
         case "zoom":
-            return this.zoom.subscribe(callback as Observer<Parameters<Callback<"zoom">>>);
+            return this.zoom.subscribe(callback as Observer<Parameters<Callback<"zoom">>>, options);
         case "rotate":
-            return this.rotate.subscribe(callback as Observer<Parameters<Callback<"rotate">>>);
+            return this.rotate.subscribe(callback as Observer<Parameters<Callback<"rotate">>>, options);
         case "all":
-            return this.all.subscribe(callback as Observer<Parameters<Callback<"all">>>);
+            return this.all.subscribe(callback as Observer<Parameters<Callback<"all">>>, options);
         default:
             throw new Error(`Invalid event name: ${eventName}`);
         }

@@ -57,8 +57,8 @@ export default class Board {
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
 
-    private _kmtStrategy: KMTEventParser;
-    private _touchStrategy: TouchEventParser;
+    private _kmtParser: KMTEventParser;
+    private _touchParser: TouchEventParser;
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
@@ -103,9 +103,9 @@ export default class Board {
 
         this.boardInputObserver = new RawUserInputObservable(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
 
-        this._kmtStrategy = new DefaultKMTEventParser(canvas, eventTarget, this.boardInputObserver, false);
+        this._kmtParser = new DefaultKMTEventParser(canvas, eventTarget, this.boardInputObserver, false);
 
-        this._touchStrategy = new DefaultTouchEventParser(this._canvas, this.boardInputObserver);
+        this._touchParser = new DefaultTouchEventParser(this._canvas, this.boardInputObserver);
         
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
@@ -118,13 +118,13 @@ export default class Board {
     }
 
     private registerEventListeners(){
-        this._kmtStrategy.setUp();
-        this._touchStrategy.setUp();
+        this._kmtParser.setUp();
+        this._touchParser.setUp();
     }
 
     private removeEventListeners(){
-        this._touchStrategy.tearDown();
-        this._kmtStrategy.tearDown();
+        this._touchParser.tearDown();
+        this._kmtParser.tearDown();
     }
 
     /**
@@ -201,8 +201,8 @@ export default class Board {
      */
     set alignCoordinateSystem(align: boolean){
         this._alignCoordinateSystem = align;
-        this._kmtStrategy.alignCoordinateSystem = align;
-        this._touchStrategy.alignCoordinateSystem = align;
+        this._kmtParser.alignCoordinateSystem = align;
+        this._touchParser.alignCoordinateSystem = align;
     }
 
     get alignCoordinateSystem(): boolean{
@@ -227,8 +227,7 @@ export default class Board {
 
     /**
      * @description The context used to draw on the canvas.
-     * If alignCoordinateSystem is false, this returns a proxy that automatically
-     * negates y-coordinates for relevant drawing methods.
+     * If alignCoordinateSystem is false, this returns a proxy that automatically negates y-coordinates for relevant drawing methods.
      */
     get context(): CanvasRenderingContext2D {
         if (!this._alignCoordinateSystem) {
@@ -294,33 +293,33 @@ export default class Board {
      * @description The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
      * You can implement your own strategy by implementing the BoardKMTStrategy interface.
      */
-    set kmtStrategy(strategy: KMTEventParser){
-        this._kmtStrategy.tearDown();
-        strategy.setUp();
-        this._kmtStrategy = strategy;
+    set kmtParser(parser: KMTEventParser){
+        this._kmtParser.tearDown();
+        parser.setUp();
+        this._kmtParser = parser;
     }
 
-    get kmtStrategy(): KMTEventParser{
-        return this._kmtStrategy;
+    get kmtParser(): KMTEventParser{
+        return this._kmtParser;
     }
 
     /**
-     * @description The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.
-     * You can implement your own strategy by implementing the BoardTouchStrategy interface.
+     * @description The parser used to handle touch events. The default parser is the DefaultTouchParser.
+     * You can have your own parser by implementing the BoardTouchParser interface.
      */
-    set touchStrategy(strategy: TouchEventParser){
-        this._touchStrategy.tearDown();
-        strategy.setUp();
-        this._touchStrategy = strategy;
+    set touchParser(parser: TouchEventParser){
+        this._touchParser.tearDown();
+        parser.setUp();
+        this._touchParser = parser;
     }
 
-    get touchStrategy(): TouchEventParser{
-        return this._touchStrategy;
+    get touchParser(): TouchEventParser{
+        return this._touchParser;
     }
 
     /**
      * @description The underlying camera of the board. The camera of the board can be switched.
-     * The boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.
+     * The boundaries are based on camera meaning you can have cameras with different boundaries, and you can switch between them during runtime.
      */
     get camera(): ObservableBoardCamera{
         return this.cameraRig.camera;
@@ -438,7 +437,11 @@ export default class Board {
         }
     }
 
-    setMaxTransWidthAlignedMin(value: number){
+    /**
+     * @group Helper Methods
+     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
+     */
+    setMaxTransWidthWithFixedMinBoundary(value: number){
         const curBoundaries = this.camera.boundaries;
         const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
         const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
@@ -446,6 +449,27 @@ export default class Board {
             this.camera.setHorizontalBoundaries(-value, value);
         } else {
             this.camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
+        }
+        if(this.limitEntireViewPort){
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
+    }
+
+    /**
+     * @group Helper Methods
+     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
+     */
+    setMaxTransWidthWithFixedMaxBoundary(value: number){
+        const curBoundaries = this.camera.boundaries;
+        const curMax = curBoundaries == undefined ? undefined: curBoundaries.max;
+        const curHorizontalMax = curMax == undefined ? undefined: curMax.x;
+        if(curHorizontalMax == undefined){
+            this.camera.setHorizontalBoundaries(-value, value);
+        } else {
+            this.camera.setHorizontalBoundaries(curHorizontalMax - value * 2, curHorizontalMax);
         }
         if(this.limitEntireViewPort){
             const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);

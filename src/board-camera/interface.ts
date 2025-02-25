@@ -4,11 +4,11 @@ import { UnSubscribe } from "src/camera-observer";
 import { RotationLimits } from "src/board-camera/utils/rotation";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
 import { Boundaries } from "src/board-camera/utils/position";
-
 import { CameraEventMap, CameraState } from "src/camera-observer";
+import { SubscriptionOptions } from "src/util/observable";
 
 export interface ObservableBoardCamera extends BoardCamera {
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe;
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe;
 }
 
 export interface BoardCamera {
