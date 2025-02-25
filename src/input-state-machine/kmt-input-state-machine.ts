@@ -4,7 +4,7 @@ import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
 
 
-export type KmtInputStates = "IDLE" | "READY_TO_SELECT" | "SELECTING" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
+export type KmtInputStates = "IDLE" | "READY_TO_SELECT" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
 
 export type PointerEventPayload = {
     x: number;
@@ -89,7 +89,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return "IDLE";
     }
 
-    private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> = {
+    private _eventReactions: EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         // leftPointerDown: {
         //     action: this.leftPointerDownHandler,
         //     defaultTargetState: "READY_TO_SELECT",
@@ -109,7 +109,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
 
-    scrollHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: ScrollEventPayload): KmtInputStates {
+    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtInputStates {
         const delta = {...payload}
         if(!context.alignCoordinateSystem){
             delta.deltaY = -delta.deltaY;
@@ -118,7 +118,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return "IDLE";
     }
 
-    scrollWithCtrlHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtInputStates {
+    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtInputStates {
         // console.log("raw deltaY", payload.deltaY);
         let scrollSensitivity = 0.005;
         if(Math.abs(payload.deltaY) > 100){
@@ -134,12 +134,12 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return "IDLE";
     }
 
-    spacebarDownHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
+    spacebarDownHandler(context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
     }
 
-    middlePointerDownHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         context.canvas.style.cursor = "grabbing";
         return "READY_TO_PAN_VIA_SCROLL_WHEEL";
@@ -176,41 +176,6 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, KmtI
 
 }
 
-export class SelectingState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
-
-
-    constructor() {
-        super();
-    }
-
-    // leftPointerMoveHandler = ((stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates => {
-    //     const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-    //     context.setSelectionEndPoint(viewportPoint);
-    //     return "SELECTING";
-    // }).bind(this);
-
-    // leftPointerUpHandler = ((stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates => {
-    //     context.toggleSelectionBox(false);
-    //     return "IDLE";
-    // }).bind(this);
-
-    private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> = {
-        // leftPointerUp: {
-        //     action: this.leftPointerUpHandler,
-        //     defaultTargetState: "IDLE",
-        // },
-        // leftPointerMove: {
-        //     action: this.leftPointerMoveHandler,
-        //     defaultTargetState: "SELECTING",
-        // },
-    }
-
-    get eventReactions(): Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> {
-        return this._eventReactions;
-    }
-
-}
-
 export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
@@ -232,13 +197,13 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
         return this._eventReactions;
     }
 
-    leftPointerDownHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    leftPointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         context.canvas.style.cursor = "grabbing";
         return "INITIAL_PAN";
     }
 
-    spacebarUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
+    spacebarUpHandler(context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
         context.canvas.style.cursor = "default";
         return "IDLE";
     }
@@ -250,7 +215,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         super();
     }
 
-    private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> = {
+    private _eventReactions: EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         leftPointerUp: {
             action: this.leftPointerUpHandler,
             defaultTargetState: "IDLE",
@@ -269,18 +234,11 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         },
     }
 
-    get eventReactions(): Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> {
+    get eventReactions(): EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
         return this._eventReactions;
     }
 
-    handles<K extends keyof KmtInputEventMapping>(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, event: K, payload: KmtInputEventMapping[K], context: KmtInputContext): KmtInputStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event].action(stateMachine, context, payload);
-        }
-        return "INITIAL_PAN";
-    }
-
-    leftPointerMoveHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -293,7 +251,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         return "PAN";
     }
 
-    leftPointerUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
     }
@@ -320,12 +278,12 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
         return this._eventReactions;
     }
 
-    middlePointerMoveHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.canvas.style.cursor = "grabbing";
         return "PAN_VIA_SCROLL_WHEEL";
     }
 
-    middlePointerUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.canvas.style.cursor = "default";
         return "IDLE";
     }
@@ -342,7 +300,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
     private _eventReactions: Partial<EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates>> = {
         leftPointerUp: {
             action: this.leftPointerUpHandler,
-            defaultTargetState: "IDLE",
+            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
         },
         leftPointerMove: {
             action: this.leftPointerMoveHandler,
@@ -358,14 +316,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         return this._eventReactions;
     }
 
-    handles<K extends keyof KmtInputEventMapping>(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, event: K, payload: KmtInputEventMapping[K], context: KmtInputContext): KmtInputStates {
-        if(this._eventReactions[event]){
-            return this._eventReactions[event].action(stateMachine, context, payload);
-        }
-        return "PAN";
-    }
-
-    leftPointerMoveHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -378,12 +329,12 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         return "PAN";
     }
 
-    spacebarUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
+    spacebarUpHandler(context: KmtInputContext, payload: SpaceBarEventPayload): KmtInputStates {
         context.canvas.style.cursor = "default";
         return "IDLE";
     }
 
-    leftPointerUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.canvas.style.cursor = "grab";
         return "READY_TO_PAN_VIA_SPACEBAR";
     }
@@ -406,7 +357,7 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         return this._eventReactions;
     }
 
-    middlePointerMoveHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -419,7 +370,7 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         return "PAN_VIA_SCROLL_WHEEL";
     }
 
-    middlePointerUpHandler(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
+    middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): KmtInputStates {
         context.canvas.style.cursor = "default";
         return "IDLE";
     }
@@ -456,7 +407,6 @@ export function createKmtInputStateMachine(context: KmtInputContext): TemplateSt
     const states = {
         IDLE: new KmtIdleState(),
         READY_TO_SELECT: new ReadyToSelectState(),
-        SELECTING: new SelectingState(),
         READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
         INITIAL_PAN: new InitialPanState(),
         PAN: new PanState(),
@@ -465,3 +415,18 @@ export function createKmtInputStateMachine(context: KmtInputContext): TemplateSt
     }
     return new TemplateStateMachine(states, "IDLE", context);
 }
+
+export type PartialKmtInputEventMapping = {
+    leftPointerDown: PointerEventPayload;
+};
+
+export function createKmtInputStateMachinePartial(context: KmtInputContext): TemplateStateMachine<PartialKmtInputEventMapping, KmtInputContext, PartialKmtInputStates> {
+    const states = {
+        "IDLE": new KmtIdleState(),
+    };
+    return new TemplateStateMachine(states, "IDLE", context);
+}
+
+type PartialKmtInputStates = "IDLE";
+
+

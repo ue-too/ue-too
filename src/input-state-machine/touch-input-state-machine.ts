@@ -26,7 +26,7 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
 
     private testVariable: string = "test";
 
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventAction<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -58,12 +58,12 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         return this._eventReactions;
     }
 
-    touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.addTouchPoints(payload.points);
         return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
+    touchend(context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
         context.removeTouchPoints(payload.points.map(p => p.ident));
         return "IDLE";
     }
@@ -90,12 +90,12 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         return this._eventReactions;
     }
 
-    touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.addTouchPoints(payload.points);
         return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.removeTouchPoints(payload.points.map(p => p.ident));
         if(context.getCurrentTouchPointsCount() === 2){
             return "IN_PROGRESS";
@@ -103,7 +103,7 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         return "IDLE";
     }
 
-    touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): TouchStates {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -148,7 +148,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
     }
 
     // TODO: align coordinate system
-    touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): TouchStates {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -174,7 +174,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         return "IN_PROGRESS"; 
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): TouchStates {
         context.removeTouchPoints(payload.points.map(p => p.ident));
         return "IDLE";
     }

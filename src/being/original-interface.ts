@@ -30,17 +30,17 @@ export interface StateMachine<EventPayloadMapping, Context, States extends strin
 export type StateChangeCallback<EventPayloadMapping, Context, States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
 export interface State<EventPayloadMapping, Context, States extends string = 'IDLE'> { 
-    uponEnter(context: Context): void;
-    uponLeave(context: Context): void;
-    handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
-    eventReactions: EventAction<EventPayloadMapping, Context, States>;
+    uponEnter(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void;
+    uponLeave(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void;
+    handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
+    eventReactions: Partial<EventAction<EventPayloadMapping, Context, States>>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
 }
 
 export type EventAction<EventPayloadMapping, Context, States extends string> = {
-    [K in keyof Partial<EventPayloadMapping>]: { 
-        action: (context: Context, event: EventPayloadMapping[K]) => States; 
+    [K in keyof EventPayloadMapping]: { 
+        action: (stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context, event: EventPayloadMapping[K]) => States; 
         defaultTargetState: States;
     };
 };
@@ -84,12 +84,12 @@ export class TemplateStateMachine<EventPayloadMapping, Context, States extends s
     
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
         this._happensCallbacks.forEach(callback => callback(event, payload, this._context));
-        const nextState = this._states[this._currentState].handles(event, payload, this._context);
+        const nextState = this._states[this._currentState].handles(this, event, payload, this._context);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
-            this._states[this._currentState].uponLeave(this._context);
+            this._states[this._currentState].uponLeave(this, this._context);
             this.switchTo(nextState);
-            this._states[this._currentState].uponEnter(this._context);
+            this._states[this._currentState].uponEnter(this, this._context);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
         return nextState;
@@ -120,7 +120,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context, States extends s
     }
 }
 
-type EventReactions<EventPayloadMapping, Context, States extends string> = EventAction<EventPayloadMapping, Context, States>;
+type EventReactions<EventPayloadMapping, Context, States extends string> = Partial<EventAction<EventPayloadMapping, Context, States>>;
 
 
 export abstract class TemplateState<EventPayloadMapping, Context, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
@@ -137,17 +137,17 @@ export abstract class TemplateState<EventPayloadMapping, Context, States extends
         return this._eventGuards;
     }
 
-    uponEnter(context: Context): void {
+    uponEnter(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
         // console.log("enter");
     }
 
-    uponLeave(context: Context): void {
+    uponLeave(stateMachine: StateMachine<EventPayloadMapping, Context, States>, context: Context): void {
         // console.log('leave');
     }
 
-    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
+    handles<K extends keyof EventPayloadMapping>(stateMachine: StateMachine<EventPayloadMapping, Context, States>, event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
         if (this.eventReactions[event]) {
-            this.eventReactions[event].action(context, payload);
+            this.eventReactions[event].action(stateMachine, context, payload);
             const targetState = this.eventReactions[event].defaultTargetState;
             const guardToEvaluate = this._eventGuards[event];
             if(guardToEvaluate){
