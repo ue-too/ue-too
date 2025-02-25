@@ -23,8 +23,9 @@
   <a href="#key-features">Key Features</a> •
   <a href="#bare-minimum-example">Bare Minimum Example</a> •
   <a href="#how-to-use">How To Use</a>
-
 </p>
+
+![small-demo](./doc-media/small-demo.gif)
 
 This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
 board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
