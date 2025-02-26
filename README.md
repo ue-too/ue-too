@@ -42,7 +42,6 @@ There are a few more examples in the `devserver` directory. Including how to int
 ## Docs
 - [API Documentation](https://niuee.github.io/board/index.html)
 - [中文文件連結](https://niuee.github.io/board/zh-tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
-### PR welcome for the i18n for the documentation. (See the [Development](#development) section for more detail)
 
 ## Installation and Usage
 ### Package manager
@@ -208,6 +207,8 @@ The flow control then pass the desired camera input through `CameraRig`; this is
 
 Below is a diagram on the data flow.
 ![camera-control-data-flow](./doc-media/camera-control-data-flow.png)
+
+You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above. 
 
 Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
 ![viewport and world coorindate system](./doc-media/coordinate-system.png)
