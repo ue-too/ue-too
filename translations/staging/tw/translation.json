@@ -11,53 +11,122 @@
     ],
     "translationKey": "6bacf2b7ccc556eb54ed4a0c1199443d"
   },
-  "71b9a8b348831c72c65b166e7459a685": {
+  "170ee2ccdd1145f8ca2525d7120a56dc": {
     "humanReadablePath": "categories > index-1 > title",
     "kind": "category",
-    "originalText": "Input Strategy",
+    "originalText": "being",
     "translation": "",
     "projectPath": [
       "categories",
       "index-1",
       "title"
     ],
-    "translationKey": "71b9a8b348831c72c65b166e7459a685"
+    "translationKey": "170ee2ccdd1145f8ca2525d7120a56dc"
   },
-  "fa7f497c9348c10457f694a7ea682097": {
+  "e84cc058ed687ad9cade3209c447ba49": {
     "humanReadablePath": "categories > index-2 > title",
     "kind": "category",
-    "originalText": "Other",
+    "originalText": "Camera Rig",
     "translation": "",
     "projectPath": [
       "categories",
       "index-2",
       "title"
     ],
-    "translationKey": "fa7f497c9348c10457f694a7ea682097"
+    "translationKey": "e84cc058ed687ad9cade3209c447ba49"
   },
-  "698ac421381b309f76c77618dc52c91b": {
+  "e637185a88988387c75ff625d7dc9881": {
     "humanReadablePath": "categories > index-3 > title",
     "kind": "category",
-    "originalText": "being",
+    "originalText": "Input Strategy",
     "translation": "",
     "projectPath": [
       "categories",
       "index-3",
       "title"
     ],
-    "translationKey": "698ac421381b309f76c77618dc52c91b"
+    "translationKey": "e637185a88988387c75ff625d7dc9881"
   },
-  "72db773aa1c5d29066c57eff96955b9c": {
+  "35d487ba5b6f57d81e3b52f2ed3ea2a9": {
     "humanReadablePath": "categories > index-4 > title",
     "kind": "category",
-    "originalText": "Easing Functions",
+    "originalText": "Other",
     "translation": "",
     "projectPath": [
       "categories",
       "index-4",
       "title"
     ],
-    "translationKey": "72db773aa1c5d29066c57eff96955b9c"
+    "translationKey": "35d487ba5b6f57d81e3b52f2ed3ea2a9"
+  },
+  "58b4922b4828b8eacd533f4b3a41aecc": {
+    "humanReadablePath": "categories > index-5 > title",
+    "kind": "category",
+    "originalText": "board camera",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-5",
+      "title"
+    ],
+    "translationKey": "58b4922b4828b8eacd533f4b3a41aecc"
+  },
+  "aa45bda8ff9437953449ffb08ebff8bb": {
+    "humanReadablePath": "categories > index-6 > title",
+    "kind": "category",
+    "originalText": "Easing Functions",
+    "translation": "",
+    "projectPath": [
+      "categories",
+      "index-6",
+      "title"
+    ],
+    "translationKey": "aa45bda8ff9437953449ffb08ebff8bb"
+  },
+  "33b2959fff5555424de0f4e30755e37d": {
+    "humanReadablePath": "BaseCamera > translation comments > index-0 > text",
+    "kind": "class",
+    "originalText": "This is the base class for the camera. It is used to create a camera that can be used to view a board.\n\nIf there's only one class that you want to use in this library, it is this one. The is the back bone of the board camera system.\n\nWith the ",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "33b2959fff5555424de0f4e30755e37d"
+  },
+  "c64d1452f0f2e774c1ce9fa3b700e355": {
+    "humanReadablePath": "BaseCamera > translation comments > index-2 > text",
+    "kind": "class",
+    "originalText": " class, you can create a camera system that can be used to achieve the infinite canvas effect.\n\nThis class is not observable (you can not register a callback for camera state changes). If you need to observe the camera state, use the ",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "comment",
+      "summary",
+      "index-2",
+      "text"
+    ],
+    "translationKey": "c64d1452f0f2e774c1ce9fa3b700e355"
+  },
+  "a0ef090071c14747286f6d04d63a155f": {
+    "humanReadablePath": "BaseCamera > translation comments > index-4 > text",
+    "kind": "class",
+    "originalText": " class instead.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "comment",
+      "summary",
+      "index-4",
+      "text"
+    ],
+    "translationKey": "a0ef090071c14747286f6d04d63a155f"
   },
   "2f9fc860b0a2a30417181f5722c7d67a": {
     "humanReadablePath": "BaseCamera > getTransform > getTransform > translation block comments > index-0 > text",
@@ -80,8 +149,98 @@
     ],
     "translationKey": "2f9fc860b0a2a30417181f5722c7d67a"
   },
-  "815cbc433daab0a5aed66c8ae7c31a97": {
-    "humanReadablePath": "Board > groups > index-3 > title",
+  "2f607a3ee9128863498b123159ce6f60": {
+    "humanReadablePath": "BaseCamera > setPosition > setPosition > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to set the position of the camera.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "children",
+      "index-18",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "2f607a3ee9128863498b123159ce6f60"
+  },
+  "0e179f074bfbafbfb2afa628b1ab51ac": {
+    "humanReadablePath": "BaseCamera > setPosition > setPosition > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function has a guard that checks if the destination point is within the boundaries of the camera.\nIf the destination point is not within the boundaries, the function will return false and the position will not be updated.\nIf the destination point is within the boundaries, the function will return true and the position will be updated.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "children",
+      "index-18",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "translationKey": "0e179f074bfbafbfb2afa628b1ab51ac"
+  },
+  "c16598d59ed54b4bc02bdc63ab682c1b": {
+    "humanReadablePath": "BaseCamera > setZoomLevel > setZoomLevel > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to set the zoom level of the camera.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "children",
+      "index-21",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "c16598d59ed54b4bc02bdc63ab682c1b"
+  },
+  "fecfa5e0162d2cf479b40c31d127d15a": {
+    "humanReadablePath": "BaseCamera > setZoomLevel > setZoomLevel > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function has a guard that checks if the zoom level is within the boundaries of the camera.\nIf the zoom level is not within the boundaries, the function will return false and the zoom level will not be updated.\nIf the zoom level is within the boundaries, the function will return true and the zoom level will be updated.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-2",
+      "children",
+      "index-21",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "translationKey": "fecfa5e0162d2cf479b40c31d127d15a"
+  },
+  "c07e76f2fd74806c67c1e90286c11efe": {
+    "humanReadablePath": "Board > groups > index-4 > title",
+    "kind": "group",
+    "originalText": "Helper Methods",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-3",
+      "groups",
+      "index-4",
+      "title"
+    ],
+    "translationKey": "c07e76f2fd74806c67c1e90286c11efe"
+  },
+  "df4cf650dcdcb2d41294c3ec32462baf": {
+    "humanReadablePath": "Board > groups > index-5 > title",
     "kind": "group",
     "originalText": "LifeCycle",
     "translation": "",
@@ -89,12 +248,12 @@
       "children",
       "index-3",
       "groups",
-      "index-3",
+      "index-5",
       "title"
     ],
-    "translationKey": "815cbc433daab0a5aed66c8ae7c31a97"
+    "translationKey": "df4cf650dcdcb2d41294c3ec32462baf"
   },
-  "dfa40c798f6ebe3ab843c83700fbe134": {
+  "986ef3bb7fca14393745bde587d19191": {
     "humanReadablePath": "Board > translation comments > index-0 > text",
     "kind": "class",
     "originalText": "Usage\n",
@@ -104,30 +263,30 @@
       "index-3",
       "comment",
       "summary",
-      "index-0",
+      "index-4",
       "text"
     ],
-    "translationKey": "dfa40c798f6ebe3ab843c83700fbe134"
+    "translationKey": "986ef3bb7fca14393745bde587d19191"
   },
-  "2a0156bddff45cd87f51905d53443f12": {
+  "1965c1722abf9626a29daadcf3a42d4a": {
     "humanReadablePath": "Board > translation comments > index-2 > text",
     "kind": "class",
-    "originalText": "\nAlternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.\nThis is a new line.\n\n",
+    "originalText": "\nAlternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.\n\n",
     "translation": "",
     "projectPath": [
       "children",
       "index-3",
       "comment",
       "summary",
-      "index-2",
+      "index-4",
       "text"
     ],
-    "translationKey": "2a0156bddff45cd87f51905d53443f12"
+    "translationKey": "1965c1722abf9626a29daadcf3a42d4a"
   },
-  "091f6e64d42528e777e942d82673fc09": {
+  "91626b419eefb675190d6755c5cb83bf": {
     "humanReadablePath": "Board > alignCoordinateSystem > alignCoordinateSystem > translation comments > index-0 > text",
     "kind": "setSignature",
-    "originalText": "This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.",
+    "originalText": "This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.\nIf you set this to true, the coordinate system will be aligned with the one of the HTML canvas element.\nIf you change this value during runtime, you should update the context to be aligned with the new coordinate system. (just call board.context again)",
     "translation": "",
     "projectPath": [
       "children",
@@ -140,12 +299,12 @@
       "index-0",
       "text"
     ],
-    "translationKey": "091f6e64d42528e777e942d82673fc09"
+    "translationKey": "91626b419eefb675190d6755c5cb83bf"
   },
-  "d56f595bfa8e732421ce6ee1d6ab29e4": {
+  "5cf9d65dd48f01c0e2cbbbb49c58896c": {
     "humanReadablePath": "Board > camera > camera > translation comments > index-0 > text",
     "kind": "getSignature",
-    "originalText": "The underlying camera of the board. The camera of the board can be switched.\nThe boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.",
+    "originalText": "The underlying camera of the board. The camera of the board can be switched.\nThe boundaries are based on camera meaning you can have cameras with different boundaries, and you can switch between them during runtime.",
     "translation": "",
     "projectPath": [
       "children",
@@ -158,12 +317,12 @@
       "index-0",
       "text"
     ],
-    "translationKey": "d56f595bfa8e732421ce6ee1d6ab29e4"
+    "translationKey": "5cf9d65dd48f01c0e2cbbbb49c58896c"
   },
-  "12df871a92c067653b182c38fc9637a1": {
+  "fa5b88dd44db89e552cf5a717a4f3923": {
     "humanReadablePath": "Board > context > context > translation comments > index-0 > text",
     "kind": "getSignature",
-    "originalText": "The context used to draw stuff on the canvas.",
+    "originalText": "The context used to draw on the canvas.\nIf alignCoordinateSystem is false, this returns a proxy that automatically negates y-coordinates for relevant drawing methods.",
     "translation": "",
     "projectPath": [
       "children",
@@ -176,12 +335,12 @@
       "index-0",
       "text"
     ],
-    "translationKey": "12df871a92c067653b182c38fc9637a1"
+    "translationKey": "fa5b88dd44db89e552cf5a717a4f3923"
   },
-  "b2414caa591ef021351147b41e57d659": {
+  "6d39df0d9c428c5094f9c7a5bae98e9f": {
     "humanReadablePath": "Board > fullScreen > fullScreen > translation comments > index-0 > text",
     "kind": "getSignature",
-    "originalText": "Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.\nIf set to true the width and height of the board will resize with the window.",
+    "originalText": "Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively, \nand the width and height of the board will resize with the window.",
     "translation": "",
     "projectPath": [
       "children",
@@ -194,7 +353,7 @@
       "index-0",
       "text"
     ],
-    "translationKey": "b2414caa591ef021351147b41e57d659"
+    "translationKey": "6d39df0d9c428c5094f9c7a5bae98e9f"
   },
   "c9c9239b332a2578e4fbaa2e02f09563": {
     "humanReadablePath": "Board > height > height > translation comments > index-0 > text",
@@ -215,7 +374,7 @@
     "translationKey": "c9c9239b332a2578e4fbaa2e02f09563"
   },
   "adc5f1528e2a70244146a7526171b5ad": {
-    "humanReadablePath": "Board > kmtStrategy > kmtStrategy > translation comments > index-0 > text",
+    "humanReadablePath": "Board > kmtParser > kmtParser > translation comments > index-0 > text",
     "kind": "setSignature",
     "originalText": "The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. \nYou can implement your own strategy by implementing the BoardKMTStrategy interface.",
     "translation": "",
@@ -286,10 +445,10 @@
     ],
     "translationKey": "562af3a662fbd21a66f02a4dd76707bd"
   },
-  "d5f6457608401914a19cb61a19a569a0": {
-    "humanReadablePath": "Board > touchStrategy > touchStrategy > translation comments > index-0 > text",
+  "eb6dd9f9efc9f1849749b27af9ebef67": {
+    "humanReadablePath": "Board > touchParser > touchParser > translation comments > index-0 > text",
     "kind": "setSignature",
-    "originalText": "The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.\nYou can implement your own strategy by implementing the BoardTouchStrategy interface.",
+    "originalText": "The parser used to handle touch events. The default parser is the DefaultTouchParser.\nYou can have your own parser by implementing the BoardTouchParser interface.",
     "translation": "",
     "projectPath": [
       "children",
@@ -302,7 +461,7 @@
       "index-0",
       "text"
     ],
-    "translationKey": "d5f6457608401914a19cb61a19a569a0"
+    "translationKey": "eb6dd9f9efc9f1849749b27af9ebef67"
   },
   "a36b65df37875a9724b158f5cf3fea0e": {
     "humanReadablePath": "Board > width > width > translation comments > index-0 > text",
@@ -397,10 +556,29 @@
     ],
     "translationKey": "85a10a68578175ba0509a51cca3fcfe9"
   },
-  "bb04eca83792b1dd54dc476ab2f57ac9": {
-    "humanReadablePath": "Board > setup > setup > translation comments > index-0 > text",
+  "556619630c4f21af49db8f3e62031459": {
+    "humanReadablePath": "Board > setMaxTransWidthWithFixedMaxBoundary > setMaxTransWidthWithFixedMaxBoundary > translation comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.",
+    "originalText": "This function sets the max translation width of the camera while fixing the minimum x boundary.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-3",
+      "children",
+      "index-16",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "556619630c4f21af49db8f3e62031459"
+  },
+  "f48eb7cc78fa0e364434f637359f6bc8": {
+    "humanReadablePath": "Board > setMaxTransWidthWithFixedMinBoundary > setMaxTransWidthWithFixedMinBoundary > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function sets the max translation width of the camera while fixing the minimum x boundary.",
     "translation": "",
     "projectPath": [
       "children",
@@ -414,12 +592,12 @@
       "index-0",
       "text"
     ],
-    "translationKey": "bb04eca83792b1dd54dc476ab2f57ac9"
+    "translationKey": "f48eb7cc78fa0e364434f637359f6bc8"
   },
-  "3fd9d4fc47652f89273a89e6cb99e144": {
-    "humanReadablePath": "Board > step > step > translation comments > index-0 > text",
+  "7f221eb4457c874a18630ed33b957d8d": {
+    "humanReadablePath": "Board > setup > setup > translation comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.",
+    "originalText": "This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.",
     "translation": "",
     "projectPath": [
       "children",
@@ -433,12 +611,12 @@
       "index-0",
       "text"
     ],
-    "translationKey": "3fd9d4fc47652f89273a89e6cb99e144"
+    "translationKey": "7f221eb4457c874a18630ed33b957d8d"
   },
-  "00c5423d1a2226229cc49d32c926f65a": {
-    "humanReadablePath": "Board > tearDown > tearDown > translation comments > index-0 > text",
+  "d6018d2c1fe3358671ba63e16cd1978a": {
+    "humanReadablePath": "Board > step > step > translation comments > index-0 > text",
     "kind": "callSignature",
-    "originalText": "This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer.",
+    "originalText": "This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.",
     "translation": "",
     "projectPath": [
       "children",
@@ -452,7 +630,26 @@
       "index-0",
       "text"
     ],
-    "translationKey": "00c5423d1a2226229cc49d32c926f65a"
+    "translationKey": "d6018d2c1fe3358671ba63e16cd1978a"
+  },
+  "bc9839fd49bd9355f60fd9841094e5bc": {
+    "humanReadablePath": "Board > tearDown > tearDown > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-3",
+      "children",
+      "index-20",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "bc9839fd49bd9355f60fd9841094e5bc"
   },
   "7366bd1d8fcf64d4e245ea80805afb6a": {
     "humanReadablePath": "DefaultBoardCamera > getTransform > getTransform > translation block comments > index-0 > text",
@@ -475,94 +672,141 @@
     ],
     "translationKey": "7366bd1d8fcf64d4e245ea80805afb6a"
   },
-  "80e66eff71d10e868e78b806f038e897": {
-    "humanReadablePath": "KmtInputStateMachine > translation comments > index-0 > text",
+  "7857c0e34a5fdb87ae0a60835ea8a1e7": {
+    "humanReadablePath": "ObservableInputTracker > translation comments > index-0 > text",
     "kind": "class",
     "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
     "translation": "",
     "projectPath": [
       "children",
-      "index-17",
+      "index-18",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationKey": "80e66eff71d10e868e78b806f038e897"
+    "translationKey": "7857c0e34a5fdb87ae0a60835ea8a1e7"
   },
-  "087172288bf8dfca1ddd592f1c3e9eba": {
-    "humanReadablePath": "PanControlStateMachine > translation comments > index-0 > text",
+  "3cbc27617fd4c6077087b6c8fda7d7d0": {
+    "humanReadablePath": "TouchInputTracker > translation comments > index-0 > text",
     "kind": "class",
     "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
     "translation": "",
     "projectPath": [
       "children",
-      "index-21",
+      "index-32",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationKey": "087172288bf8dfca1ddd592f1c3e9eba"
+    "translationKey": "3cbc27617fd4c6077087b6c8fda7d7d0"
   },
-  "363a3058961d0e5ec3111b77d9b164f8": {
-    "humanReadablePath": "TemplateStateMachine > translation comments > index-0 > text",
-    "kind": "class",
-    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-34",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "363a3058961d0e5ec3111b77d9b164f8"
-  },
-  "c72c49c5521449f80781f86201a77fe5": {
-    "humanReadablePath": "TouchInputStateMachine > translation comments > index-0 > text",
-    "kind": "class",
-    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-35",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "c72c49c5521449f80781f86201a77fe5"
-  },
-  "0a18dccf2d7651b2c9bffb84bf09db3e": {
-    "humanReadablePath": "ZoomControlStateMachine > translation comments > index-0 > text",
-    "kind": "class",
-    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
-    "translation": "",
-    "projectPath": [
-      "children",
-      "index-39",
-      "comment",
-      "summary",
-      "index-0",
-      "text"
-    ],
-    "translationKey": "0a18dccf2d7651b2c9bffb84bf09db3e"
-  },
-  "c8b22c2d77ebe972536f4391cde38b0c": {
-    "humanReadablePath": "StateMachine > translation comments > index-0 > text",
+  "d9cac7b09b44dddc88705d556bb9b688": {
+    "humanReadablePath": "BaseContext > translation comments > index-0 > text",
     "kind": "interface",
     "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
     "translation": "",
     "projectPath": [
       "children",
-      "index-50",
+      "index-40",
       "comment",
       "summary",
       "index-0",
       "text"
     ],
-    "translationKey": "c8b22c2d77ebe972536f4391cde38b0c"
+    "translationKey": "d9cac7b09b44dddc88705d556bb9b688"
+  },
+  "12c7372b132d16fdd2b16cd0aa0b38fc": {
+    "humanReadablePath": "KmtInputContext > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-45",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "12c7372b132d16fdd2b16cd0aa0b38fc"
+  },
+  "3d049503f635620b2c687174d259d9b1": {
+    "humanReadablePath": "PanContext > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-47",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "3d049503f635620b2c687174d259d9b1"
+  },
+  "459b5496c5572a4e6bd71913109df804": {
+    "humanReadablePath": "TouchContext > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-51",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "459b5496c5572a4e6bd71913109df804"
+  },
+  "35a1ec7d23e491e2ec68207731d5cc63": {
+    "humanReadablePath": "ZoomContext > translation comments > index-0 > text",
+    "kind": "interface",
+    "originalText": "This is the interface for the state machine. The interface takes in a few generic parameters:\n\n- EventPayloadMapping: A mapping of events to their payloads.\n- Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)\n- States: The states of the state machine. (all of the possible states that the state machine can be in)\n\nThe template abstract class TemplateStateMachine implements the basic functionality of the state machine:\n\n- switchTo: A function that allows you to switch the state of the state machine.\n- happens: A function that allows you to trigger an event on the state machine.\n- onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.\n- onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-54",
+      "comment",
+      "summary",
+      "index-0",
+      "text"
+    ],
+    "translationKey": "35a1ec7d23e491e2ec68207731d5cc63"
+  },
+  "544a4e638b1f04a446ab33c33f71193e": {
+    "humanReadablePath": "Handler > translation comments > index-0 > text",
+    "kind": "typeAlias",
+    "originalText": "Type definition for a handler function that takes a generic value and additional arguments\nThe handler must return the same type as its first argument",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-79",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "translationKey": "544a4e638b1f04a446ab33c33f71193e"
+  },
+  "e3766616da493cb3050653733fafcff6": {
+    "humanReadablePath": "createHandlerChain > createHandlerChain > translation comments > index-0 > text",
+    "kind": "callSignature",
+    "originalText": "Creates a handler chain from an array of handlers",
+    "translation": "",
+    "projectPath": [
+      "children",
+      "index-189",
+      "signatures",
+      "index-0",
+      "comment",
+      "summary",
+      "index-1",
+      "text"
+    ],
+    "translationKey": "e3766616da493cb3050653733fafcff6"
   }
 }

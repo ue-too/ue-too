@@ -1,7 +1,7 @@
 import DefaultBoardCamera from 'src/board-camera';
 import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
-import { DefaultKMTEventParser } from 'src/kmt-event-parser';
-import { createDefaultRawUserInputObservable } from 'src/raw-input-publisher';
+import { VanillaKMTEventParser } from 'src/kmt-event-parser';
+import { createDefaultRawUserInputPublisher } from 'src/raw-input-publisher';
 
 console.log("pixi-test");
 // Asynchronous IIFE
@@ -20,7 +20,7 @@ console.log("pixi-test");
     
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
 
-    const kmtStrategy = new DefaultKMTEventParser(app.canvas, app.canvas, createDefaultRawUserInputObservable(camera), false)
+    const kmtStrategy = new VanillaKMTEventParser(app.canvas, app.canvas, createDefaultRawUserInputPublisher(camera), false)
     kmtStrategy.setUp();
     // app.renderer.events.rootBoundary.addEventMapping
     // app.stage.hitArea = app.screen;

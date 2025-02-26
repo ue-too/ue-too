@@ -46,6 +46,7 @@
   ],
   "devDependencies": {
     "@niuee/bounce": "^0.0.5",
+    "@niuee/typedoc-plugin-translation": "^0.0.5",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.2",

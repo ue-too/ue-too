@@ -167,7 +167,18 @@ The dev environment setup for this project is relatively simple. Let me break do
 - Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
 - Unit Testing (jest): `pnpm test` There's not a lot of tests right now. Only the core functionalities revolving around the camera are unit tested. The next section I will move on to test is the input state machine.
 - Dev Server (vite): `pnpm dev` The `devserver` directory contains the current examples of the board. It's sort of like a playground. The more complete example is the in the `main.ts` file.
-- Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging`
+- Docs Dev Server (vite): `pnpm dev:docs` would spin up a docs server serving files from the directory `docs-staging`
+- Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
+- Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
+
+To start developing `board` you need to first clone the repo.
+
+Then install the dependencies using
+```pnpm i```
+
+And then off you go! You can modify however as you like it.
+
+
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
 ## Under the Hood

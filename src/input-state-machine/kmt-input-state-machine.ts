@@ -88,6 +88,10 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
             action: this.scrollWithCtrlHandler,
             defaultTargetState: "IDLE",
         },
+        middlePointerDown: {
+            action: this.middlePointerDownHandler,
+            defaultTargetState: "READY_TO_PAN_VIA_SCROLL_WHEEL",
+        },
     }
 
     scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtIdleStatePossibleTargetStates {

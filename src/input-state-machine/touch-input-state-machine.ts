@@ -137,6 +137,10 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
             action: this.touchend,
             defaultTargetState: "IDLE",
         },
+        touchstart: {
+            action: ()=> "IDLE",
+            defaultTargetState: "IDLE",
+        },
     };
 
     get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {

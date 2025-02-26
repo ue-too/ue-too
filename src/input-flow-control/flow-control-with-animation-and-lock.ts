@@ -73,6 +73,9 @@ export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
     }
 }
 
+/**
+ * @category Camera Rig
+ */
 export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
