@@ -60,6 +60,7 @@ export default class Board {
     
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
+    private _reversedContext: CanvasRenderingContext2D;
 
     private _kmtParser: KMTEventParser;
     private _touchParser: TouchEventParser;
@@ -87,6 +88,7 @@ export default class Board {
         }
 
         this._context = context;
+        this._reversedContext = this.reverseYAxis();
 
         this.bindFunctions();
 
@@ -236,44 +238,48 @@ export default class Board {
      */
     get context(): CanvasRenderingContext2D {
         if (!this._alignCoordinateSystem) {
-            return new Proxy(this._context, {
-                get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
-                    const value = Reflect.get(target, prop, target);
-                    
-                    // Check if this is a method that needs y-coordinate flipping
-                    if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
-                        return function(...args: any[]) {
-                            // Create a copy of the arguments
-                            const newArgs = [...args];
-                            
-                            // Flip the y-coordinates based on methodsToFlip configuration
-                            const yIndices = methodsToFlip[prop];
-                            for (const index of yIndices) {
-                                if (index < newArgs.length) {
-                                    newArgs[index] = -newArgs[index];
-                                }
-                            }
-                            
-                            // Call the original method with the modified arguments
-                            return value.apply(target, newArgs);
-                        };
-                    }
-                    
-                    // Return the original value for properties and methods that don't need modification
-                    if (typeof value === 'function') {
-                        return function(...args: any[]) {
-                            return value.apply(target, args);
-                        };
-                    }
-                    
-                    return value;
-                },
-                set(target, prop, value): boolean {
-                    return Reflect.set(target, prop, value);
-                }
-            });
+            return this._reversedContext;
         }
         return this._context;
+    }
+
+    private reverseYAxis(): CanvasRenderingContext2D {
+        return new Proxy(this._context, {
+            get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
+                const value = Reflect.get(target, prop, target);
+                
+                // Check if this is a method that needs y-coordinate flipping
+                if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
+                    return function(...args: any[]) {
+                        // Create a copy of the arguments
+                        const newArgs = [...args];
+                        
+                        // Flip the y-coordinates based on methodsToFlip configuration
+                        const yIndices = methodsToFlip[prop];
+                        for (const index of yIndices) {
+                            if (index < newArgs.length) {
+                                newArgs[index] = -newArgs[index];
+                            }
+                        }
+                        
+                        // Call the original method with the modified arguments
+                        return value.apply(target, newArgs);
+                    };
+                }
+                
+                // Return the original value for properties and methods that don't need modification
+                if (typeof value === 'function') {
+                    return function(...args: any[]) {
+                        return value.apply(target, args);
+                    };
+                }
+                
+                return value;
+            },
+            set(target, prop, value): boolean {
+                return Reflect.set(target, prop, value);
+            }
+        });
     }
 
     /**

@@ -161,6 +161,11 @@ board.context.stroke();
 
 This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas. (but you can pan and zoom the canvas around)
 
+This is probably a good time to talk about coordinate system. The `Board` class has an attribute `alignCoordinateSystem` if set to `false` would result in a reversed y axis.
+Meaning positive y goes up in the screen.
+
+Setting `alignCoordinateSystem` would also require an update to the context which you use to draw stuff. After altering the value of `alignCoorindateSystem` if you have previously stored the value of `board.context` somewhere you would need to update that value by calling `board.context` and use the returned value to udpate the stored value.
+
 ## Development
 The dev environment setup for this project is relatively simple. Let me break down the different aspects.
 - Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
@@ -173,10 +178,12 @@ The dev environment setup for this project is relatively simple. Let me break do
 To start developing `board` you need to first clone the repo.
 
 Then install the dependencies using
-```pnpm i```
+
+```bash
+pnpm i
+```
 
 And then off you go! You can modify however as you like it.
-
 
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
@@ -211,7 +218,9 @@ Below is a diagram on the data flow.
 ![camera-control-data-flow](./doc-media/camera-control-data-flow.png)
 
 You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above.
+
 For simplicity, the overarching class `Board` takes care of it all, but if you want customization you'll have to get familiar with the data flow and see which part best fits your need for customizing.
+
 Detail on each part will be on the documentation site (not the API documentation, but more on how and why on the various parts of `board` and a few examples) I'll setup later but probably after the version 0.2 release.
 
 #### Coordinate System
@@ -228,7 +237,7 @@ The state diagram for keyboard mouse, and trackpad input is shown below:
 The state diagram for touch input is shown below:
 ![touch-input-state-machine](./doc-media/touch-input-state-machine.png)
 
-You can customize how the state machine works but defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
+You can customize how the state machine works by defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
 Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site mentioned in the [data flow](#data-flow) section)
 
 ## TODO
