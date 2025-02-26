@@ -6,15 +6,8 @@ import { CameraUpdatePublisher } from "src/camera-update-publisher";
 import { Boundaries, withinBoundaries } from "../utils/position";
 import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
 import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
+import { TransformMatrix } from "../utils/matrix";
 
-type Transform = {
-    a: number;
-    b: number;
-    c: number;
-    d: number;
-    e: number;
-    f: number;
-}
 
 // TODO fix the context centric camera; currently the inverted coordinate system is not working
 export class ContextCentricCamera /*implements BoardCamera */{
@@ -107,7 +100,7 @@ export class ContextCentricCamera /*implements BoardCamera */{
         return -this._contextRotation;
     }
 
-    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean): Transform {
+    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
         const e = this._contextPosition.x * devicePixelRatio;
         const f = this._contextPosition.y * devicePixelRatio;
         const c = -Math.sin(this._contextRotation) * this._zoomLevel * devicePixelRatio;

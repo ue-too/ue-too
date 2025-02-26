@@ -183,5 +183,5 @@ The "raw" indicates that all values are in viewport coordinate system instead of
 The following diagram shows the difference between the "viewport" and the "world" coordinate system.
 
 Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
-![viewport and world coorindate system](./doc-media/coordinate-system.png)
+![viewport and world coorindate system](../../../doc-media/coordinate-system.png)
 

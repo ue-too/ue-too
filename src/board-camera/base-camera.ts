@@ -37,7 +37,6 @@ export default class BaseCamera implements BoardCamera {
      * @param zoomLevel The zoom level of the camera
      * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
      * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
-     * @param observer The observer of the camera
      * @param boundaries The boundaries of the camera in the world coordinate system
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera

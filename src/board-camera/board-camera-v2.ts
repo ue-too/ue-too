@@ -1,5 +1,5 @@
 import { Point } from 'src/util/misc';
-import { Boundaries } from 'src/board-camera';
+import { Boundaries, TransformMatrix } from 'src/board-camera';
 import { CameraUpdatePublisher, UnSubscribe } from 'src/camera-update-publisher';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
@@ -20,7 +20,6 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param zoomLevel The zoom level of the camera
      * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
      * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
-     * @param observer The observer of the camera
      * @param boundaries The boundaries of the camera in the world coordinate system
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera
@@ -126,7 +125,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param alignCoorindate Whether to align the coordinate system to the camera's position
      * @returns The transformation matrix
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
         const tx = devicePixelRatio * this._baseCamera.viewPortWidth / 2;
         const ty = devicePixelRatio * this._baseCamera.viewPortHeight / 2;
         const tx2 = -this._baseCamera.position.x;

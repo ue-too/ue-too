@@ -12,6 +12,10 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 import { InputFlowControl, CameraRig, createDefaultRelayControlCenterWithCameraRig } from 'src/input-flow-control';
 
 
+/**
+ * This is for proxying the canvas context methods that need to flip the y-coordinates.
+ * @internal
+ */
 const methodsToFlip: Record<string, number[]> = {
     fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
     strokeRect: [1],
@@ -25,9 +29,7 @@ const methodsToFlip: Record<string, number[]> = {
 };
 
 /**
- * @category Board
- * 
- * @description Usage
+ * Usage
  * ```typescript
  * import { Board } from "@niuee/board";
  * 
@@ -51,6 +53,8 @@ const methodsToFlip: Record<string, number[]> = {
  * ```typescript
  * import { Board } from "@niuee/board/boardify";
  * ```
+ * @category Board
+ * 
  */
 export default class Board {
     

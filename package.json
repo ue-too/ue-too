@@ -21,7 +21,8 @@
     "increment-minor-version": "cd ./build && pnpm version minor",
     "increment-patch-version": "cd ./build && pnpm version patch",
     "count-lines": "git ls-files ./src | xargs wc -l",
-    "dev": "pnpm exec vite",
+    "dev": "pnpm exec vite --config vite.config.js",
+    "dev:docs": "pnpm exec vite --config doc.vite.config.js",
     "test": "jest"
   },
   "repository": {

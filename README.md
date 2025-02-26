@@ -22,10 +22,13 @@
   <a href="#install">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#bare-minimum-example">Bare Minimum Example</a> •
-  <a href="#how-to-use">How To Use</a>
+  <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
+  <a href="#development">Development</a>
 </p>
 
 ![small-demo](./doc-media/small-demo.gif)
+
+_This is is a small demo of what board is capable of. (only showing a small fraction)_
 
 This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
 board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
@@ -38,7 +41,8 @@ There are a few more examples in the `devserver` directory. Including how to int
 
 ## Docs
 - [API Documentation](https://niuee.github.io/board/index.html)
-- [~~中文文件連結~~]() (我把它拔掉了，因為 typedoc 升級之後之前寫的 plugin 就不能用了之後再看看要怎麼 i18n 一下)
+- [中文文件連結](https://niuee.github.io/board/zh-tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
+### PR welcome for the i18n for the documentation. (See the [Development](#development) section for more detail)
 
 ## Installation and Usage
 ### Package manager
@@ -112,7 +116,7 @@ function step(timestamp){
 step(0);
 ```
 
-## How To Use (Using only HTML canvas)
+## Quick Start (Using only HTML canvas)
 The `Board` class extends an existing canvas element in the DOM to have extra capabilities such as pan, zoom, and rotation.
 To instantiate a new board, you need have a canvas element in your html.
 ```html
@@ -158,6 +162,12 @@ board.context.stroke();
 
 This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas. (but you can pan and zoom the canvas around)
 
+## Development
+The dev environment setup for this project is relatively simple. Let me break down the different aspects.
+- Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
+- Unit Testing (jest): `pnpm test` There's not a lot of tests right now. Only the core functionalities revolving around the camera are unit tested. The next section I will move on to test is the input state machine.
+- Dev Server (vite): `pnpm dev` The `devserver` directory contains the current examples of the board. It's sort of like a playground. The more complete example is the in the `main.ts` file.
+- Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging`
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
 ## Under the Hood

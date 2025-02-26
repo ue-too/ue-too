@@ -56,7 +56,7 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
-type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL";
+export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL";
 
 export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> {
 
@@ -126,8 +126,8 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 }
 
-type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
-type SelectionContext = {
+export type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
+export type SelectionContext = {
     setSelectionEndPoint: (point: Point) => void;
     toggleSelectionBox: (show: boolean) => void;
     cleanup: () => void;
@@ -207,7 +207,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
     private _eventReactions: EventAction<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         leftPointerUp: {
             action: this.leftPointerUpHandler,
-            defaultTargetState: "IDLE",
+            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
         },
         leftPointerMove: {
             action: this.leftPointerMoveHandler,
