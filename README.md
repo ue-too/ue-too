@@ -181,6 +181,8 @@ And then off you go! You can modify however as you like it.
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
 ## Under the Hood (a rather brief overview)
+
+#### Data Flow
 How board achieve the effect of infinite canvas is through a camera abstraction. It's like the viewport attribute of svg. 
 
 The user controls the position, zoom, and rotation of the camera to see different parts of a canvas context.
@@ -208,7 +210,26 @@ The flow control then pass the desired camera input through `CameraRig`; this is
 Below is a diagram on the data flow.
 ![camera-control-data-flow](./doc-media/camera-control-data-flow.png)
 
-You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above. 
+You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above.
+For simplicity, the overarching class `Board` takes care of it all, but if you want customization you'll have to get familiar with the data flow and see which part best fits your need for customizing.
+Detail on each part will be on the documentation site (not the API documentation, but more on how and why on the various parts of `board` and a few examples) I'll setup later but probably after the version 0.2 release.
 
+#### Coordinate System
 Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
 ![viewport and world coorindate system](./doc-media/coordinate-system.png)
+
+`board` provides a few sets of coordinate conversion helper functions. Most of them are in the `src/board-camera/utils/coordinate-conversion.ts` file.
+
+#### Input State Machine
+In the [Data Flow](#data-flow) section I mentioned the state machine that is used to interpret user intentions. 
+The state diagram for keyboard mouse, and trackpad input is shown below:
+![kmt-input-state-machine](./doc-media/kmt-input-state-machine.png)
+
+The state diagram for touch input is shown below:
+![touch-input-state-machine](./doc-media/touch-input-state-machine.png)
+
+You can customize how the state machine works but defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
+Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site mentioned in the [data flow](#data-flow) section)
+
+## TODO
+There is a lot of util stuff that I don't think will fit in here in the readme. So stay tuned for the documentation site!
