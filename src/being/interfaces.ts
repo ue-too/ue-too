@@ -1,22 +1,3 @@
-/**
- * @category being
- * 
- * 
- * @description This is the interface for the state machine. The interface takes in a few generic parameters:
- * 
- * - EventPayloadMapping: A mapping of events to their payloads.
- * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
- * - States: The states of the state machine. (all of the possible states that the state machine can be in)
- * 
- * The template abstract class TemplateStateMachine implements the basic functionality of the state machine:
- * 
- * - switchTo: A function that allows you to switch the state of the state machine.
- * - happens: A function that allows you to trigger an event on the state machine.
- * - onStateChange: A function that allows you to register a callback that will be called when the state of the state machine changes.
- * - onHappens: A function that allows you to register a callback that will be called when an event is triggered on the state machine.
- * 
- * 
- */
 export interface BaseContext {
     setup(): void;
     cleanup(): void;
@@ -26,6 +7,20 @@ type NOOP = () => void;
 
 export const NO_OP: NOOP = ()=>{};
 
+/**
+ * @description This is the interface for the state machine. The interface takes in a few generic parameters:
+ * You can probably get by using the TemplateStateMachine class.
+ * 
+ * Generic parameters:
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ *
+ * @see {@link TemplateStateMachine}
+ * @see {@link KmtInputStateMachine}
+ * 
+ * @category being
+ */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
@@ -36,8 +31,29 @@ export interface StateMachine<EventPayloadMapping, Context extends BaseContext, 
     onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void;
 }
 
+/**
+ * @description This is the type for the callback that is called when the state changes.
+ *
+ * @category being
+ */
 export type StateChangeCallback<States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
+/**
+ * @description This is the interface for the state. The interface takes in a few generic parameters:
+ * You can probably get by extending the TemplateState class. 
+ *
+ * Generic parameters:
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * 
+ * A state's all possible states can be only a subset of the possible states of the state machine. (a state only needs to know what states it can transition to)
+ * This allows for a state to be reusable across different state machines.
+ *
+ * @see {@link TemplateState}
+ * 
+ * @category being
+ */
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context): void;
     uponLeave(context: Context): void;
@@ -47,6 +63,16 @@ export interface State<EventPayloadMapping, Context extends BaseContext, States 
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
 }
 
+/**
+ * @description This is the type for the event reactions of a state.
+ * 
+ * Generic parameters:
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * 
+ * @category being
+ */
 export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
         action: (context: Context, event: EventPayloadMapping[K]) => void; 
@@ -54,8 +80,27 @@ export type EventReactions<EventPayloadMapping, Context extends BaseContext, Sta
     };
 };
 
+/**
+ * @description This is the type for the guard evaluation when a state transition is happening.
+ * 
+ * Guard evaluations are evaluated after the state has handled the event with the action.
+ * Guard evaluations can be defined in an array and the first guard that evaluates to true will be used to determine the next state.
+ * 
+ * Generic parameters:
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * 
+ * @category being
+ */
 export type GuardEvaluation<Context extends BaseContext> = (context: Context) => boolean;
 
+/**
+ * @description This is the type for the guard of a state.
+ * 
+ * guard is an object that maps a key to a guard evaluation.
+ * K is all the possible keys that can be used to evaluate the guard.
+ * 
+ * @category being
+ */
 export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
 }
