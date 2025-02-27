@@ -203,7 +203,10 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
             const guardToEvaluate = this._eventGuards[event];
             if(guardToEvaluate){
                 const target = guardToEvaluate.find((guard)=>{
-                    return this.guards[guard.guard](context);
+                    if(this.guards[guard.guard]){
+                        return this.guards[guard.guard](context);
+                    }
+                    return false;
                 });
                 return target ? target.target : targetState;
             }
