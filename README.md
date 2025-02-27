@@ -21,9 +21,9 @@
   •
   <a href="#install">Install</a> •
   <a href="#key-features">Key Features</a> •
-  <a href="#bare-minimum-example">Bare Minimum Example</a> •
   <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
   <a href="#development">Development</a>
+  <a href="#under-the-hood-a-rather-brief-overview">Structural Overview</a>
 </p>
 
 ![small-demo](./doc-media/small-demo.gif)
@@ -66,7 +66,7 @@ import { Board } from "https://cdn.jsdelivr.net/npm/@niuee/board@latest/index.mj
 ```
 
 ### Use iife bundle
-In an HTML file use the script tag. (instead of importing from jsdelivr you can also download it as source and put it in you project directly)
+In an HTML file use the script tag. (instead of importing from jsdelivr you can also download it as source and put it in you project folder directly)
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
 ```
@@ -83,37 +83,6 @@ const newBoard = new Board.Board(canvasElement);
 - Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse) But you can still tweak how things work.
 - Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (example is on the way)
 - You can use this with pixi.js, fabric.js, Konva; or maybe just html canvas. (example is on the way)
-
-## Bare Minimum Example
-
-```javascript
-import { Board } from "@niuee/board"; // or other import style mentioned above
-
-const canvasElement = document.querySelector("canvas");
-const board = new Board(canvasElement);
-
-
-// this is the callback function for the requestAnimationFrame
-function step(timestamp){
-    // timestamp is the argument requestAnimationFrame pass to its callback function
-
-    // step the board first before everything else because stepping the board would wipe the canvas
-    // pass in the timestamp as it is to the board's step function.
-    board.step(timestamp);
-
-    // if you want to draw stuff draw it in the step function otherwise it would not persist
-    // draw a circle at (100, 100) with a width of 1px
-    board.context.beginPath();
-    board.context.arc(100, 100, 1, 0, 2 * Math.PI);
-    board.context.stroke();
-
-    // and then call the requestAnimationFrame
-    window.requestAnimationFrame(step);
-}
-
-// start the animation loop
-step(0);
-```
 
 ## Quick Start (Using only HTML canvas)
 The `Board` class extends an existing canvas element in the DOM to have extra capabilities such as pan, zoom, and rotation.
@@ -177,7 +146,7 @@ The dev environment setup for this project is relatively simple. Let me break do
 - Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
 - Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
 
-To start developing `board` you need to first clone the repo.
+To start developing `board` first clone the repo.
 
 Then install the dependencies using
 
@@ -224,6 +193,8 @@ You can customize the data flow however you want. Heck you can probably plug dir
 For simplicity, the overarching class `Board` takes care of it all, but if you want customization you'll have to get familiar with the data flow and see which part best fits your need for customizing.
 
 Detail on each part will be on the documentation site (not the API documentation, but more on how and why on the various parts of `board` and a few examples) I'll setup later but probably after the version 0.2 release.
+
+There's one more thing about the data flow, since it's starting from event listeners all the way to the canvas context. This does not work if you want to use an offscreen canvas on a worker thread. This is a planned feature but will not be in version 0.2.
 
 #### Coordinate System
 Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
