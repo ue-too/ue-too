@@ -21,30 +21,35 @@ export interface BaseContext {
     setup(): void;
     cleanup(): void;
 }
+
+type NOOP = () => void;
+
+export const NO_OP: NOOP = ()=>{};
+
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
-    onStateChange(callback: StateChangeCallback<EventPayloadMapping, Context, States>): void;
+    onStateChange(callback: StateChangeCallback<States>): void;
     possibleStates: States[];
     onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void;
 }
 
-export type StateChangeCallback<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
+export type StateChangeCallback<States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context): void;
     uponLeave(context: Context): void;
     handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
-    eventReactions: EventAction<EventPayloadMapping, Context, States>;
+    eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
 }
 
-export type EventAction<EventPayloadMapping, Context extends BaseContext, States extends string> = {
+export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
-        action: (context: Context, event: EventPayloadMapping[K]) => States; 
+        action: (context: Context, event: EventPayloadMapping[K]) => void; 
         defaultTargetState: States;
     };
 };
@@ -70,7 +75,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     protected _states: Record<States, State<EventPayloadMapping, Context, States>>;
     protected _context: Context;
     protected _statesArray: States[];
-    protected _stateChangeCallbacks: StateChangeCallback<EventPayloadMapping, Context, States>[];
+    protected _stateChangeCallbacks: StateChangeCallback<States>[];
     protected _happensCallbacks: ((event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void)[];
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context){
@@ -99,7 +104,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         return nextState;
     }
 
-    onStateChange(callback: StateChangeCallback<EventPayloadMapping, Context, States>): void {
+    onStateChange(callback: StateChangeCallback<States>): void {
         this._stateChangeCallbacks.push(callback);
     }
 
@@ -123,9 +128,6 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         return this._states;
     }
 }
-
-type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = EventAction<EventPayloadMapping, Context, States>;
-
 
 export abstract class TemplateState<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
 

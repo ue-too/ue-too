@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import { EventAction, EventGuards, Guard, TemplateState, TemplateStateMachine } from "src/being/interfaces";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 import { TouchContext } from "./touch-input-context";
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
@@ -22,7 +22,7 @@ export type TouchEventMapping = {
 
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private _eventReactions: EventAction<TouchEventMapping, TouchContext, TouchStates> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -50,24 +50,22 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         }],
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchstart(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
-        return "IDLE";
     }
 
-    touchend(context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        return "IDLE";
     }
 }
 
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -82,24 +80,19 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         },
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchstart(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
-        return "IDLE";
     }
 
-    touchend(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "IN_PROGRESS";
-        }
-        return "IDLE";
     }
 
-    touchmove(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): void {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -117,18 +110,20 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         switch(panZoom){
             case "ZOOMING":
                 context.notifyOnZoom((currentStartAndEndDistance - initialStartAndEndDistance) * 0.005, midPointInViewPort);
-                return "IN_PROGRESS";
+                break;
             case "PANNING":
                 context.notifyOnPan(midPointDelta);
-                return "IN_PROGRESS";
+                break;
+            default:
+                console.warn("Unknown panZoom state", panZoom);
+                break;
         }
-        return "IN_PROGRESS"; 
     }
 }
 
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchmove: {
             action: this.touchmove,
             defaultTargetState: "IN_PROGRESS",
@@ -143,11 +138,11 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         },
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchmove(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): void {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -168,20 +163,21 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
                     midPointInViewPort.y = -midPointInViewPort.y;
                 }
                 context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
-                return "IN_PROGRESS";
+                break;
             case "PANNING":
                 if(!context.alignCoordinateSystem){
                     midPointDelta.y = -midPointDelta.y;
                 }
                 context.notifyOnPan(midPointDelta);
-                return "IN_PROGRESS";
+                break;
+            default:
+                console.warn("Unknown panZoom state", panZoom);
+                break;
         }
-        return "IN_PROGRESS"; 
     }
 
-    touchend(context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        return "IDLE";
     }
 }
 

@@ -1,7 +1,8 @@
 import { Point } from "src/util/misc";
-import type { EventAction, StateMachine, State, BaseContext } from "src/being";
+import type { EventReactions, State, BaseContext } from "src/being";
+import { NO_OP } from "src/being";
 import { TemplateState, TemplateStateMachine } from "src/being";
-import { BoardCamera, PanHandlerConfig } from "src/board-camera";
+import { BoardCamera } from "src/board-camera";
 
 export type PanControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
@@ -64,36 +65,28 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
         super();
     }
 
-    eventReactions: EventAction<PanEventPayloadMapping, PanContext, PanControlStates> = {
+    eventReactions: EventReactions<PanEventPayloadMapping, PanContext, PanControlStates> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
-        initateTransition: {action: this.initateTransitionHandler, defaultTargetState: "TRANSITION"},
+        initateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     }
 
-    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
         context.panBy(payload.diff);
-        return "ACCEPTING_USER_INPUT";
     }
 
-    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
         context.panTo(payload.target);
-        return "ACCEPTING_USER_INPUT";
     }
 
-    initateTransitionHandler(context: PanContext, payload: {}): PanControlStates {
-        return "TRANSITION";
-    }
-
-    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
         context.panBy(payload.diff);
-        return "LOCKED_ON_OBJECT";
     }
 
-    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
         context.panTo(payload.target);
-        return "LOCKED_ON_OBJECT";
     }
 
 }
@@ -104,7 +97,7 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
         super();
     }
 
-    eventReactions: EventAction<PanEventPayloadMapping, PanContext, PanControlStates> = {
+    eventReactions: EventReactions<PanEventPayloadMapping, PanContext, PanControlStates> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
@@ -151,24 +144,18 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, P
         super();
     }
 
-    eventReactions: EventAction<PanEventPayloadMapping, PanContext, PanControlStates> = {
-        unlock: {action: this.unlockHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
+    eventReactions: EventReactions<PanEventPayloadMapping, PanContext, PanControlStates> = {
+        unlock: {action: NO_OP, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
         context.panBy(payload.diff);
-        return "LOCKED_ON_OBJECT";
     }
 
-    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
         context.panTo(payload.target);
-        return "LOCKED_ON_OBJECT";
-    }
-
-    unlockHandler(context: PanContext, payload: {}): PanControlStates {
-        return "ACCEPTING_USER_INPUT";
     }
 
 }
