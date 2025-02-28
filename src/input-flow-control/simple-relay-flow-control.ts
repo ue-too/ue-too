@@ -11,14 +11,6 @@ export class SimpleRelayFlowControl implements InputFlowControl {
         this._cameraRig = cameraRig;
     }
 
-    // get limitEntireViewPort(): boolean {
-    //     return this._cameraRig.limitEntireViewPort;
-    // }
-
-    // set limitEntireViewPort(value: boolean) {
-    //     this._cameraRig.limitEntireViewPort = value;
-    // }
-
     notifyPanInput(diff: Point): void {
         this._cameraRig.panBy(diff);
     }

@@ -1,5 +1,5 @@
 import { Point } from "src/util/misc";
-import { createDefaultRelayControlCenter, InputFlowControl } from "src/input-flow-control";
+import { createDefaultFlowControl, InputFlowControl } from "src/input-flow-control";
 import BoardCamera from "src/board-camera";
 import { Observable, Observer } from "src/util";
 
@@ -96,5 +96,5 @@ export class RawUserInputPublisher {
 }
 
 export function createDefaultRawUserInputPublisher(camera: BoardCamera): RawUserInputPublisher {
-    return new RawUserInputPublisher(createDefaultRelayControlCenter(camera));
+    return new RawUserInputPublisher(createDefaultFlowControl(camera));
 }

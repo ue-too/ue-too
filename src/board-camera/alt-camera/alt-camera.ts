@@ -8,7 +8,14 @@ import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
 import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
 import { TransformMatrix } from "../utils/matrix";
 
-
+/**
+ * @description This is the context centric camera.
+ * 
+ * The purpose of this kind of camera is to skip the transformation from view port space to world space when accepting user input.
+ * This is a work in progress class. This is included in the bundle for experimental purposes. Please do not use it in production.
+ * 
+ * @category wip
+ */
 // TODO fix the context centric camera; currently the inverted coordinate system is not working
 export class ContextCentricCamera /*implements BoardCamera */{
 

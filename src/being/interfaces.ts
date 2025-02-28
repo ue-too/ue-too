@@ -8,13 +8,14 @@ type NOOP = () => void;
 export const NO_OP: NOOP = ()=>{};
 
 /**
- * @description This is the interface for the state machine. The interface takes in a few generic parameters:
- * You can probably get by using the TemplateStateMachine class.
+ * @description This is the interface for the state machine. The interface takes in a few generic parameters.
  * 
  * Generic parameters:
  * - EventPayloadMapping: A mapping of events to their payloads.
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
  * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * 
+ * You can probably get by using the TemplateStateMachine class.
  *
  * @see {@link TemplateStateMachine}
  * @see {@link KmtInputStateMachine}
@@ -98,6 +99,7 @@ export type GuardEvaluation<Context extends BaseContext> = (context: Context) =>
  * 
  * guard is an object that maps a key to a guard evaluation.
  * K is all the possible keys that can be used to evaluate the guard.
+ * K is optional but if it is not provided, typescript won't be able to type guard in the EventGuards type.
  * 
  * @category being
  */
@@ -105,15 +107,55 @@ export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
 }
 
+/**
+ * @description This is a mapping of a guard to a target state.
+ * 
+ * Generic parameters:
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - G: The guard type.
+ * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * 
+ * You probably don't need to use this type directly.
+ * 
+ * @see {@link TemplateState['eventGuards']}
+ * 
+ * @category being
+ */
 export type GuardMapping<Context extends BaseContext, G, States extends string> = {
     guard: G extends Guard<Context, infer K> ? K : never;
     target: States;
 }
 
+/**
+ * @description This is a mapping of a guard to a target state.
+ * 
+ * Generic parameters:
+ * - EventPayloadMapping: A mapping of events to their payloads.
+ * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
+ * - T: The guard type.
+ * 
+ * You probably don't need to use this type directly.
+ * This is a mapping of an event to a guard evaluation.
+ * 
+ * @see {@link TemplateState['eventGuards']}
+ * 
+ * @category being
+ */
 export type EventGuards<EventPayloadMapping, States extends string, Context extends BaseContext, T extends Guard<Context>> = {
     [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
 }
 
+/**
+ * @description This is the template for the state machine.
+ * 
+ * You can use this class to create a state machine. Usually this is all you need for the state machine. Unless you need extra functionality.
+ * To create a state machine, just instantiate this class and pass in the states, initial state and context.
+ * 
+ * @see {@link createKmtInputStateMachine} for an example of how to create a state machine.
+ * 
+ * @category being
+ */
 export class TemplateStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
 
     protected _currentState: States;
@@ -174,6 +216,16 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     }
 }
 
+/**
+ * @description This is the template for the state.
+ * 
+ * This is a base template that you can extend to create a state.
+ * Unlike the TemplateStateMachine, this class is abstract. You need to implement the specific methods that you need.
+ * The core part off the state is the event reactions in which you would define how to handle each event in a state.
+ * You can define an eventReactions object that maps only the events that you need. If this state does not need to handle a specific event, you can just not define it in the eventReactions object.
+ * 
+ * @category being
+ */
 export abstract class TemplateState<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
 
     abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;

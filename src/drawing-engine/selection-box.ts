@@ -1,6 +1,11 @@
 import { Point } from "src/util/misc";
 import { DrawTask } from "./driver";
 
+/**
+ * @description The selection box. (WIP)
+ * 
+ * @category Drawing Engine
+ */
 export class SelectionBox implements DrawTask{
 
     private _startPoint: Point;

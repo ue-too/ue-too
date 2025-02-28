@@ -1,6 +1,12 @@
 import { Boundaries, translationHeightOf, translationWidthOf } from "src/board-camera/utils/position";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
 
+/**
+ * @description Calculates the minimum zoom level based on the dimensions of the boundaries.
+ * Used when the canvas on the html is resized.
+ * 
+ * @category Camera
+ */
 export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
     const width = translationWidthOf(boundaries);
     const height = translationHeightOf(boundaries);
@@ -37,6 +43,12 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
     return minZoomLevel;
 }
 
+/**
+ * @description Determines if the zoom level boundaries should be updated when the canvas is resized.
+ * Zoom level boundaries adjustment only tightens the zoom level boundaries; it does not relax them.
+ * 
+ * @category Camera
+ */
 export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLimits | undefined, targetMinZoomLevel: number | undefined): boolean{
     if(targetMinZoomLevel == undefined){
         return false;
@@ -53,6 +65,11 @@ export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLi
     return false;
 }
 
+/**
+ * @description Calculates the minimum zoom level based on the width of the boundaries.
+ * Used when the canvas on the html is resized.
+ * @category Camera
+ */
 export function minZoomLevelBaseOnWidth(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
     const width = translationWidthOf(boundaries);
     if(width == undefined){
@@ -69,6 +86,11 @@ export function minZoomLevelBaseOnWidth(boundaries: Boundaries | undefined, canv
     return minZoomLevel;
 }
 
+/**
+ * @description Calculates the minimum zoom level based on the height of the boundaries.
+ * Used when the canvas on the html is resized.
+ * @category Camera
+ */
 export function minZoomLevelBaseOnHeight(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
     const height = translationHeightOf(boundaries);
     if(height == undefined){

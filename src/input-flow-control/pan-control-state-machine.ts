@@ -14,6 +14,8 @@ export type PanToInputEventPayload = {
     target: Point;
 };
 
+type EmptyPayload = {};
+
 export type PanEventPayloadMapping = {
     "userPanByInput": PanByInputEventPayload,
     "userPanToInput": PanToInputEventPayload,
@@ -21,8 +23,8 @@ export type PanEventPayloadMapping = {
     "transitionPanToInput": PanToInputEventPayload,
     "lockedOnObjectPanByInput": PanByInputEventPayload,
     "lockedOnObjectPanToInput": PanToInputEventPayload,
-    "unlock": {},
-    "initateTransition": {},
+    "unlock": EmptyPayload,
+    "initateTransition": EmptyPayload,
 };
 
 export interface PanContext extends BaseContext {

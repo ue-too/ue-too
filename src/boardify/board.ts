@@ -9,7 +9,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publ
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
-import { InputFlowControl, CameraRig, createDefaultRelayControlCenterWithCameraRig } from 'src/input-flow-control';
+import { InputFlowControl, CameraRig, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
 
 
 /**
@@ -107,7 +107,7 @@ export default class Board {
             restrictZoom: false,
         }, camera);
 
-        this.boardInputPublisher = new RawUserInputPublisher(createDefaultRelayControlCenterWithCameraRig(this.cameraRig));
+        this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
 
         this._kmtParser = new VanillaKMTEventParser(canvas, eventTarget, this.boardInputPublisher, false);
 
@@ -384,6 +384,7 @@ export default class Board {
 
     /**
      * @description Add an camera movement event listener. The events are "pan", "zoom", and "rotate".
+     * There's also an "all" event that will be triggered when any of the above events are triggered.
      * @param eventName The event name to listen for. The events are "pan", "zoom", and "rotate".
      * @param callback The callback function to call when the event is triggered. The event provided to the callback is different for the different events.
      * @returns The converted point in world coordinates.
@@ -394,7 +395,8 @@ export default class Board {
 
     /**
      * @description Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events. 
-     * Input event does not necesarily mean that the camera will move. The input event is the event that is triggered when the user interacts with the board.
+     * There's also an "all" event that will be triggered when any of the above events are triggered.
+     * Input event does not necesarily mean that the camera will move. The input events are the events triggered when the user interacts with the board.
      * @param eventName 
      * @param callback 
      * @returns 

@@ -52,6 +52,11 @@ export default class BaseCamera implements BoardCamera {
         this._boundaries = boundaries;
     }
 
+    /**
+     * @description The translation boundaries of the camera in the world coordinate system.
+     * 
+     * @category Camera
+     */
     get boundaries(): Boundaries | undefined{
         return this._boundaries;
     }
@@ -60,6 +65,11 @@ export default class BaseCamera implements BoardCamera {
         this._boundaries = boundaries;
     }
 
+    /**
+     * @description The width of the viewport. (The width of the canvas in css pixels)
+     * 
+     * @category Camera
+     */
     get viewPortWidth(): number{
         return this._viewPortWidth;
     }
@@ -68,6 +78,11 @@ export default class BaseCamera implements BoardCamera {
         this._viewPortWidth = width;
     }
 
+    /**
+     * @description The height of the viewport. (The height of the canvas in css pixels)
+     * 
+     * @category Camera
+     */
     get viewPortHeight(): number{
         return this._viewPortHeight;
     }
@@ -76,6 +91,11 @@ export default class BaseCamera implements BoardCamera {
         this._viewPortHeight = height;
     }
 
+    /**
+     * @description The position of the camera in the world coordinate system.
+     * 
+     * @category Camera
+     */
     get position(): Point{
         return this._position;
     }
@@ -101,14 +121,29 @@ export default class BaseCamera implements BoardCamera {
         return true;
     }
 
+    /**
+     * @description The zoom level of the camera.
+     * 
+     * @category Camera
+     */
     get zoomLevel(): number{
         return this._zoomLevel;
     }
 
+    /**
+     * @description The boundaries of the zoom level of the camera.
+     * 
+     * @category Camera
+     */
     get zoomBoundaries(): ZoomLevelLimits | undefined{
         return this._zoomBoundaries;
     }
 
+    /**
+     * @description The boundaries of the zoom level of the camera.
+     * 
+     * @category Camera
+     */
     set zoomBoundaries(zoomBoundaries: ZoomLevelLimits | undefined){
         if(zoomBoundaries !== undefined && zoomBoundaries.min !== undefined && zoomBoundaries.max !== undefined && zoomBoundaries.min > zoomBoundaries.max){
             let temp = zoomBoundaries.max;
@@ -184,7 +219,7 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @translationBlock The order of the transformation is as follows:
+     * @description The order of the transformation is as follows:
      * 1. Scale (scale the context using the device pixel ratio)
      * 2. Translation (move the origin of the context to the center of the canvas)
      * 3. Rotation (rotate the context negatively the rotation of the camera)
@@ -232,19 +267,48 @@ export default class BaseCamera implements BoardCamera {
         return true;
     }
 
-    // the points are in window space
+    /**
+     * @description The origin of the camera in the window coordinate system.
+     * @deprecated
+     * 
+     * @category Camera
+     */
     getCameraOriginInWindow(centerInWindow: Point): Point{
         return centerInWindow;
     }
 
+    /**
+     * @description Converts a point from the viewport coordinate system to the world coordinate system.
+     * 
+     * @param point The point in the viewport coordinate system.
+     * @returns The point in the world coordinate system.
+     * 
+     * @category Camera
+     */
     convertFromViewPort2WorldSpace(point: Point): Point{
         return convert2WorldSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
 
+    /**
+     * @description Converts a point from the world coordinate system to the viewport coordinate system.
+     * 
+     * @param point The point in the world coordinate system.
+     * @returns The point in the viewport coordinate system.
+     * 
+     * @category Camera
+     */
     convertFromWorld2ViewPort(point: Point): Point{
         return convert2ViewPortSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
-    
+
+    /**
+     * @description Inverts a point from the world coordinate system to the viewport coordinate system.
+     * 
+     * @param point The point in the world coordinate system.
+     * @returns The point in the viewport coordinate system.
+     * 
+     * @category Camera
+     */
     invertFromWorldSpace2ViewPort(point: Point): Point{
         let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this._viewPortHeight / 2};
         let delta2Point = PointCal.subVector(point, this._position);
@@ -281,9 +345,5 @@ export default class BaseCamera implements BoardCamera {
         }
         this._boundaries.min.y = min;
         this._boundaries.max.y = max;
-    }
-
-    pointInView(point: Point): boolean {
-        return withinBoundaries(point, {});
     }
 }

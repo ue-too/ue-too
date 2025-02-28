@@ -3,11 +3,22 @@ import { PointCal } from "point2point";
 
 import { convert2WorldSpaceWRT } from "./coordinate-conversion";
 
+/**
+ * @description The boundaries of a camera.
+ * The x and y are in world space.
+ * 
+ * @category Camera
+ */
 export type Boundaries = {
     min?: {x?: number, y?: number};
     max?: {x?: number, y?: number};
 }
 
+/**
+ * @description Checks if a point is within the boundaries.
+ * 
+ * @category Camera
+ */
 export function withinBoundaries(point: Point, boundaries: Boundaries | undefined): boolean{
     if(boundaries == undefined){
         // no boundaries 
@@ -33,6 +44,11 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
     return leftSide && rightSide && topSide && bottomSide;
 }
 
+/**
+ * @description Checks if the boundaries are valid.
+ * 
+ * @category Camera
+ */
 export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
     if(boundaries == undefined){
         return true;
@@ -50,6 +66,11 @@ export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
     return true;
 }
 
+/**
+ * @description Checks if the boundaries are fully defined.
+ * 
+ * @category Camera
+ */
 export function boundariesFullyDefined(boundaries: Boundaries | undefined): boolean{
     if(boundaries == undefined){
         return false;
@@ -63,6 +84,11 @@ export function boundariesFullyDefined(boundaries: Boundaries | undefined): bool
     return true;
 }
 
+/**
+ * @description Clamps a point to the boundaries.
+ * 
+ * @category Camera
+ */
 export function clampPoint(point: Point, boundaries: Boundaries | undefined): Point{
     if(withinBoundaries(point, boundaries) || boundaries == undefined){
         return point;
@@ -89,6 +115,11 @@ export function clampPoint(point: Point, boundaries: Boundaries | undefined): Po
     return manipulatePoint;
 }
 
+/**
+ * @description Gets the translation width of the boundaries.
+ * 
+ * @category Camera
+ */
 export function translationWidthOf(boundaries: Boundaries | undefined): number | undefined{
     if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.x == undefined || boundaries.max.x == undefined){
         return undefined;
@@ -96,11 +127,21 @@ export function translationWidthOf(boundaries: Boundaries | undefined): number |
     return boundaries.max.x - boundaries.min.x;
 }
 
+/**
+ * @description Gets the half translation width of the boundaries.
+ * 
+ * @category Camera
+ */
 export function halfTranslationWidthOf(boundaries: Boundaries): number | undefined{
     const translationWidth = translationWidthOf(boundaries);
     return translationWidth != undefined ? translationWidth / 2 : undefined;
 }
 
+/**
+ * @description Gets the translation height of the boundaries.
+ * 
+ * @category Camera
+ */
 export function translationHeightOf(boundaries: Boundaries | undefined): number | undefined{
     if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.y == undefined || boundaries.max.y == undefined){
         return undefined;
@@ -108,11 +149,21 @@ export function translationHeightOf(boundaries: Boundaries | undefined): number 
     return boundaries.max.y - boundaries.min.y;
 }
 
+/**
+ * @description Gets the half translation height of the boundaries.
+ * 
+ * @category Camera
+ */
 export function halfTranslationHeightOf(boundaries: Boundaries): number | undefined{
     const translationHeight = translationHeightOf(boundaries);
     return translationHeight != undefined ? translationHeight / 2 : undefined;
 }
 
+/**
+ * @description Clamps the entire viewport within the boundaries
+ * 
+ * @category Camera
+ */
 export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries | undefined, cameraZoomLevel: number, cameraRotation: number): Point{
     if(boundaries == undefined){
         return point;
