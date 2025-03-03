@@ -2,6 +2,11 @@ import { Point } from "src/util/misc";
 import { BaseContext } from "src/being";
 import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 
+/**
+ * @description The context for the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
     canvas: HTMLCanvasElement;
@@ -12,6 +17,12 @@ export interface KmtInputContext extends BaseContext {
     initialCursorPosition: Point;
 }
 
+/**
+ * @description The observable input tracker.
+ * This is used as the context for the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
@@ -64,4 +75,3 @@ export class ObservableInputTracker implements KmtInputContext {
     setup(): void {
     }
 }
-

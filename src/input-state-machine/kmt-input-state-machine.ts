@@ -11,13 +11,7 @@ export type PointerEventPayload = {
     y: number;
 }
 
-export type SpaceBarEventPayload = {
-
-}
-
-export type CursorStatusUpdateEventPayload = {
-
-}
+type EmptyPayload = {};
 
 export type ScrollEventPayload = {
     deltaX: number;
@@ -35,10 +29,10 @@ export type KmtInputEventMapping = {
     leftPointerDown: PointerEventPayload;
     leftPointerUp: PointerEventPayload;
     leftPointerMove: PointerEventPayload;
-    spacebarDown: SpaceBarEventPayload;
-    spacebarUp: SpaceBarEventPayload;
-    stayIdle: CursorStatusUpdateEventPayload;
-    cursorOnElement: CursorStatusUpdateEventPayload;
+    spacebarDown: EmptyPayload;
+    spacebarUp: EmptyPayload;
+    stayIdle: EmptyPayload;
+    cursorOnElement: EmptyPayload;
     scroll: ScrollEventPayload;
     scrollWithCtrl: ScrollWithCtrlEventPayload;
     middlePointerDown: PointerEventPayload;
@@ -116,7 +110,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
     }
 
-    spacebarDownHandler(context: KmtInputContext, payload: SpaceBarEventPayload): void {
+    spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
         context.canvas.style.cursor = "grab";
     }
 
@@ -191,7 +185,7 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
         context.canvas.style.cursor = "grabbing";
     }
 
-    spacebarUpHandler(context: KmtInputContext, payload: SpaceBarEventPayload): void {
+    spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
         context.canvas.style.cursor = "default";
     }
 }
@@ -310,7 +304,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
     }
 
-    spacebarUpHandler(context: KmtInputContext, payload: SpaceBarEventPayload): void {
+    spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
         context.canvas.style.cursor = "default";
     }
 

@@ -2,27 +2,56 @@ import { Point } from "src/util/misc";
 import { TemplateStateMachine, TemplateState, NO_OP } from "src/being";
 import type { State, EventReactions, BaseContext } from "src/being";
 
+/**
+ * @description The possible states of the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
 
-
+/**
+ * @description The payload for the zoom by at input event.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomByAtInputPayload = {
     deltaZoom: number;
     anchorPoint: Point;
 }
 
+/**
+ * @description The payload for the zoom to at input event.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomToAtInputPayload = {
     targetZoom: number;
     anchorPoint: Point;
 }
 
+/**
+ * @description The payload for the zoom by payload.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomByPayload = {
     deltaZoom: number;
 }
 
+/**
+ * @description The payload for the zoom to payload.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomToPayload = {
     targetZoom: number;
 }
 
+/**
+ * @description The payload mapping for the events of the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export type ZoomEventPayloadMapping = {
     "userZoomByAtInput": ZoomByAtInputPayload,
     "userZoomToAtInput": ZoomToAtInputPayload,
@@ -37,6 +66,11 @@ export type ZoomEventPayloadMapping = {
     "initiateTransition": {},
 };
 
+/**
+ * @description The context for the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export interface ZoomContext extends BaseContext {
     zoomToAt: (targetZoom: number, at: Point) => void;
     zoomByAt: (delta: number, at: Point) => void;
@@ -46,6 +80,11 @@ export interface ZoomContext extends BaseContext {
     zoomByAtWorld: (delta: number, at: Point) => void;
 };
 
+/**
+ * @description The accepting user input state of the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
     private _eventReactions: EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> = {
@@ -67,6 +106,11 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
     }
 }
 
+/**
+ * @description The transition state of the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
     constructor(){
@@ -125,6 +169,11 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
     }
 }
 
+/**
+ * @description The locked on object state of the zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
     constructor(){
@@ -159,6 +208,11 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
     }
 }
 
+/**
+ * @description The zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates> {
 
     constructor(states: Record<ZoomControlStates, State<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>>, initialState: ZoomControlStates, context: ZoomContext){
@@ -186,6 +240,11 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
     }
 }
 
+/**
+ * @description Create the object containing the default zoom control states.
+ * 
+ * @category Input Flow Control
+ */
 export function createDefaultZoomControlStates(): Record<ZoomControlStates, State<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates>> {
     return {
         ACCEPTING_USER_INPUT: new ZoomAcceptingUserInputState(),
@@ -194,6 +253,11 @@ export function createDefaultZoomControlStates(): Record<ZoomControlStates, Stat
     }
 }
 
+/**
+ * @description Create the default zoom control state machine.
+ * 
+ * @category Input Flow Control
+ */
 export function createDefaultZoomControlStateMachine(context: ZoomContext): ZoomControlStateMachine {
     return new ZoomControlStateMachine(createDefaultZoomControlStates(), "ACCEPTING_USER_INPUT", context);
 }

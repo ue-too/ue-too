@@ -93,4 +93,3 @@ export class TouchInputTracker implements TouchContext {
     setup(): void {
     }
 }
-

@@ -16,6 +16,7 @@ export const NO_OP: NOOP = ()=>{};
  * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
  * 
  * You can probably get by using the TemplateStateMachine class.
+ * The naming is that an event would "happen" and the state of the state machine would "handle" it.
  *
  * @see {@link TemplateStateMachine}
  * @see {@link KmtInputStateMachine}

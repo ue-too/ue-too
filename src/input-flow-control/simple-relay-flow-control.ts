@@ -3,6 +3,12 @@ import { CameraRig, createDefaultCameraRig } from "./flow-control-with-animation
 import { InputFlowControl } from "./interface";
 import { Point } from "src/util/misc";
 
+/**
+ * @description The simple relay flow control.
+ * This would be the default flow control for {@link Board}.
+ * 
+ * @category Input Flow Control
+ */
 export class SimpleRelayFlowControl implements InputFlowControl {
 
     private _cameraRig: CameraRig;
