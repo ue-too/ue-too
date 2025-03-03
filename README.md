@@ -25,10 +25,10 @@
   <a href="#under-the-hood-a-rather-brief-overview">Structural Overview</a>
 </p>
 
-![small-demo](./doc-media/small-demo.gif)
+![small-demo](./doc-media/small-demo-with-cursor.gif)
 
 <p align="center">
-    _This is is a small demo gif of what board is capable of. (only showing a small fraction)_
+    This is is a small demo gif of what board is capable of.
 </p>
 
 ## What board is?
@@ -41,9 +41,10 @@
 - A complete drawing application like Excalidraw, tldraw, or similar tools
 - A full-featured package with built-in drawing tools and user interfaces
 
+## Quick Demo
 [CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
 
-There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva.
+There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva. (not complete yet)
 
 ## Docs
 - [API Documentation](https://niuee.github.io/board/index.html)
@@ -144,6 +145,9 @@ Setting `alignCoordinateSystem` would also require an update to the context whic
 Without updating the context, the stuff you draw would probably result in a weird state. (everything is reversed in terms of y) `board` takes care of this by using `Proxy` so you don't have to remember to negate the y value when you set `alignCoorindateSystem` to false.
 
 ## Development
+I am using pnpm as the package manager for this project.
+Node version 20.11.0 is used for development. (Some of the scripts that I wrote for ci/cd uses node version 20 APIs and is not compatible with 22 (specifically the `assert`) I will migrate them to use node version 22 APIs when I have time.)
+
 The dev environment setup for this project is relatively simple. Let me break down the different aspects.
 - Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
 - Unit Testing (jest): `pnpm test` There's not a lot of tests right now. Only the core functionalities revolving around the camera are unit tested. The next section I will move on to test is the input state machine.
