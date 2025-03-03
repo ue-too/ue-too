@@ -1,0 +1,10 @@
+{
+    "plugin": ["./scripts/typedoc-defaultvalue-plugin.mjs", "typedoc-plugin-mdn-links", "@niuee/typedoc-plugin-translation"],
+    "categoryOrder": ["Board", "Camera", "Event Parser", "Input State Machine", "Input Flow Control", "Drawing Engine", "being",  "Utils", "*"],
+    "readme": "./README.md",
+    "entryPoints": ["./src/index.ts"],
+    "tsconfig": "./prod.tsconfig.json",
+    "navigation": {
+      "includeCategories": true
+    }
+}

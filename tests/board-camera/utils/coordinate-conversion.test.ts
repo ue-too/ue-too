@@ -19,7 +19,6 @@ describe("convertDeltaInWorldToViewPortSpace", ()=>{
         const cameraZoomLevel = 1;
         const cameraRotation = 45 * Math.PI / 180;
         const result = convertDeltaInViewPortToWorldSpace(delta, cameraZoomLevel, cameraRotation);
-        console.log("result", result);
         expect(result.x).toBeCloseTo(-7.071067811865475);
         expect(result.y).toBeCloseTo(7.071067811865475);
     });

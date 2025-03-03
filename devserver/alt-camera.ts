@@ -1,10 +1,10 @@
 import { ContextCentricCamera } from "src/board-camera";
-import { CameraObserver } from "src/camera-observer";
+import { CameraObservable } from "src/camera-observer";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const context = canvas.getContext("2d");
 
-const camera = new ContextCentricCamera({x: 100, y: 100}, 45 * Math.PI / 180, 0.5, canvas.width, canvas.height, new CameraObserver());
+const camera = new ContextCentricCamera({x: 100, y: 100}, 45 * Math.PI / 180, 0.5, canvas.width, canvas.height, new CameraObservable());
 console.log(camera.position);
 console.log(camera.getTransform(canvas.width, canvas.height, window.devicePixelRatio, true));
 canvas.style.width = canvas.width + "px";

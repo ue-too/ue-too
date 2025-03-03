@@ -1,6 +1,22 @@
+/**
+ * @description The limits of the rotation.
+ * 
+ * @category Camera
+ */
 export type RotationLimits = {start: number, end: number, ccw: boolean, startAsTieBreaker: boolean};
+
+/**
+ * @description The boundary of the rotation. (experimental)
+ * 
+ * @category Camera
+ */
 export type RotationBoundary = {start: number, end: number, positiveDirection: boolean, startAsTieBreaker: boolean};
 
+/**
+ * @description Clamps the rotation within the limits.
+ * 
+ * @category Camera
+ */
 export function clampRotation(rotation: number, rotationLimits?: RotationLimits): number{
     if(rotationWithinLimits(rotation, rotationLimits) || rotationLimits === undefined){
         return rotation;
@@ -20,6 +36,11 @@ export function clampRotation(rotation: number, rotationLimits?: RotationLimits)
     return rotation;
 }
 
+/**
+ * @description Checks if the rotation is within the limits.
+ * 
+ * @category Camera
+ */
 export function rotationWithinLimits(rotation: number, rotationLimits?: RotationLimits): boolean{
     if(rotationLimits === undefined){
         return true;
@@ -36,6 +57,11 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
     return true;
 }
 
+/**
+ * @description Checks if the rotation is within the boundary. (experimental)
+ * 
+ * @category Camera
+ */
 export function rotationWithinBoundary(rotation: number, rotationBoundary: RotationBoundary): boolean {
     const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
 
@@ -58,6 +84,11 @@ export function rotationWithinBoundary(rotation: number, rotationBoundary: Rotat
     return angleRange >= angleFromStart;
 }
 
+/**
+ * @description Normalizes the angle to be between 0 and 2π.
+ * 
+ * @category Camera
+ */
 export function normalizeAngleZero2TwoPI(angle: number){
     // reduce the angle  
     angle = angle % (Math.PI * 2);
@@ -67,6 +98,11 @@ export function normalizeAngleZero2TwoPI(angle: number){
     return angle;
 }
 
+/**
+ * @description Gets the smaller angle span between two angles. (in radians)
+ * 
+ * @category Camera
+ */
 export function angleSpan(from: number, to: number): number{
     // in radians
     from = normalizeAngleZero2TwoPI(from);
@@ -83,10 +119,20 @@ export function angleSpan(from: number, to: number): number{
     return angleDiff;
 }
 
+/**
+ * @description Converts degrees to radians.
+ * 
+ * @category Camera
+ */
 export function deg2rad(deg: number): number{
     return deg * Math.PI / 180;
 }
 
+/**
+ * @description Converts radians to degrees.
+ * 
+ * @category Camera
+ */
 export function rad2deg(rad: number): number{
     return rad * 180 / Math.PI;
 }

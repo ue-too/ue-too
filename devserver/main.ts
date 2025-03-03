@@ -1,11 +1,12 @@
 import "./media";
 import Board, { drawAxis, drawRuler, drawGrid } from "src/boardify";
+import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
 import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
 import { Container, SelectionBox } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
-import { RelayControlCenter } from "src/control-center/simple-relay";
+import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
 import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
@@ -31,8 +32,11 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 }
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
+const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const board = new Board(canvas);
-board.camera.setRotation(45 * Math.PI / 180);
+board.camera.setRotation(0 * Math.PI / 180);
+board.alignCoordinateSystem = true;
+console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
 const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
@@ -57,12 +61,12 @@ const animation = new Animation(positionKeyframe, (value)=>{
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
     const pointInWorldShouldBeInViewPort = value;
     const cameraPositionSatisfy = cameraPositionToGet({x: 100, y: 100}, pointInWorldShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
-    (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(cameraPositionSatisfy);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.controlCenter as RelayControlCenter).notifyZoomInputAnimationWorld(value);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
@@ -121,8 +125,8 @@ resetCameraBtn.addEventListener("click", ()=>{
         percentage: 1,
         value: 0,
     }];
-    (board.controlCenter as RelayControlCenter).initatePanTransition();
-    (board.controlCenter as RelayControlCenter).initateZoomTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initatePanTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initateZoomTransition();
     compositeAnimation.startAnimation();
 });
 
@@ -142,8 +146,8 @@ drawingEngine.addDrawTask({
 });
 
 // const stateMachine = board.touchStrategy.touchStateMachine;
-const stateMachine = board.kmtStrategy.stateMachine;
-const touchStateMachine = board.touchStrategy.touchStateMachine;
+const stateMachine = board.kmtParser.stateMachine;
+const touchStateMachine = board.touchParser.touchStateMachine;
 
 // stateMachine.onStateChange((currentState, nextState) => {
 //     console.log("state change", currentState, "->", nextState);
@@ -179,7 +183,7 @@ function step(timestamp: number){
     drawingEngine.drawWithContext(board.context, deltaMiliseconds);
 
     const fourCorners = calculateTopFourCorners();
-    // drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();

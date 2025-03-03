@@ -1,9 +1,20 @@
-import { Point } from "src/index";
+import { Point } from "src/util/misc";
+
+/**
+ * @description The interface for the draw task. (WIP)
+ * 
+ * @category Drawing Engine
+ */
 export interface DrawTask {
     draw(deltaTime: number): void;
     drawWithContext(context: CanvasRenderingContext2D, deltaTime: number): void;
 }
 
+/**
+ * @description The container for the draw tasks. (WIP)
+ * 
+ * @category Drawing Engine
+ */
 export class Container implements DrawTask {
     private _position: Point;
     private _rotation: number;

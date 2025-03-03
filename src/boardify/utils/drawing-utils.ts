@@ -1,9 +1,15 @@
-import { Point } from "src";
+import { Point } from "src/util/misc";
 import { calculateOrderOfMagnitude } from "src/util";
 import { Boundaries } from "src/board-camera";
 import { boundariesFullyDefined, translationHeightOf, translationWidthOf } from "src/board-camera/utils/position";
 import { PointCal } from "point2point";
 
+/**
+ * @description Draws a crosshair on the canvas.
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawCrossHair(context: CanvasRenderingContext2D, pos: Point, cameraZoomLevel: number, alignCoordinateSystem: boolean, size: number, color: string = "red"): void{
     // size is the pixel shown in the viewport
     let halfSize = size / 2;
@@ -26,6 +32,12 @@ export function drawCrossHair(context: CanvasRenderingContext2D, pos: Point, cam
     context.lineWidth = 3;
 }
 
+/**
+ * @description Draws a bounding box on the canvas.
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawBoundingBox(context: CanvasRenderingContext2D, boundaries: Boundaries, alignCoordinateSystem: boolean): void{
     if(!boundariesFullyDefined(boundaries)){
         return;
@@ -51,6 +63,12 @@ export function drawBoundingBox(context: CanvasRenderingContext2D, boundaries: B
     context.strokeStyle = "black";
 }
 
+/**
+ * @description Draws the axis of the board.
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawAxis(context: CanvasRenderingContext2D, boundaries: Boundaries, zoomLevel: number, alignCoordinateSystem: boolean): void{
     if(!boundariesFullyDefined(boundaries)){
         // one of the direction is not defined
@@ -85,7 +103,13 @@ export function drawAxis(context: CanvasRenderingContext2D, boundaries: Boundari
     context.strokeStyle = "black";
 }
 
-// argument points are in world space
+/**
+ * @description Draws the grid of the board.
+ * argument points are in world space
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
     let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
     let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
@@ -124,7 +148,13 @@ export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point
     }
 }
 
-// argument points are in world space
+/**
+ * @description Draws a ruler on the canvas.
+ * argument points are in world space
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
         let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
         let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
@@ -370,7 +400,13 @@ export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Poin
         }
 }
 
-
+/**
+ * @description Draws the position text on the canvas.
+ * argument points are in world space
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawPositionText(context: CanvasRenderingContext2D, pos: Point, cameraZoomLevel: number, alignCoordinateSystem: boolean, offset: number = 20, color: string="red"): void{
     offset = offset / cameraZoomLevel; 
     context.font = `${20 / cameraZoomLevel}px Arial`;
@@ -383,7 +419,13 @@ export function drawPositionText(context: CanvasRenderingContext2D, pos: Point, 
     context.fillStyle = "black";
 }
 
-
+/**
+ * @description Draws a reference circle on the canvas.
+ * argument points are in world space
+ * @deprecated
+ * 
+ * @category Board
+ */
 export function drawReferenceCircle(context: CanvasRenderingContext2D, pos: Point, alignCoordinateSystem: boolean): void {
     context.beginPath();
     context.strokeStyle = `rgba(87, 173, 72, 0.8)`;

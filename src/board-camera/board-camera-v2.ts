@@ -1,34 +1,46 @@
-import { Point } from 'src';
-import { Boundaries } from 'src/board-camera';
-import { CameraObservable, UnSubscribe } from 'src/camera-observer';
+import { Point } from 'src/util/misc';
+import { Boundaries, TransformMatrix } from 'src/board-camera';
+import { CameraUpdatePublisher, UnSubscribe } from 'src/camera-update-publisher';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
 import { RotationLimits } from 'src/board-camera/utils/rotation';
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
-import { CameraEventMap, CameraState } from 'src/camera-observer';
+import { CameraEventMap, CameraState } from 'src/camera-update-publisher';
 import { ObservableBoardCamera } from 'src/board-camera/interface';
 import BaseCamera from 'src/board-camera/base-camera';
+import { SubscriptionOptions } from 'src/util/observable';
+
+/**
+ * @description The default board camera. This is basically the same as the {@link BaseCamera} class.
+ * But it's observable.
+ * 
+ * @category Camera
+ */
 export default class DefaultBoardCamera implements ObservableBoardCamera {
 
     private _baseCamera: BaseCamera;
-    private _observer: CameraObservable;
+    private _observer: CameraUpdatePublisher;
     /**
      * @param position The position of the camera in the world coordinate system
      * @param rotation The rotation of the camera in the world coordinate system
      * @param zoomLevel The zoom level of the camera
      * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
      * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
-     * @param observer The observer of the camera
      * @param boundaries The boundaries of the camera in the world coordinate system
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera
      */
     constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
         this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
-        this._observer = new CameraObservable();
+        this._observer = new CameraUpdatePublisher();
     }
 
+    /**
+     * @description The boundaries of the camera in the world coordinate system.
+     * 
+     * @category Camera
+     */
     get boundaries(): Boundaries | undefined{
         return this._baseCamera.boundaries;
     }
@@ -37,6 +49,11 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         this._baseCamera.boundaries = boundaries;
     }
 
+    /**
+     * @description The width of the viewport. (The width of the canvas in css pixels)
+     * 
+     * @category Camera
+     */
     get viewPortWidth(): number{
         return this._baseCamera.viewPortWidth;
     }
@@ -45,6 +62,11 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         this._baseCamera.viewPortWidth = width;
     }
 
+    /**
+     * @description The height of the viewport. (The height of the canvas in css pixels)
+     * 
+     * @category Camera
+     */
     get viewPortHeight(): number{
         return this._baseCamera.viewPortHeight;
     }
@@ -53,10 +75,24 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         this._baseCamera.viewPortHeight = height;
     }
 
+    /**
+     * @description The position of the camera in the world coordinate system.
+     * 
+     * @category Camera
+     */
     get position(): Point{
         return this._baseCamera.position;
     }
 
+    /**
+     * @description This function is used to set the position of the camera.
+     * @param destination The destination point of the camera.
+     * @returns Whether the position is set successfully.
+     * 
+     * @description This function has a guard that checks if the destination point is within the boundaries of the camera.
+     * If the destination point is not within the boundaries, the function will return false and the position will not be updated.
+     * If the destination point is within the boundaries, the function will return true and the position will be updated.
+     */
     setPosition(destination: Point){
         const currentPosition = {...this._baseCamera.position};
         if(!this._baseCamera.setPosition(destination)){
@@ -66,10 +102,20 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return true;
     }
 
+    /**
+     * @description The zoom level of the camera.
+     * 
+     * @category Camera
+     */
     get zoomLevel(): number{
         return this._baseCamera.zoomLevel;
     }
 
+    /**
+     * @description The boundaries of the zoom level of the camera.
+     * 
+     * @category Camera
+     */
     get zoomBoundaries(): ZoomLevelLimits | undefined{
         return this._baseCamera.zoomBoundaries;
     }
@@ -101,10 +147,20 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return true;
     }
 
+    /**
+     * @description The rotation of the camera in the world coordinate system.
+     * 
+     * @category Camera
+     */
     get rotation(): number{
         return this._baseCamera.rotation;
     }
 
+    /**
+     * @description The boundaries of the rotation of the camera.
+     * 
+     * @category Camera
+     */
     get rotationBoundaries(): RotationLimits | undefined{
         return this._baseCamera.rotationBoundaries;
     }
@@ -114,7 +170,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     /**
-     * @translationBlock The order of the transformation is as follows:
+     * @description The order of the transformation is as follows:
      * 1. Scale (scale the context using the device pixel ratio)
      * 2. Translation (move the origin of the context to the center of the canvas)
      * 3. Rotation (rotate the context negatively the rotation of the camera)
@@ -125,7 +181,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param alignCoorindate Whether to align the coordinate system to the camera's position
      * @returns The transformation matrix
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
         const tx = devicePixelRatio * this._baseCamera.viewPortWidth / 2;
         const ty = devicePixelRatio * this._baseCamera.viewPortHeight / 2;
         const tx2 = -this._baseCamera.position.x;
@@ -147,6 +203,11 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return {a, b, c, d, e, f};
     }
 
+    /**
+     * @description This function is used to set the rotation of the camera.
+     * @param rotation The rotation of the camera in the world coordinate system.
+     * @returns Whether the rotation is set successfully.
+     */
     setRotation(rotation: number){
         const currentRotation = this._baseCamera.rotation;
         if(!this._baseCamera.setRotation(rotation)){
@@ -156,19 +217,43 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return true;
     }
 
-    // the points are in window space
+    /**
+     * @description The origin of the camera in the window coordinate system.
+     * @deprecated
+     * 
+     * @param centerInWindow The center of the camera in the window coordinate system.
+     * @returns The origin of the camera in the window coordinate system.
+     */
     getCameraOriginInWindow(centerInWindow: Point): Point{
         return centerInWindow;
     }
 
+    /**
+     * @description Converts a point from the viewport coordinate system to the world coordinate system.
+     * 
+     * @param point The point in the viewport coordinate system.
+     * @returns The point in the world coordinate system.
+     */
     convertFromViewPort2WorldSpace(point: Point): Point{
         return convert2WorldSpaceAnchorAtCenter(point, this._baseCamera.position, this._baseCamera.zoomLevel, this._baseCamera.rotation);
     }
 
+    /**
+     * @description Converts a point from the world coordinate system to the viewport coordinate system.
+     * 
+     * @param point The point in the world coordinate system.
+     * @returns The point in the viewport coordinate system.
+     */
     convertFromWorld2ViewPort(point: Point): Point{
         return convert2ViewPortSpaceAnchorAtCenter(point, this._baseCamera.position, this._baseCamera.zoomLevel, this._baseCamera.rotation);
     }
-    
+
+    /**
+     * @description Inverts a point from the world coordinate system to the viewport coordinate system.
+     * 
+     * @param point The point in the world coordinate system.
+     * @returns The point in the viewport coordinate system.
+     */
     invertFromWorldSpace2ViewPort(point: Point): Point{
         let cameraFrameCenter = {x: this._baseCamera.viewPortWidth / 2, y: this._baseCamera.viewPortHeight / 2};
         let delta2Point = PointCal.subVector(point, this._baseCamera.position);
@@ -207,11 +292,14 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         this._baseCamera.boundaries.max.y = max;
     }
 
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
-        return this._observer.on(eventName, callback);
-    }
-
-    pointInView(point: Point): boolean {
-        return withinBoundaries(point, {});
+    /**
+     * @description This function is used to subscribe to the camera events.
+     * @param eventName The name of the event to subscribe to.
+     * @param callback The callback function to be called when the event is triggered.
+     * @param options The options for the subscription.
+     * @returns The unsubscribe function.
+     */
+    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
+        return this._observer.on(eventName, callback, options);
     }
 }

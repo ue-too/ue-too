@@ -15,6 +15,9 @@ importers:
       '@niuee/bounce':
         specifier: ^0.0.5
         version: 0.0.5
+      '@niuee/typedoc-plugin-translation':
+        specifier: ^0.0.5
+        version: 0.0.5(typedoc@0.27.7(typescript@5.7.3))
       '@rollup/plugin-node-resolve':
         specifier: ^16.0.0
         version: 16.0.0(rollup@4.34.8)
@@ -494,6 +497,11 @@ packages:
 
   '@niuee/bounce@0.0.5':
     resolution: {integrity: sha512-5KbEo5d2zKz+7mZUvXc1ncVu0KijVWAMdTykxkpijoSeXRR6iaIGrXUztCDXDZ8H9oMSR/sUMhzOp7oPZtlmfQ==}
+
+  '@niuee/typedoc-plugin-translation@0.0.5':
+    resolution: {integrity: sha512-G/UAfl3sK/ImrkdQuxTuJAE93tc548OZh47fR5Gu1BuOjf70X4VEbATVqOITqIM2+qkzL9ffLjOhfKkiXpnxWQ==}
+    peerDependencies:
+      typedoc: ^0.27.6
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2378,6 +2386,10 @@ snapshots:
   '@niuee/bounce@0.0.5':
     dependencies:
       point2point: 0.0.93
+
+  '@niuee/typedoc-plugin-translation@0.0.5(typedoc@0.27.7(typescript@5.7.3))':
+    dependencies:
+      typedoc: 0.27.7(typescript@5.7.3)
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

@@ -9,7 +9,7 @@
         <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/actions/workflows/node.js.yml">
-        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?branch=main&label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
+        <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/blob/main/LICENSE.txt">
         <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;"/>
@@ -18,26 +18,37 @@
 </p>
 
 <p align="center">
-  •
-  <a href="#install">Install</a> •
+  <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
-  <a href="#bare-minimum-example">Bare Minimum Example</a> •
-  <a href="#how-to-use">How To Use</a>
-
+  <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
+  <a href="#development">Development</a> •
+  <a href="#under-the-hood-a-rather-brief-overview">Structural Overview</a>
 </p>
 
-This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
-board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
+![small-demo](./doc-media/small-demo-with-cursor.gif)
 
-What `board` is trying to do is very much like what [pixi-viewport](https://github.com/pixijs-userland/pixi-viewport) is doing. But `board` takes a step back, it's not heavily integrated with pixi.js. It can be used with just regular HTML canvas element without pixi.js, but it also works with canvas that uses [pixi.js](https://github.com/pixijs/pixijs), [fabric.js](https://github.com/fabricjs/fabric.js), and [konva](https://github.com/konvajs/konva).
+<p align="center">
+    This is is a small demo gif of what board is capable of.
+</p>
 
+## What board is?
+- Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
+- Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
+- Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
+- Serves as a foundation library for building your own infinite canvas applications
+
+## What board is not?
+- A complete drawing application like Excalidraw, tldraw, or similar tools
+- A full-featured package with built-in drawing tools and user interfaces
+
+## Quick Demo
 [CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
 
-There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva.
+There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva. (not complete yet)
 
 ## Docs
 - [API Documentation](https://niuee.github.io/board/index.html)
-- [~~中文文件連結~~]() (我把它拔掉了，因為 typedoc 升級之後之前寫的 plugin 就不能用了之後再看看要怎麼 i18n 一下)
+- [中文文件連結](https://niuee.github.io/board/zh-tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
 
 ## Installation and Usage
 ### Package manager
@@ -62,7 +73,7 @@ import { Board } from "https://cdn.jsdelivr.net/npm/@niuee/board@latest/index.mj
 ```
 
 ### Use iife bundle
-In an HTML file use the script tag. (instead of importing from jsdelivr you can also download it as source and put it in you project directly)
+In an HTML file use the script tag. (instead of importing from jsdelivr you can also download it as source and put it in you project folder directly)
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
 ```
@@ -80,38 +91,7 @@ const newBoard = new Board.Board(canvasElement);
 - Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (example is on the way)
 - You can use this with pixi.js, fabric.js, Konva; or maybe just html canvas. (example is on the way)
 
-## Bare Minimum Example
-
-```javascript
-import { Board } from "@niuee/board"; // or other import style mentioned above
-
-const canvasElement = document.querySelector("canvas");
-const board = new Board(canvasElement);
-
-
-// this is the callback function for the requestAnimationFrame
-function step(timestamp){
-    // timestamp is the argument requestAnimationFrame pass to its callback function
-
-    // step the board first before everything else because stepping the board would wipe the canvas
-    // pass in the timestamp as it is to the board's step function.
-    board.step(timestamp);
-
-    // if you want to draw stuff draw it in the step function otherwise it would not persist
-    // draw a circle at (100, 100) with a width of 1px
-    board.context.beginPath();
-    board.context.arc(100, 100, 1, 0, 2 * Math.PI);
-    board.context.stroke();
-
-    // and then call the requestAnimationFrame
-    window.requestAnimationFrame(step);
-}
-
-// start the animation loop
-step(0);
-```
-
-## How To Use (Using only HTML canvas)
+## Quick Start (Using only HTML canvas)
 The `Board` class extends an existing canvas element in the DOM to have extra capabilities such as pan, zoom, and rotation.
 To instantiate a new board, you need have a canvas element in your html.
 ```html
@@ -157,31 +137,99 @@ board.context.stroke();
 
 This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas. (but you can pan and zoom the canvas around)
 
+This is probably a good time to talk about coordinate system. The `Board` class has an attribute `alignCoordinateSystem` if set to `false` would result in a reversed y axis.
+Meaning positive y goes up in the screen.
+
+Setting `alignCoordinateSystem` would also require an update to the context which you use to draw stuff. After altering the value of `alignCoorindateSystem` if you have previously stored the value of `board.context` somewhere you would need to update that value by calling `board.context` and use the returned value to udpate the stored value.
+
+Without updating the context, the stuff you draw would probably result in a weird state. (everything is reversed in terms of y) `board` takes care of this by using `Proxy` so you don't have to remember to negate the y value when you set `alignCoorindateSystem` to false.
+
+## Development
+I am using pnpm as the package manager for this project.
+Node version 20.11.0 is used for development. (Some of the scripts that I wrote for ci/cd uses node version 20 APIs and is not compatible with 22 (specifically the `assert`) I will migrate them to use node version 22 APIs when I have time.)
+
+The dev environment setup for this project is relatively simple. Let me break down the different aspects.
+- Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
+- Unit Testing (jest): `pnpm test` There's not a lot of tests right now. Only the core functionalities revolving around the camera are unit tested. The next section I will move on to test is the input state machine.
+- Dev Server (vite): `pnpm dev` The `devserver` directory contains the current examples of the board. It's sort of like a playground. The more complete example is the in the `main.ts` file.
+- Docs Dev Server (vite): `pnpm dev:docs` would spin up a docs server serving files from the directory `docs-staging`
+- Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
+- Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
+
+To start developing `board` first clone the repo.
+
+Then install the dependencies using
+
+```bash
+pnpm i
+```
+
+And then off you go! You can modify however as you like it.
+
 The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
 
-## Under the Hood
-How board achieve the effect of infinite canvas is through an abstraction called a camera! It's like the viewport attribute of svg. 
+## Under the Hood (a rather brief overview)
 
-The user controls the position, zoom, and rotation of the camera to see different part of a canvas context.
+#### Data Flow
+How board achieve the effect of infinite canvas is through a camera abstraction. It's like the viewport attribute of svg. 
 
-i.e. if you draw a circle with the center at (100, 100) on the context, if the position of the camera is at (100, 100) the center of the canvas would be the same as the center of the circle on screen.
+The user controls the position, zoom, and rotation of the camera to see different parts of a canvas context.
 
-Everything starts with an user input: like dragging while holding the control key, 2-finger-swipe on trackpad, or 2-finger swipe on touch devices.
-These events are captured by the event listeners added to the canvas element. Then, the event listeners would parse the raw events into events like: `LEFT_POINTER_MOVE`, `SPACEBAR_DOWN`, etc.
+i.e. if you draw a circle with the center at (100, 100) on the context, if the position of the camera is at (100, 100) the cirle would appear in the center of the canvas element.
 
-These parsed events are then fed into the input state machine to interpret the user's intent. (Essentially, a second layer of parsing.)
+Everything starts with an user input: a pointer down event, or a touchstart event.
+These events are captured by the event listeners added to the canvas element. Then, the event listeners would parse the raw events into a more granular events like: `LEFT_POINTER_MOVE`, `SPACEBAR_DOWN`, etc.
+
+These parsed events are then fed into the input state machine to interpret the user's intent.
 
 The input state machine would spit out something like pan with some distance, or zoom to X scale, etc. 
+These are called the raw user inputs (meaning that they exist in the viewport coorindate system instead of the canvas context or the world coordinate.)
 
-The event listeners combined with the input state machine is how board maps users input to the control input of the camera.
-If you want custom behavior for example, the default 2-finger-swipe on touch device is panning the camera, if you want to make it 1-finger-drag instead, this is where you would want to look into.
-(you can start by looking into `src/kmt-strategy/kmt-strategy.ts`, `src/input-state-machine.ts` detail documentation will be updated in the future.)
+The raw user inputs are broadcast by the raw user input publisher to the subscribers including the flow control.
 
-User camera input from the state machine is passed to a input observable. This observable allows users (as in the user of the library not the browser client) to subscribe to the raw camera input.
-The "raw" indicates that all values are in viewport coordinate system instead of context or the "world" space.
+The flow control is where different sources of camera input are coordinated. This is in place to prepare for animated camera input.
+(an example ruleset on how different kinds of input affect each other is: user input would take precedence over animated input on both zoom and pan meaning user can cancel animated camera movement)
 
-The following diagram shows the difference between the "viewport" and the "world" coordinate system.
+You might not need this kind of functionality so there's a very basic flow control in place as the default that is just a simple relay.
 
+The flow control then pass the desired camera input through `CameraRig`; this is essentially a pipeline that will perform a series of transformation on the camera inputs. 
+(e.g. clamping the translation so that the camera does not move out of boundary; restrict camera movement in certain axis)
+
+Below is a diagram on the data flow.
+![camera-control-data-flow](./doc-media/camera-control-data-flow.png)
+
+You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above.
+
+For simplicity, the overarching class `Board` takes care of it all, but if you want customization you'll have to get familiar with the data flow and see which part best fits your need for customizing.
+
+Detail on each part will be on the documentation site (not the API documentation, but more on how and why on the various parts of `board` and a few examples) I'll setup later but probably after the version 0.2 release.
+
+There's one more thing about the data flow, since it's starting from event listeners all the way to the canvas context. This does not work if you want to use an offscreen canvas on a worker thread. This is a planned feature but will not be in version 0.2.
+
+#### Coordinate System
 Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
-![viewport and world coorindate system](./doc-media//coordinate-system.png)
+![viewport and world coorindate system](./doc-media/coordinate-system.png)
+
+`board` provides a few sets of coordinate conversion helper functions. Most of them are in the `src/board-camera/utils/coordinate-conversion.ts` file.
+
+#### Input State Machine
+In the [Data Flow](#data-flow) section I mentioned the state machine that is used to interpret user intentions. 
+The state diagram for keyboard mouse, and trackpad input is shown below:
+![kmt-input-state-machine](./doc-media/kmt-input-state-machine.png)
+
+The state diagram for touch input is shown below:
+![touch-input-state-machine](./doc-media/touch-input-state-machine.png)
+
+You can customize how the state machine works by defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
+Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site mentioned in the [data flow](#data-flow) section)
+
+## TODO
+- [ ] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
+- [ ] Add a `boardify-pixi` package that contains utility functions for the board to work with pixi.js.
+- [ ] Add a `boardify-fabric` package that contains utility functions for the board to work with fabric.js.
+- [ ] Add a `boardify-konva` package that contains utility functions for the board to work with konva.js.
+- [ ] Add an example of the board being used with react.
+- [ ] Add an example of the board being used with svelte. (I'm learning svelte right now so I can make a example for that)
+- [ ] Add an example of the board being used with vue. (Currently I don't have any plans on learning vue so probably not going to make one very soon)
+- [ ] A documentation site. There is a lot of util stuff that I don't think will fit in here in the readme. So stay tuned! (I am experimenting with docusaurus right now so it might be a docusaurus site)
 

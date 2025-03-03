@@ -1,32 +1,47 @@
 import { PointCal } from "point2point";
-import { EventAction, EventGuards, Guard, StateMachine, TemplateState, TemplateStateMachine } from "src/being/interfaces";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 import { TouchContext } from "./touch-input-context";
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
-
+/**
+ * @description The touch points.
+ * 
+ * @category Input State Machine
+ */
 export type TouchPoints = {
     ident: number,
     x: number,
     y: number,
 }
 
+/**
+ * @description The touch event payload.
+ * 
+ * @category Input State Machine
+ */
 export type TouchEventPayload = {
     points: TouchPoints[];
 };
 
+/**
+ * @description The touch event mapping.
+ * 
+ * @category Input State Machine
+ */
 export type TouchEventMapping = {
     touchstart: TouchEventPayload;
     touchmove: TouchEventPayload;
     touchend: TouchEventPayload;
 }
 
-type TouchStateMachine = StateMachine<TouchEventMapping, TouchContext, TouchStates>;
-
+/**
+ * @description The idle state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private testVariable: string = "test";
-
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -54,24 +69,27 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         }],
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
-        return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): "PENDING" | "IDLE" {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        return "IDLE";
     }
 }
 
+/**
+ * @description The pending state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -86,24 +104,19 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         },
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchstart(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
-        return "IDLE";
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        if(context.getCurrentTouchPointsCount() === 2){
-            return "IN_PROGRESS";
-        }
-        return "IDLE";
     }
 
-    touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): void {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -121,18 +134,25 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         switch(panZoom){
             case "ZOOMING":
                 context.notifyOnZoom((currentStartAndEndDistance - initialStartAndEndDistance) * 0.005, midPointInViewPort);
-                return "IN_PROGRESS";
+                break;
             case "PANNING":
                 context.notifyOnPan(midPointDelta);
-                return "IN_PROGRESS";
+                break;
+            default:
+                console.warn("Unknown panZoom state", panZoom);
+                break;
         }
-        return "IN_PROGRESS"; 
     }
 }
 
+/**
+ * @description The in progress state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
-    private _eventReactions: Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> = {
+    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
         touchmove: {
             action: this.touchmove,
             defaultTargetState: "IN_PROGRESS",
@@ -141,13 +161,17 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
             action: this.touchend,
             defaultTargetState: "IDLE",
         },
+        touchstart: {
+            action: ()=> "IDLE",
+            defaultTargetState: "IDLE",
+        },
     };
 
-    get eventReactions(): Partial<EventAction<TouchEventMapping, TouchContext, TouchStates>> {
+    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates> {
         return this._eventReactions;
     }
 
-    touchmove(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchmove(context: TouchContext, payload: TouchEventPayload): void {
         const idents = payload.points.map(p => p.ident);
         const initialPositions = context.getInitialTouchPointsPositions(idents);
         const currentPositions = payload.points;
@@ -164,21 +188,33 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         context.updateTouchPoints(currentPositions);
         switch(panZoom){
             case "ZOOMING":
+                if(!context.alignCoordinateSystem){
+                    midPointInViewPort.y = -midPointInViewPort.y;
+                }
                 context.notifyOnZoom(-(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005, midPointInViewPort);
-                return "IN_PROGRESS";
+                break;
             case "PANNING":
+                if(!context.alignCoordinateSystem){
+                    midPointDelta.y = -midPointDelta.y;
+                }
                 context.notifyOnPan(midPointDelta);
-                return "IN_PROGRESS";
+                break;
+            default:
+                console.warn("Unknown panZoom state", panZoom);
+                break;
         }
-        return "IN_PROGRESS"; 
     }
 
-    touchend(stateMachine: TouchStateMachine, context: TouchContext, payload: TouchEventPayload): TouchStates {
+    touchend(context: TouchContext, payload: TouchEventPayload): void {
         context.removeTouchPoints(payload.points.map(p => p.ident));
-        return "IDLE";
     }
 }
 
+/**
+ * @description The touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class TouchInputStateMachine extends TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates> {
 
     constructor(context: TouchContext) {

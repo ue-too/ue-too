@@ -1,19 +1,35 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
-import { BoardKMTStrategy, DefaultBoardKMTStrategy, EventTargetWithPointerEvents } from 'src/kmt-strategy';
-import { BoardTouchStrategy, DefaultTouchStrategy } from 'src/touch-strategy';
-import { Point } from 'src/index';
+import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
+import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
+import { Point } from 'src/util/misc';
 import { PointCal } from 'point2point';
 
-import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-observer';
+import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publisher';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
-import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputObservable } from 'src/input-observer';
+import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
-import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanControlStateMachine, createDefaultZoomControlStateMachine } from 'src/control-center';
+import { InputFlowControl, CameraRig, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
+
 
 /**
- * @category Board
- * @translationBlock Usage
+ * This is for proxying the canvas context methods that need to flip the y-coordinates.
+ * @internal
+ */
+const methodsToFlip: Record<string, number[]> = {
+    fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
+    strokeRect: [1],
+    fillText: [1],
+    strokeText: [1],
+    lineTo: [1],
+    moveTo: [1],
+    quadraticCurveTo: [1, 3],
+    bezierCurveTo: [1, 3, 5],
+    arc: [1]
+};
+
+/**
+ * Usage
  * ```typescript
  * import { Board } from "@niuee/board";
  * 
@@ -32,26 +48,28 @@ import { InputControlCenter, RelayControlCenter, CameraRig, createDefaultPanCont
  * //.
  * }
  * ```
- * @description Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
+ * Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
  * 
  * ```typescript
- * import {Board} from "@niuee/board/boardify";
+ * import { Board } from "@niuee/board/boardify";
  * ```
+ * @category Board
+ * 
  */
 export default class Board {
     
     private _canvas: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
+    private _reversedContext: CanvasRenderingContext2D;
 
-    private _kmtStrategy: BoardKMTStrategy;
-    private _touchStrategy: BoardTouchStrategy;
+    private _kmtParser: KMTEventParser;
+    private _touchParser: TouchEventParser;
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
 
-    // private boardStateObserver: BoardStateObserver;
-    private _camera: ObservableBoardCamera;
-    private boardInputObserver: RawUserInputObservable;
+    private cameraRig: CameraRig;
+    private boardInputPublisher: RawUserInputPublisher;
 
     private lastUpdateTime: number = 0;
 
@@ -60,16 +78,17 @@ export default class Board {
     
     constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents = canvas){
         this._canvas = canvas;
-        this._camera = new DefaultBoardCamera();
-        this._camera.viewPortHeight = canvas.height;
-        this._camera.viewPortWidth = canvas.width;
-        this._camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
+        const camera = new DefaultBoardCamera();
+        camera.viewPortHeight = canvas.height;
+        camera.viewPortWidth = canvas.width;
+        camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
         let context = canvas.getContext('2d');
         if(context == null){
             throw new Error("Canvas 2d context is null");
         }
 
         this._context = context;
+        this._reversedContext = this.reverseYAxis();
 
         this.bindFunctions();
 
@@ -79,24 +98,20 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
-        const stateMachineContext = new CameraRig({
+        this.cameraRig = new CameraRig({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
             restrictXTranslation: false,
             restrictYTranslation: false,
             restrictZoom: false,
-        }, this._camera);
+        }, camera);
 
-        const panStateMachine = createDefaultPanControlStateMachine(stateMachineContext);
-        const zoomStateMachine = createDefaultZoomControlStateMachine(stateMachineContext);
-        const relayControlCenter = new RelayControlCenter(panStateMachine, zoomStateMachine);
+        this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
 
-        this.boardInputObserver = new RawUserInputObservable(relayControlCenter);
+        this._kmtParser = new VanillaKMTEventParser(canvas, eventTarget, this.boardInputPublisher, false);
 
-        this._kmtStrategy = new DefaultBoardKMTStrategy(canvas, eventTarget, relayControlCenter, false);
-
-        this._touchStrategy = new DefaultTouchStrategy(this._canvas, this.boardInputObserver);
+        this._touchParser = new VanillaTouchEventParser(this._canvas, this.boardInputPublisher);
         
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
@@ -109,18 +124,18 @@ export default class Board {
     }
 
     private registerEventListeners(){
-        this._kmtStrategy.setUp();
-        this._touchStrategy.setUp();
+        this._kmtParser.setUp();
+        this._touchParser.setUp();
     }
 
     private removeEventListeners(){
-        this._touchStrategy.tearDown();
-        this._kmtStrategy.tearDown();
+        this._touchParser.tearDown();
+        this._kmtParser.tearDown();
     }
 
     /**
      * @group LifeCycle
-     * @translationBlock This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.
+     * @description This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.
      */
     setup(){
         this.registerEventListeners();
@@ -130,7 +145,7 @@ export default class Board {
 
     /**
      * @group LifeCycle
-     * @translationBlock This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer. 
+     * @description This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer. 
      */
     tearDown(){
         this.removeEventListeners();
@@ -145,18 +160,18 @@ export default class Board {
     }
 
     /**
+     * @group Properties
      * @description This is in sync with the canvas width and the camera view port width. This is not the board's width.
      * If the `limitEntireViewPort` is set to true, the min zoom level is updated based on the width of the canvas.
-     * 
      */
     set width(width: number){
         this._canvas.width = width * window.devicePixelRatio;
         this._canvas.style.width = width + "px";
-        this._camera.viewPortWidth = width;
+        this.camera.viewPortWidth = width;
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
@@ -166,17 +181,18 @@ export default class Board {
     }
 
     /**
-     * @translationBlock This is in sync with the canvas height and the camera view port height. This is not the board's height.
+     * @group Properties
+     * @description This is in sync with the canvas height and the camera view port height. This is not the board's height.
      * If the limitEntireViewPort is set to true, the min zoom level is updated based on the height.
      */
     set height(height: number){
         this._canvas.height = height * window.devicePixelRatio;
         this._canvas.style.height = height + "px";
-        this._camera.viewPortHeight = height;
+        this.camera.viewPortHeight = height;
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this._camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.camera.boundaries, this._canvas.width / window.devicePixelRatio, this._canvas.height / window.devicePixelRatio, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
@@ -186,12 +202,14 @@ export default class Board {
     }
 
     /**
-     * @translationBlock This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.
+     * @description This is an attribute that determines if the coordinate system should be aligned with the one of the HTML canvas element. The default is true.
+     * If you set this to true, the coordinate system will be aligned with the one of the HTML canvas element.
+     * If you change this value during runtime, you should update the context to be aligned with the new coordinate system. (just call board.context again)
      */
     set alignCoordinateSystem(align: boolean){
         this._alignCoordinateSystem = align;
-        this._kmtStrategy.alignCoordinateSystem = align;
-        this._touchStrategy.alignCoordinateSystem = align;
+        this._kmtParser.alignCoordinateSystem = align;
+        this._touchParser.alignCoordinateSystem = align;
     }
 
     get alignCoordinateSystem(): boolean{
@@ -199,8 +217,8 @@ export default class Board {
     }
 
     /**
-     * @translationBlock Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively.
-     * If set to true the width and height of the board will resize with the window.
+     * @description Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively, 
+     * and the width and height of the board will resize with the window.
      */
     get fullScreen(): boolean {
         return this._fullScreen;
@@ -215,78 +233,125 @@ export default class Board {
     }
 
     /**
-     * @translationBlock The context used to draw stuff on the canvas.
+     * @description The context used to draw on the canvas.
+     * If alignCoordinateSystem is false, this returns a proxy that automatically negates y-coordinates for relevant drawing methods.
      */
-    get context(): CanvasRenderingContext2D{
+    get context(): CanvasRenderingContext2D {
+        if (!this._alignCoordinateSystem) {
+            return this._reversedContext;
+        }
         return this._context;
     }
 
+    private reverseYAxis(): CanvasRenderingContext2D {
+        return new Proxy(this._context, {
+            get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
+                const value = Reflect.get(target, prop, target);
+                
+                // Check if this is a method that needs y-coordinate flipping
+                if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
+                    return function(...args: any[]) {
+                        // Create a copy of the arguments
+                        const newArgs = [...args];
+                        
+                        // Flip the y-coordinates based on methodsToFlip configuration
+                        const yIndices = methodsToFlip[prop];
+                        for (const index of yIndices) {
+                            if (index < newArgs.length) {
+                                newArgs[index] = -newArgs[index];
+                            }
+                        }
+                        
+                        // Call the original method with the modified arguments
+                        return value.apply(target, newArgs);
+                    };
+                }
+                
+                // Return the original value for properties and methods that don't need modification
+                if (typeof value === 'function') {
+                    return function(...args: any[]) {
+                        return value.apply(target, args);
+                    };
+                }
+                
+                return value;
+            },
+            set(target, prop, value): boolean {
+                return Reflect.set(target, prop, value);
+            }
+        });
+    }
+
     /**
-     * @translationBlock Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.
+     * @description Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.
      * If set to false, only the center of the camera is bounded by the boundaries.
      */
     set limitEntireViewPort(value: boolean){
-        this.boardInputObserver.controlCenter.limitEntireViewPort = value;
+        this.cameraRig.limitEntireViewPort = value;
         if(value){
-            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this._camera.boundaries, this._canvas.width, this._canvas.height, this._camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, this._canvas.width, this._canvas.height, this.camera.rotation);
+            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
 
     get limitEntireViewPort(): boolean{
-        return this.boardInputObserver.controlCenter.limitEntireViewPort;
+        return this.cameraRig.limitEntireViewPort;
     }
 
     /**
-     * @translationBlock The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
+     * @description The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
      * You can implement your own strategy by implementing the BoardKMTStrategy interface.
      */
-    set kmtStrategy(strategy: BoardKMTStrategy){
-        this._kmtStrategy.tearDown();
-        strategy.setUp();
-        this._kmtStrategy = strategy;
+    set kmtParser(parser: KMTEventParser){
+        this._kmtParser.tearDown();
+        parser.setUp();
+        this._kmtParser = parser;
     }
 
-    get kmtStrategy(): BoardKMTStrategy{
-        return this._kmtStrategy;
+    get kmtParser(): KMTEventParser{
+        return this._kmtParser;
     }
 
     /**
-     * @translationBlock The strategy used to handle touch events. The default strategy is the DefaultTouchStrategy.
-     * You can implement your own strategy by implementing the BoardTouchStrategy interface.
+     * @description The parser used to handle touch events. The default parser is the DefaultTouchParser.
+     * You can have your own parser by implementing the BoardTouchParser interface.
      */
-    set touchStrategy(strategy: BoardTouchStrategy){
-        this._touchStrategy.tearDown();
-        strategy.setUp();
-        this._touchStrategy = strategy;
+    set touchParser(parser: TouchEventParser){
+        this._touchParser.tearDown();
+        parser.setUp();
+        this._touchParser = parser;
     }
 
-    get touchStrategy(): BoardTouchStrategy{
-        return this._touchStrategy;
+    get touchParser(): TouchEventParser{
+        return this._touchParser;
     }
 
     /**
-     * @translationBlock The underlying camera of the board. The camera of the board can be switched.
-     * The boundaries are based on camera. Meaning you can have camera with different boundaries, and you can switch between them during runtime.
+     * @description The underlying camera of the board. The camera of the board can be switched.
+     * The boundaries are based on camera meaning you can have cameras with different boundaries, and you can switch between them during runtime.
      */
     get camera(): ObservableBoardCamera{
-        return this._camera;
+        return this.cameraRig.camera;
     }
 
     set camera(camera: ObservableBoardCamera){
         camera.viewPortHeight = this._canvas.height / window.devicePixelRatio;
         camera.viewPortWidth = this._canvas.width / window.devicePixelRatio;
-        this._camera = camera;
+        this.camera = camera;
     }
 
-    get controlCenter(): InputControlCenter{
-        return this.boardInputObserver.controlCenter;
+    get flowControl(): InputFlowControl{
+        return this.boardInputPublisher.flowControl;
+    }
+
+    set flowControl(flowControl: InputFlowControl){
+        this.boardInputPublisher.flowControl = flowControl;
     }
 
     /**
-     * @translationBlock This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.
+     * @description This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.
      * @param timestamp 
      */
     public step(timestamp: number){
@@ -296,18 +361,18 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        const curBoundaries = this._camera.boundaries;
+        const curBoundaries = this.camera.boundaries;
         if (!boundariesFullyDefined(curBoundaries)){
             throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
         }
         this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
 
-        const transfromMatrix = this._camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
+        const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
     }
 
     /**
-     * @translationBlock Converts a point from window coordinates to world coordinates.
+     * @description Converts a point from window coordinates to world coordinates.
      * @param clickPointInWindow The point in window coordinates to convert.
      * @returns The converted point in world coordinates.
      */
@@ -318,61 +383,63 @@ export default class Board {
         if(!this._alignCoordinateSystem){
             pointInViewPort.y = -pointInViewPort.y;
         }
-        return this._camera.convertFromViewPort2WorldSpace(pointInViewPort);
+        return this.camera.convertFromViewPort2WorldSpace(pointInViewPort);
     }
 
     /**
-     * @translationBlock Add an camera movement event listener. The events are "pan", "zoom", and "rotate".
+     * @description Add an camera movement event listener. The events are "pan", "zoom", and "rotate".
+     * There's also an "all" event that will be triggered when any of the above events are triggered.
      * @param eventName The event name to listen for. The events are "pan", "zoom", and "rotate".
      * @param callback The callback function to call when the event is triggered. The event provided to the callback is different for the different events.
      * @returns The converted point in world coordinates.
      */
     on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
-        return this._camera.on(eventName, callback);
+        return this.camera.on(eventName, callback);
     }
 
     /**
-     * @translationBlock Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events. 
-     * Input event does not necesarily mean that the camera will move. The input event is the event that is triggered when the user interacts with the board.
+     * @description Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events. 
+     * There's also an "all" event that will be triggered when any of the above events are triggered.
+     * Input event does not necesarily mean that the camera will move. The input events are the events triggered when the user interacts with the board.
      * @param eventName 
      * @param callback 
      * @returns 
      */
     onInput<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=> void): UnsubscribeToUserRawInput {
-        return this.boardInputObserver.on(eventName, callback);
+        return this.boardInputPublisher.on(eventName, callback);
     }
 
     /**
-     * @translationBlock The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.
+     * @description The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.
      */
     get maxHalfTransHeight(): number | undefined{
-        return halfTranslationHeightOf(this._camera.boundaries);
+        return halfTranslationHeightOf(this.camera.boundaries);
     }
 
     /**
-     * @translationBlock The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.
+     * @description The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.
      */
     get maxHalfTransWidth(): number | undefined{
-        return halfTranslationWidthOf(this._camera.boundaries);
+        return halfTranslationWidthOf(this.camera.boundaries);
     }
 
     private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    this._camera.viewPortWidth = parseFloat(this._canvas.style.width);
+                    this.camera.viewPortWidth = parseFloat(this._canvas.style.width);
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 } else if(mutation.attributeName === "height"){
-                    this._camera.viewPortHeight = parseFloat(this._canvas.style.height);
+                    this.camera.viewPortHeight = parseFloat(this._canvas.style.height);
                     if(this.limitEntireViewPort){
-                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-                        if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                            this._camera.setMinZoomLevel(targetMinZoomLevel);
+                        const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.camera.setMinZoomLevel(targetMinZoomLevel);
                         }
                     }
                 }
@@ -387,19 +454,44 @@ export default class Board {
         }
     }
 
-    setMaxTransWidthAlignedMin(value: number){
-        const curBoundaries = this._camera.boundaries;
+    /**
+     * @group Helper Methods
+     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
+     */
+    setMaxTransWidthWithFixedMinBoundary(value: number){
+        const curBoundaries = this.camera.boundaries;
         const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
         const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
         if(curHorizontalMin == undefined){
-            this._camera.setHorizontalBoundaries(-value, value);
+            this.camera.setHorizontalBoundaries(-value, value);
         } else {
-            this._camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
+            this.camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
         }
         if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this._camera.boundaries, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.rotation);
-            if(zoomLevelBoundariesShouldUpdate(this._camera.zoomBoundaries, targetMinZoomLevel)){
-                this._camera.setMinZoomLevel(targetMinZoomLevel);
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
+    }
+
+    /**
+     * @group Helper Methods
+     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
+     */
+    setMaxTransWidthWithFixedMaxBoundary(value: number){
+        const curBoundaries = this.camera.boundaries;
+        const curMax = curBoundaries == undefined ? undefined: curBoundaries.max;
+        const curHorizontalMax = curMax == undefined ? undefined: curMax.x;
+        if(curHorizontalMax == undefined){
+            this.camera.setHorizontalBoundaries(-value, value);
+        } else {
+            this.camera.setHorizontalBoundaries(curHorizontalMax - value * 2, curHorizontalMax);
+        }
+        if(this.limitEntireViewPort){
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
