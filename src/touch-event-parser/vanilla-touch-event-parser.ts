@@ -2,6 +2,12 @@ import { RawUserInputPublisher } from "src/raw-input-publisher";
 import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
 
+/**
+ * @description The touch event parser.
+ * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * 
+ * @category Event Parser
+ */
 export interface TouchEventParser {
     disabled: boolean;
     alignCoordinateSystem: boolean;
@@ -15,12 +21,11 @@ export interface TouchEventParser {
     tearDown(): void;
 }
 
-type MininumTouchEvent = {
-
-};
-
 /**
- * @category Input Strategy
+ * @description The vanilla touch event parser.
+ * This parser converts the raw events to events that can be used by the input state machine.
+ * 
+ * @category Event Parser
  */
 export class VanillaTouchEventParser implements TouchEventParser {
 

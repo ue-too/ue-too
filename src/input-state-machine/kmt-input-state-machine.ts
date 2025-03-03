@@ -3,9 +3,18 @@ import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
 
-
+/**
+ * @description The possible states of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
 
+/**
+ * @description The payload for the pointer event.
+ * 
+ * @category Input State Machine
+ */
 export type PointerEventPayload = {
     x: number;
     y: number;
@@ -13,11 +22,21 @@ export type PointerEventPayload = {
 
 type EmptyPayload = {};
 
+/**
+ * @description The payload for the scroll event.
+ * 
+ * @category Input State Machine
+ */
 export type ScrollEventPayload = {
     deltaX: number;
     deltaY: number;
 }
 
+/**
+ * @description The payload for the scroll with ctrl event.
+ * 
+ * @category Input State Machine
+ */
 export type ScrollWithCtrlEventPayload = {
     deltaX: number;
     deltaY: number;
@@ -25,6 +44,11 @@ export type ScrollWithCtrlEventPayload = {
     y: number;
 }
 
+/**
+ * @description The payload mapping for the events of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export type KmtInputEventMapping = {
     leftPointerDown: PointerEventPayload;
     leftPointerUp: PointerEventPayload;
@@ -40,18 +64,29 @@ export type KmtInputEventMapping = {
     middlePointerMove: PointerEventPayload;
 }
 
-export interface World {
-    processPoint(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, point: Point): boolean;
-}
-
+/**
+ * @description Converts the point from window coordinates(browser) to view port coordinates.
+ * 
+ * @category Input State Machine
+ */
 export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasElement): Point {
     const canvasBoundingRect = canvas.getBoundingClientRect();
     const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
+/**
+ * @description The possible target states of the idle state.
+ * 
+ * @category Input State Machine
+ */
 export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL";
 
+/**
+ * @description The idle state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> {
 
     constructor() {
@@ -120,8 +155,18 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 }
 
+/**
+ * @description The possible target states of the ready to select state.
+ * 
+ * @category Input State Machine
+ */
 export type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
 
+/**
+ * @description The context for the ready to select state.
+ * 
+ * @category Input State Machine
+ */
 export type SelectionContext = {
     setSelectionEndPoint: (point: Point) => void;
     toggleSelectionBox: (show: boolean) => void;
@@ -130,6 +175,11 @@ export type SelectionContext = {
     canvas: HTMLCanvasElement;
 }
 
+/**
+ * @description The ready to select state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> {
 
     constructor() {
@@ -159,6 +209,11 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, Sele
 
 }
 
+/**
+ * @description The ready to pan via space bar state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
@@ -190,6 +245,11 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
     }
 }
 
+/**
+ * @description The initial pan state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
@@ -236,6 +296,11 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
     }
 }
 
+/**
+ * @description The ready to pan via scroll wheel state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
@@ -267,6 +332,11 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
 
 }
 
+/**
+ * @description The pan state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
@@ -313,6 +383,11 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
     }
 }
 
+/**
+ * @description The pan via scroll wheel state of the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
@@ -347,13 +422,11 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 }
 
-export class BoardWorld implements World {
-    processPoint(stateMachine: StateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>, point: Point): boolean {
-        // console.log("Processing point", point);
-        return false;
-    }
-}
-
+/**
+ * @description The keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class KmtInputStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> extends TemplateStateMachine<EventPayloadMapping, Context, States> {
 
 
@@ -374,6 +447,11 @@ export class KmtInputStateMachine<EventPayloadMapping, Context extends BaseConte
     }
 }
 
+/**
+ * @description Creates the keyboard mouse and trackpad input state machine.
+ * 
+ * @category Input State Machine
+ */
 export function createKmtInputStateMachine(context: KmtInputContext): TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
     const states = {
         IDLE: new KmtIdleState(),

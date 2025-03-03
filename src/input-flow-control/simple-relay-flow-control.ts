@@ -1,4 +1,4 @@
-import DefaultBoardCamera from "src/board-camera";
+import DefaultBoardCamera, { ObservableBoardCamera } from "src/board-camera";
 import { CameraRig, createDefaultCameraRig } from "./flow-control-with-animation-and-lock";
 import { InputFlowControl } from "./interface";
 import { Point } from "src/util/misc";
@@ -29,4 +29,21 @@ export class SimpleRelayFlowControl implements InputFlowControl {
         this._cameraRig.rotateBy(deltaRotation);
     }
     
+}
+
+/**
+ * @description Create a default relay control center.
+ * 
+ * @category Input Flow Control
+ */
+export function createDefaultFlowControl(camera: ObservableBoardCamera): InputFlowControl {
+    const context = createDefaultCameraRig(camera);
+    return new SimpleRelayFlowControl(context);
+}
+
+/**
+ * 
+ */
+export function createDefaultFlowControlWithCameraRig(cameraRig: CameraRig): InputFlowControl {
+    return new SimpleRelayFlowControl(cameraRig);
 }

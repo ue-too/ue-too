@@ -5,7 +5,7 @@ import type { KmtInputEventMapping, KmtInputContext, KmtInputStates } from "src/
 import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 
 /**
- * @category Input Strategy
+ * @category Event Parser
  */
 
 export interface KMTEventParser {
@@ -17,6 +17,12 @@ export interface KMTEventParser {
     tearDown(): void;
 }
 
+/**
+ * @description The minimum pointer event.
+ * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * 
+ * @category Event Parser
+ */
 export type MinimumPointerEvent = {
     button: number;
     pointerType: string;
@@ -25,6 +31,12 @@ export type MinimumPointerEvent = {
     buttons: number;
 }
 
+/**
+ * @description The minimum wheel event.
+ * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * 
+ * @category Event Parser
+ */
 export type MinimumWheelEvent = {
     preventDefault: () => void;
     deltaX: number;
@@ -34,16 +46,34 @@ export type MinimumWheelEvent = {
     clientY: number;
 }
 
+/**
+ * @description The minimum keyboard event.
+ * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * 
+ * @category Event Parser
+ */
 export type MinimumKeyboardEvent = {
     preventDefault: () => void;
     key: string;
 };
 
+/**
+ * @description The event target with pointer events.
+ * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * 
+ * @category Event Parser
+ */
 export type EventTargetWithPointerEvents = {
     addEventListener: (type: string, listener: (event: any) => void, options?: {passive: boolean}) => void;
     removeEventListener: (type: string, listener: (event: any) => void) => void;
 };
 
+/**
+ * @description The vanilla keyboard mouse and trackpad(KMT) event parser.
+ * This parser converts the raw events to events that can be used by the input state machine.
+ * 
+ * @category Event Parser
+ */
 export class VanillaKMTEventParser implements KMTEventParser {
 
     private _disabled: boolean;

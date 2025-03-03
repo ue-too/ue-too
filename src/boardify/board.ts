@@ -342,8 +342,12 @@ export default class Board {
         this.camera = camera;
     }
 
-    get controlCenter(): InputFlowControl{
-        return this.boardInputPublisher.controlCenter;
+    get flowControl(): InputFlowControl{
+        return this.boardInputPublisher.flowControl;
+    }
+
+    set flowControl(flowControl: InputFlowControl){
+        this.boardInputPublisher.flowControl = flowControl;
     }
 
     /**

@@ -255,12 +255,13 @@ export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig
     }, camera);
 }
 
+
 /**
- * @description Create a default relay control center.
+ * @description Create a flow control that allows animation and lock inputs.
  * 
  * @category Input Flow Control
  */
-export function createDefaultFlowControl(camera: ObservableBoardCamera): InputFlowControl {
+export function createFlowControlWithAnimationAndLock(camera: ObservableBoardCamera): InputFlowControl {
     const context = createDefaultCameraRig(camera);
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
@@ -272,7 +273,7 @@ export function createDefaultFlowControl(camera: ObservableBoardCamera): InputFl
  * 
  * @category Input Flow Control
  */
-export function createDefaultFlowControlWithCameraRig(cameraRig: CameraRig): InputFlowControl {
+export function createFlowControlWithAnimationAndLockWithCameraRig(cameraRig: CameraRig): InputFlowControl {
     const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
     const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
     return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine);

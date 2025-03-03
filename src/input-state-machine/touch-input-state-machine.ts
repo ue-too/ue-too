@@ -3,23 +3,42 @@ import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine
 import { TouchContext } from "./touch-input-context";
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
-
+/**
+ * @description The touch points.
+ * 
+ * @category Input State Machine
+ */
 export type TouchPoints = {
     ident: number,
     x: number,
     y: number,
 }
 
+/**
+ * @description The touch event payload.
+ * 
+ * @category Input State Machine
+ */
 export type TouchEventPayload = {
     points: TouchPoints[];
 };
 
+/**
+ * @description The touch event mapping.
+ * 
+ * @category Input State Machine
+ */
 export type TouchEventMapping = {
     touchstart: TouchEventPayload;
     touchmove: TouchEventPayload;
     touchend: TouchEventPayload;
 }
 
+/**
+ * @description The idle state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
@@ -63,6 +82,11 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
     }
 }
 
+/**
+ * @description The pending state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
@@ -121,6 +145,11 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
     }
 }
 
+/**
+ * @description The in progress state of the touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates> {
 
     private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates> = {
@@ -181,6 +210,11 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
     }
 }
 
+/**
+ * @description The touch input state machine.
+ * 
+ * @category Input State Machine
+ */
 export class TouchInputStateMachine extends TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates> {
 
     constructor(context: TouchContext) {
