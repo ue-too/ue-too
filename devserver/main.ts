@@ -1,5 +1,6 @@
 import "./media";
 import Board, { drawAxis, drawRuler, drawGrid } from "src/boardify";
+import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
 import { Point, PointCal } from "point2point";
 import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
 import { drawLine } from "./utils";
@@ -31,6 +32,7 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 }
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
+const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
@@ -59,12 +61,12 @@ const animation = new Animation(positionKeyframe, (value)=>{
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
     const pointInWorldShouldBeInViewPort = value;
     const cameraPositionSatisfy = cameraPositionToGet({x: 100, y: 100}, pointInWorldShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
-    (board.controlCenter as FlowControlWithAnimationAndLockInput).notifyPanToAnimationInput(cameraPositionSatisfy);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.controlCenter as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
@@ -123,8 +125,8 @@ resetCameraBtn.addEventListener("click", ()=>{
         percentage: 1,
         value: 0,
     }];
-    (board.controlCenter as FlowControlWithAnimationAndLockInput).initatePanTransition();
-    (board.controlCenter as FlowControlWithAnimationAndLockInput).initateZoomTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initatePanTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initateZoomTransition();
     compositeAnimation.startAnimation();
 });
 

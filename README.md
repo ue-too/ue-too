@@ -220,4 +220,12 @@ You can customize how the state machine works by defining the relationship betwe
 Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site mentioned in the [data flow](#data-flow) section)
 
 ## TODO
-There is a lot of util stuff that I don't think will fit in here in the readme. So stay tuned for the documentation site!
+- [ ] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
+- [ ] Add a `boardify-pixi` package that contains utility functions for the board to work with pixi.js.
+- [ ] Add a `boardify-fabric` package that contains utility functions for the board to work with fabric.js.
+- [ ] Add a `boardify-konva` package that contains utility functions for the board to work with konva.js.
+- [ ] Add an example of the board being used with react.
+- [ ] Add an example of the board being used with svelte. (I'm learning svelte right now so I can make a example for that)
+- [ ] Add an example of the board being used with vue. (Currently I don't have any plans on learning vue so probably not going to make one very soon)
+- [ ] A documentation site. There is a lot of util stuff that I don't think will fit in here in the readme. So stay tuned! (I am experimenting with docusaurus right now so it might be a docusaurus site)
+
