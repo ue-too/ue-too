@@ -18,22 +18,28 @@
 </p>
 
 <p align="center">
-  •
-  <a href="#install">Install</a> •
+  <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
-  <a href="#development">Development</a>
+  <a href="#development">Development</a> •
   <a href="#under-the-hood-a-rather-brief-overview">Structural Overview</a>
 </p>
 
 ![small-demo](./doc-media/small-demo.gif)
 
-_This is is a small demo of what board is capable of. (only showing a small fraction)_
+<p align="center">
+    _This is is a small demo gif of what board is capable of. (only showing a small fraction)_
+</p>
 
-This is not a complete package of drawing app like excalidraw or tl;draw, but a library which you can build on top of to make an app like excalidraw.
-board lets you skip the hassle of manually implementing panning, zooming, and rotating functionalities on the HTML canvas element, and well a little bit of math.
+## What board is?
+- Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
+- Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
+- Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
+- Serves as a foundation library for building your own infinite canvas applications
 
-What `board` is trying to do is very much like what [pixi-viewport](https://github.com/pixijs-userland/pixi-viewport) is doing. But `board` takes a step back, it's not heavily integrated with pixi.js. It can be used with just regular HTML canvas element without pixi.js, but it also works with canvas that uses [pixi.js](https://github.com/pixijs/pixijs), [fabric.js](https://github.com/fabricjs/fabric.js), and [konva](https://github.com/konvajs/konva).
+## What board is not?
+- A complete drawing application like Excalidraw, tldraw, or similar tools
+- A full-featured package with built-in drawing tools and user interfaces
 
 [CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
 
