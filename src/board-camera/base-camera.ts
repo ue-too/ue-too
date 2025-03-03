@@ -8,7 +8,6 @@ import { PointCal } from 'point2point';
 import { BoardCamera } from './interface';
 
 /**
- * @category board camera
  * 
  * @description This is the base class for the camera. It is used to create a camera that can be used to view a board.
  * 
@@ -17,6 +16,7 @@ import { BoardCamera } from './interface';
  * With the {@link CameraRig} class, you can create a camera system that can be used to achieve the infinite canvas effect.
  * 
  * This class is not observable (you can not register a callback for camera state changes). If you need to observe the camera state, use the {@link DefaultBoardCamera} class instead.
+ * @category Camera
  */
 export default class BaseCamera implements BoardCamera {
 

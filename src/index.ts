@@ -4,7 +4,6 @@ export * from "./boardify";
 export * from "./camera-update-publisher";
 export * from "./input-flow-control";
 export * from "./drawing-engine"
-export * from "./ease-functions";
 export * from "./raw-input-publisher";
 export * from "./input-state-machine";
 export * from "./kmt-event-parser";
