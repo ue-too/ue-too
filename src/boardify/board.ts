@@ -110,6 +110,8 @@ export default class Board {
             restrictXTranslation: false,
             restrictYTranslation: false,
             restrictZoom: false,
+            clampTranslation: true,
+            clampZoom: true,
         }, camera);
 
         this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
@@ -555,4 +557,27 @@ export default class Board {
         this.cameraRig.configure({restrictRotation: value});
     }
 
+    get clampTranslation(): boolean{
+        return this.cameraRig.config.clampTranslation;
+    }
+
+    set clampTranslation(value: boolean){
+        this.cameraRig.configure({clampTranslation: value});
+    }
+    
+    get clampZoom(): boolean{
+        return this.cameraRig.config.clampZoom;
+    }
+
+    set clampZoom(value: boolean){
+        this.cameraRig.configure({clampZoom: value});
+    }
+
+    get clampRotation(): boolean{
+        return this.cameraRig.config.clampRotation;
+    }
+
+    set clampRotation(value: boolean){
+        this.cameraRig.configure({clampRotation: value});
+    }
 }

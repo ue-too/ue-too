@@ -120,7 +120,7 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
         this._zoomByAtWorld = createDefaultZoomByAtWorldHandler();
         this._rotateBy = createDefaultRotateByHandler();
         this._rotateTo = createDefaultRotateToHandler();
-        this._config = {...config, restrictRotation: false};
+        this._config = {...config, restrictRotation: false, clampRotation: true};
         this._camera = camera;
     }
 
@@ -252,6 +252,8 @@ export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig
         restrictXTranslation: false,
         restrictYTranslation: false,
         restrictZoom: false,
+        clampTranslation: true,
+        clampZoom: true,
     }, camera);
 }
 

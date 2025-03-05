@@ -30,6 +30,10 @@ export type PanHandlerConfig = {
      * @description Whether to restrict the relative y translation. (because the camera can be rotated, the relative y translation is the vertical direction of what the user sees on the screen)
      */
     restrictRelativeYTranslation: boolean;
+    /**
+     * @description Whether to clamp the translation.
+     */
+    clampTranslation: boolean;
 }
 
 /**
@@ -116,6 +120,9 @@ export function restrictPanByHandler(delta: Point, camera: BoardCamera, config: 
  * @category Camera
  */
 export function clampToHandler(destination: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+    if(!config.clampTranslation){
+        return destination;
+    }
     let actualDest = clampPoint(destination, camera.boundaries);
     if(config.limitEntireViewPort){
         actualDest = clampPointEntireViewPort(destination, camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation);
@@ -131,6 +138,9 @@ export function clampToHandler(destination: Point, camera: BoardCamera, config: 
  * @category Camera
  */
 export function clampByHandler(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+    if(!config.clampTranslation){
+        return delta;
+    }
     let actualDelta = PointCal.subVector(clampPoint(PointCal.addVector(camera.position, delta), camera.boundaries), camera.position);
     if(config.limitEntireViewPort){
         actualDelta = PointCal.subVector(clampPointEntireViewPort(PointCal.addVector(camera.position, delta), camera.viewPortWidth, camera.viewPortHeight, camera.boundaries, camera.zoomLevel, camera.rotation), camera.position);

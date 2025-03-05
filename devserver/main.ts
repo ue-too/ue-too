@@ -49,6 +49,8 @@ const config: ZoomHandlerConfig = {
     restrictYTranslation: false,
     restrictRelativeXTranslation: false,
     restrictRelativeYTranslation: false,
+    clampTranslation: true,
+    clampZoom: true,
 }
 
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
