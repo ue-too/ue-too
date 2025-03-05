@@ -35,7 +35,7 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
-board.alignCoordinateSystem = true;
+board.alignCoordinateSystem = false;
 console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
