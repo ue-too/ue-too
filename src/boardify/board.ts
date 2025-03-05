@@ -3,6 +3,7 @@ import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined
 import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
 import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
 import { Point } from 'src/util/misc';
+import { reverseYAxis } from 'src/boardify/utils';
 import { PointCal } from 'point2point';
 
 import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publisher';
@@ -11,23 +12,6 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 
 import { InputFlowControl, CameraRig, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
 import { createKmtInputStateMachine, createTouchInputStateMachine, KmtInputStateMachine, ObservableInputTracker, TouchInputStateMachine, TouchInputTracker } from 'src/input-state-machine';
-
-
-/**
- * This is for proxying the canvas context methods that need to flip the y-coordinates.
- * @internal
- */
-const methodsToFlip: Record<string, number[]> = {
-    fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
-    strokeRect: [1],
-    fillText: [1],
-    strokeText: [1],
-    lineTo: [1],
-    moveTo: [1],
-    quadraticCurveTo: [1, 3],
-    bezierCurveTo: [1, 3, 5],
-    arc: [1]
-};
 
 /**
  * Usage
@@ -87,13 +71,13 @@ export default class Board {
         camera.viewPortHeight = canvas.height;
         camera.viewPortWidth = canvas.width;
         camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
-        let context = canvas.getContext('2d');
+        const context = canvas.getContext('2d');
         if(context == null){
             throw new Error("Canvas 2d context is null");
         }
 
         this._context = context;
-        this._reversedContext = this.reverseYAxis();
+        this._reversedContext = reverseYAxis(context);
 
         this.bindFunctions();
 
@@ -254,45 +238,6 @@ export default class Board {
             return this._reversedContext;
         }
         return this._context;
-    }
-
-    private reverseYAxis(): CanvasRenderingContext2D {
-        return new Proxy(this._context, {
-            get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
-                const value = Reflect.get(target, prop, target);
-                
-                // Check if this is a method that needs y-coordinate flipping
-                if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
-                    return function(...args: any[]) {
-                        // Create a copy of the arguments
-                        const newArgs = [...args];
-                        
-                        // Flip the y-coordinates based on methodsToFlip configuration
-                        const yIndices = methodsToFlip[prop];
-                        for (const index of yIndices) {
-                            if (index < newArgs.length) {
-                                newArgs[index] = -newArgs[index];
-                            }
-                        }
-                        
-                        // Call the original method with the modified arguments
-                        return value.apply(target, newArgs);
-                    };
-                }
-                
-                // Return the original value for properties and methods that don't need modification
-                if (typeof value === 'function') {
-                    return function(...args: any[]) {
-                        return value.apply(target, args);
-                    };
-                }
-                
-                return value;
-            },
-            set(target, prop, value): boolean {
-                return Reflect.set(target, prop, value);
-            }
-        });
     }
 
     /**
