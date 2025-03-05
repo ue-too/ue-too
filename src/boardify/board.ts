@@ -10,6 +10,7 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
 import { InputFlowControl, CameraRig, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
+import { createKmtInputStateMachine, createTouchInputStateMachine, KmtInputStateMachine, ObservableInputTracker, TouchInputStateMachine, TouchInputTracker } from 'src/input-state-machine';
 
 
 /**
@@ -67,9 +68,13 @@ export default class Board {
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
-
+    
     private cameraRig: CameraRig;
     private boardInputPublisher: RawUserInputPublisher;
+    private _observableInputTracker: ObservableInputTracker;
+    private _touchInputTracker: TouchInputTracker;
+    private _touchInputStateMachine: TouchInputStateMachine;
+    private _kmtInputStateMachine: KmtInputStateMachine;
 
     private lastUpdateTime: number = 0;
 
@@ -109,9 +114,15 @@ export default class Board {
 
         this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
 
-        this._kmtParser = new VanillaKMTEventParser(canvas, eventTarget, this.boardInputPublisher, false);
+        this._observableInputTracker = new ObservableInputTracker(canvas, this.boardInputPublisher);
+        this._touchInputTracker = new TouchInputTracker(canvas, this.boardInputPublisher);
 
-        this._touchParser = new VanillaTouchEventParser(this._canvas, this.boardInputPublisher);
+        this._kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
+        this._touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
+        
+        this._kmtParser = new VanillaKMTEventParser(eventTarget, this._kmtInputStateMachine);
+        this._touchParser = new VanillaTouchEventParser(this._canvas, this._touchInputStateMachine);
+
         
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
@@ -208,8 +219,8 @@ export default class Board {
      */
     set alignCoordinateSystem(align: boolean){
         this._alignCoordinateSystem = align;
-        this._kmtParser.alignCoordinateSystem = align;
-        this._touchParser.alignCoordinateSystem = align;
+        this._observableInputTracker.alignCoordinateSystem = align;
+        this._touchInputTracker.alignCoordinateSystem = align;
     }
 
     get alignCoordinateSystem(): boolean{
@@ -495,4 +506,53 @@ export default class Board {
             }
         }
     }
+
+    get restrictRelativeXTranslation(): boolean{
+        return this.cameraRig.config.restrictRelativeXTranslation;
+    }
+
+    get restrictRelativeYTranslation(): boolean{
+        return this.cameraRig.config.restrictRelativeYTranslation;
+    }
+
+    get restrictXTranslation(): boolean{
+        return this.cameraRig.config.restrictXTranslation;
+    }
+
+    get restrictYTranslation(): boolean{
+        return this.cameraRig.config.restrictYTranslation;
+    }
+    
+    set restrictRelativeXTranslation(value: boolean){
+        this.cameraRig.config.restrictRelativeXTranslation = value;
+    }
+
+    set restrictRelativeYTranslation(value: boolean){
+        this.cameraRig.configure({restrictRelativeYTranslation: value});
+    }
+
+    set restrictXTranslation(value: boolean){
+        this.cameraRig.configure({restrictXTranslation: value});
+    }
+    
+    set restrictYTranslation(value: boolean){
+        this.cameraRig.configure({restrictYTranslation: value});
+    }
+
+    get restrictZoom(): boolean{
+        return this.cameraRig.config.restrictZoom;
+    }
+
+    set restrictZoom(value: boolean){
+        this.cameraRig.configure({restrictZoom: value});
+    }
+
+    get restrictRotation(): boolean{
+        return this.cameraRig.config.restrictRotation;
+    }
+
+    set restrictRotation(value: boolean){
+        this.cameraRig.configure({restrictRotation: value});
+    }
+
 }

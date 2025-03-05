@@ -211,7 +211,7 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
         return this._camera;
     }
 
-    get config(): PanHandlerConfig & BaseZoomHandlerConfig {
+    get config(): CameraRigConfig {
         return this._config;
     }
 

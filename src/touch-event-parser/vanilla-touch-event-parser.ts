@@ -10,7 +10,6 @@ import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
  */
 export interface TouchEventParser {
     disabled: boolean;
-    alignCoordinateSystem: boolean;
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
@@ -40,12 +39,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, stateMachine: TouchInputStateMachine){
         this._canvas = canvas;
         this._disabled = false;
-        this._touchInputTracker = new TouchInputTracker(canvas, inputPublisher);
-        this._touchInputTracker.alignCoordinateSystem = alignCoordinateSystem;
-        this.touchSM = new TouchInputStateMachine(this._touchInputTracker);
+        this.touchSM = stateMachine;
 
         this.bindListeners();
     }

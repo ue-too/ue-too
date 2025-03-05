@@ -1,16 +1,15 @@
 import "./media";
-import Board, { drawAxis, drawRuler, drawGrid } from "src/boardify";
+import Board from "src/boardify";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
 import { Point, PointCal } from "point2point";
-import { drawVectorTip, drawXAxis, drawYAxis, drawArrow } from "./drawing-util";
-import { drawLine } from "./utils";
-import { Container, SelectionBox } from "src/drawing-engine";
+import { drawXAxis, drawYAxis } from "./drawing-util";
+import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
 import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
-import type { BoardCamera, ZoomHandlerConfig } from "src/board-camera";
+import type { ZoomHandlerConfig } from "src/board-camera";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -35,7 +34,7 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
-board.alignCoordinateSystem = true;
+board.alignCoordinateSystem = false;
 console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
@@ -55,7 +54,8 @@ const config: ZoomHandlerConfig = {
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
 const rotationKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.rotation, easingFn: EasingFunctions.linear}];
-
+// board.restrictXTranslation = true;
+board.restrictYTranslation = true;
 const animation = new Animation(positionKeyframe, (value)=>{
     // const pointInWorld = board.camera.convertFromViewPort2WorldSpace(value);
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
@@ -183,7 +183,7 @@ function step(timestamp: number){
     drawingEngine.drawWithContext(board.context, deltaMiliseconds);
 
     const fourCorners = calculateTopFourCorners();
-    drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
+    // drawRuler(board.context, fourCorners.topLeft, fourCorners.topRight, fourCorners.bottomLeft, fourCorners.bottomRight, true, board.camera.zoomLevel);
     // layout.render(result);
     // board.context.strokeStyle = 'red';
     // board.context.beginPath();

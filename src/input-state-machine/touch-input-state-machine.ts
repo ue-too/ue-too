@@ -215,14 +215,13 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
  * 
  * @category Input State Machine
  */
-export class TouchInputStateMachine extends TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates> {
+export type TouchInputStateMachine = TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates>;
 
-    constructor(context: TouchContext) {
-        super({
+export function createTouchInputStateMachine(context: TouchContext): TouchInputStateMachine {
+    return new TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates>(
+        {
             IDLE: new IdleState(),
             PENDING: new PendingState(),
             IN_PROGRESS: new InProgressState(),
         }, "IDLE", context);
-    }
-
 }
