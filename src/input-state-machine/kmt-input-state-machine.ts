@@ -1,4 +1,4 @@
-import { BaseContext, EventReactions, EventGuards, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "../being/interfaces";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
 import { KmtInputContext } from "./kmt-input-context";
@@ -422,37 +422,14 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 }
 
-/**
- * @description The keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
- */
-export class KmtInputStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> extends TemplateStateMachine<EventPayloadMapping, Context, States> {
-
-
-    constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context) {
-        super(states, initialState, context);
-    }
-
-    setContext(context: Context): void {
-        this._context = context;
-    }
-
-    get possibleStates(): States[] {
-        return this._statesArray;
-    }
-
-    get states(): Record<States, State<EventPayloadMapping, Context, States>> {
-        return this._states;
-    }
-}
+export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
 
 /**
  * @description Creates the keyboard mouse and trackpad input state machine.
  * 
  * @category Input State Machine
  */
-export function createKmtInputStateMachine(context: KmtInputContext): TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export function createKmtInputStateMachine(context: KmtInputContext): KmtInputStateMachine {
     const states = {
         IDLE: new KmtIdleState(),
         READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),

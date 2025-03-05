@@ -13,6 +13,7 @@ import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pa
  */
 export type BaseZoomHandlerConfig = {
     restrictZoom: boolean;
+    clampZoom: boolean;
 };
 
 /**
@@ -175,6 +176,9 @@ export function clampZoomToAtHandler(destination: number, camera: BoardCamera, a
  * @category Camera
  */
 export function clampZoomToHandler(destination: number, camera: BoardCamera, config: BaseZoomHandlerConfig): number {
+    if(!config.clampZoom){
+        return destination;
+    }
     return clampZoomLevel(destination, camera.zoomBoundaries);
 }
 
@@ -186,6 +190,9 @@ export function clampZoomToHandler(destination: number, camera: BoardCamera, con
  * @category Camera
  */
 export function clampZoomByHandler(delta: number, camera: BoardCamera, config: BaseZoomHandlerConfig): number {
+    if(!config.clampZoom){
+        return delta;
+    }
     let targetZoom = camera.zoomLevel + delta;
     targetZoom = clampZoomLevel(targetZoom, camera.zoomBoundaries);
     delta = targetZoom - camera.zoomLevel;

@@ -220,23 +220,23 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
     }
 
     notifyZoomByAtInput(delta: number, at: Point): void {
-        this.happens("userZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
+        this.happens("userZoomByAtInput", {deltaZoom: delta, anchorPoint: at});
     }
 
     notifyZoomByAtInputAnimation(delta: number, at: Point): void {
-        this.happens("transitionZoomByAtInput", {deltaZoom: delta, anchorPoint: at}, this._context);
+        this.happens("transitionZoomByAtInput", {deltaZoom: delta, anchorPoint: at});
     }
 
     notifyZoomToAtCenterInput(targetZoom: number, at: Point): void {
-        this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom, anchorPoint: at}, this._context);
+        this.happens("transitionZoomToAtCenterInput", {targetZoom: targetZoom, anchorPoint: at});
     }
 
     notifyZoomToAtWorldInput(targetZoom: number, at: Point): void {
-        this.happens("transitionZoomToAtWorldInput", {targetZoom: targetZoom, anchorPoint: at}, this._context);
+        this.happens("transitionZoomToAtWorldInput", {targetZoom: targetZoom, anchorPoint: at});
     }
 
     initateTransition(): void {
-        this.happens("initiateTransition", {}, this._context);
+        this.happens("initiateTransition", {});
     }
 }
 

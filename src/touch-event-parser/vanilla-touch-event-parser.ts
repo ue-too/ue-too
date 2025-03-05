@@ -10,7 +10,6 @@ import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
  */
 export interface TouchEventParser {
     disabled: boolean;
-    alignCoordinateSystem: boolean;
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
@@ -40,12 +39,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher, alignCoordinateSystem: boolean = true){
+    constructor(canvas: HTMLCanvasElement, stateMachine: TouchInputStateMachine){
         this._canvas = canvas;
         this._disabled = false;
-        this._touchInputTracker = new TouchInputTracker(canvas, inputPublisher);
-        this._touchInputTracker.alignCoordinateSystem = alignCoordinateSystem;
-        this.touchSM = new TouchInputStateMachine(this._touchInputTracker);
+        this.touchSM = stateMachine;
 
         this.bindListeners();
     }
@@ -134,7 +131,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchstart", {points: pointsAdded}, this._touchInputTracker);
+        this.touchSM.happens("touchstart", {points: pointsAdded});
         e.preventDefault();
     }
 
@@ -146,7 +143,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
+        this.touchSM.happens("touchend", {points: pointsRemoved});
     }
 
     touchendHandler(e: TouchEvent){
@@ -157,7 +154,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
+        this.touchSM.happens("touchend", {points: pointsRemoved});
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -169,6 +166,6 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.targetTouches.length; i++) {
             pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
         }
-        this.touchSM.happens("touchmove", {points: pointsMoved}, this._touchInputTracker);
+        this.touchSM.happens("touchmove", {points: pointsMoved});
     }
 }
