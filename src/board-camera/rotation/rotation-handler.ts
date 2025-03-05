@@ -13,6 +13,10 @@ export type RotationHandlerConfig = {
      * @description Whether to restrict the rotation. (if true, rotation input will be ignored)
      */
     restrictRotation: boolean;
+    /**
+     * @description Whether to clamp the rotation if the rotation is out of the rotation boundaries.
+     */
+    clampRotation: boolean;
 };
 
 /**
@@ -53,6 +57,9 @@ export function baseRotateByHandler(delta: number, camera: BoardCamera, config: 
  * @category Camera
  */
 export function clampRotateByHandler(delta: number, camera: BoardCamera, config: RotationHandlerConfig): number {
+    if(!config.clampRotation){
+        return delta;
+    }
     const targetRotation = normalizeAngleZero2TwoPI(camera.rotation + delta);
     const clampedRotation = clampRotation(targetRotation, camera.rotationBoundaries);
     const diff = angleSpan(camera.rotation, clampedRotation);
@@ -90,6 +97,9 @@ export function baseRotateToHandler(targetRotation: number, camera: BoardCamera,
  * @category Camera
  */
 export function clampRotateToHandler(targetRotation: number, camera: BoardCamera, config: RotationHandlerConfig): number {
+    if(!config.clampRotation){
+        return targetRotation;
+    }
     const clampedRotation = clampRotation(targetRotation, camera.rotationBoundaries);
     const diff = angleSpan(camera.rotation, clampedRotation);
     return diff;

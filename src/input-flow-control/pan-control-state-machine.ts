@@ -78,7 +78,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * @category Input Flow Control
      */
     notifyPanInput(diff: Point): void{
-        this.happens("userPanByInput", {diff: diff}, this._context);
+        this.happens("userPanByInput", {diff: diff});
     }
 
     /**
@@ -87,7 +87,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * @category Input Flow Control
      */
     notifyPanToAnimationInput(target: Point): void{
-        this.happens("transitionPanToInput", {target: target}, this._context);
+        this.happens("transitionPanToInput", {target: target});
     }
 
     /**
@@ -96,7 +96,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * @category Input Flow Control
      */
     initateTransition(): void{
-        this.happens("initateTransition", {}, this._context);
+        this.happens("initateTransition", {});
     }
 
     set limitEntireViewPort(limit: boolean){
