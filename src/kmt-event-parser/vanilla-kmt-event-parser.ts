@@ -174,11 +174,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
             return;
         }
     }
@@ -188,11 +188,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
             return;
         }
     }
@@ -202,11 +202,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.buttons === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
         if(e.buttons === 4 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY}, this._inputTracker);
+            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
     }
@@ -215,9 +215,9 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){
-            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY}, this._inputTracker);
+            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY}, this._inputTracker);
+            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
         }
     }
 
@@ -228,7 +228,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
             e.preventDefault();
-            this.stateMachine.happens("spacebarDown", {}, this._inputTracker);
+            this.stateMachine.happens("spacebarDown", {});
         }
     }
 
@@ -237,7 +237,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.stateMachine.happens("spacebarUp", {}, this._inputTracker);
+            this.stateMachine.happens("spacebarUp", {});
         }
     }
 

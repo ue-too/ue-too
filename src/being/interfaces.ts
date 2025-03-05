@@ -179,7 +179,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
+    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined {
         this._happensCallbacks.forEach(callback => callback(event, payload, this._context));
         const nextState = this._states[this._currentState].handles(event, payload, this._context);
         if(nextState !== undefined && nextState !== this._currentState){

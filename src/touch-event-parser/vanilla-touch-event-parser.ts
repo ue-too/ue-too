@@ -134,7 +134,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchstart", {points: pointsAdded}, this._touchInputTracker);
+        this.touchSM.happens("touchstart", {points: pointsAdded});
         e.preventDefault();
     }
 
@@ -146,7 +146,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
+        this.touchSM.happens("touchend", {points: pointsRemoved});
     }
 
     touchendHandler(e: TouchEvent){
@@ -157,7 +157,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved}, this._touchInputTracker);
+        this.touchSM.happens("touchend", {points: pointsRemoved});
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -169,6 +169,6 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.targetTouches.length; i++) {
             pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
         }
-        this.touchSM.happens("touchmove", {points: pointsMoved}, this._touchInputTracker);
+        this.touchSM.happens("touchmove", {points: pointsMoved});
     }
 }
