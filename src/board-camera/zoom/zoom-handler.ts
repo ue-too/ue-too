@@ -48,7 +48,7 @@ export type ZoomToAtHandlerFunction = (destination: number, camera: BoardCamera,
  * 
  * @category Camera
  */
-export type ZoomByAtHandlerFunction = (delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig) => number;
+export type ZoomByAtHandlerFunction = (delta: number, camera: BoardCamera, at: Point,config: ZoomHandlerConfig) => number;
 
 /**
  * @description The function signature for the zoom to handler.
@@ -315,10 +315,10 @@ export function createDefaultZoomToAtWorldHandler(): ZoomToAtHandlerFunction {
  * @category Camera
  */
 export function createDefaultZoomByAtWorldHandler(): ZoomByAtHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<number, [BoardCamera, Point, ZoomHandlerConfig]>(
         clampZoomByAtHandler,
         restrictZoomByAtHandler,
-        baseZoomByAtWorldHandler,
+        // baseZoomByAtWorldHandler,
     );
 }
 
@@ -343,9 +343,8 @@ export function createDefaultZoomToOnlyHandler(): ZoomToHandlerFunction {
  * @category Camera
  */
 export function createDefaultZoomByOnlyHandler(): ZoomByHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<number, [BoardCamera, BaseZoomHandlerConfig]>(
         clampZoomByHandler,
         restrictZoomByHandler,
-        baseZoomByHandler,
     );
 }
