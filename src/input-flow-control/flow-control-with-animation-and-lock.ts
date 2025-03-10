@@ -1,4 +1,4 @@
-import { createDefaultPanByHandler, PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
+import { createDefaultPanByHandler, createDefaultPanToHandler, PanByHandlerFunction, PanHandlerConfig, PanToHandlerFunction } from "src/board-camera/pan/pan-handlers";
 
 import { 
     createDefaultZoomToAtHandler, 
@@ -99,6 +99,7 @@ export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
 export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
+    private _panTo: PanToHandlerFunction;
     private _zoomToAt: ZoomToAtHandlerFunction;
     private _zoomByAt: ZoomByAtHandlerFunction;
     private _zoomTo: ZoomToHandlerFunction;
@@ -112,6 +113,7 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
 
     constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
+        this._panTo = createDefaultPanToHandler();
         this._zoomToAt = createDefaultZoomToAtHandler();
         this._zoomByAt = createDefaultZoomByAtHandler();
         this._zoomTo = createDefaultZoomToOnlyHandler();
@@ -135,7 +137,13 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
      * @description Zoom by a certain amount at a certain point. The point is in the viewport coordinate system.
      */
     zoomByAt(delta: number, at: Point): void {
-        this._zoomByAt(delta, this._camera, at, {...this._config, panByHandler: this._panBy});
+        let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
+        const transformedDelta = this._zoomByAt(delta, this._camera, at, {...this._config, panByHandler: this._panBy});
+        this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
+        let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
+        const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+        const transformedDiff = this._panBy(diff, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
     }
 
     /**
@@ -171,15 +179,16 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
      */
     panBy(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        this._panBy(diffInWorld, this._camera, this._config);
+        const actualDelta = this._panBy(diffInWorld, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, actualDelta));
     }
 
     /**
      * @description Pan to a certain point. (target is in the world coordinate system)
      */
     panTo(target: Point): void {
-        const deltaInWorld = PointCal.subVector(target, this._camera.position);
-        this._panBy(deltaInWorld, this._camera, this._config);
+        const transformedTarget = this._panTo(target, this._camera, this._config);
+        this._camera.setPosition(transformedTarget);
     }
 
     /**

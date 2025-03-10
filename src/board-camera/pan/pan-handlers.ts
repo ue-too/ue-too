@@ -9,11 +9,20 @@ import { clampPoint, clampPointEntireViewPort } from "src/board-camera/utils/pos
  * 
  * @category Camera
  */
-export type PanHandlerConfig = {
+export type PanHandlerConfig = PanHandlerRestrictionConfig & PanHandlerClampConfig;
+
+export type PanHandlerClampConfig = {
     /**
      * @description Whether to limit the pan to the entire view port.
      */
     limitEntireViewPort: boolean;
+    /**
+     * @description Whether to clamp the translation.
+     */
+    clampTranslation: boolean;
+};
+
+export type PanHandlerRestrictionConfig = {
     /**
      * @description Whether to restrict the x translation.
      */
@@ -30,11 +39,7 @@ export type PanHandlerConfig = {
      * @description Whether to restrict the relative y translation. (because the camera can be rotated, the relative y translation is the vertical direction of what the user sees on the screen)
      */
     restrictRelativeYTranslation: boolean;
-    /**
-     * @description Whether to clamp the translation.
-     */
-    clampTranslation: boolean;
-}
+};
 
 /**
  * @description Function Type that is used to define the "pan to" handler.
@@ -61,25 +66,24 @@ export type PanByHandlerFunction = (delta: Point, camera: BoardCamera, config: P
  * @category Camera
  */
 export function createDefaultPanToHandler(): PanToHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<Point, [BoardCamera, PanHandlerConfig]>(
         restrictPanToHandler,
         clampToHandler,
-        PanToBaseHandler
     );
 }
 
 /**
  * @description Helper function that creates a default "pan by" handler.
+ * The resulting pan by handler takes in a delta that is in "stage/context/world" space.
  * The default pan by handler will first restrict the pan by the view port, then clamp the pan by the boundaries, and then pan by the delta.
  * 
  * @see {@link createHandlerChain} to create your own custom pan handler pipeline. (you can also use this function as a part of your own custom pan handler pipeline)
  * @category Camera
  */
 export function createDefaultPanByHandler(): PanByHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<Point, [BoardCamera, PanHandlerConfig]>(
         restrictPanByHandler,
         clampByHandler,
-        PanByBaseHandler
     );
 }
 
@@ -90,7 +94,7 @@ export function createDefaultPanByHandler(): PanByHandlerFunction {
  * 
  * @category Camera
  */
-export function restrictPanToHandler(destination: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+export function restrictPanToHandler(destination: Point, camera: BoardCamera, config: PanHandlerRestrictionConfig): Point {
     let delta = PointCal.subVector(destination, camera.position);
     delta = convertDeltaToComplyWithRestriction(delta, camera, config);
     if (delta.x === 0 && delta.y === 0) {
@@ -107,7 +111,7 @@ export function restrictPanToHandler(destination: Point, camera: BoardCamera, co
  * 
  * @category Camera
  */
-export function restrictPanByHandler(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+export function restrictPanByHandler(delta: Point, camera: BoardCamera, config: PanHandlerRestrictionConfig): Point {
     delta = convertDeltaToComplyWithRestriction(delta, camera, config);
     return delta;
 }
@@ -119,7 +123,7 @@ export function restrictPanByHandler(delta: Point, camera: BoardCamera, config: 
  * 
  * @category Camera
  */
-export function clampToHandler(destination: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+export function clampToHandler(destination: Point, camera: BoardCamera, config: PanHandlerClampConfig): Point {
     if(!config.clampTranslation){
         return destination;
     }
@@ -137,7 +141,7 @@ export function clampToHandler(destination: Point, camera: BoardCamera, config: 
  * 
  * @category Camera
  */
-export function clampByHandler(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+export function clampByHandler(delta: Point, camera: BoardCamera, config: PanHandlerClampConfig): Point {
     if(!config.clampTranslation){
         return delta;
     }
@@ -178,7 +182,7 @@ function PanToBaseHandler(destination: Point, camera: BoardCamera, config: PanHa
  * 
  * @category Camera
  */
-export function convertDeltaToComplyWithRestriction(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
+export function convertDeltaToComplyWithRestriction(delta: Point, camera: BoardCamera, config: PanHandlerRestrictionConfig): Point {
     if(config.restrictXTranslation && config.restrictYTranslation){
         return {x: 0, y: 0};
     }

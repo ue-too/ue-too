@@ -57,7 +57,7 @@ const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.ca
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
 const rotationKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.rotation, easingFn: EasingFunctions.linear}];
 // board.restrictXTranslation = true;
-board.restrictYTranslation = true;
+// board.restrictYTranslation = true;
 const animation = new Animation(positionKeyframe, (value)=>{
     // const pointInWorld = board.camera.convertFromViewPort2WorldSpace(value);
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);

@@ -11,9 +11,20 @@ import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pa
  * 
  * @category Camera
  */
-export type BaseZoomHandlerConfig = {
-    restrictZoom: boolean;
+export type BaseZoomHandlerConfig = ZoomHandlerClampConfig & ZoomHandlerRestrictConfig;
+
+export type ZoomHandlerClampConfig = {
+    /**
+     * @description Whether to clamp the zoom level.
+     */
     clampZoom: boolean;
+};
+
+export type ZoomHandlerRestrictConfig = {
+    /**
+     * @description Whether to restrict the zoom level.
+     */
+    restrictZoom: boolean;
 };
 
 /**
@@ -108,11 +119,7 @@ export function baseZoomToAtWorldHandler(destination: number, camera: BoardCamer
     let anchorInViewPortAfterZoom = camera.convertFromWorld2ViewPort(at);
     const diffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, anchorInViewPortBeforeZoom);
     const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, camera.zoomLevel, camera.rotation);
-    // console.log("--------------------------------");
-    // console.log("diffInWorld", diffInWorld);
-    // console.log("camera pos before", camera.position);
     config.panByHandler(diffInWorld, camera, config);
-    // console.log("camera pos after", camera.position);
     return destination;
 }
 
@@ -189,7 +196,7 @@ export function clampZoomToHandler(destination: number, camera: BoardCamera, con
  * @see {@link createHandlerChain}
  * @category Camera
  */
-export function clampZoomByHandler(delta: number, camera: BoardCamera, config: BaseZoomHandlerConfig): number {
+export function clampZoomByHandler(delta: number, camera: BoardCamera, config: ZoomHandlerClampConfig): number {
     if(!config.clampZoom){
         return delta;
     }
@@ -220,7 +227,7 @@ export function restrictZoomToHandler(destination: number, camera: BoardCamera, 
  * @see {@link createHandlerChain}
  * @category Camera
  */
-export function restrictZoomByHandler(delta: number, camera: BoardCamera, config: BaseZoomHandlerConfig): number {
+export function restrictZoomByHandler(delta: number, camera: BoardCamera, config: ZoomHandlerRestrictConfig): number {
     if(config.restrictZoom){
         return 0;
     }
@@ -234,7 +241,7 @@ export function restrictZoomByHandler(delta: number, camera: BoardCamera, config
  * @see {@link createHandlerChain}
  * @category Camera
  */
-export function clampZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
+export function clampZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerClampConfig): number {
     return clampZoomByHandler(delta, camera, config);
 }
 
@@ -256,7 +263,7 @@ export function restrictZoomToAtHandler(destination: number, camera: BoardCamera
  * @see {@link createHandlerChain}
  * @category Camera
  */
-export function restrictZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerConfig): number {
+export function restrictZoomByAtHandler(delta: number, camera: BoardCamera, at: Point, config: ZoomHandlerRestrictConfig): number {
     return restrictZoomByHandler(delta, camera, config);
 }
 
@@ -281,10 +288,9 @@ export function createDefaultZoomToAtHandler(): ZoomToAtHandlerFunction {
  * @category Camera
  */
 export function createDefaultZoomByAtHandler(): ZoomByAtHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<number, [BoardCamera, Point, ZoomHandlerConfig]>(
         clampZoomByAtHandler,
         restrictZoomByAtHandler,
-        baseZoomByAtHandler,
     );
 }
 
