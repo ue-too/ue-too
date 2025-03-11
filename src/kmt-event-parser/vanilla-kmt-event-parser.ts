@@ -161,11 +161,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(this._disabled){
             return;
         }
-        if(e.buttons === 1 && e.pointerType === "mouse"){
+        if((e.buttons & 1) === 1 && e.pointerType === "mouse"){
             this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
-        if(e.buttons === 4 && e.pointerType === "mouse"){
+        if((e.buttons & 4) === 4 && e.pointerType === "mouse"){
             this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
