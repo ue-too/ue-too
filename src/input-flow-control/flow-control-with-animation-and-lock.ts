@@ -2,16 +2,12 @@ import { createDefaultPanByHandler, createDefaultPanToHandler, PanByHandlerFunct
 
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { 
-    createDefaultZoomToAtHandler, 
-    ZoomToAtHandlerFunction, 
-    BaseZoomHandlerConfig, 
+    ZoomHandlerConfig, 
     ZoomToHandlerFunction, 
     createDefaultZoomToOnlyHandler, 
-    createDefaultZoomToAtWorldHandler, 
-    ZoomByAtHandlerFunction, 
     ZoomByHandlerFunction, 
     createDefaultZoomByOnlyHandler, 
-    createDefaultZoomByAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
+} from "src/board-camera/zoom/zoom-handler";
 
 import { InputFlowControl } from "./interface";
 import { Point } from "src/util/misc";
@@ -32,7 +28,7 @@ import { createDefaultZoomControlStateMachine, ZoomContext, ZoomControlStateMach
  * 
  * @category Input Flow Control
  */
-export type CameraRigConfig = PanHandlerConfig & BaseZoomHandlerConfig & RotationHandlerConfig;
+export type CameraRigConfig = PanHandlerConfig & ZoomHandlerConfig & RotationHandlerConfig;
 
 /**
  * @description The flow control with animation and lock input.
@@ -100,26 +96,18 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
 
     private _panBy: PanByHandlerFunction;
     private _panTo: PanToHandlerFunction;
-    private _zoomToAt: ZoomToAtHandlerFunction;
-    private _zoomByAt: ZoomByHandlerFunction;
     private _zoomTo: ZoomToHandlerFunction;
     private _zoomBy: ZoomByHandlerFunction;
-    private _zoomToAtWorld: ZoomToAtHandlerFunction;
-    private _zoomByAtWorld: ZoomByAtHandlerFunction;
     private _rotateBy: RotateByHandlerFunction;
     private _rotateTo: RotateToHandlerFunction;
     private _config: CameraRigConfig;
     private _camera: ObservableBoardCamera;
 
-    constructor(config: PanHandlerConfig & BaseZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
+    constructor(config: PanHandlerConfig & ZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
         this._panTo = createDefaultPanToHandler();
-        this._zoomToAt = createDefaultZoomToAtHandler();
-        this._zoomByAt = createDefaultZoomByOnlyHandler();
         this._zoomTo = createDefaultZoomToOnlyHandler();
         this._zoomBy = createDefaultZoomByOnlyHandler();
-        this._zoomToAtWorld = createDefaultZoomToAtWorldHandler();
-        this._zoomByAtWorld = createDefaultZoomByAtWorldHandler();
         this._rotateBy = createDefaultRotateByHandler();
         this._rotateTo = createDefaultRotateToHandler();
         this._config = {...config, restrictRotation: false, clampRotation: true};
@@ -130,7 +118,13 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
      * @description Zoom to a certain zoom level at a certain point. The point is in the viewport coordinate system.
      */
     zoomToAt(targetZoom: number, at: Point): void {
-        this._zoomToAt(targetZoom, this._camera, at, {...this._config, panByHandler: this._panBy});
+        let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
+        const transformTarget = this._zoomTo(targetZoom, this._camera, {...this._config});
+        this._camera.setZoomLevel(transformTarget);
+        let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
+        const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
     }
 
     /**
@@ -164,7 +158,13 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
      * @description Zoom to a certain zoom level with respect to a point in the world coordinate system.
      */
     zoomToAtWorld(targetZoom: number, at: Point): void {
-        this._zoomToAtWorld(targetZoom, this._camera, at, {...this._config, panByHandler: this._panBy});
+        let originalAnchorInViewPort = this._camera.convertFromWorld2ViewPort(at);
+        const transformedTarget = this._zoomTo(targetZoom, this._camera, {...this._config});
+        this._camera.setZoomLevel(transformedTarget);
+        let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
+        const cameraPositionDiff = PointCal.subVector(originalAnchorInViewPort, anchorInViewPortAfterZoom);
+        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
     }
 
     /**
@@ -202,14 +202,16 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
      * @description Rotate by a certain amount.
      */
     rotateBy(delta: number): void {
-        this._rotateBy(delta, this._camera, this._config);
+        const transformedDelta = this._rotateBy(delta, this._camera, this._config);
+        this._camera.setRotation(this._camera.rotation + transformedDelta);
     }
 
     /**
      * @description Rotate to a certain angle.
      */
     rotateTo(target: number): void {
-        this._rotateTo(target, this._camera, this._config);
+        const transformedTarget = this._rotateTo(target, this._camera, this._config);
+        this._camera.setRotation(transformedTarget);
     }
 
     set limitEntireViewPort(limit: boolean){

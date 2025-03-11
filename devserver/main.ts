@@ -6,10 +6,8 @@ import { drawXAxis, drawYAxis } from "./drawing-util";
 import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
-import { createDefaultZoomToAtWorldHandler } from "src/board-camera/zoom/zoom-handler";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
 import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
-import type { ZoomHandlerConfig } from "src/board-camera";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -38,20 +36,7 @@ board.alignCoordinateSystem = false;
 console.log("context", board.context);
 const drawingEngine = new Container(board.context);
 
-const experimentalZoomHandler = createDefaultZoomToAtWorldHandler();
 const panHandler = createDefaultPanByHandler();
-
-const config: ZoomHandlerConfig = {
-    panByHandler: panHandler,
-    limitEntireViewPort: false,
-    restrictZoom: false,
-    restrictXTranslation: false,
-    restrictYTranslation: false,
-    restrictRelativeXTranslation: false,
-    restrictRelativeYTranslation: false,
-    clampTranslation: true,
-    clampZoom: true,
-}
 
 const positionKeyframe: Keyframe<Point>[] = [{percentage: 0, value: {x: board.camera.position.x, y: board.camera.position.y}, easingFn: EasingFunctions.linear}];
 const zoomKeyframe: Keyframe<number>[] = [{percentage: 0, value: board.camera.zoomLevel, easingFn: EasingFunctions.linear}];
@@ -87,7 +72,6 @@ const resetCameraBtn = document.getElementById("reset-camera-btn") as HTMLButton
 const experimentalZoomHandlerBtn = document.getElementById("experimental-zoom-handler-btn") as HTMLButtonElement;
 
 experimentalZoomHandlerBtn.addEventListener("click", ()=>{
-    experimentalZoomHandler(1, board.camera, {x: 0, y: 0}, config);
 });
 
 resetCameraBtn.addEventListener("click", ()=>{
