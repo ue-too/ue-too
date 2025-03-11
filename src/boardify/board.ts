@@ -320,11 +320,12 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        const curBoundaries = this.camera.boundaries;
-        if (!boundariesFullyDefined(curBoundaries)){
-            throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
-        }
-        this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
+        // const curBoundaries = this.camera.boundaries;
+        // if (!boundariesFullyDefined(curBoundaries)){
+        //     throw new Error("Boundaries are not fully defined; not able to clear the canvas under the current implementation");
+        // }
+        // this._context.clearRect(curBoundaries.min.x, -curBoundaries.min.y, curBoundaries.max.x - curBoundaries.min.x, -(curBoundaries.max.y - curBoundaries.min.y));
+        this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
 
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
