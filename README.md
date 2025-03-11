@@ -8,16 +8,19 @@
     <a href="https://www.npmjs.com/package/@niuee/board">
         <img src="https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge" alt="continuous integration" style="height: 20px;"/>
     </a>
-    <a href="https://github.com/niuee/board/actions/workflows/node.js.yml">
+    <a href="https://github.com/niuee/board/actions/workflows/ci-test.yml">
         <img src="https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
     <a href="https://github.com/niuee/board/blob/main/LICENSE.txt">
         <img src="https://img.shields.io/github/license/niuee/board?style=for-the-badge" alt="contributors" style="height: 20px;"/>
     </a>
-
+    <a href="https://bundlephobia.com/package/@niuee/board">
+        <img src="https://img.shields.io/bundlephobia/minzip/@niuee/board?color=success&label=gzipped%20bundle%20size&style=for-the-badge" alt="bundle size" style="height: 20px;"/>
+    </a>
 </p>
 
 <p align="center">
+  <a href="#quick-demo">Quick Demo</a> •
   <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
