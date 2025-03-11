@@ -1,5 +1,5 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from "src/board-camera";
-import { CameraRig, createDefaultCameraRig } from "./flow-control-with-animation-and-lock";
+import { CameraRig, createDefaultCameraRig } from "src/board-camera/camera-rig";
 import { InputFlowControl } from "./interface";
 import { Point } from "src/util/misc";
 

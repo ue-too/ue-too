@@ -216,10 +216,9 @@ export function restrictZoomByHandler(delta: number, camera: BoardCamera, config
  * @category Camera
  */
 export function createDefaultZoomToOnlyHandler(): ZoomToHandlerFunction {
-    return createHandlerChain(
+    return createHandlerChain<number, [BoardCamera, ZoomHandlerConfig]>(
         clampZoomToHandler,
         restrictZoomToHandler,
-        baseZoomToHandler,
     );
 }
 

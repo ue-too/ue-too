@@ -6,5 +6,6 @@ export * from "./board-camera-v2";
 export * from "./interface";
 export * from "./alt-camera";
 export * from "./base-camera";
+export * from "./camera-rig";
 export { default } from "./board-camera-v2";
 export { default as BaseCamera } from "./base-camera";
