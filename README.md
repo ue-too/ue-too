@@ -5,17 +5,14 @@
     board supercharges your html canvas element giving it the capabilities to pan, zoom, rotate, and much more.
 </p>
 
-<p align="center">
+<div align="center">
 
 [![npm version](https://img.shields.io/npm/v/@niuee/board.svg?style=for-the-badge)](https://www.npmjs.com/package/@niuee/board)
-
 [![ci tests](https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge)](https://github.com/niuee/board/actions/workflows/ci-test.yml)
-
 [![License](https://img.shields.io/github/license/niuee/board?style=for-the-badge)](https://github.com/niuee/board/blob/main/LICENSE.txt)
-
 [![bundle size](https://img.shields.io/bundlephobia/minzip/@niuee/board?color=success&label=gzipped%20bundle%20size&style=for-the-badge)](https://bundlephobia.com/package/@niuee/board)
 
-</p>
+</div>
 
 <p align="center">
   <a href="#quick-demo">Quick Demo</a> •
