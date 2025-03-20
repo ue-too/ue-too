@@ -1,5 +1,4 @@
-import { RawUserInputPublisher } from "src/raw-input-publisher";
-import { TouchPoints, TouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
+import { TouchPoints, TouchInputStateMachine, createTouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
 import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
 
 /**
@@ -13,7 +12,6 @@ export interface TouchEventParser {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    touchStateMachine: TouchInputStateMachine;
     enableStrategy(): void;
     disableStrategy(): void;
     setUp(): void;
@@ -39,10 +37,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
 
-    constructor(canvas: HTMLCanvasElement, stateMachine: TouchInputStateMachine){
+    constructor(canvas: HTMLCanvasElement, observableInputTracker: TouchInputTracker){
         this._canvas = canvas;
         this._disabled = false;
-        this.touchSM = stateMachine;
+        this.touchSM = createTouchInputStateMachine(observableInputTracker);
 
         this.bindListeners();
     }

@@ -1,5 +1,5 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
-import { halfTranslationHeightOf, halfTranslationWidthOf, boundariesFullyDefined, } from 'src/board-camera/utils/position';
+import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camera/utils/position';
 import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
 import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
 import { Point } from 'src/util/misc';
@@ -12,7 +12,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 
 import { InputFlowControl, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
 import { CameraRig } from 'src/board-camera/camera-rig';
-import { createKmtInputStateMachine, createTouchInputStateMachine, KmtInputStateMachine, ObservableInputTracker, TouchInputStateMachine, TouchInputTracker } from 'src/input-state-machine';
+import { ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
 /**
  * Usage
@@ -58,8 +58,6 @@ export default class Board {
     private boardInputPublisher: RawUserInputPublisher;
     private _observableInputTracker: ObservableInputTracker;
     private _touchInputTracker: TouchInputTracker;
-    private _touchInputStateMachine: TouchInputStateMachine;
-    private _kmtInputStateMachine: KmtInputStateMachine;
 
     private lastUpdateTime: number = 0;
 
@@ -103,12 +101,9 @@ export default class Board {
 
         this._observableInputTracker = new ObservableInputTracker(canvas, this.boardInputPublisher);
         this._touchInputTracker = new TouchInputTracker(canvas, this.boardInputPublisher);
-
-        this._kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
-        this._touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
         
-        this._kmtParser = new VanillaKMTEventParser(eventTarget, this._kmtInputStateMachine);
-        this._touchParser = new VanillaTouchEventParser(this._canvas, this._touchInputStateMachine);
+        this._kmtParser = new VanillaKMTEventParser(eventTarget, this._observableInputTracker);
+        this._touchParser = new VanillaTouchEventParser(this._canvas, this._touchInputTracker);
 
         
         // NOTE: device pixel ratio
