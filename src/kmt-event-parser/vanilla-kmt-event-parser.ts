@@ -1,4 +1,5 @@
-import type { KmtInputStateMachine } from "src/input-state-machine";
+import type { KmtInputStateMachine, ObservableInputTracker } from "src/input-state-machine";
+import { createKmtInputStateMachine } from "src/input-state-machine";
 
 /**
  * @category Event Parser
@@ -6,7 +7,6 @@ import type { KmtInputStateMachine } from "src/input-state-machine";
 
 export interface KMTEventParser {
     disabled: boolean;
-    stateMachine: KmtInputStateMachine;
     setUp(): void;
     tearDown(): void;
 }
@@ -79,9 +79,9 @@ export class VanillaKMTEventParser implements KMTEventParser {
 
     private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(eventTarget: EventTargetWithPointerEvents, stateMachine: KmtInputStateMachine){
+    constructor(eventTarget: EventTargetWithPointerEvents, observableInputTracker: ObservableInputTracker){
         this.bindFunctions();
-        this._stateMachine = stateMachine;
+        this._stateMachine = createKmtInputStateMachine(observableInputTracker);
         this._keyfirstPressed = new Map();
         this._eventTarget = eventTarget;
     }
