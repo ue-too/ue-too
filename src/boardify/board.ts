@@ -106,7 +106,7 @@ export default class Board {
         this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
 
         this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
-        this._touchInputTracker = new TouchInputTracker(canvas, this.boardInputPublisher);
+        this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
         
         this._kmtParser = new VanillaKMTEventParser(canvas, this._observableInputTracker);
         this._touchParser = new VanillaTouchEventParser(canvas, this._touchInputTracker);

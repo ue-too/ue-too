@@ -19,9 +19,10 @@ export class CanvasProxy implements CanvasOperator {
     private _canvas: HTMLCanvasElement;
 
     constructor(canvas: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
-        this._width = 0;
-        this._height = 0;
-        this._position = {x: 0, y: 0};
+        const boundingRect = canvas.getBoundingClientRect();
+        this._width = boundingRect.width;
+        this._height = boundingRect.height;
+        this._position = {x: boundingRect.left, y: boundingRect.top};
         this._canvas = canvas;
         this._canvasPositionDimensionPublisher = canvasPositionDimensionPublisher;
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{

@@ -1,4 +1,4 @@
-import "./media";
+// import "./media";
 import Board from "src/boardify";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
 import { Point, PointCal } from "point2point";
