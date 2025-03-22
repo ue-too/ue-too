@@ -1,7 +1,7 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
-import { KmtInputContext } from "./kmt-input-context";
+import { CanvasOperator, KmtInputContext } from "./kmt-input-context";
 
 /**
  * @description The possible states of the keyboard mouse and trackpad input state machine.
@@ -75,6 +75,11 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
+export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: CanvasOperator): Point {
+    const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
+    return PointCal.subVector(point, cameraCenterInWindow);
+}
+
 /**
  * @description The possible target states of the idle state.
  * 
@@ -138,7 +143,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPoint = convertFromWindow2ViewPort(cursorPosition, context.canvas);
+        const anchorPoint = convertFromWindow2ViewPortCanvasOperator(cursorPosition, context.canvas);
         if(!context.alignCoordinateSystem){
             anchorPoint.y = -anchorPoint.y;
         }
@@ -146,12 +151,12 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.style.cursor = "grab";
+        context.canvas.setCursor("grab");
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.style.cursor = "grabbing";
+        context.canvas.setCursor("grabbing");
     }
 }
 
@@ -237,11 +242,11 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
 
     leftPointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.style.cursor = "grabbing";
+        context.canvas.setCursor("grabbing");
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.style.cursor = "default";
+        context.canvas.setCursor("default");
     }
 }
 
@@ -292,7 +297,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.style.cursor = "grab";
+        context.canvas.setCursor("grab");
     }
 }
 
@@ -323,11 +328,11 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
     }
 
     middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.style.cursor = "grabbing";
+        context.canvas.setCursor("grabbing");
     }
 
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.style.cursor = "default";
+        context.canvas.setCursor("default");
     }
 
 }
@@ -375,11 +380,11 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.style.cursor = "default";
+        context.canvas.setCursor("default");
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.style.cursor = "grab";
+        context.canvas.setCursor("grab");
     }
 }
 
@@ -418,7 +423,7 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.style.cursor = "default";
+        context.canvas.setCursor("default");
     }
 }
 

@@ -72,18 +72,18 @@ export type EventTargetWithPointerEvents = {
 export class VanillaKMTEventParser implements KMTEventParser {
 
     private _disabled: boolean;
-
     private _stateMachine: KmtInputStateMachine;
-
     private _keyfirstPressed: Map<string, boolean>;
+    private _abortController: AbortController;
+    private _canvas: HTMLCanvasElement;
 
-    private _eventTarget: EventTargetWithPointerEvents;
 
-    constructor(eventTarget: EventTargetWithPointerEvents, observableInputTracker: ObservableInputTracker){
+    constructor(canvas: HTMLCanvasElement, observableInputTracker: ObservableInputTracker){
+        this._canvas = canvas;
         this.bindFunctions();
+        this._abortController = new AbortController();
         this._stateMachine = createKmtInputStateMachine(observableInputTracker);
         this._keyfirstPressed = new Map();
-        this._eventTarget = eventTarget;
     }
 
     get disabled(): boolean {
@@ -98,26 +98,22 @@ export class VanillaKMTEventParser implements KMTEventParser {
         return this._stateMachine;
     }
 
-    setUp(): void {
-        this.addEventListeners(this._eventTarget);
+    addEventListeners(signal: AbortSignal){
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler, {signal});
+        this._canvas.addEventListener('pointerup', this.pointerUpHandler, {signal});
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler, {signal});
+        this._canvas.addEventListener('wheel', this.scrollHandler, {signal});
+        window.addEventListener('keydown', this.keypressHandler, {signal});
+        window.addEventListener('keyup', this.keyupHandler, {signal});
     }
-
-    addEventListeners(eventTarget: EventTargetWithPointerEvents){
-        eventTarget.addEventListener('pointerdown', this.pointerDownHandler);
-        eventTarget.addEventListener('pointerup', this.pointerUpHandler);
-        eventTarget.addEventListener('pointermove', this.pointerMoveHandler);
-        eventTarget.addEventListener('wheel', this.scrollHandler);
-        window.addEventListener('keydown', this.keypressHandler);
-        window.addEventListener('keyup', this.keyupHandler);
+    
+    setUp(): void {
+        this.addEventListeners(this._abortController.signal);
     }
 
     tearDown(): void {
-        this._eventTarget.removeEventListener('pointerdown', this.pointerDownHandler);
-        this._eventTarget.removeEventListener('pointerup', this.pointerUpHandler);
-        this._eventTarget.removeEventListener('pointermove', this.pointerMoveHandler);
-        this._eventTarget.removeEventListener('wheel', this.scrollHandler);
-        window.removeEventListener('keydown', this.keypressHandler);
-        window.removeEventListener('keyup', this.keyupHandler);
+        this._abortController.abort();
+        this._abortController = new AbortController();
     }
 
     bindFunctions(): void {
