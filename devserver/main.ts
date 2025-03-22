@@ -1,4 +1,4 @@
-import "./media";
+// import "./media";
 import Board from "src/boardify";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
 import { Point, PointCal } from "point2point";
@@ -28,8 +28,28 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
     return {nextState: "", comboDetected: false};
 }
 
+const utilBtn = document.getElementById("util-btn") as HTMLButtonElement;
+
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
+const testAbortController = new AbortController();
+
+utilBtn.addEventListener("click", ()=>{
+    // canvas.style.width = "300px";
+    // canvasPositionDimensionPublisher.dispose();
+    testAbortController.abort();
+});
+
+
+canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
+    console.log("canvas position", rect.x);
+}, {signal: testAbortController.signal});
+
+canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
+    console.log('additional observer');
+});
+
+
 const board = new Board(canvas);
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
@@ -130,17 +150,6 @@ drawingEngine.addDrawTask({
         console.log("draw", deltaTime);
     }
 });
-
-// const stateMachine = board.touchStrategy.touchStateMachine;
-const stateMachine = board.kmtParser.stateMachine;
-const touchStateMachine = board.touchParser.touchStateMachine;
-
-// stateMachine.onStateChange((currentState, nextState) => {
-//     console.log("state change", currentState, "->", nextState);
-// });
-
-// parseStateMachine(stateMachine);
-const states = stateMachine.possibleStates;
 
 board.limitEntireViewPort = false;
 board.camera.setZoomLevel(1);

@@ -1,6 +1,53 @@
 import { Point } from "src/util/misc";
 import { BaseContext } from "src/being";
 import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
+import { CanvasPositionDimensionPublisher } from "src/boardify/utils/canvas-position-dimension";
+
+export interface CanvasOperator {
+    width: number;
+    height: number;
+    position: Point;
+    setCursor: (style: "grab" | "default" | "grabbing") => void;
+}
+
+export class CanvasProxy implements CanvasOperator {
+
+    private _width: number;
+    private _height: number;
+    private _position: Point;
+    private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
+    private _canvas: HTMLCanvasElement;
+
+    constructor(canvas: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
+        const boundingRect = canvas.getBoundingClientRect();
+        this._width = boundingRect.width;
+        this._height = boundingRect.height;
+        this._position = {x: boundingRect.left, y: boundingRect.top};
+        this._canvas = canvas;
+        this._canvasPositionDimensionPublisher = canvasPositionDimensionPublisher;
+        this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
+            this._width = rect.width;
+            this._height = rect.height;
+            this._position = {x: rect.left, y: rect.top};
+        });
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    get position(): Point {
+        return this._position;
+    }
+
+    setCursor(style: "grab" | "default" | "grabbing"): void {
+        this._canvas.style.cursor = style;
+    }
+}
 
 /**
  * @description The context for the keyboard mouse and trackpad input state machine.
@@ -9,7 +56,7 @@ import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publish
  */
 export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
-    canvas: HTMLCanvasElement;
+    canvas: CanvasOperator;
     notifyOnPan: (delta: Point) => void;
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
     notifyOnRotate: (deltaRotation: number) => void;
@@ -26,13 +73,13 @@ export interface KmtInputContext extends BaseContext {
 export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
-    private _canvas: HTMLCanvasElement;
+    private _canvasOperator: CanvasOperator;
     private _inputPublisher: RawUserInputPublisher;
     private _initialCursorPosition: Point;
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher){
+    constructor(canvasOperator: CanvasOperator, inputPublisher: RawUserInputPublisher){
         this._alignCoordinateSystem = true;
-        this._canvas = canvas;
+        this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;
         this._initialCursorPosition = {x: 0, y: 0};
     }
@@ -41,8 +88,8 @@ export class ObservableInputTracker implements KmtInputContext {
         return this._alignCoordinateSystem;
     }
 
-    get canvas(): HTMLCanvasElement {
-        return this._canvas;
+    get canvas(): CanvasOperator {
+        return this._canvasOperator;
     }
 
     get initialCursorPosition(): Point {

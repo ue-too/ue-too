@@ -35,12 +35,13 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private touchSM: TouchInputStateMachine;
 
-    private touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
+    private _abortController: AbortController;
 
     constructor(canvas: HTMLCanvasElement, observableInputTracker: TouchInputTracker){
         this._canvas = canvas;
         this._disabled = false;
         this.touchSM = createTouchInputStateMachine(observableInputTracker);
+        this._abortController = new AbortController();
 
         this.bindListeners();
     }
@@ -56,32 +57,24 @@ export class VanillaTouchEventParser implements TouchEventParser {
         this.touchmoveHandler = this.touchmoveHandler.bind(this);
     }
 
-    resetAttributes(): void{
-        this.touchPointsMap.clear();
-    }
-
     enableStrategy(): void {
         this._disabled = false;
     }
 
     disableStrategy(): void {
-        this.resetAttributes();
         this._disabled = true;
     }
 
     setUp(): void {
-        this._canvas.addEventListener('touchstart', this.touchstartHandler);
-        this._canvas.addEventListener('touchend', this.touchendHandler);
-        this._canvas.addEventListener('touchcancel', this.touchcancelHandler);
-        this._canvas.addEventListener('touchmove', this.touchmoveHandler);
+        this._canvas.addEventListener('touchstart', this.touchstartHandler, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchend', this.touchendHandler, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchcancel', this.touchcancelHandler, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchmove', this.touchmoveHandler, {signal: this._abortController.signal});
     }
 
     tearDown(): void {
-        this.resetAttributes();
-        this._canvas.removeEventListener('touchstart', this.touchstartHandler);
-        this._canvas.removeEventListener('touchend', this.touchendHandler);
-        this._canvas.removeEventListener('touchcancel', this.touchcancelHandler);
-        this._canvas.removeEventListener('touchmove', this.touchmoveHandler);
+        this._abortController.abort();
+        this._abortController = new AbortController();
     }
 
     get disabled(): boolean {

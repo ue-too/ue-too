@@ -1,6 +1,7 @@
 import { PointCal } from "point2point";
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "src/being/interfaces";
 import { TouchContext } from "./touch-input-context";
+
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
 /**
@@ -125,8 +126,7 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
         const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
         const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
         const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
-        const boundingRect = context.canvas.getBoundingClientRect();
-        const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+        const cameraCenterInWindow = {x: context.canvas.position.x + context.canvas.width / 2, y: context.canvas.position.y + context.canvas.height / 2};
         const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
         let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
        
@@ -180,8 +180,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
         const midPoint = PointCal.linearInterpolation(initialPositions[0], initialPositions[1], 0.5);
         const currentMidPoint = PointCal.linearInterpolation(currentPositions[0], currentPositions[1], 0.5);
         const midPointDelta = PointCal.subVector(midPoint, currentMidPoint);
-        const boundingRect = context.canvas.getBoundingClientRect();
-        const cameraCenterInWindow = {x: boundingRect.left + boundingRect.width / 2, y: boundingRect.top + boundingRect.height / 2};
+        const cameraCenterInWindow = {x: context.canvas.position.x + context.canvas.width / 2, y: context.canvas.position.y + context.canvas.height / 2};
         const midPointInViewPort = PointCal.subVector(midPoint, cameraCenterInWindow);
         let panZoom = Math.abs(currentStartAndEndDistance - initialStartAndEndDistance) > PointCal.distanceBetweenPoints(midPoint, currentMidPoint) ? "ZOOMING" : "PANNING";
        

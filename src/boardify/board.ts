@@ -3,7 +3,7 @@ import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camer
 import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
 import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
 import { Point } from 'src/util/misc';
-import { reverseYAxis } from 'src/boardify/utils';
+import { CanvasPositionDimensionPublisher, reverseYAxis } from 'src/boardify/utils';
 import { PointCal } from 'point2point';
 
 import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publisher';
@@ -12,7 +12,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 
 import { InputFlowControl, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
 import { CameraRig } from 'src/board-camera/camera-rig';
-import { ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
+import { CanvasProxy, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
 /**
  * Usage
@@ -63,6 +63,9 @@ export default class Board {
 
     private attributeObserver: MutationObserver;
     private windowResizeObserver: ResizeObserver;
+
+    private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
+    private _canvasProxy: CanvasProxy;
     
     constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents = canvas){
         this._canvas = canvas;
@@ -86,6 +89,9 @@ export default class Board {
         this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
         this.windowResizeObserver.observe(document.body);
 
+        this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
+        this._canvasProxy = new CanvasProxy(canvas, this._canvasPositionDimensionPublisher);
+
         this.cameraRig = new CameraRig({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
@@ -99,11 +105,11 @@ export default class Board {
 
         this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
 
-        this._observableInputTracker = new ObservableInputTracker(canvas, this.boardInputPublisher);
-        this._touchInputTracker = new TouchInputTracker(canvas, this.boardInputPublisher);
+        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
+        this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
         
-        this._kmtParser = new VanillaKMTEventParser(eventTarget, this._observableInputTracker);
-        this._touchParser = new VanillaTouchEventParser(this._canvas, this._touchInputTracker);
+        this._kmtParser = new VanillaKMTEventParser(canvas, this._observableInputTracker);
+        this._touchParser = new VanillaTouchEventParser(canvas, this._touchInputTracker);
 
         
         // NOTE: device pixel ratio

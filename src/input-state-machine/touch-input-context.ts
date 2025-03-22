@@ -2,6 +2,7 @@ import { Point } from "src/util/misc";
 import { TouchPoints } from "./touch-input-state-machine";
 import { RawUserInputPublisher } from "src/raw-input-publisher";
 import { BaseContext } from "src/being/interfaces";
+import { CanvasOperator } from "./kmt-input-context";
 
 export interface TouchContext extends BaseContext{
     addTouchPoints: (points: TouchPoints[]) => void;
@@ -12,17 +13,17 @@ export interface TouchContext extends BaseContext{
     notifyOnPan: (delta: Point) => void;
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
     alignCoordinateSystem: boolean;
-    canvas: HTMLCanvasElement;
+    canvas: CanvasOperator;
 }
 
 export class TouchInputTracker implements TouchContext {
 
     private _inputPublisher: RawUserInputPublisher;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
-    private _canvas: HTMLCanvasElement;
+    private _canvas: CanvasOperator;
     private _alignCoordinateSystem: boolean;
 
-    constructor(canvas: HTMLCanvasElement, inputPublisher: RawUserInputPublisher) {
+    constructor(canvas: CanvasOperator, inputPublisher: RawUserInputPublisher) {
         this._canvas = canvas;
         this._inputPublisher = inputPublisher;
         this._alignCoordinateSystem = true;
@@ -75,16 +76,16 @@ export class TouchInputTracker implements TouchContext {
         this._inputPublisher.notifyZoom(zoomAmount, anchorPoint);
     }
 
-    get canvas(): HTMLCanvasElement {
-        return this._canvas;
-    }
-
     get alignCoordinateSystem(): boolean {
         return this._alignCoordinateSystem;
     }
 
     set alignCoordinateSystem(value: boolean) {
         this._alignCoordinateSystem = value;
+    }
+
+    get canvas(): CanvasOperator {
+        return this._canvas;
     }
 
     cleanup(): void {
