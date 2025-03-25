@@ -49,7 +49,6 @@ export class CanvasPositionDimensionPublisher {
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
         window.addEventListener('scroll', this.scrollHandler, { passive: true });
-        console.log("CanvasPositionDimensionPublisher initialized");
     }
     
     // Add a cleanup method to remove event listeners

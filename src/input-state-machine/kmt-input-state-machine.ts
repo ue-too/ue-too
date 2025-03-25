@@ -77,7 +77,6 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
 
 export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: CanvasOperator): Point {
     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
-    console.log(cameraCenterInWindow);
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 

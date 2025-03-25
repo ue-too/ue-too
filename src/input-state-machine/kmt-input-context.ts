@@ -2,12 +2,35 @@ import { Point } from "src/util/misc";
 import { BaseContext } from "src/being";
 import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils/canvas-position-dimension";
+import { Observer } from "src/util/observable";
+import { SubscriptionOptions } from "src/util/observable";
 
 export interface CanvasOperator {
     width: number;
     height: number;
     position: Point;
     setCursor: (style: "grab" | "default" | "grabbing") => void;
+}
+
+export class CanvasPositionDimensionWorkerPublisher {
+
+    private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
+
+    constructor(private _worker: Worker, canvas: HTMLCanvasElement){
+        this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
+        this._canvasPositionDimensionPublisher.onPositionUpdate(this.notifyWorker.bind(this));
+    }
+
+    dispose(): void {
+        this._canvasPositionDimensionPublisher.dispose();
+    }
+    
+    private notifyWorker(rect: DOMRect): void {
+        this._worker.postMessage({
+            type: "canvasPositionDimension",
+            payload: rect
+        });
+    }
 }
 
 export class CanvasProxy implements CanvasOperator {
