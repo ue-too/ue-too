@@ -1,8 +1,8 @@
 <h1 align="center">
-    board
+    uē-tôo
 </h1>
 <p align="center">
-    board supercharges your html canvas element giving it the capabilities to pan, zoom, rotate, and much more.
+    pan, zoom, rotate, and more.
 </p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@niuee/board">
@@ -31,59 +31,48 @@
     This is is a small demo gif of what board is capable of.
 </p>
 
-## What board is?
+## What this library is?
 - Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
 - Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
 - Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
 - Serves as a foundation library for building your own infinite canvas applications
+- Accomplishes the same goal as pixi-viewport but not dependent on pixi.js
 
-## What board is not?
+## What this library is not?
 - A complete drawing application like Excalidraw, tldraw, or similar tools
 - A full-featured package with built-in drawing tools and user interfaces
 
 ## Quick Demo
-[CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `board` can achieve.
+[CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `ue-too` can achieve.
 
 There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva. (not complete yet)
 
 ## Docs
-- [API Documentation](https://niuee.github.io/board/index.html)
-- [中文文件連結](https://niuee.github.io/board/zh-tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
+- [API Documentation](https://ue-too.github.io/ue-too/)
+- [中文文件連結](https://ue-too.github.io/ue-too/tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
 
 ## Installation and Usage
 ### Package manager
 install it using
 ```bash
-npm install @niuee/board
+npm install ue-too
 ```
 and import it like
 ```javascript
-import { Board } from "@niuee/board";
+import { Board } from "ue-too";
 ```
 
 ### Download From Github
 Download the bundled JavaScript (board.js) in the [releases](https://github.com/niuee/board/releases/) page of the repository and put it in the your project directory for other JavaScript module to import like this.
 ```javascript
-import { Board } from "./board.js";
+import { Board } from "./ue-too.js";
 ```
 
 ### Import From jsdelivr
 ```javascript
-import { Board } from "https://cdn.jsdelivr.net/npm/@niuee/board@latest/index.mjs";
+import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
 ```
-
-### Use iife bundle
-In an HTML file use the script tag. (instead of importing from jsdelivr you can also download it as source and put it in you project folder directly)
-```html
-<script src="https://cdn.jsdelivr.net/npm/@niuee/board@latest/iife/index.js"></script>
-```
-
-and then in other JavaScript module you can use the exports of @niuee/board using the name Board.some export
-
-For example the constructor for the `Board` class.
-```javascript
-const newBoard = new Board.Board(canvasElement);
-```
+_iife is no longer supported_
 
 ## Key Features
 - Modularity: you don't have to use everything from this library; take only what you need. (details in the later section)
@@ -100,7 +89,7 @@ To instantiate a new board, you need have a canvas element in your html.
 
 Call the step function of the `Board` class and in a `requestAnimationFrame` callback.
 ```javascript
-import { Board } from "@niuee/board";
+import { Board } from "ue-too";
 
 const canvasElement = document.getElementById("board");
 const board = new Board(canvasElement); // if you are using this library through iife don't use the variable name board since it would have name conflict with the library
@@ -166,7 +155,7 @@ pnpm i
 
 And then off you go! You can modify however as you like it.
 
-The [API documentation](https://niuee.github.io/board/index.html) has all the APIs listed.
+The [API documentation](https://ue-too.github.io/ue-too/) has all the APIs listed.
 
 ## Under the Hood (a rather brief overview)
 
