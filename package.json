@@ -1,6 +1,6 @@
 {
-  "name": "@niuee/board",
-  "version": "0.2.0",
+  "name": "ue-too",
+  "version": "0.2.2",
   "description": "",
   "main": "./build/index.cjs",
   "module": "./build/index.mjs",

@@ -55,13 +55,13 @@ jobs:
       - name: Get Published Version
         id: get-version
         run: |
-          echo "version=$(pnpm view @niuee/board version)" >> $GITHUB_OUTPUT
+          echo "version=$(pnpm view ue-too version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Check the current version
         id: check-version
         run: |
           echo ${{ steps.get-version.outputs.version }}
-          if [[ \"$(pnpm view @niuee/board version)\" == $(pnpm pkg get version)  ]]
+          if [[ \"$(pnpm view ue-too version)\" == $(pnpm pkg get version)  ]]
             then
             echo "synced=True" >> $GITHUB_OUTPUT
            else
