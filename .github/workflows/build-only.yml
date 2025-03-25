@@ -2,7 +2,7 @@ name:  Build
 
 on:
   pull_request:
-    branches: [ "main", "dev", "release/**" ]
+    branches: [ "main", "dev", "version/**" ]
   workflow_call:
     inputs:
       node-version:
