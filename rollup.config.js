@@ -73,13 +73,13 @@ export default [
     output: [{
       file: packageJson.main,
       format: 'cjs',
-      name: '@niuee/board',
+      name: 'ue-too',
       sourcemap: true,
     },
     {
       file: packageJson.module,
       format: 'esm',
-      name: '@niuee/board',
+      name: 'ue-too',
       sourcemap: true
     }
     ],
@@ -100,9 +100,9 @@ export default [
     input: 'src/index.ts',
     output: [
     {
-      file: 'dist/board.js',
+      file: 'dist/ue-too.js',
       format: 'esm',
-      name: 'board',
+      name: 'ue-too',
       sourcemap: true,
     },
     ],
