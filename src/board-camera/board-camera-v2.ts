@@ -182,25 +182,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @returns The transformation matrix
      */
     getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
-        const tx = devicePixelRatio * this._baseCamera.viewPortWidth / 2;
-        const ty = devicePixelRatio * this._baseCamera.viewPortHeight / 2;
-        const tx2 = -this._baseCamera.position.x;
-        const ty2 = alignCoorindate ? -this._baseCamera.position.y : this._baseCamera.position.y;
-
-        const s = devicePixelRatio;
-        const s2 = this._baseCamera.zoomLevel;
-        const θ = alignCoorindate ? -this._baseCamera.rotation : this._baseCamera.rotation;
-
-        const sin = Math.sin(θ);
-        const cos = Math.cos(θ);
-
-        const a = s2 * s * cos;
-        const b = s2 * s * sin;
-        const c = -s * s2 * sin;
-        const d = s2 * s * cos;
-        const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
-        const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
-        return {a, b, c, d, e, f};
+        return this._baseCamera.getTransform(devicePixelRatio, alignCoorindate);
     }
 
     /**
