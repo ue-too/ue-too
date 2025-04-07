@@ -130,18 +130,34 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
     /**
      * @description Pan By a certain amount. (delta is in the viewport coordinate system)
      */
-    panBy(delta: Point): void {
+    panByViewPort(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        const actualDelta = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, actualDelta));
+        const transformedDelta = this._panBy(diffInWorld, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
     }
 
     /**
      * @description Pan to a certain point. (target is in the world coordinate system)
      */
-    panTo(target: Point): void {
+    panByWorld(delta: Point): void {
+        const diffInViewPort = this._camera.convertFromWorld2ViewPort(delta);
+        this.panByViewPort(diffInViewPort);
+    }
+
+    /**
+     * @description Pan to a certain point. (target is in the world coordinate system)
+     */
+    panToWorld(target: Point): void {
         const transformedTarget = this._panTo(target, this._camera, this._config);
         this._camera.setPosition(transformedTarget);
+    }
+
+    /**
+     * @description Pan to a certain point. (target is in the viewport coordinate system)
+     */
+    panToViewPort(target: Point): void {
+        const targetInWorld = this._camera.convertFromViewPort2WorldSpace(target);
+        this.panToWorld(targetInWorld);
     }
 
     /**

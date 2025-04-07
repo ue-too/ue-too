@@ -18,7 +18,7 @@ export class SimpleRelayFlowControl implements InputFlowControl {
     }
 
     notifyPanInput(diff: Point): void {
-        this._cameraRig.panBy(diff);
+        this._cameraRig.panByViewPort(diff);
     }
     
     notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void {
