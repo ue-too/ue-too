@@ -21,7 +21,7 @@ export type Handler<T, Args extends any[]> = (value: T, ...args: Args) => T;
  * const handlerChain = createHandlerChain(handlers);
  * ```
  * 
- * The function signature of all the handlers must be the same.
+ * The function signature of all the handlers must be the same. (if they're not, you need to explicitly specify the type for the handler chain)
  * 
  * @param handlers Array of handler functions to be chained
  * @returns A single handler function that executes all handlers in sequence

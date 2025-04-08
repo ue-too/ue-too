@@ -21,6 +21,7 @@ import { PanContext } from "src/input-flow-control/pan-control-state-machine";
 import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { Point } from "src/util/misc";
+import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
 
 /**
  * @description The config for the camera rig.
@@ -38,7 +39,7 @@ export type CameraRigConfig = PanHandlerConfig & ZoomHandlerConfig & RotationHan
  * 
  * @category Camera
  */
-export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
+export class CameraRig implements PanContext, ZoomContext, RotateContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
     private _panTo: PanToHandlerFunction;

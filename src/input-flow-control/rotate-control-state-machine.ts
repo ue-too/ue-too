@@ -76,7 +76,7 @@ export class RotateControlStateMachine extends TemplateStateMachine<RotateEventP
      * 
      * @category Input Flow Control
      */
-    notifyRotateInput(diff: number): void{
+    notifyRotateByInput(diff: number): void{
         this.happens("userRotateByInput", {diff: diff});
     }
 
