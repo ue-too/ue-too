@@ -1,5 +1,5 @@
 import { Point } from "src/util/misc";
-import { BaseContext } from "src/being";
+import { BaseContext, NO_OP } from "src/being";
 import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils/canvas-position-dimension";
 import { Observer } from "src/util/observable";
@@ -10,6 +10,13 @@ export interface CanvasOperator {
     height: number;
     position: Point;
     setCursor: (style: "grab" | "default" | "grabbing") => void;
+}
+
+export class DummyCanvasOperator implements CanvasOperator {
+    width: number = 0;
+    height: number = 0;
+    position: Point = {x: 0, y: 0};
+    setCursor: (style: "grab" | "default" | "grabbing") => void = NO_OP;
 }
 
 export class CanvasPositionDimensionWorkerPublisher {
@@ -101,10 +108,39 @@ export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
     canvas: CanvasOperator;
     notifyOnPan: (delta: Point) => void;
-    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
+    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void;
     notifyOnRotate: (deltaRotation: number) => void;
     setInitialCursorPosition: (position: Point) => void;
     initialCursorPosition: Point;
+}
+
+export class DummyKmtInputContext implements KmtInputContext {
+
+    public alignCoordinateSystem: boolean = false;
+    public canvas: CanvasOperator = new DummyCanvasOperator();
+    public initialCursorPosition: Point = {x: 0, y: 0};
+
+    constructor(){
+
+    }
+
+    notifyOnPan(delta: Point): void {
+    }
+
+    notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
+    }
+
+    notifyOnRotate(deltaRotation: number): void {
+    }
+    
+    setInitialCursorPosition(position: Point): void {
+    }
+
+    cleanup(): void {
+    }
+
+    setup(): void {
+    }
 }
 
 /**

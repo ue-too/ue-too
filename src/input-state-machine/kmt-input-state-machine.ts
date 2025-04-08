@@ -1,7 +1,7 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../being/interfaces";
 import { Point } from "src/util/misc";
 import { PointCal } from "point2point";
-import { CanvasOperator, KmtInputContext } from "./kmt-input-context";
+import { CanvasOperator, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
 
 /**
  * @description The possible states of the keyboard mouse and trackpad input state machine.
@@ -427,6 +427,18 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 }
 
+export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+
+    constructor() {
+        super();
+    }
+
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+        return {};
+    }
+    
+}
+
 export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
 
 /**
@@ -444,4 +456,31 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
     }
     return new TemplateStateMachine(states, "IDLE", context);
+}
+
+export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+
+    private _webworker: Worker;
+
+    constructor(webworker: Worker){
+        super({
+            "IDLE": new KmtEmptyState(),
+            "READY_TO_PAN_VIA_SPACEBAR": new KmtEmptyState(),
+            "INITIAL_PAN": new KmtEmptyState(),
+            "PAN": new KmtEmptyState(),
+            "READY_TO_PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
+            "PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
+        }, "IDLE", new DummyKmtInputContext());
+        this._webworker = webworker;
+    }
+
+    happens(event: keyof KmtInputEventMapping, payload: KmtInputEventMapping[keyof KmtInputEventMapping]): KmtInputStates | undefined {        
+        this._webworker.postMessage({
+            type: "kmtInputStateMachine",
+            event,
+            payload,
+        });
+        return "IDLE";
+    }
+    
 }

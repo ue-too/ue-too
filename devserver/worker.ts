@@ -27,5 +27,8 @@ onmessage = (event) => {
         case "updateCanvasDimensions":
             console.log('updateCanvasDimensions', event.data);
             break;
+        case "kmtInputStateMachine":
+            console.log('kmtInputStateMachine', event.data);
+            break;
     }
 }
