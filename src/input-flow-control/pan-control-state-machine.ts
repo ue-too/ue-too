@@ -55,8 +55,10 @@ export type PanEventPayloadMapping = {
 export interface PanContext extends BaseContext {
     camera: BoardCamera;
     limitEntireViewPort: boolean;
-    panBy: (delta: Point) => void;
-    panTo: (target: Point) => void;
+    panByViewPort: (delta: Point) => void;
+    panToViewPort: (target: Point) => void;
+    panByWorld: (delta: Point) => void;
+    panToWorld: (target: Point) => void;
 };
 
 /**
@@ -128,19 +130,19 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
     }
 
     userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
     }
 
     userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
     }
 
 }
@@ -166,32 +168,32 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
     }
 
     userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
         return "ACCEPTING_USER_INPUT";
     }
 
     userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
         return "ACCEPTING_USER_INPUT";
     }
 
     transitionPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
         return "TRANSITION";
     }
 
     transitionPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
         return "TRANSITION";
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
         return "LOCKED_ON_OBJECT";
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
         return "LOCKED_ON_OBJECT";
     }
 
@@ -215,11 +217,11 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, P
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
-        context.panBy(payload.diff);
+        context.panByViewPort(payload.diff);
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
-        context.panTo(payload.target);
+        context.panToWorld(payload.target);
     }
 
 }

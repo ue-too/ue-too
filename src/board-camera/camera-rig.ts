@@ -21,6 +21,7 @@ import { PanContext } from "src/input-flow-control/pan-control-state-machine";
 import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { Point } from "src/util/misc";
+import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
 
 /**
  * @description The config for the camera rig.
@@ -38,7 +39,7 @@ export type CameraRigConfig = PanHandlerConfig & ZoomHandlerConfig & RotationHan
  * 
  * @category Camera
  */
-export class CameraRig implements PanContext, ZoomContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
+export class CameraRig implements PanContext, ZoomContext, RotateContext { // this is used as a context passed to the pan and zoom state machines; essentially a consolidated handler function for pan and zoom
 
     private _panBy: PanByHandlerFunction;
     private _panTo: PanToHandlerFunction;
@@ -130,18 +131,34 @@ export class CameraRig implements PanContext, ZoomContext { // this is used as a
     /**
      * @description Pan By a certain amount. (delta is in the viewport coordinate system)
      */
-    panBy(delta: Point): void {
+    panByViewPort(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        const actualDelta = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, actualDelta));
+        const transformedDelta = this._panBy(diffInWorld, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
     }
 
     /**
      * @description Pan to a certain point. (target is in the world coordinate system)
      */
-    panTo(target: Point): void {
+    panByWorld(delta: Point): void {
+        const diffInViewPort = this._camera.convertFromWorld2ViewPort(delta);
+        this.panByViewPort(diffInViewPort);
+    }
+
+    /**
+     * @description Pan to a certain point. (target is in the world coordinate system)
+     */
+    panToWorld(target: Point): void {
         const transformedTarget = this._panTo(target, this._camera, this._config);
         this._camera.setPosition(transformedTarget);
+    }
+
+    /**
+     * @description Pan to a certain point. (target is in the viewport coordinate system)
+     */
+    panToViewPort(target: Point): void {
+        const targetInWorld = this._camera.convertFromViewPort2WorldSpace(target);
+        this.panToWorld(targetInWorld);
     }
 
     /**

@@ -4,6 +4,7 @@ import { Point } from "src/util/misc";
 import { ObservableBoardCamera } from "src/board-camera";
 import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
 import { createDefaultZoomControlStateMachine, ZoomControlStateMachine } from "./zoom-control-state-machine";
+import { createDefaultRotateControlStateMachine, RotateControlStateMachine } from "./rotate-control-state-machine";
 import { CameraRig } from "src/board-camera/camera-rig";
 import { createDefaultCameraRig } from "src/board-camera/camera-rig";
 
@@ -22,10 +23,12 @@ export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
 
     private _panStateMachine: PanControlStateMachine;
     private _zoomStateMachine: ZoomControlStateMachine;
+    private _rotateStateMachine: RotateControlStateMachine;
 
-    constructor(panStateMachine: PanControlStateMachine, zoomStateMachine: ZoomControlStateMachine){
+    constructor(panStateMachine: PanControlStateMachine, zoomStateMachine: ZoomControlStateMachine, rotateStateMachine: RotateControlStateMachine){
         this._panStateMachine = panStateMachine;
         this._zoomStateMachine = zoomStateMachine;
+        this._rotateStateMachine = rotateStateMachine;
     }
 
     notifyPanToAnimationInput(target: Point): void {
@@ -38,6 +41,14 @@ export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
 
     notifyZoomInput(delta: number, at: Point): void {
         this._zoomStateMachine.notifyZoomByAtInput(delta, at);
+    }
+
+    notifyRotateByInput(delta: number): void {
+        this._rotateStateMachine.notifyRotateByInput(delta);
+    }
+
+    notifyRotateToAnimationInput(target: number): void {
+        this._rotateStateMachine.notifyRotateToAnimationInput(target);
     }
 
     notifyZoomInputAnimation(targetZoom: number, at: Point = {x: 0, y: 0}): void {
@@ -59,6 +70,22 @@ export class FlowControlWithAnimationAndLockInput implements InputFlowControl {
     initateZoomTransition(): void {
         this._zoomStateMachine.initateTransition();
     }
+
+    initateRotateTransition(): void {
+        this._rotateStateMachine.initateTransition();
+    }
+
+    get rotateStateMachine(): RotateControlStateMachine {
+        return this._rotateStateMachine;
+    }
+
+    get panStateMachine(): PanControlStateMachine {
+        return this._panStateMachine;
+    }
+
+    get zoomStateMachine(): ZoomControlStateMachine {
+        return this._zoomStateMachine;
+    }
 }
 
 /**
@@ -70,7 +97,8 @@ export function createFlowControlWithAnimationAndLock(camera: ObservableBoardCam
     const context = createDefaultCameraRig(camera);
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
-    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine);
+    const rotateStateMachine = createDefaultRotateControlStateMachine(context);
+    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine, rotateStateMachine);
 }
 
 /**
@@ -81,5 +109,6 @@ export function createFlowControlWithAnimationAndLock(camera: ObservableBoardCam
 export function createFlowControlWithAnimationAndLockWithCameraRig(cameraRig: CameraRig): InputFlowControl {
     const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
     const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
-    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine);
+    const rotateStateMachine = createDefaultRotateControlStateMachine(cameraRig);
+    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine, rotateStateMachine);
 }
