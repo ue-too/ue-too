@@ -73,6 +73,26 @@ export class CanvasProxy implements CanvasOperator {
 }
 
 /**
+ * @description A proxy for the canvas that is used to communicate with the web worker.
+ * The primary purpose of this class is to cache the canvas dimensions and position in the DOM to reduce the calling of the getBoundingClientRect method.
+ * This class only serves as a relay of the updated canvas dimensions and position to the web worker.
+ * 
+ */
+export class CanvasProxyWorkerRelay {
+
+    private _webWorker: Worker;
+
+    constructor(canvas: HTMLCanvasElement, webWorker: Worker, canvasDiemsionPublisher: CanvasPositionDimensionPublisher){
+        const boundingRect = canvas.getBoundingClientRect();
+        this._webWorker = webWorker;
+        this._webWorker.postMessage({type: "setCanvasDimensions", width: boundingRect.width, height: boundingRect.height, position: {x: boundingRect.left, y: boundingRect.top}});
+        canvasDiemsionPublisher.onPositionUpdate((rect)=>{
+            this._webWorker.postMessage({type: "updateCanvasDimensions", width: rect.width, height: rect.height, position: {x: rect.left, y: rect.top}});
+        });
+    }
+}
+
+/**
  * @description The context for the keyboard mouse and trackpad input state machine.
  * 
  * @category Input State Machine
