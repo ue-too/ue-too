@@ -1,4 +1,5 @@
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
+import { CanvasProxyWorkerRelay } from "src/input-state-machine/kmt-input-context";
 
 const utilBtn = document.getElementById("util-btn") as HTMLButtonElement;
 
@@ -9,12 +10,7 @@ const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(ca
 
 const worker = new Worker('./worker.ts', {type: "module"});
 
-canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
-    worker.postMessage({
-        type: "canvasPositionDimension",
-        payload: rect
-    });
-});
+const canvasProxyWorkerRelay = new CanvasProxyWorkerRelay(canvas, worker, canvasPositionDimensionPublisher);
 
 
 utilBtn.addEventListener("click", () => {

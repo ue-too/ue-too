@@ -78,11 +78,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
     private _canvas: HTMLCanvasElement;
 
 
-    constructor(canvas: HTMLCanvasElement, observableInputTracker: ObservableInputTracker){
+    constructor(canvas: HTMLCanvasElement, kmtInputStateMachine: KmtInputStateMachine){
         this._canvas = canvas;
         this.bindFunctions();
         this._abortController = new AbortController();
-        this._stateMachine = createKmtInputStateMachine(observableInputTracker);
+        this._stateMachine = kmtInputStateMachine;
         this._keyfirstPressed = new Map();
     }
 

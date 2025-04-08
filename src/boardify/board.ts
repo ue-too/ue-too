@@ -12,7 +12,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 
 import { InputFlowControl, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
 import { CameraRig } from 'src/board-camera/camera-rig';
-import { CanvasProxy, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
+import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
 /**
  * Usage
@@ -107,9 +107,12 @@ export default class Board {
 
         this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
+
+        const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
+        const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
         
-        this._kmtParser = new VanillaKMTEventParser(canvas, this._observableInputTracker);
-        this._touchParser = new VanillaTouchEventParser(canvas, this._touchInputTracker);
+        this._kmtParser = new VanillaKMTEventParser(canvas, kmtInputStateMachine);
+        this._touchParser = new VanillaTouchEventParser(canvas, touchInputStateMachine);
 
         
         // NOTE: device pixel ratio

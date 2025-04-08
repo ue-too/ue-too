@@ -14,10 +14,18 @@ function step(timestamp: number){
 }
 
 onmessage = (event) => {
-    if(event.data.type === "canvas"){
-        console.log('canvas', event.data.canvas);
-        canvas = event.data.canvas;
-        context = canvas.getContext('2d');
-        step(0);
+    switch(event.data.type){
+        case "canvas":
+            console.log('canvas', event.data.canvas);
+            canvas = event.data.canvas;
+            context = canvas.getContext('2d');
+            step(0);
+            break;
+        case "setCanvasDimensions":
+            console.log('setCanvasDimensions', event.data.payload);
+            break;
+        case "updateCanvasDimensions":
+            console.log('updateCanvasDimensions', event.data);
+            break;
     }
 }

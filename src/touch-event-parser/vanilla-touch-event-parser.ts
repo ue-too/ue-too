@@ -37,10 +37,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private _abortController: AbortController;
 
-    constructor(canvas: HTMLCanvasElement, observableInputTracker: TouchInputTracker){
+    constructor(canvas: HTMLCanvasElement, touchInputStateMachine: TouchInputStateMachine){
         this._canvas = canvas;
         this._disabled = false;
-        this.touchSM = createTouchInputStateMachine(observableInputTracker);
+        this.touchSM = touchInputStateMachine;
         this._abortController = new AbortController();
 
         this.bindListeners();
