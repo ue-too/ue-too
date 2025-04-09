@@ -70,7 +70,7 @@ export class CanvasPositionDimensionPublisher {
     }
 }
 
-function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
+export function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
     const paddingLeft = parseFloat(computedStyle.paddingLeft);
     const paddingTop = parseFloat(computedStyle.paddingTop);
     const paddingRight = parseFloat(computedStyle.paddingRight);

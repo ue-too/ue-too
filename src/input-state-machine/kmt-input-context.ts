@@ -1,9 +1,7 @@
 import { Point } from "src/util/misc";
 import { BaseContext, NO_OP } from "src/being";
-import { RawUserInputPublisher, UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
-import { CanvasPositionDimensionPublisher } from "src/boardify/utils/canvas-position-dimension";
-import { Observer } from "src/util/observable";
-import { SubscriptionOptions } from "src/util/observable";
+import { UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
+import { CanvasPositionDimensionPublisher, getTrueRect } from "src/boardify/utils/canvas-position-dimension";
 
 export interface CanvasOperator {
     width: number;
@@ -128,17 +126,45 @@ export class CanvasProxy implements CanvasOperator {
  * This class only serves as a relay of the updated canvas dimensions and position to the web worker.
  * 
  */
-export class CanvasProxyWorkerRelay {
+export class CanvasProxyWorkerRelay implements CanvasOperator {
 
+    private _width: number;
+    private _height: number;
+    private _position: Point;
     private _webWorker: Worker;
+    private _canvas: HTMLCanvasElement;
 
     constructor(canvas: HTMLCanvasElement, webWorker: Worker, canvasDiemsionPublisher: CanvasPositionDimensionPublisher){
         const boundingRect = canvas.getBoundingClientRect();
+        this._canvas = canvas;
         this._webWorker = webWorker;
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this._width = trueRect.width;
+        this._height = trueRect.height;
+        this._position = {x: trueRect.left, y: trueRect.top};
         this._webWorker.postMessage({type: "setCanvasDimensions", width: boundingRect.width, height: boundingRect.height, position: {x: boundingRect.left, y: boundingRect.top}});
         canvasDiemsionPublisher.onPositionUpdate((rect)=>{
+            this._width = rect.width;
+            this._height = rect.height;
+            this._position = {x: rect.left, y: rect.top};
             this._webWorker.postMessage({type: "updateCanvasDimensions", width: rect.width, height: rect.height, position: {x: rect.left, y: rect.top}});
         });
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    get position(): Point {
+        return this._position;
+    }
+
+    setCursor(style: "grab" | "default" | "grabbing"): void {
+        this._canvas.style.cursor = style;
     }
 }
 

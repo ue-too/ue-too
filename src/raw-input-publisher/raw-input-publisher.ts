@@ -193,19 +193,19 @@ export class RawUserInputPublisherWithWebWorkerRelay implements UserInputPublish
     }
 
     notifyPan(diff: Point): void {
-        this.webWorker.postMessage({type: "pan", payload: {diff: diff}});
+        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "pan", diff: diff}});
         this.pan.notify({diff: diff});
         this.all.notify({type: "pan", diff: diff});
     }
 
     notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
-        this.webWorker.postMessage({type: "zoom", payload: {deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint}});
+        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint}});
         this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
         this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
     }
 
     notifyRotate(deltaRotation: number): void {
-        this.webWorker.postMessage({type: "rotate", payload: {deltaRotation: deltaRotation}});
+        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "rotate", deltaRotation: deltaRotation}});
         this.rotate.notify({deltaRotation: deltaRotation});
         this.all.notify({type: "rotate", deltaRotation: deltaRotation});
     }
