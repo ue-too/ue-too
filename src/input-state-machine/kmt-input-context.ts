@@ -1,6 +1,6 @@
 import { Point } from "src/util/misc";
 import { BaseContext, NO_OP } from "src/being";
-import { RawUserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
+import { RawUserInputPublisher, UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils/canvas-position-dimension";
 import { Observer } from "src/util/observable";
 import { SubscriptionOptions } from "src/util/observable";
@@ -17,6 +17,49 @@ export class DummyCanvasOperator implements CanvasOperator {
     height: number = 0;
     position: Point = {x: 0, y: 0};
     setCursor: (style: "grab" | "default" | "grabbing") => void = NO_OP;
+}
+
+export class CanvasCacheInWebWorker implements CanvasOperator {
+
+    private _width: number;
+    private _height: number;
+    private _position: Point;
+    private _postMessageFunction: typeof postMessage;
+
+    constructor(postMessageFunction: typeof postMessage){
+        this._width = 0;
+        this._height = 0;
+        this._position = {x: 0, y: 0};
+        this._postMessageFunction = postMessageFunction;
+    }
+
+    set width(width: number){
+        this._width = width;
+    }
+
+    set height(height: number){
+        this._height = height;
+    }
+
+    set position(position: Point){
+        this._position = position;
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    get position(): Point {
+        return this._position;
+    }
+
+    setCursor(style: "grab" | "default" | "grabbing"): void {
+        this._postMessageFunction({type: "setCursor", style});
+    }
 }
 
 export class CanvasPositionDimensionWorkerPublisher {
@@ -153,10 +196,10 @@ export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
     private _canvasOperator: CanvasOperator;
-    private _inputPublisher: RawUserInputPublisher;
+    private _inputPublisher: UserInputPublisher;
     private _initialCursorPosition: Point;
 
-    constructor(canvasOperator: CanvasOperator, inputPublisher: RawUserInputPublisher){
+    constructor(canvasOperator: CanvasOperator, inputPublisher: UserInputPublisher){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;

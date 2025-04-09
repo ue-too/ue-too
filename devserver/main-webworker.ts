@@ -18,6 +18,14 @@ const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(ca
 
 
 const worker = new Worker('./worker.ts', {type: "module"});
+worker.onmessage = (event) => {
+    switch(event.data.type){
+        case "updateCanvasDimensions":
+            canvas.style.width = event.data.width + "px";
+            canvas.style.height = event.data.height + "px";
+            break;
+    }
+}
 const kmtInputStateMachine = new KmtInputStateMachineWebWorkerProxy(worker);
 const kmtEventParser = new VanillaKMTEventParser(canvas, kmtInputStateMachine);
 kmtEventParser.setUp();
@@ -29,7 +37,10 @@ utilBtn.addEventListener("click", () => {
     if (!isCanvasTransferred) {
         worker.postMessage({
             type: "canvas",
-            canvas: offscreen
+            canvas: offscreen,
+            width: canvas.width,
+            height: canvas.height,
+            devicePixelRatio: window.devicePixelRatio,
         }, {transfer: [offscreen]});
         isCanvasTransferred = true;
     } else {

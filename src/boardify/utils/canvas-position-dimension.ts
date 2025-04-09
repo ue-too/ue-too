@@ -18,9 +18,10 @@ export class CanvasPositionDimensionPublisher {
         this.resizeObserver = new ResizeObserver(entries => {
             for (const entry of entries) {
                 const newRect = entry.target.getBoundingClientRect();
-                if (rectChanged(this.lastRect, newRect)) {
-                    this.publishPositionUpdate(newRect);
-                    this.lastRect = newRect;
+                const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
+                if (rectChanged(this.lastRect, trueRect)) {
+                    this.publishPositionUpdate(trueRect);
+                    this.lastRect = trueRect;
                 }
             }
         });
@@ -29,9 +30,10 @@ export class CanvasPositionDimensionPublisher {
             for (const entry of entries) {
                 if (entry.isIntersecting) {
                     const newRect = entry.boundingClientRect;
-                    if (rectChanged(this.lastRect, newRect)) {
-                        this.publishPositionUpdate(newRect);
-                        this.lastRect = newRect;
+                    const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
+                    if (rectChanged(this.lastRect, trueRect)) {
+                        this.publishPositionUpdate(trueRect);
+                        this.lastRect = trueRect;
                     }
                 }
             }
@@ -40,9 +42,10 @@ export class CanvasPositionDimensionPublisher {
         // Add scroll handler to detect position changes during scrolling
         this.scrollHandler = () => {
             const newRect = canvas.getBoundingClientRect();
-            if (rectChanged(this.lastRect, newRect)) {
-                this.publishPositionUpdate(newRect);
-                this.lastRect = newRect;
+            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            if (rectChanged(this.lastRect, trueRect)) {
+                this.publishPositionUpdate(trueRect);
+                this.lastRect = trueRect;
             }
         };
         
@@ -65,6 +68,24 @@ export class CanvasPositionDimensionPublisher {
     onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
         this._observers.subscribe(observer, options);
     }
+}
+
+function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
+    const paddingLeft = parseFloat(computedStyle.paddingLeft);
+    const paddingTop = parseFloat(computedStyle.paddingTop);
+    const paddingRight = parseFloat(computedStyle.paddingRight);
+    const paddingBottom = parseFloat(computedStyle.paddingBottom);
+
+    const borderLeft = parseFloat(computedStyle.borderLeftWidth);
+    const borderTop = parseFloat(computedStyle.borderTopWidth);
+    const borderRight = parseFloat(computedStyle.borderRightWidth);
+    const borderBottom = parseFloat(computedStyle.borderBottomWidth);
+
+    const trueLeft = rect.left + paddingLeft + borderLeft;
+    const trueTop = rect.top + paddingTop + borderTop;
+    const trueWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+    const trueHeight = rect.height - paddingTop - paddingBottom - borderTop - borderBottom;
+    return new DOMRect(trueLeft, trueTop, trueWidth, trueHeight);
 }
 
 function rectChanged(r1: DOMRect, r2: DOMRect) {
