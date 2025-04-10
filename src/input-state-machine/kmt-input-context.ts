@@ -3,6 +3,10 @@ import { BaseContext, NO_OP } from "src/being";
 import { UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect } from "src/boardify/utils/canvas-position-dimension";
 
+/**
+ * @description A proxy for the canvas so that client code that needs to access 
+ * the canvas dimensions and position does not need to access the DOM directly.
+ */
 export interface CanvasOperator {
     width: number;
     height: number;
@@ -10,6 +14,12 @@ export interface CanvasOperator {
     setCursor: (style: "grab" | "default" | "grabbing") => void;
 }
 
+/**
+ * @description A dummy implementation of the CanvasOperator interface. 
+ * This is specifically for the case where a input state machine that is for the relay of the input events to the web worker.
+ * The input state machine needs a canvas operator in its context, but this context does not have any functionality.
+ * @see DummyKmtInputContext
+ */
 export class DummyCanvasOperator implements CanvasOperator {
     width: number = 0;
     height: number = 0;
@@ -70,9 +80,10 @@ export class CanvasProxy implements CanvasOperator {
 
     constructor(canvas: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
         const boundingRect = canvas.getBoundingClientRect();
-        this._width = boundingRect.width;
-        this._height = boundingRect.height;
-        this._position = {x: boundingRect.left, y: boundingRect.top};
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this._width = trueRect.width;
+        this._height = trueRect.height;
+        this._position = {x: trueRect.left, y: trueRect.top};
         this._canvas = canvas;
         this._canvasPositionDimensionPublisher = canvasPositionDimensionPublisher;
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
@@ -162,6 +173,11 @@ export interface KmtInputContext extends BaseContext {
     initialCursorPosition: Point;
 }
 
+/**
+ * @description A dummy implementation of the KmtInputContext interface.
+ * This is specifically for the case where a input state machine that is for the relay of the input events to the web worker.
+ * The input state machine needs a context, but this context does not have any functionality.
+ */
 export class DummyKmtInputContext implements KmtInputContext {
 
     public alignCoordinateSystem: boolean = false;
