@@ -5,6 +5,15 @@ import { CanvasCacheInWebWorker } from "src/input-state-machine/kmt-input-contex
 let context: OffscreenCanvasRenderingContext2D;
 let canvas: OffscreenCanvas;
 
+type Message = {
+    type: string;
+    width: number;
+    height: number;
+    position: {
+        x: number;
+        y: number;
+    };
+}
 
 function step(timestamp: number){
     context.reset();
@@ -63,22 +72,23 @@ onmessage = (event) => {
         //     }
         //     break;
         case "updateCanvasDimensions":
-            if(canvasCacheInWebWorker.position.x !== event.data.position.x || canvasCacheInWebWorker.position.y !== event.data.position.y){
-                canvasCacheInWebWorker.position = event.data.position;
+            const message: Message = event.data;
+            if(canvasCacheInWebWorker.position.x !== message.position.x || canvasCacheInWebWorker.position.y !== message.position.y){
+                canvasCacheInWebWorker.position = message.position;
             }
-            if(canvasCacheInWebWorker.width === event.data.width && canvasCacheInWebWorker.height === event.data.height && canvas !== undefined && canvas.width === event.data.width * 2 && canvas.height === event.data.height * 2){
+            if(canvasCacheInWebWorker.width === message.width && canvasCacheInWebWorker.height === message.height && canvas !== undefined && canvas.width === message.width * 2 && canvas.height === message.height * 2){
                 return;
             }
 
-            canvasCacheInWebWorker.width = event.data.width;
-            canvasCacheInWebWorker.height = event.data.height;
-            canvasCacheInWebWorker.position = event.data.position;
-            camera.viewPortHeight = event.data.height;
-            camera.viewPortWidth = event.data.width;
+            canvasCacheInWebWorker.width = message.width;
+            canvasCacheInWebWorker.height = message.height;
+            canvasCacheInWebWorker.position = message.position;
+            camera.viewPortHeight = message.height;
+            camera.viewPortWidth = message.width;
             if(canvas){
-                canvas.width = event.data.width * 2;
-                canvas.height = event.data.height * 2;
-                postMessage({type: "updateCanvasDimensions", width: event.data.width, height: event.data.height});
+                canvas.width = message.width * 2;
+                canvas.height = message.height * 2;
+                postMessage(message);
             }
             break;
         case "kmtInputStateMachine":

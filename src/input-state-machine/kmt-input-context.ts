@@ -60,27 +60,6 @@ export class CanvasCacheInWebWorker implements CanvasOperator {
     }
 }
 
-export class CanvasPositionDimensionWorkerPublisher {
-
-    private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
-
-    constructor(private _worker: Worker, canvas: HTMLCanvasElement){
-        this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
-        this._canvasPositionDimensionPublisher.onPositionUpdate(this.notifyWorker.bind(this));
-    }
-
-    dispose(): void {
-        this._canvasPositionDimensionPublisher.dispose();
-    }
-    
-    private notifyWorker(rect: DOMRect): void {
-        this._worker.postMessage({
-            type: "canvasPositionDimension",
-            payload: rect
-        });
-    }
-}
-
 export class CanvasProxy implements CanvasOperator {
 
     private _width: number;
