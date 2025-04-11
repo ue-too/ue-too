@@ -24,7 +24,7 @@ export default class BaseCamera implements BoardCamera {
     private _rotation: number;
     private _zoomLevel: number;
 
-    private currentCachedTransform: {transform: {a: number, b: number, c: number, d: number, e: number, f: number}, position: Point, rotation: number, zoomLevel: number, alignCoorindate: boolean, devicePixelRatio: number} | undefined;
+    private currentCachedTransform: {transform: {a: number, b: number, c: number, d: number, e: number, f: number}, position: Point, rotation: number, zoomLevel: number, alignCoorindate: boolean, devicePixelRatio: number, viewPortWidth: number, viewPortHeight: number} | undefined;
 
     private _viewPortWidth: number;
     private _viewPortHeight: number;
@@ -240,6 +240,8 @@ export default class BaseCamera implements BoardCamera {
             && this.currentCachedTransform.position.y === this._position.y
             && this.currentCachedTransform.rotation === this._rotation
             && this.currentCachedTransform.zoomLevel === this._zoomLevel
+            && this.currentCachedTransform.viewPortWidth === this._viewPortWidth
+            && this.currentCachedTransform.viewPortHeight === this._viewPortHeight
         ){
             return this.currentCachedTransform.transform;
         }
@@ -261,7 +263,7 @@ export default class BaseCamera implements BoardCamera {
         const d = s2 * s * cos;
         const e = s * s2 * cos * tx2 - s * s2 * sin * ty2 + tx;
         const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
-        this.currentCachedTransform = {transform: {a, b, c, d, e, f}, position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel, alignCoorindate, devicePixelRatio};
+        this.currentCachedTransform = {transform: {a, b, c, d, e, f}, position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel, alignCoorindate, devicePixelRatio, viewPortWidth: this._viewPortWidth, viewPortHeight: this._viewPortHeight};
         return {a, b, c, d, e, f};
     }
 
