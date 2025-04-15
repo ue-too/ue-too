@@ -62,7 +62,6 @@ export default class Board {
     private lastUpdateTime: number = 0;
 
     private attributeObserver: MutationObserver;
-    private windowResizeObserver: ResizeObserver;
 
     private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
     private _canvasProxy: CanvasProxy;
@@ -85,9 +84,6 @@ export default class Board {
 
         this.attributeObserver = new MutationObserver(this.attributeCallBack);
         this.attributeObserver.observe(this._canvas, {attributes: true});
-
-        this.windowResizeObserver = new ResizeObserver(this.windowResizeHandler);
-        this.windowResizeObserver.observe(document.body);
 
         this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasProxy = new CanvasProxy(canvas, this._canvasPositionDimensionPublisher);
@@ -141,7 +137,6 @@ export default class Board {
      */
     setup(){
         this.registerEventListeners();
-        this.windowResizeObserver.observe(document.body);
         this.attributeObserver.observe(this._canvas, {attributes: true});
     }
 
@@ -151,14 +146,12 @@ export default class Board {
      */
     tearDown(){
         this.removeEventListeners();
-        this.windowResizeObserver.disconnect();
         this.attributeObserver.disconnect();
     }
 
     private bindFunctions(){
         this.step = this.step.bind(this);
         this.attributeCallBack = this.attributeCallBack.bind(this);
-        this.windowResizeHandler = this.windowResizeHandler.bind(this);
     }
 
     /**
@@ -200,7 +193,7 @@ export default class Board {
     }
 
     get height(): number {
-        return this._canvas.height;
+        return this._canvas.height / window.devicePixelRatio;
     }
 
     /**
@@ -318,6 +311,10 @@ export default class Board {
      * @param timestamp 
      */
     public step(timestamp: number){
+        if(this._fullScreen && (this.width != window.innerWidth || this.height != window.innerHeight)){
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+        }
 
         let deltaTime = timestamp - this.lastUpdateTime;
         this.lastUpdateTime = timestamp;
@@ -385,6 +382,7 @@ export default class Board {
     private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
+                console.log("mutation", mutation.attributeName);
                 if(mutation.attributeName === "width"){
                     this.camera.viewPortWidth = parseFloat(this._canvas.style.width);
                     if(this.limitEntireViewPort){
@@ -403,13 +401,6 @@ export default class Board {
                     }
                 }
             }
-        }
-    }
-
-    private windowResizeHandler(){
-        if(this._fullScreen){
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
         }
     }
 
