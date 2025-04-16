@@ -316,6 +316,7 @@ export default class Board {
             this.height = window.innerHeight;
         }
 
+        this.cameraRig.update();
         let deltaTime = timestamp - this.lastUpdateTime;
         this.lastUpdateTime = timestamp;
         deltaTime = deltaTime / 1000;

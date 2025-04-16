@@ -22,6 +22,7 @@ import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { Point } from "src/util/misc";
 import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
+import { CameraPositionUpdateBatcher, PositionUpdate } from "src/batcher/camera-position-update";
 
 /**
  * @description The config for the camera rig.
@@ -49,6 +50,7 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
     private _rotateTo: RotateToHandlerFunction;
     private _config: CameraRigConfig;
     private _camera: ObservableBoardCamera;
+    private _positionBatcher: CameraPositionUpdateBatcher;
 
     constructor(config: PanHandlerConfig & ZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
@@ -59,6 +61,7 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
         this._rotateTo = createDefaultRotateToHandler();
         this._config = {...config, restrictRotation: false, clampRotation: true};
         this._camera = camera;
+        this._positionBatcher = new CameraPositionUpdateBatcher();
     }
 
     /**
@@ -125,7 +128,8 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
         const diffInViewPort = PointCal.subVector(anchorInViewPortBeforeZoom, anchorInViewPortAfterZoom);
         const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, this._camera.zoomLevel, this._camera.rotation);
         const transformedDiff = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
+        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
+        this._positionBatcher.queuePositionUpdateBy(transformedDiff);
     }
 
     /**
@@ -134,7 +138,8 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
     panByViewPort(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
         const transformedDelta = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
+        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
+        this._positionBatcher.queuePositionUpdateBy(transformedDelta);
     }
 
     /**
@@ -150,7 +155,8 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
      */
     panToWorld(target: Point): void {
         const transformedTarget = this._panTo(target, this._camera, this._config);
-        this._camera.setPosition(transformedTarget);
+        // this._camera.setPosition(transformedTarget);
+        this._positionBatcher.queuePositionUpdateTo(transformedTarget);
     }
 
     /**
@@ -198,6 +204,24 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
 
     set config(config: CameraRigConfig){
         this._config = {...config};
+    }
+
+    updatePosition(){
+        const positionUpdate = this._positionBatcher.update();
+        if(positionUpdate == null){
+            return;
+        }
+        switch(positionUpdate.type){
+            case 'destination':
+                this._camera.setPosition({x: positionUpdate.x, y: positionUpdate.y});
+                break;
+            case 'delta':
+                this._camera.setPosition(PointCal.addVector(this._camera.position, {x: positionUpdate.x, y: positionUpdate.y}));
+        }
+    }
+
+    update(){
+        this.updatePosition();
     }
 
     /**
