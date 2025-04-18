@@ -26,6 +26,11 @@ export class CameraPositionUpdateBatcher {
     private velocity: Velocity = { vx: 0, vy: 0 };
     private lastUpdateTime: number | null = null;
     private observable: Observable<[PositionUpdate]>;
+    // Debug counters
+    private queuePositionUpdateCount: number = 0;
+    private queuePositionUpdateToCount: number = 0;
+    private queuePositionUpdateByCount: number = 0;
+    private lastUpdateCount: number = 0;
     
     constructor() {
         this.observable = new Observable<[PositionUpdate]>();
@@ -35,6 +40,7 @@ export class CameraPositionUpdateBatcher {
      * Queue an absolute position update to be processed in the next animation frame
      */
     public queuePositionUpdate(x: number, y: number): void {
+        this.queuePositionUpdateCount++;
         this.queuePositionUpdateTo({ x, y });
     }
 
@@ -43,6 +49,7 @@ export class CameraPositionUpdateBatcher {
      * This will override any pending delta updates
      */
     public queuePositionUpdateTo(destination: Position): void {
+        this.queuePositionUpdateToCount++;
         const now = performance.now();
         
         // Update velocity if we have previous positions
@@ -66,7 +73,7 @@ export class CameraPositionUpdateBatcher {
         
         this.lastUpdateTime = now;
         this.nextPosition = { ...destination };
-        this.delta = { x: 0, y: 0 }; // Clear any pending deltas
+        this.delta = { x: 0, y: 0 }; // Reset any pending deltas
     }
 
     /**
@@ -74,10 +81,15 @@ export class CameraPositionUpdateBatcher {
      * This will be ignored if there's a pending destination update
      */
     public queuePositionUpdateBy(delta: Position): void {
+        this.queuePositionUpdateByCount++;
         const now = performance.now();
         
-        // If we have a pending destination update, ignore this delta
+        // If we have a pending destination update, add the delta to it
         if (this.nextPosition !== null) {
+            this.nextPosition = {
+                x: this.nextPosition.x + delta.x,
+                y: this.nextPosition.y + delta.y
+            };
             return;
         }
         
@@ -100,10 +112,16 @@ export class CameraPositionUpdateBatcher {
     }
 
     /**
-     * Update method to be called from animation loop
+     * Process and clear all queued position updates
      * @returns the update to apply to the position, with type information
      */
-    public update(): PositionUpdate | null {
+    public processQueuedUpdates(): PositionUpdate | null {
+        this.lastUpdateCount = this.queuePositionUpdateCount + this.queuePositionUpdateToCount + this.queuePositionUpdateByCount;
+        // Reset counters after update
+        this.queuePositionUpdateCount = 0;
+        this.queuePositionUpdateToCount = 0;
+        this.queuePositionUpdateByCount = 0;
+        
         if (this.nextPosition !== null) {
             const update: DestinationUpdate = {
                 ...this.nextPosition,
@@ -138,6 +156,23 @@ export class CameraPositionUpdateBatcher {
      */
     public subscribe(observer: Observer<[PositionUpdate]>, options?: SubscriptionOptions): () => void {
         return this.observable.subscribe(observer, options);
+    }
+
+    /**
+     * Get debug information about queue method calls since last update
+     */
+    public getDebugInfo(): {
+        lastUpdateTotalCalls: number;
+        queuePositionUpdateCalls: number;
+        queuePositionUpdateToCalls: number;
+        queuePositionUpdateByCalls: number;
+    } {
+        return {
+            lastUpdateTotalCalls: this.lastUpdateCount,
+            queuePositionUpdateCalls: this.queuePositionUpdateCount,
+            queuePositionUpdateToCalls: this.queuePositionUpdateToCount,
+            queuePositionUpdateByCalls: this.queuePositionUpdateByCount
+        };
     }
 }
 

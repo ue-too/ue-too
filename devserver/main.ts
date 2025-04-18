@@ -7,7 +7,7 @@ import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
-import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
+import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -34,12 +34,6 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const testAbortController = new AbortController();
 
-utilBtn.addEventListener("click", ()=>{
-    // canvas.style.width = "300px";
-    // canvasPositionDimensionPublisher.dispose();
-    testAbortController.abort();
-});
-
 
 canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
     console.log("canvas position", rect.x);
@@ -51,6 +45,13 @@ canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
 
 
 const board = new Board(canvas);
+utilBtn.addEventListener("click", ()=>{
+    // canvas.style.width = "300px";
+    // canvasPositionDimensionPublisher.dispose();
+    testAbortController.abort();
+    board.getCameraRig().panToWorld({x: 100, y: 100});
+});
+
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
 console.log("context", board.context);

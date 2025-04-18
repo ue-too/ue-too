@@ -10,7 +10,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publ
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
-import { InputFlowControl, createDefaultFlowControlWithCameraRig } from 'src/input-flow-control';
+import { InputFlowControl, createDefaultFlowControlWithCameraRig, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
 import { CameraRig } from 'src/board-camera/camera-rig';
 import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
@@ -99,7 +99,7 @@ export default class Board {
             clampZoom: true,
         }, camera);
 
-        this.boardInputPublisher = new RawUserInputPublisher(createDefaultFlowControlWithCameraRig(this.cameraRig));
+        this.boardInputPublisher = new RawUserInputPublisher(createFlowControlWithAnimationAndLockWithCameraRig(this.cameraRig));
 
         this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
@@ -518,4 +518,9 @@ export default class Board {
     set clampRotation(value: boolean){
         this.cameraRig.configure({clampRotation: value});
     }
+
+    getCameraRig(): CameraRig {
+        return this.cameraRig;
+    }
+
 }
