@@ -131,6 +131,31 @@ export class CameraZoomUpdateBatcher {
     }
 
     /**
+     * Queue a zoom update by delta at a world anchor to be processed in the next animation frame
+     */
+    public queueZoomByAtWorld(delta: ZoomLevel, worldAnchor: Point, currentZoom: number, currentRotation: number): void {
+        // Calculate the new zoom level
+        const newZoom = currentZoom + delta;
+        
+        // Calculate the effective anchor point in viewport coordinates
+        // that would produce the same camera position delta as the world-space zoom
+        const cos = Math.cos(currentRotation);
+        const sin = Math.sin(currentRotation);
+        
+        // Calculate the camera position delta components
+        const deltaX = -(worldAnchor.x * cos + worldAnchor.y * sin) * (delta / newZoom);
+        const deltaY = -(worldAnchor.y * cos - worldAnchor.x * sin) * (delta / newZoom);
+        
+        // Calculate the effective anchor point in viewport coordinates
+        const zoomDiff = (1/currentZoom - 1/newZoom);
+        const effectiveAnchorX = deltaX / (cos * zoomDiff);
+        const effectiveAnchorY = deltaY / (cos * zoomDiff);
+        
+        // Queue the zoom update with the effective anchor point
+        this.queueZoomUpdateTo(newZoom, { x: effectiveAnchorX, y: effectiveAnchorY }, currentZoom, currentRotation);
+    }
+
+    /**
      * Process and clear all queued zoom updates
      * @returns the update to apply to the zoom level, with type information
      */

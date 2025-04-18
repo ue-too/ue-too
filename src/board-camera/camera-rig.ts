@@ -99,13 +99,15 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
      * @description Zoom to a certain zoom level with respect to a point in the world coordinate system.
      */
     zoomToAtWorld(targetZoom: number, at: Point): void {
-        let originalAnchorInViewPort = this._camera.convertFromWorld2ViewPort(at);
-        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
-        this._camera.setZoomLevel(transformedTarget);
-        let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const cameraPositionDiff = PointCal.subVector(originalAnchorInViewPort, anchorInViewPortAfterZoom);
-        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+        // let originalAnchorInViewPort = this._camera.convertFromWorld2ViewPort(at);
+        // const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        // this._camera.setZoomLevel(transformedTarget);
+        // let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
+        // const cameraPositionDiff = PointCal.subVector(originalAnchorInViewPort, anchorInViewPortAfterZoom);
+        // const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+        const delta = targetZoom - this._camera.zoomLevel;
+        this._zoomBatcher.queueZoomByAtWorld(delta, at, this._camera.zoomLevel, this._camera.rotation);
     }
 
     /**
@@ -216,13 +218,7 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
             return;
         }
         if(op.anchor){
-            const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(op.anchor);
-            const transformedTarget = this._zoomTo(op.destination, this._camera, this._config);
-            this._camera.setZoomLevel(transformedTarget);
-            const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(op.anchor);
-            const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-            const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-            this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+            this._zoomToAtViewPort(op.destination, op.anchor);
         } else {
             const transformedTarget = this._zoomTo(op.destination, this._camera, this._config);
             this._camera.setZoomLevel(transformedTarget);
@@ -232,6 +228,16 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
     update(){
         this.updatePosition();
         this.updateZoom();
+    }
+
+    private _zoomToAtViewPort(targetZoom: number, at: Point): void {
+        const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
+        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        this._camera.setZoomLevel(transformedTarget);
+        const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
+        const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
     }
 
     /**
