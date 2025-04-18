@@ -19,10 +19,10 @@ import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerC
 import { ObservableBoardCamera } from "./interface";
 import { PanContext } from "src/input-flow-control/pan-control-state-machine";
 import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
-import { convert2ViewPortSpaceAnchorAtCenter, convert2WorldSpaceAnchorAtCenter, convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
+import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { Point } from "src/util/misc";
 import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
-import { CameraPositionUpdateBatcher, PositionUpdate } from "src/batcher/camera-position-update";
+import { CameraPositionUpdateBatcher } from "src/batcher/camera-position-update";
 import { CameraZoomUpdateBatcher } from "src/batcher/camera-zoom-update";
 
 /**
@@ -53,12 +53,6 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
     private _camera: ObservableBoardCamera;
     private _positionBatcher: CameraPositionUpdateBatcher; // all queued destination and delta updates are in world coordinate system
     private _zoomBatcher: CameraZoomUpdateBatcher;
-    private _currentZoomOp: {
-        delta: number;
-        at: Point;
-    } | null = null;
-    private _queuedZoomOperations: ZoomOperation[] = [];
-    private _queueZoomToOperations: ZoomToOperation[] = [];
 
     constructor(config: PanHandlerConfig & ZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
         this._panBy = createDefaultPanByHandler();
@@ -77,43 +71,21 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
      * @description Zoom to a certain zoom level at a certain point. The point is in the viewport coordinate system.
      */
     zoomToAt(targetZoom: number, at: Point): void {
-        // let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
-        // const transformTarget = this._zoomTo(targetZoom, this._camera, this._config);
-        // this._camera.setZoomLevel(transformTarget);
-        // let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
-        // const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        // const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
-
+        this._zoomBatcher.queueZoomUpdateTo(targetZoom, at, this._camera.zoomLevel, this._camera.rotation);
     }
 
     /**
      * @description Zoom by a certain amount at a certain point. The point is in the viewport coordinate system.
      */
     zoomByAt(delta: number, at: Point): void {
-        // if(this._queuedZoomOperations.length === 0){
-        //     this._queuedZoomOperations.push({ delta, anchor: at });
-        // } else {
-        //     const currentOp = this._queuedZoomOperations[0];
-        //     const combinedOp = combineZoomOperations(currentOp, { delta, anchor: at }, this._camera.zoomLevel, this._camera.rotation);
-        //     this._queuedZoomOperations = [combinedOp];
-        // }
-        // if(this._queueZoomToOperations.length === 0){
-        //     this._queueZoomToOperations.push({ destination: this._camera.zoomLevel + delta, anchor: at });
-        // } else {
-        //     const currentOp = this._queueZoomToOperations[0];
-        //     const combinedOp = combineZoomToOperations(currentOp, { destination: this._camera.zoomLevel + delta, anchor: at }, this._camera.zoomLevel, this._camera.rotation);
-        //     this._queueZoomToOperations = [combinedOp];
-        // }
-
-        this._zoomBatcher.queueZoomUpdateTo(this._camera.zoomLevel + delta, at, this._camera.zoomLevel, this._camera.rotation);
+        this._zoomBatcher.queueZoomUpdateBy(delta, at, this._camera.zoomLevel, this._camera.rotation);
     }
 
     /**
      * @description Zoom to a certain zoom level with respect to the center of the viewport.
      */
     zoomTo(targetZoom: number): void {
-        this._zoomTo(targetZoom, this._camera, this._config);
+        this._zoomBatcher.queueZoomUpdateTo(targetZoom);
     }
 
     /**
@@ -121,18 +93,6 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
      */
     zoomBy(delta: number): void {
         this._zoomBatcher.queueZoomUpdateBy(delta);
-    }
-
-    _actualZoomBy(delta: number): void {
-        console.log('delta', delta);
-        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
-        console.log('actual transformedDelta', transformedDelta);
-        this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
-    }
-
-    _actualZoomTo(targetZoom: number): void {
-        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
-        this._camera.setZoomLevel(transformedTarget);
     }
 
     /**
@@ -243,7 +203,6 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
         }
         switch(positionUpdate.type){
             case 'destination':
-                // console.log('panToWorld', positionUpdate);
                 this._actualPanToWorld(positionUpdate);
                 break;
             case 'delta':
@@ -252,64 +211,21 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
     }
 
     updateZoom(){
-        // if (this._queuedZoomOperations.length === 0) {
-        //     return;
-        // }
-
-        // Combine all queued operations into a single operation
-        // let combinedOp = this._queuedZoomOperations[0];
-
-        // Apply the combined operation using the same logic as the original zoomByAt
-        // const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(combinedOp.anchor);
-        // const transformedDelta = this._zoomBy(combinedOp.delta, this._camera, this._config);
-        // this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
-        // const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(combinedOp.anchor);
-        // const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        // const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
-
-        // Clear the queue
-        // this._queuedZoomOperations = [];
-
-        // ------------------------------------------------------------
-        // if (this._queueZoomToOperations.length === 0) {
-        //     return;
-        // }
-
-        // Combine all queued operations into a single operation
-        // let combinedOp = this._queueZoomToOperations[0];
-
-        // Apply the combined operation using the same logic as the original zoomByAt
-        // const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(combinedOp.anchor);
-        // const transformedTarget = this._zoomTo(combinedOp.destination, this._camera, this._config);
-        // this._camera.setZoomLevel(transformedTarget);
-        // const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(combinedOp.anchor);
-        // const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        // const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
-
-        // Clear the queue
-        // this._queueZoomToOperations = [];
-
         const op = this._zoomBatcher.processQueuedUpdates();
         if(op == null){
             return;
         }
-        switch(op.type){
-            case 'destination':
-                if(op.anchor){
-                    console.log('test');
-                    const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(op.anchor);
-                    const transformedTarget = this._zoomTo(op.destination, this._camera, this._config);
-                    this._camera.setZoomLevel(transformedTarget);
-                    const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(op.anchor);
-                    const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-                    const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-                    this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
-                }
-                break;
-            case 'delta':
-                this._actualZoomBy(op.delta);
+        if(op.anchor){
+            const originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(op.anchor);
+            const transformedTarget = this._zoomTo(op.destination, this._camera, this._config);
+            this._camera.setZoomLevel(transformedTarget);
+            const anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(op.anchor);
+            const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+            const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+            this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+        } else {
+            const transformedTarget = this._zoomTo(op.destination, this._camera, this._config);
+            this._camera.setZoomLevel(transformedTarget);
         }
     }
 
@@ -354,102 +270,4 @@ export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig
         clampTranslation: true,
         clampZoom: true,
     }, camera);
-}
-
-type ZoomOperation = {
-    delta: number;
-    anchor: Point;
-}
-
-type ZoomToOperation = {
-    destination: number;
-    anchor: Point;
-}
-
-function combineZoomByOperations(
-    op1: ZoomOperation,
-    op2: ZoomOperation,
-    initialZoom: number,
-    rotation: number
-): ZoomOperation {
-    const cos = Math.cos(rotation);
-    const sin = Math.sin(rotation);
-    
-    // Calculate intermediate and final zoom levels
-    const zoom1 = initialZoom;
-    const zoom2 = initialZoom + op1.delta;
-    const zoom3 = zoom2 + op2.delta;
-    
-    // Calculate position deltas for first operation
-    const positionDeltaX1 = cos * (op1.anchor.x/zoom1 - op1.anchor.x/zoom2) + 
-                          sin * (op1.anchor.y/zoom2 - op1.anchor.y/zoom1);
-    const positionDeltaY1 = cos * (op1.anchor.y/zoom1 - op1.anchor.y/zoom2) + 
-                          sin * (op1.anchor.x/zoom1 - op1.anchor.x/zoom2);
-    
-    // Calculate position deltas for second operation
-    const positionDeltaX2 = cos * (op2.anchor.x/zoom2 - op2.anchor.x/zoom3) + 
-                          sin * (op2.anchor.y/zoom3 - op2.anchor.y/zoom2);
-    const positionDeltaY2 = cos * (op2.anchor.y/zoom2 - op2.anchor.y/zoom3) + 
-                          sin * (op2.anchor.x/zoom2 - op2.anchor.x/zoom3);
-    
-    // Calculate total position deltas
-    const totalPositionDeltaX = positionDeltaX1 + positionDeltaX2;
-    const totalPositionDeltaY = positionDeltaY1 + positionDeltaY2;
-    
-    // Calculate effective anchor point
-    const zoomDiff = (1/initialZoom - 1/zoom3);
-    const effectiveAnchorX = totalPositionDeltaX / (cos * zoomDiff);
-    const effectiveAnchorY = totalPositionDeltaY / (cos * zoomDiff);
-    
-    return {
-        delta: op1.delta + op2.delta,
-        anchor: {
-            x: effectiveAnchorX,
-            y: effectiveAnchorY
-        }
-    };
-}
-
-function combineZoomToOperations(
-    op1: ZoomToOperation,
-    op2: ZoomToOperation,
-    initialZoom: number,
-    rotation: number
-): ZoomToOperation {
-    const cos = Math.cos(rotation);
-    const sin = Math.sin(rotation);
-    
-    // Calculate intermediate and final zoom levels
-    const zoom1 = initialZoom;
-    const zoom2 = op1.destination;
-    const zoom3 = op2.destination;
-    
-    // Calculate position deltas for first operation
-    const positionDeltaX1 = cos * (op1.anchor.x/zoom1 - op1.anchor.x/zoom2) + 
-                          sin * (op1.anchor.y/zoom2 - op1.anchor.y/zoom1);
-    const positionDeltaY1 = cos * (op1.anchor.y/zoom1 - op1.anchor.y/zoom2) + 
-                          sin * (op1.anchor.x/zoom1 - op1.anchor.x/zoom2);
-    
-    // Calculate position deltas for second operation
-    const positionDeltaX2 = cos * (op2.anchor.x/zoom2 - op2.anchor.x/zoom3) + 
-                          sin * (op2.anchor.y/zoom3 - op2.anchor.y/zoom2);
-    const positionDeltaY2 = cos * (op2.anchor.y/zoom2 - op2.anchor.y/zoom3) + 
-                          sin * (op2.anchor.x/zoom2 - op2.anchor.x/zoom3);
-    
-    // Calculate total position deltas
-    const totalPositionDeltaX = positionDeltaX1 + positionDeltaX2;
-    const totalPositionDeltaY = positionDeltaY1 + positionDeltaY2;
-    
-    // Calculate effective anchor point
-    const zoomDiff = (1/initialZoom - 1/zoom3);
-    const effectiveAnchorX = totalPositionDeltaX / (cos * zoomDiff);
-    const effectiveAnchorY = totalPositionDeltaY / (cos * zoomDiff);
-    
-    return {
-        destination: op2.destination,
-        anchor: {
-            x: effectiveAnchorX,
-            y: effectiveAnchorY
-        }
-    };
 }

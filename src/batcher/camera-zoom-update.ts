@@ -1,6 +1,5 @@
 import { Observable, Observer, SubscriptionOptions } from "src/util/observable";
 import { Point } from "src/util/misc";
-import { PointCal } from "point2point";
 
 export type ZoomLevel = number;
 
@@ -17,15 +16,9 @@ export type DestinationZoomUpdate = {
     anchor?: Point;
 };
 
-export type DeltaZoomUpdate = {
-    type: 'delta';
-    delta: ZoomLevel;
-    anchor?: Point;
-};
+export type ZoomUpdate = DestinationZoomUpdate;
 
-export type ZoomUpdate = DestinationZoomUpdate | DeltaZoomUpdate;
-
-function combineZoomToOperations(
+export function combineZoomToOperations(
     op1: ZoomToOperation,
     op2: ZoomToOperation,
     initialZoom: number,
@@ -71,7 +64,6 @@ function combineZoomToOperations(
 
 export class CameraZoomUpdateBatcher {
     private nextZoom: ZoomLevel | null = null;
-    private delta: ZoomLevel = 0;
     private velocity: ZoomVelocity = 0;
     private lastUpdateTime: number | null = null;
     private observable: Observable<[ZoomUpdate]>;
@@ -79,7 +71,6 @@ export class CameraZoomUpdateBatcher {
     // Debug counters
     private queueZoomUpdateCount: number = 0;
     private queueZoomUpdateToCount: number = 0;
-    private queueZoomUpdateByCount: number = 0;
     private lastUpdateCount: number = 0;
     
     constructor() {
@@ -96,23 +87,15 @@ export class CameraZoomUpdateBatcher {
 
     /**
      * Queue a zoom update to a specific destination to be processed in the next animation frame
-     * This will override any pending delta updates
      */
     public queueZoomUpdateTo(destination: ZoomLevel, anchor?: Point, currentZoom?: number, currentRotation?: number): void {
         this.queueZoomUpdateToCount++;
         const now = performance.now();
         
         // Update velocity if we have previous zoom levels
-        if (this.lastUpdateTime !== null) {
+        if (this.lastUpdateTime !== null && this.nextZoom !== null) {
             const dt = Math.max(1, now - this.lastUpdateTime);
-            
-            // Calculate instantaneous velocity
-            if (this.nextZoom !== null) {
-                this.velocity = (destination - this.nextZoom) / dt;
-            } else {
-                // If we have a delta, use it to calculate velocity
-                this.velocity = (destination - this.delta) / dt;
-            }
+            this.velocity = (destination - this.nextZoom) / dt;
         }
         
         this.lastUpdateTime = now;
@@ -134,35 +117,17 @@ export class CameraZoomUpdateBatcher {
             this.nextZoom = destination;
             this.anchor = anchor || null;
         }
-        
-        this.delta = 0; // Reset any pending deltas
     }
 
     /**
      * Queue a zoom update by delta to be processed in the next animation frame
-     * This will be ignored if there's a pending destination update
      */
-    public queueZoomUpdateBy(delta: ZoomLevel, anchor?: Point): void {
-        this.queueZoomUpdateByCount++;
-        const now = performance.now();
-        
-        // If we have a pending destination update, add the delta to it
+    public queueZoomUpdateBy(delta: ZoomLevel, anchor?: Point, currentZoom?: number, currentRotation?: number): void {
         if (this.nextZoom !== null) {
-            this.nextZoom += delta;
-            return;
+            this.queueZoomUpdateTo(this.nextZoom + delta, anchor, currentZoom, currentRotation);
+        } else if (currentZoom !== undefined) {
+            this.queueZoomUpdateTo(currentZoom + delta, anchor, currentZoom, currentRotation);
         }
-        
-        // Update velocity if we have previous zoom levels
-        if (this.lastUpdateTime !== null) {
-            const dt = Math.max(1, now - this.lastUpdateTime);
-            
-            // Calculate instantaneous velocity
-            this.velocity = delta / dt;
-        }
-        
-        this.lastUpdateTime = now;
-        this.delta += delta;
-        this.anchor = anchor || null;
     }
 
     /**
@@ -170,11 +135,10 @@ export class CameraZoomUpdateBatcher {
      * @returns the update to apply to the zoom level, with type information
      */
     public processQueuedUpdates(): ZoomUpdate | null {
-        this.lastUpdateCount = this.queueZoomUpdateCount + this.queueZoomUpdateToCount + this.queueZoomUpdateByCount;
+        this.lastUpdateCount = this.queueZoomUpdateCount + this.queueZoomUpdateToCount;
         // Reset counters after update
         this.queueZoomUpdateCount = 0;
         this.queueZoomUpdateToCount = 0;
-        this.queueZoomUpdateByCount = 0;
         
         if (this.nextZoom !== null) {
             const update: DestinationZoomUpdate = {
@@ -183,17 +147,6 @@ export class CameraZoomUpdateBatcher {
                 anchor: this.anchor || undefined
             };
             this.nextZoom = null;
-            this.delta = 0;
-            this.anchor = null;
-            this.observable.notify(update);
-            return update;
-        } else if (this.delta !== 0) {
-            const update: DeltaZoomUpdate = {
-                delta: this.delta,
-                type: 'delta',
-                anchor: this.anchor || undefined
-            };
-            this.delta = 0;
             this.anchor = null;
             this.observable.notify(update);
             return update;
@@ -223,13 +176,11 @@ export class CameraZoomUpdateBatcher {
         lastUpdateTotalCalls: number;
         queueZoomUpdateCalls: number;
         queueZoomUpdateToCalls: number;
-        queueZoomUpdateByCalls: number;
     } {
         return {
             lastUpdateTotalCalls: this.lastUpdateCount,
             queueZoomUpdateCalls: this.queueZoomUpdateCount,
-            queueZoomUpdateToCalls: this.queueZoomUpdateToCount,
-            queueZoomUpdateByCalls: this.queueZoomUpdateByCount
+            queueZoomUpdateToCalls: this.queueZoomUpdateToCount
         };
     }
 }

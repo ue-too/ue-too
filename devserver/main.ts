@@ -74,7 +74,8 @@ const animation = new Animation(positionKeyframe, (value)=>{
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
+    board.getCameraRig().zoomTo(value);
+    
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
@@ -83,9 +84,9 @@ const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
 }, new NumberAnimationHelper(), 1000);
 
 const compositeAnimation = new CompositeAnimation();
-compositeAnimation.addAnimation("position", animation);
+// compositeAnimation.addAnimation("position", animation);
 compositeAnimation.addAnimation("zoom", zoomAnimation);
-compositeAnimation.addAnimation("rotation", rotationAnimation);
+// compositeAnimation.addAnimation("rotation", rotationAnimation);
 // compositeAnimation.addAnimationAdmist("zoom", zoomAnimation, "position", 50);
 // compositeAnimation.addAnimationAfter("zoom", zoomAnimation, "position");
 
@@ -120,7 +121,7 @@ resetCameraBtn.addEventListener("click", ()=>{
     },
     {
         percentage: 1,
-        value: 1,
+        value: 2,
         easingFn: EasingFunctions.easeInOutSine
     }];
     rotationAnimation.keyFrames = [{
