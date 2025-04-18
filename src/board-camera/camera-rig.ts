@@ -99,29 +99,14 @@ export class CameraRig implements PanContext, ZoomContext, RotateContext { // th
      * @description Zoom to a certain zoom level with respect to a point in the world coordinate system.
      */
     zoomToAtWorld(targetZoom: number, at: Point): void {
-        // let originalAnchorInViewPort = this._camera.convertFromWorld2ViewPort(at);
-        // const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
-        // this._camera.setZoomLevel(transformedTarget);
-        // let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        // const cameraPositionDiff = PointCal.subVector(originalAnchorInViewPort, anchorInViewPortAfterZoom);
-        // const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        // this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
-        const delta = targetZoom - this._camera.zoomLevel;
-        this._zoomBatcher.queueZoomByAtWorld(delta, at, this._camera.zoomLevel, this._camera.rotation);
+        this._zoomBatcher.queueZoomToAtWorld(targetZoom, at, this._camera.zoomLevel, this._camera.rotation);
     }
 
     /**
      * @description Zoom by a certain amount with respect to a point in the world coordinate system.
      */
     zoomByAtWorld(delta: number, at: Point): void {
-        let anchorInViewPortBeforeZoom = this._camera.convertFromWorld2ViewPort(at);
-        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
-        this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
-        let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const diffInViewPort = PointCal.subVector(anchorInViewPortBeforeZoom, anchorInViewPortAfterZoom);
-        const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, this._camera.zoomLevel, this._camera.rotation);
-        const transformedDiff = this._panBy(diffInWorld, this._camera, this._config);
-        this._positionBatcher.queuePositionUpdateBy(transformedDiff);
+        this._zoomBatcher.queueZoomByAtWorld(delta, at, this._camera.zoomLevel, this._camera.rotation);
     }
 
 

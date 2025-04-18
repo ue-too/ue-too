@@ -156,6 +156,31 @@ export class CameraZoomUpdateBatcher {
     }
 
     /**
+     * Queue a zoom update to a specific destination at a world anchor to be processed in the next animation frame
+     */
+    public queueZoomToAtWorld(destination: ZoomLevel, worldAnchor: Point, currentZoom: number, currentRotation: number): void {
+        // Calculate the zoom delta
+        const delta = destination - currentZoom;
+        
+        // Calculate the effective anchor point in viewport coordinates
+        // that would produce the same camera position delta as the world-space zoom
+        const cos = Math.cos(currentRotation);
+        const sin = Math.sin(currentRotation);
+        
+        // Calculate the camera position delta components
+        const deltaX = -(worldAnchor.x * cos + worldAnchor.y * sin) * (delta / destination);
+        const deltaY = -(worldAnchor.y * cos - worldAnchor.x * sin) * (delta / destination);
+        
+        // Calculate the effective anchor point in viewport coordinates
+        const zoomDiff = (1/currentZoom - 1/destination);
+        const effectiveAnchorX = deltaX / (cos * zoomDiff);
+        const effectiveAnchorY = deltaY / (cos * zoomDiff);
+        
+        // Queue the zoom update with the effective anchor point
+        this.queueZoomUpdateTo(destination, { x: effectiveAnchorX, y: effectiveAnchorY }, currentZoom, currentRotation);
+    }
+
+    /**
      * Process and clear all queued zoom updates
      * @returns the update to apply to the zoom level, with type information
      */
@@ -209,43 +234,3 @@ export class CameraZoomUpdateBatcher {
         };
     }
 }
-
-// Example usage
-// ------------------------------------------------------------
-
-// Create zoom manager
-// const cameraZoom = new CameraZoomUpdateBatcher();
-
-// Add event listeners
-// function handleWheel(event: WheelEvent) {
-//     // Example: zoom in/out based on wheel delta
-//     const zoomDelta = -event.deltaY * 0.001;
-//     cameraZoom.queueZoomUpdateBy(zoomDelta);
-// }
-
-// Attach to DOM events
-// document.addEventListener('wheel', handleWheel);
-
-// Add update listener to respond to zoom changes
-// cameraZoom.subscribe(update => {
-//     // Update camera zoom
-//     if (update.type === 'destination') {
-//         // Set absolute zoom level
-//         camera.setZoom(update.zoom);
-//     } else {
-//         // Apply zoom delta
-//         camera.zoomBy(update.zoom);
-//     }
-// });
-
-// In your animation loop
-// function animationLoop() {
-//     // Update zoom
-//     cameraZoom.update();
-    
-//     // Continue animation loop
-//     requestAnimationFrame(animationLoop);
-// }
-
-// Start animation loop
-// requestAnimationFrame(animationLoop); 
