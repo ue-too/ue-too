@@ -383,7 +383,6 @@ export default class Board {
     private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
-                console.log("mutation", mutation.attributeName);
                 if(mutation.attributeName === "width"){
                     this.camera.viewPortWidth = parseFloat(this._canvas.style.width);
                     if(this.limitEntireViewPort){
