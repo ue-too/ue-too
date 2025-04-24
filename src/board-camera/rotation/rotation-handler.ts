@@ -106,8 +106,7 @@ export function clampRotateToHandler(targetRotation: number, camera: BoardCamera
         return targetRotation;
     }
     const clampedRotation = clampRotation(targetRotation, camera.rotationBoundaries);
-    const diff = angleSpan(camera.rotation, clampedRotation);
-    return diff;
+    return clampedRotation;
 }
 
 /**

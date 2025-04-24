@@ -7,7 +7,7 @@ import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
 import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
-import { cameraPositionToGet, convertDeltaInViewPortToWorldSpace } from "src";
+import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -34,12 +34,6 @@ const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const testAbortController = new AbortController();
 
-utilBtn.addEventListener("click", ()=>{
-    // canvas.style.width = "300px";
-    // canvasPositionDimensionPublisher.dispose();
-    testAbortController.abort();
-});
-
 
 canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
     console.log("canvas position", rect.x);
@@ -51,6 +45,13 @@ canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
 
 
 const board = new Board(canvas);
+utilBtn.addEventListener("click", ()=>{
+    // canvas.style.width = "300px";
+    // canvasPositionDimensionPublisher.dispose();
+    testAbortController.abort();
+    board.getCameraRig().panToWorld({x: 100, y: 100});
+});
+
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
 console.log("context", board.context);
@@ -73,12 +74,15 @@ const animation = new Animation(positionKeyframe, (value)=>{
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
-    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value);
+    // board.getCameraRig().zoomTo(value);
+    
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value, {x: 100, y: 100});
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
     // console.log("rotation", value);
-    board.camera.setRotation(value);
+    // board.camera.setRotation(value);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyRotateToAnimationInput(value);
 }, new NumberAnimationHelper(), 1000);
 
 const compositeAnimation = new CompositeAnimation();
@@ -119,7 +123,7 @@ resetCameraBtn.addEventListener("click", ()=>{
     },
     {
         percentage: 1,
-        value: 1,
+        value: 2,
         easingFn: EasingFunctions.easeInOutSine
     }];
     rotationAnimation.keyFrames = [{
@@ -133,11 +137,12 @@ resetCameraBtn.addEventListener("click", ()=>{
     }];
     (board.flowControl as FlowControlWithAnimationAndLockInput).initatePanTransition();
     (board.flowControl as FlowControlWithAnimationAndLockInput).initateZoomTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initateRotateTransition();
     compositeAnimation.startAnimation();
 });
 
 // board.fullScreen = true;
-// board.camera.setRotation(45 * Math.PI / 180);
+board.camera.setRotation(45 * Math.PI / 180);
 
 drawingEngine.addDrawTask({
     drawWithContext: (context, deltaTime) => {
@@ -151,9 +156,9 @@ drawingEngine.addDrawTask({
     }
 });
 
-board.limitEntireViewPort = false;
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
+// board.camera.setRotation(45 * Math.PI / 180);
 
 // drawingEngine.position = {x: 100, y: 100};
 
