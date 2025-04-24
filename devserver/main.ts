@@ -81,7 +81,8 @@ const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
     // console.log("rotation", value);
-    board.camera.setRotation(value);
+    // board.camera.setRotation(value);
+    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyRotateToAnimationInput(value);
 }, new NumberAnimationHelper(), 1000);
 
 const compositeAnimation = new CompositeAnimation();
@@ -136,11 +137,12 @@ resetCameraBtn.addEventListener("click", ()=>{
     }];
     (board.flowControl as FlowControlWithAnimationAndLockInput).initatePanTransition();
     (board.flowControl as FlowControlWithAnimationAndLockInput).initateZoomTransition();
+    (board.flowControl as FlowControlWithAnimationAndLockInput).initateRotateTransition();
     compositeAnimation.startAnimation();
 });
 
 // board.fullScreen = true;
-// board.camera.setRotation(45 * Math.PI / 180);
+board.camera.setRotation(45 * Math.PI / 180);
 
 drawingEngine.addDrawTask({
     drawWithContext: (context, deltaTime) => {
@@ -156,6 +158,7 @@ drawingEngine.addDrawTask({
 
 board.camera.setZoomLevel(1);
 board.camera.setPosition({x: 0, y: 0});
+// board.camera.setRotation(45 * Math.PI / 180);
 
 // drawingEngine.position = {x: 100, y: 100};
 

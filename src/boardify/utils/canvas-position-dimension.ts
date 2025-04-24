@@ -9,6 +9,7 @@ export class CanvasPositionDimensionPublisher {
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
     private scrollHandler: () => void;
+    private resizeHandler: () => void;
     private _observers: Observable<Parameters<CanvasUpdateObserver>>;
 
     constructor(canvas: HTMLCanvasElement) {
@@ -48,10 +49,21 @@ export class CanvasPositionDimensionPublisher {
                 this.lastRect = trueRect;
             }
         };
+
+        // Add window resize handler to detect position changes when window size changes
+        this.resizeHandler = () => {
+            const newRect = canvas.getBoundingClientRect();
+            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            if (rectChanged(this.lastRect, trueRect)) {
+                this.publishPositionUpdate(trueRect);
+                this.lastRect = trueRect;
+            }
+        };
         
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
         window.addEventListener('scroll', this.scrollHandler, { passive: true });
+        window.addEventListener('resize', this.resizeHandler, { passive: true });
     }
     
     // Add a cleanup method to remove event listeners
@@ -59,6 +71,7 @@ export class CanvasPositionDimensionPublisher {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();
         window.removeEventListener('scroll', this.scrollHandler);
+        window.removeEventListener('resize', this.resizeHandler);
     }
 
     private publishPositionUpdate(rect: DOMRect) {

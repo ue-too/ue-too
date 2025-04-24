@@ -10,8 +10,8 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publ
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
-import { InputFlowControl, createDefaultFlowControlWithCameraRig, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
-import { CameraRig } from 'src/board-camera/camera-rig';
+import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
+import { CameraRig, CameraRigWithUpdateBatcher, DefaultCameraRig } from 'src/board-camera/camera-rig';
 import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
 /**
@@ -88,7 +88,7 @@ export default class Board {
         this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasProxy = new CanvasProxy(canvas, this._canvasPositionDimensionPublisher);
 
-        this.cameraRig = new CameraRig({
+        this.cameraRig = new CameraRigWithUpdateBatcher({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
