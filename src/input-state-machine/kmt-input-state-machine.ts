@@ -372,24 +372,57 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         return this._eventReactions;
     }
 
+    uponLeave(context: KmtInputContext): void {
+        console.log('current velocity', context.currentVelocity);
+    }
+
     leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+        const currentTime = performance.now();
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
         };
+        
+        // Calculate velocity based on time and distance
+        if (context._lastMoveTime) {
+            const timeDelta = currentTime - context._lastMoveTime;
+            // Only update velocity if there's actual movement
+            if (Math.abs(delta.x) > 0 || Math.abs(delta.y) > 0) {
+                const velocity = {
+                    x: delta.x / timeDelta,
+                    y: delta.y / timeDelta
+                };
+                context.setCurrentVelocity(velocity);
+            } else {
+                // If mouse is stationary, set velocity to zero
+                context.setCurrentVelocity({x: 0, y: 0});
+            }
+        }
+        
         if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
         context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context._lastMoveTime = currentTime;
+        context._lastMovePosition = {x: payload.x, y: payload.y};
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
         context.canvas.setCursor("default");
+        context.resetVelocity();
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.canvas.setCursor("grab");
+        // Only keep velocity if there was actual movement
+        const curTime = performance.now();
+        if(curTime - context._lastMoveTime > 100){
+            context.resetVelocity();
+        }
+        if (Math.abs(context.currentVelocity.x) < 0.001 && Math.abs(context.currentVelocity.y) < 0.001) {
+            context.resetVelocity();
+        }
     }
 }
 
@@ -416,19 +449,43 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 
     middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+        const currentTime = performance.now();
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
         };
+        
+        // Calculate velocity based on time and distance
+        if (context._lastMoveTime) {
+            const timeDelta = currentTime - context._lastMoveTime;
+            // Only update velocity if there's actual movement
+            if (Math.abs(delta.x) > 0 || Math.abs(delta.y) > 0) {
+                const velocity = {
+                    x: delta.x / timeDelta,
+                    y: delta.y / timeDelta
+                };
+                context.setCurrentVelocity(velocity);
+            } else {
+                // If mouse is stationary, set velocity to zero
+                context.setCurrentVelocity({x: 0, y: 0});
+            }
+        }
+        
         if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
         context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context._lastMoveTime = currentTime;
+        context._lastMovePosition = {x: payload.x, y: payload.y};
     }
 
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.canvas.setCursor("default");
+        // Only keep velocity if there was actual movement
+        if (Math.abs(context.currentVelocity.x) < 0.001 && Math.abs(context.currentVelocity.y) < 0.001) {
+            context.resetVelocity();
+        }
     }
 }
 

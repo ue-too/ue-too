@@ -171,6 +171,13 @@ export interface KmtInputContext extends BaseContext {
     notifyOnRotate: (deltaRotation: number) => void;
     setInitialCursorPosition: (position: Point) => void;
     initialCursorPosition: Point;
+    currentVelocity: Point;
+    setCurrentVelocity: (velocity: Point) => void;
+    getCurrentVelocity: () => Point;
+    resetVelocity: () => void;
+    initiateDeceleration: (startingVelocity: Point) => void;
+    _lastMoveTime: number;
+    _lastMovePosition: Point;
 }
 
 /**
@@ -183,6 +190,9 @@ export class DummyKmtInputContext implements KmtInputContext {
     public alignCoordinateSystem: boolean = false;
     public canvas: CanvasOperator = new DummyCanvasOperator();
     public initialCursorPosition: Point = {x: 0, y: 0};
+    public currentVelocity: Point = {x: 0, y: 0};
+    public _lastMoveTime: number = 0;
+    public _lastMovePosition: Point = {x: 0, y: 0};
 
     constructor(){
 
@@ -200,10 +210,23 @@ export class DummyKmtInputContext implements KmtInputContext {
     setInitialCursorPosition(position: Point): void {
     }
 
+    setCurrentVelocity(velocity: Point): void {
+    }
+
+    getCurrentVelocity(): Point {
+        return {x: 0, y: 0};
+    }
+
+    resetVelocity(): void {
+    }
+
     cleanup(): void {
     }
 
     setup(): void {
+    }
+
+    initiateDeceleration(startingVelocity: Point): void {
     }
 }
 
@@ -219,12 +242,18 @@ export class ObservableInputTracker implements KmtInputContext {
     private _canvasOperator: CanvasOperator;
     private _inputPublisher: UserInputPublisher;
     private _initialCursorPosition: Point;
+    private _currentVelocity: Point;
+    public _lastMoveTime: number;
+    public _lastMovePosition: Point;
 
     constructor(canvasOperator: CanvasOperator, inputPublisher: UserInputPublisher){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;
         this._initialCursorPosition = {x: 0, y: 0};
+        this._currentVelocity = {x: 0, y: 0};
+        this._lastMoveTime = 0;
+        this._lastMovePosition = {x: 0, y: 0};
     }
 
     get alignCoordinateSystem(): boolean {
@@ -257,6 +286,24 @@ export class ObservableInputTracker implements KmtInputContext {
 
     setInitialCursorPosition(position: Point): void {
         this._initialCursorPosition = position;
+    }
+
+    get currentVelocity(): Point {
+        return this._currentVelocity;
+    }
+
+    setCurrentVelocity(velocity: Point): void {
+        this._currentVelocity = velocity;
+    }
+
+    getCurrentVelocity(): Point {
+        return this._currentVelocity;
+    }
+
+    resetVelocity(): void {
+        this._currentVelocity = {x: 0, y: 0};
+        this._lastMoveTime = 0;
+        this._lastMovePosition = {x: 0, y: 0};
     }
 
     cleanup(): void {
