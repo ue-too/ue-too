@@ -1,6 +1,6 @@
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { TouchPoints } from "./touch-input-state-machine";
-import { RawUserInputPublisher } from "src/raw-input-publisher";
+import { RawUserInputPublisher } from "src/input-interpretation/raw-input-publisher";
 import { BaseContext } from "src/being/interfaces";
 import { CanvasOperator } from "./kmt-input-context";
 

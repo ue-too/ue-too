@@ -1,5 +1,5 @@
-import { TouchPoints, TouchInputStateMachine, createTouchInputStateMachine } from "src/input-state-machine/touch-input-state-machine";
-import { TouchInputTracker } from "src/input-state-machine/touch-input-context";
+import { TouchPoints, TouchInputStateMachine, createTouchInputStateMachine } from "src/input-interpretation/input-state-machine/touch-input-state-machine";
+import { TouchInputTracker } from "src/input-interpretation/input-state-machine/touch-input-context";
 
 /**
  * @description The touch event parser.

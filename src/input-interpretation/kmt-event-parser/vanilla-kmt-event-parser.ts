@@ -1,5 +1,5 @@
-import type { KmtInputStateMachine, ObservableInputTracker } from "src/input-state-machine";
-import { createKmtInputStateMachine } from "src/input-state-machine";
+import type { KmtInputStateMachine, ObservableInputTracker } from "src/input-interpretation/input-state-machine";
+import { createKmtInputStateMachine } from "src/input-interpretation/input-state-machine";
 
 /**
  * @category Event Parser

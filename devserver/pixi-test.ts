@@ -1,7 +1,7 @@
 import DefaultBoardCamera from 'src/board-camera';
 import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
-import { VanillaKMTEventParser } from 'src/kmt-event-parser';
-import { createDefaultRawUserInputPublisher } from 'src/raw-input-publisher';
+import { VanillaKMTEventParser } from 'src/input-interpretation/kmt-event-parser';
+import { createDefaultRawUserInputPublisher } from 'src/input-interpretation/raw-input-publisher';
 
 console.log("pixi-test");
 // Asynchronous IIFE

@@ -1,6 +1,6 @@
 
 import { InputFlowControl } from "./interface";
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { ObservableBoardCamera } from "src/board-camera";
 import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
 import { createDefaultZoomControlStateMachine, ZoomControlStateMachine } from "./zoom-control-state-machine";

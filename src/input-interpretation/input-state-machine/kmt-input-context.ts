@@ -1,6 +1,6 @@
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { BaseContext, NO_OP } from "src/being";
-import { UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
+import { UserInputPublisher } from "src/input-interpretation/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect } from "src/boardify/utils/canvas-position-dimension";
 
 /**

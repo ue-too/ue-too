@@ -1,4 +1,4 @@
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { TemplateStateMachine, TemplateState, NO_OP } from "src/being";
 import type { State, EventReactions, BaseContext } from "src/being";
 

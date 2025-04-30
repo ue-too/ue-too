@@ -1,18 +1,18 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from 'src/board-camera';
 import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camera/utils/position';
-import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/kmt-event-parser';
-import { TouchEventParser, VanillaTouchEventParser } from 'src/touch-event-parser';
-import { Point } from 'src/util/misc';
+import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/input-interpretation/kmt-event-parser';
+import { TouchEventParser, VanillaTouchEventParser } from 'src/input-interpretation/touch-event-parser';
+import { Point } from 'src/utils/misc';
 import { CanvasPositionDimensionPublisher, reverseYAxis } from 'src/boardify/utils';
 import { PointCal } from 'point2point';
 
-import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publisher';
+import { CameraEventMap, CameraState, UnSubscribe } from 'src/board-camera/camera-update-publisher';
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
-import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
+import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/input-interpretation/raw-input-publisher';
 
 import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
 import { CameraRig, DefaultCameraRig } from 'src/board-camera/camera-rig';
-import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
+import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-interpretation/input-state-machine';
 
 /**
  * Usage

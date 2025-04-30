@@ -1,10 +1,10 @@
-import type { Point } from "src/util/misc";
+import type { Point } from "src/utils/misc";
 import { BoardCamera } from "src/board-camera";
-import { createHandlerChain } from "src/util/handler-pipeline";
+import { createHandlerChain } from "src/utils/handler-pipeline";
 import { convertDeltaInViewPortToWorldSpace } from "src/board-camera/utils/coordinate-conversion";
 import { clampZoomLevel } from "src/board-camera/utils/zoom";
 import { PointCal } from "point2point";
-import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/pan/pan-handlers";
+import type { PanByHandlerFunction, PanHandlerConfig } from "src/board-camera/camera-rig/pan-handler";
 
 /**
  * @description The configuration for the base zoom handler.

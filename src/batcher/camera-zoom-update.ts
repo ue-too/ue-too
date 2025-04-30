@@ -1,5 +1,5 @@
-import { Observable, Observer, SubscriptionOptions } from "src/util/observable";
-import { Point } from "src/util/misc";
+import { Observable, Observer, SubscriptionOptions } from "src/utils/observable";
+import { Point } from "src/utils/misc";
 
 export type DestinationZoomUpdate = {
     type: 'destination';

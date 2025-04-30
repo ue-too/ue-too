@@ -1,5 +1,5 @@
-import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../being/interfaces";
-import { Point } from "src/util/misc";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../../being/interfaces";
+import { Point } from "src/utils/misc";
 import { PointCal } from "point2point";
 import { CanvasOperator, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
 

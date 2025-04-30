@@ -1,5 +1,5 @@
-import { Point } from "src/util/misc";
-import { Observable, Observer, SubscriptionOptions } from "../util/observable";
+import { Point } from "src/utils/misc";
+import { Observable, Observer, SubscriptionOptions } from "../utils/observable";
 
 /**
  * @description The payload for the pan event.

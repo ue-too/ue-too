@@ -6,7 +6,7 @@ import { drawXAxis, drawYAxis } from "./drawing-util";
 import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
 import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
-import { createDefaultPanByHandler } from "src/board-camera/pan/pan-handlers";
+import { createDefaultPanByHandler } from "src/board-camera/camera-rig/pan-handler";
 import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {

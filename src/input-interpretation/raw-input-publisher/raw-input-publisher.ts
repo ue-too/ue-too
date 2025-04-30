@@ -1,7 +1,7 @@
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { createDefaultFlowControl, InputFlowControl } from "src/input-flow-control";
 import BoardCamera from "src/board-camera";
-import { Observable, Observer } from "src/util";
+import { Observable, Observer } from "src/utils";
 
 /**
  * @description The unsubscribe to user raw input.

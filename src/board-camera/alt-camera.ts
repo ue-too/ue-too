@@ -1,12 +1,12 @@
 import { PointCal } from "point2point";
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 // import { BoardCamera } from "../interface";
-import { CameraEventMap, CameraState, UnSubscribe } from "src/camera-update-publisher";
-import { CameraUpdatePublisher } from "src/camera-update-publisher";
-import { Boundaries, withinBoundaries } from "../utils/position";
-import { ZoomLevelLimits, zoomLevelWithinLimits } from "../utils/zoom";
-import { RotationLimits, rotationWithinLimits } from "../utils/rotation";
-import { TransformMatrix } from "../utils/matrix";
+import { CameraEventMap, CameraState, UnSubscribe } from "src/board-camera/camera-update-publisher";
+import { CameraUpdatePublisher } from "src/board-camera/camera-update-publisher";
+import { Boundaries, withinBoundaries } from "./utils/position";
+import { ZoomLevelLimits, zoomLevelWithinLimits } from "./utils/zoom";
+import { RotationLimits, rotationWithinLimits } from "./utils/rotation";
+import { TransformMatrix } from "./utils/matrix";
 
 /**
  * @description This is the context centric camera.

@@ -1,11 +1,11 @@
-import { Point } from "src/util/misc";
-import { UnSubscribe } from "src/camera-update-publisher";
+import { Point } from "src/utils/misc";
+import { UnSubscribe } from "src/board-camera/camera-update-publisher";
 
 import { RotationLimits } from "src/board-camera/utils/rotation";
 import { ZoomLevelLimits } from "src/board-camera/utils/zoom";
 import { Boundaries } from "src/board-camera/utils/position";
-import { CameraEventMap, CameraState } from "src/camera-update-publisher";
-import { SubscriptionOptions } from "src/util/observable";
+import { CameraEventMap, CameraState } from "src/board-camera/camera-update-publisher";
+import { SubscriptionOptions } from "src/utils/observable";
 
 /**
  * @description The interface for the observable board camera.

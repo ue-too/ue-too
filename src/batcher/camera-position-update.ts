@@ -1,4 +1,4 @@
-import { Observable, Observer, SubscriptionOptions } from "src/util/observable";
+import { Observable, Observer, SubscriptionOptions } from "src/utils/observable";
 
 export type Position = {
     x: number;

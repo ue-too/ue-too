@@ -5,26 +5,26 @@ import {
     createDefaultPanToHandler, 
     PanByHandlerFunction, 
     PanHandlerConfig, 
-    PanToHandlerFunction } from "src/board-camera/pan/pan-handlers";
+    PanToHandlerFunction } from "src/board-camera/camera-rig/pan-handler";
 import { 
     ZoomHandlerConfig, 
     ZoomToHandlerFunction, 
     createDefaultZoomToOnlyHandler, 
     ZoomByHandlerFunction, 
     createDefaultZoomByOnlyHandler, 
-} from "src/board-camera/zoom/zoom-handler";
+} from "src/board-camera/camera-rig/zoom-handler";
 import DefaultBoardCamera from "src/board-camera/board-camera-v2";
-import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./rotation";
-import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation";
-import { ObservableBoardCamera } from "./interface";
+import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./rotation-handler";
+import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation-handler";
+import { ObservableBoardCamera } from "../interface";
 import { PanContext } from "src/input-flow-control/pan-control-state-machine";
 import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
 import { CameraPositionUpdateBatcher } from "src/batcher/camera-position-update";
 import { CameraZoomUpdateBatcher } from "src/batcher/camera-zoom-update";
 import { CameraRotationUpdateBatcher } from "src/batcher/camera-rotation-update";
-import { convertDeltaInViewPortToWorldSpace } from "./utils";
+import { convertDeltaInViewPortToWorldSpace } from "../utils";
 
 /**
  * @description The config for the camera rig.

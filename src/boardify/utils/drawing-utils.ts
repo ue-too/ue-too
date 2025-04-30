@@ -1,5 +1,5 @@
-import { Point } from "src/util/misc";
-import { calculateOrderOfMagnitude } from "src/util";
+import { Point } from "src/utils/misc";
+import { calculateOrderOfMagnitude } from "src/utils";
 import { Boundaries } from "src/board-camera";
 import { boundariesFullyDefined, translationHeightOf, translationWidthOf } from "src/board-camera/utils/position";
 import { PointCal } from "point2point";

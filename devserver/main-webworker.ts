@@ -1,7 +1,7 @@
 import { createDefaultCameraRig, createDefaultFlowControlWithCameraRig, createKmtInputStateMachine, DefaultBoardCamera, KmtInputStateMachineWebWorkerProxy, VanillaKMTEventParser } from "src";
 import { CanvasPositionDimensionPublisher } from "src/boardify/utils";
-import { RawUserInputPublisher } from "src/raw-input-publisher";
-import { CanvasProxy, CanvasProxyWorkerRelay, ObservableInputTracker } from "src/input-state-machine/kmt-input-context";
+import { RawUserInputPublisher } from "src/input-interpretation/raw-input-publisher";
+import { CanvasProxy, CanvasProxyWorkerRelay, ObservableInputTracker } from "src/input-interpretation/input-state-machine/kmt-input-context";
 
 const utilBtn = document.getElementById("util-btn") as HTMLButtonElement;
 

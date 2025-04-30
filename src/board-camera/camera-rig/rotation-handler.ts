@@ -1,5 +1,5 @@
 import { BoardCamera } from "src/board-camera/interface";
-import { createHandlerChain } from "src/util/handler-pipeline";
+import { createHandlerChain } from "src/utils/handler-pipeline";
 import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "src/board-camera/utils/rotation";
 
 /**
