@@ -372,8 +372,12 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         return this._eventReactions;
     }
 
+    uponEnter(context: KmtInputContext): void {
+        context.resetVelocity();
+    }
+
     uponLeave(context: KmtInputContext): void {
-        console.log('current velocity', context.currentVelocity);
+        context.initiateDeceleration();
     }
 
     leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
@@ -383,24 +387,26 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
             y: context.initialCursorPosition.y - payload.y,
         };
         
+        if(!context.alignCoordinateSystem){
+            delta.y = -delta.y;
+        }
+        
         // Calculate velocity based on time and distance
         if (context._lastMoveTime) {
             const timeDelta = currentTime - context._lastMoveTime;
             // Only update velocity if there's actual movement
+            console.log('time delta', timeDelta);
             if (Math.abs(delta.x) > 0 || Math.abs(delta.y) > 0) {
                 const velocity = {
-                    x: delta.x / timeDelta,
-                    y: delta.y / timeDelta
+                    x: delta.x / (timeDelta / 5),
+                    y: delta.y / (timeDelta / 5)
                 };
+                console.log('velocity', velocity);
                 context.setCurrentVelocity(velocity);
             } else {
                 // If mouse is stationary, set velocity to zero
                 context.setCurrentVelocity({x: 0, y: 0});
             }
-        }
-        
-        if(!context.alignCoordinateSystem){
-            delta.y = -delta.y;
         }
         context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});

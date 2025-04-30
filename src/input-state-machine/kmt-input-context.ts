@@ -2,6 +2,8 @@ import { Point } from "src/util/misc";
 import { BaseContext, NO_OP } from "src/being";
 import { UserInputPublisher } from "src/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect } from "src/boardify/utils/canvas-position-dimension";
+import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
+import { PointCal } from "point2point";
 
 /**
  * @description A proxy for the canvas so that client code that needs to access 
@@ -175,7 +177,7 @@ export interface KmtInputContext extends BaseContext {
     setCurrentVelocity: (velocity: Point) => void;
     getCurrentVelocity: () => Point;
     resetVelocity: () => void;
-    initiateDeceleration: (startingVelocity: Point) => void;
+    initiateDeceleration: () => void;
     _lastMoveTime: number;
     _lastMovePosition: Point;
 }
@@ -226,7 +228,15 @@ export class DummyKmtInputContext implements KmtInputContext {
     setup(): void {
     }
 
-    initiateDeceleration(startingVelocity: Point): void {
+    initiateDeceleration(): void {
+    }
+
+    addDelta(delta: Point): void {
+
+    }
+
+    flushDelta(): Point | null {
+        return null;
     }
 }
 
@@ -245,8 +255,12 @@ export class ObservableInputTracker implements KmtInputContext {
     private _currentVelocity: Point;
     public _lastMoveTime: number;
     public _lastMovePosition: Point;
+    private _inputControlFlow: FlowControlWithAnimationAndLockInput;
+    private _decelerate: boolean;
+    private _delta: Point | null = null; 
+    private _startTrackingDeltaTime: number | null = null;
 
-    constructor(canvasOperator: CanvasOperator, inputPublisher: UserInputPublisher){
+    constructor(canvasOperator: CanvasOperator, inputPublisher: UserInputPublisher, inputControlFlow: FlowControlWithAnimationAndLockInput){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;
@@ -254,6 +268,9 @@ export class ObservableInputTracker implements KmtInputContext {
         this._currentVelocity = {x: 0, y: 0};
         this._lastMoveTime = 0;
         this._lastMovePosition = {x: 0, y: 0};
+        this._inputControlFlow = inputControlFlow;
+        this._currentVelocity = {x: 0, y: 0};
+        this._decelerate = false;
     }
 
     get alignCoordinateSystem(): boolean {
@@ -306,9 +323,26 @@ export class ObservableInputTracker implements KmtInputContext {
         this._lastMovePosition = {x: 0, y: 0};
     }
 
+    initiateDeceleration(): void {
+        this._decelerate = true;
+    }
+
     cleanup(): void {
     }
 
     setup(): void {
     }
+
+    update(): void {
+        if(!this._decelerate){
+            return;
+        }
+        this._inputControlFlow.notifyPanInput(this._currentVelocity);
+        this._currentVelocity = PointCal.multiplyVectorByScalar(this._currentVelocity, 0.99 );
+        if(PointCal.magnitude(this._currentVelocity) < 0.01){
+            this._currentVelocity = {x: 0, y: 0};
+            this._decelerate = false;
+        }
+    }
+
 }

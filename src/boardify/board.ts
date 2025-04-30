@@ -101,7 +101,7 @@ export default class Board {
 
         this.boardInputPublisher = new RawUserInputPublisher(createFlowControlWithAnimationAndLockWithCameraRig(this.cameraRig));
 
-        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
+        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher, this.boardInputPublisher.flowControl as FlowControlWithAnimationAndLockInput);
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
 
         const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
@@ -316,6 +316,7 @@ export default class Board {
             this.height = window.innerHeight;
         }
 
+        this._observableInputTracker.update();
         this.cameraRig.update();
         let deltaTime = timestamp - this.lastUpdateTime;
         this.lastUpdateTime = timestamp;
