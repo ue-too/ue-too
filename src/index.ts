@@ -1,3 +1,4 @@
+export * from "./batcher";
 export * from "./being";
 export * from "./board-camera";
 export * from "./boardify";
