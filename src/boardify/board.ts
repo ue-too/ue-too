@@ -11,7 +11,7 @@ import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBas
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
 import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
-import { CameraRig, CameraRigWithUpdateBatcher, DefaultCameraRig } from 'src/board-camera/camera-rig';
+import { CameraRig, DefaultCameraRig } from 'src/board-camera/camera-rig';
 import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
 /**
@@ -88,7 +88,7 @@ export default class Board {
         this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasProxy = new CanvasProxy(canvas, this._canvasPositionDimensionPublisher);
 
-        this.cameraRig = new CameraRigWithUpdateBatcher({
+        this.cameraRig = new DefaultCameraRig({
             limitEntireViewPort: true,
             restrictRelativeXTranslation: false,
             restrictRelativeYTranslation: false,
