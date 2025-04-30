@@ -10,7 +10,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/camera-update-publ
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/raw-input-publisher';
 
-import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
+import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig, FlowControlWithAnimationAndLockInput } from 'src/input-flow-control';
 import { CameraRig, DefaultCameraRig } from 'src/board-camera/camera-rig';
 import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-state-machine';
 
