@@ -10,7 +10,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from 'src/board-camera/camer
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnHeight, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from 'src/boardify/utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from 'src/input-interpretation/raw-input-publisher';
 
-import { InputFlowControl, createFlowControlWithAnimationAndLockWithCameraRig } from 'src/input-flow-control';
+import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from 'src/camera-mux';
 import { CameraRig, DefaultCameraRig } from 'src/board-camera/camera-rig';
 import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from 'src/input-interpretation/input-state-machine';
 
@@ -99,7 +99,7 @@ export default class Board {
             clampZoom: true,
         }, camera);
 
-        this.boardInputPublisher = new RawUserInputPublisher(createFlowControlWithAnimationAndLockWithCameraRig(this.cameraRig));
+        this.boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig));
 
         this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
@@ -298,12 +298,12 @@ export default class Board {
         this.camera = camera;
     }
 
-    get flowControl(): InputFlowControl{
-        return this.boardInputPublisher.flowControl;
+    get cameraMux(): CameraMux{
+        return this.boardInputPublisher.cameraMux;
     }
 
-    set flowControl(flowControl: InputFlowControl){
-        this.boardInputPublisher.flowControl = flowControl;
+    set cameraMux(cameraMux: CameraMux){
+        this.boardInputPublisher.cameraMux = cameraMux;
     }
 
     /**

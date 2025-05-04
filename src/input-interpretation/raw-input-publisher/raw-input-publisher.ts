@@ -1,5 +1,5 @@
 import { Point } from "src/utils/misc";
-import { createDefaultFlowControl, InputFlowControl } from "src/input-flow-control";
+import { createDefaultCameraMux, CameraMux } from "src/camera-mux";
 import BoardCamera from "src/board-camera";
 import { Observable, Observer } from "src/utils";
 
@@ -115,30 +115,30 @@ export class RawUserInputPublisher implements UserInputPublisher {
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
     private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
     private all: Observable<Parameters<RawUserInputCallback<"all">>>;
-    private _flowControl: InputFlowControl;
+    private _cameraMux: CameraMux;
 
-    constructor(flowControl: InputFlowControl){
+    constructor(cameraMux: CameraMux){
         this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
         this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
         this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
         this.all = new Observable<Parameters<RawUserInputCallback<"all">>>();
-        this._flowControl = flowControl;
+        this._cameraMux = cameraMux;
     }
 
     notifyPan(diff: Point): void {
-        this._flowControl.notifyPanInput(diff);
+        this._cameraMux.notifyPanInput(diff);
         this.pan.notify({diff: diff});
         this.all.notify({type: "pan", diff: diff});
     }
 
     notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
-        this._flowControl.notifyZoomInput(deltaZoomAmount, anchorPoint);
+        this._cameraMux.notifyZoomInput(deltaZoomAmount, anchorPoint);
         this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
         this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
     }
 
     notifyRotate(deltaRotation: number): void {
-        this._flowControl.notifyRotationInput(deltaRotation);
+        this._cameraMux.notifyRotationInput(deltaRotation);
         this.rotate.notify({deltaRotation: deltaRotation});
         this.all.notify({type: "rotate", deltaRotation: deltaRotation});
     }
@@ -158,12 +158,12 @@ export class RawUserInputPublisher implements UserInputPublisher {
         }
     }
 
-    get flowControl(): InputFlowControl {
-        return this._flowControl;
+    get cameraMux(): CameraMux {
+        return this._cameraMux;
     }
 
-    set flowControl(flowControl: InputFlowControl){
-        this._flowControl = flowControl;
+    set cameraMux(cameraMux: CameraMux){
+        this._cameraMux = cameraMux;
     }
 }
 
@@ -173,7 +173,7 @@ export class RawUserInputPublisher implements UserInputPublisher {
  * @category Event Parser
  */
 export function createDefaultRawUserInputPublisher(camera: BoardCamera): RawUserInputPublisher {
-    return new RawUserInputPublisher(createDefaultFlowControl(camera));
+    return new RawUserInputPublisher(createDefaultCameraMux(camera));
 }
 
 export class RawUserInputPublisherWithWebWorkerRelay implements UserInputPublisher {

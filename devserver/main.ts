@@ -5,7 +5,7 @@ import { Point, PointCal } from "point2point";
 import { drawXAxis, drawYAxis } from "./drawing-util";
 import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
-import { FlowControlWithAnimationAndLockInput } from "src/input-flow-control/flow-control-with-animation-and-lock";
+import { FlowControlWithAnimationAndLockInput } from "src/camera-mux/flow-control-with-animation-and-lock";
 import { createDefaultPanByHandler } from "src/board-camera/camera-rig/pan-handler";
 import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
 

@@ -6,7 +6,7 @@ import { Point } from "src/utils/misc";
  * 
  * @category Input Flow Control
  */
-export interface InputFlowControl {
+export interface CameraMux {
     notifyPanInput(diff: Point): void;
     notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void;
     notifyRotationInput(deltaRotation: number): void;

@@ -17,13 +17,13 @@ import DefaultBoardCamera from "src/board-camera/board-camera-v2";
 import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./rotation-handler";
 import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation-handler";
 import { ObservableBoardCamera } from "../interface";
-import { PanContext } from "src/input-flow-control/pan-control-state-machine";
-import { ZoomContext } from "src/input-flow-control/zoom-control-state-machine";
+import { PanContext } from "src/camera-mux/pan-control-state-machine";
+import { ZoomContext } from "src/camera-mux/zoom-control-state-machine";
 import { Point } from "src/utils/misc";
-import { RotateContext } from "src/input-flow-control/rotate-control-state-machine";
-import { CameraPositionUpdateBatcher } from "src/batcher/camera-position-update";
-import { CameraZoomUpdateBatcher } from "src/batcher/camera-zoom-update";
-import { CameraRotationUpdateBatcher } from "src/batcher/camera-rotation-update";
+import { RotateContext } from "src/camera-mux/rotate-control-state-machine";
+import { CameraPositionUpdateBatcher } from "src/board-camera/batcher/camera-position-update";
+import { CameraZoomUpdateBatcher } from "src/board-camera/batcher/camera-zoom-update";
+import { CameraRotationUpdateBatcher } from "src/board-camera/batcher/camera-rotation-update";
 import { convertDeltaInViewPortToWorldSpace } from "../utils";
 
 /**

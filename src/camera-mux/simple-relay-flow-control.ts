@@ -1,6 +1,6 @@
 import DefaultBoardCamera, { ObservableBoardCamera } from "src/board-camera";
 import { CameraRig, createDefaultCameraRig } from "src/board-camera/camera-rig";
-import { InputFlowControl } from "./interface";
+import { CameraMux } from "./interface";
 import { Point } from "src/utils/misc";
 
 /**
@@ -9,7 +9,7 @@ import { Point } from "src/utils/misc";
  * 
  * @category Input Flow Control
  */
-export class SimpleRelayFlowControl implements InputFlowControl {
+export class SimpleRelayFlowControl implements CameraMux {
 
     private _cameraRig: CameraRig;
 
@@ -36,7 +36,7 @@ export class SimpleRelayFlowControl implements InputFlowControl {
  * 
  * @category Input Flow Control
  */
-export function createDefaultFlowControl(camera: ObservableBoardCamera): InputFlowControl {
+export function createDefaultCameraMux(camera: ObservableBoardCamera): CameraMux {
     const context = createDefaultCameraRig(camera);
     return new SimpleRelayFlowControl(context);
 }
@@ -44,6 +44,6 @@ export function createDefaultFlowControl(camera: ObservableBoardCamera): InputFl
 /**
  * 
  */
-export function createDefaultFlowControlWithCameraRig(cameraRig: CameraRig): InputFlowControl {
+export function createDefaultCameraMuxWithCameraRig(cameraRig: CameraRig): CameraMux {
     return new SimpleRelayFlowControl(cameraRig);
 }
