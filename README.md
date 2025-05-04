@@ -29,6 +29,23 @@
     This is is a small demo gif of what board is capable of.
 </p>
 
+> This library is still under development. The API is not stable and will change.
+
+## Why does anyone need this?
+
+Picture this: 
+
+You are building a web app that allows users to draw on a canvas. You have your pen and eraser tools ready to go.
+You try it out and finds that you can't quite get the tiny details of the drawing just right, so you need a way to zoom in on the drawing.
+
+After you have the zoom feature in place, you find that once you zoom in, you can't see other parts of the drawing. You need a way to pan around the canvas.
+Once you have the pan feature, this is when the code starts to get a little messy. 
+You might have your logic tied to the canvas element's event listeners. What if you need to support touch input? 
+
+This is where `ue-too` comes in. It takes care of the panning and zooming part for you so you can focus on the other parts of the app. (or at least the math part)
+
+Even if you're not building a drawing app, if you have a canvas that you want to allow users to pan and zoom around, this library is for you.
+
 ## What this library is?
 - Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
 - Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
@@ -41,9 +58,9 @@
 - A full-featured package with built-in drawing tools and user interfaces
 
 ## Quick Demo
-[CodeSandbox link](https://codesandbox.io/p/sandbox/drp5c7): with a minimal example showcasing the basic functionality that `ue-too` can achieve.
+[Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): this is the exact same example as the one in the [Quick Start](#quick-start-using-only-html-canvas) section.
 
-There are a few more examples in the `devserver` directory. Including how to integrate with pixi.js, fabric.js, and konva. (not complete yet)
+There are a few more examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory. Including how to integrate with pixi.js, fabric.js, and konva. (incomplete but giving a rough and general direction on how to do it)
 
 ## Docs
 - [API Documentation](https://ue-too.github.io/ue-too/)
@@ -73,65 +90,156 @@ import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
 _iife is no longer supported_
 
 ## Key Features
-- Modularity: you don't have to use everything from this library; take only what you need. (details in the later section)
+- Modularity: you don't have to use everything from this library; take only what you need. (detail in the [under the hood](#under-the-hood-a-rather-brief-overview) section)
 - Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse) But you can still tweak how things work.
-- Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (example is on the way)
-- You can use this with pixi.js, fabric.js, Konva; or maybe just html canvas. (example is on the way)
+- Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (examples are on the way)
+- You can use this with pixi.js, fabric.js, Konva, and just html canvas. (examples are on the way)
 
 ## Quick Start (Using only HTML canvas)
-The `Board` class extends an existing canvas element in the DOM to have extra capabilities such as pan, zoom, and rotation.
-To instantiate a new board, you need have a canvas element in your html.
+
+I am borrowing the example from the MDN documentation on the [__Canvas API__](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) page.
+
+You can go to [CodeSandbox](https://codesandbox.io), [Stackblitz](https://stackblitz.com/), or any other online IDE or code sandbox to follow along. (or just locally on your computer)
+
+Following the MDN example, you would have a green rectangle in the canvas, and you should have the following html and javascript code.
+
+HTML:
 ```html
-<canvas id="board"></canvas>
+<canvas id="canvas"></canvas>
 ```
 
-Call the step function of the `Board` class and in a `requestAnimationFrame` callback.
+JavaScript:
 ```javascript
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+ctx.fillStyle = "green";
+ctx.fillRect(10, 10, 150, 100);
+```
+
+Now we're going to add `ue-too` to the canvas so you can zoom in on the green rectangle and pan around it.
+
+First we need to import `ue-too` and create a new `Board` instance. Also we need to remove the constant `ctx` because canvas only allows one context to be created per canvas element.
+But we can keep the `ctx.fillStyle = "green";` and `ctx.fillRect(10, 10, 150, 100);` as comment for reference later on how to add the rectangle back to the canvas.
+
+```javascript
+// import the Board Class
 import { Board } from "ue-too";
 
-const canvasElement = document.getElementById("board");
-const board = new Board(canvasElement); // if you are using this library through iife don't use the variable name board since it would have name conflict with the library
+const canvas = document.getElementById("canvas");
 
-// this is the callback function for the requestAnimationFrame
-function step(timestamp){
-    // timestamp is the argument requestAnimationFrame pass to its callback function
+// remove the ctx constant
 
-    // step the board first before everything else because stepping the board would wipe the canvas
-    // pass in the timestamp as it is to the board's step function.
+// instantiate the board by passing in the canvas element
+const board = new Board(canvas);
+
+// comment these out for now
+// ctx.fillStyle = "green";
+// ctx.fillRect(10, 10, 150, 100);
+```
+
+If you have dabbled with the canvas API before, you probably know that what's drawn on the canvas is there to stay, so in order to make it look like the rectangle is moving and being zoomed in, we need to clear the canvas and redraw the rectangle at the new position and scale. You can either redraw using `requestAnimationFrame` or when the user input is detected. The `Board` class is designed using the `requestAnimationFrame` method, so we need a `requestAnimationFrame` callback for the `Board` instance to call its `step` function.
+
+```javascript
+// import the Board Class
+import { Board } from "ue-too";
+
+const canvas = document.getElementById("canvas");
+
+// remove the ctx constant
+
+// instantiate the board by passing in the canvas element
+const board = new Board(canvas);
+
+// comment these out for now
+// ctx.fillStyle = "green";
+// ctx.fillRect(10, 10, 150, 100);
+
+// add a callback to the requestAnimationFrame, and call the step function of the board instance.
+function draw(timestamp) {
+    // step the board 
     board.step(timestamp);
-
-    // do your stuff
-
-    // and then call the requestAnimationFrame
-    window.requestAnimationFrame(step);
+    
+    // request the next frame
+    requestAnimationFrame(draw);
 }
 
-// start the animation loop
-step(0);
+// call the draw function every frame
+requestAnimationFrame(draw);
 ```
-Now the board should have the basic functionalities like pan and zoom. But there's probably nothing on your canvas.
 
-The default coordinate system @niuee/board uses is the same as the one of the canvas API which is "Down" for positive Y direction.
+After that we just need to add the rectangle back to the canvas.
 
-To draw stuff on the board first get the 2d context of the board.
 ```javascript
+// import the Board Class
+import { Board } from "ue-too";
 
-// draw a circle at the location (10, 10)
-board.context.beginPath();
-board.context.arc(10, 10, 5, 0, 2 * Math.PI);
-board.context.stroke();
+const canvas = document.getElementById("canvas");
+
+// remove the ctx constant
+
+// instantiate the board by passing in the canvas element
+const board = new Board(canvas);
+
+// comment these out for now
+// ctx.fillStyle = "green";
+// ctx.fillRect(10, 10, 150, 100);
+
+
+// add a callback to the requestAnimationFrame, and call the step function of the board instance.
+function draw(timestamp) {
+    // step the board 
+    board.step(timestamp);
+
+    // add the rectangle back to the canvas, the drawing steps is the same as the MDN example but we're using the context from the board instance.
+    board.context.fillStyle = "green";
+    board.context.fillRect(10, 10, 150, 100);
+    
+    // request the next frame
+    requestAnimationFrame(draw);
+}
+
+// call the draw function every frame
+requestAnimationFrame(draw);
 ```
 
-This would result in a circle drawn to the bottom right of the origin. The same as a regular canvas. (but you can pan and zoom the canvas around)
+Now you can pan and zoom around. 
 
-This is probably a good time to talk about coordinate system. The `Board` class has an attribute `alignCoordinateSystem` if set to `false` would result in a reversed y axis.
-Meaning positive y goes up in the screen.
+The default pan inputs are:
 
-Setting `alignCoordinateSystem` would also require an update to the context which you use to draw stuff. After altering the value of `alignCoorindateSystem` if you have previously stored the value of `board.context` somewhere you would need to update that value by calling `board.context` and use the returned value to udpate the stored value.
+- Mouse + Keyboard: drag the mouse while holding down the spacebar or drag using the scroll wheel button
+- Trackpad: two finger swipe
+- Touch: two finger swipe
 
-Without updating the context, the stuff you draw would probably result in a weird state. (everything is reversed in terms of y) `board` takes care of this by using `Proxy` so you don't have to remember to negate the y value when you set `alignCoorindateSystem` to false.
+The default zoom inputs are:
+
+- Mouse + Keyboard: scroll wheel + ctrl
+- Trackpad: two finger pinch
+- Touch: two finger pinch
+
+There you go, you've got a canvas with pan and zoom! (and also rotation but now there's no direct user input for that meaning you have to code it out) 
+
+Anything you want to draw on the canvas should be in the `requestAnimationFrame` callback and after the `step` function of the `Board` instance is called.
+The `Board` instance is designed as an overarching class that needs the least amount of setup. But that comes with the cost implementing other features within the framework of the `Board` class.
+If you need more customization, you can look into the [under the hood](#under-the-hood-a-rather-brief-overview) section and don't use the `Board` class.
+
+The `Board` class does these things so you don't have to:
+- Handles and interprets the input events from the canvas element
+- Automatically adjusts the camera zoom boundaries if the entire viewport of the camera should be bounded within a limit.
+- a lot more... 
+
+However, every components of the `Board` class and every util functions are also accessible to the user of the library so you can come up with your own board class, and you don't need to use the `requestAnimationFrame` callback method for the redrawing part as well.
 
 ## Development
+
+To start developing `board` first clone the repo.
+
+Then install the dependencies using
+
+```bash
+pnpm i
+```
+
 I am using pnpm as the package manager for this project.
 Node version 20.11.0 is used for development. (Some of the scripts that I wrote for ci/cd uses node version 20 APIs and is not compatible with 22 (specifically the `assert`) I will migrate them to use node version 22 APIs when I have time.)
 
@@ -143,75 +251,27 @@ The dev environment setup for this project is relatively simple. Let me break do
 - Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
 - Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
 
-To start developing `board` first clone the repo.
-
-Then install the dependencies using
-
-```bash
-pnpm i
-```
-
 And then off you go! You can modify however as you like it.
 
 The [API documentation](https://ue-too.github.io/ue-too/) has all the APIs listed.
 
-## Under the Hood (a rather brief overview)
+## Under the Hood
 
-#### Data Flow
-How board achieve the effect of infinite canvas is through a camera abstraction. It's like the viewport attribute of svg. 
+ue-too consists of 3 core components: 
 
-The user controls the position, zoom, and rotation of the camera to see different parts of a canvas context.
+- `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport's transform matrix and various other information.
+- `Camera Input Multiplexer`: This is the part of the library that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
+- `User Input Interpretation`: This is the part of the library that handles the user input events from the canvas element, and based on the events determine if the user wants to pan or zoom or do other operations.
 
-i.e. if you draw a circle with the center at (100, 100) on the context, if the position of the camera is at (100, 100) the cirle would appear in the center of the canvas element.
+To see detail of each component you can go see the respective readme in the subdirectories.
+- [Board Camera](./src/board-camera/README.md)
+- [Camera Mux](./src/camera-mux/README.md)
+- [User Input Interpreter](./src/input-interpretation/README.md)
 
-Everything starts with an user input: a pointer down event, or a touchstart event.
-These events are captured by the event listeners added to the canvas element. Then, the event listeners would parse the raw events into a more granular events like: `LEFT_POINTER_MOVE`, `SPACEBAR_DOWN`, etc.
 
-These parsed events are then fed into the input state machine to interpret the user's intent.
-
-The input state machine would spit out something like pan with some distance, or zoom to X scale, etc. 
-These are called the raw user inputs (meaning that they exist in the viewport coorindate system instead of the canvas context or the world coordinate.)
-
-The raw user inputs are broadcast by the raw user input publisher to the subscribers including the flow control.
-
-The flow control is where different sources of camera input are coordinated. This is in place to prepare for animated camera input.
-(an example ruleset on how different kinds of input affect each other is: user input would take precedence over animated input on both zoom and pan meaning user can cancel animated camera movement)
-
-You might not need this kind of functionality so there's a very basic flow control in place as the default that is just a simple relay.
-
-The flow control then pass the desired camera input through `CameraRig`; this is essentially a pipeline that will perform a series of transformation on the camera inputs. 
-(e.g. clamping the translation so that the camera does not move out of boundary; restrict camera movement in certain axis)
-
-Below is a diagram on the data flow.
-![camera-control-data-flow](./doc-media/camera-control-data-flow.png)
-
-You can customize the data flow however you want. Heck you can probably plug directly from an event listener to the camera skipping all of the above.
-
-For simplicity, the overarching class `Board` takes care of it all, but if you want customization you'll have to get familiar with the data flow and see which part best fits your need for customizing.
-
-Detail on each part will be on the documentation site (not the API documentation, but more on how and why on the various parts of `board` and a few examples) I'll setup later but probably after the version 0.2 release.
-
-There's one more thing about the data flow, since it's starting from event listeners all the way to the canvas context. This does not work if you want to use an offscreen canvas on a worker thread. This is a planned feature but will not be in version 0.2.
-
-#### Coordinate System
-Since the user controls where the camera (viewport) is, how big the camera is, and the rotation angle of the camera, it's coordinate system will deviate from the context/world coorindate system. 
-![viewport and world coorindate system](./doc-media/coordinate-system.png)
-
-`board` provides a few sets of coordinate conversion helper functions. Most of them are in the `src/board-camera/utils/coordinate-conversion.ts` file.
-
-#### Input State Machine
-In the [Data Flow](#data-flow) section I mentioned the state machine that is used to interpret user intentions. 
-The state diagram for keyboard mouse, and trackpad input is shown below:
-![kmt-input-state-machine](./doc-media/kmt-input-state-machine.png)
-
-The state diagram for touch input is shown below:
-![touch-input-state-machine](./doc-media/touch-input-state-machine.png)
-
-You can customize how the state machine works by defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
-Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site mentioned in the [data flow](#data-flow) section)
 
 ## TODO
-- [ ] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
+- [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
 - [ ] Add a `boardify-pixi` package that contains utility functions for the board to work with pixi.js.
 - [ ] Add a `boardify-fabric` package that contains utility functions for the board to work with fabric.js.
 - [ ] Add a `boardify-konva` package that contains utility functions for the board to work with konva.js.
