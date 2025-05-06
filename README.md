@@ -31,6 +31,17 @@
 
 > This library is still under development. Some of the APIs are not stable and will change.
 
+## What this library is?
+- Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
+- Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
+- Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
+- Serves as a foundation library for building your own infinite canvas applications
+- Accomplishes the same goal as pixi-viewport but not dependent on pixi.js
+
+## What this library is not?
+- A complete drawing application like Excalidraw, tldraw, or similar tools
+- A full-featured package with built-in drawing tools and user interfaces
+
 ## Why does anyone need this?
 
 Picture this: 
@@ -44,18 +55,7 @@ You might have your logic tied to the canvas element's event listeners. What if 
 
 This is where `ue-too` comes in. It takes care of the panning and zooming part for you so you can focus on the other parts of the app.
 
-Even if you're not building a drawing app, if you have a canvas that you need to pan around then give ue-too a try. (It works with pixi, fabric, konva, vanilla js canvas API, and even headless canvas in node.js)
-
-## What this library is?
-- Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
-- Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
-- Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
-- Serves as a foundation library for building your own infinite canvas applications
-- Accomplishes the same goal as pixi-viewport but not dependent on pixi.js
-
-## What this library is not?
-- A complete drawing application like Excalidraw, tldraw, or similar tools
-- A full-featured package with built-in drawing tools and user interfaces
+Even if you're not building a drawing app, if you have a canvas that you need to pan around then give ue-too a try. (It works with pixi, fabric, konva, vanilla js canvas API, and even headless canvas in node.js)ge with built-in drawing tools and user interfaces
 
 ## Quick Demo
 [Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): this is the exact same example as the one in the [Quick Start](#quick-start-using-only-html-canvas) section.
@@ -264,12 +264,12 @@ ue-too consists of 3 core components:
 - `Camera Input Multiplexer`: This is the part that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
 - `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 
-To see detail of each component you can go see the respective readme in the subdirectories.
+To see detail of each component navigate to the respective readme in the subdirectories.
 - [Board Camera](./src/board-camera/README.md)
 - [Camera Mux](./src/camera-mux/README.md)
 - [User Input Interpreter](./src/input-interpretation/README.md)
 
-I would recommend starting with the [Board Camera](./src/board-camera/README.md) since the other parts are built on top of it.
+It's recommended to start with the [Board Camera](./src/board-camera/README.md) since the other parts are built on top of it.
 
 Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
 
