@@ -20,7 +20,7 @@
   <a href="#key-features">Key Features</a> •
   <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
   <a href="#development">Development</a> •
-  <a href="#under-the-hood-a-rather-brief-overview">Structural Overview</a>
+  <a href="#under-the-hood">Basic API Overview</a>
 </p>
 
 ![small-demo](./doc-media/small-demo-with-cursor.gif)
