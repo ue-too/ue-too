@@ -42,7 +42,7 @@
 - A complete drawing application like Excalidraw, tldraw, or similar tools
 - A full-featured package with built-in drawing tools and user interfaces
 
-## Why does anyone need this?
+## Why?
 
 Picture this: 
 
