@@ -2,7 +2,7 @@
     uē-tôo
 </h1>
 <p align="center">
-    pan, zoom, rotate, and more.
+    pan, zoom, rotate, and more with your html canvas.
 </p>
 
 <div align="center">
