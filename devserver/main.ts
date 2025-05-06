@@ -5,7 +5,7 @@ import { Point, PointCal } from "point2point";
 import { drawXAxis, drawYAxis } from "./drawing-util";
 import { Container } from "src/drawing-engine";
 import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFunctions, NumberAnimationHelper } from "@niuee/bounce";
-import { FlowControlWithAnimationAndLockInput } from "src/camera-mux/flow-control-with-animation-and-lock";
+import { CameraMuxWithAnimationAndLock } from "src/camera-mux/animation-and-lock/animation-and-lock";
 import { createDefaultPanByHandler } from "src/board-camera/camera-rig/pan-handler";
 import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
 
@@ -69,20 +69,20 @@ const animation = new Animation(positionKeyframe, (value)=>{
     // (board.controlCenter as RelayControlCenter).notifyPanToAnimationInput(value);
     const pointInWorldShouldBeInViewPort = value;
     const cameraPositionSatisfy = cameraPositionToGet({x: 100, y: 100}, pointInWorldShouldBeInViewPort, board.camera.zoomLevel, board.camera.rotation);
-    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyPanToAnimationInput(cameraPositionSatisfy);
+    (board.cameraMux as CameraMuxWithAnimationAndLock).notifyPanToAnimationInput(cameraPositionSatisfy);
 }, new PointAnimationHelper(), 1000);
 
 const zoomAnimation = new Animation(zoomKeyframe, (value)=>{
     // console.log("zoom level", value);
     // board.getCameraRig().zoomTo(value);
     
-    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyZoomInputAnimationWorld(value, {x: 100, y: 100});
+    (board.cameraMux as CameraMuxWithAnimationAndLock).notifyZoomInputAnimationWorld(value, {x: 100, y: 100});
 }, new NumberAnimationHelper(), 1000);
 
 const rotationAnimation = new Animation(rotationKeyframe, (value)=>{
     // console.log("rotation", value);
     // board.camera.setRotation(value);
-    (board.flowControl as FlowControlWithAnimationAndLockInput).notifyRotateToAnimationInput(value);
+    (board.cameraMux as CameraMuxWithAnimationAndLock).notifyRotateToAnimationInput(value);
 }, new NumberAnimationHelper(), 1000);
 
 const compositeAnimation = new CompositeAnimation();
@@ -135,9 +135,9 @@ resetCameraBtn.addEventListener("click", ()=>{
         percentage: 1,
         value: 0,
     }];
-    (board.flowControl as FlowControlWithAnimationAndLockInput).initatePanTransition();
-    (board.flowControl as FlowControlWithAnimationAndLockInput).initateZoomTransition();
-    (board.flowControl as FlowControlWithAnimationAndLockInput).initateRotateTransition();
+    (board.cameraMux as CameraMuxWithAnimationAndLock).initatePanTransition();
+    (board.cameraMux as CameraMuxWithAnimationAndLock).initateZoomTransition();
+    (board.cameraMux as CameraMuxWithAnimationAndLock).initateRotateTransition();
     compositeAnimation.startAnimation();
 });
 

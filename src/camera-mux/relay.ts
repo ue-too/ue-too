@@ -9,7 +9,7 @@ import { Point } from "src/utils/misc";
  * 
  * @category Input Flow Control
  */
-export class SimpleRelayFlowControl implements CameraMux {
+export class Relay implements CameraMux {
 
     private _cameraRig: CameraRig;
 
@@ -38,12 +38,12 @@ export class SimpleRelayFlowControl implements CameraMux {
  */
 export function createDefaultCameraMux(camera: ObservableBoardCamera): CameraMux {
     const context = createDefaultCameraRig(camera);
-    return new SimpleRelayFlowControl(context);
+    return new Relay(context);
 }
 
 /**
  * 
  */
 export function createDefaultCameraMuxWithCameraRig(cameraRig: CameraRig): CameraMux {
-    return new SimpleRelayFlowControl(cameraRig);
+    return new Relay(cameraRig);
 }

@@ -29,7 +29,7 @@
     This is is a small demo gif of what board is capable of.
 </p>
 
-> This library is still under development. The API is not stable and will change.
+> This library is still under development. Some of the APIs are not stable and will change.
 
 ## Why does anyone need this?
 
@@ -42,9 +42,9 @@ After you have the zoom feature in place, you find that once you zoom in, you ca
 Once you have the pan feature, this is when the code starts to get a little messy. 
 You might have your logic tied to the canvas element's event listeners. What if you need to support touch input? 
 
-This is where `ue-too` comes in. It takes care of the panning and zooming part for you so you can focus on the other parts of the app. (or at least the math part)
+This is where `ue-too` comes in. It takes care of the panning and zooming part for you so you can focus on the other parts of the app.
 
-Even if you're not building a drawing app, if you have a canvas that you want to allow users to pan and zoom around, this library is for you.
+Even if you're not building a drawing app, if you have a canvas that you need to pan around then give ue-too a try. (It works with pixi, fabric, konva, vanilla js canvas API, and even headless canvas in node.js)
 
 ## What this library is?
 - Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
@@ -90,7 +90,7 @@ import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
 _iife is no longer supported_
 
 ## Key Features
-- Modularity: you don't have to use everything from this library; take only what you need. (detail in the [under the hood](#under-the-hood-a-rather-brief-overview) section)
+- Modularity: you don't have to use everything from this library; take only what you need. (detail in the [under the hood](#under-the-hood) section)
 - Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse) But you can still tweak how things work.
 - Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (examples are on the way)
 - You can use this with pixi.js, fabric.js, Konva, and just html canvas. (examples are on the way)
@@ -232,6 +232,7 @@ However, every components of the `Board` class and every util functions are also
 
 ## Development
 
+> This is to directly work on the source code of the library. Useful if you want to contribute to the library or fork a version for your own use. If you just want to use the library and need customizations on the behavior of the components, you can skip this section. Go the [under the hood](#under-the-hood) section for more detail on how the library works for customization.
 To start developing `board` first clone the repo.
 
 Then install the dependencies using
@@ -259,16 +260,20 @@ The [API documentation](https://ue-too.github.io/ue-too/) has all the APIs liste
 
 ue-too consists of 3 core components: 
 
-- `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport's transform matrix and various other information.
-- `Camera Input Multiplexer`: This is the part of the library that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
-- `User Input Interpretation`: This is the part of the library that handles the user input events from the canvas element, and based on the events determine if the user wants to pan or zoom or do other operations.
+- `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport and how to control the camera's position, rotation, and zoom level.
+- `Camera Input Multiplexer`: This is the part that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
+- `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 
 To see detail of each component you can go see the respective readme in the subdirectories.
 - [Board Camera](./src/board-camera/README.md)
 - [Camera Mux](./src/camera-mux/README.md)
 - [User Input Interpreter](./src/input-interpretation/README.md)
 
+I would recommend starting with the [Board Camera](./src/board-camera/README.md) since the other parts are built on top of it.
 
+Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
+
+![data-flow](./doc-media/entire-process.png)
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.

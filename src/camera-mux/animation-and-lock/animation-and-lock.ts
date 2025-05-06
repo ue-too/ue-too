@@ -1,5 +1,5 @@
 
-import { CameraMux } from "./interface";
+import { CameraMux } from "../interface";
 import { Point } from "src/utils/misc";
 import { ObservableBoardCamera } from "src/board-camera";
 import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
@@ -19,7 +19,7 @@ import { createDefaultCameraRig } from "src/board-camera/camera-rig";
  * 
  * @category Input Flow Control
  */
-export class FlowControlWithAnimationAndLockInput implements CameraMux {
+export class CameraMuxWithAnimationAndLock implements CameraMux {
 
     private _panStateMachine: PanControlStateMachine;
     private _zoomStateMachine: ZoomControlStateMachine;
@@ -98,7 +98,7 @@ export function createCameraMuxWithAnimationAndLock(camera: ObservableBoardCamer
     const panStateMachine = createDefaultPanControlStateMachine(context);
     const zoomStateMachine = createDefaultZoomControlStateMachine(context);
     const rotateStateMachine = createDefaultRotateControlStateMachine(context);
-    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine, rotateStateMachine);
+    return new CameraMuxWithAnimationAndLock(panStateMachine, zoomStateMachine, rotateStateMachine);
 }
 
 /**
@@ -110,5 +110,5 @@ export function createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig: Came
     const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
     const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
     const rotateStateMachine = createDefaultRotateControlStateMachine(cameraRig);
-    return new FlowControlWithAnimationAndLockInput(panStateMachine, zoomStateMachine, rotateStateMachine);
+    return new CameraMuxWithAnimationAndLock(panStateMachine, zoomStateMachine, rotateStateMachine);
 }
