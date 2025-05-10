@@ -1,22 +1,26 @@
 # User Input Interpretation
 
-This is more of a demonstration of how to interpret user input. I am using the state machine pattern to achieve this.
+This module demonstrates how to interpret user input using the state machine pattern.
 
-You can have your own way of interpreting user input. After interpreting the input, you can set the state of the camera directly with the `setPosition`, `setZoomLevel`, `setRotation` methods or use the camera rig as mentioned in the [board camera README](../board-camera/README.md).
+You can implement your own input interpretation logic. After processing the input, you can either:
+1. Set the camera state directly using the `setPosition`, `setZoomLevel`, and `setRotation` methods
+2. Use the camera rig as described in the [board camera README](../board-camera/README.md)
 
-There are 2 parts: 1. the layer to register event handlers. 2. the state machine to react on different events at different states.
+The module consists of two main components:
+1. Input event handler layer
+2. Input state machine
 
-### Input Event Handler
-This is the layer that registers event handlers for different events. Because event systems are different for each rendering options. 
-For example, vanilla canvas API is not the same as pixi.js's event system they have different event payload even different event names.
+### Input Event Handler Layer
+This layer registers event handlers for different input events. Since event systems vary across rendering options (e.g., vanilla canvas API differs from pixi.js's event system), this layer handles the differences in event payloads and event names.
 
 ### Input State Machine
 
-The state diagram for keyboard mouse, and trackpad input is shown below:
+The state machine manages different input states and transitions. Below are the state diagrams for different input types:
+
+#### Keyboard, Mouse, and Trackpad Input
 ![kmt-input-state-machine](../../doc-media/kmt-input-state-machine.png)
 
-The state diagram for touch input is shown below:
+#### Touch Input
 ![touch-input-state-machine](../../doc-media/touch-input-state-machine.png)
 
-You can customize how the state machine works by defining the relationship between each state in a state machine. There's a tiny library within `board` that's dedicated for this purpose.
-Look into the `src/being` directory for more. (Detailed documentation will follow with the documentation site (WIP))
+You can customize the state machine's behavior by defining relationships between states. The `board` library includes a dedicated state machine implementation in the `src/being` directory. (Detailed documentation will be available in the upcoming documentation site)

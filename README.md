@@ -26,82 +26,81 @@
 ![small-demo](./doc-media/small-demo-with-cursor.gif)
 
 <p align="center">
-    This is is a small demo gif of what board is capable of.
+    A demonstration of uē-tôo's core functionality.
 </p>
 
-> This library is still under development. Some of the APIs are not stable and will change.
+> Note: This library is under active development. Some APIs may change in future releases.
 
-## What this library is?
-- Transforms your HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
-- Provides utility functions that simplify the complex mathematics required for operating an infinite canvas
-- Works with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
+## Overview
+
+### What This Library Provides
+- Transforms HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
+- Provides utility functions that simplify the complex mathematics required for infinite canvas operations
+- Compatible with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
 - Serves as a foundation library for building your own infinite canvas applications
-- Accomplishes the same goal as pixi-viewport but not dependent on pixi.js
+- Accomplishes the same goal as pixi-viewport but without pixi.js dependency
 
-## What this library is not?
-- A complete drawing application like Excalidraw, tldraw, or similar tools
+### What This Library Is Not
+- A complete drawing application like Excalidraw or tldraw
 - A full-featured package with built-in drawing tools and user interfaces
 
-## Why?
+## Motivation
 
-Picture this: 
+Consider this scenario:
 
-You are building a web app that allows users to draw on a canvas. You have your pen and eraser tools ready to go.
-You try it out and finds that you can't quite get the tiny details of the drawing just right, so you need a way to zoom in on the drawing.
+You're building a web application that allows users to draw on a canvas. You have your pen and eraser tools ready. During testing, you notice that users need to zoom in to work on fine details. After implementing zoom functionality, you realize users can't see other parts of the drawing when zoomed in, necessitating a pan feature.
 
-After you have the zoom feature in place, you find that once you zoom in, you can't see other parts of the drawing. You need a way to pan around the canvas.
-Once you have the pan feature, this is when the code starts to get a little messy. 
-You might have your logic tied to the canvas element's event listeners. What if you need to support touch input? 
+As you add these features, the code becomes increasingly complex, especially when handling different input methods (mouse, touch, trackpad). This is where `ue-too` comes in - it handles all the panning and zooming logic, allowing you to focus on your application's core functionality.
 
-This is where `ue-too` comes in. It takes care of the panning and zooming part for you so you can focus on the other parts of the app.
-
-Even if you're not building a drawing app, if you have a canvas that you need to pan around then give ue-too a try. (It works with pixi, fabric, konva, vanilla js canvas API, and even headless canvas in node.js)ge with built-in drawing tools and user interfaces
+Even if you're not building a drawing app, `ue-too` is useful for any canvas that requires panning functionality. It works with various frameworks including pixi.js, fabric.js, Konva, vanilla JavaScript canvas API, and even headless canvas in Node.js.
 
 ## Quick Demo
-[Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): this is the exact same example as the one in the [Quick Start](#quick-start-using-only-html-canvas) section.
+[Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): This example demonstrates the basic functionality shown in the [Quick Start](#quick-start-using-only-html-canvas) section.
 
-There are a few more examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory. Including how to integrate with pixi.js, fabric.js, and konva. (incomplete but giving a rough and general direction on how to do it)
+Additional examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory show integration with pixi.js, fabric.js, and Konva (incomplete but providing general implementation guidance).
 
-## Docs
+## Documentation
 - [API Documentation](https://ue-too.github.io/ue-too/)
 - [中文文件連結](https://ue-too.github.io/ue-too/tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
 
 ## Installation and Usage
-### Package manager
-install it using
+
+### Package Manager
 ```bash
 npm install ue-too
 ```
-and import it like
+
 ```javascript
 import { Board } from "ue-too";
 ```
 
-### Download From Github
-Download the bundled JavaScript (board.js) in the [releases](https://github.com/niuee/board/releases/) page of the repository and put it in the your project directory for other JavaScript module to import like this.
+### Download from GitHub
+Download the bundled JavaScript (ue-too.js) from the [releases](https://github.com/ue-too/ue-too/releases/) page and import it in your project:
+
 ```javascript
 import { Board } from "./ue-too.js";
 ```
 
-### Import From jsdelivr
+### Import from jsdelivr
 ```javascript
 import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
 ```
-_iife is no longer supported_
+
+> Note: IIFE format is no longer supported.
 
 ## Key Features
-- Modularity: you don't have to use everything from this library; take only what you need. (detail in the [under the hood](#under-the-hood) section)
-- Supports a wide variety of input methods. (touch, trackpad(macOS), keyboard mouse) But you can still tweak how things work.
-- Works with just HTML and JavaScript but also works with frontend frameworks/libraries with a little bit of extra work. (examples are on the way)
-- You can use this with pixi.js, fabric.js, Konva, and just html canvas. (examples are on the way)
+- Modularity: Use only the components you need (details in the [Under the Hood](#under-the-hood) section)
+- Comprehensive input support: touch, trackpad (macOS), keyboard, and mouse, with customizable behavior
+- Framework-agnostic: Works with HTML and JavaScript, and can be integrated with frontend frameworks/libraries
+- Multi-framework compatibility: Works with pixi.js, fabric.js, Konva, and vanilla HTML canvas
 
-## Quick Start (Using only HTML canvas)
+## Quick Start (HTML Canvas)
 
-I am borrowing the example from the MDN documentation on the [__Canvas API__](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API) page.
+This example is based on the MDN documentation for the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
 
-You can go to [CodeSandbox](https://codesandbox.io), [Stackblitz](https://stackblitz.com/), or any other online IDE or code sandbox to follow along. (or just locally on your computer)
+You can follow along using [CodeSandbox](https://codesandbox.io), [Stackblitz](https://stackblitz.com/), or any other online IDE.
 
-Following the MDN example, you would have a green rectangle in the canvas, and you should have the following html and javascript code.
+Following the MDN example, you'll have a green rectangle in the canvas with this HTML and JavaScript:
 
 HTML:
 ```html
@@ -117,13 +116,10 @@ ctx.fillStyle = "green";
 ctx.fillRect(10, 10, 150, 100);
 ```
 
-Now we're going to add `ue-too` to the canvas so you can zoom in on the green rectangle and pan around it.
+To add `ue-too` functionality:
 
-First we need to import `ue-too` and create a new `Board` instance. Also we need to remove the constant `ctx` because canvas only allows one context to be created per canvas element.
-But we can keep the `ctx.fillStyle = "green";` and `ctx.fillRect(10, 10, 150, 100);` as comment for reference later on how to add the rectangle back to the canvas.
-
+1. Import `ue-too` and create a new `Board` instance:
 ```javascript
-// import the Board Class
 import { Board } from "ue-too";
 
 const canvas = document.getElementById("canvas");
@@ -138,24 +134,8 @@ const board = new Board(canvas);
 // ctx.fillRect(10, 10, 150, 100);
 ```
 
-If you have dabbled with the canvas API before, you probably know that what's drawn on the canvas is there to stay, so in order to make it look like the rectangle is moving and being zoomed in, we need to clear the canvas and redraw the rectangle at the new position and scale. You can either redraw using `requestAnimationFrame` or when the user input is detected. The `Board` class is designed using the `requestAnimationFrame` method, so we need a `requestAnimationFrame` callback for the `Board` instance to call its `step` function.
-
+2. Set up the animation loop:
 ```javascript
-// import the Board Class
-import { Board } from "ue-too";
-
-const canvas = document.getElementById("canvas");
-
-// remove the ctx constant
-
-// instantiate the board by passing in the canvas element
-const board = new Board(canvas);
-
-// comment these out for now
-// ctx.fillStyle = "green";
-// ctx.fillRect(10, 10, 150, 100);
-
-// add a callback to the requestAnimationFrame, and call the step function of the board instance.
 function draw(timestamp) {
     // step the board 
     board.step(timestamp);
@@ -164,29 +144,12 @@ function draw(timestamp) {
     requestAnimationFrame(draw);
 }
 
-// call the draw function every frame
+// start the animation loop
 requestAnimationFrame(draw);
 ```
 
-After that we just need to add the rectangle back to the canvas.
-
+3. Add the rectangle to the canvas:
 ```javascript
-// import the Board Class
-import { Board } from "ue-too";
-
-const canvas = document.getElementById("canvas");
-
-// remove the ctx constant
-
-// instantiate the board by passing in the canvas element
-const board = new Board(canvas);
-
-// comment these out for now
-// ctx.fillStyle = "green";
-// ctx.fillRect(10, 10, 150, 100);
-
-
-// add a callback to the requestAnimationFrame, and call the step function of the board instance.
 function draw(timestamp) {
     // step the board 
     board.step(timestamp);
@@ -203,40 +166,38 @@ function draw(timestamp) {
 requestAnimationFrame(draw);
 ```
 
-Now you can pan and zoom around. 
+### Default Input Controls
 
-The default pan inputs are:
+Pan:
+- Mouse + Keyboard: Drag while holding spacebar or use scroll wheel button
+- Trackpad: Two-finger swipe
+- Touch: Two-finger swipe
 
-- Mouse + Keyboard: drag the mouse while holding down the spacebar or drag using the scroll wheel button
-- Trackpad: two finger swipe
-- Touch: two finger swipe
+Zoom:
+- Mouse + Keyboard: Ctrl + scroll wheel
+- Trackpad: Two-finger pinch
+- Touch: Two-finger pinch
 
-The default zoom inputs are:
+### Important Notes
+- All drawing operations should be performed in the `requestAnimationFrame` callback after the `step` function
+- The `Board` class is designed for minimal setup but offers less flexibility
+- For more customization, refer to the [Under the Hood](#under-the-hood) section
 
-- Mouse + Keyboard: scroll wheel + ctrl
-- Trackpad: two finger pinch
-- Touch: two finger pinch
+The `Board` class handles:
+- Input event interpretation
+- Automatic camera zoom boundary adjustments
+- And more...
 
-There you go, you've got a canvas with pan and zoom! (and also rotation but now there's no direct user input for that meaning you have to code it out) 
+All components and utility functions are accessible, allowing you to create your own board implementation without using the `requestAnimationFrame` callback method.
 
-Anything you want to draw on the canvas should be in the `requestAnimationFrame` callback and after the `step` function of the `Board` instance is called.
-The `Board` instance is designed as an overarching class that needs the least amount of setup. But that comes with the cost implementing other features within the framework of the `Board` class.
-If you need more customization, you can look into the [under the hood](#under-the-hood-a-rather-brief-overview) section and don't use the `Board` class.
-
-The `Board` class does these things so you don't have to:
-- Handles and interprets the input events from the canvas element
-- Automatically adjusts the camera zoom boundaries if the entire viewport of the camera should be bounded within a limit.
-- a lot more... 
-
-However, every components of the `Board` class and every util functions are also accessible to the user of the library so you can come up with your own board class, and you don't need to use the `requestAnimationFrame` callback method for the redrawing part as well.
+For detailed camera control information, refer to the [Board Camera](./src/board-camera/README.md) section.
 
 ## Development
 
-> This is to directly work on the source code of the library. Useful if you want to contribute to the library or fork a version for your own use. If you just want to use the library and need customizations on the behavior of the components, you can skip this section. Go the [under the hood](#under-the-hood) section for more detail on how the library works for customization.
-To start developing `board` first clone the repo.
+> This section is for working directly with the library's source code. If you're using the library and need to customize component behavior, skip to the [Under the Hood](#under-the-hood) section.
 
-Then install the dependencies using
-
+1. Clone the repository
+2. Install dependencies:
 ```bash
 pnpm i
 ```
@@ -252,15 +213,13 @@ The dev environment setup for this project is relatively simple. Let me break do
 - Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
 - Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
 
-And then off you go! You can modify however as you like it.
-
 The [API documentation](https://ue-too.github.io/ue-too/) has all the APIs listed.
 
 ## Under the Hood
 
 ue-too consists of 3 core components: 
 
-- `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport and how to control the camera's position, rotation, and zoom level.
+- `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport.
 - `Camera Input Multiplexer`: This is the part that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
 - `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 

@@ -1,39 +1,42 @@
-# The camera input multiplexer
+# Camera Input Multiplexer
 
-The sole purpose of this module is to have the logic of controlling what camera input is allowed.
+This module manages and controls camera input permissions and behavior.
 
-For example, if you have a camera transition animation, you might want the transition to be able to be interrupted by the user's input.
+For instance, during a camera transition animation, you may want to allow user input to interrupt the transition.
 
-The interface `CameraMux` only specifies the user input. `notifyPanInput`, `notifyZoomInput`, `notifyRotateInput` and `notifyAllInput`.
+The `CameraMux` interface defines the following user input methods:
+- `notifyPanInput`
+- `notifyZoomInput`
+- `notifyRotateInput`
+- `notifyAllInput`
 
-The `Relay` class is the simplest implementation of the `CameraMux` interface. It simply relays the input to the camera.
+The `Relay` class provides the simplest implementation of the `CameraMux` interface, directly forwarding input to the camera.
 
-You might not want to control the camera input in this way; you are not limited in any way. Just come up with your own logic and set the position of the camera accordingly. (highly recommended to use the `CameraRig` class to control the camera even if you're not using the `CameraMux`)
+You are not limited to this implementation approach. You can develop your own logic and control the camera position accordingly. (We recommend using the `CameraRig` class for camera control, even if you're not using `CameraMux`)
 
-In the `animation-and-lock.ts` file there's a `CameraMuxWithAnimationAndLock` class that implements the `CameraMux` interface and adds the logic of the camera transition animation and the lock input.
+The `animation-and-lock.ts` file contains the `CameraMuxWithAnimationAndLock` class, which implements the `CameraMux` interface and adds camera transition animation and input locking functionality.
 
-This uses the state machine pattern to coordinate the camera input. You can use the similar patter or create a camera mux using you own logic.
+This implementation uses the state machine pattern to coordinate camera input. You can follow a similar pattern or create your own camera multiplexer with custom logic.
 
-The `Board` class uses the `CameraMux` interface to control the camera input. So if you have your own camera mux, and you want to use it to substitute the default one, make sure it implements the `CameraMux` interface. But don't use the camera mux inside the `Board` class like this:
+The `Board` class uses the `CameraMux` interface to control camera input. If you want to substitute the default implementation with your own camera multiplexer, ensure it implements the `CameraMux` interface. However, avoid using the camera multiplexer inside the `Board` class like this:
 
 ```ts
-// don't do this
-board.cameraMux.yourOwnInput(value); // CameraMux interface doesn't have yourOwnInput method
+// Incorrect usage
+board.cameraMux.yourOwnInput(value); // TypeScript will error as CameraMux interface doesn't have yourOwnInput method
 ```
-Typescript would scream at you.
 
-Instead, hold a reference to the camera mux and use it to send input to the camera mux.
+Instead, maintain a reference to the camera multiplexer and use it to send input:
 
 ```ts
-// hold a reference to the camera mux
+// Correct usage
 const cameraMux = new YourOwnCameraMux();
 board.cameraMux = cameraMux;
 
-// send input to the camera mux through the variable
+// Send input through the reference
 cameraMux.yourOwnInput(value);
 ```
 
-Or not use the `Board` class at all.
+Alternatively, you can choose not to use the `Board` class at all.
 
-The camera mux is entirely optional. Only customize it if you need it, you can skip it all together. 
+The camera multiplexer is entirely optional. Only implement it if you need its functionality; you can skip it entirely if not required. 
 
