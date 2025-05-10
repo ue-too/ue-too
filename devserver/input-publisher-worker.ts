@@ -1,6 +1,6 @@
 import { CanvasProxy, convertFromWindow2ViewPort, convertFromWindow2ViewPortWithCanvasOperator, createDefaultFlowControlWithCameraRig, createKmtInputStateMachine, DefaultBoardCamera, KmtInputStateMachineWebWorkerProxy, ObservableInputTracker, RawUserInputPublisher } from "src";
 import { CameraRig, createDefaultCameraRig } from "src/board-camera/camera-rig";
-import { CanvasCacheInWebWorker } from "src/input-state-machine/kmt-input-context";
+import { CanvasCacheInWebWorker } from "src/input-interpretation/input-state-machine/kmt-input-context";
 
 let context: OffscreenCanvasRenderingContext2D;
 let canvas: OffscreenCanvas;

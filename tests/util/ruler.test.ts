@@ -1,4 +1,4 @@
-import { calculateOrderOfMagnitude } from "../../src/util";
+import { calculateOrderOfMagnitude } from "../../src/utils";
 
 describe("Ruler related utility functions", () => {
     describe("calculateOrderOfMagnitude", () => {

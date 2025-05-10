@@ -1,5 +1,5 @@
 // Track position changes with ResizeObserver
-import { Observable, Observer, SubscriptionOptions } from "src/util/observable";
+import { Observable, Observer, SubscriptionOptions } from "src/utils/observable";
 
 export type CanvasUpdateObserver = (rect: DOMRect) => void;
 

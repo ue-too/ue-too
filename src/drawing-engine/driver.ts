@@ -1,4 +1,4 @@
-import { Point } from "src/util/misc";
+import { Point } from "src/utils/misc";
 
 /**
  * @description The interface for the draw task. (WIP)
