@@ -27,14 +27,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/niuee/board.git"
+    "url": "git+https://github.com/ue-too/ue-too.git"
   },
   "author": "niuee",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/niuee/board/issues"
+    "url": "https://github.com/ue-too/ue-too/issues"
   },
-  "homepage": "https://github.com/niuee/board#readme",
+  "homepage": "https://github.com/ue-too/ue-too#readme",
   "dependencies": {
     "point2point": "^0.0.95"
   },
