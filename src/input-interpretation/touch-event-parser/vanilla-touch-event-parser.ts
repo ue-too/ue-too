@@ -16,6 +16,7 @@ export interface TouchEventParser {
     disableStrategy(): void;
     setUp(): void;
     tearDown(): void;
+    attach(canvas: HTMLCanvasElement): void;
 }
 
 /**
@@ -158,5 +159,11 @@ export class VanillaTouchEventParser implements TouchEventParser {
             pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
         }
         this.touchSM.happens("touchmove", {points: pointsMoved});
+    }
+
+    attach(canvas: HTMLCanvasElement){
+        this.tearDown();
+        this._canvas = canvas;
+        this.setUp();
     }
 }

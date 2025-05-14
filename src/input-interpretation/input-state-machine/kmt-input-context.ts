@@ -108,6 +108,16 @@ export class CanvasProxy implements CanvasOperator {
     setCursor(style: "grab" | "default" | "grabbing"): void {
         this._canvas.style.cursor = style;
     }
+
+    attach(canvas: HTMLCanvasElement){
+        this._canvasPositionDimensionPublisher.attach(canvas);
+        this._canvas = canvas;
+        const boundingRect = canvas.getBoundingClientRect();
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this._width = trueRect.width;
+        this._height = trueRect.height;
+        this._position = {x: trueRect.left, y: trueRect.top};
+    }
 }
 
 /**

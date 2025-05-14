@@ -41,24 +41,24 @@ export class CanvasPositionDimensionPublisher {
         });
         
         // Add scroll handler to detect position changes during scrolling
-        this.scrollHandler = () => {
+        this.scrollHandler = (() => {
             const newRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
-        };
+        }).bind(this);
 
         // Add window resize handler to detect position changes when window size changes
-        this.resizeHandler = () => {
+        this.resizeHandler = (() => {
             const newRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
-        };
+        }).bind(this);
         
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
@@ -72,6 +72,30 @@ export class CanvasPositionDimensionPublisher {
         this.intersectionObserver.disconnect();
         window.removeEventListener('scroll', this.scrollHandler);
         window.removeEventListener('resize', this.resizeHandler);
+    }
+
+    attach(canvas: HTMLCanvasElement) {
+        this.dispose();
+        this.resizeObserver.observe(canvas);
+        this.intersectionObserver.observe(canvas);
+        this.scrollHandler = (() => {
+            const newRect = canvas.getBoundingClientRect();
+            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            if (rectChanged(this.lastRect, trueRect)) {
+                this.publishPositionUpdate(trueRect);
+                this.lastRect = trueRect;
+            }
+        }).bind(this);
+        this.resizeHandler = (() => {
+            const newRect = canvas.getBoundingClientRect();
+            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            if (rectChanged(this.lastRect, trueRect)) {
+                this.publishPositionUpdate(trueRect);
+                this.lastRect = trueRect;
+            }
+        }).bind(this);
+        window.addEventListener("scroll", this.scrollHandler, { passive: true });
+        window.addEventListener("resize", this.resizeHandler, { passive: true });
     }
 
     private publishPositionUpdate(rect: DOMRect) {
