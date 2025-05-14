@@ -12,7 +12,7 @@ const methodsToFlip: Record<string, number[]> = {
     quadraticCurveTo: [1, 3],
     bezierCurveTo: [1, 3, 5],
     arc: [1],
-    drawImage: [2, 6]     // [syIndex, dyIndex] - indices of y-coordinates to flip for all three signatures
+    drawImage: [2]        // Base case for first two signatures
 };
 
 export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRenderingContext2D {
@@ -26,11 +26,16 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
                     // Create a copy of the arguments
                     const newArgs = [...args];
                     
-                    // Flip the y-coordinates based on methodsToFlip configuration
-                    const yIndices = methodsToFlip[prop];
-                    for (const index of yIndices) {
-                        if (index < newArgs.length) {
-                            newArgs[index] = -newArgs[index];
+                    // Special handling for drawImage with 9 arguments (third signature)
+                    if (prop === 'drawImage' && args.length === 9) {
+                        newArgs[6] = -newArgs[6]; // Flip only dy
+                    } else {
+                        // Flip the y-coordinates based on methodsToFlip configuration
+                        const yIndices = methodsToFlip[prop];
+                        for (const index of yIndices) {
+                            if (index < newArgs.length) {
+                                newArgs[index] = -newArgs[index];
+                            }
                         }
                     }
                     

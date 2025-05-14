@@ -182,7 +182,7 @@ function step(timestamp: number){
 
     // Draw the test image at (0,0)
     if (testImage.complete) {
-        board.context.drawImage(testImage, 0, 100);
+        board.context.drawImage(testImage, 0, 100, 200, 200, 0, 100, 200, 200);
     }
 
     board.context.beginPath();
