@@ -35,6 +35,12 @@ const canvas2 = document.getElementById("graph2") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const testAbortController = new AbortController();
 
+// Add image loading code
+const testImage = new Image();
+testImage.src = 'https://picsum.photos/200/200';
+testImage.onload = () => {
+    console.log('Image loaded successfully');
+};
 
 canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
     console.log("canvas position", rect.x);
@@ -173,6 +179,11 @@ function step(timestamp: number){
     compositeAnimation.animate(deltaMiliseconds);
     board.context.fillStyle = 'white';
     board.context.fillRect(-5000, -5000, 10000, 10000);
+
+    // Draw the test image at (0,0)
+    if (testImage.complete) {
+        board.context.drawImage(testImage, 0, 100);
+    }
 
     board.context.beginPath();
     board.context.arc(0, 100, 10, 0, Math.PI * 2);

@@ -11,7 +11,8 @@ const methodsToFlip: Record<string, number[]> = {
     moveTo: [1],
     quadraticCurveTo: [1, 3],
     bezierCurveTo: [1, 3, 5],
-    arc: [1]
+    arc: [1],
+    drawImage: [2, 6]     // [syIndex, dyIndex] - indices of y-coordinates to flip for all three signatures
 };
 
 export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRenderingContext2D {
