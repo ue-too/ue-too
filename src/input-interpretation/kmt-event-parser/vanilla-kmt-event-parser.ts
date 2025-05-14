@@ -9,6 +9,7 @@ export interface KMTEventParser {
     disabled: boolean;
     setUp(): void;
     tearDown(): void;
+    attach(canvas: HTMLCanvasElement): void;
 }
 
 /**
@@ -197,4 +198,9 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
     }
 
+    attach(canvas: HTMLCanvasElement){
+        this.tearDown();
+        this._canvas = canvas;
+        this.setUp();
+    }
 }

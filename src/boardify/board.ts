@@ -3,7 +3,7 @@ import { halfTranslationHeightOf, halfTranslationWidthOf } from 'src/board-camer
 import { KMTEventParser, VanillaKMTEventParser, EventTargetWithPointerEvents } from 'src/input-interpretation/kmt-event-parser';
 import { TouchEventParser, VanillaTouchEventParser } from 'src/input-interpretation/touch-event-parser';
 import { Point } from 'src/utils/misc';
-import { CanvasPositionDimensionPublisher, reverseYAxis } from 'src/boardify/utils';
+import { reverseYAxis } from 'src/boardify/utils';
 import { PointCal } from 'point2point';
 
 import { CameraEventMap, CameraState, UnSubscribe } from 'src/board-camera/camera-update-publisher';
@@ -63,7 +63,6 @@ export default class Board {
 
     private attributeObserver: MutationObserver;
 
-    private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
     private _canvasProxy: CanvasProxy;
     
     constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents = canvas){
@@ -85,8 +84,7 @@ export default class Board {
         this.attributeObserver = new MutationObserver(this.attributeCallBack);
         this.attributeObserver.observe(this._canvas, {attributes: true});
 
-        this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
-        this._canvasProxy = new CanvasProxy(canvas, this._canvasPositionDimensionPublisher);
+        this._canvasProxy = new CanvasProxy(canvas);
 
         this.cameraRig = new DefaultCameraRig({
             limitEntireViewPort: true,
@@ -110,15 +108,16 @@ export default class Board {
         this._kmtParser = new VanillaKMTEventParser(canvas, kmtInputStateMachine);
         this._touchParser = new VanillaTouchEventParser(canvas, touchInputStateMachine);
 
-        
+        this.calibrateCanvasDimensions();
+        this.setup();
+    }
+
+    private calibrateCanvasDimensions(){
         // NOTE: device pixel ratio
         this._canvas.style.width = this._canvas.width + "px";
         this._canvas.style.height = this._canvas.height + "px";
         this._canvas.width = window.devicePixelRatio * this._canvas.width;
         this._canvas.height = window.devicePixelRatio * this._canvas.height;
-        // NOTE: device pixel ratio
-        
-        this.registerEventListeners();
     }
 
     private registerEventListeners(){
@@ -129,6 +128,21 @@ export default class Board {
     private removeEventListeners(){
         this._touchParser.tearDown();
         this._kmtParser.tearDown();
+    }
+
+    attach(canvas: HTMLCanvasElement){
+        if(this._canvas == canvas){
+            return;
+        }
+        this._canvas = canvas;
+        this.calibrateCanvasDimensions();
+        this._kmtParser.attach(canvas);
+        this._touchParser.attach(canvas);
+        this._canvasProxy.attach(canvas);
+        this.attributeObserver.disconnect();
+        this.attributeObserver.observe(canvas, {attributes: true});
+        this._context = canvas.getContext('2d');
+        this._reversedContext = reverseYAxis(this._context);
     }
 
     /**
@@ -384,7 +398,9 @@ export default class Board {
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    this.camera.viewPortWidth = parseFloat(this._canvas.style.width);
+                    // NOTE canvas width change (not the style width)
+                    this._canvas.style.width = this._canvas.width / window.devicePixelRatio + "px";
+                    this.camera.viewPortWidth = this._canvas.width / window.devicePixelRatio;
                     if(this.limitEntireViewPort){
                         const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
                         if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
@@ -392,9 +408,24 @@ export default class Board {
                         }
                     }
                 } else if(mutation.attributeName === "height"){
-                    this.camera.viewPortHeight = parseFloat(this._canvas.style.height);
+                    // NOTE canvas height change (not the style height)
+                    this._canvas.style.height = this._canvas.height / window.devicePixelRatio + "px";
+                    this.camera.viewPortHeight = this._canvas.height / window.devicePixelRatio;
                     if(this.limitEntireViewPort){
                         const targetMinZoomLevel = minZoomLevelBaseOnHeight(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
+                        if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+                            this.camera.setMinZoomLevel(targetMinZoomLevel);
+                        }
+                    }
+                } else if (mutation.attributeName === "style"){
+                    const styleWidth = parseFloat(this._canvas.style.width);
+                    const styleHeight = parseFloat(this._canvas.style.height);
+                    this._canvas.width = styleWidth * window.devicePixelRatio;
+                    this._canvas.height = styleHeight * window.devicePixelRatio;
+                    this.camera.viewPortWidth = styleWidth;
+                    this.camera.viewPortHeight = styleHeight;
+                    if(this.limitEntireViewPort){
+                        const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
                         if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
                             this.camera.setMinZoomLevel(targetMinZoomLevel);
                         }

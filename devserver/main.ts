@@ -31,6 +31,7 @@ export function comboDetect(inputKey: string, currentString: string, combo: stri
 const utilBtn = document.getElementById("util-btn") as HTMLButtonElement;
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
+const canvas2 = document.getElementById("graph2") as HTMLCanvasElement;
 const canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
 const testAbortController = new AbortController();
 
@@ -48,8 +49,10 @@ const board = new Board(canvas);
 utilBtn.addEventListener("click", ()=>{
     // canvas.style.width = "300px";
     // canvasPositionDimensionPublisher.dispose();
-    testAbortController.abort();
-    board.getCameraRig().panToWorld({x: 100, y: 100});
+    // testAbortController.abort();
+    console.log('width', canvas.width);
+    canvas.height = 400;
+    board.attach(canvas2);
 });
 
 board.camera.setRotation(0 * Math.PI / 180);
