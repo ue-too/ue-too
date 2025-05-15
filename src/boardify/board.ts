@@ -420,10 +420,16 @@ export default class Board {
                 } else if (mutation.attributeName === "style"){
                     const styleWidth = parseFloat(this._canvas.style.width);
                     const styleHeight = parseFloat(this._canvas.style.height);
-                    this._canvas.width = styleWidth * window.devicePixelRatio;
-                    this._canvas.height = styleHeight * window.devicePixelRatio;
-                    this.camera.viewPortWidth = styleWidth;
-                    this.camera.viewPortHeight = styleHeight;
+                    const newWidth = styleWidth * window.devicePixelRatio;
+                    if(newWidth != this._canvas.width){
+                        this._canvas.width = newWidth;
+                        this.camera.viewPortWidth = styleWidth;
+                    }
+                    const newHeight = styleHeight * window.devicePixelRatio;
+                    if(newHeight != this._canvas.height){
+                        this._canvas.height = newHeight;
+                        this.camera.viewPortHeight = styleHeight;
+                    }
                     if(this.limitEntireViewPort){
                         const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
                         if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
