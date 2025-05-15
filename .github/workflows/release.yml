@@ -56,7 +56,7 @@ jobs:
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
             pnpm run increment-major-version
           fi
-      - run: pnpm publish --no-git-checks --access public ./build ${{ github.event.inputs.dry-run && '--dry-run' || '' }}
+      - run: pnpm publish --no-git-checks --access public ./build ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version
@@ -65,7 +65,7 @@ jobs:
           echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Sync package version
-        if: ${{ !github.event.inputs.dry-run }}
+        if: ${{ github.event.inputs.dry-run != 'true' }}
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
@@ -75,11 +75,11 @@ jobs:
           git push
       - name: Determine release branch
         id: get-branch
-        if: ${{ !github.event.inputs.dry-run }}
+        if: ${{ github.event.inputs.dry-run != 'true' }}
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
       - name: Create release
-        if: ${{ !github.event.inputs.dry-run }}
+        if: ${{ github.event.inputs.dry-run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.PAT }}
           tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
