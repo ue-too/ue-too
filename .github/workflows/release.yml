@@ -65,6 +65,7 @@ jobs:
           echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
         shell: bash
       - name: Sync package version
+        if: ${{ !github.event.inputs.dry-run }}
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
@@ -74,9 +75,11 @@ jobs:
           git push
       - name: Determine release branch
         id: get-branch
+        if: ${{ !github.event.inputs.dry-run }}
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
       - name: Create release
+        if: ${{ !github.event.inputs.dry-run }}
         env:
           GH_TOKEN: ${{ secrets.PAT }}
           tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
