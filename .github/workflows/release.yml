@@ -13,6 +13,10 @@ on:
           - major
           - minor
           - patch
+        dry-run:
+          type: boolean
+          description: Perform a dry run without actually publishing
+          default: false
 
 jobs:
   release-package:
@@ -52,31 +56,16 @@ jobs:
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
             pnpm run increment-major-version
           fi
-      - run: pnpm publish --no-git-checks --access public ./build
+      - run: pnpm publish --no-git-checks --access public ./build ${{ github.event.inputs.dry-run && '--dry-run' || '' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version
         id: get-version
         run: |
-          echo "version=$(pnpm view ue-too version)" >> $GITHUB_OUTPUT
+          echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
         shell: bash
-      - name: Check the current version
-        id: check-version
-        run: |
-          echo ${{ steps.get-version.outputs.version }}
-          if [[ \"$(pnpm view ue-too version)\" == $(pnpm pkg get version)  ]]
-            then
-            echo "synced=True" >> $GITHUB_OUTPUT
-           else
-            echo "synced=False" >> $GITHUB_OUTPUT
-          fi
-          
-        shell: bash
-      - name: See if version is synced
-        run: |
-          echo ${{ steps.check-version.outputs.synced }}
       - name: Sync package version
-        if: ${{ steps.check-version.outputs.synced == 'False' }}
+        if: ${{ !github.event.inputs.dry-run }}
         run: |
           pnpm run sync-package-version ${{ steps.get-version.outputs.version }}
           git config --global user.email "vntchang@gmail.com"
@@ -86,9 +75,11 @@ jobs:
           git push
       - name: Determine release branch
         id: get-branch
+        if: ${{ !github.event.inputs.dry-run }}
         run: |
           echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
       - name: Create release
+        if: ${{ !github.event.inputs.dry-run }}
         env:
           GH_TOKEN: ${{ secrets.PAT }}
           tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
