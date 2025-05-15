@@ -61,7 +61,12 @@ const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
     plugins: [
         ...plugins,
     ],
-    external: ['point2point'],
+    external: [
+      'point2point',
+      // Add internal dependencies that should be external
+      /^\.\.\/.*/, // This will make all parent directory imports external
+      /^\.\/.*/,   // This will make all sibling directory imports external
+    ],
   };
 });
 
@@ -94,6 +99,7 @@ export default [
         mangle: true,
       }),
     ],
+    external: ['point2point'],
   },
   {
     // distribution for direct browser usage
