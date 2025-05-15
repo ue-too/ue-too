@@ -6,6 +6,7 @@
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
   "type": "module",
+  "sideEffects": false,
   "scripts": {
     "rollup": "rollup -c --bundleConfigAsCjs",
     "build": "pnpm run rollup && pnpm exec tsc-alias -p prod.tsconfig.json && pnpm run move-package",
