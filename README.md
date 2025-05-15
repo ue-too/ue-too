@@ -18,7 +18,7 @@
   <a href="#quick-demo">Quick Demo</a> •
   <a href="#installation-and-usage">Install</a> •
   <a href="#key-features">Key Features</a> •
-  <a href="#quick-start-using-only-html-canvas">Quick Start</a> •
+  <a href="#quick-start-html-canvas">Quick Start</a> •
   <a href="#development">Development</a> •
   <a href="#under-the-hood">Basic API Overview</a>
 </p>
