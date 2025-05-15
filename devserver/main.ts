@@ -57,8 +57,8 @@ utilBtn.addEventListener("click", ()=>{
     // canvasPositionDimensionPublisher.dispose();
     // testAbortController.abort();
     console.log('width', canvas.width);
-    canvas.height = 400;
     board.attach(canvas2);
+    canvas2.height = 400;
 });
 
 board.camera.setRotation(0 * Math.PI / 180);
