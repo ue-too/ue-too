@@ -65,7 +65,7 @@ const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
       'point2point',
       // Add internal dependencies that should be external
       /^\.\.\/.*/, // This will make all parent directory imports external
-      /^\.\/.*/,   // This will make all sibling directory imports external
+      // /^\.\/.*/,   // This will make all sibling directory imports external
     ],
   };
 });
