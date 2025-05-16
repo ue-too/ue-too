@@ -1,7 +1,7 @@
 {
   "name": "ue-too",
   "version": "0.4.0",
-  "description": "",
+  "description": "pan, zoom, and rotate your html canvas",
   "main": "./build/index.cjs",
   "module": "./build/index.mjs",
   "types": "./build/index.d.ts",
