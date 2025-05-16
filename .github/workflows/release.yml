@@ -64,7 +64,7 @@ jobs:
         run: |
           cd ./build
           echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
-          echo "pnpm pkg get version"
+          echo "current version: $(pnpm pkg get version)"
         shell: bash
       - name: Sync package version
         if: ${{ github.event.inputs.dry-run != 'true' }}
