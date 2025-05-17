@@ -428,8 +428,9 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
         const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
         this._camera.setZoomLevel(transformedTarget);
         let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const cameraPositionDiff = PointCal.subVector(originalAnchorInViewPort, anchorInViewPortAfterZoom);
-        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
+        const cameraPositionDiffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, originalAnchorInViewPort);
+        const cameraPositionDiffInWorld = convertDeltaInViewPortToWorldSpace(cameraPositionDiffInViewPort, this._camera.zoomLevel, this._camera.rotation);
+        const transformedCameraPositionDiff = this._panBy(cameraPositionDiffInWorld, this._camera, this._config);
         this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
     }
 
@@ -441,7 +442,7 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
         const transformedDelta = this._zoomBy(delta, this._camera, this._config);
         this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
         let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const diffInViewPort = PointCal.subVector(anchorInViewPortBeforeZoom, anchorInViewPortAfterZoom);
+        const diffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, anchorInViewPortBeforeZoom);
         const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, this._camera.zoomLevel, this._camera.rotation);
         const transformedDiff = this._panBy(diffInWorld, this._camera, this._config);
         this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
