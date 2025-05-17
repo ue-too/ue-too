@@ -112,7 +112,7 @@ Clamping is handled by the `CameraRig`, not the board camera. While you can set 
 The `getTransform` method provides the transform matrix for the rendering engine. It takes two arguments:
 
 - `devicePixelRatio`: The screen's device pixel ratio
-- `alignCoordinate`: Whether to maintain the HTML canvas coordinate system (usually true, with positive y down and clockwise rotation)
+- `alignCoordinate`: Whether to maintain the HTML canvas coordinate system (usually true, with positive y down and positive rotation clockwise)
 
 ```typescript
 const transform = boardCamera.getTransform(devicePixelRatio, true);
