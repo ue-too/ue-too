@@ -58,7 +58,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  */
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
-    uponLeave(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
     handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
@@ -199,7 +199,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         const nextState = this._states[this._currentState].handles(event, payload, this._context, this);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
-            this._states[this._currentState].uponLeave(this._context, this);
+            this._states[this._currentState].beforeExit(this._context, this);
             this.switchTo(nextState);
             this._states[this._currentState].uponEnter(this._context, this);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
@@ -265,7 +265,7 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log("enter");
     }
 
-    uponLeave(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
         // console.log('leave');
     }
 

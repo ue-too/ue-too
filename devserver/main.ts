@@ -288,7 +288,7 @@ class HoldingState extends TemplateState<TimeoutEvents, TimeoutContext, TestStat
         }, 3000);
     }
 
-    uponLeave(context: TimeoutContext, stateMachine: TimeoutStateMachine): void {
+    beforeExit(context: TimeoutContext, stateMachine: TimeoutStateMachine): void {
         if(this._timeoutId !== null){
             clearTimeout(this._timeoutId);
         }
