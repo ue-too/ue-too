@@ -25,7 +25,7 @@ export const NO_OP: NOOP = ()=>{};
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
-    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
+    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -57,12 +57,13 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  * @category being
  */
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
-    uponEnter(context: Context): void;
-    uponLeave(context: Context): void;
-    handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined;
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
+    handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
+    delay: Delay<Context, EventPayloadMapping, States> | undefined;
 }
 
 /**
@@ -77,7 +78,7 @@ export interface State<EventPayloadMapping, Context extends BaseContext, States 
  */
 export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
-        action: (context: Context, event: EventPayloadMapping[K]) => void; 
+        action: (context: Context, event: EventPayloadMapping[K], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
         defaultTargetState: States;
     };
 };
@@ -108,6 +109,16 @@ export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
 }
 
+export type Action<Context extends BaseContext, EventPayloadMapping, States extends string> = {
+    action: (context: Context, event: EventPayloadMapping[keyof EventPayloadMapping], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
+    defaultTargetState: States;
+}
+
+export type Delay<Context extends BaseContext, EventPayloadMapping, States extends string> = {
+    time: number;
+    action: Action<Context, EventPayloadMapping, States>;
+}
+
 /**
  * @description This is a mapping of a guard to a target state.
  * 
@@ -128,7 +139,7 @@ export type GuardMapping<Context extends BaseContext, G, States extends string> 
 }
 
 /**
- * @description This is a mapping of a guard to a target state.
+ * @description This is a mapping of an event to a guard evaluation.
  * 
  * Generic parameters:
  * - EventPayloadMapping: A mapping of events to their payloads.
@@ -165,6 +176,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     protected _statesArray: States[];
     protected _stateChangeCallbacks: StateChangeCallback<States>[];
     protected _happensCallbacks: ((event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void)[];
+    protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context){
         this._states = states;
@@ -180,13 +192,16 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     }
     
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined {
+        if(this._timeouts){
+            clearTimeout(this._timeouts);
+        }
         this._happensCallbacks.forEach(callback => callback(event, payload, this._context));
-        const nextState = this._states[this._currentState].handles(event, payload, this._context);
+        const nextState = this._states[this._currentState].handles(event, payload, this._context, this);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
-            this._states[this._currentState].uponLeave(this._context);
+            this._states[this._currentState].beforeExit(this._context, this);
             this.switchTo(nextState);
-            this._states[this._currentState].uponEnter(this._context);
+            this._states[this._currentState].uponEnter(this._context, this);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
         return nextState;
@@ -232,6 +247,7 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
     abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     protected _guards: Guard<Context> = {};
     protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {};
+    protected _delay: Delay<Context, EventPayloadMapping, States> | undefined = undefined;
 
     get guards(): Guard<Context> {
         return this._guards;
@@ -241,17 +257,21 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return this._eventGuards;
     }
 
-    uponEnter(context: Context): void {
+    get delay(): Delay<Context, EventPayloadMapping, States> | undefined {
+        return this._delay;
+    }
+
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
         // console.log("enter");
     }
 
-    uponLeave(context: Context): void {
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
         // console.log('leave');
     }
 
-    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context): States | undefined {
+    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined {
         if (this.eventReactions[event]) {
-            this.eventReactions[event].action(context, payload);
+            this.eventReactions[event].action(context, payload, stateMachine);
             const targetState = this.eventReactions[event].defaultTargetState;
             const guardToEvaluate = this._eventGuards[event];
             if(guardToEvaluate){
