@@ -97,7 +97,7 @@ export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEB
  * 
  * @category Input State Machine
  */
-export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> {
+export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
     constructor() {
         super();
@@ -107,14 +107,14 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         isIdle: () => true,
     }
 
-    protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtIdleStatePossibleTargetStates, KmtInputContext, Guard<KmtInputContext>>> = {
+    protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtInputStates, KmtInputContext, Guard<KmtInputContext>>> = {
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
         return this._eventReactions;
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtIdleStatePossibleTargetStates> = {
+    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
