@@ -8,6 +8,7 @@ import { Animation, CompositeAnimation, PointAnimationHelper, Keyframe, EasingFu
 import { CameraMuxWithAnimationAndLock } from "src/camera-mux/animation-and-lock/animation-and-lock";
 import { createDefaultPanByHandler } from "src/board-camera/camera-rig/pan-handler";
 import { cameraPositionToGet, CameraRig, convertDeltaInViewPortToWorldSpace } from "src";
+import { TemplateStateMachine, TemplateState, StateMachine, State, BaseContext, EventReactions } from "src/being";
 
 export function comboDetect(inputKey: string, currentString: string, combo: string): {nextState: string, comboDetected: boolean} {
     if(currentString.length > combo.length){
@@ -52,14 +53,6 @@ canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
 
 
 const board = new Board(canvas);
-utilBtn.addEventListener("click", ()=>{
-    // canvas.style.width = "300px";
-    // canvasPositionDimensionPublisher.dispose();
-    // testAbortController.abort();
-    console.log('width', canvas.width);
-    board.attach(canvas2);
-    canvas2.height = 400;
-});
 
 board.camera.setRotation(0 * Math.PI / 180);
 board.alignCoordinateSystem = false;
@@ -244,3 +237,87 @@ canvas.addEventListener('pointerdown', (event)=>{
 //     const pointInWindow = {x: event.touches[0].clientX, y: event.touches[0].clientY};
 //     console.log('point in world space: ', pointInWindow);
 // });
+
+
+type TestStates = "IDLE" | "HOLDING";
+type EmptyEvent = {};
+
+interface TimeoutContext extends BaseContext {
+    timeoutId: ReturnType<typeof setTimeout> | null;
+}
+
+type TimeoutEvents = {
+    "timeout": {
+        fromState: TestStates;
+    },
+    "start": EmptyEvent,
+}
+
+type TimeoutStateMachine = StateMachine<TimeoutEvents, TimeoutContext, TestStates>;
+
+class IDLEState extends TemplateState<TimeoutEvents, TimeoutContext, TestStates> {
+
+    private _timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    eventReactions: EventReactions<TimeoutEvents, TimeoutContext, TestStates> = {
+        start: {
+            action: (context, event, stateMachine) => {
+                console.log('start');
+            },
+            defaultTargetState: "HOLDING"
+        }
+    }
+}
+
+class HoldingState extends TemplateState<TimeoutEvents, TimeoutContext, TestStates> {
+
+    private _timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    eventReactions: EventReactions<TimeoutEvents, TimeoutContext, TestStates> = {
+        timeout: {
+            action: (context, event, stateMachine) => {
+                console.log("timeout");
+            },
+            defaultTargetState: "IDLE"
+        }
+    }
+
+    uponEnter(context: TimeoutContext, stateMachine: TimeoutStateMachine): void {
+        this._timeoutId = setTimeout(() => {
+            stateMachine.happens("timeout", {fromState: "HOLDING"});
+        }, 3000);
+    }
+
+    uponLeave(context: TimeoutContext, stateMachine: TimeoutStateMachine): void {
+        if(this._timeoutId !== null){
+            clearTimeout(this._timeoutId);
+        }
+    }
+}
+
+const timeoutStateMachine: TimeoutStateMachine = new TemplateStateMachine<TimeoutEvents, TimeoutContext, TestStates>({
+    IDLE: new IDLEState(),
+    HOLDING: new HoldingState(),
+}, "IDLE", {
+    timeoutId: null,
+    setup: () => {
+        console.log("setup");
+    },
+    cleanup: () => {
+        console.log("cleanup");
+    }
+});
+
+timeoutStateMachine.onStateChange((currentState, nextState) => {
+    console.log("state changed", currentState, nextState);
+});
+
+utilBtn.addEventListener("click", ()=>{
+    // canvas.style.width = "300px";
+    // canvasPositionDimensionPublisher.dispose();
+    // testAbortController.abort();
+    console.log('width', canvas.width);
+    board.attach(canvas2);
+    canvas2.height = 400;
+    timeoutStateMachine.happens("start", {});
+});
