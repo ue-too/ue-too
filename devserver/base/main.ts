@@ -12,4 +12,3 @@ function step(){
 }
 
 requestAnimationFrame(step);
-
