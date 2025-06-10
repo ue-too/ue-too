@@ -57,8 +57,8 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  * @category being
  */
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void;
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
     handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
@@ -199,9 +199,9 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         const nextState = this._states[this._currentState].handles(event, payload, this._context, this);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
-            this._states[this._currentState].beforeExit(this._context, this);
+            this._states[this._currentState].beforeExit(this._context, this, nextState);
             this.switchTo(nextState);
-            this._states[this._currentState].uponEnter(this._context, this);
+            this._states[this._currentState].uponEnter(this._context, this, originalState);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
         return nextState;
@@ -261,11 +261,11 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return this._delay;
     }
 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void {
         // console.log("enter");
     }
 
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): void {
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void {
         // console.log('leave');
     }
 
