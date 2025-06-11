@@ -1,5 +1,5 @@
 import { Point } from 'src/utils/misc';
-import { Boundaries, TransformMatrix } from 'src/board-camera';
+import { Boundaries, TransformationMatrix } from 'src/board-camera';
 import { CameraUpdatePublisher, UnSubscribe } from 'src/board-camera/camera-update-publisher';
 import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
@@ -181,7 +181,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param alignCoorindate Whether to align the coordinate system to the camera's position
      * @returns The transformation matrix
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformationMatrix {
         return this._baseCamera.getTransform(devicePixelRatio, alignCoorindate);
     }
 
