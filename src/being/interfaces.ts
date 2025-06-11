@@ -244,9 +244,9 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
  */
 export abstract class TemplateState<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
 
-    abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
-    protected _guards: Guard<Context> = {};
-    protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {};
+    public abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
+    protected _guards: Guard<Context> = {} as Guard<Context>;
+    protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {} as Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
     protected _delay: Delay<Context, EventPayloadMapping, States> | undefined = undefined;
 
     get guards(): Guard<Context> {
