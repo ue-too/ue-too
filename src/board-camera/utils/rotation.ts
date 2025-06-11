@@ -48,6 +48,9 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
     if(normalizeAngleZero2TwoPI(rotationLimits.start) === normalizeAngleZero2TwoPI(rotationLimits.end)){
         return true;
     }
+    if(normalizeAngleZero2TwoPI(rotationLimits.start + 0.01) === normalizeAngleZero2TwoPI(rotationLimits.end + 0.01)){
+        return true;
+    }
     const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
     const angleSpanFromStart = angleSpan(rotationLimits.start, normalizedRotation);
     const angleSpanFromEnd = angleSpan(rotationLimits.end, normalizedRotation);
@@ -63,6 +66,12 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
  * @category Camera
  */
 export function rotationWithinBoundary(rotation: number, rotationBoundary: RotationBoundary): boolean {
+    if(normalizeAngleZero2TwoPI(rotationBoundary.start) === normalizeAngleZero2TwoPI(rotationBoundary.end)){
+        return true;
+    }
+    if(normalizeAngleZero2TwoPI(rotationBoundary.start + 0.01) === normalizeAngleZero2TwoPI(rotationBoundary.end + 0.01)){
+        return true;
+    }
     const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
 
     let angleFromStart = normalizedRotation - normalizeAngleZero2TwoPI(rotationBoundary.start);

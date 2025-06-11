@@ -64,10 +64,10 @@ describe("rotation boundaries testing", ()=>{
 
     test("should return true for a full revolution boundary", ()=>{
         const rotationBoundaries: RotationBoundary = {start: 0, end: Math.PI * 2, positiveDirection: true, startAsTieBreaker: true};
-        // expect(rotationWithinBoundary(0, rotationBoundaries)).toBe(true);
-        // expect(rotationWithinBoundary(Math.PI * 2, rotationBoundaries)).toBe(true);
-        // expect(rotationWithinBoundary(Math.PI * 2 + 1, rotationBoundaries)).toBe(true);
-        // expect(rotationWithinBoundary(Math.PI * 2 - 1, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(0, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(Math.PI * 2, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(1, rotationBoundaries)).toBe(true);
+        expect(rotationWithinBoundary(Math.PI * 2 - 1, rotationBoundaries)).toBe(true);
     });
 });
 
@@ -105,7 +105,7 @@ describe("rotationLimits", ()=>{
         expect(rotationWithinLimits(0, rotationLimits)).toBe(true);
         expect(rotationWithinLimits(Math.PI * 2, rotationLimits)).toBe(true);
         expect(rotationWithinLimits(Math.PI * 2 + 1, rotationLimits)).toBe(true);
-        // expect(rotationWithinLimits(Math.PI * 2 - 1, rotationLimits)).toBe(true);
+        expect(rotationWithinLimits(Math.PI * 2 - 1, rotationLimits)).toBe(true);
     });
 });
 

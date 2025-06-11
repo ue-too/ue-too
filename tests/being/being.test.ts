@@ -60,14 +60,19 @@ describe("being", ()=>{
         idleState.beforeExit = jest.fn();
         idleState.uponEnter = jest.fn();
 
+        const firstState = new FirstState();
+        firstState.beforeExit = jest.fn();
+        firstState.uponEnter = jest.fn();
+
         const stateMachine = new TemplateStateMachine({
             "IDLE": idleState,
-            "FIRST": new FirstState(),
+            "FIRST": firstState,
             "SECOND": new SecondState()
         }, "IDLE", testContext);
 
         stateMachine.happens("EVENT_1", testContext);
         expect(mockAction).toHaveBeenCalled();
-        expect(idleState.beforeExit).toHaveBeenCalled();
+        expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
+        expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
     });
 });

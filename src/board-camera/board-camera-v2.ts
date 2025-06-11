@@ -1,7 +1,6 @@
 import { Point } from 'src/utils/misc';
 import { Boundaries, TransformationMatrix } from 'src/board-camera';
 import { CameraUpdatePublisher, UnSubscribe } from 'src/board-camera/camera-update-publisher';
-import { withinBoundaries } from 'src/board-camera/utils/position';
 import { ZoomLevelLimits } from 'src/board-camera/utils/zoom';
 import { RotationLimits } from 'src/board-camera/utils/rotation';
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
@@ -10,6 +9,14 @@ import { CameraEventMap, CameraState } from 'src/board-camera/camera-update-publ
 import { ObservableBoardCamera } from 'src/board-camera/interface';
 import BaseCamera from 'src/board-camera/base-camera';
 import { SubscriptionOptions } from 'src/utils/observable';
+
+
+export const DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH = 1000;
+export const DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT = 1000;
+
+export const DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES: ZoomLevelLimits = {min: 0.1, max: 10};
+export const DEFAULT_BOARD_CAMERA_BOUNDARIES: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}};
+export const DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES: RotationLimits = undefined;
 
 /**
  * @description The default board camera. This is basically the same as the {@link BaseCamera} class.
@@ -31,7 +38,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera
      */
-    constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
+    constructor(viewPortWidth: number = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, viewPortHeight: number = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, zoomLevelBoundaries: ZoomLevelLimits = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, rotationBoundaries: RotationLimits = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES){
         this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
         this._observer = new CameraUpdatePublisher();
     }
