@@ -26,9 +26,10 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
                     // Create a copy of the arguments
                     const newArgs = [...args];
                     
-                    // Special handling for drawImage with 9 arguments (third signature)
+                    // Special handling for drawImage with 9 arguments (third signature of drawImage)
                     if (prop === 'drawImage' && args.length === 9) {
-                        newArgs[6] = -newArgs[6]; // Flip only dy
+                        const convertedArgs = invertYAxisForDrawImageWith9Args(args);
+                        return value.apply(target, convertedArgs);
                     } else {
                         // Flip the y-coordinates based on methodsToFlip configuration
                         const yIndices = methodsToFlip[prop];
@@ -36,6 +37,10 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
                             if (index < newArgs.length) {
                                 newArgs[index] = -newArgs[index];
                             }
+                        }
+                        // Special handling for drawImage with 5 arguments (first signature of drawImage)
+                        if(prop === "drawImage" && args.length === 5){
+                            newArgs[2] -= newArgs[4];
                         }
                     }
                     
@@ -57,4 +62,19 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
             return Reflect.set(target, prop, value);
         }
     });
+}
+
+export function invertYAxisForDrawImageWith9Args(args: any[]): typeof args {
+    if(args.length !== 9){
+        return args;
+    }
+    const newArgs = [...args];
+    const imageHeight = args[0].height;
+    if(imageHeight !== undefined){
+        newArgs[2] = imageHeight - newArgs[2];
+        newArgs[6] = -newArgs[6];
+        newArgs[6] -= newArgs[8];
+        newArgs[4] = -newArgs[4];
+    }
+    return newArgs;
 }
