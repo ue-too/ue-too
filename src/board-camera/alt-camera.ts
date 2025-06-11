@@ -6,7 +6,7 @@ import { CameraUpdatePublisher } from "src/board-camera/camera-update-publisher"
 import { Boundaries, withinBoundaries } from "./utils/position";
 import { ZoomLevelLimits, zoomLevelWithinLimits } from "./utils/zoom";
 import { RotationLimits, rotationWithinLimits } from "./utils/rotation";
-import { TransformMatrix } from "./utils/matrix";
+import { TransformationMatrix } from "./utils/matrix";
 
 /**
  * @description This is the context centric camera.
@@ -107,7 +107,7 @@ export class ContextCentricCamera /*implements BoardCamera */{
         return -this._contextRotation;
     }
 
-    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean): TransformMatrix {
+    getTransform(canvasWidth: number, canvasHeight: number, devicePixelRatio: number, alignCoorindate: boolean): TransformationMatrix {
         const e = this._contextPosition.x * devicePixelRatio;
         const f = this._contextPosition.y * devicePixelRatio;
         const c = -Math.sin(this._contextRotation) * this._zoomLevel * devicePixelRatio;

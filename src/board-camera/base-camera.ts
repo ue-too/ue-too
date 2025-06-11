@@ -6,6 +6,7 @@ import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRo
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
 import { BoardCamera } from './interface';
+import { decomposeCameraMatrix, TransformationMatrix } from './utils/matrix';
 
 /**
  * 
@@ -265,6 +266,23 @@ export default class BaseCamera implements BoardCamera {
         const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
         this.currentCachedTransform = {transform: {a, b, c, d, e, f}, position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel, alignCoorindate, devicePixelRatio, viewPortWidth: this._viewPortWidth, viewPortHeight: this._viewPortHeight};
         return {a, b, c, d, e, f, cached: false};
+    }
+
+    /**
+     * @description This function is used to set the camera using a transformation matrix.
+     * The transformation matrix is the same as the one returned by the {@link getTransform} function. (by performing the transformations in the same order)
+     * The transformation matrix would be decomposed into SCALE(devicePixelRatio), TRANSLATION(center of the canvas), ROTATION(-rotation), SCALE(zoom level), and TRANSLATION(position).
+     * The position, zoom level, and rotation are still bounded by the boundaries of the camera.
+     * 
+     * @param transformationMatrix The transformation matrix.
+     * 
+     * @category Camera
+     */
+    setUsingTransformationMatrix(transformationMatrix: TransformationMatrix){
+        const decomposed = decomposeCameraMatrix(transformationMatrix, this._viewPortWidth, this._viewPortHeight, this._zoomLevel);
+        this.setPosition(decomposed.position);
+        this.setRotation(decomposed.rotation);
+        this.setZoomLevel(decomposed.zoom);
     }
 
     setRotation(rotation: number){
