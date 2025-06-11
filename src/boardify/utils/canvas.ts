@@ -37,6 +37,10 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
                                 newArgs[index] = -newArgs[index];
                             }
                         }
+                        if(prop === "drawImage" && args.length === 3){
+                            console.log("drawImage with only 3 args and the delta height is", args[2]);
+                            // newArgs[index] += 
+                        }
                     }
                     
                     // Call the original method with the modified arguments
