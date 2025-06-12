@@ -1,5 +1,6 @@
 import { Point } from "src/utils/misc";
 import { PointCal } from "point2point";
+import { multiplyMatrix, TransformationMatrix } from "src/board-camera/utils/matrix";
 
 /**
  * @description Finds the world space coordinate of the interest point if the camera is at target position.
@@ -121,4 +122,40 @@ export function cameraPositionToGet(pointInWorld: Point, toPointInViewPort: Poin
     const scaled = PointCal.multiplyVectorByScalar(toPointInViewPort, 1 / cameraZoomLevel);
     const rotated = PointCal.rotatePoint(scaled, cameraRotation);
     return PointCal.subVector(pointInWorld, rotated);
+}
+
+export function transformationMatrixFromCamera(cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): TransformationMatrix{
+    const cos = Math.cos(cameraRotation);
+    const sin = Math.sin(cameraRotation);
+    const trMatrix = multiplyMatrix({
+        a: 1,
+        b: 0,
+        c: 0,
+        d: 1,
+        e: cameraPosition.x,
+        f: cameraPosition.y
+    }, {
+        a: cos,
+        b: sin,
+        c: -sin,
+        d: cos,
+        e: 0,
+        f: 0
+    });
+    const trsMatrix = multiplyMatrix(trMatrix, {
+        a: 1 / cameraZoomLevel,
+        b: 0,
+        c: 0,
+        d: 1 / cameraZoomLevel,
+        e: 0,
+        f: 0
+    });
+    return trsMatrix;
+}
+
+export function convert2WorldSpaceWithTransformationMatrix(point: Point, transformationMatrix: TransformationMatrix): Point{
+    return {
+        x: point.x * transformationMatrix.a + point.y * transformationMatrix.c + transformationMatrix.e,
+        y: point.x * transformationMatrix.b + point.y * transformationMatrix.d + transformationMatrix.f
+    }
 }

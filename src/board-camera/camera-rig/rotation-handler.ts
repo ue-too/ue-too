@@ -44,18 +44,6 @@ export type RotateByHandlerFunction = (delta: number, camera: BoardCamera, confi
 export type RotateToHandlerFunction = (targetRotation: number, camera: BoardCamera, config: RotationHandlerConfig) => number;
 
 /**
- * @description This is the base handler for the "rotate by" handler pipeline.
- * It normalizes the delta to the range of 0 to 2π, and then sets the rotation of the camera to the new rotation.
- * 
- * @category Camera
- */
-function baseRotateByHandler(delta: number, camera: BoardCamera, config: RotationHandlerConfig): number {
-    const targetRotation = normalizeAngleZero2TwoPI(camera.rotation + delta);
-    camera.setRotation(targetRotation);
-    return delta;
-}
-
-/**
  * @description This is the clamp handler for the "rotate by" handler pipeline.
  * It clamps the delta to the range of the camera's rotation boundaries.
  * 
@@ -82,17 +70,6 @@ export function restrictRotateByHandler(delta: number, camera: BoardCamera, conf
         return 0;
     }
     return delta;
-}
-
-/**
- * @description This is the base handler for the "rotate to" handler pipeline.
- * It sets the rotation of the camera to the target rotation.
- * 
- * @category Camera
- */
-function baseRotateToHandler(targetRotation: number, camera: BoardCamera, config: RotationHandlerConfig): number {
-    camera.setRotation(targetRotation);
-    return targetRotation;
 }
 
 /**

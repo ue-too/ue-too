@@ -114,7 +114,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         return this._eventReactions;
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -202,7 +202,7 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, Sele
         context.toggleSelectionBox(true);
     }).bind(this);
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> = {
         leftPointerUp: {
             action: () => "IDLE",
             defaultTargetState: "IDLE",
@@ -230,7 +230,7 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
         super();
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         spacebarUp: {
             action: this.spacebarUpHandler,
             defaultTargetState: "IDLE",
@@ -266,7 +266,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         super();
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         leftPointerUp: {
             action: this.leftPointerUpHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -317,7 +317,7 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
         super();
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         middlePointerUp: {
             action: this.middlePointerUpHandler,
             defaultTargetState: "IDLE",
@@ -353,7 +353,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         super();
     }
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         leftPointerUp: {
             action: this.leftPointerUpHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -400,7 +400,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
  */
 export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
 
-    private _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
         middlePointerUp: {
             action: this.middlePointerUpHandler,
             defaultTargetState: "IDLE",

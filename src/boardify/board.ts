@@ -558,5 +558,4 @@ export default class Board {
     getCameraRig(): CameraRig {
         return this.cameraRig;
     }
-
 }

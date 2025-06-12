@@ -273,7 +273,7 @@ class HoldingState extends TemplateState<TimeoutEvents, TimeoutContext, TestStat
 
     private _timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    eventReactions: EventReactions<TimeoutEvents, TimeoutContext, TestStates> = {
+    public eventReactions: EventReactions<TimeoutEvents, TimeoutContext, TestStates> = {
         timeout: {
             action: (context, event, stateMachine) => {
                 console.log("timeout");
