@@ -155,7 +155,7 @@ export function drawGrid(context: CanvasRenderingContext2D, topLeftCorner: Point
  * 
  * @category Board
  */
-export function drawRuler(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
+export function drawRulerLegacy(context: CanvasRenderingContext2D, topLeftCorner: Point, topRightCorner: Point, bottomLeftCorner: Point, bottomRightCorner: Point, alignCoordinateSystem: boolean, cameraZoomLevel: number): void{
         let leftRightDirection = PointCal.unitVectorFromA2B(topLeftCorner, topRightCorner);
         let topDownDirection = PointCal.unitVectorFromA2B(bottomLeftCorner, topLeftCorner);
         let width = PointCal.distanceBetweenPoints(topLeftCorner, topRightCorner);
