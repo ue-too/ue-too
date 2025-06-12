@@ -20,8 +20,8 @@ export class Observable<T extends any[]> {
 
             // Add abort handler
             const abortHandler = () => {
-            this.observers = this.observers.filter(o => o !== observer);
-            options.signal?.removeEventListener('abort', abortHandler);
+                this.observers = this.observers.filter(o => o !== observer);
+                options.signal?.removeEventListener('abort', abortHandler);
             };
 
             options.signal.addEventListener('abort', abortHandler);

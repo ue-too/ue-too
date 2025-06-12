@@ -153,31 +153,6 @@ export function clampByHandler(delta: Point, camera: BoardCamera, config: PanHan
 }
 
 /**
- * @description Function that is part of the "pan by" handler pipeline. It pans the camera by the delta.
- * You can use this function standalone to pan the camera by the delta. 
- * But it is recommended to use this kind of function as part of the pan handler pipeline. (to include this function in your own custom pan handler pipeline)
- * 
- * @category Camera
- */
-function PanByBaseHandler(delta: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
-    const target = PointCal.addVector(camera.position, delta);
-    camera.setPosition(target);
-    return delta;
-}
-
-/**
- * @description Function that is part of the "pan to" handler pipeline. It pans the camera to the destination.
- * You can use this function standalone to pan the camera to the destination. 
- * But it is recommended to use this kind of function as part of the pan handler pipeline. (to include this function in your own custom pan handler pipeline)
- * 
- * @category Camera
- */
-function PanToBaseHandler(destination: Point, camera: BoardCamera, config: PanHandlerConfig): Point {
-    camera.setPosition(destination);
-    return destination;
-}
-
-/**
  * @description Helper function that converts the delta to comply with the restrictions of the config.
  * 
  * @category Camera

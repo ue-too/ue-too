@@ -1,6 +1,6 @@
 import { Point } from "src/utils/misc";
 import { PointCal } from "point2point";
-import { multiplyMatrix, TransformationMatrix } from ".";
+import { multiplyMatrix, TransformationMatrix } from "src/board-camera/utils/matrix";
 
 /**
  * @description Finds the world space coordinate of the interest point if the camera is at target position.
