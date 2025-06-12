@@ -25,6 +25,10 @@ export function drawArrow(context: CanvasRenderingContext2D, cameraZoomLevel: nu
 export const MAJOR_TICK_LENGTH = 30;
 export const MINOR_TICK_LENGTH = MAJOR_TICK_LENGTH * 0.3;
 export const HALF_TICK_LENGTH = MAJOR_TICK_LENGTH * 0.5;
+export const TEXT_MAJOR_TICK_OFFSET = 10;
+export const TEXT_HALF_TICK_OFFSET = 2.5;
+export const TEXT_MAJOR_TICK_FONT_SIZE = 20;
+export const TEXT_HALF_TICK_FONT_SIZE = 10;
 
 /**
  * @description Draws a ruler on the canvas.
@@ -38,11 +42,8 @@ export function drawRuler(
     topLeftCorner: Point, 
     topRightCorner: Point, 
     bottomLeftCorner: Point, 
-    bottomRightCorner: Point, 
-    alignCoordinateSystem: boolean, 
+    alignCoordinateSystem: boolean,
     cameraZoomLevel: number,
-    showMinorTicks: boolean = true,
-    showHalfTicks: boolean = true,
 ): void{
 
     // NOTE horizontal ruler
@@ -65,13 +66,8 @@ export function drawRuler(
     for(let i = minMajorTickValue; i <= maxMajorTickValue; i += majorTickStep){
         const majorTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
         const majorTickLength = alignCoordinateSystem ? MAJOR_TICK_LENGTH / cameraZoomLevel : -MAJOR_TICK_LENGTH / cameraZoomLevel;
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(majorTickPoint.x, majorTickPoint.y);
-        context.lineTo(majorTickPoint.x, majorTickPoint.y + majorTickLength);
-        context.stroke();
-        context.restore();
+        const textOffset = alignCoordinateSystem ? TEXT_MAJOR_TICK_OFFSET / cameraZoomLevel : -TEXT_MAJOR_TICK_OFFSET / cameraZoomLevel;
+        drawXAxisTick(context, cameraZoomLevel, majorTickPoint, majorTickLength, i * calibrationMultiplier, {textOffset, fontSize: TEXT_MAJOR_TICK_FONT_SIZE});
     }
 
     for(let i = minMinTickValue; i <= maxMaxTickValue; i += minTickStep){
@@ -83,13 +79,7 @@ export function drawRuler(
         }
         const minTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
         const minTickLength = alignCoordinateSystem ? MINOR_TICK_LENGTH / cameraZoomLevel : -MINOR_TICK_LENGTH / cameraZoomLevel;
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(minTickPoint.x, minTickPoint.y);
-        context.lineTo(minTickPoint.x, minTickPoint.y + minTickLength);
-        context.stroke();
-        context.restore();
+        drawXAxisTick(context, cameraZoomLevel, minTickPoint, minTickLength, i);
     }
 
     for(let i = minHalfTickValue; i <= maxHalfTickValue; i += halfTickStep){
@@ -98,13 +88,8 @@ export function drawRuler(
         }
         const halfTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
         const halfTickLength = alignCoordinateSystem ? HALF_TICK_LENGTH / cameraZoomLevel : -HALF_TICK_LENGTH / cameraZoomLevel;
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(halfTickPoint.x, halfTickPoint.y);
-        context.lineTo(halfTickPoint.x, halfTickPoint.y + halfTickLength);
-        context.stroke();
-        context.restore();
+        const textOffset = alignCoordinateSystem ? TEXT_HALF_TICK_OFFSET / cameraZoomLevel : -TEXT_HALF_TICK_OFFSET / cameraZoomLevel;
+        drawXAxisTick(context, cameraZoomLevel, halfTickPoint, halfTickLength, i * calibrationMultiplier, {textOffset, fontSize: TEXT_HALF_TICK_FONT_SIZE, color: 'red'});
     }
 
     context.restore();
@@ -123,27 +108,9 @@ export function drawRuler(
     context.strokeStyle = 'green';
     for(let i = vMinMajorTickValue; i <= vMaxMajorTickValue; i += vMajorTickStep){
         const majorTickPoint = {x: topLeftCorner.x, y: i * vCalibrationMultiplier};
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(majorTickPoint.x, majorTickPoint.y);
-        context.lineTo(majorTickPoint.x + MAJOR_TICK_LENGTH / cameraZoomLevel, majorTickPoint.y);
-        context.stroke();
-        context.restore();
-    }
-
-    for(let i = vMinMinTickValue; i <= vMaxMaxTickValue; i += vMinTickStep){
-        if(i % vMajorTickStep === 0){
-            continue;
-        }
-        const minTickPoint = {x: topLeftCorner.x, y: i * vCalibrationMultiplier};
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(minTickPoint.x, minTickPoint.y);
-        context.lineTo(minTickPoint.x + MINOR_TICK_LENGTH / cameraZoomLevel, minTickPoint.y);
-        context.stroke();
-        context.restore();
+        const majorTickLength = MAJOR_TICK_LENGTH / cameraZoomLevel;
+        const textOffset = TEXT_MAJOR_TICK_OFFSET / cameraZoomLevel;
+        drawYAxisTick(context, cameraZoomLevel, majorTickPoint, majorTickLength, i, {textOffset, fontSize: TEXT_MAJOR_TICK_FONT_SIZE});
     }
 
     for(let i = vMinHalfTickValue; i <= vMaxHalfTickValue; i += vHalfTickStep){
@@ -151,14 +118,87 @@ export function drawRuler(
             continue;
         }
         const halfTickPoint = {x: topLeftCorner.x, y: i * vCalibrationMultiplier};
-        context.save();
-        context.lineWidth = 1 / cameraZoomLevel;
-        context.beginPath();
-        context.moveTo(halfTickPoint.x, halfTickPoint.y);
-        context.lineTo(halfTickPoint.x + HALF_TICK_LENGTH / cameraZoomLevel, halfTickPoint.y);
-        context.stroke();
-        context.restore();
+        const halfTickLength = HALF_TICK_LENGTH / cameraZoomLevel;
+        const textOffset = TEXT_HALF_TICK_OFFSET / cameraZoomLevel;
+        drawYAxisTick(context, cameraZoomLevel, halfTickPoint, halfTickLength, i, {textOffset, fontSize: TEXT_HALF_TICK_FONT_SIZE});
     }
+
+    for(let i = vMinMinTickValue; i <= vMaxMaxTickValue; i += vMinTickStep){
+        if(i % vMajorTickStep === 0){
+            continue;
+        }
+        const minTickPoint = {x: topLeftCorner.x, y: i * vCalibrationMultiplier};
+        const minTickLength = MINOR_TICK_LENGTH / cameraZoomLevel;
+        drawYAxisTick(context, cameraZoomLevel, minTickPoint, minTickLength, i);
+    }
+    context.restore();
+}
+
+function drawYAxisTick(
+    context: CanvasRenderingContext2D, 
+    cameraZoomLevel: number, 
+    majorTickPoint: { x: number; y: number; }, 
+    majorTickLength: number, 
+    tickValue: number, 
+    textOption?: {
+        textOffset: number,
+        fontSize: number,
+        color?: string,
+    }
+) {
+    const drawText = textOption !== undefined;
+    context.save();
+    context.lineWidth = 1 / cameraZoomLevel;
+    context.beginPath();
+    context.moveTo(majorTickPoint.x, majorTickPoint.y);
+    context.lineTo(majorTickPoint.x + majorTickLength, majorTickPoint.y);
+    context.stroke();
+    context.restore();
+    if(!drawText){
+        return;
+    }
+    const color = textOption.color ?? 'green';
+    context.save();
+    context.textAlign = "left";
+    context.textBaseline = "middle";
+    context.fillStyle = color;
+    context.font = `${textOption.fontSize / cameraZoomLevel}px Arial`;
+    const tickValueText = tickValue % 1 == 0 ? tickValue : tickValue.toFixed(2);
+    context.fillText(`${tickValueText}`, majorTickPoint.x + majorTickLength + textOption.textOffset, majorTickPoint.y);
+    context.restore();
+}
+
+function drawXAxisTick(
+    context: CanvasRenderingContext2D, 
+    cameraZoomLevel: number, 
+    majorTickPoint: { x: number; y: number; }, 
+    majorTickLength: number, 
+    tickValue: number, 
+    textOption?: {
+        textOffset: number,
+        fontSize: number,
+        color?: string,
+    }
+) {
+    const drawText = textOption !== undefined;
+    context.save();
+    context.lineWidth = 1 / cameraZoomLevel;
+    context.beginPath();
+    context.moveTo(majorTickPoint.x, majorTickPoint.y);
+    context.lineTo(majorTickPoint.x, majorTickPoint.y + majorTickLength);
+    context.stroke();
+    context.restore();
+    if(!drawText){
+        return;
+    }
+    const color = textOption.color ?? 'red';
+    context.save();
+    context.textAlign = "center";
+    context.textBaseline = "top";
+    context.fillStyle = color;
+    context.font = `${textOption.fontSize / cameraZoomLevel}px Arial`;
+    const tickValueText = tickValue % 1 == 0 ? tickValue : tickValue.toFixed(2);
+    context.fillText(`${tickValueText}`, majorTickPoint.x, majorTickPoint.y + majorTickLength + textOption.textOffset);
     context.restore();
 }
 

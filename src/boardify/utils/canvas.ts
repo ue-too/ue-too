@@ -5,7 +5,7 @@
 const methodsToFlip: Record<string, number[]> = {
     fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
     strokeRect: [1],
-    fillText: [1],
+    fillText: [2],
     strokeText: [1],
     lineTo: [1],
     moveTo: [1],
@@ -14,6 +14,7 @@ const methodsToFlip: Record<string, number[]> = {
     arc: [1],
     drawImage: [2],        // Base case for first two signatures
     rect: [1],
+    roundRect: [1],
 };
 
 export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRenderingContext2D {
