@@ -1,4 +1,4 @@
-import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace, convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from "../../src/board-camera";
+import { withinBoundaries, normalizeAngleZero2TwoPI, angleSpan, convert2WorldSpace, invertFromWorldSpace, convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter, transformationMatrixFromCamera, convert2WorldSpaceWithTransformationMatrix } from "../../src/board-camera";
 import { clampRotation, RotationLimits, rotationWithinBoundary, RotationBoundary, rotationWithinLimits } from "../../src/board-camera/utils/rotation";
 
 import { Boundaries, halfTranslationWidthOf, translationWidthOf, translationHeightOf, halfTranslationHeightOf } from "../../src/board-camera/utils/position";
@@ -247,4 +247,17 @@ describe("coordinate conversion", () => {
         expect(testRes2.y).toBeCloseTo(expectedRes.y);
     });
     
+    describe('coorindate conversion using transformation matrix', ()=>{
+        test("should convert point within world space to camera view", ()=>{
+            const point = {x: -400, y: -400};
+            const transformationMatrix = transformationMatrixFromCamera({x: 30, y: 50}, 10, -45 * Math.PI / 180);
+            const testRes = convert2WorldSpaceWithTransformationMatrix(point, transformationMatrix);
+            expect(testRes.x).toBeCloseTo(30 - (800 / (Math.sqrt(2) * 10)));
+            expect(testRes.y).toBeCloseTo(50);
+            const transformationMatrix2 = transformationMatrixFromCamera({x: 10, y: 10}, 1, 0);
+            const testRes2 = convert2WorldSpaceWithTransformationMatrix(point, transformationMatrix2);
+            expect(testRes2.x).toBeCloseTo(-390);
+            expect(testRes2.y).toBeCloseTo(-390);
+        });
+    });
 });

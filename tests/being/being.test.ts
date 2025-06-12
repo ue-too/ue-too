@@ -75,4 +75,26 @@ describe("being", ()=>{
         expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
         expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
     });
+    
+    it("should call the beforeExit and uponEnter functions when the state changes with the correct context and source and target states", ()=>{
+        const mockAction = jest.fn();
+        const idleState = new IdleState();
+        (idleState.eventReactions["EVENT_1"] as any).action = mockAction;
+        idleState.beforeExit = jest.fn();
+        idleState.uponEnter = jest.fn();
+
+        const firstState = new FirstState();
+        firstState.beforeExit = jest.fn();
+        firstState.uponEnter = jest.fn();
+
+        const stateMachine = new TemplateStateMachine({
+            "IDLE": idleState,
+            "FIRST": firstState,
+            "SECOND": new SecondState()
+        }, "IDLE", testContext);
+
+        stateMachine.happens("EVENT_1", testContext);
+        expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
+        expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
+    });
 });
