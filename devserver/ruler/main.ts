@@ -29,7 +29,7 @@ function step(){
         topRightCornerInWorld, 
         bottomLeftCornerInWorld, 
         bottomRightCornerInWorld, 
-        false, 
+        board.alignCoordinateSystem, 
         board.camera.zoomLevel, 
         true, 
         true,
