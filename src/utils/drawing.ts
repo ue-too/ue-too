@@ -45,7 +45,7 @@ export function drawRuler(
     showHalfTicks: boolean = true,
 ): void{
 
-    // horizontal ruler
+    // NOTE horizontal ruler
     const {
         minMajorTickValue, 
         maxMajorTickValue, 
@@ -59,17 +59,17 @@ export function drawRuler(
         calibrationMultiplier, 
         normalizedOrderOfMagnitude,
     } = calculateTickValues(topLeftCorner.x, topRightCorner.x);
-    // console.log(minMajorTickValue, maxMajorTickValue, majorTickStep, minMinTickValue, maxMaxTickValue, minTickStep, minHalfTickValue, maxHalfTickValue, halfTickStep, calibrationMultiplier);
 
     context.save();
     context.strokeStyle = 'red';
     for(let i = minMajorTickValue; i <= maxMajorTickValue; i += majorTickStep){
         const majorTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
+        const majorTickLength = alignCoordinateSystem ? MAJOR_TICK_LENGTH / cameraZoomLevel : -MAJOR_TICK_LENGTH / cameraZoomLevel;
         context.save();
         context.lineWidth = 1 / cameraZoomLevel;
         context.beginPath();
         context.moveTo(majorTickPoint.x, majorTickPoint.y);
-        context.lineTo(majorTickPoint.x, majorTickPoint.y + MAJOR_TICK_LENGTH / cameraZoomLevel);
+        context.lineTo(majorTickPoint.x, majorTickPoint.y + majorTickLength);
         context.stroke();
         context.restore();
     }
@@ -82,11 +82,12 @@ export function drawRuler(
             continue;
         }
         const minTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
+        const minTickLength = alignCoordinateSystem ? MINOR_TICK_LENGTH / cameraZoomLevel : -MINOR_TICK_LENGTH / cameraZoomLevel;
         context.save();
         context.lineWidth = 1 / cameraZoomLevel;
         context.beginPath();
         context.moveTo(minTickPoint.x, minTickPoint.y);
-        context.lineTo(minTickPoint.x, minTickPoint.y + MINOR_TICK_LENGTH / cameraZoomLevel);
+        context.lineTo(minTickPoint.x, minTickPoint.y + minTickLength);
         context.stroke();
         context.restore();
     }
@@ -96,18 +97,19 @@ export function drawRuler(
             continue;
         }
         const halfTickPoint = {x: i * calibrationMultiplier, y: topLeftCorner.y};
+        const halfTickLength = alignCoordinateSystem ? HALF_TICK_LENGTH / cameraZoomLevel : -HALF_TICK_LENGTH / cameraZoomLevel;
         context.save();
         context.lineWidth = 1 / cameraZoomLevel;
         context.beginPath();
         context.moveTo(halfTickPoint.x, halfTickPoint.y);
-        context.lineTo(halfTickPoint.x, halfTickPoint.y + HALF_TICK_LENGTH / cameraZoomLevel);
+        context.lineTo(halfTickPoint.x, halfTickPoint.y + halfTickLength);
         context.stroke();
         context.restore();
     }
 
     context.restore();
 
-    // vertical ruler
+    // NOTE vertical ruler
     const {
         minMajorTickValue: vMinMajorTickValue, maxMajorTickValue: vMaxMajorTickValue, majorTickStep: vMajorTickStep, 
         minMinTickValue: vMinMinTickValue, maxMaxTickValue: vMaxMaxTickValue, 
@@ -116,7 +118,6 @@ export function drawRuler(
         halfTickStep: vHalfTickStep, 
         calibrationMultiplier: vCalibrationMultiplier,
     } = calculateTickValues(topLeftCorner.y, bottomLeftCorner.y, normalizedOrderOfMagnitude);
-    // console.log(minMajorTickValue, maxMajorTickValue, majorTickStep, minMinTickValue, maxMaxTickValue, minTickStep, minHalfTickValue, maxHalfTickValue, halfTickStep, calibrationMultiplier);
 
     context.save();
     context.strokeStyle = 'green';
