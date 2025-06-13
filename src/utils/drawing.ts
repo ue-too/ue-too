@@ -12,8 +12,8 @@ export function drawArrow(context: CanvasRenderingContext2D, cameraZoomLevel: nu
     context.lineTo(offsetPoint.x, offsetPoint.y);
     context.stroke();
     const unitVector = PointCal.rotatePoint(PointCal.unitVectorFromA2B(endPoint, startPoint), Math.PI / 2);
-    const arrowPoint1 = PointCal.addVector(offsetPoint, PointCal.multiplyVectorByScalar(unitVector, arrowHeight*0.5));
-    const arrowPoint2 = PointCal.subVector(offsetPoint, PointCal.multiplyVectorByScalar(unitVector, arrowHeight*0.5));
+    const arrowPoint1 = PointCal.addVector(offsetPoint, PointCal.multiplyVectorByScalar(unitVector, arrowHeight * 0.5));
+    const arrowPoint2 = PointCal.subVector(offsetPoint, PointCal.multiplyVectorByScalar(unitVector, arrowHeight * 0.5));
     context.beginPath();
     context.moveTo(endPoint.x, endPoint.y);
     context.lineTo(arrowPoint1.x, arrowPoint1.y);
