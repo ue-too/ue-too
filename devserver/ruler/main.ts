@@ -6,7 +6,6 @@ const board = new Board(canvas);
 
 
 board.alignCoordinateSystem = false;
-console.log(board.camera.setMaxZoomLevel(100));
 
 function step(){
 
