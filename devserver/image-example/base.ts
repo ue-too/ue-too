@@ -11,8 +11,6 @@ tileImage.src = 'tile.png';
 // instantiate the board by passing in the canvas element
 const board = new Board(canvas);
 
-board.alignCoordinateSystem = false;
-
 function draw(timestamp: number) {
   // step the board
   board.step(timestamp);

@@ -34,6 +34,7 @@ export interface BoardCamera {
     setZoomLevel(zoomLevel: number): boolean;
     setRotation(rotation: number): boolean;
     setMinZoomLevel(minZoomLevel: number): void;
+    setMaxZoomLevel(maxZoomLevel: number): void;
     setHorizontalBoundaries(min: number, max: number): void;
     setVerticalBoundaries(min: number, max: number): void;
     getCameraOriginInWindow(centerInWindow: Point): Point;
