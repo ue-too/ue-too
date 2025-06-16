@@ -63,8 +63,9 @@ jobs:
         id: get-version
         run: |
           cd ./build
-          echo "version=$(pnpm pkg get version)" >> $GITHUB_OUTPUT
-          echo "current version: $(pnpm pkg get version)"
+          VERSION=$(pnpm pkg get version | tr -d '"')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "current version: $VERSION"
         shell: bash
       - name: Sync package version
         if: ${{ github.event.inputs.dry-run != 'true' }}
@@ -84,11 +85,11 @@ jobs:
         if: ${{ github.event.inputs.dry-run != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.PAT }}
-          tag: ${{ format('{0}{1}', 'v', steps.get-version.outputs.version) }}
+          tag: v${{ steps.get-version.outputs.version }}
         run: |
           gh release create "$tag" \
               --repo="$GITHUB_REPOSITORY" \
-              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
               --target="${{ steps.get-branch.outputs.branch }}" \
               --generate-notes
               for file in ./dist/*; do
