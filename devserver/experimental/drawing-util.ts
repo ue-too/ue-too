@@ -1,5 +1,5 @@
 import { PointCal } from "point2point";
-import { Point } from "../src/";
+import { Point } from "../../src";
 
 export function drawVectorTip(context: CanvasRenderingContext2D, vectorStartPoint: Point, vectorEndPoint: Point, cameraZoomLevel: number, color: string = "black"){
     const originalColor = context.fillStyle;
