@@ -40,5 +40,6 @@ export interface BoardCamera {
     getCameraOriginInWindow(centerInWindow: Point): Point;
     convertFromViewPort2WorldSpace(point: Point): Point;
     convertFromWorld2ViewPort(point: Point): Point;
+    getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}};
     getTransform(devicePixelRatio: number, alignCoordinateSystem: boolean): {a: number, b: number, c: number, d: number, e: number, f: number};
 }
