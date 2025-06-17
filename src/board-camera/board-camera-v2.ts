@@ -291,4 +291,8 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
         return this._observer.on(eventName, callback, options);
     }
+
+    getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}} {
+        return this._baseCamera.getTRS(devicePixelRatio, alignCoordinateSystem);
+    }
 }

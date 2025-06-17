@@ -6,7 +6,7 @@ import { RotationLimits, rotationWithinLimits, normalizeAngleZero2TwoPI, clampRo
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from 'src/board-camera/utils/coordinate-conversion';
 import { PointCal } from 'point2point';
 import { BoardCamera } from './interface';
-import { decomposeCameraMatrix, TransformationMatrix } from './utils/matrix';
+import { createCameraMatrix, decomposeCameraMatrix, decomposeTRS, TransformationMatrix } from './utils/matrix';
 
 /**
  * 
@@ -266,6 +266,12 @@ export default class BaseCamera implements BoardCamera {
         const f = s * s2 * sin * tx2 + s * s2 * cos * ty2 + ty;
         this.currentCachedTransform = {transform: {a, b, c, d, e, f}, position: this._position, rotation: this._rotation, zoomLevel: this._zoomLevel, alignCoorindate, devicePixelRatio, viewPortWidth: this._viewPortWidth, viewPortHeight: this._viewPortHeight};
         return {a, b, c, d, e, f, cached: false};
+    }
+
+    getTRS(devicePixelRatio: number, alignCoorindate: boolean){
+        const transform = this.getTransform(devicePixelRatio, alignCoorindate);
+        const decompositionRes = decomposeTRS(transform);
+        return decompositionRes;
     }
 
     /**
