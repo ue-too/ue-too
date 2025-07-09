@@ -135,3 +135,5 @@ docs-staging
 docs-md
 
 README-for-docusaurus.md
+
+.DS_Store
