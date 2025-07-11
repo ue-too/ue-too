@@ -3,6 +3,12 @@ import { BaseContext, NO_OP } from "src/being";
 import { UserInputPublisher } from "src/input-interpretation/raw-input-publisher/raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect } from "src/boardify/utils/canvas-position-dimension";
 
+export enum CursorStyle {
+    GRAB = "grab",
+    DEFAULT = "default",
+    GRABBING = "grabbing"
+}
+
 /**
  * @description A proxy for the canvas so that client code that needs to access 
  * the canvas dimensions and position does not need to access the DOM directly.
@@ -11,7 +17,7 @@ export interface CanvasOperator {
     width: number;
     height: number;
     position: Point;
-    setCursor: (style: "grab" | "default" | "grabbing") => void;
+    setCursor: (style: CursorStyle) => void;
 }
 
 /**
@@ -24,7 +30,7 @@ export class DummyCanvasOperator implements CanvasOperator {
     width: number = 0;
     height: number = 0;
     position: Point = {x: 0, y: 0};
-    setCursor: (style: "grab" | "default" | "grabbing") => void = NO_OP;
+    setCursor: (style: CursorStyle) => void = NO_OP;
 }
 
 export class CanvasCacheInWebWorker implements CanvasOperator {

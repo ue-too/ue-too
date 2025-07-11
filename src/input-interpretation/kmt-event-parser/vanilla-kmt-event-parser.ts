@@ -179,12 +179,14 @@ export class VanillaKMTEventParser implements KMTEventParser {
     }
 
     keypressHandler(e: KeyboardEvent){
+        if(e.target !== document.body){
+            return;
+        }
         if(this._keyfirstPressed.has(e.key)){
             return;
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            e.preventDefault();
             this.stateMachine.happens("spacebarDown", {});
         }
     }

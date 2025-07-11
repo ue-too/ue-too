@@ -97,4 +97,15 @@ describe("being", ()=>{
         expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
         expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
     });
+
+    it("should be able to handle unknown events", ()=>{
+        const stateMachine = new TemplateStateMachine({
+            "IDLE": new IdleState(),
+            "FIRST": new FirstState(),
+            "SECOND": new SecondState()
+        }, "IDLE", testContext);
+
+        stateMachine.happens("EVENT_3", testContext);
+        expect(stateMachine.currentState).toBe("IDLE");
+    });
 });
