@@ -25,7 +25,10 @@ export const NO_OP: NOOP = ()=>{};
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
+    // Overload for known events - maintains type inference
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
+    // Overload for unknown events - accepts any event and payload
+    happens(event: string, payload: any): States | undefined;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -59,7 +62,10 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
-    handles<K extends keyof Partial<EventPayloadMapping>>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    // Overload for known events - maintains type inference
+    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    // Overload for unknown events - accepts any event and payload
+    handles(event: string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
@@ -191,12 +197,17 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined {
+    // Overload for known events - maintains type inference
+    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
+    // Overload for unknown events - accepts any event and payload
+    happens(event: string, payload: any): States | undefined;
+    // Implementation that handles both cases
+    happens(event: keyof EventPayloadMapping | string, payload: any): States | undefined {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
-        this._happensCallbacks.forEach(callback => callback(event, payload, this._context));
-        const nextState = this._states[this._currentState].handles(event, payload, this._context, this);
+        this._happensCallbacks.forEach(callback => callback(event as keyof EventPayloadMapping, payload, this._context));
+        const nextState = this._states[this._currentState].handles(event as keyof EventPayloadMapping, payload, this._context, this);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
             this._states[this._currentState].beforeExit(this._context, this, nextState);
@@ -231,7 +242,6 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         return this._states;
     }
 }
-
 /**
  * @description This is the template for the state.
  * 
@@ -269,11 +279,17 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log('leave');
     }
 
-    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined {
-        if (this.eventReactions[event]) {
-            this.eventReactions[event].action(context, payload, stateMachine);
-            const targetState = this.eventReactions[event].defaultTargetState;
-            const guardToEvaluate = this._eventGuards[event];
+    // Overload for known events - maintains type inference
+    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    // Overload for unknown events - accepts any event and payload
+    handles(event: string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    // Implementation that handles both cases
+    handles(event: keyof EventPayloadMapping | string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined {
+        const eventKey = event as keyof EventPayloadMapping;
+        if (this.eventReactions[eventKey]) {
+            this.eventReactions[eventKey].action(context, payload, stateMachine);
+            const targetState = this.eventReactions[eventKey].defaultTargetState;
+            const guardToEvaluate = this._eventGuards[eventKey];
             if(guardToEvaluate){
                 const target = guardToEvaluate.find((guard)=>{
                     if(this.guards[guard.guard]){
@@ -288,3 +304,4 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return undefined;
     }
 }
+

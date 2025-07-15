@@ -1,7 +1,7 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "../../being/interfaces";
 import { Point } from "src/utils/misc";
 import { PointCal } from "point2point";
-import { CanvasOperator, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
+import { CanvasOperator, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
 
 /**
  * @description The possible states of the keyboard mouse and trackpad input state machine.
@@ -156,12 +156,12 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor("grab");
+        context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.setCursor("grabbing");
+        context.canvas.setCursor(CursorStyle.GRABBING);
     }
 }
 
@@ -247,11 +247,11 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
 
     leftPointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.setCursor("grabbing");
+        context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor("default");
+        context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 }
 
@@ -302,7 +302,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor("grab");
+        context.canvas.setCursor(CursorStyle.GRAB);
     }
 }
 
@@ -333,11 +333,11 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
     }
 
     middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor("grabbing");
+        context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor("default");
+        context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
 }
@@ -385,11 +385,11 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor("default");
+        context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor("grab");
+        context.canvas.setCursor(CursorStyle.GRAB);
     }
 }
 
@@ -428,7 +428,7 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor("default");
+        context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 }
 
