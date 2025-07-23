@@ -1,0 +1,31 @@
+{
+  "name": "ue-too",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/ue-too/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/ue-too",
+        "main": "packages/ue-too/src/index.ts",
+        "tsConfig": "packages/ue-too/tsconfig.json",
+        "assets": ["packages/ue-too/*.md"]
+      },
+      "dependsOn": ["^build"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/ue-too/jest.config.ts"
+      }
+    }
+  },
+  "tags": []
+} 

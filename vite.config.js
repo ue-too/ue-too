@@ -2,13 +2,13 @@ import { defineConfig } from "vite";
 import { resolve } from 'path';
 
 export default defineConfig({
-    root: resolve(__dirname, "./devserver"),
+    root: resolve(__dirname, "./apps/devserver"),
     resolve: {
         alias: {
-            "src": resolve(__dirname, "./src"),
+            "src": resolve(__dirname, "./packages/core/src"),
             "@": resolve(__dirname, "../"),
             "@server": resolve(__dirname, "../server/src"),
-            "@devserver": resolve(__dirname, "./devserver"),
+            "@devserver": resolve(__dirname, "./apps/devserver"),
         },
     },
     server: {

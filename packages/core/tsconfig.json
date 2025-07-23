@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "baseUrl": "./",
+    "outDir": "./build",
+    "resolveJsonModule": true,
+    "paths": {
+      "src": ["src"],
+      "src/*": ["./src/*"],
+      "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*", "jest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+} 

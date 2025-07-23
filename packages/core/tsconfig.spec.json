@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc",
+    "module": "esnext",
+    "types": ["jest", "node"],
+    "baseUrl": "./",
+    "paths": {
+      "src": ["src"],
+      "src/*": ["./src/*"],
+      "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
+    },
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "tests/**/*.spec.ts",
+    "tests/**/*.test.ts"
+  ]
+} 

@@ -1,10 +1,9 @@
-// rollup.config.js
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import terser from "@rollup/plugin-terser";
+import alias from '@rollup/plugin-alias';
 import path from 'path';
 const packageJson = require("./package.json");
-
 
 const fs = require('fs');
 
@@ -17,6 +16,36 @@ const plugins = [
     }),
     terser({
       mangle: false,
+    }),
+]
+
+const pluginsWithDeclaration = [
+    resolve(),
+    typescript({
+      tsconfig: "./tsconfig.json",
+      exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
+      declaration: true,
+      outDir: './build',
+      // Add outDir for declaration generation
+    }),
+    terser({
+      mangle: true,
+    }),
+]
+
+const pluginsNoTerser = [
+    // alias({
+    //   entries: [
+    //     { find: 'src', replacement: path.resolve(__dirname, 'src') }
+    //   ]
+    // }),
+    resolve(),
+    typescript({
+      tsconfig: './tsconfig.json',
+      declaration: false,
+      exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
+      outDir: 'dist',
+      // Remove outDir to avoid conflict with rollup output paths
     }),
 ]
 
@@ -86,15 +115,7 @@ export default [
     }
     ],
     plugins: [
-      resolve(),
-      typescript({
-        tsconfig: "./tsconfig.json",
-        exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
-        declaration: true,
-      }),
-      terser({
-        mangle: true,
-      }),
+        ...pluginsWithDeclaration,
     ],
     external: ['point2point'],
   },
@@ -110,16 +131,7 @@ export default [
     },
     ],
     plugins: [
-      resolve(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: false,
-        exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
-        outDir: 'dist',
-      }),
-      terser({
-        mangle: false,
-      }),
+        ...pluginsNoTerser,
     ],
   }
 ];

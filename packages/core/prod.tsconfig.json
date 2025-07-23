@@ -1,0 +1,12 @@
+{
+    "extends": "../../prod.base.tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+            "src": ["src"],
+            "src/*": ["src/*"],
+            "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
+        },
+        "outDir": "./build"
+    }
+}

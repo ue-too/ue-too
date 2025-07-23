@@ -137,3 +137,10 @@ docs-md
 README-for-docusaurus.md
 
 .DS_Store
+
+
+
+.nx/cache
+.nx/workspace-data
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
