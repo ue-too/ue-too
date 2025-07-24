@@ -97,7 +97,7 @@ const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src'
 });
 
 export default [
-  ...folderBuilds,
+  // ...folderBuilds,
   // the overarching package build
   {
     input: 'src/index.ts',

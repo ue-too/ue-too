@@ -18,9 +18,9 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@ue-too/core": ["../../packages/core/src/index.ts"],
-      "@ue-too/core/utils/drawing": ["../../packages/core/src/utils/drawing.ts"],
-      "@ue-too/core/utils": ["../../packages/core/src/utils/index.ts"],
+      // "@ue-too/core": ["../../packages/core/src/index.ts"],
+      // "@ue-too/core/utils/drawing": ["../../packages/core/src/utils/drawing.ts"],
+      // "@ue-too/core/utils": ["../../packages/core/src/utils/index.ts"],
       "@ue-too/core/*": ["../../packages/core/src/*"]
     }
   },

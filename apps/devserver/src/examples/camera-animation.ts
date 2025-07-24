@@ -1,6 +1,6 @@
 import { Board } from "@ue-too/core";
 import { drawRuler } from "@ue-too/core/utils/drawing";
-import { CompositeAnimation, Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
+import { Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
 import { Point } from "point2point";
 import { CameraMuxWithAnimationAndLock } from "@ue-too/core";
 

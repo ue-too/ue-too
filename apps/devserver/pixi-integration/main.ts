@@ -2,8 +2,8 @@ import DefaultBoardCamera, { createDefaultCameraRig } from 'src/board-camera';
 import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
 import { VanillaKMTEventParser } from 'src/input-interpretation/kmt-event-parser';
 import { RawUserInputPublisher } from 'src/input-interpretation/raw-input-publisher';
-import { CanvasProxy, createKmtInputStateMachine, ObservableInputTracker } from 'src/input-interpretation/input-state-machine';
-import { createCameraMuxWithAnimationAndLockWithCameraRig } from 'src/camera-mux';
+import { CanvasProxy, createKmtInputStateMachine, ObservableInputTracker } from '@ue-too/core/input-interpretation/input-state-machine';
+import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/core/camera-mux';
 
 // Asynchronous IIFE
 (async () =>
