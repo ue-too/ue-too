@@ -1,16 +1,20 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import terser from "@rollup/plugin-terser";
-import alias from '@rollup/plugin-alias';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
-const packageJson = require("./package.json");
+import { readFileSync } from 'fs';
 
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const tsconfig = path.resolve(__dirname, 'tsconfig.json');
 
 const plugins = [
     resolve(),
     typescript({
-      tsconfig: './tsconfig.json',
+      tsconfig,
       declaration: false,
       exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
     }),
@@ -22,7 +26,7 @@ const plugins = [
 const pluginsWithDeclaration = [
     resolve(),
     typescript({
-      tsconfig: "./tsconfig.json",
+      tsconfig,
       exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
       declaration: true,
       outDir: './build',
@@ -41,7 +45,7 @@ const pluginsNoTerser = [
     // }),
     resolve(),
     typescript({
-      tsconfig: './tsconfig.json',
+      tsconfig,
       declaration: false,
       exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
       outDir: 'dist',
@@ -57,11 +61,7 @@ const getComponentsFoldersRecursive = (entry) => {
     for(let i=0; i < length; i++){
       const dir = dirs.shift();
       if(fs.statSync(path.resolve(entry, dir)).isDirectory()){
-        if (entry === './src') {
-          finalListOfDirs.push(dir);   
-        } else {
-          finalListOfDirs.push(path.join(entry, dir));
-        }
+        finalListOfDirs.push(dir);   
         const subDirs = fs.readdirSync(path.resolve(entry, dir));
         dirs.push(...subDirs.map(subDir => path.join(dir, subDir)));
       }
@@ -70,9 +70,9 @@ const getComponentsFoldersRecursive = (entry) => {
   return finalListOfDirs;
 };
 
-console.log(getComponentsFoldersRecursive('./src'));
+console.log(getComponentsFoldersRecursive(path.resolve(__dirname, 'src')));
 
-const folderBuilds = getComponentsFoldersRecursive('./src').map((folder) => {
+const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src')).map((folder) => {
   return {
     input: `src/${folder}/index.ts`,
     output: [

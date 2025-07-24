@@ -12,7 +12,11 @@
     "typeRoots": ["node_modules/@types"],
     "noEmitOnError": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "math": ["packages/math/src/index.ts"],
+      "my-new-package": ["packages/my-new-package/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "dist", "build"]
-} 
+}

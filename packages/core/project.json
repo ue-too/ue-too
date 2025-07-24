@@ -8,7 +8,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],
       "options": {
-        "command": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ./prod.tsconfig.json && pnpm run move-package",
+        "command": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ./tsconfig.lib.json && pnpm run move-package",
         "cwd": "packages/core"
       }
     },
@@ -20,8 +20,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "packages/core/jest.config.ts",
-        "tsConfig": "packages/core/tsconfig.jest.json"
+        "jestConfig": "packages/core/jest.config.ts"
       }
     }
   },
