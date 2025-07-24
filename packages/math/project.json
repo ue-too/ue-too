@@ -6,16 +6,28 @@
   "tags": [],
   "// targets": "to see all targets run: nx show project math --web",
   "targets": {
-    "build": {
-      "executor": "@nx/rollup:rollup",
-      "outputs": ["{workspaceRoot}/build/packages/math"],
+    "clean": {
+      "executor": "nx:run-commands",
       "options": {
-        "main": "packages/math/src/index.ts",
-        "tsConfig": "packages/math/tsconfig.lib.json",
-        "outputPath": "build/packages/math",
-        "useLegacyTypescriptPlugin": false,
-        "format": ["cjs", "esm"],
-        "fileName": "index"
+        "command": "node ../../scripts/clean-package.mjs",
+        "cwd": "packages/math"
+      }
+    },
+    "rollup": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/build/packages/math"],
+      "dependsOn": ["clean"],
+      "options": {
+        "command": "npx rollup -c rollup.config.js",
+        "cwd": "packages/math"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["rollup"],
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/math"
       }
     },
     "lint": {

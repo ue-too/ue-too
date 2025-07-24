@@ -22,8 +22,8 @@ const packageBuildDir = join(rootBuildDir, `packages/${packageName}`);
 mkdirSync(packageBuildDir, { recursive: true });
 
 // Use consistent file extensions for all packages
-data.main = "./index.cjs.js";
-data.module = "./index.esm.js";
+data.main = "./index.cjs";
+data.module = "./index.mjs";
 data.types = "./index.d.ts";
 data.scripts = { test: "echo \"Error: no test specified\" && exit 1"};
 

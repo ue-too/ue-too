@@ -2,9 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "../../build/packages/math",
-    "declaration": true,
-    "types": ["node"]
+    "paths": {
+      "src": ["src"],
+      "src/*": ["src/*"]
+    },
+    "outDir": "../../build/packages/math"
   },
   "include": ["src/**/*.ts"]
 }

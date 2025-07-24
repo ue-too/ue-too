@@ -82,7 +82,7 @@ const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src'
       format: 'esm',
     },
     // {
-    //   file: `${packageBuildDir}/${folder}/index.cjs.js`,
+    //   file: `${packageBuildDir}/${folder}/index.cjs`,
     //   sourcemap: true,
     //   format: 'cjs',
     // }
@@ -102,12 +102,12 @@ export default [
     input: 'src/index.ts',
     output: [
       {
-        file: path.join(packageBuildDir, 'index.cjs.js'),
+        file: path.join(packageBuildDir, 'index.cjs'),
         format: 'cjs',
         sourcemap: true,
       },
       {
-        file: path.join(packageBuildDir, 'index.esm.js'),
+        file: path.join(packageBuildDir, 'index.mjs'),
         format: 'esm',
         sourcemap: true,
       }

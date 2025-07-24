@@ -17,6 +17,7 @@
     "watch": "rollup -c --bundleConfigAsCjs rollup.config.js --watch",
     "test": "nx test core",
     "lint": "nx lint core",
+    "clean": "nx run core:clean",
     "move-package": "node ../../scripts/move-package.mjs"
   },
   "dependencies": {

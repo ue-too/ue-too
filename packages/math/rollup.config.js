@@ -15,7 +15,7 @@ const packageBuildDir = path.join(rootBuildDir, 'packages/math');
 
 export default [
   {
-    input: 'src/index.ts',
+    input: path.join(__dirname, 'src/index.ts'),
     output: [
       {
         file: path.join(packageBuildDir, 'index.cjs'),
@@ -34,7 +34,6 @@ export default [
         tsconfig: path.join(__dirname, 'tsconfig.lib.json'),
         declaration: true,
         declarationDir: packageBuildDir,
-        exclude: ["node_modules", "dist", "build", "tests/**/*"],
       }),
       terser(),
     ],

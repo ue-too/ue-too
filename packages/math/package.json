@@ -2,19 +2,19 @@
   "name": "@ue-too/math",
   "version": "0.1.0",
   "description": "Math utilities for ue-too",
-  "main": "../../build/packages/math/index.cjs.js",
-  "module": "../../build/packages/math/index.esm.js",
+  "main": "../../build/packages/math/index.cjs",
+  "module": "../../build/packages/math/index.mjs",
   "types": "../../build/packages/math/index.d.ts",
   "sideEffects": false,
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "nx build math",
+    "build:with-rename": "nx run math:rename-files && pnpm run move-package",
     "watch": "nx build math --watch",
     "test": "nx test math",
     "lint": "nx lint math",
-    "move-package": "node ../../scripts/move-package.mjs"
+    "clean": "nx run math:clean",
+    "move-package": "node ../../scripts/move-package.mjs",
+    "rename-files": "node rename-files.mjs"
   },
   "keywords": [
     "math",

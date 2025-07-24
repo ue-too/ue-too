@@ -4,9 +4,17 @@
   "sourceRoot": "packages/core/src",
   "projectType": "library",
   "targets": {
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/clean-package.mjs",
+        "cwd": "packages/core"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/build/packages/core"],
+      "dependsOn": ["clean"],
       "options": {
         "command": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ./tsconfig.lib.json && pnpm run move-package",
         "cwd": "packages/core"
