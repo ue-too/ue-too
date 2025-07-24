@@ -10,5 +10,5 @@
         "outDir": "../../build/packages/core"
     },
     "include": [ "src/**/*" ],
-    "exclude": ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*", "tests/**/*"]
+    "exclude": ["node_modules", "**/*.test.ts", "dist", "build", "examples/**/*", "tests/**/*"]
 }
