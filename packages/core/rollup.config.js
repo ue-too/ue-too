@@ -9,14 +9,13 @@ import { readFileSync } from 'fs';
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const tsconfig = path.resolve(__dirname, 'tsconfig.json');
+const tsconfig = path.resolve(__dirname, 'tsconfig.lib.json');
 
 const plugins = [
     resolve(),
     typescript({
       tsconfig,
       declaration: false,
-      exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
     }),
     terser({
       mangle: false,
@@ -27,8 +26,8 @@ const pluginsWithDeclaration = [
     resolve(),
     typescript({
       tsconfig,
-      exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
       declaration: true,
+      declarationDir: './build',
       outDir: './build',
       // Add outDir for declaration generation
     }),
@@ -47,7 +46,6 @@ const pluginsNoTerser = [
     typescript({
       tsconfig,
       declaration: false,
-      exclude: ["node_modules", "dist", "build", "devserver/**/*", "tests/**/*"],
       outDir: 'dist',
       // Remove outDir to avoid conflict with rollup output paths
     }),
@@ -99,25 +97,50 @@ const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src'
 export default [
   // ...folderBuilds,
   // the overarching package build
+  // {
+  //   input: 'src/index.ts',
+  //   output: [{
+  //     file: packageJson.main,
+  //     format: 'cjs',
+  //     name: 'ue-too',
+  //     sourcemap: true,
+  //   },
+  //   {
+  //     file: packageJson.module,
+  //     format: 'esm',
+  //     name: 'ue-too',
+  //     sourcemap: true
+  //   }
+  //   ],
+  //   plugins: [
+  //       ...pluginsWithDeclaration,
+  //   ],
+  //   external: ['point2point'],
+  // },
   {
     input: 'src/index.ts',
-    output: [{
-      file: packageJson.main,
-      format: 'cjs',
-      name: 'ue-too',
-      sourcemap: true,
-    },
-    {
-      file: packageJson.module,
-      format: 'esm',
-      name: 'ue-too',
-      sourcemap: true
-    }
+    output: [
+      {
+        file: packageJson.main,
+        format: 'cjs',
+        sourcemap: true,
+      },
+      {
+        file: packageJson.module,
+        format: 'esm',
+        sourcemap: true,
+      }
     ],
     plugins: [
-        ...pluginsWithDeclaration,
+      resolve(),
+      typescript({
+        tsconfig: path.join(__dirname, 'tsconfig.lib.json'),
+        declaration: true,
+        declarationDir: path.join(__dirname, 'build'),
+      }),
+      terser(),
     ],
-    external: ['point2point'],
+    external: [],
   },
   {
     // distribution for direct browser usage

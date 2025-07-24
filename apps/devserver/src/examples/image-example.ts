@@ -1,4 +1,4 @@
-import { Board } from "@ue-too/core";
+import Board from "@ue-too/core/boardify";
 
 export function imageExample(canvas: HTMLCanvasElement) {
   const board = new Board(canvas);
