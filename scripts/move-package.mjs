@@ -1,11 +1,13 @@
 import { readFileSync, writeFileSync, copyFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { cwd } from "process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const packageJsonPath = join(__dirname, "../package.json");
+// Read package.json from current working directory instead of root
+const packageJsonPath = join(cwd(), "package.json");
 const data = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
 data.main = "./index.cjs";
