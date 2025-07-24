@@ -6,7 +6,7 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": ["{workspaceRoot}/build/packages/core"],
       "options": {
         "command": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ./tsconfig.lib.json && pnpm run move-package",
         "cwd": "packages/core"

@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync, copyFileSync } from "fs";
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync } from "fs";
 import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { dirname, join, basename } from "path";
 import { cwd } from "process";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,12 +10,34 @@ const __dirname = dirname(__filename);
 const packageJsonPath = join(cwd(), "package.json");
 const data = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
-data.main = "./index.cjs";
-data.module = "./index.mjs";
+// Get the package name from the current directory
+const currentDir = basename(cwd());
+const packageName = currentDir;
+
+// Define the root build directory and package build directory
+const rootBuildDir = join(__dirname, '../build');
+const packageBuildDir = join(rootBuildDir, `packages/${packageName}`);
+
+// Ensure the build directory exists
+mkdirSync(packageBuildDir, { recursive: true });
+
+// Use consistent file extensions for all packages
+data.main = "./index.cjs.js";
+data.module = "./index.esm.js";
 data.types = "./index.d.ts";
 data.scripts = { test: "echo \"Error: no test specified\" && exit 1"};
 
-writeFileSync("./build/package.json", JSON.stringify(data, null, 2));
+writeFileSync(join(packageBuildDir, "package.json"), JSON.stringify(data, null, 2));
 
-copyFileSync("./README.md", "./build/README.md");
-copyFileSync("./LICENSE.txt", "./build/LICENSE.txt");
+// Copy README.md and LICENSE.txt if they exist
+try {
+  copyFileSync("./README.md", join(packageBuildDir, "README.md"));
+} catch (error) {
+  console.log("README.md not found, skipping...");
+}
+
+try {
+  copyFileSync("./LICENSE.txt", join(packageBuildDir, "LICENSE.txt"));
+} catch (error) {
+  console.log("LICENSE.txt not found, skipping...");
+}

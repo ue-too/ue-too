@@ -11,6 +11,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const tsconfig = path.resolve(__dirname, 'tsconfig.lib.json');
 
+// Define the root build directory
+const rootBuildDir = path.resolve(__dirname, '../../build');
+const packageBuildDir = path.join(rootBuildDir, 'packages/core');
+
 const plugins = [
     resolve(),
     typescript({
@@ -27,9 +31,7 @@ const pluginsWithDeclaration = [
     typescript({
       tsconfig,
       declaration: true,
-      declarationDir: './build',
-      outDir: './build',
-      // Add outDir for declaration generation
+      // Remove outDir to avoid conflict with rollup output paths
     }),
     terser({
       mangle: true,
@@ -75,12 +77,12 @@ const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src'
     input: `src/${folder}/index.ts`,
     output: [
     {
-      file: `build/${folder}/index.js`,
+      file: `${packageBuildDir}/${folder}/index.js`,
       sourcemap: true,
       format: 'esm',
     },
     // {
-    //   file: `build/${folder}/index.cjs`,
+    //   file: `${packageBuildDir}/${folder}/index.cjs.js`,
     //   sourcemap: true,
     //   format: 'cjs',
     // }
@@ -96,37 +98,16 @@ const folderBuilds = getComponentsFoldersRecursive(path.resolve(__dirname, 'src'
 
 export default [
   // ...folderBuilds,
-  // the overarching package build
-  // {
-  //   input: 'src/index.ts',
-  //   output: [{
-  //     file: packageJson.main,
-  //     format: 'cjs',
-  //     name: 'ue-too',
-  //     sourcemap: true,
-  //   },
-  //   {
-  //     file: packageJson.module,
-  //     format: 'esm',
-  //     name: 'ue-too',
-  //     sourcemap: true
-  //   }
-  //   ],
-  //   plugins: [
-  //       ...pluginsWithDeclaration,
-  //   ],
-  //   external: ['point2point'],
-  // },
   {
     input: 'src/index.ts',
     output: [
       {
-        file: packageJson.main,
+        file: path.join(packageBuildDir, 'index.cjs.js'),
         format: 'cjs',
         sourcemap: true,
       },
       {
-        file: packageJson.module,
+        file: path.join(packageBuildDir, 'index.esm.js'),
         format: 'esm',
         sourcemap: true,
       }
@@ -136,7 +117,7 @@ export default [
       typescript({
         tsconfig: path.join(__dirname, 'tsconfig.lib.json'),
         declaration: true,
-        declarationDir: path.join(__dirname, 'build'),
+        declarationDir: packageBuildDir,
       }),
       terser(),
     ],

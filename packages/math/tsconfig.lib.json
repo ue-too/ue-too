@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "outDir": "./build",
+    "outDir": "../../build/packages/math",
     "declaration": true,
     "types": ["node"]
   },

@@ -8,12 +8,14 @@
   "targets": {
     "build": {
       "executor": "@nx/rollup:rollup",
-      "outputs": ["{projectRoot}/dist", "{projectRoot}/build"],
+      "outputs": ["{workspaceRoot}/build/packages/math"],
       "options": {
-        "configFile": "packages/math/rollup.config.js",
         "main": "packages/math/src/index.ts",
         "tsConfig": "packages/math/tsconfig.lib.json",
-        "outputPath": "packages/math/dist"
+        "outputPath": "build/packages/math",
+        "useLegacyTypescriptPlugin": false,
+        "format": ["cjs", "esm"],
+        "fileName": "index"
       }
     },
     "lint": {

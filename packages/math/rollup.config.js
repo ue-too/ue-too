@@ -9,17 +9,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const packageJson = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
 
+// Define the root build directory
+const rootBuildDir = path.resolve(__dirname, '../../build');
+const packageBuildDir = path.join(rootBuildDir, 'packages/math');
+
 export default [
   {
     input: 'src/index.ts',
     output: [
       {
-        file: packageJson.main,
+        file: path.join(packageBuildDir, 'index.cjs'),
         format: 'cjs',
         sourcemap: true,
       },
       {
-        file: packageJson.module,
+        file: path.join(packageBuildDir, 'index.mjs'),
         format: 'esm',
         sourcemap: true,
       }
@@ -29,7 +33,7 @@ export default [
       typescript({
         tsconfig: path.join(__dirname, 'tsconfig.lib.json'),
         declaration: true,
-        declarationDir: path.join(__dirname, 'build'),
+        declarationDir: packageBuildDir,
         exclude: ["node_modules", "dist", "build", "tests/**/*"],
       }),
       terser(),

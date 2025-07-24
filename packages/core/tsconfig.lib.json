@@ -7,7 +7,7 @@
             "src/*": ["src/*"],
             "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
         },
-        "outDir": "./build"
+        "outDir": "../../build/packages/core"
     },
     "include": [ "src/**/*" ],
     "exclude": ["node_modules", "**/*.test.ts", "dist", "build", "devserver/**/*", "tests/**/*"]
