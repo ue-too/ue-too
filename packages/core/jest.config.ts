@@ -1,5 +1,7 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 import { pathsToModuleNameMapper } from 'ts-jest';
+
+// Use require to avoid TypeScript compilation issues with JSON imports
 import tsconfig from './tsconfig.spec.json';
 
 export default {
