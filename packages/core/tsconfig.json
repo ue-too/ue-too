@@ -11,6 +11,6 @@
       "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "jest.config.ts"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]
 } 

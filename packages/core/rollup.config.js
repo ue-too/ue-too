@@ -3,9 +3,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import terser from "@rollup/plugin-terser";
 import alias from '@rollup/plugin-alias';
 import path from 'path';
+import fs from 'fs';
 const packageJson = require("./package.json");
 
-const fs = require('fs');
 
 const plugins = [
     resolve(),

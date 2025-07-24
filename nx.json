@@ -12,9 +12,6 @@
     }
   },
   "targetDefaults": {
-    "build": {
-      "dependsOn": ["^build"]
-    },
     "test": {
       "dependsOn": ["^build"]
     }
@@ -22,5 +19,8 @@
   "workspaceLayout": {
     "appsDir": "apps",
     "libsDir": "packages"
-  }
+  },
+  "plugins": [],
+  "generators": {},
+  "defaultProject": "core"
 }

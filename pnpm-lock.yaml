@@ -99,15 +99,6 @@ importers:
         specifier: ^0.0.95
         version: 0.0.95
 
-  packages/ue-too:
-    dependencies:
-      '@ue-too/core':
-        specifier: workspace:*
-        version: link:../core
-      point2point:
-        specifier: ^0.0.95
-        version: 0.0.95
-
 packages:
 
   '@ampproject/remapping@2.3.0':

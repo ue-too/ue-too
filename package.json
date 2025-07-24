@@ -5,12 +5,6 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nx run-many --target=build --all",
-    "build:core": "nx build core",
-    "test": "nx run-many --target=test --all",
-    "test:core": "nx test core",
-    "lint": "nx run-many --target=lint --all",
-    "lint:core": "nx lint core",
     "dev": "pnpm exec vite --config vite.config.js",
     "dev:docs": "pnpm exec vite --config doc.vite.config.js",
     "doc:gen-translation-json": "run(){ if [ $# -eq 0 ]; then echo \"No Language Code provided. Going for en as default\"; pnpm exec typedoc --options ./translation.typedoc.json --emit none; else echo \"Language Code is: $1\"; pnpm exec typedoc --options ./translation.typedoc.json --l10nCode $1 --emit none; fi;}; run",

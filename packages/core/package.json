@@ -11,7 +11,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ../../prod.tsconfig.json && pnpm run move-package",
+    "build": "rollup -c --bundleConfigAsCjs rollup.config.js && pnpm exec tsc-alias -p ./prod.tsconfig.json && pnpm run move-package",
     "build:nx": "nx build core",
     "rollup": "rollup -c --bundleConfigAsCjs",
     "watch": "rollup -c --bundleConfigAsCjs rollup.config.js --watch",

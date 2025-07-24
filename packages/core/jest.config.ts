@@ -1,8 +1,13 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 import { pathsToModuleNameMapper } from 'ts-jest';
+/*
+  This is the "workaround" (might not be a workaround since this is probably the only way to do it) solution for the issue
+  https://github.com/nrwl/nx/issues/14888
+*/
+import { resolve } from 'path';
 
-// Use require to avoid TypeScript compilation issues with JSON imports
-import tsconfig from './tsconfig.spec.json';
+// Use absolute path to avoid working directory issues
+const tsconfig = require(resolve(__dirname, './tsconfig.spec.json'));
 
 export default {
   preset: 'ts-jest',
