@@ -1,0 +1,33 @@
+{
+  "name": "@ue-too/math",
+  "version": "0.1.0",
+  "description": "Math utilities for ue-too",
+  "main": "./build/index.cjs",
+  "module": "./build/index.mjs",
+  "types": "./build/index.d.ts",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "nx build math",
+    "watch": "nx build math --watch",
+    "test": "nx test math",
+    "lint": "nx lint math"
+  },
+  "keywords": [
+    "math",
+    "utilities",
+    "ue-too"
+  ],
+  "author": "niuee",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ue-too/ue-too.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ue-too/ue-too/issues"
+  },
+  "homepage": "https://github.com/ue-too/ue-too#readme"
+} 

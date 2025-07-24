@@ -1,38 +1,38 @@
 import { Board } from "@ue-too/core";
-import { drawRuler } from "@ue-too/core";
+import { drawRuler } from "@ue-too/core/utils/drawing";
 import { CompositeAnimation, Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
 import { Point } from "point2point";
 import { CameraMuxWithAnimationAndLock } from "@ue-too/core";
 
-// Create an image object
-const tileImage = new Image();
-tileImage.src = 'tile.png';
+export function cameraAnimationExample(canvas: HTMLCanvasElement) {
+  const board = new Board(canvas);
+  const cameraMux = board.cameraMux as CameraMuxWithAnimationAndLock;
 
-const canvas = document.getElementById("graph") as HTMLCanvasElement;
-const board = new Board(canvas);
-const cameraMux = board.cameraMux as CameraMuxWithAnimationAndLock;
+  // Create an image object
+  const tileImage = new Image();
+  tileImage.src = '/tile.png';
 
-const panAnimationKeyframes: Keyframe<Point>[] = [
+  const panAnimationKeyframes: Keyframe<Point>[] = [
     {
-        percentage: 0,
-        value: {x: 0, y: 0},
+      percentage: 0,
+      value: {x: 0, y: 0},
     },
     {
-        percentage: 1,
-        value: {x: 100, y: 100},
+      percentage: 1,
+      value: {x: 100, y: 100},
     }
-];
+  ];
 
-const panAnimation = new Animation(panAnimationKeyframes, (value)=>{
+  const panAnimation = new Animation(panAnimationKeyframes, (value)=>{
     cameraMux.notifyPanToAnimationInput(value);
-}, new PointAnimationHelper(), 1000);
+  }, new PointAnimationHelper(), 1000);
 
-let lastUpdateFrameTimeStamp = 0;
+  let lastUpdateFrameTimeStamp = 0;
 
-function step(timestamp: number){
+  function step(timestamp: number){
     board.step(performance.now());
     if (tileImage.complete) {
-        board.context.drawImage(tileImage, 0, 0);
+      board.context.drawImage(tileImage, 0, 0);
     }
     const deltaTime = timestamp - lastUpdateFrameTimeStamp;
     lastUpdateFrameTimeStamp = timestamp;
@@ -47,32 +47,32 @@ function step(timestamp: number){
     const topRightCornerInWorld = board.camera.convertFromViewPort2WorldSpace(topRightCornerInViewPort);
     const bottomLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(bottomLeftCornerInViewPort);
     drawRuler(
-        board.context, 
-        topLeftCornerInWorld, 
-        topRightCornerInWorld, 
-        bottomLeftCornerInWorld, 
-        board.alignCoordinateSystem, 
-        board.camera.zoomLevel, 
+      board.context, 
+      topLeftCornerInWorld, 
+      topRightCornerInWorld, 
+      bottomLeftCornerInWorld, 
+      board.alignCoordinateSystem, 
+      board.camera.zoomLevel, 
     );
     requestAnimationFrame(step);
-}
+  }
 
-
-canvas.addEventListener("click", (e) => {
+  canvas.addEventListener("click", (e) => {
     const worldCoord = board.convertWindowPoint2WorldCoord({x: e.clientX, y: e.clientY});
     cameraMux.initatePanTransition();
     panAnimation.keyFrames = [
-        {
-            percentage: 0,
-            value: board.camera.position,
-            easingFn: EasingFunctions.easeInOutSine,
-        },
-        {
-            percentage: 1,
-            value: worldCoord,
-        }
+      {
+        percentage: 0,
+        value: board.camera.position,
+        easingFn: EasingFunctions.easeInOutSine,
+      },
+      {
+        percentage: 1,
+        value: worldCoord,
+      }
     ]
     panAnimation.startAnimation();
-});
+  });
 
-requestAnimationFrame(step);
+  requestAnimationFrame(step);
+} 

@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "jsx": "preserve",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ue-too/core": ["../../packages/core/src/index.ts"],
+      "@ue-too/core/utils/drawing": ["../../packages/core/src/utils/drawing.ts"],
+      "@ue-too/core/utils": ["../../packages/core/src/utils/index.ts"],
+      "@ue-too/core/*": ["../../packages/core/src/*"]
+    }
+  },
+  "include": ["src", "index.html"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+} 

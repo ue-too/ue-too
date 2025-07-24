@@ -1,10 +1,10 @@
 import Konva from "konva";
-import DefaultBoardCamera, { createDefaultCameraRig } from "src/board-camera";
-import { createCameraMuxWithAnimationAndLockWithCameraRig } from "src/camera-mux";
-import { CanvasProxy, ObservableInputTracker } from "src/input-interpretation/input-state-machine/kmt-input-context";
-import { createKmtInputStateMachine } from "src/input-interpretation/input-state-machine/kmt-input-state-machine";
-import { VanillaKMTEventParser } from "src/input-interpretation/kmt-event-parser";
-import { RawUserInputPublisher } from "src/input-interpretation/raw-input-publisher";
+import { DefaultBoardCamera, createDefaultCameraRig } from "@ue-too/core";
+import { createCameraMuxWithAnimationAndLockWithCameraRig } from "@ue-too/core";
+import { CanvasProxy, ObservableInputTracker } from "@ue-too/core";
+import { createKmtInputStateMachine } from "@ue-too/core";
+import { VanillaKMTEventParser } from "@ue-too/core";
+import { RawUserInputPublisher } from "@ue-too/core";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const camera = new DefaultBoardCamera(800, 600);

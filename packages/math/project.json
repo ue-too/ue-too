@@ -1,0 +1,31 @@
+{
+  "name": "math",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/math/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project math --web",
+  "targets": {
+    "build": {
+      "executor": "@nx/rollup:rollup",
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/build"],
+      "options": {
+        "configFile": "packages/math/rollup.config.js",
+        "main": "packages/math/src/index.ts",
+        "tsConfig": "packages/math/tsconfig.lib.json",
+        "outputPath": "packages/math/dist"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "packages/math/jest.config.ts"
+      }
+    }
+  }
+}

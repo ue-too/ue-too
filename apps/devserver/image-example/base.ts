@@ -1,6 +1,6 @@
 // import the Board Class
-import Board from 'src/boardify';
-import { drawArrow } from 'src/utils/drawing';
+import { Board } from '@ue-too/core';
+import { drawArrow } from '@ue-too/core';
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
 
@@ -23,12 +23,12 @@ function draw(timestamp: number) {
   // draw the axis arrow as reference
   board.context.save();
   board.context.strokeStyle = "red";
-  drawArrow(board.context, 1, {x: 0, y: 0}, {x: 0, y: board.camera.boundaries.max.y}, 10, 0.3);
+  drawArrow(board.context, 1, {x: 0, y: 0}, {x: 0, y: board.camera.boundaries?.max?.y ?? 0}, 10, 0.3);
   board.context.restore();
 
   board.context.save();
   board.context.strokeStyle = "green";
-  drawArrow(board.context, 1, {x: 0, y: 0}, {x: board.camera.boundaries.max.x, y: 0}, 10, 0.3);
+  drawArrow(board.context, 1, {x: 0, y: 0}, {x: board.camera.boundaries?.max?.x ?? 0, y: 0}, 10, 0.3);
   board.context.restore();
 
   // request the next frame

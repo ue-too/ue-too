@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "paths": {
       "math": ["packages/math/src/index.ts"],
-      "my-new-package": ["packages/my-new-package/src/index.ts"]
+      "core": ["packages/core/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "dist", "build"]
