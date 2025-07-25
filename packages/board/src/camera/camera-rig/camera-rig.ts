@@ -1,4 +1,4 @@
-import { PointCal } from "point2point";
+import { PointCal } from "@ue-too/math";
 
 import { 
     createDefaultPanByHandler, 
