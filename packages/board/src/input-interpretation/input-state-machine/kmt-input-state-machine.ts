@@ -156,7 +156,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor(CursorStyle.GRABBING);
+        context.canvas.setCursor(CursorStyle.GRAB);
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {

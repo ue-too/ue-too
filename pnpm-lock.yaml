@@ -97,6 +97,12 @@ importers:
         specifier: ^6.1.0
         version: 6.1.0(@types/node@22.13.4)(terser@5.39.0)(yaml@2.7.0)
 
+  apps/examples:
+    dependencies:
+      '@ue-too/board':
+        specifier: workspace:*
+        version: link:../../packages/board
+
   apps/placeholder:
     dependencies:
       '@ue-too/lib-a':
@@ -119,22 +125,6 @@ importers:
       '@ue-too/math':
         specifier: workspace:*
         version: link:../math
-    devDependencies:
-      '@rollup/plugin-node-resolve':
-        specifier: ^15.2.3
-        version: 15.3.1(rollup@4.34.8)
-      '@rollup/plugin-terser':
-        specifier: ^0.4.4
-        version: 0.4.4(rollup@4.34.8)
-      '@rollup/plugin-typescript':
-        specifier: ^11.1.6
-        version: 11.1.6(rollup@4.34.8)(tslib@2.8.1)(typescript@5.7.3)
-      rollup:
-        specifier: ^4.9.6
-        version: 4.34.8
-      typescript:
-        specifier: ^5.3.3
-        version: 5.7.3
 
   packages/math: {}
 
@@ -1243,19 +1233,6 @@ packages:
       rollup: ^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
-        optional: true
-
-  '@rollup/plugin-typescript@11.1.6':
-    resolution: {integrity: sha512-R92yOmIACgYdJ7dJ97p4K69I8gg6IEHt8M7dUBxN3W6nrO8uUxX5ixl0yU/N3aZTi8WhPuICvOHXQvF6FaykAA==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0||^3.0.0||^4.0.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-      tslib:
         optional: true
 
   '@rollup/plugin-typescript@12.1.2':
@@ -5354,15 +5331,6 @@ snapshots:
       terser: 5.39.0
     optionalDependencies:
       rollup: 4.34.8
-
-  '@rollup/plugin-typescript@11.1.6(rollup@4.34.8)(tslib@2.8.1)(typescript@5.7.3)':
-    dependencies:
-      '@rollup/pluginutils': 5.1.4(rollup@4.34.8)
-      resolve: 1.22.10
-      typescript: 5.7.3
-    optionalDependencies:
-      rollup: 4.34.8
-      tslib: 2.8.1
 
   '@rollup/plugin-typescript@12.1.2(rollup@4.34.8)(tslib@2.8.1)(typescript@5.7.3)':
     dependencies:

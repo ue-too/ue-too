@@ -5,7 +5,8 @@
       { "path": "./apps/placeholder" },
       { "path": "./packages/math" },
       { "path": "./packages/board" },
-      { "path": "./packages/being" }
+      { "path": "./packages/being" },
+      { "path": "./apps/examples" }
     ]
   }
   
