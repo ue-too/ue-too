@@ -109,6 +109,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/lib-a
 
+  packages/animate:
+    dependencies:
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../math
+
   packages/being: {}
 
   packages/board:
