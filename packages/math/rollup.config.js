@@ -2,7 +2,6 @@
  * @type {import('rollup').RollupOptions}
  */
 import typescript from '@rollup/plugin-typescript';
-import nodeResolve from '@rollup/plugin-node-resolve';
 
 export default {
 	input: 'src/index.ts',
@@ -12,13 +11,10 @@ export default {
         sourcemap: true
 	},
     plugins: [
-        nodeResolve({
-            preferBuiltins: false,
-        }),
         typescript({
             tsconfig: 'tsconfig.json',
             outputToFilesystem: true,
         })
     ],
-    external: ['@ue-too/being']
+    external: ['@ue-too/math', '@ue-too/being']
 };

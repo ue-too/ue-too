@@ -5,7 +5,9 @@
     "baseUrl": ".",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/math.tsbuildinfo",
-    "declaration": true
+    "declaration": true,
+    "moduleResolution": "node",
+    "module": "esnext",
   },
   "include": ["src/**/*"]
 }
