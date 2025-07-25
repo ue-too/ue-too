@@ -79,6 +79,14 @@ importers:
         specifier: ^6.1.0
         version: 6.1.0(@types/node@22.13.4)(terser@5.39.0)(yaml@2.7.0)
 
+  apps/placeholder:
+    dependencies:
+      '@ue-too/lib-a':
+        specifier: workspace:*
+        version: link:../../packages/lib-a
+
+  packages/lib-a: {}
+
 packages:
 
   '@ampproject/remapping@2.3.0':
