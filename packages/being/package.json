@@ -14,9 +14,6 @@
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
-  "module": "./src/index.ts",
-  "dependencies": {
-    "@ue-too/math": "workspace:*"
-  }
+  "module": "./src/index.ts"
 }
   
