@@ -14,5 +14,8 @@
   "module": "./src/index.ts",
   "dependencies": {
     "@ue-too/math": "workspace:*"
+  },
+  "scripts": {
+    "build": "rm -rf dist && rollup -c rollup.config.js"
   }
 }
