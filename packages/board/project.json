@@ -9,13 +9,7 @@
       "options": {
         "command": "pnpm build",
         "cwd": "packages/board"
-      },
-      "dependsOn": [
-        {
-          "target": "build",
-          "projects": "dependencies"
-        }
-      ]
+      }
     }
   },
   "tags": []

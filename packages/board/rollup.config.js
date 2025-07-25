@@ -2,7 +2,8 @@
  * @type {import('rollup').RollupOptions}
  */
 import typescript from '@rollup/plugin-typescript';
-import nodeResolve from '@rollup/plugin-node-resolve';
+// import nodeResolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
 
 export default {
 	input: 'src/index.ts',
@@ -12,13 +13,16 @@ export default {
         sourcemap: true
 	},
     plugins: [
-        nodeResolve({
-            preferBuiltins: false,
-        }),
+        // nodeResolve({
+        //     preferBuiltins: false,
+        // }),
         typescript({
             tsconfig: 'tsconfig.json',
             outputToFilesystem: true,
-        })
+            declarationMap: false,
+            paths: undefined
+        }),
+        terser()
     ],
-    // external: ['@ue-too/being']
+    external: ['@ue-too/math', '@ue-too/being']
 };
