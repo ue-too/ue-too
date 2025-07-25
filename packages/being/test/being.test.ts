@@ -1,4 +1,4 @@
-import { TemplateStateMachine, TemplateState, BaseContext, EventReactions } from "../../src/being";
+import { TemplateStateMachine, TemplateState, BaseContext, EventReactions } from "../src/interface";
 
 type TestStates = "IDLE" | "FIRST" | "SECOND";
 

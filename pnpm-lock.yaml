@@ -85,7 +85,19 @@ importers:
         specifier: workspace:*
         version: link:../../packages/lib-a
 
-  packages/lib-a: {}
+  packages/board:
+    dependencies:
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../math
+
+  packages/lib-a:
+    dependencies:
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../math
+
+  packages/math: {}
 
 packages:
 

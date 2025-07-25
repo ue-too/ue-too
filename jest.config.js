@@ -2,7 +2,7 @@
 import { pathsToModuleNameMapper } from 'ts-jest';
 import { readFileSync } from 'fs';
 
-const { compilerOptions } = JSON.parse(readFileSync(new URL('./tsconfig.json', import.meta.url), 'utf-8'));
+const { compilerOptions } = JSON.parse(readFileSync(new URL('./legacy.tsconfig.json', import.meta.url), 'utf-8'));
 
 export default {
   preset: 'ts-jest',
