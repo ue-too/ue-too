@@ -9,6 +9,9 @@
       },
       "./package.json": "./package.json"
   },
+  "scripts": {
+    "test": "jest"
+  },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "module": "./src/index.ts"

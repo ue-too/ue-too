@@ -5,7 +5,9 @@
     "baseUrl": ".",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/being.tsbuildinfo",
-    "declaration": true
+    "declaration": true,
+    "module": "ESNext",
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"]
 }

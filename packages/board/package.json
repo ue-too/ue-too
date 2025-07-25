@@ -13,7 +13,11 @@
   "types": "./src/index.ts",
   "module": "./src/index.ts",
   "dependencies": {
-    "@ue-too/math": "workspace:*"
+    "@ue-too/math": "workspace:*",
+    "@ue-too/being": "workspace:*"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }
   
