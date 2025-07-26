@@ -48,7 +48,7 @@ jobs:
             pnpm install
           fi
       - name: Build packages
-        run: pnpm build:packages
+        run: pnpm build
       - name: Bump version
         run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then

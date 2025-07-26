@@ -15,5 +15,11 @@
         }
       }
     }
-  ]
+  ],
+  "release": {
+    "releaseTagPattern": "v{version}",
+    "changelog": {
+      "automaticFromRef": true
+    }
+  }
 }
