@@ -2,9 +2,6 @@
     "files": [],
     "references": [
       {
-        "path": "./packages/lib-a"
-      },
-      {
         "path": "./apps/placeholder"
       },
       {

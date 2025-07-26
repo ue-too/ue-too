@@ -9,6 +9,7 @@
   "sideEffects": false,
   "private": true,
   "scripts": {
+    "test": "nx run-many --target=test",
     "build": "nx run-many --target=build",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm build && pnpm replace-workspace-deps",
