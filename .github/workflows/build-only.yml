@@ -13,6 +13,8 @@ on:
         description: Node Version
         required: false
         default: '20.x'
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,14 +33,11 @@ jobs:
           version: 10
       - name: Install dependencies
         run: |
-          cd ./board
           if [ -f pnpm-lock.yaml ]; then
             pnpm install --frozen-lockfile || pnpm install
           else
             pnpm install
           fi
       - name: Build
-        run: |
-          cd ./board
-          pnpm build
+        run: pnpm build:packages
       
