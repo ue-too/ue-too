@@ -4,7 +4,7 @@ import { Point } from "@ue-too/math";
 
 // Create an image object
 const tileImage = new Image();
-tileImage.src = 'tile.png';
+tileImage.src = new URL('./tile.png', import.meta.url).href;
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);

@@ -25,6 +25,8 @@
       "pixi.js": "8.8.0"
   },
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   }
 }

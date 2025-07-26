@@ -6,7 +6,7 @@ const canvas = document.getElementById('graph') as HTMLCanvasElement;
 
 // Create an image object
 const tileImage = new Image();
-tileImage.src = 'tile.png';
+tileImage.src = new URL('./tile.png', import.meta.url).href;
 
 // instantiate the board by passing in the canvas element
 const board = new Board(canvas);
