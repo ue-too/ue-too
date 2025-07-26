@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      point2point:
-        specifier: ^0.0.95
-        version: 0.0.95
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.5
@@ -3264,9 +3260,6 @@ packages:
 
   point2point@0.0.93:
     resolution: {integrity: sha512-kO27XKR7TqwhtpYcLEAjcdkHoXuMIOZhGUuz8UCbj9ZtLhhhTKL1gLOogIpXFz5TUfRag3zX7fpIW5kdqMftlw==}
-
-  point2point@0.0.95:
-    resolution: {integrity: sha512-8aahc+BLo86ZnUSQbPlCcqBW3MINnxmVqmfs3qORtNwTJKLlocZkqujB07H9PbmINRqV8R5G3R3KJlMTrXnImQ==}
 
   postcss-calc@8.2.4:
     resolution: {integrity: sha512-SmWMSJmB8MRnnULldx0lQIyhSNvuDl9HfrZkaqqE/WHAhToYsAvDq+yAsA/kIyINDszOp3Rh0GFoNuH5Ypsm3Q==}
@@ -7868,8 +7861,6 @@ snapshots:
       queue-lit: 1.5.2
 
   point2point@0.0.93: {}
-
-  point2point@0.0.95: {}
 
   postcss-calc@8.2.4(postcss@8.5.2):
     dependencies:

@@ -30,11 +30,6 @@ jobs:
         cache: 'pnpm'
         registry-url: 'https://registry.npmjs.org'
     - name: Install dependencies
-      run: |
-        if [ -f pnpm-lock.yaml ]; then
-          pnpm install --frozen-lockfile || pnpm install
-        else
-          pnpm install
-        fi
+      run: pnpm install
     - name: Run unit tests
       run: pnpm test
