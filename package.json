@@ -31,6 +31,7 @@
     "PIXI"
   ],
   "devDependencies": {
+    "@changesets/cli": "^2.29.5",
     "@niuee/bounce": "^0.0.5",
     "@niuee/typedoc-plugin-translation": "^0.0.5",
     "@nx/js": "^21.3.5",

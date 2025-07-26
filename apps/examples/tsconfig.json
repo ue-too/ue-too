@@ -7,5 +7,30 @@
     "module": "ESNext",
     "moduleResolution": "node"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../../packages/border"
+    },
+    {
+      "path": "../../packages/dynamics"
+    },
+    {
+      "path": "../../packages/curve"
+    },
+    {
+      "path": "../../packages/being"
+    },
+    {
+      "path": "../../packages/animate"
+    },
+    {
+      "path": "../../packages/math"
+    },
+    {
+      "path": "../../packages/board"
+    }
+  ]
 }

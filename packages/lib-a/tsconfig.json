@@ -9,5 +9,12 @@
       "moduleResolution": "node",
       "module": "esnext",
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../math"
+    }
+  ]
 }

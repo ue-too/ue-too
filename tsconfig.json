@@ -1,12 +1,36 @@
 {
     "files": [],
     "references": [
-      { "path": "./packages/lib-a" }, 
-      { "path": "./apps/placeholder" },
-      { "path": "./packages/math" },
-      { "path": "./packages/board" },
-      { "path": "./packages/being" },
-      { "path": "./apps/examples" }
+      {
+        "path": "./packages/lib-a"
+      },
+      {
+        "path": "./apps/placeholder"
+      },
+      {
+        "path": "./packages/math"
+      },
+      {
+        "path": "./packages/board"
+      },
+      {
+        "path": "./packages/being"
+      },
+      {
+        "path": "./apps/examples"
+      },
+      {
+        "path": "./packages/dynamics"
+      },
+      {
+        "path": "./packages/animate"
+      },
+      {
+        "path": "./packages/border"
+      },
+      {
+        "path": "./packages/curve"
+      }
     ]
   }
   
