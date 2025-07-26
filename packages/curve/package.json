@@ -8,9 +8,9 @@
   },
   "exports": {
     ".": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.js",
-    "default": "./dist/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -25,4 +25,3 @@
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js"
 }
-  

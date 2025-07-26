@@ -11,12 +11,12 @@
   },
   "homepage": "https://github.com/niuee/ue-too",
   "exports": {
-      ".": {
+    ".": {
       "types": "./src/index.d.ts",
       "import": "./src/index.ts",
       "default": "./src/index.ts"
-      },
-      "./package.json": "./package.json"
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "test": "jest",

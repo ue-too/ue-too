@@ -126,6 +126,9 @@ importers:
       konva:
         specifier: 9.3.20
         version: 9.3.20
+      pixi.js:
+        specifier: 8.8.0
+        version: 8.8.0
 
   apps/placeholder:
     dependencies:
