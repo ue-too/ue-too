@@ -1,0 +1,30 @@
+{
+  "name": "animate",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/animate/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/animate"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/animate"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm test",
+        "cwd": "packages/animate"
+      }
+    }
+  },
+  "tags": []
+}

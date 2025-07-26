@@ -1,1 +1,0 @@
-export * from "./vanilla-touch-event-parser";

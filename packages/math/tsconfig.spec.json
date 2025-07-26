@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/math.tsbuildinfo",
+    "declaration": true
+  },
+  "include": ["test/**/*"]
+}
+  

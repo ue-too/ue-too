@@ -9,13 +9,14 @@ permissions:
 on:
   pull_request:
     branches: [ "main", "dev", "version/**" ]
+  workflow_dispatch:
 
 jobs:
   unit-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@v3
@@ -28,12 +29,27 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
         registry-url: 'https://registry.npmjs.org'
-    - name: Install dependencies
+    - name: Debug Environment
       run: |
-        if [ -f pnpm-lock.yaml ]; then
-          pnpm install --frozen-lockfile || pnpm install
-        else
-          pnpm install
-        fi
+        echo "Node version: $(node --version)"
+        echo "PNPM version: $(pnpm --version)"
+        echo "Working directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        echo "Package.json contents:"
+        cat package.json
+        echo "Nx version: $(npx nx --version)"
+    - name: Install dependencies
+      run: pnpm install
+    - name: Debug After Install
+      run: |
+        echo "Node modules directory:"
+        ls -la node_modules/ | head -10
+        echo "PNPM store info:"
+        pnpm store path
+        echo "Available packages:"
+        ls -la packages/
+        echo "Nx projects:"
+        npx nx show projects
     - name: Run unit tests
       run: pnpm test

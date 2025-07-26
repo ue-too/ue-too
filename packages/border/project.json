@@ -1,0 +1,30 @@
+{
+  "name": "border",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/border/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/border"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/border"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm test",
+        "cwd": "packages/border"
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,22 +1,30 @@
 {
-    "compilerOptions": {
-        "target": "es6",
-        "baseUrl": "./",
-        "esModuleInterop": true,
-        "outDir": "./build",
-        "strict": false,
-        "moduleResolution": "node",
-        "paths": {
-            "src": ["src"],
-            "src/*": ["src/*"],
-            "coordinate-conversion": ["src/board-camera/coordinate-conversion"]
-        },
-        "resolveJsonModule": true,
-        "lib": ["es6", "dom"],
-        "typeRoots": ["node_modules/@types"],
-        "noEmitOnError": true,
-        "noImplicitAny": true
-    },
-    "include": [ "src/**/*", "devserver/**/*", "tests/**/*" ],
-    "exclude": ["node_modules",  "dist", "build"]
-}
+    "files": [],
+    "references": [
+      {
+        "path": "./packages/math"
+      },
+      {
+        "path": "./packages/board"
+      },
+      {
+        "path": "./packages/being"
+      },
+      {
+        "path": "./apps/examples"
+      },
+      {
+        "path": "./packages/dynamics"
+      },
+      {
+        "path": "./packages/animate"
+      },
+      {
+        "path": "./packages/border"
+      },
+      {
+        "path": "./packages/curve"
+      }
+    ]
+  }
+  

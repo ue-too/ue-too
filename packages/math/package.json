@@ -1,0 +1,28 @@
+{
+  "name": "@ue-too/math",
+  "author": "niuee",
+  "type": "module",
+  "version": "0.6.0",
+  "description": "Math utilities for uē-tôo",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niuee/ue-too.git"
+  },
+  "homepage": "https://github.com/niuee/ue-too",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "rm -rf dist && rollup -c rollup.config.js"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "module": "./src/index.ts"
+}

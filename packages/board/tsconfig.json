@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/board.tsbuildinfo",
+    "declaration": true,
+    "moduleResolution": "node",
+    "module": "esnext",
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../being"
+    },
+    {
+      "path": "../math"
+    }
+  ]
+}
