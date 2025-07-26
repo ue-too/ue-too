@@ -126,6 +126,12 @@ importers:
         specifier: workspace:*
         version: link:../math
 
+  packages/border:
+    dependencies:
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../math
+
   packages/curve:
     dependencies:
       '@ue-too/math':
