@@ -12,5 +12,14 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "implicitDependencies": [
+    "math",
+    "being",
+    "animate",
+    "border",
+    "curve",
+    "dynamics",
+    "board"
+  ]
 }

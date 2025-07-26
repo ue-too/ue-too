@@ -19,7 +19,6 @@ export default {
         typescript({
             tsconfig: 'tsconfig.json',
             outputToFilesystem: true,
-            projectReferences: true,
             declarationMap: false,
             paths: undefined,
             allowImportingTsExtensions: false

@@ -14,7 +14,6 @@ export default {
         typescript({
             tsconfig: 'tsconfig.json',
             outputToFilesystem: true,
-            projectReferences: true,
         })
     ],
     external: ['@ue-too/math', '@ue-too/being']
