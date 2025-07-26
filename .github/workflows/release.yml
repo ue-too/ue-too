@@ -50,22 +50,40 @@ jobs:
       - run: pnpm build
       - run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
-            pnpm run increment-patch-version
+            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
           elif [[ ${{ github.event.inputs.version-type }} == 'minor' ]]; then
-            pnpm run increment-minor-version
+            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier minor
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
-            pnpm run increment-major-version
+            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
           fi
-      - run: pnpm publish --no-git-checks --access public ./build ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
+      - name: Publish packages individually
+        run: |
+          # Get the list of packages that have dist directories
+          for package_dir in packages/*/; do
+            if [ -d "${package_dir}dist" ]; then
+              package_name=$(basename "$package_dir")
+              echo "Publishing package: $package_name"
+              cd "${package_dir}dist"
+              pnpm publish --no-git-checks --access public ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
+              cd ../../..
+            fi
+          done
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Get Published Version
         id: get-version
         run: |
-          cd ./build
-          VERSION=$(pnpm pkg get version | tr -d '"')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "current version: $VERSION"
+          # Get version from the first package that has a dist directory
+          for package_dir in packages/*/; do
+            if [ -d "${package_dir}dist" ]; then
+              cd "${package_dir}dist"
+              VERSION=$(pnpm pkg get version | tr -d '"')
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              echo "current version: $VERSION"
+              break
+            fi
+          done
+          cd ../..
         shell: bash
       - name: Sync package version
         if: ${{ github.event.inputs.dry-run != 'true' }}
@@ -92,8 +110,15 @@ jobs:
               --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
               --target="${{ steps.get-branch.outputs.branch }}" \
               --generate-notes
-              for file in ./dist/*; do
-                gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
+              # Upload dist files from all packages
+              for package_dir in packages/*/; do
+                if [ -d "${package_dir}dist" ]; then
+                  for file in "${package_dir}dist"/*; do
+                    if [ -f "$file" ]; then
+                      gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
+                    fi
+                  done
+                fi
               done
   # release-docs:
   #   uses: ./.github/workflows/build-doc.yml
