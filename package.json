@@ -9,7 +9,11 @@
   "sideEffects": false,
   "private": true,
   "scripts": {
-    "build": "nx run-many --target=build --projects=lib-a"
+    "build": "nx run-many --target=build",
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm build && pnpm replace-workspace-deps",
+    "release": "changeset publish",
+    "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs"
   },
   "repository": {
     "type": "git",
