@@ -1,6 +1,7 @@
 {
   "name": "@ue-too/board",
   "type": "module",
+  "version": "0.6.0",
   "exports": {
     ".": {
     "types": "./src/index.ts",
@@ -16,6 +17,22 @@
     "@ue-too/math": "workspace:*",
     "@ue-too/being": "workspace:*"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ue-too/ue-too.git"
+  },
+  "author": "niuee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ue-too/ue-too/issues"
+  },
+  "homepage": "https://github.com/ue-too/ue-too#readme",
+  "keywords": [
+    "canvas",
+    "infinite-canvas",
+    "pixi.js",
+    "PIXI"
+  ],
   "scripts": {
     "test": "jest",
     "build": "rm -rf dist && rollup -c rollup.config.js"
