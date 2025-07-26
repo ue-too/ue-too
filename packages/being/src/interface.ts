@@ -304,3 +304,7 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return undefined;
     }
 }
+
+export function placeHolder(){
+    return "placeholder";
+};
