@@ -5,8 +5,10 @@ export default {
   rootDir: '.',
   testMatch: ['<rootDir>/test/**/*.test.ts'],
   moduleFileExtensions: ['ts', 'js'],
+  extensionsToTreatAsEsm: ['.ts'],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
+      useESM: true,
       tsconfig: 'tsconfig.spec.json'
     }]
   },

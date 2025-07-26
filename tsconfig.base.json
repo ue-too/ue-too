@@ -8,6 +8,7 @@
     "declaration": true,
     "declarationMap": false,
     "sourceMap": true,
+    "esModuleInterop": true,
     // "allowImportingTsExtensions": true,
     // "noEmit": true
   }
