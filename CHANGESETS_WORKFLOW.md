@@ -1,3 +1,5 @@
+# NOT IN USE FOR THE CURRENT BUILD SETUP
+build -> bump-version -> move-packageJson -> replace workspace deps
 # Changesets Workflow for uē-tôo Monorepo
 
 This document describes how to use Changesets for versioning and releasing packages in the uē-tôo monorepo.
