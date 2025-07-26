@@ -139,6 +139,12 @@ importers:
         specifier: ^6.1.4
         version: 6.1.4
 
+  packages/dynamics:
+    dependencies:
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../math
+
   packages/lib-a:
     dependencies:
       '@ue-too/math':

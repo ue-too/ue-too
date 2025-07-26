@@ -1,0 +1,16 @@
+{
+  "name": "dynamics",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/dynamics/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/dynamics"
+      }
+    }
+  },
+  "tags": []
+}
