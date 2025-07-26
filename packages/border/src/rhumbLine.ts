@@ -23,7 +23,7 @@ export function rhumbDistance(startCoord: GeoCoord, endCoord: GeoCoord): number{
     return dist;
 }
 
-export function bearing(startCoord: GeoCoord, endCoord: GeoCoord): number{
+export function rhumbBearing(startCoord: GeoCoord, endCoord: GeoCoord): number{
     const φ1 = startCoord.latitude * Math.PI / 180; // φ, λ in radians
     const φ2 = endCoord.latitude * Math.PI / 180;
     let Δλ = (endCoord.longitude - startCoord.longitude) * Math.PI / 180;
@@ -36,7 +36,7 @@ export function bearing(startCoord: GeoCoord, endCoord: GeoCoord): number{
     return brng;
 }
 
-export function destinationFrom(startCoord: GeoCoord, bearing: number, distance: number): GeoCoord{
+export function destinationFromOriginOnRhumbLine(startCoord: GeoCoord, bearing: number, distance: number): GeoCoord{
     const R = 6371e3; // metres
     const φ1 = startCoord.latitude * Math.PI / 180; // φ, λ in radians
     const λ1 = startCoord.longitude * Math.PI / 180;
@@ -57,7 +57,7 @@ export function destinationFrom(startCoord: GeoCoord, bearing: number, distance:
     return {latitude: φ2, longitude: λ2};
 }
 
-export function midPoint(startCoord: GeoCoord, endCoord: GeoCoord): GeoCoord{
+export function midPointOnRhumbLine(startCoord: GeoCoord, endCoord: GeoCoord): GeoCoord{
     let λ1 = startCoord.longitude * Math.PI / 180;  
     const λ2 = endCoord.longitude * Math.PI / 180;
     const φ1 = startCoord.latitude * Math.PI / 180;
