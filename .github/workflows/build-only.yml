@@ -22,8 +22,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Setup .npmrc file to publish to npm
-        with:
-          path: board
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ inputs.node-version }}
