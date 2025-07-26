@@ -7,7 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm build && node ../../scripts/move-package.mjs",
+        "command": "pnpm build",
+        "cwd": "packages/being"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
         "cwd": "packages/being"
       }
     },
