@@ -133,12 +133,6 @@ importers:
         specifier: 8.8.0
         version: 8.8.0
 
-  apps/placeholder:
-    dependencies:
-      '@ue-too/lib-a':
-        specifier: workspace:*
-        version: link:../../packages/lib-a
-
   packages/animate:
     dependencies:
       '@ue-too/math':
@@ -176,12 +170,6 @@ importers:
         version: 6.1.4
 
   packages/dynamics:
-    dependencies:
-      '@ue-too/math':
-        specifier: workspace:*
-        version: link:../math
-
-  packages/lib-a:
     dependencies:
       '@ue-too/math':
         specifier: workspace:*
