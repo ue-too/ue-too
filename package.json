@@ -1,20 +1,15 @@
 {
   "name": "ue-too",
-  "version": "0.5.0",
   "description": "pan, zoom, and rotate your html canvas",
-  "main": "./build/index.cjs",
-  "module": "./build/index.mjs",
-  "types": "./build/index.d.ts",
-  "type": "module",
-  "sideEffects": false,
   "private": true,
+  "sideEffects": false,
   "scripts": {
     "test": "nx run-many --target=test",
     "build": "nx run-many --target=build --parallel=true",
     "build:packages": "nx run-many --target=build --projects=packages/* --parallel=true",
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",
     "build:affected": "nx affected --target=build --parallel=true",
-    "bump-version": "nx release",
+    "bump-version": "nx release --skip-publish",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm build && pnpm replace-workspace-deps",
     "release": "changeset publish",
@@ -30,15 +25,6 @@
     "url": "https://github.com/ue-too/ue-too/issues"
   },
   "homepage": "https://github.com/ue-too/ue-too#readme",
-  "dependencies": {
-    "point2point": "^0.0.95"
-  },
-  "keywords": [
-    "canvas",
-    "infinite-canvas",
-    "pixi.js",
-    "PIXI"
-  ],
   "devDependencies": {
     "@changesets/cli": "^2.29.5",
     "@niuee/bounce": "^0.0.5",
