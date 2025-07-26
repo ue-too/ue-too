@@ -49,6 +49,11 @@ jobs:
           fi
       - name: Build packages
         run: pnpm build
+
+      - name: Setup git user
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "vntchang@gmail.com"
       - name: Bump version
         run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
