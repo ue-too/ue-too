@@ -10,6 +10,7 @@
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",
     "build:affected": "nx affected --target=build --parallel=true",
     "bump-version": "nx release --skip-publish",
+    "bump-version:dry-run": "nx release --skip-publish --dry-run",
     "move-packageJson": "nx run-many --target=move-package --parallel=true",
     "publish": "nx release publish",
     "changeset": "changeset",
