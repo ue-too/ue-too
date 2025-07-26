@@ -26,5 +26,8 @@
       }
     }
   },
-  "tags": []
+  "tags": [],
+  "implicitDependencies": [
+    "math"
+  ]
 }
