@@ -10,6 +10,13 @@
         "command": "pnpm build",
         "cwd": "packages/border"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm test",
+        "cwd": "packages/border"
+      }
     }
   },
   "tags": []

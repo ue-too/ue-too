@@ -12,11 +12,10 @@
       }
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "executor": "nx:run-commands",
       "options": {
-        "jestConfig": "packages/math/jest.config.js",
-        "passWithNoTests": true
+        "command": "pnpm test",
+        "cwd": "packages/math"
       }
     }
   },
