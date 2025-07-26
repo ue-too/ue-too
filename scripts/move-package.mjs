@@ -15,8 +15,8 @@ const currentDir = basename(cwd());
 const packageName = currentDir;
 
 // Define the root build directory and package build directory
-const rootBuildDir = join(__dirname, '../build');
-const packageBuildDir = join(rootBuildDir, `packages/${packageName}`);
+const rootPackagesDir = join(__dirname, '..');
+const packageBuildDir = join(rootPackagesDir, `packages/${packageName}/dist`);
 
 // Ensure the build directory exists
 mkdirSync(packageBuildDir, { recursive: true });
@@ -26,6 +26,14 @@ data.main = "./index.js";
 data.module = "./index.js";
 data.types = "./index.d.ts";
 data.scripts = { test: "echo \"Error: no test specified\" && exit 1"};
+data.exports = {
+    ".": {
+        "types": "./index.d.ts",
+        "import": "./index.js",
+        "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+}
 
 writeFileSync(join(packageBuildDir, "package.json"), JSON.stringify(data, null, 2));
 

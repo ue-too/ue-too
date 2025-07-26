@@ -4,6 +4,8 @@
     "outDir": "../../dist",
     "declaration": true,
     "allowImportingTsExtensions": false,
+    "module": "ESNext",
+    "moduleResolution": "node"
   },
   "include": ["src/**/*"]
 }

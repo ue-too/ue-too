@@ -1,6 +1,5 @@
 import { StaticCanvas, FabricText, TMat2D, Rect } from 'fabric'
-import { createKmtInputStateMachine, CanvasProxy, createDefaultCameraRig, DefaultBoardCamera, ObservableInputTracker, RawUserInputPublisher, createCameraMuxWithAnimationAndLockWithCameraRig, VanillaKMTEventParser } from "@ue-too/board";
-
+import { createKmtInputStateMachine, createDefaultCameraRig, DefaultBoardCamera, ObservableInputTracker, RawUserInputPublisher, createCameraMuxWithAnimationAndLockWithCameraRig, VanillaKMTEventParser, CanvasProxy } from "@ue-too/board";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const fabricCanvas = new StaticCanvas(canvas);

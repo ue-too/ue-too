@@ -6,9 +6,9 @@
     "moduleResolution": "bundler",
     "composite": true,
     "declaration": true,
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    // "allowImportingTsExtensions": true,
+    // "noEmit": true
   }
 }

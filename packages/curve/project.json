@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm build",
+        "command": "pnpm build && node ../../scripts/move-package.mjs",
         "cwd": "packages/curve"
       }
     },
