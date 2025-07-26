@@ -2,9 +2,6 @@
     "files": [],
     "references": [
       {
-        "path": "./apps/placeholder"
-      },
-      {
         "path": "./packages/math"
       },
       {
