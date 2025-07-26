@@ -13,7 +13,16 @@
   "types": "./src/index.ts",
   "module": "./src/index.ts",
   "dependencies": {
-      "@ue-too/board": "workspace:*"
+      "@ue-too/board": "workspace:*",
+      "@ue-too/math": "workspace:*",
+      "@ue-too/animate": "workspace:*",
+      "@ue-too/being": "workspace:*",
+      "@ue-too/curve": "workspace:*",
+      "@ue-too/dynamics": "workspace:*",
+      "@ue-too/border": "workspace:*",
+      "fabric": "6.7.0",
+      "konva": "9.3.20",
+      "pixi.js": "8.8.0"
   },
   "scripts": {
     "dev": "vite"

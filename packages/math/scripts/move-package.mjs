@@ -12,32 +12,41 @@ const data = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 
 // Get the package name from the current directory
 const currentDir = basename(cwd());
-const packageName = currentDir;
+
+console.log('dirname',__dirname);
 
 // Define the root build directory and package build directory
-const rootBuildDir = join(__dirname, '../build');
-const packageBuildDir = join(rootBuildDir, `packages/${packageName}`);
+const rootBuildDir = join(currentDir, '../dist');
+// const packageBuildDir = join(rootBuildDir, `packages/${packageName}`);
 
 // Ensure the build directory exists
-mkdirSync(packageBuildDir, { recursive: true });
+mkdirSync(rootBuildDir, { recursive: true });
 
 // Use consistent file extensions for all packages
 data.main = "./index.js";
 data.module = "./index.js";
 data.types = "./index.d.ts";
 data.scripts = { test: "echo \"Error: no test specified\" && exit 1"};
+data.exports = {
+    ".": {
+        "types": "./index.d.ts",
+        "import": "./index.js",
+        "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+}
 
-writeFileSync(join(packageBuildDir, "package.json"), JSON.stringify(data, null, 2));
+writeFileSync(join(rootBuildDir, "package.json"), JSON.stringify(data, null, 2));
 
 // Copy README.md and LICENSE.txt if they exist
 try {
-  copyFileSync("./README.md", join(packageBuildDir, "README.md"));
+  copyFileSync("../README.md", join(rootBuildDir, "README.md"));
 } catch (error) {
   console.log("README.md not found, skipping...");
 }
 
 try {
-  copyFileSync("./LICENSE.txt", join(packageBuildDir, "LICENSE.txt"));
+  copyFileSync("../LICENSE.txt", join(rootBuildDir, "LICENSE.txt"));
 } catch (error) {
   console.log("LICENSE.txt not found, skipping...");
 }

@@ -20,7 +20,8 @@ export default {
             tsconfig: 'tsconfig.json',
             outputToFilesystem: true,
             declarationMap: false,
-            paths: undefined
+            paths: undefined,
+            allowImportingTsExtensions: false
         }),
         terser()
     ],

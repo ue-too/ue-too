@@ -1,4 +1,4 @@
-import Board from "src/boardify";
+import { Board } from "@ue-too/board";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);

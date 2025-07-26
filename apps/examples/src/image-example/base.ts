@@ -1,6 +1,6 @@
 // import the Board Class
-import Board from 'src/boardify';
-import { drawArrow } from 'src/utils/drawing';
+import { Board } from '@ue-too/board';
+import { drawArrow } from '@ue-too/board';
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
 

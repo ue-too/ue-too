@@ -1,8 +1,6 @@
-import Board from "src/boardify";
-import { drawRuler } from "src/utils/drawing";
-import { CompositeAnimation, Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
-import { Point } from "point2point";
-import { CameraMuxWithAnimationAndLock } from "src";
+import { Board, CameraMuxWithAnimationAndLock, drawRuler } from "@ue-too/board";
+import { Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
+import { Point } from "@ue-too/math";
 
 // Create an image object
 const tileImage = new Image();

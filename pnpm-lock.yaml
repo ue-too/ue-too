@@ -99,9 +99,33 @@ importers:
 
   apps/examples:
     dependencies:
+      '@ue-too/animate':
+        specifier: workspace:*
+        version: link:../../packages/animate
+      '@ue-too/being':
+        specifier: workspace:*
+        version: link:../../packages/being
       '@ue-too/board':
         specifier: workspace:*
         version: link:../../packages/board
+      '@ue-too/border':
+        specifier: workspace:*
+        version: link:../../packages/border
+      '@ue-too/curve':
+        specifier: workspace:*
+        version: link:../../packages/curve
+      '@ue-too/dynamics':
+        specifier: workspace:*
+        version: link:../../packages/dynamics
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../../packages/math
+      fabric:
+        specifier: 6.7.0
+        version: 6.7.0
+      konva:
+        specifier: 9.3.20
+        version: 9.3.20
 
   apps/placeholder:
     dependencies:
@@ -2020,15 +2044,6 @@ packages:
     resolution: {integrity: sha512-Jy/tj3ldjZJo63sVAvg6LHt2mHvl4V6AgRAmNDtLdm7faqtsx+aJG42rsyCo9JCoRVKwPFzKlIPx3DIibwSIaQ==}
     engines: {node: '>=12'}
 
-  debug@4.4.0:
-    resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
   debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
     engines: {node: '>=6.0'}
@@ -2299,10 +2314,6 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
-
-  form-data@4.0.3:
-    resolution: {integrity: sha512-qsITQPfmvMOSAdeyZ+12I1c+CKSstAFAwu+97zrnWAbIr5u8wfsExUzCesVLC8NgHuRUqNN4Zy6UPWUTRGslcA==}
-    engines: {node: '>= 6'}
 
   form-data@4.0.4:
     resolution: {integrity: sha512-KrGhL9Q4zjj0kiUt5OO4Mr/A/jlI2jDYs5eHBpYHPcBEVSiipAvn2Ko2HnPe20rmcuuvMHNdZFp+4IlGTMF0Ow==}
@@ -6155,11 +6166,6 @@ snapshots:
       whatwg-url: 11.0.0
     optional: true
 
-  debug@4.4.0:
-    dependencies:
-      ms: 2.1.3
-    optional: true
-
   debug@4.4.1:
     dependencies:
       ms: 2.1.3
@@ -6431,15 +6437,6 @@ snapshots:
 
   follow-redirects@1.15.9: {}
 
-  form-data@4.0.3:
-    dependencies:
-      asynckit: 0.4.0
-      combined-stream: 1.0.8
-      es-set-tostringtag: 2.1.0
-      hasown: 2.0.2
-      mime-types: 2.1.35
-    optional: true
-
   form-data@4.0.4:
     dependencies:
       asynckit: 0.4.0
@@ -6606,7 +6603,7 @@ snapshots:
     dependencies:
       '@tootallnate/once': 2.0.0
       agent-base: 6.0.2
-      debug: 4.4.0
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -6614,7 +6611,7 @@ snapshots:
   https-proxy-agent@5.0.1:
     dependencies:
       agent-base: 6.0.2
-      debug: 4.4.0
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
     optional: true
@@ -7094,7 +7091,7 @@ snapshots:
       decimal.js: 10.5.0
       domexception: 4.0.0
       escodegen: 2.1.0
-      form-data: 4.0.3
+      form-data: 4.0.4
       html-encoding-sniffer: 3.0.0
       http-proxy-agent: 5.0.0
       https-proxy-agent: 5.0.1

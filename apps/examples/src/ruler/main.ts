@@ -1,5 +1,4 @@
-import Board from "src/boardify";
-import { drawRuler } from "src/utils/drawing";
+import { Board, drawRuler } from "@ue-too/board";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
