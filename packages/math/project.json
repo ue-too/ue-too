@@ -27,7 +27,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist"
+        "packageRoot": "dist",
+        "cwd": "packages/math"
       }
     }
   },

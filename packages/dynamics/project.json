@@ -24,6 +24,12 @@
         "command": "pnpm test",
         "cwd": "packages/dynamics"
       }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist",
+        "cwd": "packages/dynamics"
+      }
     }
   },
   "tags": [],
