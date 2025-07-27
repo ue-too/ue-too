@@ -72,6 +72,10 @@ jobs:
         run: pnpm replace-workspace-deps
       - name: Publish packages
         run: pnpm publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
+      - name: Push to branch
+        if: ${{ !github.event.inputs.dry-run }}
+        run: |
+          git push
       # - name: Determine release branch
       #   id: get-branch
       #   if: ${{ github.event.inputs.dry-run != 'true' }}
