@@ -74,7 +74,9 @@ jobs:
         run: pnpm publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
       - name: Push to branch
         if: ${{ !github.event.inputs.dry-run }}
-        run: |
+        run:
+          |
+          git log -1 --pretty --no-pager
           git push
       # - name: Determine release branch
       #   id: get-branch
