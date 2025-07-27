@@ -96,6 +96,39 @@ importers:
         specifier: ^6.1.0
         version: 6.1.0(@types/node@22.13.4)(terser@5.39.0)(yaml@2.7.0)
 
+  apps/b-curve-exp:
+    dependencies:
+      '@ue-too/animate':
+        specifier: workspace:*
+        version: link:../../packages/animate
+      '@ue-too/being':
+        specifier: workspace:*
+        version: link:../../packages/being
+      '@ue-too/board':
+        specifier: workspace:*
+        version: link:../../packages/board
+      '@ue-too/border':
+        specifier: workspace:*
+        version: link:../../packages/border
+      '@ue-too/curve':
+        specifier: workspace:*
+        version: link:../../packages/curve
+      '@ue-too/dynamics':
+        specifier: workspace:*
+        version: link:../../packages/dynamics
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../../packages/math
+      fabric:
+        specifier: 6.7.0
+        version: 6.7.0
+      konva:
+        specifier: 9.3.20
+        version: 9.3.20
+      pixi.js:
+        specifier: 8.8.0
+        version: 8.8.0
+
   apps/examples:
     dependencies:
       '@niuee/bolt':
