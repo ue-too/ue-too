@@ -67,10 +67,8 @@ jobs:
             pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
           fi
       - name: Move package.json to dist
-        if: ${{ github.event.inputs.dry-run != 'true' }}
         run: pnpm move-packageJson
       - name: Replace workspace deps
-        if: ${{ github.event.inputs.dry-run != 'true' }}
         run: pnpm replace-workspace-deps
       - name: Publish packages
         run: pnpm publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
