@@ -75,7 +75,7 @@ jobs:
       - name: Log git log
         run: git log -1 --pretty | cat
       - name: Push to branch
-        if: ${{ !github.event.inputs.dry-run }}
+        if: ${{ github.event.inputs.dry-run != 'true' }}
         run: git push
       # - name: Determine release branch
       #   id: get-branch
