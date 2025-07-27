@@ -24,6 +24,11 @@
         "command": "pnpm test",
         "cwd": "packages/being"
       }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist"
+      }
     }
   },
   "tags": []
