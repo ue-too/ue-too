@@ -27,8 +27,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist",
-        "cwd": "packages/board"
+        "packageRoot": "packages/board/dist"
       }
     }
   },
