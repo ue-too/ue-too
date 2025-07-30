@@ -27,7 +27,7 @@ export class EntityManager {
             throw new Error('Max entities reached');
         }
         const entity = this._availableEntities.shift();
-        if(!entity) {
+        if(entity === undefined) {
             throw new Error('No available entities');
         }
         this._signatures[entity] = 0;
@@ -51,9 +51,9 @@ export class EntityManager {
         this._signatures[entity] = signature;
     }
 
-    getSignature(entity: Entity): ComponentSignature {
+    getSignature(entity: Entity): ComponentSignature | null {
         if(entity >= this._maxEntities || entity < 0) {
-            throw new Error('Invalid entity out of range');
+            return null;
         }
         return this._signatures[entity];
     }
@@ -77,17 +77,70 @@ export interface CArray<T> {
 
 export class ComponentArray<T> implements CArray<T> {
 
-    private _array: Tuple<T | null, N>;
-    private _size: number;
-    private _entityToIndexMap: Map<Entity, number>;
-    private _indexToEntityMap: Map<number, Entity>;
+    private denseArray: T[];
+    private sparse: Entity[]; // maps entity to index in dense array
+    private reverse: Entity[]; // maps index in dense array to entity
+    private _count: number;
 
-    constructor(maxComponents: number) {
-        this._size = maxComponents;
-        this._array = new Array(maxComponents).fill(null) as Tuple<T | null, typeof this._size>;
+    constructor(maxEntities: number) {
+        this._count = 0;
+        this.denseArray = new Array(maxEntities);
+        this.sparse = new Array(maxEntities);
+        this.reverse = new Array(maxEntities);
     }
 
+    insertData(entity: Entity, data: T): void {
+        if(this.sparse.length < entity){
+            // resize the array for the new entity but normally this should not happen
+            this.sparse = [...this.sparse, ...new Array(entity - this.sparse.length).fill(null)];
+        }
 
+        this.denseArray[this._count] = data;
+        this.reverse[this._count] = entity;
+        this.sparse[entity] = this._count;
+        this._count++;
+
+        console.log('insertData');
+        console.log('this.denseArray', this.denseArray);
+        console.log('this.sparse', this.sparse);
+        console.log('this.reverse', this.reverse);
+        console.log('this._count', this._count);
+    }
+
+    getData(entity: Entity): T {
+        if(this.sparse.length <= entity){
+            return null;
+        }
+
+        const denseIndex = this.sparse[entity];
+        if(denseIndex === undefined || denseIndex >= this._count){
+            return null;
+        }
+
+        if(this.reverse[denseIndex] !== entity) {
+            return null;
+        }
+
+        return this.denseArray[denseIndex];
+    }
+
+    removeData(entity: Entity): void {
+        const denseIndex = this.sparse[entity];
+        if(denseIndex === undefined || denseIndex >= this._count){
+            return;
+        }
+
+        const lastEntity = this.reverse[this._count - 1];
+
+        this.denseArray[denseIndex] = this.denseArray[this._count - 1];
+        this.reverse[denseIndex] = lastEntity;
+        this.sparse[lastEntity] = denseIndex;
+        this.sparse[entity] = null;
+
+        this._count--;
+    }
+
+    entityDestroyed(entity: Entity): void {
+        this.removeData(entity);
+    }
 }
-
-
