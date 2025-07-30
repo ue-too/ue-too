@@ -59,4 +59,35 @@ export class EntityManager {
     }
 }
 
+type Tuple<T, N extends number> = N extends N
+  ? number extends N
+    ? T[]
+    : _TupleOf<T, N, []>
+  : never;
+
+type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
+  ? R
+  : _TupleOf<T, N, [...R, T]>;
+
+// Usage
+
+export interface CArray<T> {
+    entityDestroyed(entity: Entity): void;
+}
+
+export class ComponentArray<T> implements CArray<T> {
+
+    private _array: Tuple<T | null, N>;
+    private _size: number;
+    private _entityToIndexMap: Map<Entity, number>;
+    private _indexToEntityMap: Map<number, Entity>;
+
+    constructor(maxComponents: number) {
+        this._size = maxComponents;
+        this._array = new Array(maxComponents).fill(null) as Tuple<T | null, typeof this._size>;
+    }
+
+
+}
+
 
