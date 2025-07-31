@@ -67,23 +67,26 @@ export class PhysicsSystem implements System {
                 physicsComponent.angularVelocity += angularDamping;
             }
             rigidBodyComponent.orientationAngle += physicsComponent.angularVelocity * deltaTime;
-            if (PointCal.magnitude({x: physicsComponent.linearVelocity.x, y: physicsComponent.linearVelocity.y}) < PointCal.magnitude(PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(physicsComponent.force, deltaTime), rigidBodyComponent.mass))){
-                if (physicsComponent.linearVelocity.z != undefined) {
-                    physicsComponent.linearVelocity = {x: 0, y: 0, z: physicsComponent.linearVelocity.z};
-                } else {
-                    physicsComponent.linearVelocity = {x: 0, y: 0};
-                }
-            }
+            
+            // Apply gravity and forces first
             const gravitationalForce = -9.81 * rigidBodyComponent.mass;
             physicsComponent.force = PointCal.addVector(physicsComponent.force, {x: 0, y: 0, z: gravitationalForce});
             const deltaLinearVelocity = PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(physicsComponent.force, deltaTime), rigidBodyComponent.mass);
             physicsComponent.linearVelocity = PointCal.addVector(physicsComponent.linearVelocity, deltaLinearVelocity);
+            
+            // Update position
             const deltaCenter = PointCal.multiplyVectorByScalar(physicsComponent.linearVelocity, deltaTime);
             rigidBodyComponent.center = PointCal.addVector(rigidBodyComponent.center, deltaCenter);
+            
+            // Ground collision - only reset z velocity when hitting ground
             if (rigidBodyComponent.center.z != undefined && rigidBodyComponent.center.z < 0) {
                 rigidBodyComponent.center.z = 0;
-                physicsComponent.linearVelocity = {x: 0, y: 0};
+                if (physicsComponent.linearVelocity.z != undefined) {
+                    physicsComponent.linearVelocity.z = 0;
+                }
             }
+            
+            // Reset force
             physicsComponent.force = {x: 0, y: 0};
             rigidBodyComponent.AABB = updateAABB(rigidBodyComponent);
         }
