@@ -2,6 +2,7 @@ export const MAX_ENTITIES = 10000;
 export const MAX_COMPONENTS = 32;
 
 export type ComponentSignature = number;
+export type ComponentType = number;
 
 export type Entity = number;
 
@@ -71,11 +72,11 @@ type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
 
 // Usage
 
-export interface CArray<T> {
+export interface CArray {
     entityDestroyed(entity: Entity): void;
 }
 
-export class ComponentArray<T> implements CArray<T> {
+export class ComponentArray<T> implements CArray {
 
     private denseArray: T[];
     private sparse: Entity[]; // maps entity to index in dense array
@@ -144,3 +145,109 @@ export class ComponentArray<T> implements CArray<T> {
         this.removeData(entity);
     }
 }
+
+export class ComponentManager {
+
+    private _componentNameToTypeMap: Map<string, {componentType: ComponentType, componentArray: CArray}> = new Map();
+    private _nextAvailableComponentType: ComponentType = 0;
+    
+    registerComponent<T>(componentName: string){
+        if(this._componentNameToTypeMap.has(componentName)) {
+            console.warn(`Component ${componentName} already registered`);
+        }
+        const componentType = this._nextAvailableComponentType;
+        this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
+        this._nextAvailableComponentType++;
+    }
+
+    getComponentType(componentName: string): ComponentType {
+        return this._componentNameToTypeMap.get(componentName)?.componentType;
+    }
+
+    addComponentToEntity<T>(componentName: string, entity: Entity, component: T){
+        const componentArray = this._getComponentArray<T>(componentName);
+        if(componentArray === null) {
+            return;
+        }
+        componentArray.insertData(entity, component);
+    }
+
+    removeComponentFromEntity<T>(componentName: string, entity: Entity){
+        const componentArray = this._getComponentArray<T>(componentName);
+        if(componentArray === null) {
+            return;
+        }
+        componentArray.removeData(entity);
+    }
+
+    getComponentFromEntity<T>(componentName: string, entity: Entity): T {
+        const componentArray = this._getComponentArray<T>(componentName);
+        if(componentArray === null) {
+            return null;
+        }
+        return componentArray.getData(entity);
+    }
+
+    entityDestroyed(entity: Entity){
+        for(const component of this._componentNameToTypeMap.values()){
+            component.componentArray.entityDestroyed(entity);
+        }
+    }
+
+    private _getComponentArray<T>(componentName: string): ComponentArray<T> {
+        const component = this._componentNameToTypeMap.get(componentName);
+        if(component === undefined) {
+            console.warn(`Component ${componentName} not registered`);
+            return null;
+        }
+        return component.componentArray as ComponentArray<T>;
+    }
+
+}
+
+export class System {
+    entities: Set<Entity>;
+
+    constructor(){
+        this.entities = new Set();
+    }
+}
+
+export class SystemManager {
+    private _systems: Map<string, {system: System, signature: ComponentSignature}> = new Map();
+
+    registerSystem(systemName: string, system: System){
+        if(this._systems.has(systemName)) {
+            console.warn(`System ${systemName} already registered`);
+            return;
+        }
+        this._systems.set(systemName, {system, signature: 0});
+    }
+
+    setSignature(systemName: string, signature: ComponentSignature){
+        if(!this._systems.has(systemName)) {
+            console.warn(`System ${systemName} not registered`);
+            return;
+        }
+        this._systems.get(systemName).signature = signature;
+    }
+
+    entityDestroyed(entity: Entity){
+        for(const system of this._systems.values()){
+            system.system.entities.delete(entity);
+        }
+    }
+
+    entitySignatureChanged(entity: Entity, signature: ComponentSignature){
+        for(const system of this._systems.values()){
+            const systemSignature = system.signature;
+            if((systemSignature & signature) === systemSignature){
+                system.system.entities.add(entity);
+            } else {
+                system.system.entities.delete(entity);
+            }
+        }
+    }
+}
+
+
