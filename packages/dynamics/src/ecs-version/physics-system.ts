@@ -1,6 +1,7 @@
 import { Coordinator, Entity, System } from "@ue-too/ecs";
 import { PHYSICS_COMPONENT, PhysicsComponent, RIGID_BODY_COMPONENT, RigidBodyComponent } from "./component";
 import { PointCal } from "@ue-too/math";
+import { updateAABB } from "./collision-system";
 
 export class PhysicsSystem implements System {
     entities: Set<Entity>;
@@ -10,11 +11,22 @@ export class PhysicsSystem implements System {
     constructor(coordinator: Coordinator){
         this.entities = new Set<Entity>();
         this.coordinator = coordinator;
-        const rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
-        const physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
-        const signature = rigidBodyComponentType | physicsComponentType;
+        let rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
+        let physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
+        if(rigidBodyComponentType === undefined){
+            console.info('RigidBodyComponent not registered; registering it now');
+            this.coordinator.registerComponent(RIGID_BODY_COMPONENT);
+            rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
+        }
+        if(physicsComponentType === undefined){
+            console.info('PhysicsComponent not registered; registering it now');
+            this.coordinator.registerComponent(PHYSICS_COMPONENT);
+            physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
+        }
+        const signature = 1 << rigidBodyComponentType | 1 << physicsComponentType;
         this.coordinator.registerSystem("physicsSystem", this);
         this.coordinator.setSystemSignature("physicsSystem", signature);
+        this._frictionEnabled = true;
     }
 
     get frictionEnabled(): boolean {
@@ -64,13 +76,16 @@ export class PhysicsSystem implements System {
             }
             const gravitationalForce = -9.81 * rigidBodyComponent.mass;
             physicsComponent.force = PointCal.addVector(physicsComponent.force, {x: 0, y: 0, z: gravitationalForce});
-            physicsComponent.linearVelocity = PointCal.addVector(physicsComponent.linearVelocity, PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(physicsComponent.force, deltaTime), rigidBodyComponent.mass));
-            rigidBodyComponent.center = PointCal.addVector(rigidBodyComponent.center, PointCal.multiplyVectorByScalar(physicsComponent.linearVelocity, deltaTime));
+            const deltaLinearVelocity = PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(physicsComponent.force, deltaTime), rigidBodyComponent.mass);
+            physicsComponent.linearVelocity = PointCal.addVector(physicsComponent.linearVelocity, deltaLinearVelocity);
+            const deltaCenter = PointCal.multiplyVectorByScalar(physicsComponent.linearVelocity, deltaTime);
+            rigidBodyComponent.center = PointCal.addVector(rigidBodyComponent.center, deltaCenter);
             if (rigidBodyComponent.center.z != undefined && rigidBodyComponent.center.z < 0) {
                 rigidBodyComponent.center.z = 0;
+                physicsComponent.linearVelocity = {x: 0, y: 0};
             }
             physicsComponent.force = {x: 0, y: 0};
-            // TODO update aabb of rigid body component
+            rigidBodyComponent.AABB = updateAABB(rigidBodyComponent);
         }
     }
 }

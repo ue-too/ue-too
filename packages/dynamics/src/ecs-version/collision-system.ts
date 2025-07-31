@@ -14,9 +14,19 @@ export class CollisionSystem implements System {
     constructor(coordinator: Coordinator){
         this.entities = new Set<Entity>();
         this.coordinator = coordinator;
-        const rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
-        const physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
-        const signature = rigidBodyComponentType | physicsComponentType;
+        let rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
+        let physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
+        if(rigidBodyComponentType === undefined){
+            console.info('RigidBodyComponent not registered; registering it now');
+            this.coordinator.registerComponent(RIGID_BODY_COMPONENT);
+            rigidBodyComponentType = this.coordinator.getComponentType(RIGID_BODY_COMPONENT);
+        }
+        if(physicsComponentType === undefined){
+            console.info('PhysicsComponent not registered; registering it now');
+            this.coordinator.registerComponent(PHYSICS_COMPONENT);
+            physicsComponentType = this.coordinator.getComponentType(PHYSICS_COMPONENT);
+        }
+        const signature = 1 << rigidBodyComponentType | 1 << physicsComponentType;
         this.coordinator.registerSystem("collisionSystem", this);
         this.coordinator.setSystemSignature("collisionSystem", signature);
         this.quadTree = new QuadTree<RigidBodyComponent & {entity: Entity}>(0, new RectangleBound({x: 0, y: 0}, 10000, 10000));
@@ -33,6 +43,7 @@ export class CollisionSystem implements System {
     }
 
     broadPhase(): {entityA: Entity, entityB: Entity}[] {
+        this.constructQuadTree();
         const possibleCombinations: {entityA: Entity, entityB: Entity}[] = [];
         const entities = Array.from(this.entities);
         for(let i = 0; i < entities.length; i++){
@@ -51,6 +62,9 @@ export class CollisionSystem implements System {
                     continue;
                 }
 
+                if(entity1 === entity2){
+                    continue;
+                }
                 possibleCombinations.push({entityA: entity1, entityB: entity2});
             }
         }
@@ -83,17 +97,16 @@ export class CollisionSystem implements System {
                 let revMoveDisplacement = PointCal.multiplyVectorByScalar(normalAxis, -depth / 2);
 
                 if (!rigidBodyA.isStatic) {
-                    physicsA.linearVelocity = PointCal.addVector(physicsA.linearVelocity, moveDisplacement);
+                    rigidBodyA.center = PointCal.addVector(rigidBodyA.center, moveDisplacement);
                 }
                 if (!rigidBodyB.isStatic) {
-                    physicsB.linearVelocity = PointCal.addVector(physicsB.linearVelocity, revMoveDisplacement);
+                    rigidBodyB.center = PointCal.addVector(rigidBodyB.center, revMoveDisplacement);
                 }
                 if (rigidBodyA.isStatic) {
-                    // bodyA.move(revMoveDisplacement);
-                    physicsB.linearVelocity = PointCal.addVector(physicsB.linearVelocity, revMoveDisplacement);
+                    rigidBodyB.center = PointCal.addVector(rigidBodyB.center, revMoveDisplacement);
                 }
                 if (rigidBodyB.isStatic) {
-                    physicsA.linearVelocity = PointCal.addVector(physicsA.linearVelocity, moveDisplacement);
+                    rigidBodyA.center = PointCal.addVector(rigidBodyA.center, moveDisplacement);
                 }
 
                 // finding the collision contact point(s)
@@ -219,10 +232,14 @@ function getVerticesAbsCoord(body: RigidBodyComponent): Point[]{
     if(body.shapeType === "circle"){
         return [];
     } else {
-        return body.vertices.map(vertex=>{
-            return PointCal.addVector(body.center, PointCal.rotatePoint(vertex, body.orientationAngle));
-        });
+        return getVerticesAbsCoordRaw(body.vertices, body.center, body.orientationAngle);
     }
+}
+
+export function getVerticesAbsCoordRaw(vertices: Point[], center: Point, orientationAngle: number): Point[]{
+    return vertices.map(vertex=>{
+        return PointCal.addVector(PointCal.rotatePoint(vertex, orientationAngle), center);
+    });
 }
 
 function getCollisionAxesForPolygon(subjectBody: RigidBodyComponent, relativeBody: RigidBodyComponent): Point[]{
@@ -499,4 +516,37 @@ function resolveCollisionWithRotation(bodyA: RigidBodyComponent, bodyB: RigidBod
         physicsB.angularVelocity -= resB * inverseMMOIB;
         physicsB.linearVelocity = PointCal.subVector(physicsB.linearVelocity, deltaVelocityB);
     });
+}
+
+export function updateAABBForPolygon(subjectBody: RigidBodyComponent): {min: Point, max: Point} {
+    if(subjectBody.shapeType !== "polygon"){
+        return {min: {x: 0, y: 0}, max: {x: 0, y: 0}};
+    }
+    return updateAABBForPolygonRaw(subjectBody.vertices, subjectBody.center, subjectBody.orientationAngle);
+}
+
+export function updateAABBForPolygonRaw(vertices: Point[], center: Point, orientationAngle: number): {min: Point, max: Point} {
+    const verticesAbsCoordRotated = getVerticesAbsCoordRaw(vertices, center, orientationAngle);
+    let xCoords = verticesAbsCoordRotated.map(vertex => vertex.x);
+    let yCoords = verticesAbsCoordRotated.map(vertex => vertex.y);
+    return {min: {x: Math.min(...xCoords), y: Math.min(...yCoords)}, max: {x: Math.max(...xCoords), y: Math.max(...yCoords)}};
+}
+
+export function updateAABBForCircle(subjectBody: RigidBodyComponent): {min: Point, max: Point} {
+    if(subjectBody.shapeType !== "circle"){
+        return {min: {x: 0, y: 0}, max: {x: 0, y: 0}};
+    }
+    return {min: {x: subjectBody.center.x - subjectBody.radius, y: subjectBody.center.y - subjectBody.radius}, max: {x: subjectBody.center.x + subjectBody.radius, y: subjectBody.center.y + subjectBody.radius}};
+}
+
+export function updateAABB(subjectBody: RigidBodyComponent): {min: Point, max: Point} {
+    switch(subjectBody.shapeType){
+        case "circle":
+            return updateAABBForCircle(subjectBody);
+        case "polygon":
+            return updateAABBForPolygon(subjectBody);
+        default:
+            console.error("Invalid shape type");
+            return {min: {x: 0, y: 0}, max: {x: 0, y: 0}};
+    }
 }

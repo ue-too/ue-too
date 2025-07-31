@@ -163,8 +163,11 @@ export abstract class BaseRigidBody implements RigidBody{
         }
         const gravitationalForce = -9.81 * this._mass;
         this.force = PointCal.addVector(this.force, {x: 0, y: 0, z: gravitationalForce});
-        this._linearVelocity = PointCal.addVector(this._linearVelocity, PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(this.force, deltaTime), this.mass));
-        this._center = PointCal.addVector(this._center, PointCal.multiplyVectorByScalar(this._linearVelocity, deltaTime));
+        const deltaLinearVelocity = PointCal.divideVectorByScalar(PointCal.multiplyVectorByScalar(this.force, deltaTime), this.mass);
+        this._linearVelocity = PointCal.addVector(this._linearVelocity, deltaLinearVelocity);
+        const deltaCenter = PointCal.multiplyVectorByScalar(this._linearVelocity, deltaTime);
+        // console.log('delta center', deltaCenter);
+        this._center = PointCal.addVector(this._center, deltaCenter);
         if (this._center.z != undefined && this._center.z < 0) {
             this._center.z = 0;
         }
