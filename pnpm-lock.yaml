@@ -167,9 +167,14 @@ importers:
 
   packages/dynamics:
     dependencies:
+      '@ue-too/ecs':
+        specifier: workspace:*
+        version: link:../ecs
       '@ue-too/math':
         specifier: workspace:*
         version: link:../math
+
+  packages/ecs: {}
 
   packages/math: {}
 

@@ -25,14 +25,17 @@ export class RectangleBound{
     }
 }
 
+export type QuadTreeObject = {
+    AABB: {min: Point, max: Point};
+}
 
-export class QuadTree {
+export class QuadTree<T extends QuadTreeObject> {
     private MAX_OBJECTS = 10; // per node
     private MAX_LEVELS = 5;
 
     private level: number;
-    private objects: RigidBody[] = [];
-    private nodes: (QuadTree | undefined)[] = [];
+    private objects: T[] = [];
+    private nodes: (QuadTree<T> | undefined)[] = [];
     private bounds: RectangleBound;
     
 
@@ -73,13 +76,13 @@ export class QuadTree {
         let subHeight = this.bounds.getHeight() / 2;
         let bottomLeft = this.bounds.getbottomLeft();
         // bottom left is the first node and it goes clock wise 
-        this.nodes[0] = new QuadTree(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y}, subWidth, subHeight));
-        this.nodes[1] = new QuadTree(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y + subHeight}, subWidth, subHeight));
-        this.nodes[2] = new QuadTree(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y + subHeight}, subWidth, subHeight));
-        this.nodes[3] = new QuadTree(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y}, subWidth, subHeight));
+        this.nodes[0] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y}, subWidth, subHeight));
+        this.nodes[1] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y + subHeight}, subWidth, subHeight));
+        this.nodes[2] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y + subHeight}, subWidth, subHeight));
+        this.nodes[3] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y}, subWidth, subHeight));
     }
 
-    getIndex(vBody: RigidBody){
+    getIndex(vBody: T){
         let midPoint = {x: this.bounds.getbottomLeft().x + this.bounds.getWidth() / 2, y: this.bounds.getbottomLeft().y + this.bounds.getHeight() / 2};
         let points = vBody.AABB;
         let bottom = points.max.y < midPoint.y && points.min.y > this.bounds.getbottomLeft().y;
@@ -99,7 +102,7 @@ export class QuadTree {
         return -1;
     }
 
-    insert(vBody: RigidBody){
+    insert(vBody: T){
         let node = this.nodes[0];
         if (node != undefined){
             let index = this.getIndex(vBody);
@@ -131,7 +134,7 @@ export class QuadTree {
         }
     }
 
-    retrieve(vBody: RigidBody): RigidBody[]{
+    retrieve(vBody: T): T[]{
         let index = this.getIndex(vBody);
         let res = [];
         let node = this.nodes[index];

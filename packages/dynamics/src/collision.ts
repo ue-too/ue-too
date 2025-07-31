@@ -320,7 +320,7 @@ export function narrowPhase(bodies: BaseRigidBody[], combinationsToCheck: {bodyA
     })
 }
 
-export function broadPhaseWithRigidBodyReturned(quadTree: QuadTree, bodies: RigidBody[]): {bodyA: RigidBody, bodyB: RigidBody}[]{
+export function broadPhaseWithRigidBodyReturned(quadTree: QuadTree<RigidBody>, bodies: RigidBody[]): {bodyA: RigidBody, bodyB: RigidBody}[]{
     let possibleCombi: {bodyA: RigidBody, bodyB: RigidBody}[] = [];
     for(let index = 0; index <= bodies.length - 1; index++){
         let objsToCheck = quadTree.retrieve(bodies[index]);
@@ -339,7 +339,7 @@ export function broadPhaseWithRigidBodyReturned(quadTree: QuadTree, bodies: Rigi
     return possibleCombi
 }
 
-export function broadPhase(quadTree: QuadTree, bodies: BaseRigidBody[]): {bodyAIndex: number, bodyBIndex: number}[]{
+export function broadPhase(quadTree: QuadTree<RigidBody>, bodies: BaseRigidBody[]): {bodyAIndex: number, bodyBIndex: number}[]{
     let possibleCombi: {bodyAIndex: number, bodyBIndex: number}[] = [];
     for(let index = 0; index <= bodies.length - 1; index++){
         let objsToCheck = quadTree.retrieve(bodies[index]);

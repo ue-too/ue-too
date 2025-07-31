@@ -15,7 +15,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@ue-too/math": "workspace:*"
+    "@ue-too/math": "workspace:*",
+    "@ue-too/ecs": "workspace:*"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
