@@ -1,4 +1,4 @@
-import { ComponentArray, EntityManager } from "../src";
+import { ComponentArray, EntityManager, ComponentManager } from "../src";
 
 type MockComponent = {
     name: string;
@@ -56,4 +56,14 @@ describe('ComponentArray', () => {
         expect(componentArray.getData(entity)).toBeNull();
         expect(componentArray.getData(entity2)).toEqual(data2);
     });
+});
+
+describe('ComponentManager', () => {
+
+    it('should be able to register a component', () => {
+        const componentManager = new ComponentManager();
+        componentManager.registerComponent<MockComponent>('MockComponent');
+        expect(componentManager.getComponentType('MockComponent')).toBe(0);
+    });
+
 });
