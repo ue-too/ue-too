@@ -1,9 +1,9 @@
-import { BaseRigidBody, RigidBody } from "./rigidbody";
+import { RigidBody } from "./rigidbody";
 import * as Collision from "./collision";
 import { RectangleBound, QuadTree} from "./quadtree"
 import { Point } from "@ue-too/math";
 import { Constraint } from "./constraint";
-import { PinJointConstraint, solvePinJointConstraint } from "./constraint";
+import { PinJointConstraint } from "./constraint";
 
 export class World {
     private rigidBodyList: RigidBody[];
@@ -12,7 +12,7 @@ export class World {
     private maxTransWidth: number;
     private maxTransHeight: number;
     private bound: RectangleBound;
-    private quadTree: QuadTree;
+    private quadTree: QuadTree<RigidBody>;
     private constraints: Constraint[];
     private pinJoints: PinJointConstraint[] = [];
     _context: CanvasRenderingContext2D | null = null;
