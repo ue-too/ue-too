@@ -5,11 +5,52 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + TS</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Courier New', monospace;
+        overflow: hidden;
+      }
+      
+      #fps-indicator {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 1000;
+        min-width: 120px;
+        text-align: center;
+      }
+      
+      #fps-value {
+        color: #00ff00;
+        font-size: 18px;
+      }
+      
+      #fps-label {
+        color: #cccccc;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    </style>
   </head>
-  <body style="overflow: hidden;">
+  <body>
     <div style="display: flex; justify-content: center; flex-direction: column; align-items: center; height: 100vh;">
       <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas>
     </div>
+    
+    <div id="fps-indicator">
+      <div id="fps-label">FPS</div>
+      <div id="fps-value">--</div>
+    </div>
+    
     <script type="module" src="./main.ts"></script>
   </body>
 </html>
