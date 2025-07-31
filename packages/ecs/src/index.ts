@@ -1,3 +1,5 @@
+/** This is a direct port of the tutorial from https://austinmorlan.com/posts/entity_component_system/  with slight modifications */
+
 export const MAX_ENTITIES = 10000;
 export const MAX_COMPONENTS = 32;
 
@@ -100,12 +102,6 @@ export class ComponentArray<T> implements CArray {
         this.reverse[this._count] = entity;
         this.sparse[entity] = this._count;
         this._count++;
-
-        console.log('insertData');
-        console.log('this.denseArray', this.denseArray);
-        console.log('this.sparse', this.sparse);
-        console.log('this.reverse', this.reverse);
-        console.log('this._count', this._count);
     }
 
     getData(entity: Entity): T {
@@ -205,12 +201,8 @@ export class ComponentManager {
 
 }
 
-export class System {
+export interface System {
     entities: Set<Entity>;
-
-    constructor(){
-        this.entities = new Set();
-    }
 }
 
 export class SystemManager {
@@ -250,4 +242,66 @@ export class SystemManager {
     }
 }
 
+export class Coordinator {
+    private _entityManager: EntityManager;
+    private _componentManager: ComponentManager;
+    private _systemManager: SystemManager;
 
+    constructor(){
+        this._entityManager = new EntityManager();
+        this._componentManager = new ComponentManager();
+        this._systemManager = new SystemManager();
+    }
+
+    createEntity(): Entity {
+        return this._entityManager.createEntity();
+    }
+
+    destroyEntity(entity: Entity): void {
+        this._entityManager.destroyEntity(entity);
+        this._componentManager.entityDestroyed(entity);
+        this._systemManager.entityDestroyed(entity);
+    }
+
+    registerComponent<T>(componentName: string): void {
+        this._componentManager.registerComponent<T>(componentName);
+    }
+
+    addComponentToEntity<T>(componentName: string, entity: Entity, component: T): void {
+        this._componentManager.addComponentToEntity<T>(componentName, entity, component);
+        let signature = this._entityManager.getSignature(entity);
+        if(signature === null) {
+            signature = 0;
+        }
+        signature |= 1 << this._componentManager.getComponentType(componentName);
+        this._entityManager.setSignature(entity, signature);
+        this._systemManager.entitySignatureChanged(entity, signature);
+    }
+
+    removeComponentFromEntity<T>(componentName: string, entity: Entity): void {
+        this._componentManager.removeComponentFromEntity<T>(componentName, entity);
+        let signature = this._entityManager.getSignature(entity);
+        if(signature === null) {
+            signature = 0;
+        }
+        signature &= ~(1 << this._componentManager.getComponentType(componentName));
+        this._entityManager.setSignature(entity, signature);
+        this._systemManager.entitySignatureChanged(entity, signature);
+    }
+
+    getComponentFromEntity<T>(componentName: string, entity: Entity): T {
+        return this._componentManager.getComponentFromEntity<T>(componentName, entity);
+    }
+
+    getComponentType(componentName: string): ComponentType {
+        return this._componentManager.getComponentType(componentName);
+    }
+
+    registerSystem(systemName: string, system: System): void {
+        this._systemManager.registerSystem(systemName, system);
+    }
+
+    setSystemSignature(systemName: string, signature: ComponentSignature): void {
+        this._systemManager.setSignature(systemName, signature);
+    }
+}
