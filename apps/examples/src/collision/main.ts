@@ -1,8 +1,13 @@
 import { Board, CameraPanEventPayload, CameraState, CameraZoomEventPayload } from "@ue-too/board";
 import { Point, PointCal } from "@ue-too/math";
-import { World, VisualPolygonBody, PhysicsSystem, CollisionSystem, RigidBodyComponent, RIGID_BODY_COMPONENT, updateAABBForPolygonRaw, PhysicsComponent, PHYSICS_COMPONENT, Canvas2DContextRenderSystem, RenderComponent, RENDER_COMPONENT, InputComponent, INPUT_COMPONENT } from "@ue-too/dynamics";
+import { World, VisualPolygonBody, PhysicsSystem, CollisionSystem, RigidBodyComponent, RIGID_BODY_COMPONENT, updateAABBForPolygonRaw, PhysicsComponent, PHYSICS_COMPONENT, Canvas2DContextRenderSystem, RenderComponent, RENDER_COMPONENT, InputComponent, INPUT_COMPONENT, Polygon } from "@ue-too/dynamics";
 import { Coordinator } from "@ue-too/ecs";
 import { InputSystem } from "./input-system";
+
+// FPS tracking variables
+let frameCount = 0;
+let lastTime = performance.now();
+let fpsElement: HTMLElement;
 
 let element = document.getElementById("graph") as HTMLCanvasElement;
 let board = new Board(element);
@@ -36,20 +41,20 @@ coordinator.addComponentToEntity<RenderComponent>(RENDER_COMPONENT, entity, {
     show: true,
 });
 
-    coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
-        force: {x: 0, y: 0},
-        angularDampingFactor: 0.005,
-        linearAcceleration: {x: 0, y: 0},
-        angularAcceleration: 0,
-        linearVelocity: {x: 0, y: 0},
-        angularVelocity: 0,
-    });
+coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
+    force: {x: 0, y: 0},
+    angularDampingFactor: 0.005,
+    linearAcceleration: {x: 0, y: 0},
+    angularAcceleration: 0,
+    linearVelocity: {x: 0, y: 0},
+    angularVelocity: 0,
+});
 
-for(let i = 0; i < 1; i++){
+for(let i = 0; i < 10; i++){
     const entity = coordinator.createEntity();
     const vertices = [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}];
-    // const center = getRandomPoint(0, 300);
-    const center = {x: 300, y: 0};
+    const center = getRandomPoint(-5000, 5000);
+    // const center = {x: 300, y: 0};
     const aabb = updateAABBForPolygonRaw(vertices, center, 0);
     coordinator.addComponentToEntity<RigidBodyComponent>(RIGID_BODY_COMPONENT, entity, {
         center: center,
@@ -102,26 +107,40 @@ window.addEventListener('keyup', (e)=>{
 })
 
 const context = board.context;
-let world = new World(300, 300);
+let world = new World(10000, 10000);
 world._context = context;
-for (let index = 0; index < 10; index++){
+for (let index = 0; index < 1000; index++){
     if(index == 0){
         let vertices = [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}];
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 200);
-        let initialCenter = getRandomPoint(0, 300);
+        let initialCenter = getRandomPoint(-5000, 5000);
         initialCenter.z = 100;
-        let body = new VisualPolygonBody(initialCenter, vertices, context, 0, 300);
+        let body = new Polygon(initialCenter, vertices, 0, 300);
         world.addRigidBody(index.toString(), body);
         
     } else {
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 50);
-        let body = new VisualPolygonBody(getRandomPoint(0, 300), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], context, 0, 50, false);
+        let body = new Polygon(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], 0, 50);
         world.addRigidBody(index.toString(), body);
     }
 }
 const initCameraPos = world.getRigidBodyList()[0].center;
 // element.getCamera().setPositionWithClamp(initCameraPos);
 function step(timestamp: number){
+    // FPS calculation
+    frameCount++;
+    const currentTime = performance.now();
+    const deltaTime = currentTime - lastTime;
+    
+    // Update FPS display every 10 frames (approximately every 160ms at 60fps)
+    if (frameCount % 10 === 0) {
+        const fps = Math.round(1000 / (deltaTime / 10));
+        if (fpsElement) {
+            fpsElement.textContent = fps.toString();
+        }
+        lastTime = currentTime;
+    }
+    
     board.step(timestamp);
     // console.log(world.getRigidBodyList()[0].center);
     let rigidBodies = world.getRigidBodyList();
@@ -167,6 +186,9 @@ function step(timestamp: number){
     physicsSystem.update(0.016);
     window.requestAnimationFrame(step);
 }
+
+// Initialize FPS element
+fpsElement = document.getElementById('fps-value') as HTMLElement;
 
 step(0);
 
