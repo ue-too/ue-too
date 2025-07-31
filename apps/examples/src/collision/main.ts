@@ -21,7 +21,7 @@ const aabb = updateAABBForPolygonRaw(vertices, center, 0);
 coordinator.addComponentToEntity<RigidBodyComponent>(RIGID_BODY_COMPONENT, entity, {
     center: center,
     orientationAngle: 0,
-    mass: 1,
+    mass: 300,
     AABB: aabb,
     staticFrictionCoeff: 0.3,
     dynamicFrictionCoeff: 0.3,
@@ -36,14 +36,14 @@ coordinator.addComponentToEntity<RenderComponent>(RENDER_COMPONENT, entity, {
     show: true,
 });
 
-coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
-    force: {x: 0, y: 0},
-    angularDampingFactor: 0.9,
-    linearAcceleration: {x: 0, y: 0},
-    angularAcceleration: 0,
-    linearVelocity: {x: 0, y: 0},
-    angularVelocity: 0,
-});
+    coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
+        force: {x: 0, y: 0},
+        angularDampingFactor: 0.005,
+        linearAcceleration: {x: 0, y: 0},
+        angularAcceleration: 0,
+        linearVelocity: {x: 0, y: 0},
+        angularVelocity: 0,
+    });
 
 for(let i = 0; i < 1; i++){
     const entity = coordinator.createEntity();
@@ -66,7 +66,7 @@ for(let i = 0; i < 1; i++){
     });
     coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
         force: {x: 0, y: 0},
-        angularDampingFactor: 0.9,
+        angularDampingFactor: 0.005,
         linearAcceleration: {x: 0, y: 0},
         angularAcceleration: 0,
         linearVelocity: {x: 0, y: 0},
@@ -130,25 +130,25 @@ function step(timestamp: number){
     if(keyController.get("KeyW")){
         const force = {x: 3000, y: 0}; 
         const forceTransformed = PointCal.rotatePoint(force, rigidBodyComponent.orientationAngle);
-        physicsComponent.force = forceTransformed;
+        physicsComponent.force = PointCal.addVector(physicsComponent.force, forceTransformed);
         rigidBodies[0].applyForceInOrientation({x: 3000, y: 0});
     } 
     if(keyController.get("KeyA")){
         const force = {x: 0, y: 3000}; 
         const forceTransformed = PointCal.rotatePoint(force, rigidBodyComponent.orientationAngle);
-        physicsComponent.force = forceTransformed;
-        rigidBodies[0].applyForceInOrientation(forceTransformed);
+        physicsComponent.force = PointCal.addVector(physicsComponent.force, forceTransformed);
+        rigidBodies[0].applyForceInOrientation({x: 0, y: 3000});
     }
     if(keyController.get("KeyS")){
         const force = {x: -3000, y: 0}; 
         const forceTransformed = PointCal.rotatePoint(force, rigidBodyComponent.orientationAngle);
-        physicsComponent.force = forceTransformed;
+        physicsComponent.force = PointCal.addVector(physicsComponent.force, forceTransformed);
         rigidBodies[0].applyForceInOrientation({x: -3000, y: 0});
     }
     if(keyController.get("KeyD")){
         const force = {x: 0, y: -3000}; 
         const forceTransformed = PointCal.rotatePoint(force, rigidBodyComponent.orientationAngle);
-        physicsComponent.force = forceTransformed;
+        physicsComponent.force = PointCal.addVector(physicsComponent.force, forceTransformed);
         rigidBodies[0].applyForceInOrientation({x: 0, y: -3000});
     }
     if(keyController.get("KeyQ")){
