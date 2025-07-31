@@ -70,6 +70,7 @@ export class PhysicsSystem implements System {
                 rigidBodyComponent.center.z = 0;
             }
             physicsComponent.force = {x: 0, y: 0};
+            // TODO update aabb of rigid body component
         }
     }
 }

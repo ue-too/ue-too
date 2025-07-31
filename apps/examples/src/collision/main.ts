@@ -1,6 +1,20 @@
 import { Board, CameraPanEventPayload, CameraState, CameraZoomEventPayload } from "@ue-too/board";
 import { Point, PointCal } from "@ue-too/math";
-import { World, VisualPolygonBody } from "@ue-too/dynamics";
+import { World, VisualPolygonBody, PhysicsSystem, CollisionSystem, RigidBodyComponent, RIGID_BODY_COMPONENT } from "@ue-too/dynamics";
+import { Coordinator } from "@ue-too/ecs";
+
+const coordinator = new Coordinator();
+const physicsSystem = new PhysicsSystem(coordinator);
+const collisionSystem = new CollisionSystem(coordinator);
+
+const entity = coordinator.createEntity();
+
+
+for(let i = 0; i < 10; i++){
+    const entity = coordinator.createEntity();
+    coordinator.addComponentToEntity<RigidBodyComponent>(RIGID_BODY_COMPONENT, entity, {
+    });
+}
 
 
 let element = document.getElementById("graph") as HTMLCanvasElement;
