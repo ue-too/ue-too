@@ -339,6 +339,25 @@ export function broadPhaseWithRigidBodyReturned(quadTree: QuadTree<RigidBody>, b
     return possibleCombi
 }
 
+export function broadPhaseWithSpatialIndex(spatialIndex: import("./dynamic-tree").SpatialIndex<RigidBody>, bodies: RigidBody[]): {bodyA: RigidBody, bodyB: RigidBody}[]{
+    let possibleCombi: {bodyA: RigidBody, bodyB: RigidBody}[] = [];
+    for(let index = 0; index <= bodies.length - 1; index++){
+        let objsToCheck = spatialIndex.retrieve(bodies[index]);
+        for(let jindex = 0; jindex <= objsToCheck.length - 1; jindex++){
+            let bodyA = bodies[index];
+            let bodyB = objsToCheck[jindex];
+            if (bodyA.isStatic() && bodyB.isStatic()){
+                continue;
+            }
+            if(!aabbIntersects(bodyA.AABB, bodyB.AABB)){
+                continue;
+            }
+            possibleCombi.push({bodyA: bodyA, bodyB: bodyB});
+        }
+    }
+    return possibleCombi
+}
+
 export function broadPhase(quadTree: QuadTree<RigidBody>, bodies: BaseRigidBody[]): {bodyAIndex: number, bodyBIndex: number}[]{
     let possibleCombi: {bodyAIndex: number, bodyBIndex: number}[] = [];
     for(let index = 0; index <= bodies.length - 1; index++){

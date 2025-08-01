@@ -1,9 +1,12 @@
 import { RigidBody } from "./rigidbody";
 import * as Collision from "./collision";
 import { RectangleBound, QuadTree} from "./quadtree"
+import { DynamicTree, SpatialIndex } from "./dynamic-tree";
 import { Point } from "@ue-too/math";
 import { Constraint } from "./constraint";
 import { PinJointConstraint } from "./constraint";
+
+export type SpatialIndexType = 'quadtree' | 'dynamictree';
 
 export class World {
     private rigidBodyList: RigidBody[];
@@ -12,16 +15,25 @@ export class World {
     private maxTransWidth: number;
     private maxTransHeight: number;
     private bound: RectangleBound;
-    private quadTree: QuadTree<RigidBody>;
+    private spatialIndex: SpatialIndex<RigidBody>;
+    private spatialIndexType: SpatialIndexType;
     private constraints: Constraint[];
     private pinJoints: PinJointConstraint[] = [];
     _context: CanvasRenderingContext2D | null = null;
 
-    constructor(maxTransWidth: number, maxTransHeight: number){
+    constructor(maxTransWidth: number, maxTransHeight: number, spatialIndexType: SpatialIndexType = 'dynamictree'){
         this.maxTransHeight = maxTransHeight;
         this.maxTransWidth = maxTransWidth;
+        this.spatialIndexType = spatialIndexType;
         this.bound = new RectangleBound({x: -this.maxTransWidth, y: -this.maxTransHeight}, 2 * this.maxTransWidth, 2 * this.maxTransHeight);
-        this.quadTree = new QuadTree(0, this.bound);
+        
+        // Initialize spatial index based on type
+        if (spatialIndexType === 'dynamictree') {
+            this.spatialIndex = new DynamicTree<RigidBody>();
+        } else {
+            this.spatialIndex = new QuadTree(0, this.bound);
+        }
+        
         this.rigidBodyList = [];
         this.rigidBodyMap = new Map<string, RigidBody>();
         this._resolveCollision = true;
@@ -44,7 +56,7 @@ export class World {
             const contactPoints = this.resolveCollisionPhase();
         }
         // if(this._context != null){
-        //     this.quadTree.draw(this._context);
+        //     this.spatialIndex.draw?.(this._context);
         //     contactPoints.forEach((contactPoint) => {
         //         if(this._context != null){
         //             this._context.lineWidth = 1;
@@ -63,13 +75,13 @@ export class World {
 
     resolveCollisionPhase(): Point[]{
         let rigidBodyList: RigidBody[] = [];
-        this.quadTree.clear();
+        this.spatialIndex.clear();
         this.rigidBodyMap.forEach((body) => {
             rigidBodyList.push(body);
-            this.quadTree.insert(body);
+            this.spatialIndex.insert(body);
         });
-        // console.log("quadtree size: ", this.quadTree);
-        let possibleCombinations = Collision.broadPhaseWithRigidBodyReturned(this.quadTree, rigidBodyList);
+        // console.log("spatial index size: ", this.spatialIndex);
+        let possibleCombinations = Collision.broadPhaseWithSpatialIndex(this.spatialIndex, rigidBodyList);
         let contactPoints = Collision.narrowPhaseWithRigidBody(rigidBodyList, possibleCombinations, this._resolveCollision);
         return contactPoints;
     }
@@ -112,5 +124,27 @@ export class World {
 
     addPinJoint(bodyA: RigidBody, bodyB: RigidBody, anchorA: Point, anchorB: Point) {
         this.pinJoints.push({ bodyA, bodyB, anchorA, anchorB });
+    }
+
+    get currentSpatialIndexType(): SpatialIndexType {
+        return this.spatialIndexType;
+    }
+
+    setSpatialIndexType(type: SpatialIndexType): void {
+        if (type === this.spatialIndexType) return;
+        
+        this.spatialIndexType = type;
+        if (type === 'dynamictree') {
+            this.spatialIndex = new DynamicTree<RigidBody>();
+        } else {
+            this.spatialIndex = new QuadTree(0, this.bound);
+        }
+    }
+
+    getSpatialIndexStats(): any {
+        if (this.spatialIndex instanceof DynamicTree) {
+            return (this.spatialIndex as DynamicTree<RigidBody>).getStats();
+        }
+        return { type: 'quadtree', objects: this.rigidBodyMap.size };
     }
 }

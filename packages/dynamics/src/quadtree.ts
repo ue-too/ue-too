@@ -1,5 +1,6 @@
 import { Point } from "@ue-too/math";
 import { RigidBody } from "./rigidbody";
+import { SpatialIndex, SpatialIndexObject } from "./dynamic-tree";
 
 export class RectangleBound{
     private bottomLeft: Point;
@@ -25,11 +26,9 @@ export class RectangleBound{
     }
 }
 
-export type QuadTreeObject = {
-    AABB: {min: Point, max: Point};
-}
+export type QuadTreeObject = SpatialIndexObject;
 
-export class QuadTree<T extends QuadTreeObject> {
+export class QuadTree<T extends QuadTreeObject> implements SpatialIndex<T> {
     private MAX_OBJECTS = 10; // per node
     private MAX_LEVELS = 5;
 
