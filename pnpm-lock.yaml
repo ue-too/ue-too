@@ -98,6 +98,9 @@ importers:
 
   apps/examples:
     dependencies:
+      '@niuee/bolt':
+        specifier: 0.0.5
+        version: 0.0.5
       '@ue-too/animate':
         specifier: workspace:*
         version: link:../../packages/animate
@@ -1189,6 +1192,9 @@ packages:
 
   '@napi-rs/wasm-runtime@0.2.4':
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
+
+  '@niuee/bolt@0.0.5':
+    resolution: {integrity: sha512-cczZsDDXbIRshXlUiMTCdMeNGZCNXBCdnTDAyOOOp2dBVStKOFBWjqk92gZdJ38FwUOQcmOilJv5AUsUMiw1lQ==}
 
   '@niuee/bounce@0.0.5':
     resolution: {integrity: sha512-5KbEo5d2zKz+7mZUvXc1ncVu0KijVWAMdTykxkpijoSeXRR6iaIGrXUztCDXDZ8H9oMSR/sUMhzOp7oPZtlmfQ==}
@@ -5481,6 +5487,8 @@ snapshots:
       '@emnapi/core': 1.4.5
       '@emnapi/runtime': 1.4.5
       '@tybys/wasm-util': 0.9.0
+
+  '@niuee/bolt@0.0.5': {}
 
   '@niuee/bounce@0.0.5':
     dependencies:

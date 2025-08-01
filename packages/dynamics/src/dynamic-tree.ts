@@ -87,6 +87,95 @@ class TreeNode<T extends SpatialIndexObject> {
     }
 }
 
+// Endpoint for Sweep and Prune algorithm
+interface Endpoint<T> {
+    value: number;
+    isMin: boolean;
+    object: T;
+    id: number;
+}
+
+// Sweep and Prune implementation
+export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex<T> {
+    private xEndpoints: Endpoint<T>[] = [];
+    private objects: Map<T, number> = new Map();
+    private nextId: number = 0;
+
+    clear(): void {
+        this.xEndpoints = [];
+        this.objects.clear();
+        this.nextId = 0;
+    }
+
+    insert(object: T): void {
+        const id = this.nextId++;
+        this.objects.set(object, id);
+
+        // Create min and max endpoints for x-axis
+        this.xEndpoints.push(
+            { value: object.AABB.min.x, isMin: true, object, id },
+            { value: object.AABB.max.x, isMin: false, object, id }
+        );
+
+        // Keep endpoints sorted
+        this.xEndpoints.sort((a, b) => {
+            if (a.value !== b.value) return a.value - b.value;
+            // If values are equal, process min endpoints before max endpoints
+            return a.isMin ? -1 : 1;
+        });
+    }
+
+    retrieve(queryObject: T): T[] {
+        const result: T[] = [];
+        const queryMin = queryObject.AABB.min.x;
+        const queryMax = queryObject.AABB.max.x;
+
+        // Find all objects that overlap on x-axis using sweep line
+        const activeObjects = new Set<T>();
+        
+        for (const endpoint of this.xEndpoints) {
+            if (endpoint.value > queryMax) break;
+            
+            if (endpoint.isMin) {
+                // Object starts - check if it overlaps with query
+                if (endpoint.value <= queryMax && endpoint.object !== queryObject) {
+                    // Check y-axis overlap
+                    if (this.aabbIntersects(endpoint.object.AABB, queryObject.AABB)) {
+                        result.push(endpoint.object);
+                    }
+                }
+                activeObjects.add(endpoint.object);
+            } else {
+                // Object ends
+                activeObjects.delete(endpoint.object);
+            }
+        }
+
+        return result;
+    }
+
+    private aabbIntersects(aabb1: { min: Point, max: Point }, aabb2: { min: Point, max: Point }): boolean {
+        return !(aabb1.max.x < aabb2.min.x || 
+                 aabb1.min.x > aabb2.max.x || 
+                 aabb1.max.y < aabb2.min.y || 
+                 aabb1.min.y > aabb2.max.y);
+    }
+
+    draw?(context: CanvasRenderingContext2D): void {
+        // Simple visualization showing sweep line bounds
+        context.strokeStyle = 'orange';
+        context.lineWidth = 1;
+        
+        // Draw vertical lines at object boundaries
+        for (const endpoint of this.xEndpoints) {
+            context.beginPath();
+            context.moveTo(endpoint.value, -1000);
+            context.lineTo(endpoint.value, 1000);
+            context.stroke();
+        }
+    }
+}
+
 export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T> {
     private root: TreeNode<T> | null = null;
     private nodeCount: number = 0;
