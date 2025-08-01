@@ -95,10 +95,10 @@ interface Endpoint<T> {
     id: number;
 }
 
-// Sweep and Prune implementation
+// Optimized Sweep and Prune implementation
 export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex<T> {
     private xEndpoints: Endpoint<T>[] = [];
-    private objects: Map<T, number> = new Map();
+    private objects: Map<T, { minEndpoint: Endpoint<T>, maxEndpoint: Endpoint<T> }> = new Map();
     private nextId: number = 0;
 
     clear(): void {
@@ -109,20 +109,45 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
 
     insert(object: T): void {
         const id = this.nextId++;
-        this.objects.set(object, id);
+        
+        const minEndpoint: Endpoint<T> = { value: object.AABB.min.x, isMin: true, object, id };
+        const maxEndpoint: Endpoint<T> = { value: object.AABB.max.x, isMin: false, object, id };
+        
+        this.objects.set(object, { minEndpoint, maxEndpoint });
 
-        // Create min and max endpoints for x-axis
-        this.xEndpoints.push(
-            { value: object.AABB.min.x, isMin: true, object, id },
-            { value: object.AABB.max.x, isMin: false, object, id }
-        );
+        // Use binary search + splice for O(n) insertion instead of O(n log n) sort
+        this.insertEndpointSorted(minEndpoint);
+        this.insertEndpointSorted(maxEndpoint);
+    }
 
-        // Keep endpoints sorted
-        this.xEndpoints.sort((a, b) => {
-            if (a.value !== b.value) return a.value - b.value;
-            // If values are equal, process min endpoints before max endpoints
-            return a.isMin ? -1 : 1;
-        });
+    update(object: T): void {
+        const endpoints = this.objects.get(object);
+        if (!endpoints) return;
+
+        const newMinX = object.AABB.min.x;
+        const newMaxX = object.AABB.max.x;
+
+        // Update endpoint values and maintain sorted order
+        if (endpoints.minEndpoint.value !== newMinX) {
+            this.removeEndpoint(endpoints.minEndpoint);
+            endpoints.minEndpoint.value = newMinX;
+            this.insertEndpointSorted(endpoints.minEndpoint);
+        }
+
+        if (endpoints.maxEndpoint.value !== newMaxX) {
+            this.removeEndpoint(endpoints.maxEndpoint);
+            endpoints.maxEndpoint.value = newMaxX;
+            this.insertEndpointSorted(endpoints.maxEndpoint);
+        }
+    }
+
+    remove(object: T): void {
+        const endpoints = this.objects.get(object);
+        if (!endpoints) return;
+
+        this.removeEndpoint(endpoints.minEndpoint);
+        this.removeEndpoint(endpoints.maxEndpoint);
+        this.objects.delete(object);
     }
 
     retrieve(queryObject: T): T[] {
@@ -131,27 +156,70 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
         const queryMax = queryObject.AABB.max.x;
 
         // Find all objects that overlap on x-axis using sweep line
-        const activeObjects = new Set<T>();
-        
         for (const endpoint of this.xEndpoints) {
             if (endpoint.value > queryMax) break;
             
-            if (endpoint.isMin) {
-                // Object starts - check if it overlaps with query
-                if (endpoint.value <= queryMax && endpoint.object !== queryObject) {
+            if (endpoint.isMin && endpoint.object !== queryObject) {
+                // Object starts - check if it overlaps with query on x-axis
+                const objMax = this.objects.get(endpoint.object)?.maxEndpoint.value;
+                if (objMax !== undefined && objMax >= queryMin) {
                     // Check y-axis overlap
                     if (this.aabbIntersects(endpoint.object.AABB, queryObject.AABB)) {
                         result.push(endpoint.object);
                     }
                 }
-                activeObjects.add(endpoint.object);
-            } else {
-                // Object ends
-                activeObjects.delete(endpoint.object);
             }
         }
 
         return result;
+    }
+
+    // Efficient method to find all collision pairs - the main strength of sweep-and-prune
+    findAllOverlaps(): Array<{a: T, b: T}> {
+        const pairs: Array<{a: T, b: T}> = [];
+        const activeObjects = new Set<T>();
+        
+        for (const endpoint of this.xEndpoints) {
+            if (endpoint.isMin) {
+                // Check against all currently active objects
+                for (const activeObj of activeObjects) {
+                    if (this.aabbIntersects(endpoint.object.AABB, activeObj.AABB)) {
+                        pairs.push({a: endpoint.object, b: activeObj});
+                    }
+                }
+                activeObjects.add(endpoint.object);
+            } else {
+                activeObjects.delete(endpoint.object);
+            }
+        }
+        return pairs;
+    }
+
+    private insertEndpointSorted(endpoint: Endpoint<T>): void {
+        // Binary search for insertion position
+        let left = 0;
+        let right = this.xEndpoints.length;
+        
+        while (left < right) {
+            const mid = Math.floor((left + right) / 2);
+            const midEndpoint = this.xEndpoints[mid];
+            
+            if (midEndpoint.value < endpoint.value || 
+                (midEndpoint.value === endpoint.value && midEndpoint.isMin && !endpoint.isMin)) {
+                left = mid + 1;
+            } else {
+                right = mid;
+            }
+        }
+        
+        this.xEndpoints.splice(left, 0, endpoint);
+    }
+
+    private removeEndpoint(endpoint: Endpoint<T>): void {
+        const index = this.xEndpoints.indexOf(endpoint);
+        if (index !== -1) {
+            this.xEndpoints.splice(index, 1);
+        }
     }
 
     private aabbIntersects(aabb1: { min: Point, max: Point }, aabb2: { min: Point, max: Point }): boolean {
@@ -161,10 +229,11 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
                  aabb1.min.y > aabb2.max.y);
     }
 
+    // Enhanced visualization showing active sweep line and overlaps
     draw?(context: CanvasRenderingContext2D): void {
-        // Simple visualization showing sweep line bounds
         context.strokeStyle = 'orange';
         context.lineWidth = 1;
+        context.globalAlpha = 0.3;
         
         // Draw vertical lines at object boundaries
         for (const endpoint of this.xEndpoints) {
@@ -172,7 +241,21 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
             context.moveTo(endpoint.value, -1000);
             context.lineTo(endpoint.value, 1000);
             context.stroke();
+            
+            // Label min/max endpoints
+            context.fillStyle = endpoint.isMin ? 'green' : 'red';
+            context.fillText(endpoint.isMin ? 'min' : 'max', endpoint.value, -950);
         }
+        
+        context.globalAlpha = 1.0;
+    }
+
+    // Get statistics for performance monitoring
+    getStats(): { endpointCount: number, objectCount: number } {
+        return {
+            endpointCount: this.xEndpoints.length,
+            objectCount: this.objects.size
+        };
     }
 }
 

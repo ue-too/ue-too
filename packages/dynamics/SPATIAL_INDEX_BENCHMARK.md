@@ -1,8 +1,8 @@
 # Spatial Index Benchmark Results
 
-## 🌳 Dynamic Tree vs QuadTree Implementation
+## 🌳 Dynamic Tree vs QuadTree vs Sweep-and-Prune Implementation
 
-This document summarizes the implementation and benchmarking of Dynamic Tree (AABB Tree) vs QuadTree spatial data structures for collision detection in the physics engine.
+This document summarizes the implementation and benchmarking of Dynamic Tree (AABB Tree), QuadTree, and Sweep-and-Prune spatial data structures for collision detection in the physics engine.
 
 ## 📦 What's New
 
@@ -14,11 +14,20 @@ This document summarizes the implementation and benchmarking of Dynamic Tree (AA
   - Surface Area Heuristic (SAH) for optimal splits
   - Borderless - no predefined world bounds needed
 
+### Sweep-and-Prune Implementation
+- **File**: `src/dynamic-tree.ts` (SweepAndPrune class)
+- **Features**:
+  - Optimized O(n log n) insertion using binary search
+  - Incremental updates for moving objects
+  - Efficient sweep-line collision detection
+  - Excellent for linear object arrangements
+
 ### Updated World Class
-- **Configurable spatial index**: Choose between `'quadtree'` or `'dynamictree'`
+- **Configurable spatial index**: Choose between `'quadtree'`, `'dynamictree'`, or `'sap'`
 - **API Methods**:
   ```typescript
-  const world = new World(1000, 1000, 'dynamictree'); // Use dynamic tree
+  const world = new World(1000, 1000, 'sap'); // Use sweep-and-prune
+  world.setSpatialIndexType('dynamictree'); // Switch to dynamic tree
   world.setSpatialIndexType('quadtree'); // Switch to quadtree
   console.log(world.getSpatialIndexStats()); // Get performance stats
   ```

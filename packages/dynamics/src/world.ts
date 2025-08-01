@@ -50,11 +50,28 @@ export class World {
     addRigidBody(ident: string, body: RigidBody): void{
         this.rigidBodyList.push(body);
         this.rigidBodyMap.set(ident, body);
+        
+        // Add to spatial index immediately for sweep-and-prune
+        if (this.spatialIndexType === 'sap') {
+            this.spatialIndex.insert(body);
+        }
     }
 
     removeRigidBody(ident: string): void{
         if (this.rigidBodyMap.has(ident)) {
+            const body = this.rigidBodyMap.get(ident);
             this.rigidBodyMap.delete(ident);
+            
+            // Remove from spatial index for sweep-and-prune
+            if (body && this.spatialIndexType === 'sap' && this.spatialIndex instanceof SweepAndPrune) {
+                (this.spatialIndex as SweepAndPrune<RigidBody>).remove(body);
+            }
+            
+            // Remove from rigidBodyList as well
+            const index = this.rigidBodyList.findIndex(b => b === body);
+            if (index !== -1) {
+                this.rigidBodyList.splice(index, 1);
+            }
         }
     }
 
@@ -91,15 +108,29 @@ export class World {
 
     resolveCollisionPhase(): Point[]{
         let rigidBodyList: RigidBody[] = [];
-        this.spatialIndex.clear();
         
-        // Only process non-sleeping bodies
-        this.rigidBodyMap.forEach((body) => {
-            if (!this.enableSleeping || !body.isSleeping) {
-                rigidBodyList.push(body);
-                this.spatialIndex.insert(body);
-            }
-        });
+        // Use incremental updates for sweep-and-prune, full rebuild for others
+        if (this.spatialIndexType === 'sap') {
+            // For sweep-and-prune: use incremental updates for better performance
+            this.rigidBodyMap.forEach((body) => {
+                if (!this.enableSleeping || !body.isSleeping) {
+                    rigidBodyList.push(body);
+                    // Update existing objects in spatial index
+                    if (this.spatialIndex instanceof SweepAndPrune) {
+                        (this.spatialIndex as SweepAndPrune<RigidBody>).update(body);
+                    }
+                }
+            });
+        } else {
+            // For QuadTree and DynamicTree: rebuild each frame (existing behavior)
+            this.spatialIndex.clear();
+            this.rigidBodyMap.forEach((body) => {
+                if (!this.enableSleeping || !body.isSleeping) {
+                    rigidBodyList.push(body);
+                    this.spatialIndex.insert(body);
+                }
+            });
+        }
         
         // console.log("spatial index size: ", this.spatialIndex);
         let possibleCombinations = Collision.broadPhaseWithSpatialIndexFiltered(this.spatialIndex, rigidBodyList);
@@ -179,6 +210,11 @@ export class World {
     getSpatialIndexStats(): any {
         if (this.spatialIndex instanceof DynamicTree) {
             return (this.spatialIndex as DynamicTree<RigidBody>).getStats();
+        } else if (this.spatialIndex instanceof SweepAndPrune) {
+            return {
+                type: this.spatialIndexType,
+                ...(this.spatialIndex as SweepAndPrune<RigidBody>).getStats()
+            };
         }
         return { type: this.spatialIndexType, objects: this.rigidBodyMap.size };
     }
