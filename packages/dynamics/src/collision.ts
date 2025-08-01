@@ -1,6 +1,7 @@
 import { BaseRigidBody, RigidBody } from "./rigidbody";
 import { PointCal, Point } from "@ue-too/math";
 import { QuadTree } from "./quadtree";
+import { canCollide } from "./collision-filter";
 
 export function resolveCollision(bodyA: RigidBody, bodyB: RigidBody, normal: Point): void {
     // console.log("resolve");
@@ -375,4 +376,97 @@ export function broadPhase(quadTree: QuadTree<RigidBody>, bodies: BaseRigidBody[
         }
     }
     return possibleCombi
+}
+
+// Enhanced broadphase with collision filtering
+export function broadPhaseWithSpatialIndexFiltered(spatialIndex: import("./dynamic-tree").SpatialIndex<RigidBody>, bodies: RigidBody[]): {bodyA: RigidBody, bodyB: RigidBody}[]{
+    let possibleCombi: {bodyA: RigidBody, bodyB: RigidBody}[] = [];
+    for(let index = 0; index <= bodies.length - 1; index++){
+        let objsToCheck = spatialIndex.retrieve(bodies[index]);
+        for(let jindex = 0; jindex <= objsToCheck.length - 1; jindex++){
+            let bodyA = bodies[index];
+            let bodyB = objsToCheck[jindex];
+            
+            // Skip if both are static
+            if (bodyA.isStatic() && bodyB.isStatic()){
+                continue;
+            }
+            
+            // Apply collision filtering
+            if (!canCollide(bodyA.collisionFilter, bodyB.collisionFilter)) {
+                continue;
+            }
+            
+            // Basic AABB check
+            if(!aabbIntersects(bodyA.AABB, bodyB.AABB)){
+                continue;
+            }
+            
+            possibleCombi.push({bodyA: bodyA, bodyB: bodyB});
+        }
+    }
+    return possibleCombi;
+}
+
+// Enhanced narrow phase that returns collision data for pair management
+export function narrowPhaseWithRigidBodyAndPairs(bodies: RigidBody[], combinationsToCheck: {bodyA: RigidBody, bodyB: RigidBody}[], resolveCollisionFlag: boolean): {
+    contactPoints: Point[],
+    collisions: {bodyA: RigidBody, bodyB: RigidBody, contactPoints: Point[], normal?: Point, depth?: number}[]
+} {
+    const contactPoints: Point[] = [];
+    const collisions: {bodyA: RigidBody, bodyB: RigidBody, contactPoints: Point[], normal?: Point, depth?: number}[] = [];
+
+    combinationsToCheck.forEach(combination => {
+        let bodyA = combination.bodyA;
+        let bodyB = combination.bodyB;
+        
+        let {collision, depth, normal: normalAxis} = intersects(bodyA, bodyB);
+        if (collision && normalAxis !== undefined && depth !== undefined) {
+            // Calculate contact points (simplified version)
+            const collisionContactPoints: Point[] = [];
+            
+            // For now, use a simple contact point calculation
+            // This could be enhanced later with proper clipping algorithms
+            const contactCenter = {
+                x: (bodyA.center.x + bodyB.center.x) / 2,
+                y: (bodyA.center.y + bodyB.center.y) / 2
+            };
+            collisionContactPoints.push(contactCenter);
+            
+            const collisionData = {
+                bodyA,
+                bodyB,
+                contactPoints: collisionContactPoints,
+                normal: normalAxis,
+                depth: depth
+            };
+            
+            collisions.push(collisionData);
+            contactPoints.push(...collisionContactPoints);
+
+            if (resolveCollisionFlag) {
+                // Position correction
+                let moveDisplacement = PointCal.multiplyVectorByScalar(normalAxis, depth / 2);
+                let revMoveDisplacement = PointCal.multiplyVectorByScalar(normalAxis, -depth / 2);
+
+                if (!bodyA.isStatic()) {
+                    bodyA.move(moveDisplacement);
+                }
+                if (!bodyB.isStatic()) {
+                    bodyB.move(revMoveDisplacement);
+                }
+                if (bodyA.isStatic()) {
+                    bodyB.move(revMoveDisplacement);
+                }
+                if (bodyB.isStatic()) {
+                    bodyA.move(moveDisplacement);
+                }
+
+                // Resolve collision with rotation
+                resolveCollisionWithRotation(bodyA, bodyB, {normal: normalAxis, contactPoints: collisionContactPoints});
+            }
+        }
+    });
+
+    return { contactPoints, collisions };
 }

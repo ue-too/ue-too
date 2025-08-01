@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP Collision Detection with Filtering Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        canvas {
+            border: 1px solid #333;
+            background-color: #222;
+        }
+        .controls {
+            margin-top: 10px;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 10px 15px;
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background-color: #5a5a5a;
+        }
+        .stats {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SAP Collision Detection with Filtering</h1>
+    <p>This example demonstrates:</p>
+    <ul>
+        <li><strong>Sweep and Prune (SAP)</strong> collision detection</li>
+        <li><strong>Collision filtering</strong> with categories and masks</li>
+        <li><strong>Sleeping bodies</strong> for performance optimization</li>
+        <li><strong>Temporal coherence</strong> with pair management</li>
+    </ul>
+    
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="controls">
+        <button onclick="toggleSpatialIndex()">Toggle Spatial Index (Current: SAP)</button>
+        <button onclick="toggleSleeping()">Toggle Sleeping (Enabled)</button>
+        <button onclick="addRandomBodies()">Add Random Bodies</button>
+        <button onclick="resetWorld()">Reset World</button>
+    </div>
+    
+    <div class="stats" id="stats"></div>
+    
+    <script type="module" src="./main.ts"></script>
+</body>
+</html>

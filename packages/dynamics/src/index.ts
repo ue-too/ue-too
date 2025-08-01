@@ -7,3 +7,5 @@ export * from "./constraint";
 export * from "./ecs-version";
 export * from "./simple-benchmark-runner";
 export * from "./benchmark";
+export * from "./collision-filter";
+export * from "./pair-manager";

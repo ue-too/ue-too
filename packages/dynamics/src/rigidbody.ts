@@ -1,4 +1,5 @@
 import { PointCal, Point } from "@ue-too/math";
+import { CollisionFilter, DEFAULT_COLLISION_FILTER } from "./collision-filter";
 
 export interface RigidBody {
     center: Point;
@@ -9,6 +10,16 @@ export interface RigidBody {
     mass: number;
     staticFrictionCoeff: number;
     momentOfInertia: number;
+    
+    // Collision filtering
+    collisionFilter: CollisionFilter;
+    
+    // Sleeping system
+    isSleeping: boolean;
+    sleepThreshold: number;
+    sleepTime: number;
+    timeAtRest: number;
+    
     step(deltaTime: number): void;
     isStatic(): boolean;
     isMovingStatic(): boolean;
@@ -22,6 +33,10 @@ export interface RigidBody {
     getSignificantVertices(collisionNormal: Point): Point[];
     getNormalOfSignificantFace(collisionNormal: Point): Point;
     getAdjacentFaces(collisionNormal: Point): {startPoint: {coord: Point, index: number}, endPoint: {coord: Point, index: number}}[];
+    
+    // Sleeping methods
+    setSleeping(sleeping: boolean): void;
+    updateSleeping(deltaTime: number): void;
 }
 
 export interface VisualComponent{
@@ -43,6 +58,15 @@ export abstract class BaseRigidBody implements RigidBody{
     protected frictionEnabled: boolean = false;
     protected isMovingStaticBody: boolean = false;
     protected angularDampingFactor: number = 0.005;
+    
+    // Collision filtering
+    public collisionFilter: CollisionFilter = { ...DEFAULT_COLLISION_FILTER };
+    
+    // Sleeping system
+    public isSleeping: boolean = false;
+    public sleepThreshold: number = 0.01; // Velocity threshold to consider sleeping
+    public sleepTime: number = 0.5; // Time (seconds) to wait before sleeping
+    public timeAtRest: number = 0;
     
 
     constructor(center: Point, _orientationAngle: number = 0, mass: number = 50, isStaticBody: boolean = false, frictionEnabled: boolean = false){
@@ -210,12 +234,52 @@ export abstract class BaseRigidBody implements RigidBody{
     abstract getSignificantVertices(collisionNormal: Point): Point[];
     abstract getNormalOfSignificantFace(collisionNormal: Point): Point;
     abstract getAdjacentFaces(collisionNormal: Point): {startPoint: {coord: Point, index: number}, endPoint: {coord: Point, index: number}}[];
+
+    // Sleeping methods
+    setSleeping(sleeping: boolean): void {
+        if (sleeping && !this.isSleeping) {
+            this.isSleeping = true;
+            this._linearVelocity = { x: 0, y: 0 };
+            this._angularVelocity = 0;
+        } else if (!sleeping && this.isSleeping) {
+            this.isSleeping = false;
+            this.timeAtRest = 0;
+        }
+    }
+
+    updateSleeping(deltaTime: number): void {
+        if (this.isStatic() || this.isMovingStatic()) return;
+
+        const speed = PointCal.magnitude(this._linearVelocity);
+        const angularSpeed = Math.abs(this._angularVelocity);
+
+        if (speed < this.sleepThreshold && angularSpeed < this.sleepThreshold) {
+            this.timeAtRest += deltaTime;
+            if (this.timeAtRest >= this.sleepTime) {
+                this.setSleeping(true);
+            }
+        } else {
+            this.timeAtRest = 0;
+            if (this.isSleeping) {
+                this.setSleeping(false);
+            }
+        }
+    }
 }
 
 export class VisaulCircleBody implements VisualComponent, RigidBody {
 
     private _circle: Circle;
     private _context: CanvasRenderingContext2D;
+    
+    // Collision filtering
+    public collisionFilter: CollisionFilter = { ...DEFAULT_COLLISION_FILTER };
+    
+    // Sleeping system
+    public isSleeping: boolean = false;
+    public sleepThreshold: number = 0.01;
+    public sleepTime: number = 0.5;
+    public timeAtRest: number = 0;
 
     constructor(center: Point = {x: 0, y: 0}, radius: number, drawingContext: CanvasRenderingContext2D, _orientationAngle: number = 0, mass: number = 50, isStatic: boolean = false, frictionEnabled: boolean = true) {
         this._circle = new Circle(center, radius, _orientationAngle, mass, isStatic, frictionEnabled);
@@ -329,12 +393,52 @@ export class VisaulCircleBody implements VisualComponent, RigidBody {
         return this._circle.momentOfInertia;
     }
 
+    // Sleeping methods
+    setSleeping(sleeping: boolean): void {
+        if (sleeping && !this.isSleeping) {
+            this.isSleeping = true;
+            this._circle.linearVelocity = { x: 0, y: 0 };
+            this._circle.angularVelocity = 0;
+        } else if (!sleeping && this.isSleeping) {
+            this.isSleeping = false;
+            this.timeAtRest = 0;
+        }
+    }
+
+    updateSleeping(deltaTime: number): void {
+        if (this._circle.isStatic() || this._circle.isMovingStatic()) return;
+
+        const speed = PointCal.magnitude(this._circle.linearVelocity);
+        const angularSpeed = Math.abs(this._circle.angularVelocity);
+
+        if (speed < this.sleepThreshold && angularSpeed < this.sleepThreshold) {
+            this.timeAtRest += deltaTime;
+            if (this.timeAtRest >= this.sleepTime) {
+                this.setSleeping(true);
+            }
+        } else {
+            this.timeAtRest = 0;
+            if (this.isSleeping) {
+                this.setSleeping(false);
+            }
+        }
+    }
+
 }
 
 export class VisualPolygonBody implements VisualComponent, RigidBody {
     
     private _polygon: Polygon;
     private _context: CanvasRenderingContext2D;
+    
+    // Collision filtering
+    public collisionFilter: CollisionFilter = { ...DEFAULT_COLLISION_FILTER };
+    
+    // Sleeping system
+    public isSleeping: boolean = false;
+    public sleepThreshold: number = 0.01;
+    public sleepTime: number = 0.5;
+    public timeAtRest: number = 0;
 
     constructor(center: Point = {x: 0, y: 0}, vertices: Point[], drawingContext: CanvasRenderingContext2D, _orientationAngle: number = 0, mass: number = 50, isStatic: boolean = false, frictionEnabled: boolean = true) {
         this._polygon = new Polygon(center, vertices, _orientationAngle, mass, isStatic, frictionEnabled);
@@ -454,6 +558,37 @@ export class VisualPolygonBody implements VisualComponent, RigidBody {
 
     getAdjacentFaces(collisionNormal: Point): {startPoint: {coord: Point, index: number}, endPoint: {coord: Point, index: number}}[] {
         return this._polygon.getAdjacentFaces(collisionNormal);
+    }
+
+    // Sleeping methods
+    setSleeping(sleeping: boolean): void {
+        if (sleeping && !this.isSleeping) {
+            this.isSleeping = true;
+            this._polygon.linearVelocity = { x: 0, y: 0 };
+            this._polygon.angularVelocity = 0;
+        } else if (!sleeping && this.isSleeping) {
+            this.isSleeping = false;
+            this.timeAtRest = 0;
+        }
+    }
+
+    updateSleeping(deltaTime: number): void {
+        if (this._polygon.isStatic() || this._polygon.isMovingStatic()) return;
+
+        const speed = PointCal.magnitude(this._polygon.linearVelocity);
+        const angularSpeed = Math.abs(this._polygon.angularVelocity);
+
+        if (speed < this.sleepThreshold && angularSpeed < this.sleepThreshold) {
+            this.timeAtRest += deltaTime;
+            if (this.timeAtRest >= this.sleepTime) {
+                this.setSleeping(true);
+            }
+        } else {
+            this.timeAtRest = 0;
+            if (this.isSleeping) {
+                this.setSleeping(false);
+            }
+        }
     }
 }
 

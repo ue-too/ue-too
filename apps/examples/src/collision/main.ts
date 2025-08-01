@@ -1,6 +1,6 @@
 import { Board, CameraPanEventPayload, CameraState, CameraZoomEventPayload } from "@ue-too/board";
 import { Point, PointCal } from "@ue-too/math";
-import { World, VisualPolygonBody, PhysicsSystem, CollisionSystem, RigidBodyComponent, RIGID_BODY_COMPONENT, updateAABBForPolygonRaw, PhysicsComponent, PHYSICS_COMPONENT, Canvas2DContextRenderSystem, RenderComponent, RENDER_COMPONENT, InputComponent, INPUT_COMPONENT, Polygon } from "@ue-too/dynamics";
+import { World, VisualPolygonBody, PhysicsSystem, CollisionSystem, RigidBodyComponent, RIGID_BODY_COMPONENT, updateAABBForPolygonRaw, PhysicsComponent, PHYSICS_COMPONENT, Canvas2DContextRenderSystem, RenderComponent, RENDER_COMPONENT, InputComponent, INPUT_COMPONENT, Polygon, VisaulCircleBody } from "@ue-too/dynamics";
 import { Coordinator } from "@ue-too/ecs";
 import { InputSystem } from "./input-system";
 
@@ -108,7 +108,7 @@ window.addEventListener('keyup', (e)=>{
 })
 
 const context = board.context;
-let world = new World(10000, 10000);
+let world = new World(10000, 10000, "dynamictree");
 world._context = context;
 for (let index = 0; index < 1291; index++){
     if(index == 0){
@@ -116,12 +116,12 @@ for (let index = 0; index < 1291; index++){
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 200);
         let initialCenter = getRandomPoint(-300, 300);
         initialCenter.z = 100;
-        let body = new VisualPolygonBody(initialCenter, vertices, context, 0, 300);
+        let body = new Polygon(initialCenter, vertices, 0, 300);
         world.addRigidBody(index.toString(), body);
         
     } else {
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 50);
-        let body = new VisualPolygonBody(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], context, 0, 50);
+        let body = new Polygon(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], 0, 50);
         world.addRigidBody(index.toString(), body);
     }
 }
