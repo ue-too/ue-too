@@ -1,5 +1,5 @@
 import { QuadTree, RectangleBound } from "./quadtree";
-import { DynamicTree } from "./dynamic-tree";
+import { DynamicTree, SweepAndPrune } from "./dynamic-tree";
 import { Point } from "@ue-too/math";
 
 interface MockRigidBody {
@@ -314,6 +314,52 @@ class SpatialIndexBenchmark {
         };
     }
 
+    private benchmarkSweepAndPrune(bodies: MockRigidBody[], iterations: number): BenchmarkResult {
+        let totalInsertTime = 0;
+        let totalQueryTime = 0;
+        let totalCollisionPairs = 0;
+        let totalQueries = 0;
+
+        for (let iter = 0; iter < iterations; iter++) {
+            const sweepAndPrune = new SweepAndPrune<MockRigidBody>();
+
+            // Measure insertion time
+            const insertStart = performance.now();
+            bodies.forEach(body => {
+                sweepAndPrune.insert(body);
+            });
+            const insertEnd = performance.now();
+            totalInsertTime += insertEnd - insertStart;
+
+            // Measure query time
+            const queryStart = performance.now();
+            let collisionPairs = 0;
+            bodies.forEach(body => {
+                const nearby = sweepAndPrune.retrieve(body);
+                totalQueries += nearby.length;
+                collisionPairs += nearby.length;
+            });
+            const queryEnd = performance.now();
+            totalQueryTime += queryEnd - queryStart;
+            totalCollisionPairs += collisionPairs;
+
+            // Update moving objects for next iteration
+            bodies.forEach(body => {
+                if (!body.isStatic()) {
+                    (body as MockDynamicBody).update(0.016); // 60 FPS
+                    sweepAndPrune.update(body); // Use the new update method
+                }
+            });
+        }
+
+        return {
+            insertTime: totalInsertTime / iterations,
+            queryTime: totalQueryTime / iterations,
+            totalCollisionPairs: totalCollisionPairs / iterations,
+            averageQueriesPerObject: totalQueries / (iterations * bodies.length)
+        };
+    }
+
     run(): void {
         console.log("=".repeat(80));
         console.log("SPATIAL INDEX BENCHMARK RESULTS");
@@ -323,13 +369,15 @@ class SpatialIndexBenchmark {
             console.log(`\n📊 ${scenario.name}`);
             console.log("-".repeat(50));
 
-            // Benchmark QuadTree
+            // Benchmark all three algorithms
             const bodiesQuad = JSON.parse(JSON.stringify(scenario.bodies)); // Deep copy
             const quadResult = this.benchmarkQuadTree(bodiesQuad, scenario.iterations);
 
-            // Benchmark DynamicTree
             const bodiesDynamic = JSON.parse(JSON.stringify(scenario.bodies)); // Deep copy
             const dynamicResult = this.benchmarkDynamicTree(bodiesDynamic, scenario.iterations);
+
+            const bodiesSAP = JSON.parse(JSON.stringify(scenario.bodies)); // Deep copy
+            const sapResult = this.benchmarkSweepAndPrune(bodiesSAP, scenario.iterations);
 
             console.log(`Object Count: ${scenario.bodies.length}`);
             console.log(`Iterations: ${scenario.iterations}`);
@@ -355,29 +403,50 @@ class SpatialIndexBenchmark {
 
             console.log();
 
+            console.log("🔄 Sweep-and-Prune Results:");
+            console.log(`  Insert Time: ${sapResult.insertTime.toFixed(3)}ms`);
+            console.log(`  Query Time: ${sapResult.queryTime.toFixed(3)}ms`);
+            console.log(`  Total Time: ${(sapResult.insertTime + sapResult.queryTime).toFixed(3)}ms`);
+            console.log(`  Collision Pairs: ${sapResult.totalCollisionPairs.toFixed(0)}`);
+            console.log(`  Avg Queries/Object: ${sapResult.averageQueriesPerObject.toFixed(1)}`);
+
+            console.log();
+
             // Performance comparison
             const totalQuadTime = quadResult.insertTime + quadResult.queryTime;
             const totalDynamicTime = dynamicResult.insertTime + dynamicResult.queryTime;
-            const speedup = totalQuadTime / totalDynamicTime;
+            const totalSAPTime = sapResult.insertTime + sapResult.queryTime;
 
-            if (speedup > 1.1) {
-                console.log(`🚀 DynamicTree is ${speedup.toFixed(2)}x FASTER`);
-            } else if (speedup < 0.9) {
-                console.log(`🐌 DynamicTree is ${(1/speedup).toFixed(2)}x SLOWER`);
-            } else {
-                console.log(`⚖️  Similar performance (${speedup.toFixed(2)}x)`);
-            }
+            const times = [
+                { name: "QuadTree", time: totalQuadTime },
+                { name: "DynamicTree", time: totalDynamicTime },
+                { name: "Sweep-and-Prune", time: totalSAPTime }
+            ].sort((a, b) => a.time - b.time);
 
-            // Efficiency metrics
+            console.log("🏆 Performance Ranking:");
+            times.forEach((result, index) => {
+                const emoji = index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
+                const speedup = times[2].time / result.time;
+                console.log(`  ${emoji} ${result.name}: ${result.time.toFixed(3)}ms ${speedup > 1.1 ? `(${speedup.toFixed(2)}x faster than slowest)` : ''}`);
+            });
+
+            // Algorithm-specific insights
             console.log();
-            console.log("📈 Efficiency Metrics:");
+            console.log("📈 Algorithm Insights:");
             console.log(`  QuadTree queries/object: ${quadResult.averageQueriesPerObject.toFixed(2)}`);
             console.log(`  DynamicTree queries/object: ${dynamicResult.averageQueriesPerObject.toFixed(2)}`);
-            const queryEfficiency = quadResult.averageQueriesPerObject / dynamicResult.averageQueriesPerObject;
-            if (queryEfficiency > 1.1) {
-                console.log(`  DynamicTree has ${queryEfficiency.toFixed(2)}x fewer false positives`);
-            } else if (queryEfficiency < 0.9) {
-                console.log(`  QuadTree has ${(1/queryEfficiency).toFixed(2)}x fewer false positives`);
+            console.log(`  Sweep-and-Prune queries/object: ${sapResult.averageQueriesPerObject.toFixed(2)}`);
+            
+            // Find most efficient for query overhead
+            const queryOverheads = [
+                { name: "QuadTree", overhead: quadResult.averageQueriesPerObject },
+                { name: "DynamicTree", overhead: dynamicResult.averageQueriesPerObject },
+                { name: "Sweep-and-Prune", overhead: sapResult.averageQueriesPerObject }
+            ].sort((a, b) => a.overhead - b.overhead);
+
+            if (queryOverheads[0].overhead < queryOverheads[1].overhead * 0.9) {
+                const efficiency = queryOverheads[1].overhead / queryOverheads[0].overhead;
+                console.log(`  🎯 ${queryOverheads[0].name} has ${efficiency.toFixed(2)}x fewer false positives`);
             }
         });
 

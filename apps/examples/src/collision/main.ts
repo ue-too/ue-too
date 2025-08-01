@@ -110,18 +110,18 @@ window.addEventListener('keyup', (e)=>{
 const context = board.context;
 let world = new World(10000, 10000, "dynamictree");
 world._context = context;
-for (let index = 0; index < 1291; index++){
+for (let index = 0; index < 1000; index++){
     if(index == 0){
         let vertices = [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}];
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 200);
         let initialCenter = getRandomPoint(-300, 300);
         initialCenter.z = 100;
-        let body = new Polygon(initialCenter, vertices, 0, 300);
+        let body = new VisaulCircleBody(initialCenter, 5, context, 0, 300);
         world.addRigidBody(index.toString(), body);
         
     } else {
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 50);
-        let body = new Polygon(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], 0, 50);
+        let body = new VisaulCircleBody(getRandomPoint(-5000, 5000), 5, context, 0, 50);
         world.addRigidBody(index.toString(), body);
     }
 }
