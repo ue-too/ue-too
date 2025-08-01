@@ -11,6 +11,7 @@ let fpsElement: HTMLElement;
 
 let element = document.getElementById("graph") as HTMLCanvasElement;
 let board = new Board(element);
+board.camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
 const coordinator = new Coordinator();
 const physicsSystem = new PhysicsSystem(coordinator);
 const collisionSystem = new CollisionSystem(coordinator);
@@ -50,7 +51,7 @@ coordinator.addComponentToEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity, {
     angularVelocity: 0,
 });
 
-for(let i = 0; i < 10; i++){
+for(let i = 0; i < 1; i++){
     const entity = coordinator.createEntity();
     const vertices = [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}];
     const center = getRandomPoint(-5000, 5000);
@@ -109,18 +110,18 @@ window.addEventListener('keyup', (e)=>{
 const context = board.context;
 let world = new World(10000, 10000);
 world._context = context;
-for (let index = 0; index < 1000; index++){
+for (let index = 0; index < 1291; index++){
     if(index == 0){
         let vertices = [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}];
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 200);
-        let initialCenter = getRandomPoint(-5000, 5000);
+        let initialCenter = getRandomPoint(-300, 300);
         initialCenter.z = 100;
-        let body = new Polygon(initialCenter, vertices, 0, 300);
+        let body = new VisualPolygonBody(initialCenter, vertices, context, 0, 300);
         world.addRigidBody(index.toString(), body);
         
     } else {
         // let body = new VisaulCircleBody(getRandomPoint(0, 100), 5, context, 0, 50);
-        let body = new Polygon(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], 0, 50);
+        let body = new VisualPolygonBody(getRandomPoint(-5000, 5000), [{x: 20, y: 10}, {x: -20, y: 10}, {x: -20, y: -10}, {x: 20, y: -10}], context, 0, 50);
         world.addRigidBody(index.toString(), body);
     }
 }
