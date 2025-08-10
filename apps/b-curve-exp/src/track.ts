@@ -4,7 +4,7 @@ import { Point, PointCal } from "@ue-too/math";
 export type TrackSegment = {
     t0Joint: number;
     t1Joint: number;
-    curve: BCurve;
+    curve: number;
 }
 
 export type Connection = {
@@ -15,14 +15,13 @@ export type TrackJoint = {
     position: Point;
     from: Map<number | "end", Connection>;
 }
-
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
     private jointPositions: Point[] = [];
     private jointNumberManager: NumberManager = new NumberManager(10);
     private trackSegmentNumberManager: NumberManager = new NumberManager(10);
-    private _trackSegments: TrackSegment[] = [];
+    private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
     addJoint(joint: TrackJoint) {
         this.joints.set(this.joints.size, joint);
@@ -41,13 +40,13 @@ export class TrackGraph {
         }
 
         const curve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
-
+        const curveNumber = this._trackCurveManager.createEntity(curve);
         const endJointNumber = this.jointNumberManager.createEntity();
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
             t1Joint: endJointNumber,
-            curve: curve
+            curve: curveNumber
         };
 
         const endTrackJoint: TrackJoint = {
@@ -79,17 +78,15 @@ export class TrackGraph {
 
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]){
         const curve = new BCurve([startJointPosition, ...controlPoints, endJointPosition]);
+        const curveNumber = this._trackCurveManager.createEntity(curve);
         const startJointNumber = this.jointNumberManager.createEntity();
         const endJointNumber = this.jointNumberManager.createEntity();
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
             t1Joint: endJointNumber,
-            curve: curve
+            curve: curveNumber
         };
-
-        const newTrackSegmentNumber = this.trackSegmentNumberManager.createEntity();
-        this._trackSegments.push(newTrackSegment);
 
         const startJoint: TrackJoint = {
             position: startJointPosition,
@@ -136,6 +133,7 @@ export class TrackGraph {
         }
 
         const newCurve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
+        const newCurveNumber = this._trackCurveManager.createEntity(newCurve);
         const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
@@ -146,7 +144,7 @@ export class TrackGraph {
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
             t1Joint: newJointNumber,
-            curve: newCurve
+            curve: newCurveNumber
         };
 
         const newConnection: Connection = {
@@ -191,9 +189,16 @@ export class TrackGraph {
         return null;
     }
 
-    get trackSegments(): TrackSegment[] {
-        return this._trackSegments;
+    get trackSegments(): {t0Joint: number, t1Joint: number, curve: BCurve}[] {
+        return this._trackCurveManager.livingEntities.map((entity) => {
+            return {
+                t0Joint: this.joints.get(entity)?.from.get("end")?.out.get(entity)?.t0Joint,
+                t1Joint: this.joints.get(entity)?.from.get("end")?.out.get(entity)?.t1Joint,
+                curve: this._trackCurveManager.getTrackSegment(entity)
+            }
+        });
     }
+
 }
 
 export class NumberManager {
@@ -233,5 +238,64 @@ export class NumberManager {
         }
         this._availableEntities.push(entity);
         this._livingEntityCount--;
+    }
+}
+
+export class TrackCurveManager {
+
+    private _availableEntities: number[] = [];
+    private _livingEntities: Set<number> = new Set();
+    private _maxEntities: number;
+    private _livingEntityCount = 0;
+    private _trackSegments: (BCurve | null)[] = [];
+
+    constructor(initialCount: number) {
+        this._maxEntities = initialCount;
+        for (let i = 0; i < this._maxEntities; i++) {
+            this._availableEntities.push(i);
+            this._trackSegments.push(null);
+        }
+    }
+
+    getTrackSegment(entity: number): BCurve | null {
+        if(entity < 0 || entity >= this._trackSegments.length){
+            return null;
+        }
+        return this._trackSegments[entity];
+    }
+
+    createEntity(curve: BCurve): number {
+        if(this._livingEntityCount >= this._maxEntities) {
+            // throw new Error('Max entities reached');
+            console.info("Max entities reached, increasing max entities");
+            const currentMaxEntities = this._maxEntities;
+            this._maxEntities += currentMaxEntities;
+            for (let i = currentMaxEntities; i < this._maxEntities; i++) {
+                this._availableEntities.push(i);
+                this._trackSegments.push(null);
+            }
+        }
+        const entity = this._availableEntities.shift();
+        if(entity === undefined) {
+            throw new Error('No available entities');
+        }
+        this._trackSegments[entity] = curve;
+        this._livingEntityCount++;
+        this._livingEntities.add(entity);
+        return entity;
+    }
+
+    destroyEntity(entity: number): void {
+        if(entity >= this._maxEntities || entity < 0) {
+            throw new Error('Invalid entity out of range');
+        }
+        this._livingEntities.delete(entity);
+        this._availableEntities.push(entity);
+        this._livingEntityCount--;
+        this._trackSegments[entity] = null;
+    }
+
+    get livingEntities(): number[] {
+        return Array.from(this._livingEntities);
     }
 }

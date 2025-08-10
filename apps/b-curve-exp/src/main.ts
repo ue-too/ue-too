@@ -170,13 +170,13 @@ function step(timestamp: number){
     //     board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
     //     board.context.stroke();
     // });
-    // curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
-    //     const cps = trackSegment.curve.getControlPoints();
-    //     board.context.beginPath();
-    //     board.context.moveTo(cps[0].x, cps[0].y);
-    //     board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    //     board.context.stroke();
-    // });
+    curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
+        const cps = trackSegment.curve.getControlPoints();
+        board.context.beginPath();
+        board.context.moveTo(cps[0].x, cps[0].y);
+        board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        board.context.stroke();
+    });
 
     for(let i = 0; i < arcs.length; i++){
         board.context.save();
