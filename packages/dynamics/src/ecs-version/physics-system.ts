@@ -40,9 +40,9 @@ export class PhysicsSystem implements System {
             const physicsComponent = this.coordinator.getComponentFromEntity<PhysicsComponent>(PHYSICS_COMPONENT, entity);
 
             if (this._frictionEnabled) {
-                if (rigidBodyComponent.isStatic  || 
-                    (physicsComponent.linearVelocity.x == 0 && 
-                    physicsComponent.linearVelocity.y == 0 && 
+                if (rigidBodyComponent.isStatic  ||
+                    (physicsComponent.linearVelocity.x == 0 &&
+                    physicsComponent.linearVelocity.y == 0 &&
                     PointCal.magnitude(PointCal.subVector({x: physicsComponent.force.x, y: physicsComponent.force.y}, {x: 0, y: 0})) >= 0 && 
                     PointCal.magnitude({x: physicsComponent.force.x, y: physicsComponent.force.y}) < rigidBodyComponent.staticFrictionCoeff * rigidBodyComponent.mass * 9.81)
                     ) {

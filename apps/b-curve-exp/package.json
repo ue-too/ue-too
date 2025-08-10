@@ -21,6 +21,7 @@
     "@ue-too/curve": "workspace:*",
     "@ue-too/dynamics": "workspace:*",
     "@ue-too/border": "workspace:*",
+    "@ue-too/ecs": "workspace:*",
     "fabric": "6.7.0",
     "konva": "9.3.20",
     "pixi.js": "8.8.0"

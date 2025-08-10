@@ -116,6 +116,9 @@ importers:
       '@ue-too/dynamics':
         specifier: workspace:*
         version: link:../../packages/dynamics
+      '@ue-too/ecs':
+        specifier: workspace:*
+        version: link:../../packages/ecs
       '@ue-too/math':
         specifier: workspace:*
         version: link:../../packages/math

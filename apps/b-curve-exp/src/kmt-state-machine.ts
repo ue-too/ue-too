@@ -2,6 +2,8 @@ import { BCurve } from "@ue-too/curve";
 import { type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { TrackGraph } from "./track";
+import { PointCal } from "@ue-too/math";
 
 
 export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT";
@@ -19,7 +21,7 @@ export type LayoutEvents = {
         pointerId: number;
         position: Point;
     };
-    "esacpeKey": {};
+    "escapeKey": {};
     "startLayout": {};
     "endLayout": {};
 }
@@ -29,6 +31,7 @@ export interface LayoutContext extends BaseContext {
     endCurve: (endingPosition: Point) => void;
     cancelCurrentCurve: () => void;
     setHoverPosition: (position: Point) => void;
+    hoverForStartingPoint: (position: Point) => void;
 }
 
 class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -63,19 +66,19 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
-        // "pointermove": {
-        //     action: (context, event) => {
-        //         context.setHoverPosition(event.position);
-        //     },
-        //     defaultTargetState: "HOVER_FOR_STARTING_POINT",
-        // },
+        "pointermove": {
+            action: (context, event) => {
+                context.hoverForStartingPoint(event.position);
+            },
+            defaultTargetState: "HOVER_FOR_STARTING_POINT",
+        },
         "endLayout": {
             action: (context, event) => {
                 context.cancelCurrentCurve();
             },
             defaultTargetState: "IDLE",
         },
-        "esacpeKey": {
+        "escapeKey": {
             action: (context) => {
                 context.cancelCurrentCurve();
             },
@@ -114,11 +117,11 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
             },
             defaultTargetState: "IDLE",
         },
-        "esacpeKey": {
+        "escapeKey": {
             action: (context) => {
                 context.cancelCurrentCurve();
             },
-            defaultTargetState: "IDLE",
+            defaultTargetState: "HOVER_FOR_STARTING_POINT",
         }
     };
 
@@ -145,20 +148,42 @@ export class CurveCreationEngine implements LayoutContext {
     private _currentStartingPoint: Point | null;
     private _curves: BCurve[] = [];
     private _hoverPosition: Point | null;
+    private _hoverCirclePosition: Point | null;
+    private _hoverCircleJointNumber: number | null;
     private _previewCurve: BCurve | null;
+    private _trackGraph: TrackGraph;
 
     constructor() {
         this._currentStartingPoint = null;
         this._hoverPosition = null;
         this._previewCurve = null;
+        this._trackGraph = new TrackGraph();
     }
 
     startCurve(startingPosition: Point) {
-        this._currentStartingPoint = startingPosition;
+        let newPosition = startingPosition;
+        if(this._hoverCircleJointNumber != null){
+            // starting on an existing joint
+            console.log("starting on an existing joint", this._hoverCircleJointNumber);
+            newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
+        }
+        this._currentStartingPoint = newPosition;
+    }
+
+    hoverForStartingPoint(position: Point) {
+        const joint = this._trackGraph.pointOnJoint(position);
+        if(joint !== null){
+            const jointPosition = this._trackGraph.getJointPosition(joint.jointNumber);
+            if(jointPosition !== null){
+                this._hoverCirclePosition = jointPosition;
+                this._hoverCircleJointNumber = joint.jointNumber;
+            }
+        } else {
+            this._hoverCirclePosition = null;
+        }
     }
 
     setHoverPosition(position: Point) {
-        console.log("setHoverPosition", position);
         this._hoverPosition = position;
         if(this._currentStartingPoint === null) {
             return;
@@ -186,6 +211,10 @@ export class CurveCreationEngine implements LayoutContext {
         return this._curves;
     }
 
+    get hoverCirclePosition(): Point | null {
+        return this._hoverCirclePosition;
+    }
+
     endCurve(endingPosition: Point) {
         if(this._currentStartingPoint === null) {
             return;
@@ -199,8 +228,13 @@ export class CurveCreationEngine implements LayoutContext {
         const curve = new BCurve([this._currentStartingPoint, midPoint, endingPosition]);
         this._curves.push(curve);
         this._hoverPosition = null;
+        this._trackGraph.addJointPosition(this._currentStartingPoint);
+        this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, [midPoint]);
         this._currentStartingPoint = null;
         this._previewCurve = null;
+        this._trackGraph.addJointPosition(endingPosition);
+        this._hoverCircleJointNumber = null;
+        this._hoverCirclePosition = null;
     }
 
     cancelCurrentCurve() {
@@ -216,4 +250,48 @@ export class CurveCreationEngine implements LayoutContext {
     cleanup() {
 
     }
+
+    get trackGraph(): TrackGraph {
+        return this._trackGraph;
+    }
+}
+
+function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
+    const controlPoints = existingCurve.getControlPoints();
+    const endPoint = controlPoints[controlPoints.length - 1];
+    const curvature = existingCurve.curvature(1);
+    const tangent = existingCurve.derivative(1);
+    const unitTangent = PointCal.unitVector(tangent);
+    const mouseDistance = PointCal.distanceBetweenPoints(endPoint, mousePos);
+    
+    // Adaptive control distance based on mouse position
+    let controlDistance = Math.min(mouseDistance * 0.4, 120);
+    
+    // Curvature-based adjustment for smoothness
+    const curvatureMagnitude = Math.abs(curvature);
+    if (curvatureMagnitude > 0.015) {
+        controlDistance *= 0.7; // Tighter control for high curvature
+    }
+    
+    // Prevent extreme angles
+    const mouseVector = {
+        x: mousePos.x - endPoint.x,
+        y: mousePos.y - endPoint.y
+    };
+    const angleToMouse = Math.atan2(mouseVector.y, mouseVector.x);
+    const tangentAngle = Math.atan2(tangent.y, tangent.x);
+    const angleDiff = Math.abs(angleToMouse - tangentAngle);
+    
+    if (angleDiff > Math.PI / 2) {
+        controlDistance *= 0.5; // Reduce control distance for sharp turns
+    }
+    
+    return {
+        p0: endPoint,
+        p1: {
+            x: endPoint.x + unitTangent.x * controlDistance,
+            y: endPoint.y + unitTangent.y * controlDistance
+        },
+        p2: mousePos
+    };
 }
