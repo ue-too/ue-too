@@ -81,7 +81,7 @@ canvas.addEventListener("pointerup", (event) => {
 
 window.addEventListener("keydown", (event)=>{
     if(event.key === "Escape"){
-        stateMachine.happens("esacpeKey", {});
+        stateMachine.happens("escapeKey", {});
     }
 });
 
@@ -163,13 +163,20 @@ function step(timestamp: number){
         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
         board.context.stroke();
     }
-    curveEngine.curves.forEach((curve)=>{
-        const cps = curve.getControlPoints();
-        board.context.beginPath();
-        board.context.moveTo(cps[0].x, cps[0].y);
-        board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-        board.context.stroke();
-    });
+    // curveEngine.curves.forEach((curve)=>{
+    //     const cps = curve.getControlPoints();
+    //     board.context.beginPath();
+    //     board.context.moveTo(cps[0].x, cps[0].y);
+    //     board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+    //     board.context.stroke();
+    // });
+    // curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
+    //     const cps = trackSegment.curve.getControlPoints();
+    //     board.context.beginPath();
+    //     board.context.moveTo(cps[0].x, cps[0].y);
+    //     board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+    //     board.context.stroke();
+    // });
 
     for(let i = 0; i < arcs.length; i++){
         board.context.save();
@@ -181,9 +188,39 @@ function step(timestamp: number){
         board.context.restore();
     }
 
+    if(curveEngine.hoverCirclePosition != null){
+        board.context.beginPath();
+        board.context.arc(curveEngine.hoverCirclePosition.x, curveEngine.hoverCirclePosition.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+    }
+
     animation.animate(deltaTime);
 
     window.requestAnimationFrame(step);
 }
 
 window.requestAnimationFrame(step);
+
+const positiveControlPoints = [{x: 70, y: 250}, {x: 20, y: 110}, {x: 220, y: 60}];
+const reverseControlPoints = [{x: 220, y: 60}, {x: 20, y: 110}, {x: 70, y: 250}];
+
+const posCurve = new BCurve(positiveControlPoints);
+const reverseCurve = new BCurve(reverseControlPoints);
+
+
+const positiveTVal = 0.5;
+const reverseTVal = 1 - positiveTVal;
+
+const posPoint = posCurve.get(positiveTVal);
+const posTangent = posCurve.derivative(positiveTVal);
+const reversePoint = reverseCurve.get(reverseTVal);
+const reverseTangent = reverseCurve.derivative(reverseTVal);
+
+console.log("posPoint", posPoint);
+console.log("reversePoint", reversePoint);
+
+console.log("posTangent", posTangent);
+console.log("reverseTangent", reverseTangent);
+
+
+
