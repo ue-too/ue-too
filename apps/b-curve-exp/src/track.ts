@@ -15,12 +15,12 @@ export type TrackJoint = {
     position: Point;
     from: Map<number | "end", Connection>;
 }
+
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
     private jointPositions: Point[] = [];
     private jointNumberManager: NumberManager = new NumberManager(10);
-    private trackSegmentNumberManager: NumberManager = new NumberManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
     addJoint(joint: TrackJoint) {
@@ -113,6 +113,33 @@ export class TrackGraph {
         this.joints.set(endJointNumber, endJoint);
     }
 
+    getJointConnections(jointNumber: number, comingFromJoint: number | "end"): Connection | null {
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            console.warn("joint not found");
+            return null;
+        }
+        return joint.from.get(comingFromJoint);
+    }
+
+    getTheOtherEndOfEndingTrack(jointNumber: number): number | null {
+        if(!this.jointIsEndingTrack(jointNumber)){
+            console.warn("joint is not an ending track");
+            return null;
+        }
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            console.warn("joint not found");
+            return null;
+        }
+        if(joint.from.get("end")?.out.size !== 1){
+            console.warn("joint has more than one outgoing connection; something is wrong");
+            return null;
+        }
+        const outJoint = joint.from.get("end")?.out.keys().next().value;
+        return outJoint;
+    }
+
     jointIsEndingTrack(jointNumber: number): boolean {
         const joint = this.joints.get(jointNumber);
         if(joint === undefined){
@@ -155,6 +182,7 @@ export class TrackGraph {
 
         this.joints.set(newJointNumber, newTrackJoint);
 
+        console.log('comingFromJoint', comingFromJoint);
         let comingFromConnections = startJoint.from.get(comingFromJoint);
 
         if(comingFromConnections === undefined){
@@ -168,25 +196,54 @@ export class TrackGraph {
         comingFromConnections.out.set(newJointNumber, newTrackSegment);
 
         if(this.jointIsEndingTrack(comingFromJoint)){
+            const otherEndOfEndingTrack = this.getTheOtherEndOfEndingTrack(comingFromJoint);
+            if(otherEndOfEndingTrack != null && this.getJointConnections(startJointNumber, "end") != null){
+                const otherEndOfEndingTrackConnection = this.getJointConnections(startJointNumber, "end");
+                startJoint.from.set(newJointNumber, otherEndOfEndingTrackConnection);
+            }
             startJoint.from.delete("end");
         }
     }
 
     getJointPosition(jointNumber: number): Point | null {
-        if(jointNumber < 0 || jointNumber >= this.jointPositions.length){
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
             return null;
         }
-        return this.jointPositions[jointNumber];
+        return joint.position;
     }
 
     pointOnJoint(position: Point): {jointNumber: number} | null {
-        const distances = this.jointPositions.map((jointPosition) => PointCal.distanceBetweenPoints(position, jointPosition));
-        const minDistance = Math.min(...distances);
-        const jointNumber = distances.indexOf(minDistance);
-        if(minDistance < 10){
-            return {jointNumber: jointNumber};
+        let closestJoint: {jointNumber: number, distance: number} | null = null;
+        let minDistance:number = 10;
+
+        for(const [jointNumber, joint] of this.joints.entries()){
+            const distance = PointCal.distanceBetweenPoints(position, joint.position);
+            if(distance < minDistance){
+                minDistance = distance;
+                closestJoint = {jointNumber: jointNumber, distance: distance};
+            }
+        }
+        if(closestJoint !== null){
+            return {jointNumber: closestJoint.jointNumber};
         }
         return null;
+    }
+
+    projectPointOnTrack(position: Point): Point | null {
+        let minDistance = 10;
+        let minProjection: Point | null = null;
+        this._trackCurveManager.livingEntities.forEach((entity)=>{
+            const res = this._trackCurveManager.getTrackSegment(entity)?.getProjection(position);
+            if(res != null){
+                const distance = PointCal.distanceBetweenPoints(position, res.projection);
+                if(distance < minDistance){
+                    minDistance = distance;
+                    minProjection = res.projection;
+                }
+            }
+        });
+        return minProjection;
     }
 
     get trackSegments(): {t0Joint: number, t1Joint: number, curve: BCurve}[] {
@@ -197,6 +254,19 @@ export class TrackGraph {
                 curve: this._trackCurveManager.getTrackSegment(entity)
             }
         });
+    }
+
+    logJoints(){
+        for(const [jointNumber, joint] of this.joints.entries()){
+            console.log('--------------------------------');
+            console.log(`joint ${jointNumber}`);
+            for(const [jointNumber, connection] of joint.from.entries()){
+                console.log(`coming from ${jointNumber}`);
+                for(const [jointNumber, trackSegment] of connection.out.entries()){
+                    console.log(`can go to ${jointNumber}`);
+                }
+            }
+        }
     }
 
 }
