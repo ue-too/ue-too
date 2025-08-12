@@ -446,6 +446,10 @@ export class BCurve{
         return numerator / denominator;
     }
 
+    secondDerivative(tVal: number): Point{
+        return computeWithControlPoints(tVal, this.getDerivativeControlPoints(this.dControlPoints));
+    }
+
     public getCoefficientOfTTerms(): Point[]{
         return this.getCoefficientOfTTermsWithControlPoints(this.controlPoints);
     }

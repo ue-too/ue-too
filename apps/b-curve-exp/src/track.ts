@@ -122,6 +122,30 @@ export class TrackGraph {
         return joint.from.get(comingFromJoint);
     }
 
+    getDeadEndJointSoleConnection(jointNumber: number): TrackSegment | null {
+        if(!this.jointIsEndingTrack(jointNumber)){
+            console.warn("joint is not an ending track");
+            return null;
+        }
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            console.warn("joint not found");
+            return null;
+        }
+        const comingFromEndOutlets = joint.from.get("end");
+        if(comingFromEndOutlets == undefined){
+            console.warn("coming from end outlets not found");
+            return null;
+        }
+        if(comingFromEndOutlets.out.size !== 1){
+            console.warn("joint has more than one outgoing connection; something is wrong");
+            return null;
+        }
+        const connection: TrackSegment = comingFromEndOutlets.out.values().next().value;
+
+        return connection;
+    }
+
     getTheOtherEndOfEndingTrack(jointNumber: number): number | null {
         if(!this.jointIsEndingTrack(jointNumber)){
             console.warn("joint is not an ending track");
@@ -244,6 +268,10 @@ export class TrackGraph {
             }
         });
         return minProjection;
+    }
+
+    getTrackSegmentCurve(curveNumber: number): BCurve | null {
+        return this._trackCurveManager.getTrackSegment(curveNumber);
     }
 
     get trackSegments(): {t0Joint: number, t1Joint: number, curve: BCurve}[] {

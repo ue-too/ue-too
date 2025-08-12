@@ -208,26 +208,13 @@ function step(timestamp: number){
 
 window.requestAnimationFrame(step);
 
-const positiveControlPoints = [{x: 70, y: 250}, {x: 20, y: 110}, {x: 220, y: 60}];
-const reverseControlPoints = [{x: 220, y: 60}, {x: 20, y: 110}, {x: 70, y: 250}];
+const straightLine = [{x: 0, y: 0}, {x: 100, y: 100}, {x: 200, y: 200}];
+const straightCurve = new BCurve(straightLine);
+const tangent = PointCal.unitVector(straightCurve.derivative(1));
 
-const posCurve = new BCurve(positiveControlPoints);
-const reverseCurve = new BCurve(reverseControlPoints);
+console.log('tangent', tangent);
 
 
-const positiveTVal = 0.5;
-const reverseTVal = 1 - positiveTVal;
-
-const posPoint = posCurve.get(positiveTVal);
-const posTangent = posCurve.derivative(positiveTVal);
-const reversePoint = reverseCurve.get(reverseTVal);
-const reverseTangent = reverseCurve.derivative(reverseTVal);
-
-console.log("posPoint", posPoint);
-console.log("reversePoint", reversePoint);
-
-console.log("posTangent", posTangent);
-console.log("reverseTangent", reverseTangent);
 
 
 
