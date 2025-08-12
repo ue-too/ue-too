@@ -30,7 +30,7 @@ export interface LayoutContext extends BaseContext {
     startCurve: (startingPosition: Point) => void;
     endCurve: (endingPosition: Point) => void;
     cancelCurrentCurve: () => void;
-    setHoverPosition: (position: Point) => void;
+    hoveringForEndJoint: (position: Point) => void;
     hoverForStartingPoint: (position: Point) => void;
 }
 
@@ -78,12 +78,6 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
             },
             defaultTargetState: "IDLE",
         },
-        "escapeKey": {
-            action: (context) => {
-                context.cancelCurrentCurve();
-            },
-            defaultTargetState: "IDLE",
-        }
     };
 
     get eventReactions() {
@@ -101,13 +95,14 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
         "pointerup": {
             action: (context, event) => {
                 context.endCurve(event.position);
+                context.hoverForStartingPoint(event.position);
                 context.startCurve(event.position);
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
         "pointermove": {
             action: (context, event) => {
-                context.setHoverPosition(event.position);
+                context.hoveringForEndJoint(event.position);
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
@@ -146,12 +141,15 @@ export function createLayoutStateMachine(context: LayoutContext): StateMachine<L
 export class CurveCreationEngine implements LayoutContext {
 
     private _currentStartingPoint: Point | null;
-    private _curves: BCurve[] = [];
     private _hoverPosition: Point | null;
     private _hoverCirclePosition: Point | null;
     private _hoverCircleJointNumber: number | null;
     private _previewCurve: BCurve | null;
     private _trackGraph: TrackGraph;
+
+    public projection: Point | null = null;
+
+    private _curveType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
 
     constructor() {
         this._currentStartingPoint = null;
@@ -162,16 +160,31 @@ export class CurveCreationEngine implements LayoutContext {
 
     startCurve(startingPosition: Point) {
         let newPosition = startingPosition;
-        if(this._hoverCircleJointNumber != null){
+        if(this._hoverCircleJointNumber != null && this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // starting on an existing joint
             console.log("starting on an existing joint", this._hoverCircleJointNumber);
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
+            this._curveType = "extendEndingTrack";
+        } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
+            newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
+            console.log('branching out from a joint that is not an ending track', this._hoverCircleJointNumber);
+            this._curveType = "branchJoint";
+        } else if (this.projection != null){
+            newPosition = this.projection;
+            console.log("branching out from a track segment", this.projection);
+            this._curveType = "branchTrack";
+        } else {
+            console.log("starting on a new track segment");
+            this._curveType = "new";
         }
+
         this._currentStartingPoint = newPosition;
+        this.projection = null;
     }
 
     hoverForStartingPoint(position: Point) {
         const joint = this._trackGraph.pointOnJoint(position);
+        const projection = this._trackGraph.projectPointOnTrack(position);
         if(joint !== null){
             const jointPosition = this._trackGraph.getJointPosition(joint.jointNumber);
             if(jointPosition !== null){
@@ -180,18 +193,39 @@ export class CurveCreationEngine implements LayoutContext {
             }
         } else {
             this._hoverCirclePosition = null;
+            this._hoverCircleJointNumber = null;
+        }
+        if(projection != null){
+            this.projection = projection;
+        } else {
+            this.projection = null;
         }
     }
 
-    setHoverPosition(position: Point) {
+    hoveringForEndJoint(position: Point) {
         this._hoverPosition = position;
-        if(this._currentStartingPoint === null) {
+        if(this._currentStartingPoint == null) {
             return;
         }
 
-        const midPoint = {
+        let midPoint = {
             x: this._currentStartingPoint.x,
             y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
+        }
+
+        switch(this._curveType){
+            case "new":
+                midPoint = {
+                    x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x),
+                    y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
+                }
+                break;
+            case "branchJoint":
+                break;
+            case "branchTrack":
+                break;
+            case "extendEndingTrack":
+                break;
         }
 
         if(this._previewCurve == null){
@@ -205,10 +239,6 @@ export class CurveCreationEngine implements LayoutContext {
 
     get previewCurve(): BCurve | null {
         return this._previewCurve;
-    }
-
-    get curves(): BCurve[] {
-        return this._curves;
     }
 
     get hoverCirclePosition(): Point | null {
@@ -225,22 +255,40 @@ export class CurveCreationEngine implements LayoutContext {
             y: this._currentStartingPoint.y + (endingPosition.y - this._currentStartingPoint.y),
         }
 
-        const curve = new BCurve([this._currentStartingPoint, midPoint, endingPosition]);
-        this._curves.push(curve);
         this._hoverPosition = null;
-        this._trackGraph.addJointPosition(this._currentStartingPoint);
-        this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, [midPoint]);
+        console.log('hoverCircleJointNumber', this._hoverCircleJointNumber);
+        if(this._hoverCircleJointNumber != null){
+            // this._trackGraph.extendTrackFromJoint(this._hoverCircleJointNumber, this._currentStartingPoint, endingPosition, [midPoint]);
+            if(this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
+                console.log(`ending track from joint ${this._hoverCircleJointNumber}`);
+                const otherEndOfEndingTrack = this._trackGraph.getTheOtherEndOfEndingTrack(this._hoverCircleJointNumber);
+                if(otherEndOfEndingTrack != null){
+                    console.log(`other end of ending track is ${otherEndOfEndingTrack}`);
+                    this._trackGraph.extendTrackFromJoint(otherEndOfEndingTrack, this._hoverCircleJointNumber, endingPosition, [midPoint]);
+                } else {
+                    console.warn("other end of ending track not found");
+                }
+            } else {
+                console.log('should branch out');
+
+            }
+        } else {
+            this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, [midPoint]);
+        }
+
         this._currentStartingPoint = null;
         this._previewCurve = null;
-        this._trackGraph.addJointPosition(endingPosition);
         this._hoverCircleJointNumber = null;
         this._hoverCirclePosition = null;
+        this._trackGraph.logJoints();
     }
 
     cancelCurrentCurve() {
         this._currentStartingPoint = null;
+        this._hoverCircleJointNumber = null;
         this._hoverPosition = null;
         this._previewCurve = null;
+        this.projection = null;
     }
 
     setup() {

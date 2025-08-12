@@ -163,24 +163,22 @@ function step(timestamp: number){
         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
         board.context.stroke();
     }
-    // curveEngine.curves.forEach((curve)=>{
-    //     const cps = curve.getControlPoints();
-    //     board.context.beginPath();
-    //     board.context.moveTo(cps[0].x, cps[0].y);
-    //     board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    //     board.context.stroke();
-    // });
+    
     curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
         const cps = trackSegment.curve.getControlPoints();
+        board.context.save();
+        board.context.lineWidth = 1 / board.camera.zoomLevel;
+        board.context.strokeStyle = "green";
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
         board.context.stroke();
+        board.context.restore();
     });
 
     for(let i = 0; i < arcs.length; i++){
         board.context.save();
-        board.context.lineWidth = 1 / board.camera.zoomLevel;
+        board.context.lineWidth = 3 / board.camera.zoomLevel;
         board.context.strokeStyle = "red";
         board.context.beginPath();
         // board.context.arc(arcs[i].center.x, arcs[i].center.y, arcs[i].radius, arcs[i]., arcs[i].endAngle, false);
@@ -192,6 +190,15 @@ function step(timestamp: number){
         board.context.beginPath();
         board.context.arc(curveEngine.hoverCirclePosition.x, curveEngine.hoverCirclePosition.y, 5, 0, 2 * Math.PI);
         board.context.fill();
+    }
+
+    if(curveEngine.projection != null){
+        board.context.save();
+        board.context.fillStyle = "blue";
+        board.context.beginPath();
+        board.context.arc(curveEngine.projection.x, curveEngine.projection.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
     }
 
     animation.animate(deltaTime);
