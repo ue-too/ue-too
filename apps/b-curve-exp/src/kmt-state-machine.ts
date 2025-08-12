@@ -151,6 +151,8 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _curveType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
 
+    private _constrainingCurve: BCurve | null = null;
+
     constructor() {
         this._currentStartingPoint = null;
         this._hoverPosition = null;
@@ -164,6 +166,16 @@ export class CurveCreationEngine implements LayoutContext {
             // starting on an existing joint
             console.log("starting on an existing joint", this._hoverCircleJointNumber);
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
+            const comingFromConnection = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
+            const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
+            console.log("coming from joint", comingFromConnection);
+            console.log("coming from curve", comingFromCurve);
+            const tVal = comingFromConnection.t0Joint === this._hoverCircleJointNumber ? 0 : 1;
+            const incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
+            console.log('incoming tangent', incomingTangent);
+            this._constrainingCurve = comingFromCurve;
+            // const incomingConnection = this._trackGraph.getJointConnections(this._hoverCircleJointNumber, comingFromJoint);
+            // console.log("incoming connection", incomingConnection);
             this._curveType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
@@ -216,25 +228,34 @@ export class CurveCreationEngine implements LayoutContext {
         switch(this._curveType){
             case "new":
                 midPoint = {
-                    x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x),
-                    y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
+                    x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x) / 2,
+                    y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y) / 2,
                 }
+                if(this._previewCurve == null){
+                    this._previewCurve = new BCurve([this._currentStartingPoint, midPoint, this._hoverPosition]);
+                    return;
+                }
+
+                this._previewCurve.setControlPointAtIndex(1, midPoint);
+                this._previewCurve.setControlPointAtIndex(2, this._hoverPosition);
                 break;
             case "branchJoint":
                 break;
             case "branchTrack":
                 break;
             case "extendEndingTrack":
+                const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve, this._hoverPosition);
+                if(this._previewCurve == null){
+                    this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
+                    return;
+                }
+                console.log('preview curve', this._previewCurve.getControlPoints());
+                this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
+                this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
+                this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
                 break;
         }
 
-        if(this._previewCurve == null){
-            this._previewCurve = new BCurve([this._currentStartingPoint, midPoint, this._hoverPosition]);
-            return;
-        }
-
-        this._previewCurve.setControlPointAtIndex(1, midPoint);
-        this._previewCurve.setControlPointAtIndex(2, this._hoverPosition);
     }
 
     get previewCurve(): BCurve | null {
@@ -246,36 +267,30 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     endCurve(endingPosition: Point) {
-        if(this._currentStartingPoint === null) {
+        if(this._currentStartingPoint === null || this._previewCurve === null) {
             return;
         }
 
-        const midPoint = {
-            x: this._currentStartingPoint.x,
-            y: this._currentStartingPoint.y + (endingPosition.y - this._currentStartingPoint.y),
-        }
-
-        this._hoverPosition = null;
-        console.log('hoverCircleJointNumber', this._hoverCircleJointNumber);
-        if(this._hoverCircleJointNumber != null){
-            // this._trackGraph.extendTrackFromJoint(this._hoverCircleJointNumber, this._currentStartingPoint, endingPosition, [midPoint]);
-            if(this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
-                console.log(`ending track from joint ${this._hoverCircleJointNumber}`);
+        const cps = this._previewCurve.getControlPoints().slice(1, -1);
+        console.log('raw cps', this._previewCurve.getControlPoints());
+        switch(this._curveType){
+            case "new":
+                this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
+                break;
+            case "branchJoint":
+                break;
+            case "branchTrack":
+                break;
+            case "extendEndingTrack":   
                 const otherEndOfEndingTrack = this._trackGraph.getTheOtherEndOfEndingTrack(this._hoverCircleJointNumber);
                 if(otherEndOfEndingTrack != null){
                     console.log(`other end of ending track is ${otherEndOfEndingTrack}`);
-                    this._trackGraph.extendTrackFromJoint(otherEndOfEndingTrack, this._hoverCircleJointNumber, endingPosition, [midPoint]);
-                } else {
-                    console.warn("other end of ending track not found");
+                    this._trackGraph.extendTrackFromJoint(otherEndOfEndingTrack, this._hoverCircleJointNumber, endingPosition, cps);
                 }
-            } else {
-                console.log('should branch out');
-
-            }
-        } else {
-            this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, [midPoint]);
+                break;
         }
 
+        this._hoverPosition = null;
         this._currentStartingPoint = null;
         this._previewCurve = null;
         this._hoverCircleJointNumber = null;
@@ -342,4 +357,42 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
         },
         p2: mousePos
     };
+}
+
+function createG2Cubic(existingCurve: BCurve, targetPoint: Point) {
+    const endPoint = existingCurve.get(1);
+    const unitTangent = PointCal.unitVector(existingCurve.derivative(1));
+    
+    // Calculate tangent magnitude based on distance to target
+    const targetDistance = PointCal.distanceBetweenPoints(endPoint, targetPoint);
+    const tangentMagnitude = Math.min(targetDistance * 0.4, 150);
+    
+    const newCubic: {p0: Point, p1: Point, p2: Point, p3: Point} = {
+        p0: endPoint,
+        p1: {x: 0, y: 0},
+        p2: {x: 0, y: 0},
+        p3: {x: 0, y: 0}
+    };
+
+    newCubic.p0 = { ...endPoint };
+    
+    // P1: Along tangent direction
+    newCubic.p1 = {
+        x: newCubic.p0.x + unitTangent.x * tangentMagnitude,
+        y: newCubic.p0.y + unitTangent.y * tangentMagnitude
+    };
+    
+    // For G2 continuity: 6*(P2 - 2*P1 + P0) should match curvature constraint
+    const targetSecondDeriv = existingCurve.secondDerivative(1);
+    
+    // P2: Satisfy G2 constraint
+    newCubic.p2 = {
+        x: (targetSecondDeriv.x / 6) + 2 * newCubic.p1.x - newCubic.p0.x,
+        y: (targetSecondDeriv.y / 6) + 2 * newCubic.p1.y - newCubic.p0.y
+    };
+    
+    // P3: Target point
+    newCubic.p3 = { ...targetPoint };
+    
+    return newCubic;
 }
