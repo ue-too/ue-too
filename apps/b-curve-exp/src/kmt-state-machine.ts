@@ -151,7 +151,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _curveType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
 
-    private _constrainingCurve: BCurve | null = null;
+    private _constrainingCurve: {curve: BCurve, atT: number} | null = null;
 
     constructor() {
         this._currentStartingPoint = null;
@@ -168,12 +168,13 @@ export class CurveCreationEngine implements LayoutContext {
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
             const comingFromConnection = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
             const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
-            console.log("coming from joint", comingFromConnection);
+            console.log("coming from connection", comingFromConnection);
             console.log("coming from curve", comingFromCurve);
             const tVal = comingFromConnection.t0Joint === this._hoverCircleJointNumber ? 0 : 1;
+            console.log("tVal", tVal);
             const incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
             console.log('incoming tangent', incomingTangent);
-            this._constrainingCurve = comingFromCurve;
+            this._constrainingCurve = {curve: comingFromCurve, atT: tVal};
             // const incomingConnection = this._trackGraph.getJointConnections(this._hoverCircleJointNumber, comingFromJoint);
             // console.log("incoming connection", incomingConnection);
             this._curveType = "extendEndingTrack";
@@ -244,12 +245,11 @@ export class CurveCreationEngine implements LayoutContext {
             case "branchTrack":
                 break;
             case "extendEndingTrack":
-                const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve, this._hoverPosition);
+                const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
                 if(this._previewCurve == null){
                     this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
                     return;
                 }
-                console.log('preview curve', this._previewCurve.getControlPoints());
                 this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
                 this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                 this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
@@ -319,13 +319,19 @@ export class CurveCreationEngine implements LayoutContext {
     }
 }
 
-function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
-    const controlPoints = existingCurve.getControlPoints();
-    const endPoint = controlPoints[controlPoints.length - 1];
-    const curvature = existingCurve.curvature(1);
-    const tangent = existingCurve.derivative(1);
-    const unitTangent = PointCal.unitVector(tangent);
-    const mouseDistance = PointCal.distanceBetweenPoints(endPoint, mousePos);
+function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT: number = 1) {
+    const branchPoint = existingCurve.get(atT);
+    const curvature = existingCurve.curvature(atT);
+    const tangent = existingCurve.derivative(atT);
+    let unitTangent = PointCal.unitVector(tangent);
+    const mouseDistance = PointCal.distanceBetweenPoints(branchPoint, mousePos);
+
+    const mouseDirection = PointCal.unitVectorFromA2B(branchPoint, mousePos);
+    const angleBetweenTangentAndMouse = PointCal.angleFromA2B(tangent, mouseDirection);
+
+    if(angleBetweenTangentAndMouse > Math.PI / 2){
+        unitTangent = PointCal.multiplyVectorByScalar(unitTangent, -1);
+    }
     
     // Adaptive control distance based on mouse position
     let controlDistance = Math.min(mouseDistance * 0.5);
@@ -338,8 +344,8 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
     
     // Prevent extreme angles
     const mouseVector = {
-        x: mousePos.x - endPoint.x,
-        y: mousePos.y - endPoint.y
+        x: mousePos.x - branchPoint.x,
+        y: mousePos.y - branchPoint.y
     };
     const angleToMouse = Math.atan2(mouseVector.y, mouseVector.x);
     const tangentAngle = Math.atan2(tangent.y, tangent.x);
@@ -350,10 +356,10 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
     }
     
     return {
-        p0: endPoint,
+        p0: branchPoint,
         p1: {
-            x: endPoint.x + unitTangent.x * controlDistance,
-            y: endPoint.y + unitTangent.y * controlDistance
+            x: branchPoint.x + unitTangent.x * controlDistance,
+            y: branchPoint.y + unitTangent.y * controlDistance
         },
         p2: mousePos
     };

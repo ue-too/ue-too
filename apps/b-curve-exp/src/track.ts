@@ -14,6 +14,7 @@ export type Connection = {
 export type TrackJoint = {
     position: Point;
     from: Map<number | "end", Connection>;
+    connections: Map<number, TrackSegment>;
 }
 
 export class TrackGraph {
@@ -51,7 +52,8 @@ export class TrackGraph {
 
         const endTrackJoint: TrackJoint = {
             position: endPosition,
-            from: new Map()
+            from: new Map(),
+            connections: new Map()
         };
 
         let comingFromConnections: Connection | undefined;
@@ -72,6 +74,7 @@ export class TrackGraph {
         };
 
         endTrackJoint.from.set("end", end2StartConnection);
+        endTrackJoint.connections.set(startJointNumber, newTrackSegment);
 
         this.joints.set(endJointNumber, endTrackJoint);
     }
@@ -90,12 +93,14 @@ export class TrackGraph {
 
         const startJoint: TrackJoint = {
             position: startJointPosition,
-            from: new Map()
+            from: new Map(),
+            connections: new Map()
         };
 
         const endJoint: TrackJoint = {
             position: endJointPosition,
-            from: new Map()
+            from: new Map(),
+            connections: new Map()
         };
 
         const start2EndConnection: Connection = {
@@ -108,6 +113,8 @@ export class TrackGraph {
 
         startJoint.from.set("end", start2EndConnection);
         endJoint.from.set("end", end2StartConnection);
+        startJoint.connections.set(endJointNumber, newTrackSegment);
+        endJoint.connections.set(startJointNumber, newTrackSegment);
 
         this.joints.set(startJointNumber, startJoint);
         this.joints.set(endJointNumber, endJoint);
@@ -188,6 +195,7 @@ export class TrackGraph {
         const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
+            connections: new Map()
         };
 
         const newJointNumber = this.jointNumberManager.createEntity();
@@ -203,6 +211,7 @@ export class TrackGraph {
         };
 
         newTrackJoint.from.set("end", newConnection);
+        newTrackJoint.connections.set(startJointNumber, newTrackSegment);
 
         this.joints.set(newJointNumber, newTrackJoint);
 
@@ -227,6 +236,8 @@ export class TrackGraph {
             }
             startJoint.from.delete("end");
         }
+
+        startJoint.connections.set(newJointNumber, newTrackSegment);
     }
 
     getJointPosition(jointNumber: number): Point | null {
@@ -293,6 +304,9 @@ export class TrackGraph {
                 for(const [jointNumber, trackSegment] of connection.out.entries()){
                     console.log(`can go to ${jointNumber}`);
                 }
+            }
+            for(const [jointNumber, trackSegment] of joint.connections.entries()){
+                console.log(`has connection to ${jointNumber} with track segment ${trackSegment.curve}`);
             }
         }
     }
