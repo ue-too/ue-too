@@ -145,3 +145,38 @@ export class PointCal {
     }
     
 }
+
+/**
+ * @description Normalizes the angle to be between 0 and 2π.
+ * 
+ * @category Camera
+ */
+export function normalizeAngleZero2TwoPI(angle: number){
+    // reduce the angle  
+    angle = angle % (Math.PI * 2);
+
+    // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI 
+    angle = (angle + Math.PI * 2) % (Math.PI * 2); 
+    return angle;
+}
+
+/**
+ * @description Gets the smaller angle span between two angles. (in radians)
+ * 
+ * @category Camera
+ */
+export function angleSpan(from: number, to: number): number{
+    // in radians
+    from = normalizeAngleZero2TwoPI(from);
+    to = normalizeAngleZero2TwoPI(to);
+    let angleDiff = to - from;
+    
+    if(angleDiff > Math.PI){
+        angleDiff = - (Math.PI * 2 - angleDiff);
+    }
+
+    if(angleDiff < -Math.PI){
+        angleDiff += (Math.PI * 2);
+    }
+    return angleDiff;
+}
