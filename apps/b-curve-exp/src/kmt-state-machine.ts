@@ -274,7 +274,6 @@ export class CurveCreationEngine implements LayoutContext {
                 let tangent = PointCal.unitVector(this._trackGraph.getTangentAtJoint(this._hoverCircleJointNumber));
                 const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
                 if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
-                    console.info('tangent should be the reversed');
                     tangent = PointCal.multiplyVectorByScalar(tangent, -1);
                 }
                 const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
@@ -285,7 +284,6 @@ export class CurveCreationEngine implements LayoutContext {
                 this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
                 this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                 this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
-                console.log("current starting point", this._currentStartingPoint);
                 break;
             }
             case "branchTrack":{
@@ -303,9 +301,8 @@ export class CurveCreationEngine implements LayoutContext {
                 const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
                 const angleDiff = PointCal.angleFromA2B(this._constrainingCurve.tangent, curPreviewTangent);
                 const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-                console.log("angle diff", angleDiffRad * 180 / Math.PI);
                 if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
-                    console.log("invalid direction");
+                    // invalid direction; ending track should not be able to branch
                 }
                 break;
         }
