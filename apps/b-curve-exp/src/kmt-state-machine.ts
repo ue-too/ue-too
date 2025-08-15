@@ -1,9 +1,9 @@
 import { BCurve } from "@ue-too/curve";
 import { type Point } from "@ue-too/math";
-import type { StateMachine, BaseContext, EventReactions } from "@ue-too/being";
+import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
-import { TrackGraph } from "./track";
-import { PointCal } from "@ue-too/math";
+import { ProjectionInfo, TrackGraph } from "./track";
+import { PointCal, normalizeAngleZero2TwoPI, angleSpan } from "@ue-too/math";
 
 
 export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT";
@@ -26,12 +26,16 @@ export type LayoutEvents = {
     "endLayout": {};
 }
 
+type NewCurveCreationType = "new" | "branchJoint" | "branchTrack" | "extendEndingTrack";
+
 export interface LayoutContext extends BaseContext {
+    startingPointType: NewCurveCreationType; 
     startCurve: (startingPosition: Point) => void;
     endCurve: (endingPosition: Point) => void;
     cancelCurrentCurve: () => void;
     hoveringForEndJoint: (position: Point) => void;
     hoverForStartingPoint: (position: Point) => void;
+    insertJointIntoTrackSegment: (startJointNumber: number, endJointNumber: number, atT: number) => void;
 }
 
 class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -78,6 +82,20 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
             },
             defaultTargetState: "IDLE",
         },
+    };
+
+    protected _guards: Guard<LayoutContext, string> = {
+        "hasProjection": (context: LayoutContext) => {
+            // NOTE: is in the middle instead of the end points
+            return context.startingPointType === "branchTrack";
+        }
+    }
+
+    protected _eventGuards: Partial<EventGuards<LayoutEvents, LayoutStates, LayoutContext, typeof this._guards>> = {
+        "pointerup": [{
+            guard: "hasProjection",
+            target: "HOVER_FOR_STARTING_POINT",
+        }],
     };
 
     get eventReactions() {
@@ -147,17 +165,21 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewCurve: BCurve | null;
     private _trackGraph: TrackGraph;
 
-    public projection: Point | null = null;
+    public projection: ProjectionInfo | null = null;
 
-    private _curveType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
+    private _startingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
 
-    private _constrainingCurve: {curve: BCurve, atT: number} | null = null;
+    private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
 
     constructor() {
         this._currentStartingPoint = null;
         this._hoverPosition = null;
         this._previewCurve = null;
         this._trackGraph = new TrackGraph();
+    }
+
+    get startingPointType(): NewCurveCreationType {
+        return this._startingPointType;
     }
 
     startCurve(startingPosition: Point) {
@@ -170,25 +192,32 @@ export class CurveCreationEngine implements LayoutContext {
             const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
             console.log("coming from connection", comingFromConnection);
             console.log("coming from curve", comingFromCurve);
-            const tVal = comingFromConnection.t0Joint === this._hoverCircleJointNumber ? 0 : 1;
+            let tVal = 1;
+            let incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
+            if(comingFromConnection.t0Joint === this._hoverCircleJointNumber){
+                tVal = 0;
+                incomingTangent = PointCal.multiplyVectorByScalar(incomingTangent, -1);
+            }
             console.log("tVal", tVal);
-            const incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
             console.log('incoming tangent', incomingTangent);
-            this._constrainingCurve = {curve: comingFromCurve, atT: tVal};
+            this._constrainingCurve = {curve: comingFromCurve, atT: tVal, tangent: incomingTangent};
             // const incomingConnection = this._trackGraph.getJointConnections(this._hoverCircleJointNumber, comingFromJoint);
             // console.log("incoming connection", incomingConnection);
-            this._curveType = "extendEndingTrack";
+            this._startingPointType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
             console.log('branching out from a joint that is not an ending track', this._hoverCircleJointNumber);
-            this._curveType = "branchJoint";
+            this._startingPointType = "branchJoint";
         } else if (this.projection != null){
-            newPosition = this.projection;
+            newPosition = this.projection.projectionPoint;
+            this._trackGraph.insertJointIntoTrackSegment(this.projection.t0Joint, this.projection.t1Joint, this.projection.atT);
+            this._trackGraph.logJoints();
+            this._trackGraph.logTrackSegments();
+            this._startingPointType = "branchTrack";
             console.log("branching out from a track segment", this.projection);
-            this._curveType = "branchTrack";
         } else {
             console.log("starting on a new track segment");
-            this._curveType = "new";
+            this._startingPointType = "new";
         }
 
         this._currentStartingPoint = newPosition;
@@ -226,7 +255,7 @@ export class CurveCreationEngine implements LayoutContext {
             y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
         }
 
-        switch(this._curveType){
+        switch(this._startingPointType){
             case "new":
                 midPoint = {
                     x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x) / 2,
@@ -253,6 +282,13 @@ export class CurveCreationEngine implements LayoutContext {
                 this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
                 this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                 this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
+                const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
+                const angleDiff = PointCal.angleFromA2B(this._constrainingCurve.tangent, curPreviewTangent);
+                const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
+                console.log("angle diff", angleDiffRad * 180 / Math.PI);
+                if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
+                    console.log("invalid direction");
+                }
                 break;
         }
 
@@ -273,7 +309,7 @@ export class CurveCreationEngine implements LayoutContext {
 
         const cps = this._previewCurve.getControlPoints().slice(1, -1);
         console.log('raw cps', this._previewCurve.getControlPoints());
-        switch(this._curveType){
+        switch(this._startingPointType){
             case "new":
                 this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
@@ -296,6 +332,10 @@ export class CurveCreationEngine implements LayoutContext {
         this._hoverCircleJointNumber = null;
         this._hoverCirclePosition = null;
         this._trackGraph.logJoints();
+    }
+
+    insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number) {
+        this._trackGraph.insertJointIntoTrackSegment(startJointNumber, endJointNumber, atT);
     }
 
     cancelCurrentCurve() {
@@ -327,9 +367,12 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT:
     const mouseDistance = PointCal.distanceBetweenPoints(branchPoint, mousePos);
 
     const mouseDirection = PointCal.unitVectorFromA2B(branchPoint, mousePos);
-    const angleBetweenTangentAndMouse = PointCal.angleFromA2B(tangent, mouseDirection);
 
-    if(angleBetweenTangentAndMouse > Math.PI / 2){
+    const rawAngleDiff = PointCal.angleFromA2B(unitTangent, mouseDirection);
+    const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
+
+    // NOTE: + or - 90 degrees should reverse the tangent direction
+    if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
         unitTangent = PointCal.multiplyVectorByScalar(unitTangent, -1);
     }
     
@@ -347,13 +390,7 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT:
         x: mousePos.x - branchPoint.x,
         y: mousePos.y - branchPoint.y
     };
-    const angleToMouse = Math.atan2(mouseVector.y, mouseVector.x);
-    const tangentAngle = Math.atan2(tangent.y, tangent.x);
-    const angleDiff = Math.abs(angleToMouse - tangentAngle);
-    
-    if (angleDiff > Math.PI / 2) {
-        controlDistance *= 0.5; // Reduce control distance for sharp turns
-    }
+
     
     return {
         p0: branchPoint,

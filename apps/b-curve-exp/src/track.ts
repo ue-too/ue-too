@@ -17,6 +17,14 @@ export type TrackJoint = {
     connections: Map<number, TrackSegment>;
 }
 
+export type ProjectionInfo = {
+    curve: number;
+    t0Joint: number;
+    t1Joint: number;
+    atT: number;
+    projectionPoint: Point;
+}
+
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
@@ -32,6 +40,129 @@ export class TrackGraph {
         this.jointPositions.push(position);
     }
 
+    getJoints(): TrackJoint[] {
+        return Array.from(this.joints.values());
+    }
+
+    insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number){
+        const startJoint = this.joints.get(startJointNumber);
+        const endJoint = this.joints.get(endJointNumber);
+
+        if(startJoint === undefined || endJoint === undefined){
+            console.warn("startJoint or endJoint not found");
+            return;
+        }
+
+        const trackSegment = startJoint.connections.get(endJointNumber);
+
+        if(trackSegment === undefined || (trackSegment.t0Joint !== startJointNumber && trackSegment.t0Joint !== endJointNumber) || (trackSegment.t1Joint !== endJointNumber && trackSegment.t1Joint !== startJointNumber)){
+            console.warn("trackSegment not found or not the correct track segment; something is wrong");
+            return;
+        }
+        
+        const curve = this._trackCurveManager.getTrackSegment(trackSegment.curve);
+
+        if(curve === null){
+            console.warn("curve of track segmentnot found");
+            return;
+        }
+        
+        const newControlPointGroups = curve.split(atT);
+        const newJointNumber = this.jointNumberManager.createEntity();
+        const t0JointNumber = trackSegment.t0Joint;
+        const t1JointNumber = trackSegment.t1Joint;
+        let t0Joint = startJoint;
+        let t1Joint = endJoint;
+        if(t0JointNumber === endJointNumber) {
+            t0Joint = endJoint;
+            t1Joint = startJoint;
+        }
+        const newJointPosition = curve.get(atT);
+
+        const firstCurve = new BCurve(newControlPointGroups[0]);
+        const secondCurve = new BCurve(newControlPointGroups[1]);
+
+        const firstCurveNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber);
+        const secondCurveNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber);
+
+        const firstTrackSegment: TrackSegment = {
+            t0Joint: t0JointNumber,
+            t1Joint: newJointNumber,
+            curve: firstCurveNumber
+        };
+
+        const secondTrackSegment: TrackSegment = {
+            t0Joint: newJointNumber,
+            t1Joint: t1JointNumber,
+            curve: secondCurveNumber
+        };
+
+        /*  NOTE: insert the new joint*/
+        const newJoint: TrackJoint = {
+            position: newJointPosition,
+            from: new Map(),
+            connections: new Map()
+        };
+
+        newJoint.from.set(t0JointNumber, {
+            out: new Map([[t1JointNumber, secondTrackSegment]])
+        });
+
+        newJoint.from.set(t1JointNumber, {
+            out: new Map([[t0JointNumber, firstTrackSegment]])
+        });
+
+        newJoint.connections.set(t0JointNumber, firstTrackSegment);
+        newJoint.connections.set(t1JointNumber, secondTrackSegment);
+
+        this.joints.set(newJointNumber, newJoint);
+
+        /* NOTE: update the t0 joint */
+
+        // NOTE: add the new connection and remove the old connection to the t1Joint
+        t0Joint.connections.set(newJointNumber, firstTrackSegment);
+        t0Joint.connections.delete(t1JointNumber);
+        
+        // NOTE: update every destination joint that is the t1Joint
+        t0Joint.from.forEach((connection)=>{
+            if(connection.out.has(t1JointNumber)){
+                connection.out.set(newJointNumber, firstTrackSegment);
+                connection.out.delete(t1JointNumber);
+            }
+        });
+
+        // NOTE: update the incoming from t1Joint
+        if(t0Joint.from.has(t1JointNumber)){
+            const t0JointFromt1Joint = t0Joint.from.get(t1JointNumber);
+            t0Joint.from.set(newJointNumber, t0JointFromt1Joint);
+            t0Joint.from.delete(t1JointNumber);
+        }
+
+
+        /* NOTE: update the t1 joint */
+
+        // NOTE: add the new connection and remove the old connection to the t0Joint
+        t1Joint.connections.set(newJointNumber, secondTrackSegment);
+        t1Joint.connections.delete(t0JointNumber);
+
+        // NOTE: udpate every destination joint that is the t0Joint
+        t1Joint.from.forEach((connection, originJointNumber)=>{
+            if(connection.out.has(t0JointNumber)){
+                connection.out.set(newJointNumber, secondTrackSegment);
+                connection.out.delete(t0JointNumber);
+            }
+        });
+
+        // NOTE: update the incoming from t0Joint
+        if(t1Joint.from.has(t0JointNumber)){
+            const t1JointFromt0Joint = t1Joint.from.get(t0JointNumber);
+            t1Joint.from.set(newJointNumber, t1JointFromt0Joint);
+            t1Joint.from.delete(t0JointNumber);
+        }
+
+        this._trackCurveManager.destroyEntity(trackSegment.curve);
+    }
+
     branchToNewJoint(comingFromJoint: number, startJointNumber: number, endPosition: Point, controlPoints: Point[]){
         const startJoint = this.joints.get(startJointNumber);
 
@@ -41,8 +172,8 @@ export class TrackGraph {
         }
 
         const curve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
-        const curveNumber = this._trackCurveManager.createEntity(curve);
         const endJointNumber = this.jointNumberManager.createEntity();
+        const curveNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
@@ -81,9 +212,9 @@ export class TrackGraph {
 
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]){
         const curve = new BCurve([startJointPosition, ...controlPoints, endJointPosition]);
-        const curveNumber = this._trackCurveManager.createEntity(curve);
         const startJointNumber = this.jointNumberManager.createEntity();
         const endJointNumber = this.jointNumberManager.createEntity();
+        const curveNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
@@ -191,7 +322,6 @@ export class TrackGraph {
         }
 
         const newCurve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
-        const newCurveNumber = this._trackCurveManager.createEntity(newCurve);
         const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
@@ -199,6 +329,7 @@ export class TrackGraph {
         };
 
         const newJointNumber = this.jointNumberManager.createEntity();
+        const newCurveNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, newJointNumber);
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
@@ -265,20 +396,38 @@ export class TrackGraph {
         return null;
     }
 
-    projectPointOnTrack(position: Point): Point | null {
+    projectPointOnTrack(position: Point): ProjectionInfo | null {
         let minDistance = 10;
-        let minProjection: Point | null = null;
+        let projectionInfo: ProjectionInfo | null = null;
         this._trackCurveManager.livingEntities.forEach((entity)=>{
-            const res = this._trackCurveManager.getTrackSegment(entity)?.getProjection(position);
+            const trackSegment = this._trackCurveManager.getTrackSegmentWithJoints(entity);
+            if(trackSegment === null){
+                return;
+            }
+            const res = trackSegment.curve.getProjection(position);
             if(res != null){
                 const distance = PointCal.distanceBetweenPoints(position, res.projection);
                 if(distance < minDistance){
                     minDistance = distance;
-                    minProjection = res.projection;
+                    if(projectionInfo === null){
+                        projectionInfo = {
+                            curve: entity,
+                            atT: res.tVal,
+                            projectionPoint: res.projection,
+                            t0Joint: trackSegment.t0Joint,
+                            t1Joint: trackSegment.t1Joint
+                        };
+                        return;
+                    }
+                    projectionInfo.atT = res.tVal;
+                    projectionInfo.projectionPoint = res.projection;
+                    projectionInfo.curve = entity;
+                    projectionInfo.t0Joint = trackSegment.t0Joint;
+                    projectionInfo.t1Joint = trackSegment.t1Joint;
                 }
             }
         });
-        return minProjection;
+        return projectionInfo;
     }
 
     getTrackSegmentCurve(curveNumber: number): BCurve | null {
@@ -286,13 +435,7 @@ export class TrackGraph {
     }
 
     get trackSegments(): {t0Joint: number, t1Joint: number, curve: BCurve}[] {
-        return this._trackCurveManager.livingEntities.map((entity) => {
-            return {
-                t0Joint: this.joints.get(entity)?.from.get("end")?.out.get(entity)?.t0Joint,
-                t1Joint: this.joints.get(entity)?.from.get("end")?.out.get(entity)?.t1Joint,
-                curve: this._trackCurveManager.getTrackSegment(entity)
-            }
-        });
+        return this._trackCurveManager.getTrackSegmentsWithJoints();
     }
 
     logJoints(){
@@ -308,6 +451,15 @@ export class TrackGraph {
             for(const [jointNumber, trackSegment] of joint.connections.entries()){
                 console.log(`has connection to ${jointNumber} with track segment ${trackSegment.curve}`);
             }
+        }
+    }
+    
+    logTrackSegments(){
+        for(const [index, trackSegment] of this.trackSegments.entries()){
+            if(trackSegment.curve === null){
+                continue;
+            }
+            console.log(`track segment ${index} has t0Joint ${trackSegment.t0Joint} and t1Joint ${trackSegment.t1Joint} with curve ${trackSegment.curve}`);
         }
     }
 
@@ -359,6 +511,7 @@ export class TrackCurveManager {
     private _livingEntities: Set<number> = new Set();
     private _maxEntities: number;
     private _livingEntityCount = 0;
+    private _trackSegmentsWithJoints: ({curve: BCurve, t0Joint: number, t1Joint: number} | null)[] = [];
     private _trackSegments: (BCurve | null)[] = [];
 
     constructor(initialCount: number) {
@@ -366,6 +519,7 @@ export class TrackCurveManager {
         for (let i = 0; i < this._maxEntities; i++) {
             this._availableEntities.push(i);
             this._trackSegments.push(null);
+            this._trackSegmentsWithJoints.push(null);
         }
     }
 
@@ -374,6 +528,23 @@ export class TrackCurveManager {
             return null;
         }
         return this._trackSegments[entity];
+    }
+
+    getTrackSegmentsWithJoints(): {curve: BCurve, t0Joint: number, t1Joint: number}[] {
+        return this._trackSegmentsWithJoints.filter((trackSegment) => trackSegment !== null);
+    }
+
+    getTrackSegmentWithJoints(entity: number): {curve: BCurve, t0Joint: number, t1Joint: number} | null {
+        if(entity < 0 || entity >= this._trackSegmentsWithJoints.length){
+            return null;
+        }
+        return this._trackSegmentsWithJoints[entity];
+    }
+
+    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number): number {
+        const entity = this.createEntity(curve);
+        this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
+        return entity;
     }
 
     createEntity(curve: BCurve): number {
@@ -405,6 +576,7 @@ export class TrackCurveManager {
         this._availableEntities.push(entity);
         this._livingEntityCount--;
         this._trackSegments[entity] = null;
+        this._trackSegmentsWithJoints[entity] = null;
     }
 
     get livingEntities(): number[] {

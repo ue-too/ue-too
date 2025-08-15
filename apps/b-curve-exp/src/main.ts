@@ -176,6 +176,16 @@ function step(timestamp: number){
         board.context.restore();
     });
 
+    curveEngine.trackGraph.getJoints().forEach((joint)=>{
+        board.context.save();
+        board.context.lineWidth = 1 / board.camera.zoomLevel;
+        board.context.strokeStyle = "blue";
+        board.context.beginPath();
+        board.context.arc(joint.position.x, joint.position.y, 5, 0, 2 * Math.PI);
+        board.context.stroke();
+        board.context.restore();
+    });
+
     for(let i = 0; i < arcs.length; i++){
         board.context.save();
         board.context.lineWidth = 3 / board.camera.zoomLevel;
@@ -196,7 +206,7 @@ function step(timestamp: number){
         board.context.save();
         board.context.fillStyle = "blue";
         board.context.beginPath();
-        board.context.arc(curveEngine.projection.x, curveEngine.projection.y, 5, 0, 2 * Math.PI);
+        board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
