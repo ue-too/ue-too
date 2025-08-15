@@ -251,6 +251,25 @@ export class TrackGraph {
         this.joints.set(endJointNumber, endJoint);
     }
 
+    getTangentAtJoint(jointNumber: number): Point | null {
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            return null;
+        }
+        const firstConnection: TrackSegment = joint.connections.values().next().value;
+        const curve = this._trackCurveManager.getTrackSegment(firstConnection.curve);
+        if(curve === null){
+            return null;
+        }
+        let tVal = 0;
+        let derivative = curve.derivative(tVal);
+        if(firstConnection.t1Joint === jointNumber){
+            tVal = 1;
+            return PointCal.multiplyVectorByScalar(derivative, -1);
+        }
+        return derivative;
+    }
+
     getJointConnections(jointNumber: number, comingFromJoint: number | "end"): Connection | null {
         const joint = this.joints.get(jointNumber);
         if(joint === undefined){
@@ -377,6 +396,23 @@ export class TrackGraph {
             return null;
         }
         return joint.position;
+    }
+
+    getCurvatureAtJoint(jointNumber: number): number | null {
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            return null;
+        }
+        const firstConnection: TrackSegment = joint.connections.values().next().value;
+        const curve = this._trackCurveManager.getTrackSegment(firstConnection.curve);
+        if(curve === null){
+            return null;
+        }
+        let tVal = 0;
+        if(firstConnection.t1Joint === jointNumber){
+            tVal = 1;
+        }
+        return curve.curvature(tVal);
     }
 
     pointOnJoint(position: Point): {jointNumber: number} | null {

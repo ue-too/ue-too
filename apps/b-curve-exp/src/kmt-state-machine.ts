@@ -199,10 +199,9 @@ export class CurveCreationEngine implements LayoutContext {
                 incomingTangent = PointCal.multiplyVectorByScalar(incomingTangent, -1);
             }
             console.log("tVal", tVal);
-            console.log('incoming tangent', incomingTangent);
             this._constrainingCurve = {curve: comingFromCurve, atT: tVal, tangent: incomingTangent};
-            // const incomingConnection = this._trackGraph.getJointConnections(this._hoverCircleJointNumber, comingFromJoint);
-            // console.log("incoming connection", incomingConnection);
+
+            console.log('incoming tangent', incomingTangent);
             this._startingPointType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
@@ -269,10 +268,29 @@ export class CurveCreationEngine implements LayoutContext {
                 this._previewCurve.setControlPointAtIndex(1, midPoint);
                 this._previewCurve.setControlPointAtIndex(2, this._hoverPosition);
                 break;
-            case "branchJoint":
+            case "branchJoint":{
+                const curPreviewDirection = PointCal.unitVectorFromA2B(this._currentStartingPoint, this._hoverPosition);
+                const curvature = this._trackGraph.getCurvatureAtJoint(this._hoverCircleJointNumber);
+                let tangent = PointCal.unitVector(this._trackGraph.getTangentAtJoint(this._hoverCircleJointNumber));
+                const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
+                if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+                    console.info('tangent should be the reversed');
+                    tangent = PointCal.multiplyVectorByScalar(tangent, -1);
+                }
+                const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
+                if(this._previewCurve == null){
+                    this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
+                    return;
+                }
+                this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
+                this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
+                this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
+                console.log("current starting point", this._currentStartingPoint);
                 break;
-            case "branchTrack":
+            }
+            case "branchTrack":{
                 break;
+            }
             case "extendEndingTrack":
                 const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
                 if(this._previewCurve == null){
@@ -321,6 +339,13 @@ export class CurveCreationEngine implements LayoutContext {
                 const otherEndOfEndingTrack = this._trackGraph.getTheOtherEndOfEndingTrack(this._hoverCircleJointNumber);
                 if(otherEndOfEndingTrack != null){
                     console.log(`other end of ending track is ${otherEndOfEndingTrack}`);
+                    const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
+                    const angleDiff = PointCal.angleFromA2B(this._constrainingCurve.tangent, curPreviewTangent);
+                    const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
+                    if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
+                        console.log("invalid direction in endCurve");
+                        break;
+                    }
                     this._trackGraph.extendTrackFromJoint(otherEndOfEndingTrack, this._hoverCircleJointNumber, endingPosition, cps);
                 }
                 break;
@@ -399,6 +424,78 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT:
             y: branchPoint.y + unitTangent.y * controlDistance
         },
         p2: mousePos
+    };
+}
+
+/**
+ * Creates a quadratic Bézier curve from start and end points with specified tangent direction and curvature
+ * @param startPoint - The starting point of the curve (P0)
+ * @param endPoint - The ending point of the curve (P2)  
+ * @param tangentDirection - Unit vector indicating the tangent direction at the start point
+ * @param curvature - The desired curvature value (positive for left turn, negative for right turn)
+ * @returns Object containing the three control points {p0, p1, p2} of the quadratic Bézier curve
+ */
+function createQuadraticFromTangentCurvature(
+    startPoint: Point, 
+    endPoint: Point, 
+    tangentDirection: Point, 
+    curvature: number
+): {p0: Point, p1: Point, p2: Point} {
+    
+    // Ensure tangent direction is normalized
+    const unitTangent = PointCal.unitVector(tangentDirection);
+    
+    // Calculate the chord vector from start to end
+    const chordVector = PointCal.subVector(endPoint, startPoint);
+    const chordLength = PointCal.magnitude(chordVector);
+    
+    // For a quadratic Bézier curve, the relationship between curvature and control point placement
+    // can be derived from the curve's mathematical properties
+    // The control point distance is inversely related to curvature magnitude
+    
+    // Base control distance as a fraction of chord length
+    let controlDistance = chordLength * 0.5;
+    
+    // Adjust control distance based on curvature
+    // Higher curvature magnitude requires closer control points for tighter curves
+    const curvatureMagnitude = Math.abs(curvature);
+    if (curvatureMagnitude > 0.001) {
+        // Scale inversely with curvature, but with reasonable bounds
+        const curvatureScale = Math.min(1.0, 1.0 / (curvatureMagnitude * chordLength + 1.0));
+        controlDistance *= curvatureScale;
+        
+        // Additional scaling based on curvature sign and magnitude
+        if (curvatureMagnitude > 0.01) {
+            controlDistance *= 0.8; // Tighter control for high curvature
+        }
+    }
+    
+    // Calculate the midpoint control point (P1)
+    // For quadratic curves, P1 influences both the tangent direction and curvature
+    const p1 = {
+        x: startPoint.x + unitTangent.x * controlDistance,
+        y: startPoint.y + unitTangent.y * controlDistance
+    };
+    
+    // Fine-tune P1 position based on curvature direction
+    // Positive curvature typically means curving to the left of the tangent direction
+    if (Math.abs(curvature) > 0.001) {
+        // Calculate perpendicular vector to tangent (90 degrees counter-clockwise)
+        const perpendicular = {
+            x: -unitTangent.y,
+            y: unitTangent.x
+        };
+        
+        // Adjust P1 perpendicular to the tangent based on curvature
+        const perpendicularOffset = curvature * chordLength * 0.1;
+        p1.x += perpendicular.x * perpendicularOffset;
+        p1.y += perpendicular.y * perpendicularOffset;
+    }
+    
+    return {
+        p0: startPoint,
+        p1: p1,
+        p2: endPoint
     };
 }
 
