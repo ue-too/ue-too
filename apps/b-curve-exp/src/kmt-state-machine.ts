@@ -328,7 +328,7 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point) {
     const mouseDistance = PointCal.distanceBetweenPoints(endPoint, mousePos);
     
     // Adaptive control distance based on mouse position
-    let controlDistance = Math.min(mouseDistance * 0.4, 120);
+    let controlDistance = Math.min(mouseDistance * 0.5);
     
     // Curvature-based adjustment for smoothness
     const curvatureMagnitude = Math.abs(curvature);
