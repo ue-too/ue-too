@@ -163,7 +163,7 @@ export class TrackGraph {
         this._trackCurveManager.destroyEntity(trackSegment.curve);
     }
 
-    branchToNewJoint(comingFromJoint: number, startJointNumber: number, endPosition: Point, controlPoints: Point[]){
+    branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[], tangentDirection: Point){
         const startJoint = this.joints.get(startJointNumber);
 
         if(startJoint === undefined){
@@ -187,27 +187,15 @@ export class TrackGraph {
             connections: new Map()
         };
 
-        let comingFromConnections: Connection | undefined;
-
-        comingFromConnections = startJoint.from.get(comingFromJoint);
-
-        if(comingFromConnections === undefined){
-            console.info("comingFromConnections not found, creating new connection");
-            comingFromConnections = {
-                out: new Map<number, TrackSegment>()
-            };
-        }
-
-        comingFromConnections.out.set(endJointNumber, newTrackSegment);
-
-        const end2StartConnection: Connection = {
-            out: new Map([[startJointNumber, newTrackSegment]])
-        };
-
-        endTrackJoint.from.set("end", end2StartConnection);
         endTrackJoint.connections.set(startJointNumber, newTrackSegment);
-
+        endTrackJoint.from.set("end", {
+            out: new Map([[startJointNumber, newTrackSegment]])
+        });
+        
         this.joints.set(endJointNumber, endTrackJoint);
+
+        // TODO;
+
     }
 
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]){
@@ -257,17 +245,16 @@ export class TrackGraph {
             return null;
         }
         const firstConnection: TrackSegment = joint.connections.values().next().value;
+        console.log("firstConnection", firstConnection.t0Joint, firstConnection.t1Joint);
         const curve = this._trackCurveManager.getTrackSegment(firstConnection.curve);
         if(curve === null){
             return null;
         }
-        let tVal = 0;
-        let derivative = curve.derivative(tVal);
+        console.log("curve", curve);
         if(firstConnection.t1Joint === jointNumber){
-            tVal = 1;
-            return PointCal.multiplyVectorByScalar(derivative, -1);
+            return curve.derivative(1);
         }
-        return derivative;
+        return curve.derivative(0);
     }
 
     getJointConnections(jointNumber: number, comingFromJoint: number | "end"): Connection | null {
@@ -378,8 +365,8 @@ export class TrackGraph {
 
         comingFromConnections.out.set(newJointNumber, newTrackSegment);
 
-        if(this.jointIsEndingTrack(comingFromJoint)){
-            const otherEndOfEndingTrack = this.getTheOtherEndOfEndingTrack(comingFromJoint);
+        if(this.jointIsEndingTrack(startJointNumber)){
+            const otherEndOfEndingTrack = this.getTheOtherEndOfEndingTrack(startJointNumber);
             if(otherEndOfEndingTrack != null && this.getJointConnections(startJointNumber, "end") != null){
                 const otherEndOfEndingTrackConnection = this.getJointConnections(startJointNumber, "end");
                 startJoint.from.set(newJointNumber, otherEndOfEndingTrackConnection);
@@ -477,7 +464,7 @@ export class TrackGraph {
     logJoints(){
         for(const [jointNumber, joint] of this.joints.entries()){
             console.log('--------------------------------');
-            console.log(`joint ${jointNumber}`);
+            console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not"} a ending joint`);
             for(const [jointNumber, connection] of joint.from.entries()){
                 console.log(`coming from ${jointNumber}`);
                 for(const [jointNumber, trackSegment] of connection.out.entries()){
