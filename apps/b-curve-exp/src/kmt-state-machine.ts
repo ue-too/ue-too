@@ -193,22 +193,17 @@ export class CurveCreationEngine implements LayoutContext {
         console.log("hover circle joint number", this._hoverCircleJointNumber);
         if(this._hoverCircleJointNumber != null && this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // starting on an existing joint
-            console.log("extending on an existing joint", this._hoverCircleJointNumber);
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
             const comingFromConnection = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
             const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
-            console.log("coming from connection", comingFromConnection);
-            console.log("coming from curve", comingFromCurve);
             let tVal = 1;
             let incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
             if(comingFromConnection.t0Joint === this._hoverCircleJointNumber){
                 tVal = 0;
                 incomingTangent = PointCal.multiplyVectorByScalar(incomingTangent, -1);
             }
-            console.log("tVal", tVal);
             this._constrainingCurve = {curve: comingFromCurve, atT: tVal, tangent: incomingTangent};
-
-            console.log('incoming tangent', incomingTangent);
+            console.log("extending on an existing joint", this._hoverCircleJointNumber);
             this._startingPointType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // branching out from a joint that is not an ending track
