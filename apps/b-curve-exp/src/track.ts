@@ -171,30 +171,55 @@ export class TrackGraph {
             return;
         }
 
+        // NOTE: create the new joint and curve
         const curve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
-        const endJointNumber = this.jointNumberManager.createEntity();
-        const curveNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
+        const newJointNumber = this.jointNumberManager.createEntity();
+        const curveNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, newJointNumber);
 
         const newTrackSegment: TrackSegment = {
             t0Joint: startJointNumber,
-            t1Joint: endJointNumber,
+            t1Joint: newJointNumber,
             curve: curveNumber
         };
 
-        const endTrackJoint: TrackJoint = {
+        const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
             connections: new Map()
         };
 
-        endTrackJoint.connections.set(startJointNumber, newTrackSegment);
-        endTrackJoint.from.set("end", {
+        // NOTE: insert connection to new joint's connections
+        newTrackJoint.connections.set(startJointNumber, newTrackSegment);
+
+        // NOTE: 
+        newTrackJoint.from.set("end", {
             out: new Map([[startJointNumber, newTrackSegment]])
         });
         
-        this.joints.set(endJointNumber, endTrackJoint);
+        // NOTE: insert the new joint
+        this.joints.set(newJointNumber, newTrackJoint);
 
-        // TODO;
+        const destinationJointsToConnect: number[] = [];
+
+        startJoint.connections.forEach((trackSegment, destinationJointNumber)=>{
+            const curve = this.getTrackSegmentCurve(trackSegment.curve);
+            if(curve == null){
+                console.warn("curve not found");
+                return;
+            }
+            if(startJointNumber === trackSegment.t0Joint){
+                const tangent = PointCal.multiplyVectorByScalar(PointCal.unitVector(curve.derivative(0)), -1);
+
+            } else {
+                const tangent = PointCal.unitVector(curve.derivative(1));
+
+            }
+        });
+
+        // NOTE: insert connection to the start joint's connections
+        startJoint.connections.set(newJointNumber, newTrackSegment);
+
+         
 
     }
 
