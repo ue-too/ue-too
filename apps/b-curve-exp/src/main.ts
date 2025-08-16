@@ -1,4 +1,4 @@
-import { Board } from "@ue-too/board";
+import { Board, drawArrow } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { Animation, type Keyframe, numberHelperFunctions } from "@ue-too/animate";
 import { PointCal } from "@ue-too/math";
@@ -166,6 +166,8 @@ function step(timestamp: number){
     
     curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
         const cps = trackSegment.curve.getControlPoints();
+        const tangentAtStart = PointCal.multiplyVectorByScalar(PointCal.unitVector(trackSegment.curve.derivative(0)), 10);
+        const tangentAtEnd = PointCal.multiplyVectorByScalar(PointCal.unitVector(trackSegment.curve.derivative(1)), 10);
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
         board.context.strokeStyle = "green";
@@ -174,6 +176,8 @@ function step(timestamp: number){
         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
         board.context.stroke();
         board.context.restore();
+        drawArrow(board.context, board.camera.zoomLevel, cps[0], PointCal.addVector(tangentAtStart, cps[0]));
+        drawArrow(board.context, board.camera.zoomLevel, cps[2], PointCal.addVector(tangentAtEnd, cps[2]));
     });
 
     curveEngine.trackGraph.getJoints().forEach((joint)=>{
@@ -209,6 +213,10 @@ function step(timestamp: number){
         board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
+    }
+
+    if(curveEngine.branchTangent != null && curveEngine.currentStartingPoint != null){
+        drawArrow(board.context, board.camera.zoomLevel, curveEngine.currentStartingPoint, PointCal.addVector(PointCal.multiplyVectorByScalar(curveEngine.branchTangent, 10), curveEngine.currentStartingPoint));
     }
 
     animation.animate(deltaTime);

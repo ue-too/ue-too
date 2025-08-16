@@ -171,6 +171,8 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
 
+    public branchTangent: Point | null = null;
+
     constructor() {
         this._currentStartingPoint = null;
         this._hoverPosition = null;
@@ -182,11 +184,15 @@ export class CurveCreationEngine implements LayoutContext {
         return this._startingPointType;
     }
 
+    get currentStartingPoint(): Point | null {
+        return this._currentStartingPoint;
+    }
+
     startCurve(startingPosition: Point) {
         let newPosition = startingPosition;
         if(this._hoverCircleJointNumber != null && this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // starting on an existing joint
-            console.log("starting on an existing joint", this._hoverCircleJointNumber);
+            console.log("extending on an existing joint", this._hoverCircleJointNumber);
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
             const comingFromConnection = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
             const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
@@ -204,10 +210,12 @@ export class CurveCreationEngine implements LayoutContext {
             console.log('incoming tangent', incomingTangent);
             this._startingPointType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
+            // branching out from a joint that is not an ending track
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
             console.log('branching out from a joint that is not an ending track', this._hoverCircleJointNumber);
             this._startingPointType = "branchJoint";
         } else if (this.projection != null){
+            // branching out from a track segment
             newPosition = this.projection.projectionPoint;
             this._trackGraph.insertJointIntoTrackSegment(this.projection.t0Joint, this.projection.t1Joint, this.projection.atT);
             this._trackGraph.logJoints();
@@ -215,6 +223,7 @@ export class CurveCreationEngine implements LayoutContext {
             this._startingPointType = "branchTrack";
             console.log("branching out from a track segment", this.projection);
         } else {
+            // starting on a new track segment
             console.log("starting on a new track segment");
             this._startingPointType = "new";
         }
@@ -254,6 +263,9 @@ export class CurveCreationEngine implements LayoutContext {
             y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
         }
 
+
+        this.branchTangent = null;
+
         switch(this._startingPointType){
             case "new":
                 midPoint = {
@@ -274,8 +286,11 @@ export class CurveCreationEngine implements LayoutContext {
                 let tangent = PointCal.unitVector(this._trackGraph.getTangentAtJoint(this._hoverCircleJointNumber));
                 const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
                 if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+                    console.info('tangent should be the reversed');
                     tangent = PointCal.multiplyVectorByScalar(tangent, -1);
                 }
+                this.branchTangent = tangent;
+                console.log("tangent", tangent);
                 const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
                 if(this._previewCurve == null){
                     this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
@@ -358,6 +373,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number) {
         this._trackGraph.insertJointIntoTrackSegment(startJointNumber, endJointNumber, atT);
+        this._trackGraph.logJoints();
     }
 
     cancelCurrentCurve() {
