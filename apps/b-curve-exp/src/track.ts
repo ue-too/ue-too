@@ -15,6 +15,7 @@ export type TrackJoint = {
     position: Point;
     from: Map<number | "end", Connection>;
     connections: Map<number, TrackSegment>;
+    tangent?: Point;
 }
 
 export type ProjectionInfo = {
@@ -28,17 +29,8 @@ export type ProjectionInfo = {
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
-    private jointPositions: Point[] = [];
     private jointNumberManager: NumberManager = new NumberManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
-
-    addJoint(joint: TrackJoint) {
-        this.joints.set(this.joints.size, joint);
-    }
-
-    addJointPosition(position: Point) {
-        this.jointPositions.push(position);
-    }
 
     getJoints(): TrackJoint[] {
         return Array.from(this.joints.values());
