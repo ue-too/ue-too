@@ -190,6 +190,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     startCurve(startingPosition: Point) {
         let newPosition = startingPosition;
+        console.log("hover circle joint number", this._hoverCircleJointNumber);
         if(this._hoverCircleJointNumber != null && this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // starting on an existing joint
             console.log("extending on an existing joint", this._hoverCircleJointNumber);
@@ -290,7 +291,6 @@ export class CurveCreationEngine implements LayoutContext {
                     tangent = PointCal.multiplyVectorByScalar(tangent, -1);
                 }
                 this.branchTangent = tangent;
-                console.log("tangent", tangent);
                 const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
                 if(this._previewCurve == null){
                     this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
