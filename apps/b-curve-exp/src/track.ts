@@ -35,8 +35,15 @@ export class TrackGraph {
     private jointNumberManager: NumberManager = new NumberManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
-    getJoints(): TrackJoint[] {
-        return Array.from(this.joints.values());
+    getJoints(): {jointNumber: number, joint: TrackJoint}[] {
+        const res: {jointNumber: number, joint: TrackJoint}[] = [];
+        this.joints.forEach((joint, jointNumber)=>{
+            res.push({
+                jointNumber,
+                joint: {...joint}
+            })
+        });
+        return res;
     }
 
     insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number){
@@ -198,6 +205,9 @@ export class TrackGraph {
         if(sameDirection(tangentAtStartJoint, tangentAtStartJointFromCurve)){
             startJoint.direction.tangent.add(newJointNumber);
         } else {
+            console.log('different start tangent at branching');
+            console.log('tangent at start joint', tangentAtStartJoint);
+            console.log('tangent from curve', tangentAtStartJointFromCurve);
             startJoint.direction.reverseTangent.add(newJointNumber);
         }
     }

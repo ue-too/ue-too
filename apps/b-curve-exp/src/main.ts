@@ -176,15 +176,18 @@ function step(timestamp: number){
         board.context.restore();
     });
 
-    curveEngine.trackGraph.getJoints().forEach((joint)=>{
+    curveEngine.trackGraph.getJoints().forEach(({joint, jointNumber})=>{
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
         board.context.strokeStyle = "blue";
         board.context.beginPath();
         board.context.arc(joint.position.x, joint.position.y, 5, 0, 2 * Math.PI);
         board.context.stroke();
-        board.context.restore();
+        board.context.textAlign = "center";
+        board.context.textBaseline = "middle";
         drawArrow(board.context, board.camera.zoomLevel, joint.position, PointCal.addVector(PointCal.multiplyVectorByScalar(joint.tangent, 10), joint.position));
+        board.context.fillText(jointNumber.toString(), joint.position.x, joint.position.y);
+        board.context.restore();
     });
 
     for(let i = 0; i < arcs.length; i++){
