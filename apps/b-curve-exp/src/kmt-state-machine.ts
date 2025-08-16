@@ -344,6 +344,7 @@ export class CurveCreationEngine implements LayoutContext {
                 this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
             case "branchJoint":
+                this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps, this.branchTangent);
                 break;
             case "branchTrack":
                 break;

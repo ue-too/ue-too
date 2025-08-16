@@ -180,3 +180,21 @@ export function angleSpan(from: number, to: number): number{
     }
     return angleDiff;
 }
+
+export function approximatelyTheSame(a: number, b: number, precision?: number): boolean {
+    const epsilon = 0.000001
+    return Math.abs(a - b) <= (precision || epsilon);
+}
+
+export function sameDirection(a: Point, b: Point, precision?: number): boolean{
+   const aNormalized = PointCal.unitVector(a);
+   const bNormalized = PointCal.unitVector(b);
+   return samePoint(aNormalized, bNormalized, precision);
+}
+
+export function samePoint(a: Point, b: Point, precision?: number): boolean {
+    if(approximatelyTheSame(a.x, b.x, precision) && approximatelyTheSame(a.y, b.y, precision)){
+        return true;
+    }
+    return false;
+}

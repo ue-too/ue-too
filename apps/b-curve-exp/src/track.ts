@@ -1,5 +1,5 @@
 import { BCurve } from "@ue-too/curve";
-import { Point, PointCal } from "@ue-too/math";
+import { Point, PointCal, sameDirection } from "@ue-too/math";
 
 export type TrackSegment = {
     t0Joint: number;
@@ -200,6 +200,11 @@ export class TrackGraph {
         this.joints.set(newJointNumber, newTrackJoint);
 
         const destinationJointsToConnect: number[] = [];
+        const comingFromNewJointCanGoToJoint: {destinationJointNumber: number, trackSegment: TrackSegment}[] = [];
+
+        const comingFromNewJointCanGoToConnection: Connection = {
+            out: new Map<number, TrackSegment>()
+        };
 
         startJoint.connections.forEach((trackSegment, destinationJointNumber)=>{
             const curve = this.getTrackSegmentCurve(trackSegment.curve);
@@ -207,19 +212,37 @@ export class TrackGraph {
                 console.warn("curve not found");
                 return;
             }
-            if(startJointNumber === trackSegment.t0Joint){
-                const tangent = PointCal.multiplyVectorByScalar(PointCal.unitVector(curve.derivative(0)), -1);
-
-            } else {
-                const tangent = PointCal.unitVector(curve.derivative(1));
-
+            let tangentEnteringStartJoint = PointCal.multiplyVectorByScalar(PointCal.unitVector(curve.derivative(0)), -1);
+            if(startJointNumber === trackSegment.t1Joint){
+                tangentEnteringStartJoint = PointCal.unitVector(curve.derivative(1));
+            }
+            const needConnection = sameDirection(tangentDirection, tangentEnteringStartJoint);
+            if(needConnection){
+                destinationJointsToConnect.push(destinationJointNumber);
+                comingFromNewJointCanGoToJoint.push({
+                    destinationJointNumber: destinationJointNumber,
+                    trackSegment: trackSegment
+                });
             }
         });
 
+        destinationJointsToConnect.forEach((destination)=>{
+            const fromDestinationEnteringStartJoint = startJoint.from.get(destination);
+            if(fromDestinationEnteringStartJoint == undefined){
+                console.warn('destination to add connection is not in the startJoint\'s from map something is not right');
+                return;
+            }
+            fromDestinationEnteringStartJoint.out.set(newJointNumber, newTrackSegment);
+        });
+
+        comingFromNewJointCanGoToJoint.forEach((destination)=>{
+            comingFromNewJointCanGoToConnection.out.set(destination.destinationJointNumber, {...destination.trackSegment});
+        });
+
+        startJoint.from.set(newJointNumber, comingFromNewJointCanGoToConnection);
+
         // NOTE: insert connection to the start joint's connections
         startJoint.connections.set(newJointNumber, newTrackSegment);
-
-         
 
     }
 
