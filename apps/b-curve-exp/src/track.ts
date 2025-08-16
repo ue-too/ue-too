@@ -15,7 +15,7 @@ export type TrackJoint = {
     position: Point;
     from: Map<number | "end", Connection>;
     connections: Map<number, TrackSegment>;
-    tangent?: Point;
+    tangent: Point;
 }
 
 export type ProjectionInfo = {
@@ -89,11 +89,14 @@ export class TrackGraph {
             curve: secondCurveNumber
         };
 
+        const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
+
         /*  NOTE: insert the new joint*/
         const newJoint: TrackJoint = {
             position: newJointPosition,
             from: new Map(),
-            connections: new Map()
+            connections: new Map(),
+            tangent: tangentAtNewJoint
         };
 
         newJoint.from.set(t0JointNumber, {
@@ -174,10 +177,13 @@ export class TrackGraph {
             curve: curveNumber
         };
 
+        const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
+
         const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
-            connections: new Map()
+            connections: new Map(),
+            tangent: tangentAtEnd
         };
 
         // NOTE: insert connection to new joint's connections
@@ -250,16 +256,21 @@ export class TrackGraph {
             curve: curveNumber
         };
 
+        const tangentAtStart = PointCal.unitVector(curve.derivative(0));
+        const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
+
         const startJoint: TrackJoint = {
             position: startJointPosition,
             from: new Map(),
-            connections: new Map()
+            connections: new Map(),
+            tangent: tangentAtStart
         };
 
         const endJoint: TrackJoint = {
             position: endJointPosition,
             from: new Map(),
-            connections: new Map()
+            connections: new Map(),
+            tangent: tangentAtEnd
         };
 
         const start2EndConnection: Connection = {
@@ -282,19 +293,10 @@ export class TrackGraph {
     getTangentAtJoint(jointNumber: number): Point | null {
         const joint = this.joints.get(jointNumber);
         if(joint === undefined){
+            console.warn("Joint does not exist");
             return null;
         }
-        const firstConnection: TrackSegment = joint.connections.values().next().value;
-        console.log("firstConnection", firstConnection.t0Joint, firstConnection.t1Joint);
-        const curve = this._trackCurveManager.getTrackSegment(firstConnection.curve);
-        if(curve === null){
-            return null;
-        }
-        console.log("curve", curve);
-        if(firstConnection.t1Joint === jointNumber){
-            return curve.derivative(1);
-        }
-        return curve.derivative(0);
+        return joint.tangent;
     }
 
     getJointConnections(jointNumber: number, comingFromJoint: number | "end"): Connection | null {
@@ -368,10 +370,13 @@ export class TrackGraph {
         }
 
         const newCurve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
+        const tangentAtEnd = PointCal.unitVector(newCurve.derivative(1));
+
         const newTrackJoint: TrackJoint = {
             position: endPosition,
             from: new Map(),
-            connections: new Map()
+            connections: new Map(),
+            tangent: tangentAtEnd
         };
 
         const newJointNumber = this.jointNumberManager.createEntity();

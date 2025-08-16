@@ -5,7 +5,8 @@
     "declaration": true,
     "allowImportingTsExtensions": false,
     "module": "ESNext",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "strict": false
   },
   "include": [
     "src/**/*"
