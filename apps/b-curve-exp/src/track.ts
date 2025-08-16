@@ -97,7 +97,6 @@ export class TrackGraph {
         /*  NOTE: insert the new joint*/
         const newJoint: TrackJoint = {
             position: newJointPosition,
-            // from: new Map(),
             connections: new Map(),
             tangent: tangentAtNewJoint,
             direction: {
@@ -108,14 +107,6 @@ export class TrackGraph {
 
         newJoint.direction.reverseTangent.add(t0JointNumber);
         newJoint.direction.tangent.add(t1JointNumber);
-
-        // newJoint.from.set(t0JointNumber, {
-        //     out: new Map([[t1JointNumber, secondTrackSegment]])
-        // });
-
-        // newJoint.from.set(t1JointNumber, {
-        //     out: new Map([[t0JointNumber, firstTrackSegment]])
-        // });
 
         newJoint.connections.set(t0JointNumber, firstTrackSegment);
         newJoint.connections.set(t1JointNumber, secondTrackSegment);
@@ -138,22 +129,6 @@ export class TrackGraph {
             t0Joint.direction.reverseTangent.delete(t1JointNumber);
             t0Joint.direction.reverseTangent.add(newJointNumber);
         }
-        
-        // NOTE: update every destination joint that is the t1Joint
-        // t0Joint.from.forEach((connection)=>{
-        //     if(connection.out.has(t1JointNumber)){
-        //         connection.out.set(newJointNumber, firstTrackSegment);
-        //         connection.out.delete(t1JointNumber);
-        //     }
-        // });
-
-        // NOTE: update the incoming from t1Joint
-        // if(t0Joint.from.has(t1JointNumber)){
-        //     const t0JointFromt1Joint = t0Joint.from.get(t1JointNumber);
-        //     t0Joint.from.set(newJointNumber, t0JointFromt1Joint);
-        //     t0Joint.from.delete(t1JointNumber);
-        // }
-
 
         /* NOTE: update the t1 joint */
 
@@ -172,22 +147,7 @@ export class TrackGraph {
             t1Joint.direction.tangent.add(newJointNumber);
         }
 
-        // NOTE: udpate every destination joint that is the t0Joint
-        // t1Joint.from.forEach((connection, originJointNumber)=>{
-        //     if(connection.out.has(t0JointNumber)){
-        //         connection.out.set(newJointNumber, secondTrackSegment);
-        //         connection.out.delete(t0JointNumber);
-        //     }
-        // });
-
-        // NOTE: update the incoming from t0Joint
-        // if(t1Joint.from.has(t0JointNumber)){
-        //     const t1JointFromt0Joint = t1Joint.from.get(t0JointNumber);
-        //     t1Joint.from.set(newJointNumber, t1JointFromt0Joint);
-        //     t1Joint.from.delete(t0JointNumber);
-        // }
-
-        this._trackCurveManager.destroyEntity(trackSegment.curve);
+        this._trackCurveManager.destroyCurve(trackSegment.curve);
     }
 
     branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[], tangentDirection: Point){
@@ -213,7 +173,6 @@ export class TrackGraph {
 
         const newTrackJoint: TrackJoint = {
             position: endPosition,
-            // from: new Map(),
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
@@ -226,55 +185,9 @@ export class TrackGraph {
         newTrackJoint.connections.set(startJointNumber, newTrackSegment);
         newTrackJoint.direction.reverseTangent.add(startJointNumber);
 
-        // NOTE: 
-        // newTrackJoint.from.set("end", {
-        //     out: new Map([[startJointNumber, newTrackSegment]])
-        // });
         
         // NOTE: insert the new joint
         this.joints.set(newJointNumber, newTrackJoint);
-
-        const destinationJointsToConnect: number[] = [];
-        const comingFromNewJointCanGoToJoint: {destinationJointNumber: number, trackSegment: TrackSegment}[] = [];
-
-        const comingFromNewJointCanGoToConnection: Connection = {
-            out: new Map<number, TrackSegment>()
-        };
-
-        // startJoint.connections.forEach((trackSegment, destinationJointNumber)=>{
-        //     const curve = this.getTrackSegmentCurve(trackSegment.curve);
-        //     if(curve == null){
-        //         console.warn("curve not found");
-        //         return;
-        //     }
-        //     let tangentEnteringStartJoint = PointCal.multiplyVectorByScalar(PointCal.unitVector(curve.derivative(0)), -1);
-        //     if(startJointNumber === trackSegment.t1Joint){
-        //         tangentEnteringStartJoint = PointCal.unitVector(curve.derivative(1));
-        //     }
-        //     const needConnection = sameDirection(tangentDirection, tangentEnteringStartJoint);
-        //     if(needConnection){
-        //         destinationJointsToConnect.push(destinationJointNumber);
-        //         comingFromNewJointCanGoToJoint.push({
-        //             destinationJointNumber: destinationJointNumber,
-        //             trackSegment: trackSegment
-        //         });
-        //     }
-        // });
-
-        // destinationJointsToConnect.forEach((destination)=>{
-        //     const fromDestinationEnteringStartJoint = startJoint.from.get(destination);
-        //     if(fromDestinationEnteringStartJoint == undefined){
-        //         console.warn('destination to add connection is not in the startJoint\'s from map something is not right');
-        //         return;
-        //     }
-        //     fromDestinationEnteringStartJoint.out.set(newJointNumber, newTrackSegment);
-        // });
-
-        // comingFromNewJointCanGoToJoint.forEach((destination)=>{
-        //     comingFromNewJointCanGoToConnection.out.set(destination.destinationJointNumber, {...destination.trackSegment});
-        // });
-
-        // startJoint.from.set(newJointNumber, comingFromNewJointCanGoToConnection);
 
         // NOTE: insert connection to the start joint's connections
         startJoint.connections.set(newJointNumber, newTrackSegment);
@@ -287,7 +200,6 @@ export class TrackGraph {
         } else {
             startJoint.direction.reverseTangent.add(newJointNumber);
         }
-
     }
 
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]){
@@ -307,7 +219,6 @@ export class TrackGraph {
 
         const startJoint: TrackJoint = {
             position: startJointPosition,
-            // from: new Map(),
             connections: new Map(),
             tangent: tangentAtStart,
             direction: {
@@ -318,7 +229,6 @@ export class TrackGraph {
 
         const endJoint: TrackJoint = {
             position: endJointPosition,
-            // from: new Map(),
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
@@ -327,16 +237,6 @@ export class TrackGraph {
             }
         };
 
-        // const start2EndConnection: Connection = {
-        //     out: new Map([[endJointNumber, newTrackSegment]])
-        // };
-
-        // const end2StartConnection: Connection = {
-        //     out: new Map([[startJointNumber, newTrackSegment]])
-        // };
-
-        // startJoint.from.set("end", start2EndConnection);
-        // endJoint.from.set("end", end2StartConnection);
         startJoint.connections.set(endJointNumber, newTrackSegment);
         endJoint.connections.set(startJointNumber, newTrackSegment);
 
@@ -390,13 +290,8 @@ export class TrackGraph {
             console.warn("joint not found");
             return false;
         }
-        console.log("joint number", jointNumber);
         const tangentCount = joint.direction.tangent.size;
         const reverseTangentCount = joint.direction.reverseTangent.size;
-        console.log("tangent count", tangentCount);
-        console.log("reverse tangent count", reverseTangentCount);
-        console.log('tangent + reverse tangent === 1', tangentCount + reverseTangentCount === 1);
-        console.log('connection count === 1', joint.connections.size === 1);
         if(tangentCount + reverseTangentCount === 1 && joint.connections.size === 1){
             return true;
         }
@@ -421,7 +316,6 @@ export class TrackGraph {
 
         const newTrackJoint: TrackJoint = {
             position: endPosition,
-            // from: new Map(),
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
@@ -441,36 +335,9 @@ export class TrackGraph {
             curve: newCurveNumber
         };
 
-        // const newConnection: Connection = {
-        //     out: new Map([[startJointNumber, newTrackSegment]])
-        // };
-
-        // newTrackJoint.from.set("end", newConnection);
         newTrackJoint.connections.set(startJointNumber, newTrackSegment);
 
         this.joints.set(newJointNumber, newTrackJoint);
-
-        console.log('comingFromJoint', comingFromJoint);
-        // let comingFromConnections = startJoint.from.get(comingFromJoint);
-
-        // if(comingFromConnections === undefined){
-        //     console.info("comingFromConnections not found, creating new connection");
-        //     comingFromConnections = {
-        //         out: new Map<number, TrackSegment>()
-        //     };
-        //     startJoint.from.set(comingFromJoint, comingFromConnections);
-        // }
-
-        // comingFromConnections.out.set(newJointNumber, newTrackSegment);
-
-        // if(this.jointIsEndingTrack(startJointNumber)){
-        //     const otherEndOfEndingTrack = this.getTheOtherEndOfEndingTrack(startJointNumber);
-        //     if(otherEndOfEndingTrack != null && this.getJointConnections(startJointNumber, "end") != null){
-        //         const otherEndOfEndingTrackConnection = this.getJointConnections(startJointNumber, "end");
-        //         startJoint.from.set(newJointNumber, otherEndOfEndingTrackConnection);
-        //     }
-        //     startJoint.from.delete("end");
-        // }
 
         startJoint.connections.set(newJointNumber, newTrackSegment);
         if(sameDirection(startJoint.tangent, tangentAtStart)){
@@ -603,7 +470,6 @@ export class TrackGraph {
             console.log(`track segment ${index} has t0Joint ${trackSegment.t0Joint} and t1Joint ${trackSegment.t1Joint} with curve ${trackSegment.curve}`);
         }
     }
-
 }
 
 export class NumberManager {
@@ -683,14 +549,13 @@ export class TrackCurveManager {
     }
 
     createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number): number {
-        const entity = this.createEntity(curve);
+        const entity = this.createCurve(curve);
         this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
         return entity;
     }
 
-    createEntity(curve: BCurve): number {
+    createCurve(curve: BCurve): number {
         if(this._livingEntityCount >= this._maxEntities) {
-            // throw new Error('Max entities reached');
             console.info("Max entities reached, increasing max entities");
             const currentMaxEntities = this._maxEntities;
             this._maxEntities += currentMaxEntities;
@@ -709,15 +574,15 @@ export class TrackCurveManager {
         return entity;
     }
 
-    destroyEntity(entity: number): void {
-        if(entity >= this._maxEntities || entity < 0) {
+    destroyCurve(curveNumber: number): void {
+        if(curveNumber >= this._maxEntities || curveNumber < 0) {
             throw new Error('Invalid entity out of range');
         }
-        this._livingEntities.delete(entity);
-        this._availableEntities.push(entity);
+        this._livingEntities.delete(curveNumber);
+        this._availableEntities.push(curveNumber);
         this._livingEntityCount--;
-        this._trackSegments[entity] = null;
-        this._trackSegmentsWithJoints[entity] = null;
+        this._trackSegments[curveNumber] = null;
+        this._trackSegmentsWithJoints[curveNumber] = null;
     }
 
     get livingEntities(): number[] {
