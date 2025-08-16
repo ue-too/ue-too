@@ -186,7 +186,7 @@ export function approximatelyTheSame(a: number, b: number, precision?: number): 
     return Math.abs(a - b) <= (precision || epsilon);
 }
 
-export function sameDirection(a: Point, b: Point, precision?: number): boolean{
+export function sameDirection(a: Point, b: Point, precision: number = 0.001): boolean{
    const aNormalized = PointCal.unitVector(a);
    const bNormalized = PointCal.unitVector(b);
    return samePoint(aNormalized, bNormalized, precision);
