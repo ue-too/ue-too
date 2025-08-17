@@ -444,7 +444,7 @@ export class TrackGraph {
     logJoints(){
         for(const [jointNumber, joint] of this.joints.entries()){
             console.log('--------------------------------');
-            console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not"} a ending joint`);
+            console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not "}an ending joint`);
             if(joint.direction){
                 console.log('######')
                 console.log('tangent count', joint.direction.tangent.size);
