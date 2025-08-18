@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/b-curve-exp.tsbuildinfo",
+    "declaration": true
+  },
+  "include": ["test/**/*"]
+}

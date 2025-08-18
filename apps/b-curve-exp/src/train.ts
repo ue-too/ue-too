@@ -2,8 +2,12 @@ import { NumberManager } from "./utils";
 
 export type Car = {
     id: number;
-    numberOfAxles: number;
+    numberOfBogies: number;
     onTrack: number[];
+}
+
+export type Formation = {
+    cars: number[]; // car ids
 }
 
 
