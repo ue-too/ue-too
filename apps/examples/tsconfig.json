@@ -12,6 +12,9 @@
   ],
   "references": [
     {
+      "path": "../../packages/ecs"
+    },
+    {
       "path": "../../packages/border"
     },
     {
