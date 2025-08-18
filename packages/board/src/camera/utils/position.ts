@@ -130,7 +130,7 @@ export function translationWidthOf(boundaries: Boundaries | undefined): number |
  * 
  * @category Camera
  */
-export function halfTranslationWidthOf(boundaries: Boundaries): number | undefined{
+export function halfTranslationWidthOf(boundaries: Boundaries | undefined): number | undefined{
     const translationWidth = translationWidthOf(boundaries);
     return translationWidth != undefined ? translationWidth / 2 : undefined;
 }
@@ -152,7 +152,7 @@ export function translationHeightOf(boundaries: Boundaries | undefined): number 
  * 
  * @category Camera
  */
-export function halfTranslationHeightOf(boundaries: Boundaries): number | undefined{
+export function halfTranslationHeightOf(boundaries: Boundaries | undefined): number | undefined{
     const translationHeight = translationHeightOf(boundaries);
     return translationHeight != undefined ? translationHeight / 2 : undefined;
 }

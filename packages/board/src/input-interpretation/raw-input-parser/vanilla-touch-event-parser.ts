@@ -28,7 +28,6 @@ export interface TouchEventParser {
 export class VanillaTouchEventParser implements TouchEventParser {
 
     private _canvas: HTMLCanvasElement;
-    private _touchInputTracker: TouchInputTracker;
     private _disabled: boolean;
     private _panDisabled: boolean = false;
     private _zoomDisabled: boolean = false;
@@ -80,14 +79,6 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     get disabled(): boolean {
         return this._disabled;
-    }
-
-    get alignCoordinateSystem(): boolean {
-        return this._touchInputTracker.alignCoordinateSystem;
-    }
-
-    set alignCoordinateSystem(alignCoordinateSystem: boolean){
-        this._touchInputTracker.alignCoordinateSystem = alignCoordinateSystem;
     }
 
     get panDisabled(): boolean {

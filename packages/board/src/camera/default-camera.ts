@@ -15,7 +15,7 @@ export const DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT = 1000;
 
 export const DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES: ZoomLevelLimits = {min: 0.1, max: 10};
 export const DEFAULT_BOARD_CAMERA_BOUNDARIES: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}};
-export const DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES: RotationLimits = undefined;
+export const DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES: RotationLimits | undefined = undefined;
 
 /**
  * @description The default board camera. This is basically the same as the {@link BaseCamera} class.
@@ -37,7 +37,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera
      */
-    constructor(viewPortWidth: number = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, viewPortHeight: number = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, zoomLevelBoundaries: ZoomLevelLimits = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, rotationBoundaries: RotationLimits = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES){
+    constructor(viewPortWidth: number = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, viewPortHeight: number = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, zoomLevelBoundaries: ZoomLevelLimits = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, rotationBoundaries: RotationLimits | undefined = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES){
         this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
         this._observer = new CameraUpdatePublisher();
     }
@@ -257,7 +257,13 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
             min = temp;
         }
         if(this._baseCamera.boundaries == undefined){
-            this._baseCamera.boundaries = {min: {x: undefined, y: undefined}, max: {x: undefined, y: undefined}};
+            this._baseCamera.boundaries = {min: undefined, max: undefined};
+        }
+        if(this._baseCamera.boundaries.min == undefined){
+            this._baseCamera.boundaries.min = {x: undefined, y: undefined};
+        }
+        if(this._baseCamera.boundaries.max == undefined){
+            this._baseCamera.boundaries.max = {x: undefined, y: undefined};
         }
         this._baseCamera.boundaries.min.x = min;
         this._baseCamera.boundaries.max.x = max;
@@ -274,7 +280,13 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
             min = temp;
         }
         if(this._baseCamera.boundaries == undefined){
-            this._baseCamera.boundaries = {min: {x: undefined, y: undefined}, max: {x: undefined, y: undefined}};
+            this._baseCamera.boundaries = {min: undefined, max: undefined};
+        }
+        if(this._baseCamera.boundaries.min == undefined){
+            this._baseCamera.boundaries.min = {x: undefined, y: undefined};
+        }
+        if(this._baseCamera.boundaries.max == undefined){
+            this._baseCamera.boundaries.max = {x: undefined, y: undefined};
         }
         this._baseCamera.boundaries.min.y = min;
         this._baseCamera.boundaries.max.y = max;

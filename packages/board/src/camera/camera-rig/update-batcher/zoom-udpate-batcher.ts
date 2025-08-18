@@ -42,7 +42,7 @@ export class CameraZoomUpdateBatcher {
             this.nextZoom = null;
             this.delta = 0;
         }
-        this.anchor = anchor;
+        this.anchor = anchor ?? null;
         this.nextZoom = destination;
         if(this.delta !== 0){
             this.delta = 0;
@@ -63,7 +63,7 @@ export class CameraZoomUpdateBatcher {
         } else {
             this.nextZoom += delta;
         }
-        this.anchor = anchor;
+        this.anchor = anchor ?? null;
     }
 
     /**
@@ -119,7 +119,7 @@ export class CameraZoomUpdateBatcher {
                 update: {
                     type: 'delta',
                     delta: delta,
-                    anchor: anchor,
+                    anchor: anchor ?? undefined,
                 }
             }
         }
@@ -127,8 +127,8 @@ export class CameraZoomUpdateBatcher {
             anchorCoordinateSystem: this.anchorCoordinateSystem,
             update: {
                 type: 'destination',
-                destination: nextZoom,
-                anchor: anchor
+                destination: nextZoom ?? 0,
+                anchor: anchor ?? undefined,
             }
         }
     }
