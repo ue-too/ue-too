@@ -8,7 +8,8 @@
     "declaration": true,
     "module": "ESNext",
     "moduleResolution": "node",
-    "composite": true
+    "composite": true,
+    "strict": true
   },
   "include": [
     "src/**/*"
