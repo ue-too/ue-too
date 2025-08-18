@@ -194,11 +194,11 @@ export class CurveCreationEngine implements LayoutContext {
         if(this._hoverCircleJointNumber != null && this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
             // starting on an existing joint
             newPosition = this._trackGraph.getJointPosition(this._hoverCircleJointNumber);
-            const comingFromConnection = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
-            const comingFromCurve = this._trackGraph.getTrackSegmentCurve(comingFromConnection?.curve);
+            const comingFromSegment = this._trackGraph.getDeadEndJointSoleConnection(this._hoverCircleJointNumber);
+            const comingFromCurve = comingFromSegment.curve;
             let tVal = 1;
             let incomingTangent = PointCal.unitVector(comingFromCurve.derivative(tVal));
-            if(comingFromConnection.t0Joint === this._hoverCircleJointNumber){
+            if(comingFromSegment.t0Joint === this._hoverCircleJointNumber){
                 tVal = 0;
                 incomingTangent = PointCal.multiplyVectorByScalar(incomingTangent, -1);
             }
