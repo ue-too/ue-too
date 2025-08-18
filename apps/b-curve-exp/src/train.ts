@@ -1,4 +1,4 @@
-import { NumberManager } from "./utils";
+import { EntityManager } from "./utils";
 
 export type Car = {
     id: number;
@@ -10,12 +10,11 @@ export type Formation = {
     cars: number[]; // car ids
 }
 
-
 export class TrainManager {
 
-    private _numberManager: NumberManager;
+    private _carManager: EntityManager<Car>;
 
     constructor(){
-        this._numberManager = new NumberManager(100);
+        this._carManager = new EntityManager<Car>(100);
     }
 }

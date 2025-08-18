@@ -3,6 +3,7 @@ import { BCurve } from "@ue-too/curve";
 import { Animation, type Keyframe, numberHelperFunctions } from "@ue-too/animate";
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
+import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 
 const utilButton = document.getElementById("util") as HTMLButtonElement;
 
@@ -46,6 +47,11 @@ const curve = new BCurve(controlPoints);
 const curveEngine = new CurveCreationEngine();
 const stateMachine = createLayoutStateMachine(curveEngine);
 
+const trainPlacementToggleButton = document.getElementById("train-placement-toggle") as HTMLButtonElement;
+const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
+const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
+
+
 canvas.addEventListener("pointerdown", (event) => {
     if(event.button !== 0){
         return;
@@ -59,6 +65,10 @@ canvas.addEventListener("pointerdown", (event) => {
     stateMachine.happens("pointerdown", {
         position: worldPosition,
         pointerId: event.pointerId,
+    });
+
+    trainStateMachine.happens("pointerdown", {
+        position: worldPosition,
     });
 });
 
@@ -75,6 +85,10 @@ canvas.addEventListener("pointerup", (event) => {
 
     stateMachine.happens("pointerup", {
         pointerId: event.pointerId,
+        position: worldPosition,
+    });
+
+    trainStateMachine.happens("pointerup", {
         position: worldPosition,
     });
 });
@@ -96,6 +110,10 @@ canvas.addEventListener("pointermove", (event) => {
         pointerId: event.pointerId,
         position: worldPosition,
     });
+
+    trainStateMachine.happens("pointermove", {
+        position: worldPosition,
+    });
 });
 
 layoutToggleButton.addEventListener("click", ()=>{
@@ -103,10 +121,30 @@ layoutToggleButton.addEventListener("click", ()=>{
         stateMachine.happens("startLayout", {});
         board.kmtParser.disabled = true;
         layoutToggleButton.textContent = "End Layout";
+        trainPlacementToggleButton.disabled = true;
+        trainPlacementToggleButton.textContent = "Start Train Placement";
+        trainStateMachine.happens("endPlacement", {});
     } else {
         stateMachine.happens("endLayout", {});
         board.kmtParser.disabled = false;
         layoutToggleButton.textContent = "Start Layout";
+        trainPlacementToggleButton.disabled = false;
+    }
+});
+
+trainPlacementToggleButton.addEventListener("click", ()=>{
+    if(trainPlacementToggleButton.textContent === "Start Train Placement"){
+        trainStateMachine.happens("startPlacement", {});
+        stateMachine.happens("endLayout", {});
+        board.kmtParser.disabled = true;
+        trainPlacementToggleButton.textContent = "End Train Placement";
+        layoutToggleButton.disabled = true;
+        layoutToggleButton.textContent = "Start Layout";
+    } else {
+        trainStateMachine.happens("endPlacement", {});
+        board.kmtParser.disabled = false;
+        trainPlacementToggleButton.textContent = "Start Train Placement";
+        layoutToggleButton.disabled = false;
     }
 });
 
@@ -211,6 +249,24 @@ function step(timestamp: number){
         board.context.fillStyle = "blue";
         board.context.beginPath();
         board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if(trainPlacementEngine.previewPosition != null){
+        board.context.save();
+        board.context.fillStyle = "red";
+        board.context.beginPath();
+        board.context.arc(trainPlacementEngine.previewPosition.x, trainPlacementEngine.previewPosition.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if(trainPlacementEngine.trainPosition != null){
+        board.context.save();
+        board.context.fillStyle = "green";
+        board.context.beginPath();
+        board.context.arc(trainPlacementEngine.trainPosition.x, trainPlacementEngine.trainPosition.y, 5, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
