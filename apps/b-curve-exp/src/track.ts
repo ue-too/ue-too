@@ -26,6 +26,29 @@ export type ProjectionInfo = {
     projectionPoint: Point;
 }
 
+export type ProjectionResult = ProjectionFalseResult | ProjectionPositiveResult;
+
+export type ProjectionFalseResult = {
+    hit: false;
+}
+
+export type ProjectionPositiveResult = {
+    hit: true;
+} & (ProjectionJointResult | ProjectionCurveResult);
+
+
+export type ProjectionJointResult = {
+    hitType: "joint";
+    jointNumber: number;
+    position: Point;
+}
+
+export type ProjectionCurveResult = {
+    hitType: "curve";
+} & ProjectionInfo;
+
+
+
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
@@ -371,6 +394,18 @@ export class TrackGraph {
         return null;
     }
 
+    project(point: Point): ProjectionResult {
+        const jointRes = this.pointOnJoint(point);
+        const curveRes = this.projectPointOnTrack(point);
+        if(jointRes !== null){
+            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, position: this.getJointPosition(jointRes.jointNumber)};
+        }
+        if(curveRes !== null){
+            return {hit: true, hitType: "curve", ...curveRes};
+        }
+        return {hit: false};
+    }
+
     projectPointOnTrack(position: Point): ProjectionInfo | null {
         let minDistance = 10;
         let projectionInfo: ProjectionInfo | null = null;
@@ -466,13 +501,11 @@ export class TrackCurveManager {
     private _maxEntities: number;
     private _livingEntityCount = 0;
     private _trackSegmentsWithJoints: (TrackSegment | null)[] = [];
-    private _trackSegments: (BCurve | null)[] = [];
 
     constructor(initialCount: number) {
         this._maxEntities = initialCount;
         for (let i = 0; i < this._maxEntities; i++) {
             this._availableEntities.push(i);
-            this._trackSegments.push(null);
             this._trackSegmentsWithJoints.push(null);
         }
     }
@@ -509,14 +542,12 @@ export class TrackCurveManager {
             this._maxEntities += currentMaxEntities;
             for (let i = currentMaxEntities; i < this._maxEntities; i++) {
                 this._availableEntities.push(i);
-                this._trackSegments.push(null);
             }
         }
         const entity = this._availableEntities.shift();
         if(entity === undefined) {
             throw new Error('No available entities');
         }
-        this._trackSegments[entity] = curve;
         this._livingEntityCount++;
         this._livingEntities.add(entity);
         return entity;
@@ -529,7 +560,6 @@ export class TrackCurveManager {
         this._livingEntities.delete(curveNumber);
         this._availableEntities.push(curveNumber);
         this._livingEntityCount--;
-        this._trackSegments[curveNumber] = null;
         this._trackSegmentsWithJoints[curveNumber] = null;
     }
 
