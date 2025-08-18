@@ -1,5 +1,6 @@
 import { BCurve } from "@ue-too/curve";
 import { Point, PointCal, sameDirection } from "@ue-too/math";
+import { NumberManager } from "./utils";
 
 export type TrackSegment = {
     t0Joint: number;
@@ -482,45 +483,6 @@ export class TrackGraph {
     }
 }
 
-export class NumberManager {
-
-    private _availableEntities: number[] = [];
-    private _maxEntities: number;
-    private _livingEntityCount = 0;
-
-    constructor(initialCount: number) {
-        this._maxEntities = initialCount;
-        for (let i = 0; i < this._maxEntities; i++) {
-            this._availableEntities.push(i);
-        }
-    }
-
-    createEntity(): number {
-        if(this._livingEntityCount >= this._maxEntities) {
-            // throw new Error('Max entities reached');
-            console.info("Max entities reached, increasing max entities");
-            const currentMaxEntities = this._maxEntities;
-            this._maxEntities += currentMaxEntities;
-            for (let i = currentMaxEntities; i < this._maxEntities; i++) {
-                this._availableEntities.push(i);
-            }
-        }
-        const entity = this._availableEntities.shift();
-        if(entity === undefined) {
-            throw new Error('No available entities');
-        }
-        this._livingEntityCount++;
-        return entity;
-    }
-
-    destroyEntity(entity: number): void {
-        if(entity >= this._maxEntities || entity < 0) {
-            throw new Error('Invalid entity out of range');
-        }
-        this._availableEntities.push(entity);
-        this._livingEntityCount--;
-    }
-}
 
 export class TrackCurveManager {
 
