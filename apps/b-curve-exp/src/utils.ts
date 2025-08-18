@@ -263,6 +263,51 @@ function getQuadraticTangentCurvature(
     };
 }
 
+export class EntityManager<T> {
+
+    private _availableEntities: number[] = [];
+    private _maxEntities: number;
+    private _livingEntityCount = 0;
+    private _entities: (T | null)[] = [];
+
+    constructor(initialCount: number) {
+        this._maxEntities = initialCount;
+        for (let i = 0; i < this._maxEntities; i++) {
+            this._availableEntities.push(i);
+            this._entities.push(null);
+        }
+    }
+
+    createEntity(entity: T): number {
+        if(this._livingEntityCount >= this._maxEntities) {
+            // throw new Error('Max entities reached');
+            console.info("Max entities reached, increasing max entities");
+            const currentMaxEntities = this._maxEntities;
+            this._maxEntities += currentMaxEntities;
+            for (let i = currentMaxEntities; i < this._maxEntities; i++) {
+                this._availableEntities.push(i);
+                this._entities.push(null);
+            }
+        }
+        const entityNumber = this._availableEntities.shift();
+        if(entityNumber === undefined) {
+            throw new Error('No available entities');
+        }
+        this._entities[entityNumber] = entity;
+        this._livingEntityCount++;
+        return entityNumber;
+    }
+
+    destroyEntity(entity: number): void {
+        if(entity >= this._maxEntities || entity < 0) {
+            throw new Error('Invalid entity out of range');
+        }
+        this._availableEntities.push(entity);
+        this._entities[entity] = null;
+        this._livingEntityCount--;
+    }
+}
+
 export class NumberManager {
 
     private _availableEntities: number[] = [];
