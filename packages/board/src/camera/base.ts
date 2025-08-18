@@ -43,7 +43,7 @@ export default class BaseCamera implements BoardCamera {
      * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
      * @param rotationBoundaries The boundaries of the rotation of the camera
      */
-    constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits = undefined){
+    constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits | undefined = undefined){
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;
@@ -298,7 +298,7 @@ export default class BaseCamera implements BoardCamera {
         if(this._rotationBoundaries !== undefined && this._rotationBoundaries.end !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.end && this._rotation == this._rotationBoundaries.end){
             return false;
         }
-        if(this._rotationBoundaries !== undefined && this.rotationBoundaries.start !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.start && this._rotation == this._rotationBoundaries.start){
+        if(this._rotationBoundaries !== undefined && this._rotationBoundaries.start !== undefined && clampRotation(rotation, this._rotationBoundaries) == this._rotationBoundaries.start && this._rotation == this._rotationBoundaries.start){
             return false;
         }
         this._rotation = rotation;
@@ -364,6 +364,12 @@ export default class BaseCamera implements BoardCamera {
         if(this._boundaries == undefined){
             this._boundaries = {min: {x: undefined, y: undefined}, max: {x: undefined, y: undefined}};
         }
+        if(this._boundaries.min == undefined){
+            this._boundaries.min = {x: undefined, y: undefined};
+        }
+        if(this._boundaries.max == undefined){
+            this._boundaries.max = {x: undefined, y: undefined};
+        }
         this._boundaries.min.x = min;
         this._boundaries.max.x = max;
         //NOTE leave for future optimization when setting the boundaries if the camera lies outside the boundaries clamp the position of the camera
@@ -380,6 +386,12 @@ export default class BaseCamera implements BoardCamera {
         }
         if(this._boundaries == undefined){
             this._boundaries = {min: {x: undefined, y: undefined}, max: {x: undefined, y: undefined}};
+        }
+        if(this._boundaries.min == undefined){
+            this._boundaries.min = {x: undefined, y: undefined};
+        }
+        if(this._boundaries.max == undefined){
+            this._boundaries.max = {x: undefined, y: undefined};
         }
         this._boundaries.min.y = min;
         this._boundaries.max.y = max;

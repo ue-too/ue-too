@@ -49,7 +49,7 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
  * 
  * @category Camera
  */
-export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLimits | undefined, targetMinZoomLevel: number | undefined): boolean{
+export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLimits | undefined, targetMinZoomLevel: number | undefined): targetMinZoomLevel is number{
     if(targetMinZoomLevel == undefined){
         return false;
     }

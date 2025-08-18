@@ -135,6 +135,11 @@ export default class Board {
         if(this._canvas == canvas){
             return;
         }
+        const newContext = canvas.getContext('2d');
+        if(newContext == null){
+            console.error("new canvas context is null");
+            return;
+        }
         this._canvas = canvas;
         this.calibrateCanvasDimensions();
         this._kmtParser.attach(canvas);
@@ -142,7 +147,7 @@ export default class Board {
         this._canvasProxy.attach(canvas);
         this.attributeObserver.disconnect();
         this.attributeObserver.observe(canvas, {attributes: true});
-        this._context = canvas.getContext('2d');
+        this._context = newContext;
         this._reversedContext = reverseYAxis(this._context);
     }
 
