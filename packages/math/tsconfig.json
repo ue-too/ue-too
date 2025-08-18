@@ -8,6 +8,7 @@
     "declaration": true,
     "moduleResolution": "node",
     "module": "esnext",
+    "strict": true
   },
   "include": ["src/**/*"]
 }
