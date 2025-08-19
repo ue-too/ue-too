@@ -378,6 +378,9 @@ export class CurveCreationEngine implements LayoutContext {
         this._hoverPosition = null;
         this._previewCurve = null;
         this.projection = null;
+        this._hoverCirclePosition = null;
+        this._constrainingCurve = null;
+        this.branchTangent = null;
     }
 
     setup() {

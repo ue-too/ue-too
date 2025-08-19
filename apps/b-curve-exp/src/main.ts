@@ -269,6 +269,7 @@ function step(timestamp: number){
         board.context.arc(trainPlacementEngine.trainPosition.x, trainPlacementEngine.trainPosition.y, 5, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
+        drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
     }
 
     if(curveEngine.branchTangent != null && curveEngine.currentStartingPoint != null){

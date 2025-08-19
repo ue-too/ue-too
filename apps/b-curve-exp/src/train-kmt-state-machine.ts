@@ -30,6 +30,9 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
     private _trainPosition: Point | null = null;
     private _previewPosition: Point | null = null;
+    private _trainTangent: Point | null = null;
+    private _previewTangent: Point | null = null;
+    private _trainDirection: "forward" | "backward" = "forward";
 
     constructor(trackGraph: TrackGraph) {
         this._trackGraph = trackGraph;
@@ -45,19 +48,43 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         this._trainPosition = this._previewPosition;
         this._previewPosition = null;
+        this._trainTangent = this._previewTangent;
+        this._previewTangent = null;
+    }
+
+    update(deltaTime: number){
+
+    }
+
+    get trainTangent(): Point | null {
+        return this._trainTangent;
     }
 
     hoverForPlacement(position: Point){
         const res = this._trackGraph.project(position);
         if(res.hit){
             switch(res.hitType){
-                case "joint":
-                    this._previewPosition = res.position;
-                    break;
+                // case "joint":
+                //     this._previewPosition = res.position;
+                //     const joint = this._trackGraph.getJoint(res.jointNumber);
+                //     if(joint == undefined){
+                //         console.warn("joint not found");
+                //         return;
+                //     }
+                //     const connection = joint.connections.values().next().value;
+
+                //     break;
                 case "curve":
+                    const trackSegment = this._trackGraph.getTrackSegmentWithJoints(res.curve);
+                    if(trackSegment == undefined){
+                        console.warn("track segment not found");
+                        return;
+                    }
+                    const tangent = trackSegment.curve.derivative(res.atT);
                     this._previewPosition = res.projectionPoint;
                     break;
             }
+            this._previewTangent = res.tangent;
         } else {
             this._previewPosition = null;
         }

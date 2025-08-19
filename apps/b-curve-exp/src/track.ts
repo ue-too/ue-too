@@ -24,6 +24,7 @@ export type ProjectionInfo = {
     t1Joint: number;
     atT: number;
     projectionPoint: Point;
+    tangent: Point;
 }
 
 export type ProjectionResult = ProjectionFalseResult | ProjectionPositiveResult;
@@ -41,6 +42,7 @@ export type ProjectionJointResult = {
     hitType: "joint";
     jointNumber: number;
     position: Point;
+    tangent: Point;
 }
 
 export type ProjectionCurveResult = {
@@ -64,6 +66,10 @@ export class TrackGraph {
             })
         });
         return res;
+    }
+
+    getJoint(jointNumber: number): TrackJoint | null {
+        return this.joints.get(jointNumber) ?? null;
     }
 
     insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number){
@@ -377,19 +383,19 @@ export class TrackGraph {
         return segment.curve.curvature(tVal);
     }
 
-    pointOnJoint(position: Point): {jointNumber: number} | null {
-        let closestJoint: {jointNumber: number, distance: number} | null = null;
+    pointOnJoint(position: Point): {jointNumber: number, tangent: Point} | null {
+        let closestJoint: {jointNumber: number, distance: number, tangent: Point} | null = null;
         let minDistance:number = 10;
 
         for(const [jointNumber, joint] of this.joints.entries()){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
             if(distance < minDistance){
                 minDistance = distance;
-                closestJoint = {jointNumber: jointNumber, distance: distance};
+                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent};
             }
         }
         if(closestJoint !== null){
-            return {jointNumber: closestJoint.jointNumber};
+            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent};
         }
         return null;
     }
@@ -398,7 +404,7 @@ export class TrackGraph {
         const jointRes = this.pointOnJoint(point);
         const curveRes = this.projectPointOnTrack(point);
         if(jointRes !== null){
-            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, position: this.getJointPosition(jointRes.jointNumber)};
+            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, position: this.getJointPosition(jointRes.jointNumber), tangent: jointRes.tangent};
         }
         if(curveRes !== null){
             return {hit: true, hitType: "curve", ...curveRes};
@@ -425,7 +431,8 @@ export class TrackGraph {
                             atT: res.tVal,
                             projectionPoint: res.projection,
                             t0Joint: trackSegment.t0Joint,
-                            t1Joint: trackSegment.t1Joint
+                            t1Joint: trackSegment.t1Joint,
+                            tangent: trackSegment.curve.derivative(res.tVal)
                         };
                         return;
                     }
@@ -442,6 +449,10 @@ export class TrackGraph {
 
     getTrackSegmentCurve(curveNumber: number): BCurve | null {
         return this._trackCurveManager.getTrackSegmentWithJoints(curveNumber).curve;
+    }
+
+    getTrackSegmentWithJoints(curveNumber: number): TrackSegment | null {
+        return this._trackCurveManager.getTrackSegmentWithJoints(curveNumber);
     }
 
     get trackSegments(): {t0Joint: number, t1Joint: number, curve: BCurve}[] {
