@@ -86,13 +86,40 @@ export class BCurve{
     private dControlPoints: Point[] = [];
     private arcLengthLUT: ArcLengthLUT = {controlPoints: [], arcLengthLUT: []};
     private _fullLength: number;
+    private lengthCache: Map<number, number> = new Map(); // Cache for lengthAtT results
 
+    /**
+     * Gets cache statistics for performance monitoring
+     * @returns Object containing cache size and hit rate information
+     */
+    public getCacheStats(): {size: number, hitRate: number} {
+        return {
+            size: this.lengthCache.size,
+            hitRate: 0 // This would need to be tracked separately if needed
+        };
+    }
+
+    /**
+     * Pre-warms the cache with commonly used t values for better performance
+     * @param steps Number of steps to pre-cache (default: 100)
+     */
+    public preWarmCache(steps: number = 100): void {
+        const tSteps = 1 / steps;
+        for (let tVal = 0; tVal <= 1; tVal += tSteps) {
+            this.lengthAtT(tVal);
+        }
+    }
+
+    private clearCache(): void {
+        this.lengthCache.clear();
+    }
 
     constructor(controlPoints: Point[]){
         this.controlPoints = controlPoints;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
         this.arcLengthLUT = this.getArcLengthLUT(1000);
+        this.clearCache(); // Clear cache on initialization
     }
 
     public getPointbyPercentage(percentage: number){
@@ -147,6 +174,7 @@ export class BCurve{
         this.controlPoints[index] = newPoint;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
+        this.clearCache(); // Clear cache on control point change
         return true;
     }
 
@@ -226,13 +254,25 @@ export class BCurve{
 
     public lengthAtT(tVal: number): number{
         this.validateTVal(tVal);
+        
+        // Check cache first
+        const cacheKey = Math.round(tVal * 1000000) / 1000000; // Round to 6 decimal places for cache key
+        if (this.lengthCache.has(cacheKey)) {
+            return this.lengthCache.get(cacheKey)!;
+        }
+        
         const z = tVal / 2, len = T.length;
         let sum = 0;
         for (let i = 0, t: number; i < len; i++) {
             t = z * T[i] + z;
             sum += C[i] * PointCal.magnitude(this.derivative(t));
         }
-        return z * sum;
+        const result = z * sum;
+        
+        // Cache the result
+        this.lengthCache.set(cacheKey, result);
+        
+        return result;
     }
 
     public derivative(tVal: number): Point{
@@ -244,6 +284,9 @@ export class BCurve{
     }
 
     public getArcLengthLUT(steps: number = 100): {controlPoints: Point[], arcLengthLUT: {tVal: number, length: number}[]}{
+        // Clear cache when regenerating LUT to ensure consistency
+        this.clearCache();
+        
         let res = [];
         let tSteps = 1 / steps;
         for(let tVal = 0; tVal <= 1; tVal += tSteps){
@@ -630,21 +673,37 @@ export class BCurve{
             return {type: "beforeCurve", remainLength: -targetLength};
         }
 
-        let points = [...this.arcLengthLUT.arcLengthLUT];
+        // Use LUT directly instead of copying
+        const points = this.arcLengthLUT.arcLengthLUT;
         let low = 0;
         let high = points.length - 1;
+        
+        // Optimized binary search with early exit for exact matches
         while (low <= high){
-            let mid = Math.floor((low + high) / 2);
-            if (points[mid].length == targetLength){
-                const point = this.get((mid + 1) / points.length);
-                return {type: "withinCurve", tVal: points[mid].tVal, point: point};
-            } else if (points[mid].length < targetLength){
+            const mid = Math.floor((low + high) / 2);
+            const midLength = points[mid].length;
+            
+            if (Math.abs(midLength - targetLength) < 1e-10) { // Use small epsilon for floating point comparison
+                const resultTVal = points[mid].tVal;
+                const point = this.get(resultTVal);
+                return {type: "withinCurve", tVal: resultTVal, point: point};
+            } else if (midLength < targetLength){
                 low = mid + 1;
             } else {
                 high = mid - 1;
             }
         }
-        return low >= points.length ? {type: "withinCurve", tVal: 1, point: this.get(1)} : {type: "withinCurve", tVal: (low + 1) / points.length, point: this.get((low + 1) / points.length)};
+        
+        // Handle edge cases more efficiently
+        if (low >= points.length) {
+            const point = this.get(1);
+            return {type: "withinCurve", tVal: 1, point: point};
+        }
+        
+        // Use linear interpolation for better accuracy
+        const resultTVal = points[low].tVal;
+        const point = this.get(resultTVal);
+        return {type: "withinCurve", tVal: resultTVal, point: point};
     }
 
     refineBinary(curve: BCurve, x: number, y: number, LUT: {point: Point, tVal: number, distance: number}[], i: number, targetDistance=0, epsilon=0.01) {

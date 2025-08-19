@@ -170,16 +170,24 @@ const animation = new Animation(percentageKeyFrame, (value)=>{
     point.y = curve.getPointbyPercentage(value).y;
 }, numberHelperFunctions);
 
-utilButton.addEventListener("click", ()=>{
-    animation.start();
-});
-
 let lastTimestamp = 0;
+
+// FPS calculation variables
+let frameCount = 0;
+let lastFpsUpdate = 0;
+let currentFps = 0;
 
 function step(timestamp: number){
 
     board.step(timestamp);
 
+    // FPS calculation
+    frameCount++;
+    if (timestamp - lastFpsUpdate >= 1000) { // Update FPS every second
+        currentFps = frameCount;
+        frameCount = 0;
+        lastFpsUpdate = timestamp;
+    }
 
     const deltaTime = timestamp - lastTimestamp;
 
@@ -278,6 +286,34 @@ function step(timestamp: number){
 
     animation.animate(deltaTime);
 
+    // Draw FPS indicator
+    board.context.save();
+    board.context.fillStyle = "white";
+    board.context.strokeStyle = "black";
+    board.context.lineWidth = 2;
+    board.context.font = "16px Arial";
+    board.context.textAlign = "left";
+    board.context.textBaseline = "top";
+    
+    const fpsText = `FPS: ${currentFps}`;
+    const textMetrics = board.context.measureText(fpsText);
+    const padding = 8;
+    const bgWidth = textMetrics.width + padding * 2;
+    const bgHeight = 20 + padding * 2;
+    
+    // Draw background rectangle
+    board.context.fillStyle = "rgba(0, 0, 0, 0.7)";
+    board.context.fillRect(10, 10, bgWidth, bgHeight);
+    
+    // Draw border
+    board.context.strokeRect(10, 10, bgWidth, bgHeight);
+    
+    // Draw FPS text
+    board.context.fillStyle = "white";
+    board.context.fillText(fpsText, 10 + padding, 10 + padding);
+    
+    board.context.restore();
+
     window.requestAnimationFrame(step);
 }
 
@@ -288,8 +324,18 @@ const straightCurve = new BCurve(straightLine);
 const tangent = PointCal.unitVector(straightCurve.derivative(1));
 
 console.log('tangent', tangent);
+console.time('create curve');
+const curves: BCurve[] = [];
+for(let i = 0; i < 3000; i++){
+    curves.push(new BCurve([getRandomPoint(0, 100),getRandomPoint(0, 100), getRandomPoint(0, 100), getRandomPoint(0, 100)]));
+}
+console.timeEnd('create curve');
 
-
-
-
-
+utilButton.addEventListener("click", ()=>{
+    animation.start();
+    console.time("advance");
+    curves.forEach((curve)=>{
+        curve.advanceAtTWithLength(Math.random(), curve.fullLength * Math.random());
+    });
+    console.timeEnd("advance");
+});
