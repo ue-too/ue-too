@@ -13,8 +13,8 @@ export type TrackJoint = {
     connections: Map<number, number>; // maps joint number -> track segment number
     tangent: Point;
     direction: {
-        tangent: Set<number>;
-        reverseTangent: Set<number>;
+        tangent: Set<number>; // to the next joint number
+        reverseTangent: Set<number>; // to the next joint number
     };
 }
 
@@ -48,8 +48,6 @@ export type ProjectionJointResult = {
 export type ProjectionCurveResult = {
     hitType: "curve";
 } & ProjectionInfo;
-
-
 
 export class TrackGraph {
 
@@ -492,6 +490,7 @@ export class TrackGraph {
                 console.log(`has connection to ${jointNumber} with track segment ${segment.curve}`);
             }
         }
+        console.log('full length', this.getFullLength());
     }
     
     logTrackSegments(){
@@ -501,6 +500,14 @@ export class TrackGraph {
             }
             console.log(`track segment ${index} has t0Joint ${trackSegment.t0Joint} and t1Joint ${trackSegment.t1Joint} with curve ${trackSegment.curve}`);
         }
+    }
+    
+    getFullLength(): number {
+        let length = 0;
+        for(const trackSegment of this.trackSegments){
+            length += trackSegment.curve.fullLength;
+        }
+        return length;
     }
 }
 

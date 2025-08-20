@@ -73,7 +73,7 @@ type AdvanceAtWithLengthBeforeCurveRes = {
 
 type AdvanceAtWithLengthAfterCurveRes = {
     type: "afterCurve";
-    remainLenth: number;
+    remainLength: number;
 }
 
 type AdvanceAtTWithLengthOutofCurveRes = AdvanceAtWithLengthBeforeCurveRes | AdvanceAtWithLengthAfterCurveRes;
@@ -122,7 +122,7 @@ export class BCurve{
         this.clearCache(); // Clear cache on initialization
     }
 
-    public getPointbyPercentage(percentage: number){
+    public getPointbyPercentage(percentage: number){ // this is the percentage of the curve length, not the t value
         // this leaves room for optimization
         let controlPointsChangedSinceLastArcLengthLUT = this.arcLengthLUT.controlPoints.length != this.controlPoints.length;
         controlPointsChangedSinceLastArcLengthLUT = controlPointsChangedSinceLastArcLengthLUT || this.arcLengthLUT.controlPoints.reduce((prevVal, curVal, index)=>{
@@ -668,7 +668,7 @@ export class BCurve{
         const currentLength = this.lengthAtT(tVal);
         const targetLength = currentLength + length;
         if(targetLength > this.fullLength){
-            return {type: "afterCurve", remainLenth: targetLength - this.fullLength};
+            return {type: "afterCurve", remainLength: targetLength - this.fullLength};
         } else if(targetLength < 0){
             return {type: "beforeCurve", remainLength: -targetLength};
         }
