@@ -86,7 +86,6 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _previewPosition: Point | null = null;
     private _trainTangent: Point | null = null;
     private _previewTangent: Point | null = null;
-    private _trainDirection: "forward" | "backward" = "forward";
     private _trainSpeed: number = 0; // train speed should never be negative since the direction already takes care of it
     private _trainAcceleration: number = 0;
     private _trainPositionInTrack: TrainPosition | null = null;
@@ -177,6 +176,11 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             distanceToAdvance = Math.abs(nextPosition.remainLength);
             nextPosition = nextTrackSegment.curve.advanceAtTWithLength(nextDirection.direction === "forward" ? 0 : 1, distanceToAdvance * (nextDirection.direction === "forward" ? 1 : -1));
             this._trainPositionInTrack.tValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : nextDirection.direction === "forward" ? 1 : 0;
+            if(nextPosition.type === "withinCurve"){
+                this._trainPositionInTrack.tValue = nextPosition.tVal;
+            } else {
+                this._trainPositionInTrack.tValue = nextDirection.direction === "forward" ? 1 : 0;
+            }
         }
         // console.log("train position in track", this._trainPositionInTrack);
         this._trainPositionInTrack.tValue = nextPosition.tVal;
