@@ -87,12 +87,12 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _trainTangent: Point | null = null;
     private _previewTangent: Point | null = null;
     private _trainDirection: "forward" | "backward" = "forward";
-    private _trainSpeed: number = 0;
+    private _trainSpeed: number = 0; // train speed should never be negative since the direction already takes care of it
     private _trainAcceleration: number = 0;
     private _trainPositionInTrack: TrainPosition | null = null;
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
-    private _friction: number = 0.05;
+    private _friction: number = -0.05;
 
     constructor(trackGraph: TrackGraph) {
         this._trackGraph = trackGraph;
@@ -123,7 +123,6 @@ export class TrainPlacementEngine implements TrainPlacementContext {
 
     update(deltaTime: number){
         deltaTime /= 1000;
-        this._trainSpeed += this._trainAcceleration * deltaTime;
         if(this._trainPositionInTrack === null){
             return;
         }
@@ -132,13 +131,17 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             console.warn("track segment where the train is on is not found");
             return;
         }
-        if(Math.abs(this._trainSpeed) < this._friction){
+        let friction = this._friction;
+        if(this._trainSpeed === 0){
+            friction = 0;
+        }
+        if(this._trainSpeed > 0 && this._trainSpeed + friction < 0){
             this._trainSpeed = 0;
             return;
         } else {
-            // console.log("train speed is", this._trainSpeed);
-            this._trainSpeed -= this._friction;
+            this._trainSpeed += friction;
         }
+        this._trainSpeed += this._trainAcceleration * deltaTime;
         let distanceToAdvance = this._trainSpeed * deltaTime;
         if(approximately(distanceToAdvance, 0, 0.001)){
             return;
