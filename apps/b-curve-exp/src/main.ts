@@ -189,7 +189,8 @@ function step(timestamp: number){
         lastFpsUpdate = timestamp;
     }
 
-    const deltaTime = timestamp - lastTimestamp;
+    const deltaTime = timestamp - lastTimestamp; // in milliseconds
+    trainPlacementEngine.update(deltaTime);
 
     lastTimestamp = timestamp;
     const cps = curve.getControlPoints();
@@ -319,23 +320,22 @@ function step(timestamp: number){
 
 window.requestAnimationFrame(step);
 
-const straightLine = [{x: 0, y: 0}, {x: 100, y: 100}, {x: 200, y: 200}];
-const straightCurve = new BCurve(straightLine);
-const tangent = PointCal.unitVector(straightCurve.derivative(1));
-
-console.log('tangent', tangent);
-console.time('create curve');
-const curves: BCurve[] = [];
-for(let i = 0; i < 3000; i++){
-    curves.push(new BCurve([getRandomPoint(0, 100),getRandomPoint(0, 100), getRandomPoint(0, 100), getRandomPoint(0, 100)]));
-}
-console.timeEnd('create curve');
-
 utilButton.addEventListener("click", ()=>{
     animation.start();
-    console.time("advance");
-    curves.forEach((curve)=>{
-        curve.advanceAtTWithLength(Math.random(), curve.fullLength * Math.random());
-    });
-    console.timeEnd("advance");
+});
+
+const p1Button = document.getElementById("p1") as HTMLButtonElement;
+const neutralButton = document.getElementById("neutral") as HTMLButtonElement;
+const switchDirectionButton = document.getElementById("switch-direction") as HTMLButtonElement;
+
+p1Button.addEventListener("click", ()=>{
+    trainPlacementEngine.setTrainAcceleration(10);
+});
+
+neutralButton.addEventListener("click", ()=>{
+    trainPlacementEngine.setTrainAcceleration(0);
+});
+
+switchDirectionButton.addEventListener("click", ()=>{
+    trainPlacementEngine.switchDirection();
 });

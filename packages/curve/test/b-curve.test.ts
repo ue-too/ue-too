@@ -624,7 +624,9 @@ describe("Advanced Operation on Bezier Curve", ()=>{
         if(testRes.type === "withinCurve"){
             // The new t value should be greater than 0.5 since we're advancing forward
             expect(testRes.tVal).toBeGreaterThan(0.5);
-            expect(testRes.tVal).toBeLessThanOrEqual(1);
+            const lengthAtStart = testCurve.lengthAtT(0.5);
+            const lengthAtEnd = testCurve.lengthAtT(testRes.tVal);
+            expect(lengthAtEnd - lengthAtStart).toBeCloseTo(length, 0);
             
             // The point should be further along the curve
             expect(testRes.point.x).toBeGreaterThan(testCurve.get(0.5).x);
@@ -647,7 +649,7 @@ describe("Advanced Operation on Bezier Curve", ()=>{
         expect(testRes.type).toBe("afterCurve");
         if(testRes.type === "afterCurve"){
             // Should have some remaining length
-            expect(testRes.remainLenth).toBeGreaterThan(0);
+            expect(testRes.remainLength).toBeGreaterThan(0);
         }
     });
 
