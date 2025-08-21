@@ -120,6 +120,10 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         this._trainAcceleration = acceleration;
     }
 
+    setTrainSpeed(speed: number){
+        this._trainSpeed = speed;
+    }
+
     update(deltaTime: number){
         deltaTime /= 1000;
         if(this._trainPositionInTrack === null){
@@ -130,23 +134,30 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             console.warn("track segment where the train is on is not found");
             return;
         }
-        let friction = this._friction;
-        if(this._trainSpeed === 0){
-            friction = 0;
-        }
-        if(this._trainSpeed > 0 && this._trainSpeed + friction < 0){
-            this._trainSpeed = 0;
-            return;
-        } else {
-            this._trainSpeed += friction;
-        }
-        this._trainSpeed += this._trainAcceleration * deltaTime;
+        // let friction = this._friction;
+        // if(this._trainSpeed === 0){
+        //     friction = 0;
+        // }
+        // if(this._trainSpeed > 0 && this._trainSpeed + friction < 0){
+        //     this._trainSpeed = 0;
+        //     return;
+        // } else {
+        //     this._trainSpeed += friction * deltaTime;
+        // }
+        // this._trainSpeed += this._trainAcceleration * deltaTime;
         let distanceToAdvance = this._trainSpeed * deltaTime;
         if(approximately(distanceToAdvance, 0, 0.001)){
+            // console.log("train speed is too slow, stopping");
             return;
         }
-        let nextPosition = trackSegment.curve.advanceAtTWithLength(this._trainPositionInTrack.tValue, distanceToAdvance * (this._trainPositionInTrack.direction === "forward" ? 1 : -1));
+        console.log('--------------------------------');
+        console.log('train position before update', this._trainPositionInTrack);
+        const advanceLength = distanceToAdvance * (this._trainPositionInTrack.direction === "forward" ? 1 : -1);
+        console.log('advance length', advanceLength);
+        let nextPosition = trackSegment.curve.advanceAtTWithLength(this._trainPositionInTrack.tValue, advanceLength);
+        console.log('next position', nextPosition);
         while(nextPosition.type !== "withinCurve"){
+            console.log('next position is not within curve');
             const comingFromJointNumber = this._trainPositionInTrack.direction === "forward" ? trackSegment.t0Joint : trackSegment.t1Joint;
             const enteringJointNumber = this._trainPositionInTrack.direction === "forward" ? trackSegment.t1Joint : trackSegment.t0Joint;
             const enteringJoint = this._trackGraph.getJoint(enteringJointNumber);
@@ -184,6 +195,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         // console.log("train position in track", this._trainPositionInTrack);
         this._trainPositionInTrack.tValue = nextPosition.tVal;
+        console.log("train position in track after update", this._trainPositionInTrack);
         this._trainPosition = null;
     }
 
