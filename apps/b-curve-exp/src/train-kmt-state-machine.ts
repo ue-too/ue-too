@@ -96,6 +96,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _friction: number = -0.05;
+    private _expandDirection: "same" | "opposite" = "opposite";
 
     private _secondBogieOffset: number = 40;
 
@@ -158,6 +159,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         this._trainPositionInTrack.direction = this._trainPositionInTrack.direction === "forward" ? "backward" : "forward";
         this._trainTangent = PointCal.multiplyVectorByScalar(this._trainTangent, -1);
+        this._expandDirection = this._expandDirection === "same" ? "opposite" : "same";
     }
 
     get trainTangent(): Point | null {
@@ -234,7 +236,8 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         if(this._trainPositionInTrack === null){
             return null;
         }
-        const secondBogiePosition = this.getPosition(this._secondBogieOffset, this._trainPositionInTrack.direction, this._trainPositionInTrack.tValue, this._trainPositionInTrack.trackSegment);
+        const expandDirection = this._expandDirection === "same" ? this._trainPositionInTrack.direction : flipDirection(this._trainPositionInTrack.direction);
+        const secondBogiePosition = this.getPosition(this._secondBogieOffset, expandDirection, this._trainPositionInTrack.tValue, this._trainPositionInTrack.trackSegment);
         if(secondBogiePosition === null){
             return null;
         }
