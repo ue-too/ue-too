@@ -276,7 +276,11 @@ export class TrainPlacementEngine implements TrainPlacementContext {
                 this._trainAcceleration = 0;
                 this._trainSpeed = 0;
                 xTValue = xDirection === "forward" ? 1 : 0;
-                return;
+                return {
+                    trackSegment: xTrackSegment,
+                    tValue: xTValue,
+                    direction: xDirection
+                };
             }
 
             const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
