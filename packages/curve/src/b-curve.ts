@@ -667,6 +667,12 @@ export class BCurve{
     advanceAtTWithLength(tVal: number, length: number): AdvanceAtTWithLengthRes{
         const currentLength = this.lengthAtT(tVal);
         const targetLength = currentLength + length;
+        if(tVal === 0 && length < 0){
+            return {type: "beforeCurve", remainLength: -length};
+        }
+        if(tVal === 1 && length > 0){
+            return {type: "afterCurve", remainLength: length};
+        }
         if(targetLength > this.fullLength){
             return {type: "afterCurve", remainLength: targetLength - this.fullLength};
         } else if(targetLength < 0){
@@ -686,6 +692,7 @@ export class BCurve{
             if (Math.abs(midLength - targetLength) < 1e-10) { // Use small epsilon for floating point comparison
                 const resultTVal = points[mid].tVal;
                 const point = this.get(resultTVal);
+                console.log('found, using exact match', resultTVal);
                 return {type: "withinCurve", tVal: resultTVal, point: point};
             } else if (midLength < targetLength){
                 low = mid + 1;
@@ -703,7 +710,45 @@ export class BCurve{
         // Use linear interpolation for better accuracy
         const resultTVal = points[low].tVal;
         const point = this.get(resultTVal);
-        return {type: "withinCurve", tVal: resultTVal, point: point};
+        console.log('low', low);
+        const tValInterpolated = (low + length > 0 ? 1 : -1) / points.length;
+        console.log('tValInterpolated', tValInterpolated);
+        return {type: "withinCurve", tVal: tValInterpolated, point: this.get(tValInterpolated)};
+        // return {type: "withinCurve", tVal: resultTVal, point: point};
+    }
+
+    advanceByDistance(startT: number, distance: number): AdvanceAtTWithLengthRes {
+        let currentT = startT;
+        let remainingDistance = distance;
+        const stepSize = 0.01; // Adjust for precision vs performance
+
+        if(distance > this.fullLength){
+            return {type: "afterCurve", remainLength: distance - this.fullLength};
+        } else if(distance < 0){
+            return {type: "beforeCurve", remainLength: -distance};
+        }
+        
+        while (remainingDistance > 0 && currentT < 1) {
+            const currentPoint = this.get(currentT);
+            const nextT = Math.min(currentT + stepSize, 1);
+            const nextPoint = this.get(nextT);
+            
+            const segmentLength = Math.sqrt(
+                Math.pow(nextPoint.x - currentPoint.x, 2) + 
+                Math.pow(nextPoint.y - currentPoint.y, 2)
+            );
+            
+            if (segmentLength >= remainingDistance) {
+                // Interpolate within this segment
+                const ratio = remainingDistance / segmentLength;
+                return {type: "withinCurve", tVal: currentT + ratio * (nextT - currentT), point: this.get(currentT + ratio * (nextT - currentT))};
+            }
+            
+            remainingDistance -= segmentLength;
+            currentT = nextT;
+        }
+        
+        return {type: "withinCurve", tVal: currentT, point: this.get(currentT)};
     }
 
     refineBinary(curve: BCurve, x: number, y: number, LUT: {point: Point, tVal: number, distance: number}[], i: number, targetDistance=0, epsilon=0.01) {
