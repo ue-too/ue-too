@@ -667,6 +667,8 @@ export class BCurve{
     advanceAtTWithLength(tVal: number, length: number): AdvanceAtTWithLengthRes{
         const currentLength = this.lengthAtT(tVal);
         const targetLength = currentLength + length;
+        
+        // Handle edge cases first
         if(tVal === 0 && length < 0){
             return {type: "beforeCurve", remainLength: -length};
         }
@@ -679,20 +681,20 @@ export class BCurve{
             return {type: "beforeCurve", remainLength: -targetLength};
         }
 
-        // Use LUT directly instead of copying
+        // Use LUT for binary search
         const points = this.arcLengthLUT.arcLengthLUT;
         let low = 0;
         let high = points.length - 1;
         
-        // Optimized binary search with early exit for exact matches
+        // Binary search to find the interval containing targetLength
         while (low <= high){
             const mid = Math.floor((low + high) / 2);
             const midLength = points[mid].length;
             
-            if (Math.abs(midLength - targetLength) < 1e-10) { // Use small epsilon for floating point comparison
+            if (Math.abs(midLength - targetLength) < 1e-10) {
+                // Found exact match
                 const resultTVal = points[mid].tVal;
                 const point = this.get(resultTVal);
-                console.log('found, using exact match', resultTVal);
                 return {type: "withinCurve", tVal: resultTVal, point: point};
             } else if (midLength < targetLength){
                 low = mid + 1;
@@ -701,20 +703,44 @@ export class BCurve{
             }
         }
         
-        // Handle edge cases more efficiently
+        // After binary search, 'high' points to the largest index with length < targetLength
+        // and 'low' points to the smallest index with length >= targetLength
+        
+        // Handle edge cases
+        if (high < 0) {
+            // targetLength is smaller than the first point's length
+            const point = this.get(0);
+            return {type: "withinCurve", tVal: 0, point: point};
+        }
+        
         if (low >= points.length) {
+            // targetLength is larger than the last point's length
             const point = this.get(1);
             return {type: "withinCurve", tVal: 1, point: point};
         }
         
-        // Use linear interpolation for better accuracy
-        const resultTVal = points[low].tVal;
-        const point = this.get(resultTVal);
-        console.log('low', low);
-        const tValInterpolated = (low + length > 0 ? 1 : -1) / points.length;
-        console.log('tValInterpolated', tValInterpolated);
-        return {type: "withinCurve", tVal: tValInterpolated, point: this.get(tValInterpolated)};
-        // return {type: "withinCurve", tVal: resultTVal, point: point};
+        // Interpolate between points[high] and points[low]
+        const p1 = points[high];
+        const p2 = points[low];
+        
+        // Linear interpolation
+        const lengthRange = p2.length - p1.length;
+        const tRange = p2.tVal - p1.tVal;
+        
+        if (lengthRange === 0) {
+            // Both points have the same length, use the first one
+            const point = this.get(p1.tVal);
+            return {type: "withinCurve", tVal: p1.tVal, point: point};
+        }
+        
+        const ratio = (targetLength - p1.length) / lengthRange;
+        const interpolatedT = p1.tVal + ratio * tRange;
+        
+        // Clamp to valid range
+        const clampedT = Math.max(0, Math.min(1, interpolatedT));
+        const point = this.get(clampedT);
+        
+        return {type: "withinCurve", tVal: clampedT, point: point};
     }
 
     advanceByDistance(startT: number, distance: number): AdvanceAtTWithLengthRes {
