@@ -32,6 +32,10 @@ export type TrainPosition = {
     direction: TrainDirection; // the direction of the train on the bezier curve; forward is t = 0 -> t = 1; backward is t = 1 -> t = 0
 }
 
+export function flipDirection(direction: TrainDirection): TrainDirection {
+    return direction === "forward" ? "backward" : "forward";
+}
+
 export type TrainDirection = "forward" | "backward";
 
 
@@ -93,6 +97,8 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _friction: number = -0.05;
 
+    private _secondBogieOffset: number = 40;
+
     constructor(trackGraph: TrackGraph) {
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(trackGraph);
@@ -150,26 +156,26 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             // console.log("train speed is too slow, stopping");
             return;
         }
-        console.log('--------------------------------');
-        console.log('train position before update', this._trainPositionInTrack);
+        // console.log('--------------------------------');
+        // console.log('train position before update', this._trainPositionInTrack);
         const advanceLength = distanceToAdvance * (this._trainPositionInTrack.direction === "forward" ? 1 : -1);
-        console.log('advance length', advanceLength);
+        // console.log('advance length', advanceLength);
         let nextPosition = trackSegment.curve.advanceAtTWithLength(this._trainPositionInTrack.tValue, advanceLength);
-        console.log('next position', nextPosition);
+        // console.log('next position', nextPosition);
         while(nextPosition.type !== "withinCurve"){
-            console.log('next position is not within curve');
+            // console.log('next position is not within curve');
             const comingFromJointNumber = this._trainPositionInTrack.direction === "forward" ? trackSegment.t0Joint : trackSegment.t1Joint;
             const enteringJointNumber = this._trainPositionInTrack.direction === "forward" ? trackSegment.t1Joint : trackSegment.t0Joint;
             const enteringJoint = this._trackGraph.getJoint(enteringJointNumber);
             if(enteringJoint === null){
-                console.warn("entering joint not found");
+                // console.warn("entering joint not found");
                 return;
             }
             const nextJointDirection = enteringJoint.direction.reverseTangent.has(comingFromJointNumber) ? "tangent" : "reverseTangent";
             const nextDirection = this._jointDirectionManager.getNextJoint(enteringJointNumber, nextJointDirection);
 
             if(nextDirection === null){
-                console.warn("end of the track");
+                // console.warn("end of the track");
                 this._trainAcceleration = 0;
                 this._trainSpeed = 0;
                 this._trainPositionInTrack.tValue = this._trainPositionInTrack.direction === "forward" ? 1 : 0;
@@ -178,7 +184,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
 
             const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
             if(nextTrackSegment === null){
-                console.info("the end");
+                // console.info("the end");
                 return;
             }
             this._trainPositionInTrack.direction = nextDirection.direction;
@@ -195,7 +201,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         // console.log("train position in track", this._trainPositionInTrack);
         this._trainPositionInTrack.tValue = nextPosition.tVal;
-        console.log("train position in track after update", this._trainPositionInTrack);
+        // console.log("train position in track after update", this._trainPositionInTrack);
         this._trainPosition = null;
     }
 
@@ -261,8 +267,91 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         return null;
     }
 
+    get secondBogiePosition(): Point | null {
+        const secondBogiePosition = this.getSecondBogiePosition();
+        if(secondBogiePosition === null){
+            return null;
+        }
+        const trackSegment = this._trackGraph.getTrackSegmentWithJoints(secondBogiePosition.trackSegment);
+        if(trackSegment === null){
+            return null;
+        }
+        return trackSegment.curve.get(secondBogiePosition.tValue);
+    }
+
     get previewPosition(): Point | null {
         return this._previewPosition;
+    }
+
+    getSecondBogiePosition(): TrainPosition | null {
+        if(this._trainPositionInTrack === null){
+            return null;
+        }
+        const secondBogiePosition = this.getPosition(this._trainPositionInTrack.trackSegment, this._trainPositionInTrack.tValue, flipDirection(this._trainPositionInTrack.direction), this._secondBogieOffset);
+        if(secondBogiePosition === null){
+            return null;
+        }
+        return secondBogiePosition;
+    }
+
+    getPosition(trackSegmentNumber: number, currentTValue: number, direction: TrainDirection, advanceLength: number): TrainPosition | null{
+        let resTrackSegmentNumber = trackSegmentNumber;
+        let resTValue = currentTValue;
+        let resDirection = direction;
+        let distanceToAdvance = advanceLength;
+        const trackSegment = this._trackGraph.getTrackSegmentWithJoints(resTrackSegmentNumber);
+        if(trackSegment === null){
+            console.warn("track segment where the train is on is not found");
+            return null;
+        }
+        let nextPosition = trackSegment.curve.advanceAtTWithLength(resTValue, advanceLength);
+        // console.log('next position', nextPosition);
+        while(nextPosition.type !== "withinCurve"){
+            // console.log('next position is not within curve');
+            const comingFromJointNumber = resDirection === "forward" ? trackSegment.t0Joint : trackSegment.t1Joint;
+            const enteringJointNumber = resDirection === "forward" ? trackSegment.t1Joint : trackSegment.t0Joint;
+            const enteringJoint = this._trackGraph.getJoint(enteringJointNumber);
+            if(enteringJoint === null){
+                // console.warn("entering joint not found");
+                return null;
+            }
+            const nextJointDirection = enteringJoint.direction.reverseTangent.has(comingFromJointNumber) ? "tangent" : "reverseTangent";
+            const nextDirection = this._jointDirectionManager.getNextJoint(enteringJointNumber, nextJointDirection);
+
+            if(nextDirection === null){
+                // console.warn("end of the track");
+                resTValue = resDirection === "forward" ? 1 : 0;
+                return {
+                    trackSegment: resTrackSegmentNumber,
+                    tValue: resTValue,
+                    direction: resDirection
+                };
+            }
+
+            const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
+            if(nextTrackSegment === null){
+                console.warn('next track segment not found');
+                return null;
+            }
+            direction = nextDirection.direction;
+            trackSegmentNumber = nextDirection.curveNumber;
+
+            distanceToAdvance = Math.abs(nextPosition.remainLength);
+            nextPosition = nextTrackSegment.curve.advanceAtTWithLength(nextDirection.direction === "forward" ? 0 : 1, distanceToAdvance * (nextDirection.direction === "forward" ? 1 : -1));
+            currentTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : nextDirection.direction === "forward" ? 1 : 0;
+            if(nextPosition.type === "withinCurve"){
+                currentTValue = nextPosition.tVal;
+            } else {
+                currentTValue = nextDirection.direction === "forward" ? 1 : 0;
+            }
+        }
+        // console.log("train position in track", this._trainPositionInTrack);
+        resTValue = nextPosition.tVal;
+        return {
+            trackSegment: resTrackSegmentNumber,
+            tValue: resTValue,
+            direction: resDirection
+        };
     }
 
     setup(){

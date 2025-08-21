@@ -281,6 +281,15 @@ function step(timestamp: number){
         drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
     }
 
+    if(trainPlacementEngine.secondBogiePosition != null){
+        board.context.save();
+        board.context.fillStyle = "green";
+        board.context.beginPath();
+        board.context.arc(trainPlacementEngine.secondBogiePosition.x, trainPlacementEngine.secondBogiePosition.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
     if(curveEngine.branchTangent != null && curveEngine.currentStartingPoint != null){
         drawArrow(board.context, board.camera.zoomLevel, curveEngine.currentStartingPoint, PointCal.addVector(PointCal.multiplyVectorByScalar(curveEngine.branchTangent, 10), curveEngine.currentStartingPoint));
     }
