@@ -170,6 +170,7 @@ export class CurveCreationEngine implements LayoutContext {
     private _hoverPosition: Point | null;
     private _hoverCirclePosition: Point | null;
     private _hoverCircleJointNumber: number | null;
+    private _hoverEndPosition: Point | null = null;
     private _previewCurve: BCurve | null;
     private _trackGraph: TrackGraph;
 
@@ -196,6 +197,10 @@ export class CurveCreationEngine implements LayoutContext {
 
     get currentStartingPoint(): Point | null {
         return this._currentStartingPoint;
+    }
+
+    get hoverEndPosition(): Point | null {
+        return this._hoverEndPosition;
     }
 
     startCurve(startingPosition: Point) {
@@ -280,10 +285,13 @@ export class CurveCreationEngine implements LayoutContext {
 
         const joint = this._trackGraph.pointOnJoint(position);
         const projection = this._trackGraph.projectPointOnTrack(position);
-        let tangent = null;
 
         if(joint != null){
-            tangent = joint.tangent;
+            this._hoverEndPosition = joint.position;
+            this._endTangent = joint.tangent;
+        } else {
+            this._hoverEndPosition = null;
+            this._endTangent = null;
         }
 
         switch(this._startingPointType){
@@ -310,14 +318,24 @@ export class CurveCreationEngine implements LayoutContext {
                     tangent = PointCal.multiplyVectorByScalar(tangent, -1);
                 }
                 this.branchTangent = tangent;
-                const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
-                if(this._previewCurve == null){
-                    this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
-                    return;
+                if(this._endTangent == null){
+                    const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
+                    if(this._previewCurve == null){
+                        this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
+                        return;
+                    }
+                    this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
+                    this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
+                    this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
+                } else {
+                    const previewCurveCPs = createCubicFromTangentsCurvatures(this._currentStartingPoint, this._hoverEndPosition, joint.tangent, this._endTangent, curvature, joint.curvature);
+                    if(this._previewCurve == null){
+                        this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
+                    } else {
+                        console.log("setting control points for cubic curve");
+                        this._previewCurve.setControlPoints([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
+                    }
                 }
-                this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
-                this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
-                this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
                 break;
             }
             case "branchTrack":{
@@ -340,6 +358,7 @@ export class CurveCreationEngine implements LayoutContext {
                 }
                 break;
         }
+
 
     }
 
@@ -388,6 +407,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewCurve = null;
         this._hoverCircleJointNumber = null;
         this._hoverCirclePosition = null;
+        this._hoverEndPosition = null;
         this._trackGraph.logJoints();
     }
 
@@ -405,6 +425,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._hoverCirclePosition = null;
         this._constrainingCurve = null;
         this.branchTangent = null;
+        this._hoverEndPosition = null;
     }
 
     setup() {
@@ -676,4 +697,79 @@ function createG2Cubic(existingCurve: BCurve, targetPoint: Point) {
     newCubic.p3 = { ...targetPoint };
     
     return newCubic;
+}
+
+function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
+    const unitStartTangent = PointCal.unitVector(startTangent);
+    const unitEndTangent = PointCal.unitVector(endTangent);
+    
+    const chordVector = PointCal.subVector(endPoint, startPoint);
+    const chordLength = PointCal.magnitude(chordVector);
+    
+    // Base control distances
+    let startControlDistance = chordLength * tension / 3.0;
+    let endControlDistance = chordLength * tension / 3.0;
+    
+    // Adjust based on curvatures
+    const startCurvatureMagnitude = Math.abs(startCurvature);
+    if (startCurvatureMagnitude > 0.001) {
+        const startCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (startCurvatureMagnitude * chordLength + 1.0)));
+        startControlDistance *= startCurvatureScale;
+        
+        if (startCurvatureMagnitude > 0.02) {
+            startControlDistance *= 0.7;
+        }
+    }
+    
+    const endCurvatureMagnitude = Math.abs(endCurvature);
+    if (endCurvatureMagnitude > 0.001) {
+        const endCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (endCurvatureMagnitude * chordLength + 1.0)));
+        endControlDistance *= endCurvatureScale;
+        
+        if (endCurvatureMagnitude > 0.02) {
+            endControlDistance *= 0.7;
+        }
+    }
+    
+    // Calculate initial control points
+    const p1Initial = {
+        x: startPoint.x + unitStartTangent.x * startControlDistance,
+        y: startPoint.y + unitStartTangent.y * startControlDistance
+    };
+    
+    const p2Initial = {
+        x: endPoint.x - unitEndTangent.x * endControlDistance,
+        y: endPoint.y - unitEndTangent.y * endControlDistance
+    };
+    
+    // Apply curvature adjustments
+    const startPerpendicular = {
+        x: -unitStartTangent.y,
+        y: unitStartTangent.x
+    };
+    
+    const endPerpendicular = {
+        x: -unitEndTangent.y,
+        y: unitEndTangent.x
+    };
+    
+    const startCurvatureOffset = startCurvature * chordLength * 0.05;
+    const endCurvatureOffset = endCurvature * chordLength * 0.05;
+    
+    const p1 = {
+        x: p1Initial.x + startPerpendicular.x * startCurvatureOffset,
+        y: p1Initial.y + startPerpendicular.y * startCurvatureOffset
+    };
+    
+    const p2 = {
+        x: p2Initial.x + endPerpendicular.x * endCurvatureOffset,
+        y: p2Initial.y + endPerpendicular.y * endCurvatureOffset
+    };
+    
+    return {
+        p0: startPoint,
+        p1: p1,
+        p2: p2,
+        p3: endPoint
+    };
 }

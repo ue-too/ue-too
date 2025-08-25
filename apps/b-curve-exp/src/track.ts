@@ -425,19 +425,26 @@ export class TrackGraph {
         return segment.curve.curvature(tVal);
     }
 
-    pointOnJoint(position: Point): {jointNumber: number, tangent: Point} | null {
-        let closestJoint: {jointNumber: number, distance: number, tangent: Point} | null = null;
+    pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
+        let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
         let minDistance:number = 10;
 
         for(const [jointNumber, joint] of this.joints.entries()){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
             if(distance < minDistance){
                 minDistance = distance;
-                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent};
+                const curveNumber: number = joint.connections.values().next().value;
+                const curve = this._trackCurveManager.getTrackSegmentWithJoints(curveNumber);
+                if(curve === null){
+                    continue;
+                }
+                const tVal = curve.t0Joint === jointNumber ? 0 : 1;
+                const curvature = curve.curve.curvature(tVal);
+                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent, position: joint.position, curvature: curvature};
             }
         }
         if(closestJoint !== null){
-            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent};
+            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, position: closestJoint.position, curvature: closestJoint.curvature};
         }
         return null;
     }
