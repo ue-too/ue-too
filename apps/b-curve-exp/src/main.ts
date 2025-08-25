@@ -207,7 +207,11 @@ function step(timestamp: number){
         const cps = curveEngine.previewCurve.getControlPoints();
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
-        board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        if(cps.length === 3){
+            board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        } else {
+            board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+        }
         board.context.stroke();
     }
     
@@ -218,7 +222,11 @@ function step(timestamp: number){
         board.context.strokeStyle = "green";
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
-        board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        if(cps.length === 3){
+            board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        } else {
+            board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+        }
         board.context.stroke();
         board.context.restore();
     });
@@ -250,6 +258,12 @@ function step(timestamp: number){
     if(curveEngine.hoverCirclePosition != null){
         board.context.beginPath();
         board.context.arc(curveEngine.hoverCirclePosition.x, curveEngine.hoverCirclePosition.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+    }
+
+    if(curveEngine.hoverEndPosition != null){
+        board.context.beginPath();
+        board.context.arc(curveEngine.hoverEndPosition.x, curveEngine.hoverEndPosition.y, 5, 0, 2 * Math.PI);
         board.context.fill();
     }
 

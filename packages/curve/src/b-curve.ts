@@ -122,6 +122,14 @@ export class BCurve{
         this.clearCache(); // Clear cache on initialization
     }
 
+    setControlPoints(controlPoints: Point[]){
+        this.controlPoints = controlPoints;
+        this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
+        this._fullLength = this.calculateFullLength();
+        this.arcLengthLUT = this.getArcLengthLUT(1000);
+        this.clearCache(); // Clear cache on control point change
+    }
+
     public getPointbyPercentage(percentage: number){ // this is the percentage of the curve length, not the t value
         // this leaves room for optimization
         let controlPointsChangedSinceLastArcLengthLUT = this.arcLengthLUT.controlPoints.length != this.controlPoints.length;
