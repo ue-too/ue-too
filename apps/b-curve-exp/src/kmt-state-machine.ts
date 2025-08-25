@@ -24,6 +24,7 @@ export type LayoutEvents = {
     "escapeKey": {};
     "startLayout": {};
     "endLayout": {};
+    "flipEndTangent": {};
 }
 
 type NewCurveCreationType = "new" | "branchJoint" | "branchTrack" | "extendEndingTrack";
@@ -36,6 +37,7 @@ export interface LayoutContext extends BaseContext {
     hoveringForEndJoint: (position: Point) => void;
     hoverForStartingPoint: (position: Point) => void;
     insertJointIntoTrackSegment: (startJointNumber: number, endJointNumber: number, atT: number) => void;
+    flipEndTangent: () => void;
 }
 
 class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -135,6 +137,12 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
                 context.cancelCurrentCurve();
             },
             defaultTargetState: "HOVER_FOR_STARTING_POINT",
+        },
+        "flipEndTangent": {
+            action: (context, event) => {
+                context.flipEndTangent();
+            },
+            defaultTargetState: "HOVER_FOR_ENDING_POINT",
         }
     };
 
@@ -172,6 +180,8 @@ export class CurveCreationEngine implements LayoutContext {
     private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
 
     public branchTangent: Point | null = null;
+
+    private _endTangent: Point | null = null;
 
     constructor() {
         this._currentStartingPoint = null;
@@ -248,6 +258,13 @@ export class CurveCreationEngine implements LayoutContext {
         }
     }
 
+    flipEndTangent() {
+        if(this._endTangent == null){
+            return;
+        }
+        this._endTangent = PointCal.multiplyVectorByScalar(this._endTangent, -1);
+    }
+
     hoveringForEndJoint(position: Point) {
         this._hoverPosition = position;
         if(this._currentStartingPoint == null) {
@@ -259,8 +276,15 @@ export class CurveCreationEngine implements LayoutContext {
             y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
         }
 
-
         this.branchTangent = null;
+
+        const joint = this._trackGraph.pointOnJoint(position);
+        const projection = this._trackGraph.projectPointOnTrack(position);
+        let tangent = null;
+
+        if(joint != null){
+            tangent = joint.tangent;
+        }
 
         switch(this._startingPointType){
             case "new":
@@ -339,7 +363,7 @@ export class CurveCreationEngine implements LayoutContext {
                 this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
             case "branchJoint":
-                this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps, this.branchTangent);
+                this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps);
                 break;
             case "branchTrack":
                 break;
@@ -508,6 +532,111 @@ function createQuadraticFromTangentCurvature(
         p0: startPoint,
         p1: p1,
         p2: endPoint
+    };
+}
+
+/**
+ * Creates a cubic Bézier curve from start and end points with specified tangent directions and curvatures
+ * @param startPoint - The starting point of the curve (P0)
+ * @param endPoint - The ending point of the curve (P3)
+ * @param startTangentDirection - Unit vector indicating the tangent direction at the start point
+ * @param endTangentDirection - Unit vector indicating the tangent direction at the end point
+ * @param startCurvature - The desired curvature value at start point (positive for left turn, negative for right turn)
+ * @param endCurvature - The desired curvature value at end point (positive for left turn, negative for right turn)
+ * @returns Object containing the four control points {p0, p1, p2, p3} of the cubic Bézier curve
+ */
+function createCubicFromTangentCurvature(
+    startPoint: Point,
+    endPoint: Point,
+    startTangentDirection: Point,
+    endTangentDirection: Point,
+    startCurvature: number,
+    endCurvature: number
+): {p0: Point, p1: Point, p2: Point, p3: Point} {
+    
+    // Ensure tangent directions are normalized
+    const unitStartTangent = PointCal.unitVector(startTangentDirection);
+    const unitEndTangent = PointCal.unitVector(endTangentDirection);
+    
+    // Calculate the chord vector from start to end
+    const chordVector = PointCal.subVector(endPoint, startPoint);
+    const chordLength = PointCal.magnitude(chordVector);
+    
+    // Base control distances - start with 1/3 of chord length (standard for cubic Bézier)
+    let startControlDistance = chordLength / 3.0;
+    let endControlDistance = chordLength / 3.0;
+    
+    // Adjust control distances based on curvatures
+    // Higher curvature magnitude requires tighter control for more precise curves
+    
+    // For start control point (P1)
+    const startCurvatureMagnitude = Math.abs(startCurvature);
+    if (startCurvatureMagnitude > 0.001) {
+        // Scale inversely with curvature, with reasonable bounds
+        const startCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (startCurvatureMagnitude * chordLength + 1.0)));
+        startControlDistance *= startCurvatureScale;
+        
+        // Additional scaling for very high curvature
+        if (startCurvatureMagnitude > 0.02) {
+            startControlDistance *= 0.7;
+        }
+    }
+    
+    // For end control point (P2)
+    const endCurvatureMagnitude = Math.abs(endCurvature);
+    if (endCurvatureMagnitude > 0.001) {
+        // Scale inversely with curvature, with reasonable bounds
+        const endCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (endCurvatureMagnitude * chordLength + 1.0)));
+        endControlDistance *= endCurvatureScale;
+        
+        // Additional scaling for very high curvature
+        if (endCurvatureMagnitude > 0.02) {
+            endControlDistance *= 0.7;
+        }
+    }
+    
+    // Calculate initial control points along tangent directions
+    const p1Initial = {
+        x: startPoint.x + unitStartTangent.x * startControlDistance,
+        y: startPoint.y + unitStartTangent.y * startControlDistance
+    };
+    
+    const p2Initial = {
+        x: endPoint.x - unitEndTangent.x * endControlDistance,
+        y: endPoint.y - unitEndTangent.y * endControlDistance
+    };
+    
+    // Apply curvature-based perpendicular adjustments
+    // Calculate perpendicular vectors (90 degrees counter-clockwise)
+    const startPerpendicular = {
+        x: -unitStartTangent.y,
+        y: unitStartTangent.x
+    };
+    
+    const endPerpendicular = {
+        x: -unitEndTangent.y,
+        y: unitEndTangent.x
+    };
+    
+    // Apply curvature offsets perpendicular to tangent directions
+    const startPerpendicularOffset = startCurvature * chordLength * 0.05;
+    const endPerpendicularOffset = endCurvature * chordLength * 0.05;
+    
+    const p1 = {
+        x: p1Initial.x + startPerpendicular.x * startPerpendicularOffset,
+        y: p1Initial.y + startPerpendicular.y * startPerpendicularOffset
+    };
+    
+    const p2 = {
+        x: p2Initial.x + endPerpendicular.x * endPerpendicularOffset,
+        y: p2Initial.y + endPerpendicular.y * endPerpendicularOffset
+    };
+    
+    return {
+        p0: startPoint,
+        p1: p1,
+        p2: p2,
+        p3: endPoint
     };
 }
 

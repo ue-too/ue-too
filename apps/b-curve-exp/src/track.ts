@@ -170,7 +170,7 @@ export class TrackGraph {
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
     }
 
-    branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[], tangentDirection: Point){
+    branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
         const startJoint = this.joints.get(startJointNumber);
 
         if(startJoint === undefined){
@@ -217,9 +217,11 @@ export class TrackGraph {
             console.log('tangent from curve', tangentAtStartJointFromCurve);
             startJoint.direction.reverseTangent.add(newJointNumber);
         }
+
+        return true;
     }
 
-    createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]){
+    createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]): boolean {
         const curve = new BCurve([startJointPosition, ...controlPoints, endJointPosition]);
         const startJointNumber = this.jointNumberManager.createEntity();
         const endJointNumber = this.jointNumberManager.createEntity();
@@ -256,6 +258,8 @@ export class TrackGraph {
 
         this.joints.set(startJointNumber, startJoint);
         this.joints.set(endJointNumber, endJoint);
+
+        return true;
     }
 
     getTangentAtJoint(jointNumber: number): Point | null {
@@ -313,14 +317,14 @@ export class TrackGraph {
         return false;
     }
 
-    extendTrackFromJoint(comingFromJoint: number, startJointNumber: number, endPosition: Point, controlPoints: Point[]){
+    extendTrackFromJoint(comingFromJoint: number, startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
 
         const startJoint = this.joints.get(startJointNumber);
         const comingJoint = this.joints.get(comingFromJoint);
 
         if(startJoint === undefined || comingJoint === undefined){
             console.warn("startJoint or comingJoint not found");
-            return;
+            return false;
         }
 
         const newCurve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
@@ -354,6 +358,46 @@ export class TrackGraph {
         } else {
             startJoint.direction.reverseTangent.add(newJointNumber);
         }
+
+        return true;
+    }
+
+    connectJoints(startJointNumber: number, endJointNumber: number, controlPoints: Point[]): boolean {
+        const startJoint = this.joints.get(startJointNumber);
+        const endJoint = this.joints.get(endJointNumber);
+
+        if(startJoint === undefined || endJoint === undefined){
+            console.warn("startJoint or endJoint not found");
+            return false;
+        }
+
+        const newCurve = new BCurve([startJoint.position, ...controlPoints, endJoint.position]);
+
+        const startTangent = PointCal.unitVector(newCurve.derivative(0));
+        const endTangent = PointCal.unitVector(newCurve.derivative(1));
+
+        const startJointTangentDirection = startJoint.tangent;
+        const endJointTangentDirection = endJoint.tangent;
+
+        const straightCurve = new BCurve([startJoint.position, ...controlPoints, endJoint.position]);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(straightCurve, startJointNumber, endJointNumber);
+
+        startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
+        endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
+
+        if(sameDirection(startJointTangentDirection, startTangent)){
+            startJoint.direction.tangent.add(endJointNumber);
+        } else {
+            startJoint.direction.reverseTangent.add(endJointNumber);
+        }
+
+        if(sameDirection(endJointTangentDirection, endTangent)){
+            endJoint.direction.reverseTangent.add(startJointNumber);
+        } else {
+            endJoint.direction.tangent.add(startJointNumber);
+        }
+        
+        return true;
     }
 
     getJointPosition(jointNumber: number): Point | null {
@@ -548,12 +592,12 @@ export class TrackCurveManager {
     }
 
     createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number): number {
-        const entity = this.createCurve(curve);
+        const entity = this.createCurve();
         this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
         return entity;
     }
 
-    createCurve(curve: BCurve): number {
+    private createCurve(): number {
         if(this._livingEntityCount >= this._maxEntities) {
             console.info("Max entities reached, increasing max entities");
             const currentMaxEntities = this._maxEntities;
