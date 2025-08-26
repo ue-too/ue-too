@@ -246,6 +246,18 @@ function step(timestamp: number){
         board.context.restore();
     });
 
+    curveEngine.trackGraph.trackOffsets.forEach((curve)=>{
+        const cps = curve.getControlPoints();
+        board.context.beginPath();
+        board.context.moveTo(cps[0].x, cps[0].y);
+        if(cps.length === 3){
+            board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        } else {
+            board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+        }
+        board.context.stroke();
+    });
+
     // const offsetCurves = curveEngine.trackGraph.trackSegments.map((trackSegment)=>{
     //     return offset(trackSegment.curve, 10);
     // });

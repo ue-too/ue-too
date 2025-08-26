@@ -1,11 +1,13 @@
-import { BCurve } from "@ue-too/curve";
+import { BCurve, offset } from "@ue-too/curve";
 import { Point, PointCal, sameDirection } from "@ue-too/math";
 import { NumberManager } from "./utils";
+import { Bezier } from "bezier-js";
 
 export type TrackSegment = {
     t0Joint: number;
     t1Joint: number;
     curve: BCurve;
+    gauge?: number;
 }
 
 export type TrackJoint = {
@@ -168,6 +170,10 @@ export class TrackGraph {
         }
 
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
+    }
+
+    get trackOffsets(): BCurve[] {
+        return this._trackCurveManager.trackOffsets;
     }
 
     branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
@@ -570,6 +576,7 @@ export class TrackCurveManager {
     private _maxEntities: number;
     private _livingEntityCount = 0;
     private _trackSegmentsWithJoints: (TrackSegment | null)[] = [];
+    private _trackOffset: (BCurve[] | null)[] = [];
 
     constructor(initialCount: number) {
         this._maxEntities = initialCount;
@@ -598,9 +605,19 @@ export class TrackCurveManager {
         return this._trackSegmentsWithJoints[entity];
     }
 
-    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number): number {
+    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, gauge: number = 10): number {
         const entity = this.createCurve();
         this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
+        const experiment = new Bezier(curve.getControlPoints());
+        console.time('offset');
+        experiment.offset(gauge / 2);
+        experiment.offset(-gauge / 2);
+        console.timeEnd('offset');
+        console.time('offset curve');
+        const positiveOffsets = offset(curve, gauge / 2);
+        const negativeOffsets = offset(curve, -gauge / 2);
+        this._trackOffset[entity] = [...positiveOffsets, ...negativeOffsets];
+        console.timeEnd('offset curve');
         return entity;
     }
 
@@ -630,9 +647,14 @@ export class TrackCurveManager {
         this._availableEntities.push(curveNumber);
         this._livingEntityCount--;
         this._trackSegmentsWithJoints[curveNumber] = null;
+        this._trackOffset[curveNumber] = null;
     }
 
     get livingEntities(): number[] {
         return Array.from(this._livingEntities);
+    }
+
+    get trackOffsets(): BCurve[] {
+        return this._trackOffset.filter((offset) => offset !== null).flat();
     }
 }

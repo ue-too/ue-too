@@ -14,14 +14,15 @@
   "types": "./src/index.ts",
   "module": "./src/index.ts",
   "dependencies": {
-    "@ue-too/board": "workspace:*",
-    "@ue-too/math": "workspace:*",
     "@ue-too/animate": "workspace:*",
     "@ue-too/being": "workspace:*",
+    "@ue-too/board": "workspace:*",
+    "@ue-too/border": "workspace:*",
     "@ue-too/curve": "workspace:*",
     "@ue-too/dynamics": "workspace:*",
-    "@ue-too/border": "workspace:*",
     "@ue-too/ecs": "workspace:*",
+    "@ue-too/math": "workspace:*",
+    "bezier-js": "^6.1.4",
     "fabric": "6.7.0",
     "konva": "9.3.20",
     "pixi.js": "8.8.0"
@@ -31,5 +32,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "jest"
+  },
+  "devDependencies": {
+    "@types/bezier-js": "^4.1.3"
   }
 }
