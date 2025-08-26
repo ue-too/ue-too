@@ -118,7 +118,8 @@ export class BCurve{
         this.controlPoints = controlPoints;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
-        this.arcLengthLUT = this.getArcLengthLUT(1000);
+        // Make arc length LUT lazy - only compute when needed
+        this.arcLengthLUT = { controlPoints: [], arcLengthLUT: [] };
         this.clearCache(); // Clear cache on initialization
     }
 
@@ -171,7 +172,8 @@ export class BCurve{
         this.controlPoints = controlPoints;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
-        this.arcLengthLUT = this.getArcLengthLUT();
+        // Reset LUT to trigger lazy computation when needed
+        this.arcLengthLUT = { controlPoints: [], arcLengthLUT: [] };
         this.clearCache(); // Clear cache on control point change
     }
 
@@ -182,7 +184,8 @@ export class BCurve{
         this.controlPoints[index] = newPoint;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
-        this.arcLengthLUT = this.getArcLengthLUT();
+        // Reset LUT to trigger lazy computation when needed
+        this.arcLengthLUT = { controlPoints: [], arcLengthLUT: [] };
         this.clearCache(); // Clear cache on control point change
         return true;
     }
@@ -292,16 +295,24 @@ export class BCurve{
         return PointCal.unitVector(computeWithControlPoints(tVal, this.dControlPoints));
     }
 
-    public getArcLengthLUT(steps: number = 100): {controlPoints: Point[], arcLengthLUT: {tVal: number, length: number}[]}{
-        // Clear cache when regenerating LUT to ensure consistency
-        this.clearCache();
+    public getArcLengthLUT(steps: number = 50): {controlPoints: Point[], arcLengthLUT: {tVal: number, length: number}[]}{
+        // Check if we need to recompute the LUT
+        const controlPointsChanged = this.arcLengthLUT.controlPoints.length !== this.controlPoints.length ||
+            this.arcLengthLUT.controlPoints.some((cp, index) => !PointCal.isEqual(cp, this.controlPoints[index]));
         
-        let res = [];
-        let tSteps = 1 / steps;
-        for(let tVal = 0; tVal <= 1; tVal += tSteps){
-            res.push({tVal: tVal, length: this.lengthAtT(tVal)});
+        if (controlPointsChanged || this.arcLengthLUT.arcLengthLUT.length === 0) {
+            // Clear cache when regenerating LUT to ensure consistency
+            this.clearCache();
+            
+            let res = [];
+            let tSteps = 1 / steps;
+            for(let tVal = 0; tVal <= 1; tVal += tSteps){
+                res.push({tVal: tVal, length: this.lengthAtT(tVal)});
+            }
+            this.arcLengthLUT = {controlPoints: [...this.controlPoints], arcLengthLUT: res};
         }
-        return {controlPoints: this.controlPoints, arcLengthLUT: res};
+        
+        return this.arcLengthLUT;
     }
 
     public split(tVal: number): [Point[], Point[]]{
@@ -726,6 +737,9 @@ export class BCurve{
         }
 
         // Use LUT for binary search
+        if(this.arcLengthLUT.arcLengthLUT.length === 0){
+            this.arcLengthLUT = this.getArcLengthLUT(1000);
+        }
         const points = this.arcLengthLUT.arcLengthLUT;
         let low = 0;
         let high = points.length - 1;
