@@ -386,9 +386,9 @@ export class TrackGraph {
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
 
         if(sameDirection(startJointTangentDirection, startTangent)){
-            startJoint.direction.tangent.add(endJointNumber);
-        } else {
             startJoint.direction.reverseTangent.add(endJointNumber);
+        } else {
+            startJoint.direction.tangent.add(endJointNumber);
         }
 
         if(sameDirection(endJointTangentDirection, endTangent)){

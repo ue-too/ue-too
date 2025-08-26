@@ -1,5 +1,5 @@
 import { Board, drawArrow } from "@ue-too/board";
-import { BCurve } from "@ue-too/curve";
+import { BCurve, offset } from "@ue-too/curve";
 import { Animation, type Keyframe, numberHelperFunctions } from "@ue-too/animate";
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
@@ -50,6 +50,14 @@ const stateMachine = createLayoutStateMachine(curveEngine);
 const trainPlacementToggleButton = document.getElementById("train-placement-toggle") as HTMLButtonElement;
 const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
+
+
+const testCurve = new BCurve([{x:-10, y: -10}, {x: 50, y: 50}, {x: 100, y: 100}, {x: 150, y: 150}]);
+const offsetTestCurve = offset(testCurve, 25);
+
+// Cache for track segment offset curves to avoid recalculating every frame
+const trackOffsetCache = new Map<number, BCurve[]>();
+let trackCacheVersion = 0;
 
 
 canvas.addEventListener("pointerdown", (event) => {
@@ -215,7 +223,14 @@ function step(timestamp: number){
         board.context.stroke();
     }
     
-    curveEngine.trackGraph.trackSegments.forEach((trackSegment)=>{ 
+    // Clear offset cache when track changes (simple version - clear when number of segments changes)
+    const currentTrackSegmentCount = curveEngine.trackGraph.trackSegments.length;
+    if (trackOffsetCache.size !== currentTrackSegmentCount) {
+        trackOffsetCache.clear();
+        trackCacheVersion++;
+    }
+
+    curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
         const cps = trackSegment.curve.getControlPoints();
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
@@ -230,6 +245,24 @@ function step(timestamp: number){
         board.context.stroke();
         board.context.restore();
     });
+
+    // const offsetCurves = curveEngine.trackGraph.trackSegments.map((trackSegment)=>{
+    //     return offset(trackSegment.curve, 10);
+    // });
+
+    // offsetCurves.forEach((curveGroup)=>{
+    //     curveGroup.forEach((curve)=>{
+    //         const cps = curve.getControlPoints();
+    //         board.context.beginPath();
+    //         board.context.moveTo(cps[0].x, cps[0].y);
+    //         if(cps.length === 3){
+    //             board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+    //         } else {
+    //             board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+    //         }
+    //         board.context.stroke();
+    //     });
+    // })
 
     curveEngine.trackGraph.getJoints().forEach(({joint, jointNumber})=>{
         board.context.save();
@@ -308,6 +341,32 @@ function step(timestamp: number){
         drawArrow(board.context, board.camera.zoomLevel, curveEngine.currentStartingPoint, PointCal.addVector(PointCal.multiplyVectorByScalar(curveEngine.branchTangent, 10), curveEngine.currentStartingPoint));
     }
 
+    board.context.beginPath();
+    const testCurveCps = testCurve.getControlPoints();
+    board.context.moveTo(testCurveCps[0].x, testCurveCps[0].y);
+    if(testCurveCps.length === 3){
+        board.context.quadraticCurveTo(testCurveCps[1].x, testCurveCps[1].y, testCurveCps[2].x, testCurveCps[2].y);
+    } else {
+        board.context.bezierCurveTo(testCurveCps[1].x, testCurveCps[1].y, testCurveCps[2].x, testCurveCps[2].y, testCurveCps[3].x, testCurveCps[3].y);
+    }
+    board.context.stroke();
+
+    board.context.save();
+    board.context.strokeStyle = "blue";
+    board.context.lineWidth = 3;
+    offsetTestCurve.forEach((curve)=>{
+        const offsetCps = curve.getControlPoints();
+        board.context.beginPath();
+        board.context.moveTo(offsetCps[0].x, offsetCps[0].y);
+        if(offsetCps.length === 3){
+            board.context.quadraticCurveTo(offsetCps[1].x, offsetCps[1].y, offsetCps[2].x, offsetCps[2].y);
+        } else {
+            board.context.bezierCurveTo(offsetCps[1].x, offsetCps[1].y, offsetCps[2].x, offsetCps[2].y, offsetCps[3].x, offsetCps[3].y);
+        }
+        board.context.stroke();
+    });
+    board.context.restore();
+
     animation.animate(deltaTime);
 
     // Draw FPS indicator
@@ -363,3 +422,4 @@ neutralButton.addEventListener("click", ()=>{
 switchDirectionButton.addEventListener("click", ()=>{
     trainPlacementEngine.switchDirection();
 });
+

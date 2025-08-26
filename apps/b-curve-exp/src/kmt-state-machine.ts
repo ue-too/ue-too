@@ -177,6 +177,8 @@ export class CurveCreationEngine implements LayoutContext {
     public projection: ProjectionInfo | null = null;
 
     private _startingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
+    private _endingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
+    private _endingPointJointNumber: number | null = null;
 
     private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
 
@@ -289,9 +291,11 @@ export class CurveCreationEngine implements LayoutContext {
         if(joint != null){
             this._hoverEndPosition = joint.position;
             this._endTangent = joint.tangent;
+            this._endingPointJointNumber = joint.jointNumber;
         } else {
             this._hoverEndPosition = null;
             this._endTangent = null;
+            this._endingPointJointNumber = null;
         }
 
         switch(this._startingPointType){
@@ -299,7 +303,7 @@ export class CurveCreationEngine implements LayoutContext {
                 midPoint = {
                     x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x) / 2,
                     y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y) / 2,
-                }
+                };
                 if(this._previewCurve == null){
                     this._previewCurve = new BCurve([this._currentStartingPoint, midPoint, this._hoverPosition]);
                     return;
@@ -328,6 +332,7 @@ export class CurveCreationEngine implements LayoutContext {
                     this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                     this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
                 } else {
+                    this._endingPointType = "branchJoint";
                     const previewCurveCPs = createCubicFromTangentsCurvatures(this._currentStartingPoint, this._hoverEndPosition, joint.tangent, this._endTangent, curvature, joint.curvature);
                     if(this._previewCurve == null){
                         this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
@@ -382,7 +387,11 @@ export class CurveCreationEngine implements LayoutContext {
                 this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
             case "branchJoint":
-                this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps);
+                if(this._endingPointJointNumber != null) {
+                    this._trackGraph.connectJoints(this._hoverCircleJointNumber, this._endingPointJointNumber, cps);
+                } else {
+                    this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps);
+                }
                 break;
             case "branchTrack":
                 break;
@@ -408,6 +417,8 @@ export class CurveCreationEngine implements LayoutContext {
         this._hoverCircleJointNumber = null;
         this._hoverCirclePosition = null;
         this._hoverEndPosition = null;
+        this._endingPointJointNumber = null;
+        this._endTangent = null;
         this._trackGraph.logJoints();
     }
 
@@ -426,6 +437,8 @@ export class CurveCreationEngine implements LayoutContext {
         this._constrainingCurve = null;
         this.branchTangent = null;
         this._hoverEndPosition = null;
+        this._endingPointJointNumber = null;
+        this._endTangent = null;
     }
 
     setup() {

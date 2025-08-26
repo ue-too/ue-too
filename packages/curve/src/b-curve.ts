@@ -122,14 +122,6 @@ export class BCurve{
         this.clearCache(); // Clear cache on initialization
     }
 
-    setControlPoints(controlPoints: Point[]){
-        this.controlPoints = controlPoints;
-        this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
-        this._fullLength = this.calculateFullLength();
-        this.arcLengthLUT = this.getArcLengthLUT(1000);
-        this.clearCache(); // Clear cache on control point change
-    }
-
     public getPointbyPercentage(percentage: number){ // this is the percentage of the curve length, not the t value
         // this leaves room for optimization
         let controlPointsChangedSinceLastArcLengthLUT = this.arcLengthLUT.controlPoints.length != this.controlPoints.length;
@@ -175,13 +167,22 @@ export class BCurve{
         return this.controlPoints;
     }
 
-    public setControlPointAtIndex(index: number, newPoint: Point): boolean{
+    setControlPoints(controlPoints: Point[]){
+        this.controlPoints = controlPoints;
+        this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
+        this._fullLength = this.calculateFullLength();
+        this.arcLengthLUT = this.getArcLengthLUT();
+        this.clearCache(); // Clear cache on control point change
+    }
+
+    setControlPointAtIndex(index: number, newPoint: Point): boolean{
         if (index < 0 || index >= this.controlPoints.length){
             return false;
         }
         this.controlPoints[index] = newPoint;
         this.dControlPoints = this.getDerivativeControlPoints(this.controlPoints);
         this._fullLength = this.calculateFullLength();
+        this.arcLengthLUT = this.getArcLengthLUT();
         this.clearCache(); // Clear cache on control point change
         return true;
     }
@@ -303,7 +304,7 @@ export class BCurve{
         return {controlPoints: this.controlPoints, arcLengthLUT: res};
     }
 
-    public split(tVal: number, tVal2?: number): Point[][]{
+    public split(tVal: number): [Point[], Point[]]{
         this.validateTVal(tVal);
         if (this.controlPoints.length == 3){
             let newControlPoint1 = this.controlPoints[0];
@@ -327,6 +328,41 @@ export class BCurve{
         let newControlPoint7 = this.controlPoints[3];
 
         return [[newControlPoint1, newControlPoint2, newControlPoint3, newControlPoint4], [newControlPoint4, newControlPoint5, newControlPoint6, newControlPoint7]];
+    }
+
+   splitIn3WithControlPoints(tVal: number, tVal2: number): [Point[], Point[], Point[]]{
+        if(tVal2 < tVal){
+            console.warn("tVal2 is less than tVal, swapping them");
+            [tVal, tVal2] = [tVal2, tVal];
+        }
+
+        const firstSplit = this.split(tVal);
+
+        const secondHalf = new BCurve(firstSplit[1]);
+        
+        const secondSplit = secondHalf.split(tVal2);
+
+        return [firstSplit[0], secondSplit[0], secondSplit[1]];
+    }
+
+   splitIn3Curves(tVal: number, tVal2: number): [BCurve, BCurve, BCurve]{
+        if(tVal2 < tVal){
+            console.warn("tVal2 is less than tVal, swapping them");
+            [tVal, tVal2] = [tVal2, tVal];
+        }
+
+        const firstSplit = this.split(tVal);
+
+        const secondHalf = new BCurve(firstSplit[1]);
+        
+        const secondSplit = secondHalf.split(tVal2);
+
+        return [new BCurve(firstSplit[0]), new BCurve(secondSplit[0]), new BCurve(secondSplit[1])];
+    }
+
+    splitAndTakeMidCurve(tVal: number, tVal2: number): BCurve{
+        const [firstSplit, secondSplit, thirdSplit] = this.splitIn3Curves(tVal, tVal2);
+        return secondSplit;
     }
 
     getProjection(point: Point){
@@ -885,6 +921,276 @@ export class BCurve{
         return {min:min, max:max};
     }
 
+    normal(tVal: number): {tVal: number, direction: Point} {
+        const d = this.derivative(tVal);
+        const q = Math.sqrt(d.x * d.x + d.y * d.y);
+        return {tVal, direction: {x: -d.y / q, y: d.x / q}};
+    }
+}
+
+export function reduce(curve: BCurve) {
+    let i: number,
+      t1 = 0,
+      t2 = 0,
+      step = 0.01,
+      segment: BCurve,
+      pass1: BCurve[] = [],
+      pass2: BCurve[] = [];
+  
+    // first pass: split on extrema
+    let extrema = curve.getExtrema().x;
+    if (extrema.indexOf(0) === -1) {
+      extrema = [0].concat(extrema);
+    }
+    if (extrema.indexOf(1) === -1) {
+      extrema.push(1);
+    }
+    for (t1 = extrema[0], i = 1; i < extrema.length; i++) {
+      t2 = extrema[i];
+      segment = curve.splitAndTakeMidCurve(t1, t2);
+      pass1.push(segment);
+      t1 = t2;
+    }
+  
+    // second pass: further reduce these segments to simple segments
+    pass1.forEach(p1 => {
+      t1 = 0;
+      t2 = 0;
+      while (t2 <= 1) {
+        for (t2 = t1 + step; t2 <= 1 + step; t2 += step) {
+          // Clamp t2 to valid range
+          const clampedT2 = Math.min(t2, 1);
+          segment = p1.splitAndTakeMidCurve(t1, clampedT2);
+          if (!curveIsSimple(segment)) {
+            t2 -= step;
+            if (Math.abs(t1 - t2) < step) {
+              // we can never form a reduction
+              return [];
+            }
+            const finalT2 = Math.min(t2, 1);
+            segment = p1.splitAndTakeMidCurve(t1, finalT2);
+            pass2.push(segment);
+            t1 = finalT2;
+            break;
+          }
+        }
+      }
+      if (t1 < 1) {
+        segment = p1.splitAndTakeMidCurve(t1, 1);
+        pass2.push(segment);
+      }
+    });
+  
+    return pass2;
+}
+
+function raiseCurveOrder(curve: BCurve): BCurve {
+    const p = curve.getControlPoints(),
+        np = [p[0]],
+        k = p.length;
+    for (let i = 1; i < k; i++) {
+        const pi = p[i];
+        const pim = p[i - 1];
+        np[i] = {
+            x: ((k - i) / k) * pi.x + (i / k) * pim.x,
+            y: ((k - i) / k) * pi.y + (i / k) * pim.y,
+        };
+    }
+    np[k] = p[k - 1];
+    return new BCurve(np);
+}
+
+// Function overloads for different return types
+export function offset(curve: BCurve, t: number): BCurve[];
+export function offset(curve: BCurve, t: number, d: number): {c: Point, n: Point, x: number, y: number};
+export function offset(curve: BCurve, t: number, d?: number | undefined) {
+    if (d !== undefined) {
+        const c = curve.get(t),
+        n = curve.normal(t).direction;
+        const ret = {
+        c: c,
+        n: n,
+        x: c.x + n.x * d,
+        y: c.y + n.y * d,
+        };
+        // if (this._3d) {
+        // ret.z = c.z + n.z * d;
+        // }
+        return ret;
+    }
+
+    // Native offset implementation based on bezier-js algorithm
+    const points = curve.getControlPoints();
+    const linear = curveIsLinear(curve);
+
+    if (linear) {
+        const nv = curve.normal(0).direction,
+        coords = points.map(function (p) {
+            const ret = {
+            x: p.x + t * nv.x,
+            y: p.y + t * nv.y,
+            };
+            return ret;
+        });
+        return [new BCurve(coords)];
+    }
+
+    // For non-linear curves, reduce to simple segments and scale each
+    return reduce(curve).map(function (s) {
+        if (curveIsLinear(s)) {
+            return offset(s, t)[0];
+        }
+        return scaleCurve(s, t);
+    });
+}
+
+// Helper function for line-line intersection (ported from bezier-js utils)
+function lli4(p1: Point, p2: Point, p3: Point, p4: Point): Point | false {
+    const x1 = p1.x, y1 = p1.y,
+          x2 = p2.x, y2 = p2.y,
+          x3 = p3.x, y3 = p3.y,
+          x4 = p4.x, y4 = p4.y;
+    return lli8(x1, y1, x2, y2, x3, y3, x4, y4);
+}
+
+function lli8(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number): Point | false {
+    const nx = (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4);
+    const ny = (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4);
+    const d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (d == 0) {
+        return false;
+    }
+    return { x: nx / d, y: ny / d };
+}
+
+function curveIsLinear(curve: BCurve): boolean{
+    const order = curve.getControlPoints().length - 1;
+    const points = curve.getControlPoints();
+    const alignedPoints = alignPointsToLine(points, {p1: points[0], p2: points[order]});
+    const baseLength = PointCal.distanceBetweenPoints(points[0], points[order]);
+
+    // Sum of distances from the line (y coordinates in aligned space)
+    const linear = alignedPoints.reduce((t, p) => t + Math.abs(p.y), 0) < baseLength / 50;
+
+    return linear;
+}
+
+
+function scaleCurve(curve: BCurve, d: number | ((t: number) => number)): BCurve {
+    const order = curve.getControlPoints().length - 1;
+    let distanceFn: ((t: number) => number) | undefined = undefined;
+
+    if (typeof d === "function") {
+        distanceFn = d;
+    }
+
+    if (distanceFn && order === 2) {
+        return scaleCurve(raiseCurveOrder(curve), distanceFn);
+    }
+
+    const points = curve.getControlPoints();
+
+    // Check if curve is linear
+    if (curveIsLinear(curve)) {
+        return translate(
+            curve,
+            curve.normal(0).direction,
+            distanceFn ? distanceFn(0) : d as number,
+            distanceFn ? distanceFn(1) : d as number
+        );
+    }
+
+    const r1 = distanceFn ? distanceFn(0) : d as number;
+    const r2 = distanceFn ? distanceFn(1) : d as number;
+    
+    // Get offset points at endpoints to find the scaling origin
+    const v = [offset(curve, 0, 10), offset(curve, 1, 10)];
+    const np: Point[] = [];
+    const o = lli4(v[0] as any, (v[0] as any).c, v[1] as any, (v[1] as any).c);
+
+    if (!o) {
+        // Fallback: use simple translation for problematic curves
+        return translate(
+            curve,
+            curve.normal(0).direction,
+            r1,
+            r2
+        );
+    }
+
+    // Move endpoint control points by distance along normal
+    [0, 1].forEach(function (t) {
+        const p = JSON.parse(JSON.stringify(points[t * order]));
+        const vt = v[t] as any;
+        p.x += (t ? r2 : r1) * vt.n.x;
+        p.y += (t ? r2 : r1) * vt.n.y;
+        np[t * order] = p;
+    });
+
+    if (!distanceFn) {
+        // Move control points to lie on the intersection of the offset
+        // derivative vector, and the origin-through-control vector
+        [0, 1].forEach((t) => {
+            if (order === 2 && !!t) return;
+            const p = np[t * order];
+            const derivativeAtT = curve.derivative(t);
+            const p2 = { x: p.x + derivativeAtT.x, y: p.y + derivativeAtT.y };
+            const intersection = lli4(p, p2, o, points[t + 1]);
+            if (intersection) {
+                np[t + 1] = intersection;
+            } else {
+                // Fallback: use original control point with simple offset
+                const originalPoint = points[t + 1];
+                const normal = curve.normal((t + 1) / order).direction;
+                np[t + 1] = {
+                    x: originalPoint.x + (t ? r2 : r1) * normal.x,
+                    y: originalPoint.y + (t ? r2 : r1) * normal.y
+                };
+            }
+        });
+        return new BCurve(np);
+    }
+
+    // For function-based distances, move control points by distance
+    // to ensure correct tangent at endpoints
+    [0, 1].forEach(function (t) {
+        if (order === 2 && !!t) return;
+        const p = points[t + 1];
+        const ov = {
+            x: p.x - o.x,
+            y: p.y - o.y,
+        };
+        let rc = distanceFn!((t + 1) / order);
+        const m = Math.sqrt(ov.x * ov.x + ov.y * ov.y);
+        ov.x /= m;
+        ov.y /= m;
+        np[t + 1] = {
+            x: p.x + rc * ov.x,
+            y: p.y + rc * ov.y,
+        };
+    });
+    return new BCurve(np);
+}
+
+function alignPointsToLine(points: Point[], line: {p1: Point, p2: Point}) {
+    const tx = line.p1.x,
+      ty = line.p1.y,
+      a = -Math.atan2(line.p2.y - ty, line.p2.x - tx),
+      d = function (v: Point) {
+        return {
+          x: (v.x - tx) * Math.cos(a) - (v.y - ty) * Math.sin(a),
+          y: (v.x - tx) * Math.sin(a) + (v.y - ty) * Math.cos(a),
+        };
+      };
+    return points.map(d);
+};
+
+function map(v: number, ds: number, de: number, ts: number, te: number): number {
+    const d1 = de - ds,      // source range size
+      d2 = te - ts,          // target range size  
+      v2 = v - ds,           // offset from source start
+      r = v2 / d1;           // ratio within source range
+    return ts + d2 * r;      // mapped value in target range
 }
 
 export class TValOutofBoundError extends Error{
@@ -1145,4 +1451,33 @@ export function computeWithControlPoints(tVal: number, controlPoints: Point[]): 
         points = lowerLevelPoints;
     }
     return points[0];
+}
+
+function curveIsSimple(curve: BCurve): boolean {
+    if (curve.getControlPoints().length === 4) {
+        const points = curve.getControlPoints();
+        const p0ToP3Vector = PointCal.subVector(points[3], points[0]);
+        const p0ToP1Vector = PointCal.subVector(points[1], points[0]);
+        const p0ToP2Vector = PointCal.subVector(points[2], points[0]);
+    
+        const a1 = PointCal.angleFromA2B(p0ToP3Vector, p0ToP1Vector);
+        const a2 = PointCal.angleFromA2B(p0ToP3Vector, p0ToP2Vector);
+        if ((a1 > 0 && a2 < 0) || (a1 < 0 && a2 > 0)) return false;
+    }
+    const n1 = curve.normal(0).direction;
+    const n2 = curve.normal(1).direction;
+    let s = n1.x * n2.x + n1.y * n2.y;
+    // if (this._3d) {
+    //     s += n1.z * n2.z;
+    // }
+    return Math.abs(Math.acos(s)) < Math.PI / 3;
+  }
+
+
+
+function translate(curve: BCurve, vector: Point, d1: number, d2: number){
+    const order = curve.getControlPoints().length - 1;
+    const points = curve.getControlPoints();
+    const d = points.map((_, i: number) => (1 - i / order) * d1 + (i / order) * d2);
+    return new BCurve(points.map((p, i) => ({x: p.x + d[i] * vector.x, y: p.y + d[i] * vector.y})));
 }
