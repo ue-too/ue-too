@@ -71,7 +71,7 @@ export type EventTargetWithPointerEvents = {
  */
 export class VanillaKMTEventParser implements KMTEventParser {
 
-    private _disabled: boolean;
+    private _disabled: boolean = false;
     private _stateMachine: KmtInputStateMachine;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
