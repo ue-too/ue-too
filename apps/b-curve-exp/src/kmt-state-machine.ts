@@ -31,7 +31,7 @@ type NewCurveCreationType = "new" | "branchJoint" | "branchTrack" | "extendEndin
 
 export interface LayoutContext extends BaseContext {
     startCurve: (startingPosition: Point) => void;
-    endCurve: (endingPosition: Point) => void;
+    endCurve: (endingPosition: Point) => boolean;
     cancelCurrentCurve: () => void;
     hoveringForEndJoint: (position: Point) => void;
     hoverForStartingPoint: (position: Point) => void;
@@ -119,7 +119,7 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
     _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
             action: (context, event) => {
-                context.endCurve(event.position);
+                const res = context.endCurve(event.position);
                 context.hoverForStartingPoint(event.position);
                 context.startCurve(event.position);
             },
@@ -387,23 +387,24 @@ export class CurveCreationEngine implements LayoutContext {
         return this._previewEndProjection;
     }
 
-    endCurve(endingPosition: Point) {
+    endCurve(endingPosition: Point): boolean {
+        let res = false;
         if(this._currentStartingPoint === null || this._previewCurve === null) {
-            return;
+            this.cancelCurrentCurve();
+            return false;
         }
 
         const cps = this._previewCurve.getControlPoints().slice(1, -1);
-        console.log('raw cps', this._previewCurve.getControlPoints());
         switch(this._newStartJointType.type){
             case "new":
-                this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
+                res = this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
             case "branchJoint": {
                 const constraint = this._newStartJointType.constraint;
                 if(this._endingPointJointNumber != null) {
-                    this._trackGraph.connectJoints(constraint.jointNumber, this._endingPointJointNumber, cps);
+                    res = this._trackGraph.connectJoints(constraint.jointNumber, this._endingPointJointNumber, cps);
                 } else {
-                    this._trackGraph.branchToNewJoint(constraint.jointNumber, endingPosition, cps);
+                    res = this._trackGraph.branchToNewJoint(constraint.jointNumber, endingPosition, cps);
                 }
                 break;
             }
@@ -412,13 +413,15 @@ export class CurveCreationEngine implements LayoutContext {
             case "extendingTrack":
                 const constraint = this._newStartJointType.constraint;
                 const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
-                const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-                // if((angleDiffRad >= 0 &&angleDiffRad <= Math.PI / 2) || angleDiffRad >= 3 * Math.PI / 2){
-                //     console.log("invalid direction in endCurve");
-                //     break;
-                // }
-                this._trackGraph.extendTrackFromJoint(constraint.jointNumber, endingPosition, cps);
+                const emptyTangentDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber) ? constraint.tangent : PointCal.multiplyVectorByScalar(constraint.tangent, -1);
+                const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, curPreviewTangent);
+                const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
+                if(angleDiff > Math.PI / 2 && angleDiff < 3 * Math.PI / 2){
+                    console.log("invalid direction in endCurve");
+                    res = false;
+                    break;
+                }
+                res = this._trackGraph.extendTrackFromJoint(constraint.jointNumber, endingPosition, cps);
                 break;
         }
 
@@ -431,6 +434,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewStartProjection = null;
         this._newStartJointType = null;
         this._trackGraph.logJoints();
+        return res;
     }
 
     insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number) {

@@ -1,5 +1,5 @@
 import { BCurve, offset } from "@ue-too/curve";
-import { Point, PointCal, sameDirection } from "@ue-too/math";
+import { normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
 import { NumberManager } from "./utils";
 import { Bezier } from "bezier-js";
 
@@ -330,6 +330,18 @@ export class TrackGraph {
 
         if(startJoint === undefined){
             console.warn("startJoint not found");
+            return false;
+        }
+
+        const emptyTangentDirection = this.tangentIsPointingInEmptyDirection(startJointNumber) ? startJoint.tangent : PointCal.multiplyVectorByScalar(startJoint.tangent, -1);
+
+        const start2EndDirection = PointCal.unitVectorFromA2B(startJoint.position, endPosition);
+
+        const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, start2EndDirection);
+        const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
+
+        if(angleDiff > Math.PI / 2 && angleDiff < 3 * Math.PI / 2){
+            console.warn("invalid direction in extendTrackFromJoint");
             return false;
         }
 
