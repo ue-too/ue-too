@@ -290,19 +290,12 @@ function step(timestamp: number){
         board.context.restore();
     });
 
-    for(let i = 0; i < arcs.length; i++){
+    if(curveEngine.previewStartProjection != null){
         board.context.save();
-        board.context.lineWidth = 3 / board.camera.zoomLevel;
-        board.context.strokeStyle = "red";
+        board.context.fillStyle = "red";
+        const point = curveEngine.previewStartProjection.projectionPoint;
         board.context.beginPath();
-        // board.context.arc(arcs[i].center.x, arcs[i].center.y, arcs[i].radius, arcs[i]., arcs[i].endAngle, false);
-        board.context.stroke();
-        board.context.restore();
-    }
-
-    if(curveEngine.hoverCirclePosition != null){
-        board.context.beginPath();
-        board.context.arc(curveEngine.hoverCirclePosition.x, curveEngine.hoverCirclePosition.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
         board.context.fill();
     }
 
@@ -312,14 +305,14 @@ function step(timestamp: number){
         board.context.fill();
     }
 
-    if(curveEngine.projection != null){
-        board.context.save();
-        board.context.fillStyle = "blue";
-        board.context.beginPath();
-        board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
-    }
+    // if(curveEngine.projection != null){
+    //     board.context.save();
+    //     board.context.fillStyle = "blue";
+    //     board.context.beginPath();
+    //     board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
+    //     board.context.fill();
+    //     board.context.restore();
+    // }
 
     if(trainPlacementEngine.previewPosition != null){
         board.context.save();

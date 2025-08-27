@@ -43,8 +43,9 @@ export type ProjectionPositiveResult = {
 export type ProjectionJointResult = {
     hitType: "joint";
     jointNumber: number;
-    position: Point;
+    projectionPoint: Point;
     tangent: Point;
+    curvature: number;
 }
 
 export type ProjectionCurveResult = {
@@ -455,11 +456,16 @@ export class TrackGraph {
         return null;
     }
 
+    /**
+     * Get the projection of a point on the tracks; joint has precedence over curve
+     * @param point 
+     * @returns 
+     */
     project(point: Point): ProjectionResult {
         const jointRes = this.pointOnJoint(point);
         const curveRes = this.projectPointOnTrack(point);
         if(jointRes !== null){
-            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, position: this.getJointPosition(jointRes.jointNumber), tangent: jointRes.tangent};
+            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, projectionPoint: this.getJointPosition(jointRes.jointNumber), tangent: jointRes.tangent, curvature: jointRes.curvature};
         }
         if(curveRes !== null){
             return {hit: true, hitType: "curve", ...curveRes};

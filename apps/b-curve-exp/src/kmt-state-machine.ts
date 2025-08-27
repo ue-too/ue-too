@@ -2,7 +2,7 @@ import { BCurve } from "@ue-too/curve";
 import { type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
-import { ProjectionInfo, TrackGraph } from "./track";
+import { ProjectionCurveResult, ProjectionInfo, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
 import { PointCal, normalizeAngleZero2TwoPI, angleSpan } from "@ue-too/math";
 
 
@@ -38,6 +38,7 @@ export interface LayoutContext extends BaseContext {
     hoverForStartingPoint: (position: Point) => void;
     insertJointIntoTrackSegment: (startJointNumber: number, endJointNumber: number, atT: number) => void;
     flipEndTangent: () => void;
+    previewStartProjection: ProjectionPositiveResult | null;
 }
 
 class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -68,7 +69,11 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
     _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
             action: (context, event) => {
-                context.startCurve(event.position);
+                if(context.previewStartProjection != null){
+                    context.startCurve(context.previewStartProjection.projectionPoint);
+                } else {
+                    context.startCurve(event.position);
+                }
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
@@ -164,11 +169,32 @@ export function createLayoutStateMachine(context: LayoutContext): StateMachine<L
     return stateMachine;
 }
 
+export type NewCurveNewJoint = {
+    type: "new";
+    position: Point;
+}
+
+export type NewCurveBranchJoint = {
+    type: "branchJoint";
+    constraint: ProjectionJointResult;
+}
+
+export type NewCurveExtendingTrack = {
+    type: "extendingTrack";
+    constraint: ProjectionJointResult;
+}
+
+export type NewCurveBranchCurve = {
+    type: "branchCurve";
+    constraint: ProjectionCurveResult;
+}
+
+export type NewCurveType = NewCurveNewJoint | NewCurveBranchJoint | NewCurveExtendingTrack | NewCurveBranchCurve;
+
 export class CurveCreationEngine implements LayoutContext {
 
     private _currentStartingPoint: Point | null;
     private _hoverPosition: Point | null;
-    private _hoverCirclePosition: Point | null;
     private _hoverCircleJointNumber: number | null;
     private _hoverEndPosition: Point | null = null;
     private _previewCurve: BCurve | null;
@@ -177,14 +203,16 @@ export class CurveCreationEngine implements LayoutContext {
     public projection: ProjectionInfo | null = null;
 
     private _startingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
-    private _endingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
     private _endingPointJointNumber: number | null = null;
 
-    private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
+    // private _constrainingCurve: {curve: BCurve, atT: number, tangent: Point} | null = null;
+    private _newStartJointType: NewCurveType | null = null;
 
     public branchTangent: Point | null = null;
 
     private _endTangent: Point | null = null;
+
+    private _previewStartProjection: ProjectionPositiveResult | null = null;
 
     constructor() {
         this._currentStartingPoint = null;
@@ -219,7 +247,6 @@ export class CurveCreationEngine implements LayoutContext {
                 tVal = 0;
                 incomingTangent = PointCal.multiplyVectorByScalar(incomingTangent, -1);
             }
-            this._constrainingCurve = {curve: comingFromCurve, atT: tVal, tangent: incomingTangent};
             console.log("extending on an existing joint", this._hoverCircleJointNumber);
             this._startingPointType = "extendEndingTrack";
         } else if (this._hoverCircleJointNumber != null && !this._trackGraph.jointIsEndingTrack(this._hoverCircleJointNumber)){
@@ -241,21 +268,32 @@ export class CurveCreationEngine implements LayoutContext {
             this._startingPointType = "new";
         }
 
+
+
         this._currentStartingPoint = newPosition;
         this.projection = null;
     }
 
     hoverForStartingPoint(position: Point) {
+        /** same section */
+        const res = this._trackGraph.project(position);
+        if(res.hit){
+            this._previewStartProjection = res;
+        } else {
+            this._previewStartProjection = null;
+        }
+        this._newStartJointType = this.determineNewJointType(position, res);
+        /** same section */
+
         const joint = this._trackGraph.pointOnJoint(position);
         const projection = this._trackGraph.projectPointOnTrack(position);
+
         if(joint !== null){
             const jointPosition = this._trackGraph.getJointPosition(joint.jointNumber);
             if(jointPosition !== null){
-                this._hoverCirclePosition = jointPosition;
                 this._hoverCircleJointNumber = joint.jointNumber;
             }
         } else {
-            this._hoverCirclePosition = null;
             this._hoverCircleJointNumber = null;
         }
         if(projection != null){
@@ -298,7 +336,7 @@ export class CurveCreationEngine implements LayoutContext {
             this._endingPointJointNumber = null;
         }
 
-        switch(this._startingPointType){
+        switch(this._newStartJointType.type){
             case "new":
                 midPoint = {
                     x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x) / 2,
@@ -332,7 +370,6 @@ export class CurveCreationEngine implements LayoutContext {
                     this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                     this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
                 } else {
-                    this._endingPointType = "branchJoint";
                     const previewCurveCPs = createCubicFromTangentsCurvatures(this._currentStartingPoint, this._hoverEndPosition, joint.tangent, this._endTangent, curvature, joint.curvature);
                     if(this._previewCurve == null){
                         this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
@@ -343,11 +380,13 @@ export class CurveCreationEngine implements LayoutContext {
                 }
                 break;
             }
-            case "branchTrack":{
+            case "branchCurve":{
                 break;
             }
-            case "extendEndingTrack":
-                const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
+            case "extendingTrack":
+                // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
+                const constraint = this._newStartJointType.constraint;
+                const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, this._hoverPosition, constraint.tangent, constraint.curvature );
                 if(this._previewCurve == null){
                     this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
                     return;
@@ -356,7 +395,7 @@ export class CurveCreationEngine implements LayoutContext {
                 this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
                 this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
                 const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                const angleDiff = PointCal.angleFromA2B(this._constrainingCurve.tangent, curPreviewTangent);
+                const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
                 const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
                 if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
                     // invalid direction; ending track should not be able to branch
@@ -371,8 +410,8 @@ export class CurveCreationEngine implements LayoutContext {
         return this._previewCurve;
     }
 
-    get hoverCirclePosition(): Point | null {
-        return this._hoverCirclePosition;
+    get previewStartProjection(): ProjectionPositiveResult | null {
+        return this._previewStartProjection;
     }
 
     endCurve(endingPosition: Point) {
@@ -382,7 +421,7 @@ export class CurveCreationEngine implements LayoutContext {
 
         const cps = this._previewCurve.getControlPoints().slice(1, -1);
         console.log('raw cps', this._previewCurve.getControlPoints());
-        switch(this._startingPointType){
+        switch(this._newStartJointType.type){
             case "new":
                 this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
                 break;
@@ -393,14 +432,15 @@ export class CurveCreationEngine implements LayoutContext {
                     this._trackGraph.branchToNewJoint(this._hoverCircleJointNumber, endingPosition, cps);
                 }
                 break;
-            case "branchTrack":
+            case "branchCurve":
                 break;
-            case "extendEndingTrack":   
+            case "extendingTrack":
                 const otherEndOfEndingTrack = this._trackGraph.getTheOtherEndOfEndingTrack(this._hoverCircleJointNumber);
+                const constraint = this._newStartJointType.constraint;
                 if(otherEndOfEndingTrack != null){
                     console.log(`other end of ending track is ${otherEndOfEndingTrack}`);
                     const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                    const angleDiff = PointCal.angleFromA2B(this._constrainingCurve.tangent, curPreviewTangent);
+                    const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
                     const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
                     if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
                         console.log("invalid direction in endCurve");
@@ -415,10 +455,10 @@ export class CurveCreationEngine implements LayoutContext {
         this._currentStartingPoint = null;
         this._previewCurve = null;
         this._hoverCircleJointNumber = null;
-        this._hoverCirclePosition = null;
         this._hoverEndPosition = null;
         this._endingPointJointNumber = null;
         this._endTangent = null;
+        this._previewStartProjection = null;
         this._trackGraph.logJoints();
     }
 
@@ -428,13 +468,12 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     cancelCurrentCurve() {
+        this._previewStartProjection = null;
         this._currentStartingPoint = null;
         this._hoverCircleJointNumber = null;
         this._hoverPosition = null;
         this._previewCurve = null;
         this.projection = null;
-        this._hoverCirclePosition = null;
-        this._constrainingCurve = null;
         this.branchTangent = null;
         this._hoverEndPosition = null;
         this._endingPointJointNumber = null;
@@ -452,6 +491,39 @@ export class CurveCreationEngine implements LayoutContext {
     get trackGraph(): TrackGraph {
         return this._trackGraph;
     }
+
+    determineNewJointType(rawPosition: Point, projection: ProjectionResult): NewCurveType {
+
+        if(!projection.hit){
+            return {
+                type: "new",
+                position: rawPosition
+            };
+        }
+
+        switch(projection.hitType){
+            case "joint":
+                if(this._trackGraph.jointIsEndingTrack(projection.jointNumber)){
+                    // extending from a dead end joint
+                    return {
+                        type: "extendingTrack",
+                        constraint: projection,
+                    };
+                } else {
+                    // branching out from a joint that is not an ending track
+                    return {
+                        type: "branchJoint",
+                        constraint: projection,
+                    }
+                }
+            case "curve":
+                return {
+                    type: "branchCurve",
+                    constraint: projection,
+                }
+        }
+    }
+
 }
 
 function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT: number = 1) {
