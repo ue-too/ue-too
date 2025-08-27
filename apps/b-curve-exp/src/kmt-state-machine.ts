@@ -324,7 +324,7 @@ export class CurveCreationEngine implements LayoutContext {
                 this.branchTangent = tangent;
                 if(this._endTangent == null){
                     const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
-                    if(this._previewCurve == null){
+                    if(this._previewCurve == null || this._previewCurve.getControlPoints().length !== 3){
                         this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
                         return;
                     }
