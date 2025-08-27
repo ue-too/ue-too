@@ -367,9 +367,8 @@ export class CurveCreationEngine implements LayoutContext {
                 const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
                 const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
                 const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-                if(angleDiffRad > Math.PI / 2 && angleDiffRad < 3 * Math.PI / 2){
-                    // invalid direction; ending track should not be able to branch
-                }
+                const jointTangentIsPointingInEmptyDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber);
+                
                 break;
         }
 
@@ -412,20 +411,14 @@ export class CurveCreationEngine implements LayoutContext {
                 break;
             case "extendingTrack":
                 const constraint = this._newStartJointType.constraint;
-                const tangent = PointCal.unitVector(constraint.tangent);
-                const previewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                const otherEndOfEndingTrack = this._trackGraph.getTheOtherEndOfEndingTrack(constraint.jointNumber);
-                if(otherEndOfEndingTrack != null){
-                    console.log(`other end of ending track is ${otherEndOfEndingTrack}`);
-                    const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                    const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
-                    const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-                    if((angleDiffRad >= 0 &&angleDiffRad <= Math.PI / 2) || angleDiffRad >= 3 * Math.PI / 2){
-                        console.log("invalid direction in endCurve");
-                        break;
-                    }
-                    this._trackGraph.extendTrackFromJoint(otherEndOfEndingTrack, constraint.jointNumber, endingPosition, cps);
-                }
+                const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
+                const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
+                const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
+                // if((angleDiffRad >= 0 &&angleDiffRad <= Math.PI / 2) || angleDiffRad >= 3 * Math.PI / 2){
+                //     console.log("invalid direction in endCurve");
+                //     break;
+                // }
+                this._trackGraph.extendTrackFromJoint(constraint.jointNumber, endingPosition, cps);
                 break;
         }
 

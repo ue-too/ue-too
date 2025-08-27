@@ -324,13 +324,12 @@ export class TrackGraph {
         return false;
     }
 
-    extendTrackFromJoint(comingFromJoint: number, startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
+    extendTrackFromJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
 
         const startJoint = this.joints.get(startJointNumber);
-        const comingJoint = this.joints.get(comingFromJoint);
 
-        if(startJoint === undefined || comingJoint === undefined){
-            console.warn("startJoint or comingJoint not found");
+        if(startJoint === undefined){
+            console.warn("startJoint not found");
             return false;
         }
 
@@ -454,6 +453,15 @@ export class TrackGraph {
             return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, position: closestJoint.position, curvature: closestJoint.curvature};
         }
         return null;
+    }
+
+    tangentIsPointingInEmptyDirection(jointNumber: number): boolean {
+        const joint = this.joints.get(jointNumber);
+        if(joint === undefined){
+            console.warn("joint not found");
+            return false;
+        }
+        return joint.direction.tangent.size === 0;
     }
 
     /**
