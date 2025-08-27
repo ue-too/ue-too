@@ -342,10 +342,6 @@ function step(timestamp: number){
         board.context.restore();
     }
 
-    if(curveEngine.branchTangent != null && curveEngine.currentStartingPoint != null){
-        drawArrow(board.context, board.camera.zoomLevel, curveEngine.currentStartingPoint, PointCal.addVector(PointCal.multiplyVectorByScalar(curveEngine.branchTangent, 10), curveEngine.currentStartingPoint));
-    }
-
     board.context.beginPath();
     const testCurveCps = testCurve.getControlPoints();
     board.context.moveTo(testCurveCps[0].x, testCurveCps[0].y);
