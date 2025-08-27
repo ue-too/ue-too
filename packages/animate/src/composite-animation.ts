@@ -670,7 +670,7 @@ export class Animation<T> implements Animator{
                 this.endCallbacks.forEach((callback) => {
                     queueMicrotask(()=>{callback()});
                 });
-                if(!this.loops || (this._maxLoopCount != undefined && this.playedTime >= this.maxLoopCount)){
+                if(!this.loops || (this._maxLoopCount != undefined && this.playedTime >= (this.maxLoopCount ?? 0))){
                     // this.onGoing = false;
                     // console.log("animation should stop after ", this.playedTime, " loops");
                     this.stop();
