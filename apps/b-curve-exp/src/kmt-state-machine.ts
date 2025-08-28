@@ -30,7 +30,7 @@ export type LayoutEvents = {
 type NewCurveCreationType = "new" | "branchJoint" | "branchTrack" | "extendEndingTrack";
 
 export interface LayoutContext extends BaseContext {
-    startCurve: (startingPosition: Point) => void;
+    startCurve: () => void;
     endCurve: (endingPosition: Point) => boolean;
     cancelCurrentCurve: () => void;
     hoveringForEndJoint: (position: Point) => void;
@@ -69,11 +69,7 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
     _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
             action: (context, event) => {
-                if(context.previewStartProjection != null){
-                    context.startCurve(context.previewStartProjection.projectionPoint);
-                } else {
-                    context.startCurve(event.position);
-                }
+                context.startCurve();
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
@@ -121,7 +117,7 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
             action: (context, event) => {
                 const res = context.endCurve(event.position);
                 context.hoverForStartingPoint(event.position);
-                context.startCurve(event.position);
+                context.startCurve();
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
@@ -196,184 +192,147 @@ export type NewJointType = BrandNewJoint | BranchJoint | ExtendingTrackJoint | B
 
 export class CurveCreationEngine implements LayoutContext {
 
-    private _currentStartingPoint: Point | null;
-    private _hoverPosition: Point | null;
-    // private _hoverCircleJointNumber: number | null;
-    private _hoverEndPosition: Point | null = null;
-    private _previewCurve: BCurve | null;
+    // private _hoverEndPosition: Point | null = null;
     private _trackGraph: TrackGraph;
 
-    public projection: ProjectionInfo | null = null;
-
-    // private _startingPointType: "new" | "branchJoint" | "branchTrack" | "extendEndingTrack" = "new";
-    private _endingPointJointNumber: number | null = null;
-
     private _newStartJointType: NewJointType | null = null;
-
-    private _endTangent: Point | null = null;
+    private _newEndJointType: NewJointType | null = null;
 
     private _previewStartProjection: ProjectionPositiveResult | null = null;
     private _previewEndProjection: ProjectionPositiveResult | null = null;
 
+    private _previewCurve: BCurve | null;
+    private _previewEndTangent: Point | null = null;
+
     constructor() {
-        this._currentStartingPoint = null;
-        this._hoverPosition = null;
         this._previewCurve = null;
         this._trackGraph = new TrackGraph();
-    }
-
-    get currentStartingPoint(): Point | null {
-        return this._currentStartingPoint;
-    }
-
-    get hoverEndPosition(): Point | null {
-        return this._hoverEndPosition;
     }
 
     get newStartJointType(): NewJointType | null {
         return this._newStartJointType;
     }
 
-    startCurve(startingPosition: Point) {
-
-        const res = this._trackGraph.project(startingPosition);
-        this._newStartJointType = this.determineNewJointType(startingPosition, res);
+    startCurve() {
         if(this._newStartJointType != null && this._newStartJointType.type === "branchCurve"){
-            this._trackGraph.insertJointIntoTrackSegment(this.projection.t0Joint, this.projection.t1Joint, this.projection.atT);
+            const constraint = this._newStartJointType.constraint;
+            this._trackGraph.insertJointIntoTrackSegment(constraint.t0Joint, constraint.t1Joint, constraint.atT);
             this._trackGraph.logJoints();
             this._trackGraph.logTrackSegments();
-            console.log("branching out from a track segment", this.projection);
+            console.log("branching out from track segment", constraint.curve);
         }
-
-        this._currentStartingPoint = this._newStartJointType.position;
-        this.projection = null;
     }
 
     hoverForStartingPoint(position: Point) {
-        /** same section */
         const res = this._trackGraph.project(position);
+        this._newStartJointType = this.determineNewJointType(position, res);
         if(res.hit){
             this._previewStartProjection = res;
         } else {
             this._previewStartProjection = null;
         }
-        /** same section */
-
-        const joint = this._trackGraph.pointOnJoint(position);
-        const projection = this._trackGraph.projectPointOnTrack(position);
-
-        if(joint !== null){
-            const jointPosition = this._trackGraph.getJointPosition(joint.jointNumber);
-            if(jointPosition !== null){
-            }
-        } else {
-        }
-        if(projection != null){
-            this.projection = projection;
-        } else {
-            this.projection = null;
-        }
     }
 
     flipEndTangent() {
-        if(this._endTangent == null){
+        if(this._previewEndTangent == null){
             return;
         }
-        this._endTangent = PointCal.multiplyVectorByScalar(this._endTangent, -1);
+        this._previewEndTangent = PointCal.multiplyVectorByScalar(this._previewEndTangent, -1);
     }
 
     hoveringForEndJoint(position: Point) {
-        this._hoverPosition = position;
-        if(this._currentStartingPoint == null) {
+        if(this._newStartJointType == null) {
             return;
         }
 
-        let midPoint = {
-            x: this._currentStartingPoint.x,
-            y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y),
-        }
+        const res = this._trackGraph.project(position);
+        this._newEndJointType = this.determineNewJointType(position, res);
 
-        const joint = this._trackGraph.pointOnJoint(position);
-        const projection = this._trackGraph.projectPointOnTrack(position);
-
-        if(joint != null){
-            this._hoverEndPosition = joint.position;
-            this._endTangent = joint.tangent;
-            this._endingPointJointNumber = joint.jointNumber;
+        if(res.hit){
+            this._previewEndProjection = res;
+            this._previewEndTangent = res.tangent;
         } else {
-            this._hoverEndPosition = null;
-            this._endTangent = null;
-            this._endingPointJointNumber = null;
+            this._previewEndProjection = null;
+            this._previewEndTangent = null;
         }
 
-        switch(this._newStartJointType.type){
-            case "new":
-                midPoint = {
-                    x: this._currentStartingPoint.x + (this._hoverPosition.x - this._currentStartingPoint.x) / 2,
-                    y: this._currentStartingPoint.y + (this._hoverPosition.y - this._currentStartingPoint.y) / 2,
-                };
-                if(this._previewCurve == null){
-                    this._previewCurve = new BCurve([this._currentStartingPoint, midPoint, this._hoverPosition]);
-                    return;
-                }
+        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewEndTangent, this._previewEndProjection, this._previewCurve, this._trackGraph);
 
-                this._previewCurve.setControlPointAtIndex(1, midPoint);
-                this._previewCurve.setControlPointAtIndex(2, this._hoverPosition);
-                break;
-            case "branchJoint":{
-                const curPreviewDirection = PointCal.unitVectorFromA2B(this._currentStartingPoint, this._hoverPosition);
-                const curvature = this._newStartJointType.constraint.curvature;
-                let tangent = this._newStartJointType.constraint.tangent;
-                const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
-                if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
-                    console.info('tangent should be the reversed');
-                    tangent = PointCal.multiplyVectorByScalar(tangent, -1);
-                }
-                if(this._endTangent == null){
-                    const previewCurveCPs = createQuadraticFromTangentCurvature(this._currentStartingPoint, this._hoverPosition, tangent, curvature);
-                    if(this._previewCurve == null || this._previewCurve.getControlPoints().length !== 3){
-                        this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
-                        return;
-                    }
-                    this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
-                    this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
-                    this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
-                } else {
-                    const previewCurveCPs = createCubicFromTangentsCurvatures(this._currentStartingPoint, this._hoverEndPosition, joint.tangent, this._endTangent, curvature, joint.curvature);
-                    if(this._previewCurve == null){
-                        this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
-                    } else {
-                        console.log("setting control points for cubic curve");
-                        this._previewCurve.setControlPoints([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
-                    }
-                }
-                break;
-            }
-            case "branchCurve":{
-                break;
-            }
-            case "extendingTrack":
-                console.log("extending track");
-                // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
-                const constraint = this._newStartJointType.constraint;
-                const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, this._hoverPosition, constraint.tangent, constraint.curvature );
-                if(this._previewCurve == null){
-                    this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
-                    return;
-                }
-                this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
-                this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
-                this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
-                const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
-                const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
-                const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-                const jointTangentIsPointingInEmptyDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber);
+        if(this._previewCurve == null){
+            this._previewCurve = new BCurve(newPreviewCurveCPs);
+        } else {
+            this._previewCurve.setControlPoints(newPreviewCurveCPs);
+        }
+
+        // switch(this._newStartJointType.type){
+        //     case "new":
+        //         let midPoint = {
+        //             x: this._newStartJointType.position.x + (this._newEndJointType.position.x - this._newStartJointType.position.x) / 2,
+        //             y: this._newStartJointType.position.y + (this._newEndJointType.position.y - this._newStartJointType.position.y) / 2,
+        //         };
+        //         if(this._previewCurve == null){
+        //             this._previewCurve = new BCurve([this._newStartJointType.position, midPoint, this._newEndJointType.position]);
+        //             return;
+        //         }
+
+        //         this._previewCurve.setControlPointAtIndex(1, midPoint);
+        //         this._previewCurve.setControlPointAtIndex(2, this._newEndJointType.position);
+        //         break;
+        //     case "branchJoint":{
+        //         const curPreviewDirection = PointCal.unitVectorFromA2B(this._newStartJointType.position, this._newEndJointType.position);
+        //         const curvature = this._newStartJointType.constraint.curvature;
+        //         let tangent = this._newStartJointType.constraint.tangent;
+        //         const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
+        //         if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+        //             console.info('tangent should be the reversed');
+        //             tangent = PointCal.multiplyVectorByScalar(tangent, -1);
+        //         }
+        //         if(this._previewEndTangent == null){
+        //             // branch to a new joint
+        //             const previewCurveCPs = createQuadraticFromTangentCurvature(this._newStartJointType.position, this._newEndJointType.position, tangent, curvature);
+        //             if(this._previewCurve == null || this._previewCurve.getControlPoints().length !== 3){
+        //                 this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
+        //                 return;
+        //             }
+        //             this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
+        //             this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
+        //             this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
+        //         } else {
+        //             console.log("preview end tangent", this._previewEndTangent);
+        //             const previewCurveCPs = createCubicFromTangentsCurvatures(this._newStartJointType.position, this._newEndJointType.position, this._newStartJointType.constraint.tangent, this._previewEndTangent, curvature, this._previewEndProjection.curvature);
+        //             if(this._previewCurve == null){
+        //                 this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
+        //             } else {
+        //                 console.log("setting control points for cubic curve");
+        //                 this._previewCurve.setControlPoints([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3]);
+        //             }
+        //         }
+        //         break;
+        //     }
+        //     case "branchCurve":{
+        //         break;
+        //     }
+        //     case "extendingTrack":
+        //         // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
+        //         const constraint = this._newStartJointType.constraint;
+        //         const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, this._newEndJointType.position, constraint.tangent, constraint.curvature );
+        //         if(this._previewCurve == null){
+        //             this._previewCurve = new BCurve([previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2]);
+        //             return;
+        //         }
+        //         this._previewCurve.setControlPointAtIndex(0, previewCurveCPs.p0);
+        //         this._previewCurve.setControlPointAtIndex(1, previewCurveCPs.p1);
+        //         this._previewCurve.setControlPointAtIndex(2, previewCurveCPs.p2);
+        //         const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
+        //         const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
+        //         const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
+        //         const jointTangentIsPointingInEmptyDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber);
                 
-                break;
-        }
-
-
+        //         break;
+        // }
     }
+
+
 
     get previewCurve(): BCurve | null {
         return this._previewCurve;
@@ -387,9 +346,9 @@ export class CurveCreationEngine implements LayoutContext {
         return this._previewEndProjection;
     }
 
-    endCurve(endingPosition: Point): boolean {
+    endCurve(): boolean {
         let res = false;
-        if(this._currentStartingPoint === null || this._previewCurve === null) {
+        if(this._newStartJointType === null || this._previewCurve === null) {
             this.cancelCurrentCurve();
             return false;
         }
@@ -397,14 +356,14 @@ export class CurveCreationEngine implements LayoutContext {
         const cps = this._previewCurve.getControlPoints().slice(1, -1);
         switch(this._newStartJointType.type){
             case "new":
-                res = this._trackGraph.createNewTrackSegment(this._currentStartingPoint, endingPosition, cps);
+                res = this._trackGraph.createNewTrackSegment(this._newStartJointType.position, this._newEndJointType.position, cps);
                 break;
             case "branchJoint": {
                 const constraint = this._newStartJointType.constraint;
-                if(this._endingPointJointNumber != null) {
-                    res = this._trackGraph.connectJoints(constraint.jointNumber, this._endingPointJointNumber, cps);
+                if(this._newEndJointType.type === "branchJoint") {
+                    res = this._trackGraph.connectJoints(constraint.jointNumber, this._newEndJointType.constraint.jointNumber, cps);
                 } else {
-                    res = this._trackGraph.branchToNewJoint(constraint.jointNumber, endingPosition, cps);
+                    res = this._trackGraph.branchToNewJoint(constraint.jointNumber, this._newEndJointType.position, cps);
                 }
                 break;
             }
@@ -421,18 +380,15 @@ export class CurveCreationEngine implements LayoutContext {
                     res = false;
                     break;
                 }
-                res = this._trackGraph.extendTrackFromJoint(constraint.jointNumber, endingPosition, cps);
+                res = this._trackGraph.extendTrackFromJoint(constraint.jointNumber, this._newEndJointType.position, cps);
                 break;
         }
 
-        this._hoverPosition = null;
-        this._currentStartingPoint = null;
         this._previewCurve = null;
-        this._hoverEndPosition = null;
-        this._endingPointJointNumber = null;
-        this._endTangent = null;
+        this._previewEndTangent = null;
         this._previewStartProjection = null;
         this._newStartJointType = null;
+        this._newEndJointType = null;
         this._trackGraph.logJoints();
         return res;
     }
@@ -444,14 +400,11 @@ export class CurveCreationEngine implements LayoutContext {
 
     cancelCurrentCurve() {
         this._previewStartProjection = null;
-        this._currentStartingPoint = null;
-        this._hoverPosition = null;
+        this._previewEndProjection = null;
         this._previewCurve = null;
-        this.projection = null;
-        this._hoverEndPosition = null;
-        this._endingPointJointNumber = null;
-        this._endTangent = null;
+        this._previewEndTangent = null;
         this._newStartJointType = null;
+        this._newEndJointType = null;
     }
 
     setup() {
@@ -544,6 +497,48 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT:
         },
         p2: mousePos
     };
+}
+
+function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJointType, previewEndTangent: Point | null, previewEndProjection: ProjectionPositiveResult | null, previewCurve: BCurve | null, trackGraph: TrackGraph): Point[]{
+
+    switch(newStartJointType.type){
+        case "new":
+            let midPoint = {
+                x: newStartJointType.position.x + (newEndJointType.position.x - newStartJointType.position.x) / 2,
+                y: newStartJointType.position.y + (newEndJointType.position.y - newStartJointType.position.y) / 2,
+            };
+            return [newStartJointType.position, midPoint, newEndJointType.position];
+        case "branchJoint":{
+            const curPreviewDirection = PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position);
+            const curvature = newStartJointType.constraint.curvature;
+            let tangent = newStartJointType.constraint.tangent;
+            const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
+            if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+                console.info('tangent should be the reversed');
+                tangent = PointCal.multiplyVectorByScalar(tangent, -1);
+            }
+            if(previewEndTangent == null){
+                // branch to a new joint
+                const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
+                return [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2];
+            } else {
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, newStartJointType.constraint.tangent, previewEndTangent, curvature, previewEndProjection.curvature);
+                return [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3];
+            }
+        }
+        case "branchCurve":{
+            break;
+        }
+        case "extendingTrack":
+            // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
+            const constraint = newStartJointType.constraint;
+            const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, constraint.tangent, constraint.curvature );
+            // const curPreviewTangent = PointCal.unitVector(previewCurve.derivative(0));
+            // const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
+            // const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
+            // const jointTangentIsPointingInEmptyDirection = trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber);
+            return [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2];
+    }
 }
 
 /**
@@ -771,6 +766,7 @@ function createG2Cubic(existingCurve: BCurve, targetPoint: Point) {
 }
 
 function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
+    console.log('end tangent', endTangent);
     const unitStartTangent = PointCal.unitVector(startTangent);
     const unitEndTangent = PointCal.unitVector(endTangent);
     

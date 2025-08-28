@@ -27,6 +27,7 @@ export type ProjectionInfo = {
     atT: number;
     projectionPoint: Point;
     tangent: Point;
+    curvature: number;
 }
 
 export type ProjectionResult = ProjectionFalseResult | ProjectionPositiveResult;
@@ -513,7 +514,8 @@ export class TrackGraph {
                             projectionPoint: res.projection,
                             t0Joint: trackSegment.t0Joint,
                             t1Joint: trackSegment.t1Joint,
-                            tangent: trackSegment.curve.derivative(res.tVal)
+                            tangent: trackSegment.curve.derivative(res.tVal),
+                            curvature: trackSegment.curve.curvature(res.tVal)
                         };
                         return;
                     }

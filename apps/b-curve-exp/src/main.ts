@@ -101,7 +101,10 @@ canvas.addEventListener("pointerup", (event) => {
 
 window.addEventListener("keydown", (event)=>{
     if(event.key === "Escape"){
+        console.log("Escape key pressed");
         stateMachine.happens("escapeKey", {});
+    } else if(event.key === "f"){
+        stateMachine.happens("flipEndTangent", {});
     }
 });
 
@@ -295,22 +298,19 @@ function step(timestamp: number){
         board.context.beginPath();
         board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
         board.context.fill();
+        board.context.restore();
     }
 
-    if(curveEngine.hoverEndPosition != null){
+    if(curveEngine.previewEndProjection != null){
+        board.context.save();
+        board.context.fillStyle = "green";
+        const point = curveEngine.previewEndProjection.projectionPoint;
         board.context.beginPath();
-        board.context.arc(curveEngine.hoverEndPosition.x, curveEngine.hoverEndPosition.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
         board.context.fill();
+        board.context.restore();
     }
 
-    // if(curveEngine.projection != null){
-    //     board.context.save();
-    //     board.context.fillStyle = "blue";
-    //     board.context.beginPath();
-    //     board.context.arc(curveEngine.projection.projectionPoint.x, curveEngine.projection.projectionPoint.y, 5, 0, 2 * Math.PI);
-    //     board.context.fill();
-    //     board.context.restore();
-    // }
 
     if(trainPlacementEngine.previewPosition != null){
         board.context.save();
