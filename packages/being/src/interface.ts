@@ -62,6 +62,8 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
+    // Overload for events with empty payloads - payload is optional
+    handles<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never, context?: Context, stateMachine?: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     // Overload for known events - maintains type inference
     handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     // Overload for unknown events - accepts any event and payload
@@ -117,7 +119,7 @@ export type Guard<Context extends BaseContext, K extends string = string> = {
 
 export type Action<Context extends BaseContext, EventPayloadMapping, States extends string> = {
     action: (context: Context, event: EventPayloadMapping[keyof EventPayloadMapping], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
-    defaultTargetState: States;
+    defaultTargetState?: States;
 }
 
 export type Delay<Context extends BaseContext, EventPayloadMapping, States extends string> = {
@@ -197,6 +199,8 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
+    // Overload for events with empty payloads - payload is optional
+    happens<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never): States | undefined;
     // Overload for known events - maintains type inference
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
     // Overload for unknown events - accepts any event and payload
@@ -206,8 +210,10 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
-        this._happensCallbacks.forEach(callback => callback(event as keyof EventPayloadMapping, payload, this._context));
-        const nextState = this._states[this._currentState].handles(event as keyof EventPayloadMapping, payload, this._context, this);
+        // If payload is undefined, use an empty object as default
+        const actualPayload = payload ?? {};
+        this._happensCallbacks.forEach(callback => callback(event as keyof EventPayloadMapping, actualPayload, this._context));
+        const nextState = this._states[this._currentState].handles(event as keyof EventPayloadMapping, actualPayload, this._context, this);
         if(nextState !== undefined && nextState !== this._currentState){
             const originalState = this._currentState;
             this._states[this._currentState].beforeExit(this._context, this, nextState);
@@ -279,6 +285,8 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log('leave');
     }
 
+    // Overload for events with empty payloads - payload is optional
+    handles<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never, context?: Context, stateMachine?: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     // Overload for known events - maintains type inference
     handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     // Overload for unknown events - accepts any event and payload
