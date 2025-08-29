@@ -102,9 +102,11 @@ canvas.addEventListener("pointerup", (event) => {
 window.addEventListener("keydown", (event)=>{
     if(event.key === "Escape"){
         console.log("Escape key pressed");
-        stateMachine.happens("escapeKey", {});
+        stateMachine.happens("escapeKey");
     } else if(event.key === "f"){
-        stateMachine.happens("flipEndTangent", {});
+        stateMachine.happens("flipEndTangent");
+    } else if(event.key === "g"){
+        stateMachine.happens("flipStartTangent");
     }
 });
 

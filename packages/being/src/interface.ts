@@ -26,9 +26,11 @@ export const NO_OP: NOOP = ()=>{};
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
     // Overload for known events - maintains type inference
+    happens<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never): States | undefined;
+    // Overload for known events - maintains type inference
     happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
     // Overload for unknown events - accepts any event and payload
-    happens(event: string, payload: any): States | undefined;
+    happens(event: string, payload?: any): States | undefined;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -87,7 +89,7 @@ export interface State<EventPayloadMapping, Context extends BaseContext, States 
 export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
         action: (context: Context, event: EventPayloadMapping[K], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
-        defaultTargetState: States;
+        defaultTargetState?: States;
     };
 };
 
