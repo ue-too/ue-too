@@ -218,9 +218,11 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewStartProjection: ProjectionPositiveResult | null = null;
     private _previewEndProjection: ProjectionPositiveResult | null = null;
 
-    private _previewCurve: BCurve | null = null;
+    private _previewCurve: {
+        curve: BCurve;
+        previewStartAndEndSwitched: boolean; 
+    } | null = null;
 
-    private _previewEndTangent: Point | null = null;
     private _previewStartTangentFlipped: boolean = false;
     private _previewEndTangentFlipped: boolean = false;
 
@@ -254,22 +256,30 @@ export class CurveCreationEngine implements LayoutContext {
 
     flipStartTangent() {
         this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
         if(this._previewCurve == null){
-            this._previewCurve = new BCurve(newPreviewCurveCPs.cps);
+            this._previewCurve = {
+                curve: new BCurve(newPreviewCurveCPs.cps),
+                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
+            };
         } else {
-            this._previewCurve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
         }
     }
 
     flipEndTangent() {
         console.log('flipEndTangent');
         this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
         if(this._previewCurve == null){
-            this._previewCurve = new BCurve(newPreviewCurveCPs.cps);
+            this._previewCurve = {
+                curve: new BCurve(newPreviewCurveCPs.cps),
+                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
+            };
         } else {
-            this._previewCurve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
         }
     }
 
@@ -283,13 +293,11 @@ export class CurveCreationEngine implements LayoutContext {
 
         if(res.hit){
             this._previewEndProjection = res;
-            this._previewEndTangent = res.tangent;
         } else {
             this._previewEndProjection = null;
-            this._previewEndTangent = null;
         }
 
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
 
         if(newPreviewCurveCPs.shouldToggleStartTangentFlip){
             this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
@@ -299,14 +307,21 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         if(this._previewCurve == null){
-            this._previewCurve = new BCurve(newPreviewCurveCPs.cps);
+            this._previewCurve = {
+                curve: new BCurve(newPreviewCurveCPs.cps),
+                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
+            };
         } else {
-            this._previewCurve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
         }
 
     }
 
-    get previewCurve(): BCurve | null {
+    get previewCurve(): {
+        curve: BCurve;
+        previewStartAndEndSwitched: boolean;
+    } | null {
         return this._previewCurve;
     }
 
@@ -325,7 +340,7 @@ export class CurveCreationEngine implements LayoutContext {
             return false;
         }
 
-        const cps = this._previewCurve.getControlPoints().slice(1, -1);
+        const cps = this._previewCurve.curve.getControlPoints().slice(1, -1);
 
         switch(this._newStartJointType.type){
             case "new":
@@ -357,7 +372,7 @@ export class CurveCreationEngine implements LayoutContext {
             }
             case "extendingTrack":
                 const constraint = this._newStartJointType.constraint;
-                const curPreviewTangent = PointCal.unitVector(this._previewCurve.derivative(0));
+                const curPreviewTangent = PointCal.unitVector(this._previewCurve.curve.derivative(0));
                 const emptyTangentDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber) ? constraint.tangent : PointCal.multiplyVectorByScalar(constraint.tangent, -1);
                 const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, curPreviewTangent);
                 const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
@@ -390,7 +405,6 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewStartProjection = null;
         this._previewEndProjection = null;
         this._previewCurve = null;
-        this._previewEndTangent = null;
         this._newStartJointType = null;
         this._newEndJointType = null;
         this._previewStartTangentFlipped = false;

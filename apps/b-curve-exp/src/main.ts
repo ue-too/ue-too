@@ -215,7 +215,7 @@ function step(timestamp: number){
     board.context.fill();
 
     if(curveEngine.previewCurve !== null){
-        const cps = curveEngine.previewCurve.getControlPoints();
+        const cps = curveEngine.previewCurve.curve.getControlPoints();
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
