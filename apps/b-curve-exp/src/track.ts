@@ -478,6 +478,11 @@ export class TrackGraph {
             return false;
         }
 
+        if(startJoint.connections.has(endJointNumber)){
+            console.warn(`joint #${startJointNumber} already has connection to joint #${endJointNumber}`);
+            return false;
+        }
+
         const newCurve = new BCurve([startJoint.position, ...controlPoints, endJoint.position]);
 
         const startTangent = PointCal.unitVector(newCurve.derivative(0));

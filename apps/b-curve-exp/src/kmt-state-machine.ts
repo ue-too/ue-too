@@ -93,10 +93,10 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
     }
 
     protected _eventGuards: Partial<EventGuards<LayoutEvents, LayoutStates, LayoutContext, typeof this._guards>> = {
-        "pointerup": [{
-            guard: "hasProjection",
-            target: "HOVER_FOR_STARTING_POINT",
-        }],
+        // "pointerup": [{
+        //     guard: "hasProjection",
+        //     target: "HOVER_FOR_STARTING_POINT",
+        // }],
     };
 
     get eventReactions() {
@@ -199,11 +199,10 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewStartProjection: ProjectionPositiveResult | null = null;
     private _previewEndProjection: ProjectionPositiveResult | null = null;
 
-    private _previewCurve: BCurve | null;
+    private _previewCurve: BCurve | null = null;
     private _previewEndTangent: Point | null = null;
 
     constructor() {
-        this._previewCurve = null;
         this._trackGraph = new TrackGraph();
     }
 
@@ -314,6 +313,7 @@ export class CurveCreationEngine implements LayoutContext {
                 break;
             }
             case "branchCurve":
+
                 break;
             case "extendingTrack":
                 const constraint = this._newStartJointType.constraint;
@@ -478,7 +478,22 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
             }
         }
         case "branchCurve":{
-            break;
+            const curPreviewDirection = PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position);
+            const curvature = newStartJointType.constraint.curvature;
+            let tangent = newStartJointType.constraint.tangent;
+            const angleDiff = normalizeAngleZero2TwoPI(PointCal.angleFromA2B(tangent, curPreviewDirection));
+            if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+                console.info('tangent should be the reversed');
+                tangent = PointCal.multiplyVectorByScalar(tangent, -1);
+            }
+            if(previewEndTangent == null){
+                // branch to a new joint
+                const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
+                return [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2];
+            } else {
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, newStartJointType.constraint.tangent, previewEndTangent, curvature, previewEndProjection.curvature);
+                return [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3];
+            }
         }
         case "extendingTrack":
             // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
