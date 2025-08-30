@@ -351,6 +351,7 @@ export class CurveCreationEngine implements LayoutContext {
             const startJointTangent = this._newStartJointType.constraint.tangent;
             const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(1) : this._previewCurve.curve.derivative(0);
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangent, this._trackGraph)){
+                console.log('extend track not possible for start joint');
                 this.cancelCurrentCurve();
                 return false;
             }
@@ -360,9 +361,9 @@ export class CurveCreationEngine implements LayoutContext {
             console.log('checking extend track possible for end joint');
             const startJointNumber = this._newEndJointType.constraint.jointNumber;
             const startJointTangent = this._newEndJointType.constraint.tangent;
-            const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(0) : this._previewCurve.curve.derivative(1);
-            const previewCurveTangentInTheDirectionToOtherJoint = PointCal.multiplyVectorByScalar(previewCurveTangent, -1);
+            const previewCurveTangentInTheDirectionToOtherJoint = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(0) : PointCal.multiplyVectorByScalar(this._previewCurve.curve.derivative(1), -1);
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangentInTheDirectionToOtherJoint, this._trackGraph)){
+                console.log('extend track not possible for end joint');
                 this.cancelCurrentCurve();
                 return false;
             }
