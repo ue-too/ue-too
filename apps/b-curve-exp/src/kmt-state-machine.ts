@@ -26,6 +26,7 @@ export type LayoutEvents = {
     "endLayout": {};
     "flipEndTangent": {};
     "flipStartTangent": {};
+    "toggleStraightLine": {};
 }
 
 export interface LayoutContext extends BaseContext {
@@ -37,6 +38,7 @@ export interface LayoutContext extends BaseContext {
     insertJointIntoTrackSegment: (startJointNumber: number, endJointNumber: number, atT: number) => void;
     flipEndTangent: () => void;
     flipStartTangent: () => void;
+    toggleStraightLine: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
 }
@@ -155,13 +157,15 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
             action: (context, event) => {
                 context.flipEndTangent();
             },
-            defaultTargetState: "HOVER_FOR_ENDING_POINT",
         },
         "flipStartTangent": {
             action: (context, event) => {
                 context.flipStartTangent();
             },
-            // defaultTargetState: "HOVER_FOR_ENDING_POINT",
+        },
+        "toggleStraightLine": {
+            action: (context, event) => {
+            },
         }
     };
 
@@ -225,6 +229,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _previewStartTangentFlipped: boolean = false;
     private _previewEndTangentFlipped: boolean = false;
+    private _extendAsStraightLine: boolean = false;
 
     constructor() {
         this._trackGraph = new TrackGraph();
@@ -256,7 +261,15 @@ export class CurveCreationEngine implements LayoutContext {
 
     flipStartTangent() {
         this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(
+            this._newStartJointType, 
+            this._newEndJointType, 
+            this._previewStartTangentFlipped, 
+            this._previewEndTangentFlipped, 
+            this._extendAsStraightLine,
+            this._previewCurve?.curve, 
+            this._trackGraph
+        );
         if(this._previewCurve == null){
             this._previewCurve = {
                 curve: new BCurve(newPreviewCurveCPs.cps),
@@ -270,7 +283,37 @@ export class CurveCreationEngine implements LayoutContext {
 
     flipEndTangent() {
         this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(
+            this._newStartJointType, 
+            this._newEndJointType, 
+            this._previewStartTangentFlipped, 
+            this._previewEndTangentFlipped, 
+            this._extendAsStraightLine,
+            this._previewCurve?.curve, 
+            this._trackGraph
+        );
+        if(this._previewCurve == null){
+            this._previewCurve = {
+                curve: new BCurve(newPreviewCurveCPs.cps),
+                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
+            };
+        } else {
+            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
+            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
+        }
+    }
+
+    toggleStraightLine() {
+        this._extendAsStraightLine = !this._extendAsStraightLine;
+        const newPreviewCurveCPs = getPreviewCurve(
+            this._newStartJointType, 
+            this._newEndJointType, 
+            this._previewStartTangentFlipped, 
+            this._previewEndTangentFlipped, 
+            this._extendAsStraightLine,
+            this._previewCurve?.curve, 
+            this._trackGraph
+        );
         if(this._previewCurve == null){
             this._previewCurve = {
                 curve: new BCurve(newPreviewCurveCPs.cps),
@@ -296,7 +339,15 @@ export class CurveCreationEngine implements LayoutContext {
             this._previewEndProjection = null;
         }
 
-        const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
+        const newPreviewCurveCPs = getPreviewCurve(
+            this._newStartJointType, 
+            this._newEndJointType, 
+            this._previewStartTangentFlipped, 
+            this._previewEndTangentFlipped, 
+            this._extendAsStraightLine,
+            this._previewCurve?.curve, 
+            this._trackGraph
+        );
 
         if(newPreviewCurveCPs.shouldToggleStartTangentFlip){
             this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
@@ -423,6 +474,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._newEndJointType = null;
         this._previewStartTangentFlipped = false;
         this._previewEndTangentFlipped = false;
+        this._extendAsStraightLine = false;
     }
 
     setup() {
@@ -516,7 +568,15 @@ function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT:
     };
 }
 
-function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJointType, previewStartTangentFlipped: boolean, previewEndTangentFlipped: boolean, previewEndProjection: ProjectionPositiveResult | null, previewCurve: BCurve | null, trackGraph: TrackGraph): 
+function getPreviewCurve(
+    newStartJointType: NewJointType, 
+    newEndJointType: NewJointType, 
+    previewStartTangentFlipped: boolean, 
+    previewEndTangentFlipped: boolean, 
+    extendAsStraightLine: boolean = false,
+    previewCurve: BCurve | null, 
+    trackGraph: TrackGraph,
+): 
     {
         cps: Point[] // including start and end preview points
         startAndEndSwitched: boolean; // sometimes the new curve would go from end (as t = 0) to start (as t = 1)
@@ -524,7 +584,6 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
         shouldToggleEndTangentFlip: boolean;
     }
 {
-
     switch(newStartJointType.type){
         case "new":
             if(newEndJointType.type === "new"){
@@ -565,7 +624,7 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
                 };
             } else {
                 const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, previewEndProjection.curvature);
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
                 return {
                     cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
                     startAndEndSwitched: false,
@@ -589,7 +648,7 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
                 };
             } else {
                 const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, previewEndProjection.curvature);
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
                 return {
                     cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
                     startAndEndSwitched: false,
@@ -614,14 +673,19 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
                     shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
                 };
             } else {
-                const constraint = newStartJointType.constraint;
-                const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
+                if(!extendAsStraightLine){
+                    const constraint = newStartJointType.constraint;
+                    const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
+                    return {
+                        cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+                        startAndEndSwitched: false,
+                        shouldToggleEndTangentFlip: false,
+                        shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+                    };
+                } else {
+
+
+                }
             }
     }
 }
@@ -639,16 +703,6 @@ function extendTrackIsPossible(startJointNumber: number, startJointTangent: Poin
     }
 
     return false;
-
-    // const start2EndDirection = PointCal.unitVectorFromA2B(startJointPosition, endPosition);
-
-    // const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, start2EndDirection);
-    // const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
-
-    // if(angleDiff > Math.PI / 2 && angleDiff < 3 * Math.PI / 2){
-    //     console.warn("invalid direction in extendTrackFromJoint");
-    //     return false;
-    // }
 }
 
 function calibrateTangent(rawTangent: Point, curveStartPoint: Point, curveEndPoint: Point): { 
