@@ -350,8 +350,13 @@ export class CurveCreationEngine implements LayoutContext {
             const startJointNumber = this._newStartJointType.constraint.jointNumber;
             const startJointTangent = this._newStartJointType.constraint.tangent;
             const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(1) : this._previewCurve.curve.derivative(0);
+            if(this._previewCurve.previewStartAndEndSwitched){
+                console.log("start and end point switched in preview curve")
+            } else {
+                console.log("start and end point not switched in preview curve")
+            }
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangent, this._trackGraph)){
-                console.log('extend track not possible for start joint');
+                console.warn('extend track not possible for start joint');
                 this.cancelCurrentCurve();
                 return false;
             }
@@ -363,7 +368,7 @@ export class CurveCreationEngine implements LayoutContext {
             const startJointTangent = this._newEndJointType.constraint.tangent;
             const previewCurveTangentInTheDirectionToOtherJoint = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(0) : PointCal.multiplyVectorByScalar(this._previewCurve.curve.derivative(1), -1);
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangentInTheDirectionToOtherJoint, this._trackGraph)){
-                console.log('extend track not possible for end joint');
+                console.warn('extend track not possible for end joint');
                 this.cancelCurrentCurve();
                 return false;
             }
@@ -599,11 +604,13 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
 
             const curvature = newStartJointType.constraint.curvature;
             if(newEndJointType.type === "extendingTrack"){
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, newEndJointType.constraint.tangent, curvature, newEndJointType.constraint.curvature);
+                let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+                endTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, endTangent, curvature, newEndJointType.constraint.curvature);
                 return {
                     cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
                     startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
+                    shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
                     shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
                 };
             } else {
@@ -620,9 +627,14 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
 }
 
 function extendTrackIsPossible(startJointNumber: number, startJointTangent: Point, previewCurveTangentInTheDirectionToOtherJoint: Point, trackGraph: TrackGraph){
-    const emptyTangentDirection = trackGraph.tangentIsPointingInEmptyDirection(startJointNumber) ? startJointTangent : PointCal.multiplyVectorByScalar(startJointTangent, -1);
+    const jointTangentIsPointingInEmptyDirection = trackGraph.tangentIsPointingInEmptyDirection(startJointNumber);
+    const emptyTangentDirection = jointTangentIsPointingInEmptyDirection ? startJointTangent : PointCal.multiplyVectorByScalar(startJointTangent, -1);
 
-    if(sameDirection(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint)){
+    console.log("jointTangentIsPointingInEmptyDirection", jointTangentIsPointingInEmptyDirection);
+    console.log("emptyTangentDirection", emptyTangentDirection);
+    console.log("previewCurveTangentInTheDirectionToOtherJoint", previewCurveTangentInTheDirectionToOtherJoint);
+
+    if(sameDirection(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint, 0.01)){
         return true;
     }
 
