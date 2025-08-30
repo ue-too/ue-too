@@ -1,5 +1,5 @@
 import { BCurve } from "@ue-too/curve";
-import { type Point } from "@ue-too/math";
+import { sameDirection, type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { ProjectionCurveResult, ProjectionInfo, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
@@ -269,7 +269,6 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     flipEndTangent() {
-        console.log('flipEndTangent');
         this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
         const newPreviewCurveCPs = getPreviewCurve(this._newStartJointType, this._newEndJointType, this._previewStartTangentFlipped, this._previewEndTangentFlipped, this._previewEndProjection, this._previewCurve?.curve, this._trackGraph);
         if(this._previewCurve == null){
@@ -335,64 +334,73 @@ export class CurveCreationEngine implements LayoutContext {
 
     endCurve(): boolean {
         let res = false;
-        if(this._newStartJointType === null || this._previewCurve === null) {
+
+        if(this._newStartJointType === null || this._previewCurve === null || this._newEndJointType === null) {
             this.cancelCurrentCurve();
             return false;
         }
 
         const cps = this._previewCurve.curve.getControlPoints().slice(1, -1);
 
-        switch(this._newStartJointType.type){
-            case "new":
-                if(this._newEndJointType.type === "new"){
-                    res = this._trackGraph.createNewTrackSegment(this._newStartJointType.position, this._newEndJointType.position, cps);
-                } else {
-                    if(this._newEndJointType.type === "branchCurve"){
-                        const newJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(this._newEndJointType.constraint.curve, this._newEndJointType.constraint.atT);
-                        res = this._trackGraph.branchToNewJoint(newJointNumber, this._newStartJointType.position, cps);
-                    } else {
-                        res = this._trackGraph.extendTrackFromJoint(this._newEndJointType.constraint.jointNumber, this._newStartJointType.position, cps);
-                    }
-                }
-                break;
-            case "branchJoint": {
-                const startConstraint = this._newStartJointType.constraint;
-                if(this._newEndJointType.type === "branchJoint") {
-                    const endConstraint = this._newEndJointType.constraint;
-                    res = this._trackGraph.connectJoints(startConstraint.jointNumber, endConstraint.jointNumber, cps);
-                } else {
-                    res = this._trackGraph.branchToNewJoint(startConstraint.jointNumber, this._newEndJointType.position, cps);
-                }
-                break;
+        let startJointNumber: number | null = null;
+        let endJointNumber: number | null = null;
+
+        // TODO maybe turn this into a validation pipeline function and add other edge cases?
+        if(this._newStartJointType.type === "extendingTrack"){
+            const startJointNumber = this._newStartJointType.constraint.jointNumber;
+            const startJointTangent = this._newStartJointType.constraint.tangent;
+            const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(1) : this._previewCurve.curve.derivative(0);
+            if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangent, this._trackGraph)){
+                this.cancelCurrentCurve();
+                return false;
             }
-            case "branchCurve": {
-                const constraint = this._newStartJointType.constraint;
-                this._trackGraph.insertJointIntoTrackSegment(constraint.t0Joint, constraint.t1Joint, constraint.atT);
-                break;
-            }
-            case "extendingTrack":
-                const constraint = this._newStartJointType.constraint;
-                const curPreviewTangent = PointCal.unitVector(this._previewCurve.curve.derivative(0));
-                const emptyTangentDirection = this._trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber) ? constraint.tangent : PointCal.multiplyVectorByScalar(constraint.tangent, -1);
-                const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, curPreviewTangent);
-                const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
-                if(angleDiff > Math.PI / 2 && angleDiff < 3 * Math.PI / 2){
-                    console.log("invalid direction in endCurve");
-                    res = false;
-                    break;
-                }
-                res = this._trackGraph.extendTrackFromJoint(constraint.jointNumber, this._newEndJointType.position, cps);
-                break;
         }
 
-        // this._previewCurve = null;
-        // this._previewEndTangent = null;
-        // this._previewStartProjection = null;
-        // this._newStartJointType = null;
-        // this._newEndJointType = null;
-        // this._previewStartTangentFlipped = false;
-        // this._previewEndTangentFlipped = false;
+        if(this._newEndJointType.type === "extendingTrack"){
+            console.log('checking extend track possible for end joint');
+            const startJointNumber = this._newEndJointType.constraint.jointNumber;
+            const startJointTangent = this._newEndJointType.constraint.tangent;
+            const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(0) : this._previewCurve.curve.derivative(1);
+            const previewCurveTangentInTheDirectionToOtherJoint = PointCal.multiplyVectorByScalar(previewCurveTangent, -1);
+            if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangentInTheDirectionToOtherJoint, this._trackGraph)){
+                this.cancelCurrentCurve();
+                return false;
+            }
+        }
+        // END OF VALIDATION PIPELINE
+
+        if(this._newStartJointType.type === "new"){
+            const startTangent = this._previewCurve.previewStartAndEndSwitched ? 
+            PointCal.unitVector(this._previewCurve.curve.derivative(1)) : PointCal.unitVector(this._previewCurve.curve.derivative(0));
+            startJointNumber = this._trackGraph.createNewEmptyJoint(this._newStartJointType.position, startTangent);
+        } else if(this._newStartJointType.type === "branchCurve"){
+            const constraint = this._newStartJointType.constraint;
+            const trackSegmentNumber = constraint.curve;
+            startJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber, constraint.atT);
+        }else {
+            startJointNumber = this._newStartJointType.constraint.jointNumber;
+        }
+
+        if(this._newEndJointType.type === "new"){
+            const endTangent = this._previewCurve.previewStartAndEndSwitched ? 
+            PointCal.unitVector(this._previewCurve.curve.derivative(0)) : PointCal.unitVector(this._previewCurve.curve.derivative(1));
+            endJointNumber = this._trackGraph.createNewEmptyJoint(this._newEndJointType.position, endTangent);
+        } else if (this._newEndJointType.type === "branchCurve"){
+            const constraint = this._newEndJointType.constraint;
+            const trackSegmentNumber = constraint.curve;
+            endJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber, constraint.atT);
+        }else {
+            endJointNumber = this._newEndJointType.constraint.jointNumber;
+        }
+
+        if(startJointNumber === null || endJointNumber === null){
+            this.cancelCurrentCurve();
+            return false;
+        }
+
+        res = this._trackGraph.connectJoints(startJointNumber, endJointNumber, cps);
         this._trackGraph.logJoints();
+
         return res;
     }
 
@@ -424,7 +432,6 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     determineNewJointType(rawPosition: Point, projection: ProjectionResult): NewJointType {
-
         if(!projection.hit){
             return {
                 type: "new",
@@ -586,20 +593,49 @@ function getPreviewCurve(newStartJointType: NewJointType, newEndJointType: NewJo
             }
         }
         case "extendingTrack":
-            // const previewCurveCPs = createInteractiveQuadratic(this._constrainingCurve.curve, this._hoverPosition, this._constrainingCurve.atT);
-            const constraint = newStartJointType.constraint;
-            const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, constraint.tangent, constraint.curvature );
-            // const curPreviewTangent = PointCal.unitVector(previewCurve.derivative(0));
-            // const angleDiff = PointCal.angleFromA2B(constraint.tangent, curPreviewTangent);
-            // const angleDiffRad = normalizeAngleZero2TwoPI(angleDiff);
-            // const jointTangentIsPointingInEmptyDirection = trackGraph.tangentIsPointingInEmptyDirection(constraint.jointNumber);
-            return {
-                cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                startAndEndSwitched: false,
-                shouldToggleEndTangentFlip: false,
-                shouldToggleStartTangentFlip: false,
-            };
+            let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+            startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
+
+            const curvature = newStartJointType.constraint.curvature;
+            if(newEndJointType.type === "extendingTrack"){
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, newEndJointType.constraint.tangent, curvature, newEndJointType.constraint.curvature);
+                return {
+                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+                    startAndEndSwitched: false,
+                    shouldToggleEndTangentFlip: false,
+                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+                };
+            } else {
+                const constraint = newStartJointType.constraint;
+                const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
+                return {
+                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+                    startAndEndSwitched: false,
+                    shouldToggleEndTangentFlip: false,
+                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+                };
+            }
     }
+}
+
+function extendTrackIsPossible(startJointNumber: number, startJointTangent: Point, previewCurveTangentInTheDirectionToOtherJoint: Point, trackGraph: TrackGraph){
+    const emptyTangentDirection = trackGraph.tangentIsPointingInEmptyDirection(startJointNumber) ? startJointTangent : PointCal.multiplyVectorByScalar(startJointTangent, -1);
+
+    if(sameDirection(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint)){
+        return true;
+    }
+
+    return false;
+
+    // const start2EndDirection = PointCal.unitVectorFromA2B(startJointPosition, endPosition);
+
+    // const rawAngleDiff = PointCal.angleFromA2B(emptyTangentDirection, start2EndDirection);
+    // const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
+
+    // if(angleDiff > Math.PI / 2 && angleDiff < 3 * Math.PI / 2){
+    //     console.warn("invalid direction in extendTrackFromJoint");
+    //     return false;
+    // }
 }
 
 function calibrateTangent(rawTangent: Point, curveStartPoint: Point, curveEndPoint: Point): { 

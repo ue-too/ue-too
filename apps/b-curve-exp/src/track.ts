@@ -317,6 +317,21 @@ export class TrackGraph {
         return true;
     }
 
+    createNewEmptyJoint(position: Point, tangent: Point): number {
+        const newJointNumber = this.jointNumberManager.createEntity();
+        const newJoint: TrackJoint = {
+            position,
+            connections: new Map(),
+            tangent,
+            direction: {
+                tangent: new Set<number>(),
+                reverseTangent: new Set<number>()
+            }
+        }
+        this.joints.set(newJointNumber, newJoint);
+        return newJointNumber;
+    }
+
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]): boolean {
         const curve = new BCurve([startJointPosition, ...controlPoints, endJointPosition]);
         const startJointNumber = this.jointNumberManager.createEntity();
