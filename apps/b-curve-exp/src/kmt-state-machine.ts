@@ -2,8 +2,8 @@ import { BCurve } from "@ue-too/curve";
 import { sameDirection, type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
-import { ProjectionCurveResult, ProjectionInfo, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
-import { PointCal, normalizeAngleZero2TwoPI, angleSpan } from "@ue-too/math";
+import { ProjectionCurveResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
+import { PointCal, normalizeAngleZero2TwoPI } from "@ue-too/math";
 
 
 export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT";
@@ -554,10 +554,9 @@ function getPreviewCurve(
     // simplified logic for different combinations of new joint types
     if(newEndJointType.type === "new" && (newStartJointType.type === "new" || (extendAsStraightLine && newStartJointType.type === "extendingTrack"))) { 
         // a straight line
-        console.log('new straight line');
+
         let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.type === "extendingTrack" ? newStartJointType.constraint.tangent : PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position), newStartJointType.position, newEndJointType.position);
         startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
-
 
         const rawEndPositionRelativeToStart = PointCal.subVector(newEndJointType.position, newStartJointType.position);
         const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPositionRelativeToStart)));
@@ -575,7 +574,6 @@ function getPreviewCurve(
         };
     } else if(newStartJointType.type === "new" && newEndJointType.type !== "new") {
         // reversed quadratic curve
-        console.log('new reversed quadratic curve');
 
         let {flipped: tangentCalibrated, tangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
         tangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
@@ -590,7 +588,6 @@ function getPreviewCurve(
 
     } else if(newEndJointType.type === "new" && newStartJointType.type !== "new") {
         // quadratic curve
-        console.log('new quadratic curve');
 
         let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
         tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
@@ -605,7 +602,6 @@ function getPreviewCurve(
         };
     } else if(newStartJointType.type !== "new" && newEndJointType.type !== "new") {
         // cubic curve
-        console.log('new cubic curve');
 
         let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
         tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
