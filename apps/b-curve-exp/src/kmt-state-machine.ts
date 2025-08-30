@@ -165,6 +165,8 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
         },
         "toggleStraightLine": {
             action: (context, event) => {
+                console.log("toggleStraightLine");
+                context.toggleStraightLine();
             },
         }
     };
@@ -383,6 +385,10 @@ export class CurveCreationEngine implements LayoutContext {
         return this._previewEndProjection;
     }
 
+    get newEndJointType(): NewJointType | null {
+        return this._newEndJointType;
+    }
+
     endCurve(): boolean {
         let res = false;
 
@@ -439,9 +445,12 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         if(this._newEndJointType.type === "new"){
-            const endTangent = this._previewCurve.previewStartAndEndSwitched ? 
+            const previewCurveStartAndEndSwitched = this._previewCurve.previewStartAndEndSwitched;
+            const endTangent = previewCurveStartAndEndSwitched ? 
             PointCal.unitVector(this._previewCurve.curve.derivative(0)) : PointCal.unitVector(this._previewCurve.curve.derivative(1));
-            endJointNumber = this._trackGraph.createNewEmptyJoint(this._newEndJointType.position, endTangent);
+            const previewCurveCPs = this._previewCurve.curve.getControlPoints();
+            const endPosition = previewCurveStartAndEndSwitched ? previewCurveCPs[0] : previewCurveCPs[2];
+            endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent);
         } else if (this._newEndJointType.type === "branchCurve"){
             const constraint = this._newEndJointType.constraint;
             const trackSegmentNumber = constraint.curve;
@@ -523,49 +532,6 @@ export class CurveCreationEngine implements LayoutContext {
         }
     }
 
-}
-
-function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT: number = 1) {
-    const branchPoint = existingCurve.get(atT);
-    const curvature = existingCurve.curvature(atT);
-    const tangent = existingCurve.derivative(atT);
-    let unitTangent = PointCal.unitVector(tangent);
-    const mouseDistance = PointCal.distanceBetweenPoints(branchPoint, mousePos);
-
-    const mouseDirection = PointCal.unitVectorFromA2B(branchPoint, mousePos);
-
-    const rawAngleDiff = PointCal.angleFromA2B(unitTangent, mouseDirection);
-    const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
-
-    // NOTE: + or - 90 degrees should reverse the tangent direction
-    if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
-        unitTangent = PointCal.multiplyVectorByScalar(unitTangent, -1);
-    }
-    
-    // Adaptive control distance based on mouse position
-    let controlDistance = Math.min(mouseDistance * 0.5);
-    
-    // Curvature-based adjustment for smoothness
-    const curvatureMagnitude = Math.abs(curvature);
-    if (curvatureMagnitude > 0.015) {
-        controlDistance *= 0.7; // Tighter control for high curvature
-    }
-    
-    // Prevent extreme angles
-    const mouseVector = {
-        x: mousePos.x - branchPoint.x,
-        y: mousePos.y - branchPoint.y
-    };
-
-    
-    return {
-        p0: branchPoint,
-        p1: {
-            x: branchPoint.x + unitTangent.x * controlDistance,
-            y: branchPoint.y + unitTangent.y * controlDistance
-        },
-        p2: mousePos
-    };
 }
 
 function getPreviewCurve(
@@ -672,7 +638,7 @@ function getPreviewCurve(
                     shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
                     shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
                 };
-            } else {
+            } else if(newEndJointType.type === "new"){
                 if(!extendAsStraightLine){
                     const constraint = newStartJointType.constraint;
                     const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
@@ -683,9 +649,27 @@ function getPreviewCurve(
                         shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
                     };
                 } else {
-
-
+                    const rawEndPosition = PointCal.subVector(newEndJointType.position, newStartJointType.position);
+                    const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPosition)));
+                    const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, adjustedEndPosition, startTangent, curvature);
+                    return {
+                        cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+                        startAndEndSwitched: false,
+                        shouldToggleEndTangentFlip: false,
+                        shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+                    };
                 }
+            } else {
+                let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+                const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
+                const endCurvature = newEndJointType.constraint.curvature;
+                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, previewEndTangent, curvature, endCurvature);
+                return {
+                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+                    startAndEndSwitched: false,
+                    shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
+                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+                };
             }
     }
 }
@@ -720,6 +704,81 @@ function calibrateTangent(rawTangent: Point, curveStartPoint: Point, curveEndPoi
     return {
         flipped,
         tangent
+    };
+}
+
+function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
+    const unitStartTangent = PointCal.unitVector(startTangent);
+    const unitEndTangent = PointCal.unitVector(endTangent);
+    
+    const chordVector = PointCal.subVector(endPoint, startPoint);
+    const chordLength = PointCal.magnitude(chordVector);
+    
+    // Base control distances
+    let startControlDistance = chordLength * tension / 3.0;
+    let endControlDistance = chordLength * tension / 3.0;
+    
+    // Adjust based on curvatures
+    const startCurvatureMagnitude = Math.abs(startCurvature);
+    if (startCurvatureMagnitude > 0.001) {
+        const startCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (startCurvatureMagnitude * chordLength + 1.0)));
+        startControlDistance *= startCurvatureScale;
+        
+        if (startCurvatureMagnitude > 0.02) {
+            startControlDistance *= 0.7;
+        }
+    }
+    
+    const endCurvatureMagnitude = Math.abs(endCurvature);
+    if (endCurvatureMagnitude > 0.001) {
+        const endCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (endCurvatureMagnitude * chordLength + 1.0)));
+        endControlDistance *= endCurvatureScale;
+        
+        if (endCurvatureMagnitude > 0.02) {
+            endControlDistance *= 0.7;
+        }
+    }
+    
+    // Calculate initial control points
+    const p1Initial = {
+        x: startPoint.x + unitStartTangent.x * startControlDistance,
+        y: startPoint.y + unitStartTangent.y * startControlDistance
+    };
+    
+    const p2Initial = {
+        x: endPoint.x - unitEndTangent.x * endControlDistance,
+        y: endPoint.y - unitEndTangent.y * endControlDistance
+    };
+    
+    // Apply curvature adjustments
+    const startPerpendicular = {
+        x: -unitStartTangent.y,
+        y: unitStartTangent.x
+    };
+    
+    const endPerpendicular = {
+        x: -unitEndTangent.y,
+        y: unitEndTangent.x
+    };
+    
+    const startCurvatureOffset = startCurvature * chordLength * 0.05;
+    const endCurvatureOffset = endCurvature * chordLength * 0.05;
+    
+    const p1 = {
+        x: p1Initial.x + startPerpendicular.x * startCurvatureOffset,
+        y: p1Initial.y + startPerpendicular.y * startCurvatureOffset
+    };
+    
+    const p2 = {
+        x: p2Initial.x + endPerpendicular.x * endCurvatureOffset,
+        y: p2Initial.y + endPerpendicular.y * endCurvatureOffset
+    };
+    
+    return {
+        p0: startPoint,
+        p1: p1,
+        p2: p2,
+        p3: endPoint
     };
 }
 
@@ -938,77 +997,45 @@ function createG2Cubic(existingCurve: BCurve, targetPoint: Point) {
     return newCubic;
 }
 
-function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
-    const unitStartTangent = PointCal.unitVector(startTangent);
-    const unitEndTangent = PointCal.unitVector(endTangent);
-    
-    const chordVector = PointCal.subVector(endPoint, startPoint);
-    const chordLength = PointCal.magnitude(chordVector);
-    
-    // Base control distances
-    let startControlDistance = chordLength * tension / 3.0;
-    let endControlDistance = chordLength * tension / 3.0;
-    
-    // Adjust based on curvatures
-    const startCurvatureMagnitude = Math.abs(startCurvature);
-    if (startCurvatureMagnitude > 0.001) {
-        const startCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (startCurvatureMagnitude * chordLength + 1.0)));
-        startControlDistance *= startCurvatureScale;
-        
-        if (startCurvatureMagnitude > 0.02) {
-            startControlDistance *= 0.7;
-        }
+function createInteractiveQuadratic(existingCurve: BCurve, mousePos: Point, atT: number = 1) {
+    const branchPoint = existingCurve.get(atT);
+    const curvature = existingCurve.curvature(atT);
+    const tangent = existingCurve.derivative(atT);
+    let unitTangent = PointCal.unitVector(tangent);
+    const mouseDistance = PointCal.distanceBetweenPoints(branchPoint, mousePos);
+
+    const mouseDirection = PointCal.unitVectorFromA2B(branchPoint, mousePos);
+
+    const rawAngleDiff = PointCal.angleFromA2B(unitTangent, mouseDirection);
+    const angleDiff = normalizeAngleZero2TwoPI(rawAngleDiff);
+
+    // NOTE: + or - 90 degrees should reverse the tangent direction
+    if(angleDiff >= Math.PI / 2 && angleDiff <= 3 * Math.PI / 2){
+        unitTangent = PointCal.multiplyVectorByScalar(unitTangent, -1);
     }
     
-    const endCurvatureMagnitude = Math.abs(endCurvature);
-    if (endCurvatureMagnitude > 0.001) {
-        const endCurvatureScale = Math.min(1.5, Math.max(0.3, 1.0 / (endCurvatureMagnitude * chordLength + 1.0)));
-        endControlDistance *= endCurvatureScale;
-        
-        if (endCurvatureMagnitude > 0.02) {
-            endControlDistance *= 0.7;
-        }
+    // Adaptive control distance based on mouse position
+    let controlDistance = Math.min(mouseDistance * 0.5);
+    
+    // Curvature-based adjustment for smoothness
+    const curvatureMagnitude = Math.abs(curvature);
+    if (curvatureMagnitude > 0.015) {
+        controlDistance *= 0.7; // Tighter control for high curvature
     }
     
-    // Calculate initial control points
-    const p1Initial = {
-        x: startPoint.x + unitStartTangent.x * startControlDistance,
-        y: startPoint.y + unitStartTangent.y * startControlDistance
+    // Prevent extreme angles
+    const mouseVector = {
+        x: mousePos.x - branchPoint.x,
+        y: mousePos.y - branchPoint.y
     };
-    
-    const p2Initial = {
-        x: endPoint.x - unitEndTangent.x * endControlDistance,
-        y: endPoint.y - unitEndTangent.y * endControlDistance
-    };
-    
-    // Apply curvature adjustments
-    const startPerpendicular = {
-        x: -unitStartTangent.y,
-        y: unitStartTangent.x
-    };
-    
-    const endPerpendicular = {
-        x: -unitEndTangent.y,
-        y: unitEndTangent.x
-    };
-    
-    const startCurvatureOffset = startCurvature * chordLength * 0.05;
-    const endCurvatureOffset = endCurvature * chordLength * 0.05;
-    
-    const p1 = {
-        x: p1Initial.x + startPerpendicular.x * startCurvatureOffset,
-        y: p1Initial.y + startPerpendicular.y * startCurvatureOffset
-    };
-    
-    const p2 = {
-        x: p2Initial.x + endPerpendicular.x * endCurvatureOffset,
-        y: p2Initial.y + endPerpendicular.y * endCurvatureOffset
-    };
+
     
     return {
-        p0: startPoint,
-        p1: p1,
-        p2: p2,
-        p3: endPoint
+        p0: branchPoint,
+        p1: {
+            x: branchPoint.x + unitTangent.x * controlDistance,
+            y: branchPoint.y + unitTangent.y * controlDistance
+        },
+        p2: mousePos
     };
 }

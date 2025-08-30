@@ -107,6 +107,8 @@ window.addEventListener("keydown", (event)=>{
         stateMachine.happens("flipEndTangent");
     } else if(event.key === "g"){
         stateMachine.happens("flipStartTangent");
+    } else if(event.key === "q"){
+        stateMachine.happens("toggleStraightLine");
     }
 });
 
@@ -261,24 +263,6 @@ function step(timestamp: number){
         board.context.stroke();
     });
 
-    // const offsetCurves = curveEngine.trackGraph.trackSegments.map((trackSegment)=>{
-    //     return offset(trackSegment.curve, 10);
-    // });
-
-    // offsetCurves.forEach((curveGroup)=>{
-    //     curveGroup.forEach((curve)=>{
-    //         const cps = curve.getControlPoints();
-    //         board.context.beginPath();
-    //         board.context.moveTo(cps[0].x, cps[0].y);
-    //         if(cps.length === 3){
-    //             board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    //         } else {
-    //             board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
-    //         }
-    //         board.context.stroke();
-    //     });
-    // })
-
     curveEngine.trackGraph.getJoints().forEach(({joint, jointNumber})=>{
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
@@ -313,6 +297,14 @@ function step(timestamp: number){
         board.context.restore();
     }
 
+    if(curveEngine.newEndJointType != null){
+        board.context.save();
+        board.context.fillStyle = "purple";
+        board.context.beginPath();
+        board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
 
     if(trainPlacementEngine.previewPosition != null){
         board.context.save();
