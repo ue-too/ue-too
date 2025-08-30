@@ -540,7 +540,7 @@ function getPreviewCurve(
     previewStartTangentFlipped: boolean, 
     previewEndTangentFlipped: boolean, 
     extendAsStraightLine: boolean = false,
-    previewCurve: BCurve | null, 
+    previewCurve: BCurve | null,
     trackGraph: TrackGraph,
 ): 
     {
@@ -550,128 +550,207 @@ function getPreviewCurve(
         shouldToggleEndTangentFlip: boolean;
     }
 {
-    switch(newStartJointType.type){
-        case "new":
-            if(newEndJointType.type === "new"){
-                let midPoint = {
-                    x: newStartJointType.position.x + (newEndJointType.position.x - newStartJointType.position.x) / 2,
-                    y: newStartJointType.position.y + (newEndJointType.position.y - newStartJointType.position.y) / 2,
-                };
-                return {
-                    cps: [newStartJointType.position, midPoint, newEndJointType.position],
-                    startAndEndSwitched: false,
-                    shouldToggleStartTangentFlip: false,
-                    shouldToggleEndTangentFlip: false,
-                };
-            } else {
-                let {flipped: tangentCalibrated, tangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
-                tangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
-                const curvature = newEndJointType.constraint.curvature;
-                const previewCurveCPs = createQuadraticFromTangentCurvature(newEndJointType.position, newStartJointType.position, tangent, curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                    startAndEndSwitched: true,
-                    shouldToggleStartTangentFlip: false,
-                    shouldToggleEndTangentFlip: tangentCalibrated && previewEndTangentFlipped,
-                };
-            }
-        case "branchJoint":{
-            let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
-            tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
-            const curvature = newStartJointType.constraint.curvature;
-            if(newEndJointType.type === "new"){
-                // branch to a new joint
-                const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            } else {
-                const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            }
-        }
-        case "branchCurve":{
-            const curvature = newStartJointType.constraint.curvature;
-            let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
-            tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
-            if(newEndJointType.type === "new"){
-                // branch to a new joint
-                const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            } else {
-                const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: false,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            }
-        }
-        case "extendingTrack":
-            let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
-            startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
 
-            const curvature = newStartJointType.constraint.curvature;
-            if(newEndJointType.type === "extendingTrack"){
-                let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
-                endTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, endTangent, curvature, newEndJointType.constraint.curvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            } else if(newEndJointType.type === "new"){
-                if(!extendAsStraightLine){
-                    const constraint = newStartJointType.constraint;
-                    const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
-                    return {
-                        cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                        startAndEndSwitched: false,
-                        shouldToggleEndTangentFlip: false,
-                        shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                    };
-                } else {
-                    const rawEndPosition = PointCal.subVector(newEndJointType.position, newStartJointType.position);
-                    const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPosition)));
-                    const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, adjustedEndPosition, startTangent, curvature);
-                    return {
-                        cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
-                        startAndEndSwitched: false,
-                        shouldToggleEndTangentFlip: false,
-                        shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                    };
-                }
-            } else {
-                let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
-                const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
-                const endCurvature = newEndJointType.constraint.curvature;
-                const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, previewEndTangent, curvature, endCurvature);
-                return {
-                    cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
-                    startAndEndSwitched: false,
-                    shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
-                    shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
-                };
-            }
+    // simplified logic for different combinations of new joint types
+    if(newEndJointType.type === "new" && (newStartJointType.type === "new" || (extendAsStraightLine && newStartJointType.type === "extendingTrack"))) { 
+        // a straight line
+        console.log('new straight line');
+        let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.type === "extendingTrack" ? newStartJointType.constraint.tangent : PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position), newStartJointType.position, newEndJointType.position);
+        startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
+
+
+        const rawEndPositionRelativeToStart = PointCal.subVector(newEndJointType.position, newStartJointType.position);
+        const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPositionRelativeToStart)));
+
+        const midPoint = {
+            x: newStartJointType.position.x + (adjustedEndPosition.x - newStartJointType.position.x) / 2,
+            y: newStartJointType.position.y + (adjustedEndPosition.y - newStartJointType.position.y) / 2,
+        }
+
+        return {
+            cps: [newStartJointType.position, midPoint, adjustedEndPosition],
+            startAndEndSwitched: false,
+            shouldToggleEndTangentFlip: false,
+            shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+        };
+    } else if(newStartJointType.type === "new" && newEndJointType.type !== "new") {
+        // reversed quadratic curve
+        console.log('new reversed quadratic curve');
+
+        let {flipped: tangentCalibrated, tangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+        tangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+        const curvature = newEndJointType.constraint.curvature;
+        const previewCurveCPs = createQuadraticFromTangentCurvature(newEndJointType.position, newStartJointType.position, tangent, curvature);
+        return {
+            cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+            startAndEndSwitched: true,
+            shouldToggleStartTangentFlip: false,
+            shouldToggleEndTangentFlip: tangentCalibrated && previewEndTangentFlipped,
+        };
+
+    } else if(newEndJointType.type === "new" && newStartJointType.type !== "new") {
+        // quadratic curve
+        console.log('new quadratic curve');
+
+        let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+        tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+        const curvature = newStartJointType.constraint.curvature;
+        // branch to a new joint
+        const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
+        return {
+            cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+            startAndEndSwitched: false,
+            shouldToggleEndTangentFlip: false,
+            shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+        };
+    } else if(newStartJointType.type !== "new" && newEndJointType.type !== "new") {
+        // cubic curve
+        console.log('new cubic curve');
+
+        let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+        tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+        const curvature = newStartJointType.constraint.curvature;
+        let endTangentCalibrated = false;
+        let endTangent = newEndJointType.constraint.tangent;
+
+        if(newEndJointType.type === "extendingTrack"){
+            let {flipped, tangent } = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+            endTangent = tangent;
+            endTangentCalibrated = flipped;
+        }
+
+        const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
+        const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
+        return {
+            cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+            startAndEndSwitched: false,
+            shouldToggleEndTangentFlip: false,
+            shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+        };
     }
+
+    // switch(newStartJointType.type){
+    //     case "new":
+    //         if(newEndJointType.type === "new"){
+    //             let midPoint = {
+    //                 x: newStartJointType.position.x + (newEndJointType.position.x - newStartJointType.position.x) / 2,
+    //                 y: newStartJointType.position.y + (newEndJointType.position.y - newStartJointType.position.y) / 2,
+    //             };
+    //             return {
+    //                 cps: [newStartJointType.position, midPoint, newEndJointType.position],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleStartTangentFlip: false,
+    //                 shouldToggleEndTangentFlip: false,
+    //             };
+    //         } else {
+    //             let {flipped: tangentCalibrated, tangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+    //             tangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+    //             const curvature = newEndJointType.constraint.curvature;
+    //             const previewCurveCPs = createQuadraticFromTangentCurvature(newEndJointType.position, newStartJointType.position, tangent, curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+    //                 startAndEndSwitched: true,
+    //                 shouldToggleStartTangentFlip: false,
+    //                 shouldToggleEndTangentFlip: tangentCalibrated && previewEndTangentFlipped,
+    //             };
+    //         }
+    //     case "branchJoint":{
+    //         let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+    //         tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+    //         const curvature = newStartJointType.constraint.curvature;
+    //         if(newEndJointType.type === "new"){
+    //             // branch to a new joint
+    //             const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: false,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         } else {
+    //             const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
+    //             const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: false,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         }
+    //     }
+    //     case "branchCurve":{
+    //         const curvature = newStartJointType.constraint.curvature;
+    //         let {flipped: tangentCalibrated, tangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+    //         tangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(tangent, -1) : tangent;
+    //         if(newEndJointType.type === "new"){
+    //             // branch to a new joint
+    //             const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, newEndJointType.position, tangent, curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: false,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         } else {
+    //             const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(newEndJointType.constraint.tangent, -1) : newEndJointType.constraint.tangent;
+    //             const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, tangent, previewEndTangent, curvature, newEndJointType.constraint.curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: false,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         }
+    //     }
+    //     case "extendingTrack":
+    //         let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.constraint.tangent, newStartJointType.position, newEndJointType.position);
+    //         startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
+
+    //         const curvature = newStartJointType.constraint.curvature;
+    //         if(newEndJointType.type === "extendingTrack"){
+    //             let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+    //             endTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
+    //             const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, endTangent, curvature, newEndJointType.constraint.curvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         } else if(newEndJointType.type === "new"){
+    //             if(!extendAsStraightLine){
+    //                 const constraint = newStartJointType.constraint;
+    //                 const previewCurveCPs = createQuadraticFromTangentCurvature(constraint.projectionPoint, newEndJointType.position, startTangent, curvature);
+    //                 return {
+    //                     cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+    //                     startAndEndSwitched: false,
+    //                     shouldToggleEndTangentFlip: false,
+    //                     shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //                 };
+    //             } else {
+    //                 const rawEndPosition = PointCal.subVector(newEndJointType.position, newStartJointType.position);
+    //                 const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPosition)));
+    //                 const previewCurveCPs = createQuadraticFromTangentCurvature(newStartJointType.position, adjustedEndPosition, startTangent, curvature);
+    //                 return {
+    //                     cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
+    //                     startAndEndSwitched: false,
+    //                     shouldToggleEndTangentFlip: false,
+    //                     shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //                 };
+    //             }
+    //         } else {
+    //             let {flipped: endTangentCalibrated, tangent: endTangent} = calibrateTangent(newEndJointType.constraint.tangent, newEndJointType.position, newStartJointType.position);
+    //             const previewEndTangent = previewEndTangentFlipped ? PointCal.multiplyVectorByScalar(endTangent, -1) : endTangent;
+    //             const endCurvature = newEndJointType.constraint.curvature;
+    //             const previewCurveCPs = createCubicFromTangentsCurvatures(newStartJointType.position, newEndJointType.position, startTangent, previewEndTangent, curvature, endCurvature);
+    //             return {
+    //                 cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2, previewCurveCPs.p3],
+    //                 startAndEndSwitched: false,
+    //                 shouldToggleEndTangentFlip: endTangentCalibrated && previewEndTangentFlipped,
+    //                 shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
+    //             };
+    //         }
+    // }
 }
 
 function extendTrackIsPossible(startJointNumber: number, startJointTangent: Point, previewCurveTangentInTheDirectionToOtherJoint: Point, trackGraph: TrackGraph){
