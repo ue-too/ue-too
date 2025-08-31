@@ -31,7 +31,7 @@ export type LayoutEvents = {
 
 export interface LayoutContext extends BaseContext {
     startCurve: () => void;
-    endCurve: (endingPosition: Point) => boolean;
+    endCurve: () => Point | null;
     cancelCurrentCurve: () => void;
     hoveringForEndJoint: (position: Point) => void;
     hoverForStartingPoint: (position: Point) => void;
@@ -101,20 +101,6 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
         }
     };
 
-    protected _guards: Guard<LayoutContext, string> = {
-        "hasProjection": (context: LayoutContext) => {
-            // NOTE: is in the middle instead of the end points
-            return context.newStartJointType != null && context.newStartJointType.type === "branchCurve";
-        }
-    }
-
-    protected _eventGuards: Partial<EventGuards<LayoutEvents, LayoutStates, LayoutContext, typeof this._guards>> = {
-        // "pointerup": [{
-        //     guard: "hasProjection",
-        //     target: "HOVER_FOR_STARTING_POINT",
-        // }],
-    };
-
     get eventReactions() {
         return this._eventReactions;
     }
@@ -128,9 +114,13 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
     
     _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
-            action: (context, event) => {
-                const res = context.endCurve(event.position);
-                context.hoverForStartingPoint(event.position);
+            action: (context, event, stateMachine) => {
+                const res = context.endCurve();
+                if(res == null) {
+                    stateMachine.happens("endLayout");
+                    return;
+                }
+                context.hoverForStartingPoint(res);
                 context.startCurve();
             },
             defaultTargetState: "HOVER_FOR_ENDING_POINT",
@@ -242,13 +232,7 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     startCurve() {
-        // if(this._newStartJointType != null && this._newStartJointType.type === "branchCurve"){
-        //     const constraint = this._newStartJointType.constraint;
-        //     this._trackGraph.insertJointIntoTrackSegment(constraint.t0Joint, constraint.t1Joint, constraint.atT);
-        //     this._trackGraph.logJoints();
-        //     this._trackGraph.logTrackSegments();
-        //     console.log("branching out from track segment", constraint.curve);
-        // }
+        // this.cancelCurrentCurve();
     }
 
     hoverForStartingPoint(position: Point) {
@@ -389,12 +373,13 @@ export class CurveCreationEngine implements LayoutContext {
         return this._newEndJointType;
     }
 
-    endCurve(): boolean {
-        let res = false;
+    endCurve(): Point | null {
+        
+        let res: Point | null = null;
 
         if(this._newStartJointType === null || this._previewCurve === null || this._newEndJointType === null) {
             this.cancelCurrentCurve();
-            return false;
+            return null;
         }
 
         const cps = this._previewCurve.curve.getControlPoints().slice(1, -1);
@@ -415,7 +400,7 @@ export class CurveCreationEngine implements LayoutContext {
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangent, this._trackGraph)){
                 console.warn('extend track not possible for start joint');
                 this.cancelCurrentCurve();
-                return false;
+                return null;
             }
         }
 
@@ -427,7 +412,7 @@ export class CurveCreationEngine implements LayoutContext {
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangentInTheDirectionToOtherJoint, this._trackGraph)){
                 console.warn('extend track not possible for end joint');
                 this.cancelCurrentCurve();
-                return false;
+                return null;
             }
         }
         // END OF VALIDATION PIPELINE
@@ -450,22 +435,26 @@ export class CurveCreationEngine implements LayoutContext {
             PointCal.unitVector(this._previewCurve.curve.derivative(0)) : PointCal.unitVector(this._previewCurve.curve.derivative(1));
             const previewCurveCPs = this._previewCurve.curve.getControlPoints();
             const endPosition = previewCurveStartAndEndSwitched ? previewCurveCPs[0] : previewCurveCPs[2];
+            res = endPosition;
             endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent);
         } else if (this._newEndJointType.type === "branchCurve"){
             const constraint = this._newEndJointType.constraint;
             const trackSegmentNumber = constraint.curve;
+            res = constraint.projectionPoint;
             endJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber, constraint.atT);
         }else {
+            res = this._newEndJointType.position;
             endJointNumber = this._newEndJointType.constraint.jointNumber;
         }
 
         if(startJointNumber === null || endJointNumber === null){
             this.cancelCurrentCurve();
-            return false;
+            return null;
         }
 
-        res = this._trackGraph.connectJoints(startJointNumber, endJointNumber, cps);
+        this._trackGraph.connectJoints(startJointNumber, endJointNumber, cps);
         this._trackGraph.logJoints();
+        this.cancelCurrentCurve();
 
         return res;
     }
@@ -552,11 +541,13 @@ function getPreviewCurve(
 {
 
     // simplified logic for different combinations of new joint types
-    if(newEndJointType.type === "new" && (newStartJointType.type === "new" || (extendAsStraightLine && newStartJointType.type === "extendingTrack"))) { 
+    if(newEndJointType.type === "new" && (newStartJointType.type === "new" || extendAsStraightLine)) { 
         // a straight line
 
-        let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.type === "extendingTrack" ? newStartJointType.constraint.tangent : PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position), newStartJointType.position, newEndJointType.position);
+        let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.type !== "new" ? newStartJointType.constraint.tangent : PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position), newStartJointType.position, newEndJointType.position);
         startTangent = previewStartTangentFlipped ? PointCal.multiplyVectorByScalar(startTangent, -1) : startTangent;
+
+        startTangent = PointCal.unitVector(startTangent);
 
         const rawEndPositionRelativeToStart = PointCal.subVector(newEndJointType.position, newStartJointType.position);
         const adjustedEndPosition = PointCal.addVector(newStartJointType.position, PointCal.multiplyVectorByScalar(startTangent, PointCal.dotProduct(startTangent, rawEndPositionRelativeToStart)));
@@ -623,6 +614,8 @@ function getPreviewCurve(
             shouldToggleEndTangentFlip: false,
             shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
         };
+    } else {
+        newStartJointType.type
     }
 }
 
