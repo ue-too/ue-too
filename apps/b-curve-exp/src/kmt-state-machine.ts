@@ -208,8 +208,8 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _trackGraph: TrackGraph;
 
-    private _newStartJointType: NewJointType | null = null;
-    private _newEndJointType: NewJointType | null = null;
+    private _newStartJoint: NewJointType | null = null;
+    private _newEndJoint: NewJointType | null = null;
 
     private _previewStartProjection: ProjectionPositiveResult | null = null;
     private _previewEndProjection: ProjectionPositiveResult | null = null;
@@ -228,7 +228,7 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     get newStartJointType(): NewJointType | null {
-        return this._newStartJointType;
+        return this._newStartJoint;
     }
 
     startCurve() {
@@ -237,7 +237,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     hoverForStartingPoint(position: Point) {
         const res = this._trackGraph.project(position);
-        this._newStartJointType = this.determineNewJointType(position, res);
+        this._newStartJoint = this.determineNewJointType(position, res);
         if(res.hit){
             this._previewStartProjection = res;
         } else {
@@ -248,8 +248,8 @@ export class CurveCreationEngine implements LayoutContext {
     flipStartTangent() {
         this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
         const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJointType, 
-            this._newEndJointType, 
+            this._newStartJoint, 
+            this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
@@ -270,8 +270,8 @@ export class CurveCreationEngine implements LayoutContext {
     flipEndTangent() {
         this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
         const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJointType, 
-            this._newEndJointType, 
+            this._newStartJoint, 
+            this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
@@ -292,8 +292,8 @@ export class CurveCreationEngine implements LayoutContext {
     toggleStraightLine() {
         this._extendAsStraightLine = !this._extendAsStraightLine;
         const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJointType, 
-            this._newEndJointType, 
+            this._newStartJoint, 
+            this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
@@ -312,12 +312,12 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     hoveringForEndJoint(position: Point) {
-        if(this._newStartJointType == null) {
+        if(this._newStartJoint == null) {
             return;
         }
 
         const res = this._trackGraph.project(position);
-        this._newEndJointType = this.determineNewJointType(position, res);
+        this._newEndJoint = this.determineNewJointType(position, res);
 
         if(res.hit){
             this._previewEndProjection = res;
@@ -326,8 +326,8 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJointType, 
-            this._newEndJointType, 
+            this._newStartJoint, 
+            this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
@@ -370,14 +370,14 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     get newEndJointType(): NewJointType | null {
-        return this._newEndJointType;
+        return this._newEndJoint;
     }
 
     endCurve(): Point | null {
         
         let res: Point | null = null;
 
-        if(this._newStartJointType === null || this._previewCurve === null || this._newEndJointType === null) {
+        if(this._newStartJoint === null || this._previewCurve === null || this._newEndJoint === null) {
             this.cancelCurrentCurve();
             return null;
         }
@@ -388,9 +388,9 @@ export class CurveCreationEngine implements LayoutContext {
         let endJointNumber: number | null = null;
 
         // TODO maybe turn this into a validation pipeline function and add other edge cases?
-        if(this._newStartJointType.type === "extendingTrack"){
-            const startJointNumber = this._newStartJointType.constraint.jointNumber;
-            const startJointTangent = this._newStartJointType.constraint.tangent;
+        if(this._newStartJoint.type === "extendingTrack"){
+            const startJointNumber = this._newStartJoint.constraint.jointNumber;
+            const startJointTangent = this._newStartJoint.constraint.tangent;
             const previewCurveTangent = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(1) : this._previewCurve.curve.derivative(0);
             if(this._previewCurve.previewStartAndEndSwitched){
                 console.log("start and end point switched in preview curve")
@@ -404,10 +404,10 @@ export class CurveCreationEngine implements LayoutContext {
             }
         }
 
-        if(this._newEndJointType.type === "extendingTrack"){
+        if(this._newEndJoint.type === "extendingTrack"){
             console.log('checking extend track possible for end joint');
-            const startJointNumber = this._newEndJointType.constraint.jointNumber;
-            const startJointTangent = this._newEndJointType.constraint.tangent;
+            const startJointNumber = this._newEndJoint.constraint.jointNumber;
+            const startJointTangent = this._newEndJoint.constraint.tangent;
             const previewCurveTangentInTheDirectionToOtherJoint = this._previewCurve.previewStartAndEndSwitched ? this._previewCurve.curve.derivative(0) : PointCal.multiplyVectorByScalar(this._previewCurve.curve.derivative(1), -1);
             if(!extendTrackIsPossible(startJointNumber, startJointTangent, previewCurveTangentInTheDirectionToOtherJoint, this._trackGraph)){
                 console.warn('extend track not possible for end joint');
@@ -417,19 +417,19 @@ export class CurveCreationEngine implements LayoutContext {
         }
         // END OF VALIDATION PIPELINE
 
-        if(this._newStartJointType.type === "new"){
+        if(this._newStartJoint.type === "new"){
             const startTangent = this._previewCurve.previewStartAndEndSwitched ? 
             PointCal.unitVector(this._previewCurve.curve.derivative(1)) : PointCal.unitVector(this._previewCurve.curve.derivative(0));
-            startJointNumber = this._trackGraph.createNewEmptyJoint(this._newStartJointType.position, startTangent);
-        } else if(this._newStartJointType.type === "branchCurve"){
-            const constraint = this._newStartJointType.constraint;
+            startJointNumber = this._trackGraph.createNewEmptyJoint(this._newStartJoint.position, startTangent);
+        } else if(this._newStartJoint.type === "branchCurve"){
+            const constraint = this._newStartJoint.constraint;
             const trackSegmentNumber = constraint.curve;
             startJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber, constraint.atT);
         }else {
-            startJointNumber = this._newStartJointType.constraint.jointNumber;
+            startJointNumber = this._newStartJoint.constraint.jointNumber;
         }
 
-        if(this._newEndJointType.type === "new"){
+        if(this._newEndJoint.type === "new"){
             const previewCurveStartAndEndSwitched = this._previewCurve.previewStartAndEndSwitched;
             const endTangent = previewCurveStartAndEndSwitched ? 
             PointCal.unitVector(this._previewCurve.curve.derivative(0)) : PointCal.unitVector(this._previewCurve.curve.derivative(1));
@@ -437,14 +437,14 @@ export class CurveCreationEngine implements LayoutContext {
             const endPosition = previewCurveStartAndEndSwitched ? previewCurveCPs[0] : previewCurveCPs[2];
             res = endPosition;
             endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent);
-        } else if (this._newEndJointType.type === "branchCurve"){
-            const constraint = this._newEndJointType.constraint;
+        } else if (this._newEndJoint.type === "branchCurve"){
+            const constraint = this._newEndJoint.constraint;
             const trackSegmentNumber = constraint.curve;
             res = constraint.projectionPoint;
             endJointNumber = this._trackGraph.insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber, constraint.atT);
         }else {
-            res = this._newEndJointType.position;
-            endJointNumber = this._newEndJointType.constraint.jointNumber;
+            res = this._newEndJoint.position;
+            endJointNumber = this._newEndJoint.constraint.jointNumber;
         }
 
         if(startJointNumber === null || endJointNumber === null){
@@ -468,8 +468,8 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewStartProjection = null;
         this._previewEndProjection = null;
         this._previewCurve = null;
-        this._newStartJointType = null;
-        this._newEndJointType = null;
+        this._newStartJoint = null;
+        this._newEndJoint = null;
         this._previewStartTangentFlipped = false;
         this._previewEndTangentFlipped = false;
         this._extendAsStraightLine = false;
