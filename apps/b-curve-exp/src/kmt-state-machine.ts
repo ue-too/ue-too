@@ -520,8 +520,9 @@ export class CurveCreationEngine implements LayoutContext {
                 }
         }
     }
-
 }
+
+
 
 function getPreviewCurve(
     newStartJointType: NewJointType, 
@@ -541,7 +542,7 @@ function getPreviewCurve(
 {
 
     // simplified logic for different combinations of new joint types
-    if(newEndJointType.type === "new" && (newStartJointType.type === "new" || extendAsStraightLine)) { 
+    if(newEndJointType.type === "new" && (newStartJointType.type === "new" || extendAsStraightLine)) {
         // a straight line
 
         let {flipped: tangentCalibrated, tangent: startTangent} = calibrateTangent(newStartJointType.type !== "new" ? newStartJointType.constraint.tangent : PointCal.unitVectorFromA2B(newStartJointType.position, newEndJointType.position), newStartJointType.position, newEndJointType.position);
