@@ -266,6 +266,38 @@ export class TrackGraph {
         return this._trackCurveManager.trackOffsets;
     }
 
+    removeTrackSegment(trackSegmentNumber: number): void {
+        const segment = this._trackCurveManager.getTrackSegmentWithJoints(trackSegmentNumber);
+        if(segment === null){
+            console.warn("segment not found");
+            return;
+        }
+
+        const t0Joint = this.joints.get(segment.t0Joint);
+        const t1Joint = this.joints.get(segment.t1Joint);
+
+        if(t0Joint === undefined || t1Joint === undefined){
+            console.warn("t0Joint or t1Joint not found");
+            return;
+        }
+
+        t0Joint.connections.delete(segment.t1Joint);
+        t1Joint.connections.delete(segment.t0Joint);
+
+        t0Joint.direction.tangent.delete(segment.t1Joint);
+        t0Joint.direction.reverseTangent.delete(segment.t1Joint);
+        t1Joint.direction.tangent.delete(segment.t0Joint);
+        t1Joint.direction.reverseTangent.delete(segment.t0Joint);
+
+        if(t0Joint.connections.size === 0){
+            this.joints.delete(segment.t0Joint);
+        }
+
+        if(t1Joint.connections.size === 0){
+            this.joints.delete(segment.t1Joint);
+        }
+    }
+
     branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
         const startJoint = this.joints.get(startJointNumber);
 
