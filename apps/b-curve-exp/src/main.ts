@@ -8,6 +8,7 @@ import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-st
 const utilButton = document.getElementById("util") as HTMLButtonElement;
 
 const layoutToggleButton = document.getElementById("layout-toggle") as HTMLButtonElement;
+const layoutDeleteToggleButton = document.getElementById("layout-delete-toggle") as HTMLButtonElement;
 
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
@@ -47,16 +48,47 @@ const curve = new BCurve(controlPoints);
 const curveEngine = new CurveCreationEngine();
 const stateMachine = createLayoutStateMachine(curveEngine);
 
+stateMachine.onStateChange((currentState, nextState)=>{
+    switch(nextState){
+        case "HOVER_FOR_CURVE_DELETION":
+            layoutToggleButton.textContent = "Start Layout";
+            layoutToggleButton.disabled = true;
+            layoutDeleteToggleButton.textContent = "End Layout Deletion";
+            layoutDeleteToggleButton.disabled = false;
+            break;
+        case "HOVER_FOR_STARTING_POINT":
+            layoutDeleteToggleButton.textContent = "Start Layout Deletion";
+            layoutDeleteToggleButton.disabled = true;
+            layoutToggleButton.textContent = "End Layout";
+            layoutToggleButton.disabled = false;
+            break;
+        case "IDLE":
+            layoutDeleteToggleButton.textContent = "Start Layout Deletion";
+            layoutDeleteToggleButton.disabled = false;
+            layoutToggleButton.textContent = "Start Layout";
+            layoutToggleButton.disabled = false;
+            break;
+        default:
+            break;
+    }
+});
+
+layoutDeleteToggleButton.addEventListener("click", ()=>{
+    if(layoutDeleteToggleButton.textContent === "Start Layout Deletion"){
+        stateMachine.happens("startDeletion");
+    } else {
+        stateMachine.happens("endDeletion");
+    }
+});
+
+
 const trainPlacementToggleButton = document.getElementById("train-placement-toggle") as HTMLButtonElement;
 const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
-
-
 // Cache for track segment offset curves to avoid recalculating every frame
 const trackOffsetCache = new Map<number, BCurve[]>();
 let trackCacheVersion = 0;
-
 
 canvas.addEventListener("pointerdown", (event) => {
     if(event.button !== 0){
@@ -251,8 +283,42 @@ function step(timestamp: number){
         board.context.restore();
     });
 
-    curveEngine.trackGraph.trackOffsets.forEach((curve)=>{
-        const cps = curve.getControlPoints();
+    // offset as bezier curve
+    // curveEngine.trackGraph.trackOffsets.forEach((curve)=>{
+    //     const cps = curve.getControlPoints();
+    //     board.context.beginPath();
+    //     board.context.moveTo(cps[0].x, cps[0].y);
+    //     if(cps.length === 3){
+    //         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+    //     } else {
+    //         board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+    //     }
+    //     board.context.stroke();
+    // });
+
+    // offset as line segments
+    board.context.save();
+    curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
+        board.context.beginPath();
+        board.context.moveTo(offset.positive[0].x, offset.positive[0].y);
+        for(let i = 1; i < offset.positive.length; i++){
+            board.context.lineTo(offset.positive[i].x, offset.positive[i].y);
+        }
+        board.context.stroke();
+        board.context.beginPath();
+        board.context.moveTo(offset.negative[0].x, offset.negative[0].y);
+        for(let i = 1; i < offset.negative.length; i++){
+            board.context.lineTo(offset.negative[i].x, offset.negative[i].y);
+        }
+        board.context.stroke();
+    });
+    board.context.restore();
+
+    if(curveEngine.previewCurveForDeletion !== null){
+        const cps = curveEngine.previewCurveForDeletion.getControlPoints();
+        board.context.save();
+        board.context.lineWidth = 10 / board.camera.zoomLevel;
+        board.context.strokeStyle = "rgba(255, 0, 0, 0.5)";
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -261,7 +327,8 @@ function step(timestamp: number){
             board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
         }
         board.context.stroke();
-    });
+        board.context.restore();
+    }
 
     curveEngine.trackGraph.getJoints().forEach(({joint, jointNumber})=>{
         board.context.save();

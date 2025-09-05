@@ -1,7 +1,6 @@
-import { BCurve, offset } from "@ue-too/curve";
+import { BCurve, offset, offset2 } from "@ue-too/curve";
 import { normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
 import { NumberManager } from "./utils";
-import { Bezier } from "bezier-js";
 
 export type TrackSegment = {
     t0Joint: number;
@@ -268,6 +267,8 @@ export class TrackGraph {
 
     removeTrackSegment(trackSegmentNumber: number): void {
         const segment = this._trackCurveManager.getTrackSegmentWithJoints(trackSegmentNumber);
+
+        console.log('segment', segment);
         if(segment === null){
             console.warn("segment not found");
             return;
@@ -280,6 +281,17 @@ export class TrackGraph {
             console.warn("t0Joint or t1Joint not found");
             return;
         }
+
+        if((t0Joint.direction.tangent.has(segment.t1Joint) && t0Joint.direction.tangent.size === 1 && t0Joint.direction.reverseTangent.size > 1) || (t0Joint.direction.reverseTangent.has(segment.t1Joint) && t0Joint.direction.reverseTangent.size === 1 && t0Joint.direction.tangent.size > 1)){
+            console.warn("t1Joint is the sole connection of the t0Joint in the direction of t0Joint; cannot delete");
+            return;
+        }
+        if((t1Joint.direction.tangent.has(segment.t0Joint) && t1Joint.direction.tangent.size === 1 && t1Joint.direction.reverseTangent.size > 1) || (t1Joint.direction.reverseTangent.has(segment.t0Joint) && t1Joint.direction.reverseTangent.size === 1 && t1Joint.direction.tangent.size > 1)){
+            console.warn("t0Joint is the sole connection of the t1Joint in the direction of t1Joint; cannot delete");
+            return;
+        }
+
+        this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
         t0Joint.connections.delete(segment.t1Joint);
         t1Joint.connections.delete(segment.t0Joint);
@@ -584,30 +596,6 @@ export class TrackGraph {
         return segment.curve.curvature(tVal);
     }
 
-    pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
-        let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
-        let minDistance:number = 10;
-
-        for(const [jointNumber, joint] of this.joints.entries()){
-            const distance = PointCal.distanceBetweenPoints(position, joint.position);
-            if(distance < minDistance){
-                minDistance = distance;
-                const curveNumber: number = joint.connections.values().next().value;
-                const curve = this._trackCurveManager.getTrackSegmentWithJoints(curveNumber);
-                if(curve === null){
-                    continue;
-                }
-                const tVal = curve.t0Joint === jointNumber ? 0 : 1;
-                const curvature = curve.curve.curvature(tVal);
-                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent, position: joint.position, curvature: curvature};
-            }
-        }
-        if(closestJoint !== null){
-            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, position: closestJoint.position, curvature: closestJoint.curvature};
-        }
-        return null;
-    }
-
     tangentIsPointingInEmptyDirection(jointNumber: number): boolean {
         const joint = this.joints.get(jointNumber);
         if(joint === undefined){
@@ -668,6 +656,30 @@ export class TrackGraph {
             }
         });
         return projectionInfo;
+    }
+
+    pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
+        let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
+        let minDistance:number = 10;
+
+        for(const [jointNumber, joint] of this.joints.entries()){
+            const distance = PointCal.distanceBetweenPoints(position, joint.position);
+            if(distance < minDistance){
+                minDistance = distance;
+                const curveNumber: number = joint.connections.values().next().value;
+                const curve = this._trackCurveManager.getTrackSegmentWithJoints(curveNumber);
+                if(curve === null){
+                    continue;
+                }
+                const tVal = curve.t0Joint === jointNumber ? 0 : 1;
+                const curvature = curve.curve.curvature(tVal);
+                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent, position: joint.position, curvature: curvature};
+            }
+        }
+        if(closestJoint !== null){
+            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, position: closestJoint.position, curvature: closestJoint.curvature};
+        }
+        return null;
     }
 
     getTrackSegmentCurve(curveNumber: number): BCurve | null {
@@ -734,6 +746,10 @@ export class TrackGraph {
         }
         return length;
     }
+
+    get experimentTrackOffsets(): {positive: Point[], negative: Point[]}[] {
+        return this._trackCurveManager.experimentTrackOffsets;
+    }
 }
 
 
@@ -745,6 +761,8 @@ export class TrackCurveManager {
     private _livingEntityCount = 0;
     private _trackSegmentsWithJoints: (TrackSegment | null)[] = [];
     private _trackOffset: (BCurve[] | null)[] = [];
+
+    private _experimentTrackOffsets: ({positive: Point[], negative: Point[]} | null)[] = [];
 
     constructor(initialCount: number) {
         this._maxEntities = initialCount;
@@ -766,7 +784,7 @@ export class TrackCurveManager {
     }
 
     getTrackSegmentWithJoints(entity: number): {curve: BCurve, t0Joint: number, t1Joint: number} | null {
-        if(entity < 0 || entity >= this._trackSegmentsWithJoints.length){
+        if(entity < 0 || entity >= this._trackSegmentsWithJoints.length || this._trackSegmentsWithJoints[entity] == undefined){
             console.log("not exist");
             return null;
         }
@@ -776,12 +794,12 @@ export class TrackCurveManager {
     createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, gauge: number = 10): number {
         const entity = this.createCurve();
         this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
-        const experiment = new Bezier(curve.getControlPoints());
-        experiment.offset(gauge / 2);
-        experiment.offset(-gauge / 2);
         const positiveOffsets = offset(curve, gauge / 2);
         const negativeOffsets = offset(curve, -gauge / 2);
+        const experimentPositiveOffsets = offset2(curve, gauge / 2);
+        const experimentNegativeOffsets = offset2(curve, -gauge / 2);
         this._trackOffset[entity] = [...positiveOffsets, ...negativeOffsets];
+        this._experimentTrackOffsets[entity] = {positive: experimentPositiveOffsets, negative: experimentNegativeOffsets};
         return entity;
     }
 
@@ -812,6 +830,8 @@ export class TrackCurveManager {
         this._livingEntityCount--;
         this._trackSegmentsWithJoints[curveNumber] = null;
         this._trackOffset[curveNumber] = null;
+
+        this._experimentTrackOffsets[curveNumber] = null;
     }
 
     get livingEntities(): number[] {
@@ -820,5 +840,9 @@ export class TrackCurveManager {
 
     get trackOffsets(): BCurve[] {
         return this._trackOffset.filter((offset) => offset !== null).flat();
+    }
+
+    get experimentTrackOffsets(): {positive: Point[], negative: Point[]}[] {
+        return this._experimentTrackOffsets.filter((offset) => offset !== null);
     }
 }

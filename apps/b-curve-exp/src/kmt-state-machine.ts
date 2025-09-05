@@ -6,7 +6,7 @@ import { ProjectionCurveResult, ProjectionJointResult, ProjectionPositiveResult,
 import { PointCal, normalizeAngleZero2TwoPI } from "@ue-too/math";
 
 
-export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT";
+export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT" | "HOVER_FOR_CURVE_DELETION";
 
 export type LayoutEvents = {
     "pointerdown": {
@@ -27,6 +27,8 @@ export type LayoutEvents = {
     "flipEndTangent": {};
     "flipStartTangent": {};
     "toggleStraightLine": {};
+    "startDeletion": {};
+    "endDeletion": {};
 }
 
 export interface LayoutContext extends BaseContext {
@@ -39,8 +41,12 @@ export interface LayoutContext extends BaseContext {
     flipEndTangent: () => void;
     flipStartTangent: () => void;
     toggleStraightLine: () => void;
+    hoverForCurveDeletion: (position: Point) => void;
+    deleteCurrentCurve: () => void;
+    cancelCurrentDeletion: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
+    lastCurveSuccess: boolean;
 }
 
 class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -53,6 +59,10 @@ class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutS
         "startLayout": {
             action: NO_OP,
             defaultTargetState: "HOVER_FOR_STARTING_POINT",
+        },
+        "startDeletion": {
+            action: NO_OP,
+            defaultTargetState: "HOVER_FOR_CURVE_DELETION",
         }
     };
 
@@ -60,6 +70,38 @@ class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutS
         return this._eventReactions;
     }
 
+}
+
+class LayoutHoverForCurveDeletionState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
+    constructor() {
+        super();
+    }
+
+    _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
+        "pointermove": {
+            action: (context, event) => {
+                context.hoverForCurveDeletion(event.position);
+            }
+        },
+        "pointerup": {
+            action: (context, event) => {
+                // context.deleteCurrentCurve();
+                context.deleteCurrentCurve();
+            },
+            defaultTargetState: "HOVER_FOR_CURVE_DELETION",
+        },
+        "endDeletion": {
+            action: (context, event) => {
+                context.cancelCurrentDeletion();
+            },
+            defaultTargetState: "IDLE",
+        },
+    };
+
+    get eventReactions() {
+        return this._eventReactions;
+    }
+    
 }
 
 class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -98,6 +140,12 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
                 context.flipStartTangent();
             },
             defaultTargetState: "HOVER_FOR_STARTING_POINT",
+        },
+        "startDeletion": {
+            action: (context, event) => {
+                context.cancelCurrentCurve();
+            },
+            defaultTargetState: "HOVER_FOR_CURVE_DELETION",
         }
     };
 
@@ -114,10 +162,9 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
     
     _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
-            action: (context, event, stateMachine) => {
+            action: (context, event) => {
                 const res = context.endCurve();
                 if(res == null) {
-                    stateMachine.happens("endLayout");
                     return;
                 }
                 context.hoverForStartingPoint(res);
@@ -155,10 +202,30 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
         },
         "toggleStraightLine": {
             action: (context, event) => {
-                console.log("toggleStraightLine");
                 context.toggleStraightLine();
             },
+        },
+        "startDeletion": {
+            action: (context, event) => {
+                context.cancelCurrentCurve();
+            },
+            defaultTargetState: "HOVER_FOR_CURVE_DELETION",
         }
+    };
+
+    protected _guards: Guard<LayoutContext, string> = {
+        "lastCurveNotSuccess": (context) => {
+            return !context.lastCurveSuccess;
+        }
+    };
+
+    protected _eventGuards: Partial<EventGuards<LayoutEvents, LayoutStates, LayoutContext, Guard<LayoutContext, string>>> = {
+        "pointerup": [
+            {
+                guard: "lastCurveNotSuccess",
+                target: "HOVER_FOR_STARTING_POINT",
+            }
+        ]
     };
 
     get eventReactions() {
@@ -172,6 +239,7 @@ export function createLayoutStateMachine(context: LayoutContext): StateMachine<L
             "IDLE": new LayoutIDLEState(),
             "HOVER_FOR_STARTING_POINT": new LayoutHoverForStartingPointState(),
             "HOVER_FOR_ENDING_POINT": new LayoutHoverForEndingPointState(),
+            "HOVER_FOR_CURVE_DELETION": new LayoutHoverForCurveDeletionState(),
         },
         "IDLE",
         context
@@ -223,6 +291,10 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewEndTangentFlipped: boolean = false;
     private _extendAsStraightLine: boolean = false;
 
+    private _lastCurveSuccess: boolean = false;
+
+    private _previewCurveForDeletion: number | null = null;
+
     constructor() {
         this._trackGraph = new TrackGraph();
     }
@@ -231,8 +303,26 @@ export class CurveCreationEngine implements LayoutContext {
         return this._newStartJoint;
     }
 
+    get lastCurveSuccess(): boolean {
+        return this._lastCurveSuccess;
+    }
+
+    get previewCurveForDeletion(): BCurve | null {
+        const res = this._previewCurveForDeletion !== null ? this._trackGraph.getTrackSegmentCurve(this._previewCurveForDeletion) : null;
+        return res;
+    }
+
     startCurve() {
         // this.cancelCurrentCurve();
+    }
+
+    hoverForCurveDeletion(position: Point) {
+        const res = this._trackGraph.project(position);
+        if(res.hit && res.hitType === "curve") {
+            this._previewCurveForDeletion = res.curve;
+        } else {
+            this._previewCurveForDeletion = null;
+        }
     }
 
     hoverForStartingPoint(position: Point) {
@@ -374,6 +464,26 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     endCurve(): Point | null {
+        const res = this.endCurveInternal();
+        if(res !== null) {
+            this._lastCurveSuccess = true;
+        } else {
+            this._lastCurveSuccess = false;
+        }
+
+        return res;
+    }
+
+    deleteCurrentCurve(){
+        if(this._previewCurveForDeletion === null){
+            return;
+        }
+        console.log('deleteCurrentCurve', this._previewCurveForDeletion);
+        this._trackGraph.removeTrackSegment(this._previewCurveForDeletion);
+        this._previewCurveForDeletion = null;
+    }
+
+    private endCurveInternal(): Point | null {
         
         let res: Point | null = null;
 
@@ -473,6 +583,10 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewStartTangentFlipped = false;
         this._previewEndTangentFlipped = false;
         this._extendAsStraightLine = false;
+    }
+
+    cancelCurrentDeletion(){
+        this._previewCurveForDeletion = null;
     }
 
     setup() {

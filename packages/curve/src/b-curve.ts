@@ -1058,6 +1058,19 @@ export function offset(curve: BCurve, t: number, d?: number | undefined) {
     });
 }
 
+export function offset2(curve: BCurve, d: number){
+    const lut = curve.getLUTWithTVal(100);
+
+    const res = lut.map((item)=>{
+        const derivative = PointCal.unitVector(curve.derivative(item.tVal));
+        const normal = {x: -derivative.y, y: derivative.x};
+        const offsetPoint = {x: item.point.x + normal.x * d, y: item.point.y + normal.y * d};
+        return offsetPoint;
+    });
+
+    return res;
+}
+
 // Helper function for line-line intersection (ported from bezier-js utils)
 function lli4(p1: Point, p2: Point, p3: Point, p4: Point): Point | false {
     const x1 = p1.x, y1 = p1.y,
