@@ -4,6 +4,8 @@ import { Animation, type Keyframe, numberHelperFunctions } from "@ue-too/animate
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
+import Stats from "stats.js";
+
 
 const utilButton = document.getElementById("util") as HTMLButtonElement;
 
@@ -12,6 +14,9 @@ const layoutDeleteToggleButton = document.getElementById("layout-delete-toggle")
 
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
+const stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 
 const board = new Board(canvas);
 
@@ -224,6 +229,7 @@ let currentFps = 0;
 
 function step(timestamp: number){
 
+    stats.begin();
     board.step(timestamp);
 
     // FPS calculation
@@ -431,6 +437,7 @@ function step(timestamp: number){
     
     board.context.restore();
 
+    stats.end();
     window.requestAnimationFrame(step);
 }
 
