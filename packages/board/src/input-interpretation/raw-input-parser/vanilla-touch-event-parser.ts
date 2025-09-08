@@ -12,8 +12,6 @@ export interface TouchEventParser {
     panDisabled: boolean;
     zoomDisabled: boolean;
     rotateDisabled: boolean;
-    enableStrategy(): void;
-    disableStrategy(): void;
     setUp(): void;
     tearDown(): void;
     attach(canvas: HTMLCanvasElement): void;
