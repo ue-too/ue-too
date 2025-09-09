@@ -228,23 +228,11 @@ const animation = new Animation(percentageKeyFrame, (value)=>{
 
 let lastTimestamp = 0;
 
-// FPS calculation variables
-let frameCount = 0;
-let lastFpsUpdate = 0;
-let currentFps = 0;
 
 function step(timestamp: number){
 
     stats.begin();
     board.step(timestamp);
-
-    // FPS calculation
-    frameCount++;
-    if (timestamp - lastFpsUpdate >= 1000) { // Update FPS every second
-        currentFps = frameCount;
-        frameCount = 0;
-        lastFpsUpdate = timestamp;
-    }
 
     const deltaTime = timestamp - lastTimestamp; // in milliseconds
     trainPlacementEngine.update(deltaTime);
@@ -414,35 +402,6 @@ function step(timestamp: number){
     }
 
     animation.animate(deltaTime);
-
-    // Draw FPS indicator
-    board.context.save();
-    board.context.fillStyle = "white";
-    board.context.strokeStyle = "black";
-    board.context.lineWidth = 2;
-    board.context.font = "16px Arial";
-    board.context.textAlign = "left";
-    board.context.textBaseline = "top";
-    
-    const fpsText = `FPS: ${currentFps}`;
-    const textMetrics = board.context.measureText(fpsText);
-    const padding = 8;
-    const bgWidth = textMetrics.width + padding * 2;
-    const bgHeight = 20 + padding * 2;
-    
-    // Draw background rectangle
-    board.context.fillStyle = "rgba(0, 0, 0, 0.7)";
-    board.context.fillRect(10, 10, bgWidth, bgHeight);
-    
-    // Draw border
-    board.context.strokeRect(10, 10, bgWidth, bgHeight);
-    
-    // Draw FPS text
-    board.context.fillStyle = "white";
-    board.context.fillText(fpsText, 10 + padding, 10 + padding);
-    
-    board.context.restore();
-
     stats.end();
     window.requestAnimationFrame(step);
 }
