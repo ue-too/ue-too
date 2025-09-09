@@ -10,7 +10,10 @@
   <!-- Add any necessary HTML markup here -->
 
     <div style="display: flex; justify-content: center; flex-direction: column; align-items: center; height: 100vh;">
-      <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas>
+      <div style="position: relative;">
+        <div id="stats" style="position: absolute; top: 0; left: 0;"></div>
+        <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas>
+      </div>
       <button id="util">Util</button>
       <button id="layout-toggle">Start Layout</button>
       <button id="layout-delete-toggle">Start Layout Deletion</button>

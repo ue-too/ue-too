@@ -16,7 +16,13 @@ const layoutDeleteToggleButton = document.getElementById("layout-delete-toggle")
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const stats = new Stats();
 stats.showPanel(0);
-document.body.appendChild(stats.dom);
+const statsContainer = document.getElementById("stats") as HTMLDivElement;
+statsContainer.appendChild(stats.dom);
+
+// Override the stats.js default positioning to place it in top left
+stats.dom.style.position = "absolute";
+stats.dom.style.top = "0px";
+stats.dom.style.left = "0px";
 
 const board = new Board(canvas);
 
