@@ -133,6 +133,10 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
             action: this.middlePointerDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SCROLL_WHEEL",
         },
+        disable: {
+            action: NO_OP,
+            defaultTargetState: "DISABLED",
+        }
     }
 
     uponEnter(context: KmtInputContext): void {

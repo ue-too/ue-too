@@ -55,7 +55,6 @@ const point = {
     y: controlPoints[0].y
 };
 
-const curve = new BCurve(controlPoints);
 const curveEngine = new CurveCreationEngine();
 const stateMachine = createLayoutStateMachine(curveEngine);
 
@@ -175,14 +174,14 @@ canvas.addEventListener("pointermove", (event) => {
 layoutToggleButton.addEventListener("click", ()=>{
     if(layoutToggleButton.textContent === "Start Layout"){
         stateMachine.happens("startLayout", {});
-        board.kmtParser.disabled = true;
+        console.log("start layout");
+        board.kmtParser.stateMachine.happens("disable");
         layoutToggleButton.textContent = "End Layout";
-        trainPlacementToggleButton.disabled = true;
         trainPlacementToggleButton.textContent = "Start Train Placement";
         trainStateMachine.happens("endPlacement", {});
     } else {
         stateMachine.happens("endLayout", {});
-        board.kmtParser.disabled = false;
+        board.kmtParser.stateMachine.happens("enable");
         layoutToggleButton.textContent = "Start Layout";
         trainPlacementToggleButton.disabled = false;
     }
@@ -209,22 +208,6 @@ stateMachine.onStateChange((currentState, nextState )=>{
     console.log('from', currentState, 'to', nextState);
 })
 
-const arcs = curve.findArcs(0.25);
-
-const distance = PointCal.distanceBetweenPoints(curve.getPointbyPercentage(0), curve.getPointbyPercentage(0.25));
-const distance2 = PointCal.distanceBetweenPoints(curve.getPointbyPercentage(0.25), curve.getPointbyPercentage(0.5));
-const distance3 = PointCal.distanceBetweenPoints(curve.getPointbyPercentage(0.5), curve.getPointbyPercentage(0.75));
-const distance4 = PointCal.distanceBetweenPoints(curve.getPointbyPercentage(0.75), curve.getPointbyPercentage(1));
-
-console.log('full length', curve.fullLength);
-console.log("distance", distance, distance2, distance3, distance4);
-console.log("totals", distance + distance2 + distance3 + distance4);
-
-
-const animation = new Animation(percentageKeyFrame, (value)=>{
-    point.x = curve.getPointbyPercentage(value).x;
-    point.y = curve.getPointbyPercentage(value).y;
-}, numberHelperFunctions);
 
 let lastTimestamp = 0;
 
@@ -238,15 +221,6 @@ function step(timestamp: number){
     trainPlacementEngine.update(deltaTime);
 
     lastTimestamp = timestamp;
-    const cps = curve.getControlPoints();
-    board.context.beginPath();
-    board.context.moveTo(cps[0].x, cps[0].y);
-    board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    board.context.stroke();
-
-    board.context.beginPath();
-    board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-    board.context.fill();
 
     if(curveEngine.previewCurve !== null){
         const cps = curveEngine.previewCurve.curve.getControlPoints();
@@ -401,7 +375,6 @@ function step(timestamp: number){
         board.context.restore();
     }
 
-    animation.animate(deltaTime);
     stats.end();
     window.requestAnimationFrame(step);
 }
@@ -409,7 +382,6 @@ function step(timestamp: number){
 window.requestAnimationFrame(step);
 
 utilButton.addEventListener("click", ()=>{
-    animation.start();
 });
 
 const p1Button = document.getElementById("p1") as HTMLButtonElement;
