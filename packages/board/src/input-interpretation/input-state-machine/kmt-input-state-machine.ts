@@ -1,4 +1,4 @@
-import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
 import { PointCal } from "@ue-too/math";
 import { CanvasOperator, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
@@ -8,7 +8,7 @@ import { CanvasOperator, CursorStyle, DummyKmtInputContext, KmtInputContext } fr
  * 
  * @category Input State Machine
  */
-export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL";
+export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL" | "DISABLED";
 
 /**
  * @description The payload for the pointer event.
@@ -62,6 +62,8 @@ export type KmtInputEventMapping = {
     middlePointerDown: PointerEventPayload;
     middlePointerUp: PointerEventPayload;
     middlePointerMove: PointerEventPayload;
+    disable: EmptyPayload;
+    enable: EmptyPayload;
 }
 
 /**
@@ -90,7 +92,7 @@ export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOpe
  * 
  * @category Input State Machine
  */
-export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL";
+export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "DISABLED";
 
 /**
  * @description The idle state of the keyboard mouse and trackpad input state machine.
@@ -131,6 +133,14 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
             action: this.middlePointerDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SCROLL_WHEEL",
         },
+        disable: {
+            action: NO_OP,
+            defaultTargetState: "DISABLED",
+        }
+    }
+
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
     scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): void {
@@ -156,12 +166,12 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor(CursorStyle.GRAB);
+        // context.canvas.setCursor(CursorStyle.GRAB);
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.setCursor(CursorStyle.GRABBING);
+        // context.canvas.setCursor(CursorStyle.GRABBING);
     }
 }
 
@@ -170,7 +180,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
  * 
  * @category Input State Machine
  */
-export type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING";
+export type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING" | "DISABLED";
 
 /**
  * @description The context for the ready to select state.
@@ -211,12 +221,35 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, Sele
             action: this.leftPointerMove,
             defaultTargetState: "SELECTING",
         },
+        disable: {
+            action: NO_OP,
+            defaultTargetState: "DISABLED",
+        },
     }
 
     get eventReactions(): EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> {
         return this._eventReactions;
     }
 
+}
+
+export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    constructor() {
+        super();
+    }
+
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.DEFAULT);
+    }
+
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+        return {
+            "enable": {
+                action: NO_OP,
+                defaultTargetState: "IDLE",
+            }
+        };
+    }
 }
 
 /**
@@ -239,6 +272,14 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
             action: this.leftPointerDownHandler,
             defaultTargetState: "INITIAL_PAN",
         },
+        disable: {
+            action: (context) => context.cancelCurrentAction(),
+            defaultTargetState: "DISABLED",
+        }
+    }
+
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.GRAB);
     }
 
     get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
@@ -247,11 +288,11 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
 
     leftPointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        context.canvas.setCursor(CursorStyle.GRABBING);
+        // context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor(CursorStyle.DEFAULT);
+        // context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 }
 
@@ -289,6 +330,10 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         return this._eventReactions;
     }
 
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.GRABBING);
+    }
+
     leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
@@ -302,7 +347,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor(CursorStyle.GRAB);
+        // context.canvas.setCursor(CursorStyle.GRAB);
     }
 }
 
@@ -332,12 +377,16 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
         return this._eventReactions;
     }
 
-    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+    uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
+    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+        // context.canvas.setCursor(CursorStyle.GRABBING);
+    }
+
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor(CursorStyle.DEFAULT);
+        // context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
 }
@@ -372,6 +421,14 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         return this._eventReactions;
     }
 
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.GRABBING);
+    }
+
+    beforeExit(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.DEFAULT);
+    }
+
     leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
@@ -385,11 +442,11 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
     }
 
     spacebarUpHandler(context: KmtInputContext, payload: EmptyPayload): void {
-        context.canvas.setCursor(CursorStyle.DEFAULT);
+        // context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
     leftPointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor(CursorStyle.GRAB);
+        // context.canvas.setCursor(CursorStyle.GRAB);
     }
 }
 
@@ -427,8 +484,12 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
     }
 
+    uponEnter(context: KmtInputContext): void {
+        context.canvas.setCursor(CursorStyle.GRABBING);
+    }
+
     middlePointerUpHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.canvas.setCursor(CursorStyle.DEFAULT);
+        // context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 }
 
@@ -459,6 +520,7 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         PAN: new PanState(),
         READY_TO_PAN_VIA_SCROLL_WHEEL: new ReadyToPanViaScrollWheelState(),
         PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
+        DISABLED: new DisabledState(),
     }
     return new TemplateStateMachine(states, "IDLE", context);
 }
@@ -475,6 +537,7 @@ export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<Kmt
             "PAN": new KmtEmptyState(),
             "READY_TO_PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
             "PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
+            "DISABLED": new DisabledState(),
         }, "IDLE", new DummyKmtInputContext());
         this._webworker = webworker;
     }

@@ -186,6 +186,7 @@ export interface KmtInputContext extends BaseContext {
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void;
     notifyOnRotate: (deltaRotation: number) => void;
     setInitialCursorPosition: (position: Point) => void;
+    cancelCurrentAction: () => void;
     initialCursorPosition: Point;
 }
 
@@ -220,6 +221,9 @@ export class DummyKmtInputContext implements KmtInputContext {
     }
 
     setup(): void {
+    }
+
+    cancelCurrentAction(): void {
     }
 }
 
@@ -269,6 +273,10 @@ export class ObservableInputTracker implements KmtInputContext {
 
     notifyOnRotate(deltaRotation: number): void {
         this._inputPublisher.notifyRotate(deltaRotation);
+    }
+
+    cancelCurrentAction(): void {
+        this._initialCursorPosition = {x: 0, y: 0};
     }
 
     setInitialCursorPosition(position: Point): void {

@@ -9,6 +9,7 @@ export interface KMTEventParser {
     setUp(): void;
     tearDown(): void;
     attach(canvas: HTMLCanvasElement): void;
+    stateMachine: KmtInputStateMachine;
 }
 
 /**

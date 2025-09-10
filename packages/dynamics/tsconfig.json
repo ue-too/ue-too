@@ -15,6 +15,9 @@
   ],
   "references": [
     {
+      "path": "../ecs"
+    },
+    {
       "path": "../math"
     }
   ]

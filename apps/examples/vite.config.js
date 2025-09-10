@@ -19,6 +19,7 @@ export default defineConfig({
                 "fabric-integration": resolve(__dirname, "src/fabric-integration/index.html"),
                 "camera-animation": resolve(__dirname, "src/camera-animation/index.html"),
                 "image-example": resolve(__dirname, "src/image-example/index.html"),
+                "physics": resolve(__dirname, "src/physics/index.html"),
             },
         },
     },

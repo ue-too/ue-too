@@ -13,7 +13,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 
 import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from '../camera/camera-mux';
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
-import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
+import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, KmtInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
 
 /**
  * Usage
@@ -303,6 +303,10 @@ export default class Board {
     get touchParser(): TouchEventParser{
         return this._touchParser;
     }
+
+    // get kmtStateMachine(): KmtInputStateMachine {
+    //     return this._kmtParser.;
+    // }
 
     /**
      * @description The underlying camera of the board. The camera of the board can be switched.

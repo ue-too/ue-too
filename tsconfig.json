@@ -24,6 +24,12 @@
       },
       {
         "path": "./packages/curve"
+      },
+      {
+        "path": "./apps/b-curve-exp"
+      },
+      {
+        "path": "./packages/ecs"
       }
     ]
   }

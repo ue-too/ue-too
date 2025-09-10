@@ -96,7 +96,7 @@ importers:
         specifier: ^6.1.0
         version: 6.1.0(@types/node@22.13.4)(terser@5.39.0)(yaml@2.7.0)
 
-  apps/examples:
+  apps/b-curve-exp:
     dependencies:
       '@ue-too/animate':
         specifier: workspace:*
@@ -116,6 +116,61 @@ importers:
       '@ue-too/dynamics':
         specifier: workspace:*
         version: link:../../packages/dynamics
+      '@ue-too/ecs':
+        specifier: workspace:*
+        version: link:../../packages/ecs
+      '@ue-too/math':
+        specifier: workspace:*
+        version: link:../../packages/math
+      bezier-js:
+        specifier: ^6.1.4
+        version: 6.1.4
+      fabric:
+        specifier: 6.7.0
+        version: 6.7.0
+      konva:
+        specifier: 9.3.20
+        version: 9.3.20
+      pixi.js:
+        specifier: 8.8.0
+        version: 8.8.0
+      stats.js:
+        specifier: ^0.17.0
+        version: 0.17.0
+    devDependencies:
+      '@types/bezier-js':
+        specifier: ^4.1.3
+        version: 4.1.3
+      '@types/stats.js':
+        specifier: ^0.17.4
+        version: 0.17.4
+
+  apps/examples:
+    dependencies:
+      '@niuee/bolt':
+        specifier: 0.0.5
+        version: 0.0.5
+      '@ue-too/animate':
+        specifier: workspace:*
+        version: link:../../packages/animate
+      '@ue-too/being':
+        specifier: workspace:*
+        version: link:../../packages/being
+      '@ue-too/board':
+        specifier: workspace:*
+        version: link:../../packages/board
+      '@ue-too/border':
+        specifier: workspace:*
+        version: link:../../packages/border
+      '@ue-too/curve':
+        specifier: workspace:*
+        version: link:../../packages/curve
+      '@ue-too/dynamics':
+        specifier: workspace:*
+        version: link:../../packages/dynamics
+      '@ue-too/ecs':
+        specifier: workspace:*
+        version: link:../../packages/ecs
       '@ue-too/math':
         specifier: workspace:*
         version: link:../../packages/math
@@ -164,12 +219,20 @@ importers:
       bezier-js:
         specifier: ^6.1.4
         version: 6.1.4
+      ts-node:
+        specifier: ^10.9.2
+        version: 10.9.2(@swc/core@1.5.29(@swc/helpers@0.5.17))(@types/node@22.13.4)(typescript@5.7.3)
 
   packages/dynamics:
     dependencies:
+      '@ue-too/ecs':
+        specifier: workspace:*
+        version: link:../ecs
       '@ue-too/math':
         specifier: workspace:*
         version: link:../math
+
+  packages/ecs: {}
 
   packages/math: {}
 
@@ -1182,6 +1245,9 @@ packages:
   '@napi-rs/wasm-runtime@0.2.4':
     resolution: {integrity: sha512-9zESzOO5aDByvhIAsOy9TbpZ0Ur2AJbUI7UT73kcUTS2mxAMHOBaa1st/jAymNoCtvrit99kkzT1FZuXVcgfIQ==}
 
+  '@niuee/bolt@0.0.5':
+    resolution: {integrity: sha512-cczZsDDXbIRshXlUiMTCdMeNGZCNXBCdnTDAyOOOp2dBVStKOFBWjqk92gZdJ38FwUOQcmOilJv5AUsUMiw1lQ==}
+
   '@niuee/bounce@0.0.5':
     resolution: {integrity: sha512-5KbEo5d2zKz+7mZUvXc1ncVu0KijVWAMdTykxkpijoSeXRR6iaIGrXUztCDXDZ8H9oMSR/sUMhzOp7oPZtlmfQ==}
 
@@ -1666,6 +1732,9 @@ packages:
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
+
+  '@types/stats.js@0.17.4':
+    resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
 
   '@types/unist@3.0.3':
     resolution: {integrity: sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==}
@@ -3727,6 +3796,9 @@ packages:
     resolution: {integrity: sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==}
     engines: {node: '>=10'}
 
+  stats.js@0.17.0:
+    resolution: {integrity: sha512-hNKz8phvYLPEcRkeG1rsGmV5ChMjKDAWU7/OJJdDErPBNChQXxCo3WZurGpnWc6gZhAzEPFad1aVgyOANH1sMw==}
+
   string-hash@1.1.3:
     resolution: {integrity: sha512-kJUvRUFK49aub+a7T1nNE66EJbZBMnBgoC1UbCZ5n6bsZKBRga4KgBRTMn/pFkeCZSYtNeSyMxPDM0AXWELk2A==}
 
@@ -5474,6 +5546,8 @@ snapshots:
       '@emnapi/runtime': 1.4.5
       '@tybys/wasm-util': 0.9.0
 
+  '@niuee/bolt@0.0.5': {}
+
   '@niuee/bounce@0.0.5':
     dependencies:
       point2point: 0.0.93
@@ -5964,6 +6038,8 @@ snapshots:
   '@types/resolve@1.20.2': {}
 
   '@types/stack-utils@2.0.3': {}
+
+  '@types/stats.js@0.17.4': {}
 
   '@types/unist@3.0.3': {}
 
@@ -8341,6 +8417,8 @@ snapshots:
   stack-utils@2.0.6:
     dependencies:
       escape-string-regexp: 2.0.0
+
+  stats.js@0.17.0: {}
 
   string-hash@1.1.3: {}
 
