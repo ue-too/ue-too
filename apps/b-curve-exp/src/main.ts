@@ -1,17 +1,21 @@
 import { Board, drawArrow } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
-import { Animation, type Keyframe, numberHelperFunctions } from "@ue-too/animate";
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 
+const getRandomPoint = (min: number, max: number) => {
+    return {
+        x: Math.random() * (max - min) + min,
+        y: Math.random() * (max - min) + min,
+    }
+}
 
 const utilButton = document.getElementById("util") as HTMLButtonElement;
 
 const layoutToggleButton = document.getElementById("layout-toggle") as HTMLButtonElement;
 const layoutDeleteToggleButton = document.getElementById("layout-delete-toggle") as HTMLButtonElement;
-
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const stats = new Stats();
@@ -25,35 +29,6 @@ stats.dom.style.top = "0px";
 stats.dom.style.left = "0px";
 
 const board = new Board(canvas);
-
-const getRandomPoint = (min: number, max: number) => {
-    return {
-        x: Math.random() * (max - min) + min,
-        y: Math.random() * (max - min) + min,
-    }
-}
-
-const controlPoints = [];
-
-for(let i = 0; i < 3; i++){
-    controlPoints.push(getRandomPoint(0, 100));
-}
-
-const percentageKeyFrame: Keyframe<number>[] = [
-    {
-        percentage: 0,
-        value: 0
-    },
-    {
-        percentage: 1,
-        value: 1
-    }
-];
-
-const point = {
-    x: controlPoints[0].x,
-    y: controlPoints[0].y
-};
 
 const curveEngine = new CurveCreationEngine();
 const stateMachine = createLayoutStateMachine(curveEngine);
