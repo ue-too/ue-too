@@ -3,9 +3,10 @@ import { defineConfig } from 'vite';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
-export default defineConfig(() => ({
+export default defineConfig(({ command }) => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/racetrack-maker',
+  base: process.env.BASE_PATH || (command === 'serve' ? '/' : '/app/'),
   server: {
     port: 4201,
     host: 'localhost',
