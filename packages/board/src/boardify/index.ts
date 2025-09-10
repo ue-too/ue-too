@@ -18,9 +18,6 @@ import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, 
 /**
  * Usage
  * ```typescript
- * import { Board } from "@niuee/board";
- * 
- * // however you prefer to get a canvas element that is already in the DOM
  * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
  * const board = new Board(canvasElement);
  * 
@@ -31,21 +28,14 @@ import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, 
  *    stepFn(timestamp);
  * // do other stuff after the board has stepped
  * //.
- * //.
- * //.
  * }
- * ```
- * Alternatively you can import the board class as from a subdirectory; this shaves the bundle size a bit but not a lot though. As the board is the overall entry point for the library.
- * 
- * ```typescript
- * import { Board } from "@niuee/board/boardify";
  * ```
  * @category Board
  * 
  */
 export default class Board {
     
-    private _canvas: HTMLCanvasElement;
+    private _canvas?: HTMLCanvasElement;
     private _context: CanvasRenderingContext2D;
     private _reversedContext: CanvasRenderingContext2D;
 
@@ -66,11 +56,10 @@ export default class Board {
 
     private _canvasProxy: CanvasProxy;
     
-    constructor(canvas: HTMLCanvasElement, eventTarget: EventTargetWithPointerEvents = canvas){
+    constructor(canvas?: HTMLCanvasElement){
+        console.log("canvas", canvas);
         this._canvas = canvas;
         const camera = new DefaultBoardCamera();
-        camera.viewPortHeight = canvas.height;
-        camera.viewPortWidth = canvas.width;
         camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
         const context = canvas.getContext('2d');
         if(context == null){
@@ -82,6 +71,7 @@ export default class Board {
 
         this.bindFunctions();
 
+        // TODO this should be removed since we should use canvas operator instead of the canvas itself 
         this.attributeObserver = new MutationObserver(this.attributeCallBack);
         this.attributeObserver.observe(this._canvas, {attributes: true});
 
@@ -106,15 +96,23 @@ export default class Board {
         const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
         const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
         
-        this._kmtParser = new VanillaKMTEventParser(canvas, kmtInputStateMachine);
-        this._touchParser = new VanillaTouchEventParser(canvas, touchInputStateMachine);
+        this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
+        this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
 
         this.calibrateCanvasDimensions();
         this.setup();
     }
 
+    private syncViewPortDimensions(canvas: HTMLCanvasElement){
+        this.camera.viewPortHeight = canvas.height;
+        this.camera.viewPortWidth = canvas.width;
+    }
+
     private calibrateCanvasDimensions(){
         // NOTE: device pixel ratio
+        if(this._canvas == undefined){
+            return;
+        }
         this._canvas.style.width = this._canvas.width + "px";
         this._canvas.style.height = this._canvas.height + "px";
         this._canvas.width = window.devicePixelRatio * this._canvas.width;
@@ -141,12 +139,16 @@ export default class Board {
             return;
         }
         this._canvas = canvas;
+        this.syncViewPortDimensions(canvas);
         this.calibrateCanvasDimensions();
         this._kmtParser.attach(canvas);
         this._touchParser.attach(canvas);
         this._canvasProxy.attach(canvas);
+
+        // TODO maybe we don't need this
         this.attributeObserver.disconnect();
         this.attributeObserver.observe(canvas, {attributes: true});
+
         this._context = newContext;
         this._reversedContext = reverseYAxis(this._context);
     }
@@ -335,6 +337,9 @@ export default class Board {
      * @param timestamp 
      */
     public step(timestamp: number){
+        if(this._canvas == undefined || this._context == undefined){
+            return;
+        }
         if(this._fullScreen && (this.width != window.innerWidth || this.height != window.innerHeight)){
             this.width = window.innerWidth;
             this.height = window.innerHeight;

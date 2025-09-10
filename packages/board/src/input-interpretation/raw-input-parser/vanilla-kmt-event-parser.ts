@@ -76,10 +76,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
     private _stateMachine: KmtInputStateMachine;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
-    private _canvas: HTMLCanvasElement;
+    private _canvas?: HTMLCanvasElement;
 
 
-    constructor(canvas: HTMLCanvasElement, kmtInputStateMachine: KmtInputStateMachine){
+    constructor(kmtInputStateMachine: KmtInputStateMachine, canvas?: HTMLCanvasElement){
         this._canvas = canvas;
         this.bindFunctions();
         this._abortController = new AbortController();
@@ -100,6 +100,9 @@ export class VanillaKMTEventParser implements KMTEventParser {
     }
 
     addEventListeners(signal: AbortSignal){
+        if(this._canvas == undefined){
+            return;
+        }
         this._canvas.addEventListener('pointerdown', this.pointerDownHandler, {signal});
         this._canvas.addEventListener('pointerup', this.pointerUpHandler, {signal});
         this._canvas.addEventListener('pointermove', this.pointerMoveHandler, {signal});
@@ -109,6 +112,9 @@ export class VanillaKMTEventParser implements KMTEventParser {
     }
     
     setUp(): void {
+        if(this._abortController.signal.aborted){
+            this._abortController = new AbortController();
+        }
         this.addEventListeners(this._abortController.signal);
     }
 

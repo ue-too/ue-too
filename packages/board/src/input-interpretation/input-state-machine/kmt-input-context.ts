@@ -18,6 +18,8 @@ export interface CanvasOperator {
     height: number;
     position: Point;
     setCursor: (style: CursorStyle) => void;
+    dimensions: {width: number, height: number, position: Point};
+    detached: boolean;
 }
 
 /**
@@ -31,6 +33,8 @@ export class DummyCanvasOperator implements CanvasOperator {
     height: number = 0;
     position: Point = {x: 0, y: 0};
     setCursor: (style: CursorStyle) => void = NO_OP;
+    dimensions: {width: number, height: number, position: Point} = {width: 0, height: 0, position: {x: 0, y: 0}};
+    detached: boolean = false;
 }
 
 export class CanvasCacheInWebWorker implements CanvasOperator {
@@ -45,6 +49,10 @@ export class CanvasCacheInWebWorker implements CanvasOperator {
         this._height = 0;
         this._position = {x: 0, y: 0};
         this._postMessageFunction = postMessageFunction;
+    }
+
+    get dimensions(): {width: number, height: number, position: Point} {
+        return {width: this._width, height: this._height, position: this._position};
     }
 
     set width(width: number){
@@ -74,29 +82,43 @@ export class CanvasCacheInWebWorker implements CanvasOperator {
     setCursor(style: "grab" | "default" | "grabbing"): void {
         this._postMessageFunction({type: "setCursor", style});
     }
+
+    get detached(): boolean {
+        return false;
+    }
 }
 
 export class CanvasProxy implements CanvasOperator {
 
-    private _width: number;
-    private _height: number;
-    private _position: Point;
+    private _width: number = 0;
+    private _height: number = 0;
+    private _position: Point = {x: 0, y: 0};
     private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
-    private _canvas: HTMLCanvasElement;
+    private _canvas: HTMLCanvasElement | undefined;
 
-    constructor(canvas: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
-        const boundingRect = canvas.getBoundingClientRect();
-        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
-        this._width = trueRect.width;
-        this._height = trueRect.height;
-        this._position = {x: trueRect.left, y: trueRect.top};
-        this._canvas = canvas;
+    constructor(canvas?: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
+        if(canvas){
+            const boundingRect = canvas.getBoundingClientRect();
+            const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+            this._width = trueRect.width;
+            this._height = trueRect.height;
+            this._position = {x: trueRect.left, y: trueRect.top};
+            this._canvas = canvas;
+        }
         this._canvasPositionDimensionPublisher = canvasPositionDimensionPublisher;
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
             this._width = rect.width;
             this._height = rect.height;
             this._position = {x: rect.left, y: rect.top};
         });
+    }
+
+    get detached(): boolean {
+        return this._canvas === undefined;
+    }
+
+    get dimensions(): {width: number, height: number, position: Point} {
+        return {width: this._width, height: this._height, position: this._position};
     }
 
     get width(): number {
@@ -112,7 +134,9 @@ export class CanvasProxy implements CanvasOperator {
     }
 
     setCursor(style: "grab" | "default" | "grabbing"): void {
-        this._canvas.style.cursor = style;
+        if(this._canvas){
+            this._canvas.style.cursor = style;
+        }
     }
 
     attach(canvas: HTMLCanvasElement){
@@ -167,6 +191,14 @@ export class CanvasProxyWorkerRelay implements CanvasOperator {
 
     get position(): Point {
         return this._position;
+    }
+
+    get dimensions(): {width: number, height: number, position: Point} {
+        return {width: this._width, height: this._height, position: this._position};
+    }
+
+    get detached(): boolean {
+        return false;
     }
 
     setCursor(style: "grab" | "default" | "grabbing"): void {
