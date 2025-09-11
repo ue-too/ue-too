@@ -57,23 +57,17 @@ export default class Board {
     private _canvasProxy: CanvasProxy;
     
     constructor(canvas?: HTMLCanvasElement){
-        console.log("canvas", canvas);
-        this._canvas = canvas;
         const camera = new DefaultBoardCamera();
         camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
-        const context = canvas.getContext('2d');
-        if(context == null){
-            throw new Error("Canvas 2d context is null");
-        }
 
-        this._context = context;
-        this._reversedContext = reverseYAxis(context);
+        if(canvas != undefined){
+            this.attach(canvas);
+        }
 
         this.bindFunctions();
 
         // TODO this should be removed since we should use canvas operator instead of the canvas itself 
         this.attributeObserver = new MutationObserver(this.attributeCallBack);
-        this.attributeObserver.observe(this._canvas, {attributes: true});
 
         this._canvasProxy = new CanvasProxy(canvas);
 
@@ -119,10 +113,10 @@ export default class Board {
         this._canvas.height = window.devicePixelRatio * this._canvas.height;
     }
 
-    private registerEventListeners(){
-        this._kmtParser.setUp();
-        this._touchParser.setUp();
-    }
+    // private registerEventListeners(){
+    //     this._kmtParser.setUp();
+    //     this._touchParser.setUp();
+    // }
 
     private removeEventListeners(){
         this._touchParser.tearDown();
@@ -158,8 +152,8 @@ export default class Board {
      * @description This function is used to set up the board. It adds all the event listeners and starts the resize observer and the attribute observer.
      */
     setup(){
-        this.registerEventListeners();
-        this.attributeObserver.observe(this._canvas, {attributes: true});
+        // this.registerEventListeners();
+        // this.attributeObserver.observe(this._canvas, {attributes: true});
     }
 
     /**
@@ -194,7 +188,7 @@ export default class Board {
     }
 
     get width(): number {
-        return this._canvas.width / window.devicePixelRatio;
+        return this._canvasProxy.width;
     }
 
     /**
