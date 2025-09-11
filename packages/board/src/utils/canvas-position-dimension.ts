@@ -50,7 +50,6 @@ export class CanvasPositionDimensionPublisher {
         }
     }
     
-    // Add a cleanup method to remove event listeners
     public dispose(): void {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();

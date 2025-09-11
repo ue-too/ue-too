@@ -36,8 +36,8 @@ import { CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, 
 export default class Board {
     
     private _canvas?: HTMLCanvasElement;
-    private _context: CanvasRenderingContext2D;
-    private _reversedContext: CanvasRenderingContext2D;
+    private _context?: CanvasRenderingContext2D;
+    private _reversedContext?: CanvasRenderingContext2D;
 
     private _kmtParser: KMTEventParser;
     private _touchParser: TouchEventParser;

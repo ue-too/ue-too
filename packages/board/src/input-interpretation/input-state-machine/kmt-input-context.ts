@@ -13,7 +13,7 @@ export enum CursorStyle {
  * @description A proxy for the canvas so that client code that needs to access 
  * the canvas dimensions and position does not need to access the DOM directly.
  */
-export interface CanvasOperator {
+export interface Canvas {
     width: number;
     height: number;
     position: Point;
@@ -28,7 +28,7 @@ export interface CanvasOperator {
  * The input state machine needs a canvas operator in its context, but this context does not have any functionality.
  * @see DummyKmtInputContext
  */
-export class DummyCanvasOperator implements CanvasOperator {
+export class DummyCanvas implements Canvas {
     width: number = 0;
     height: number = 0;
     position: Point = {x: 0, y: 0};
@@ -37,7 +37,7 @@ export class DummyCanvasOperator implements CanvasOperator {
     detached: boolean = false;
 }
 
-export class CanvasCacheInWebWorker implements CanvasOperator {
+export class CanvasCacheInWebWorker implements Canvas {
 
     private _width: number;
     private _height: number;
@@ -88,7 +88,7 @@ export class CanvasCacheInWebWorker implements CanvasOperator {
     }
 }
 
-export class CanvasProxy implements CanvasOperator {
+export class CanvasProxy implements Canvas {
 
     private _width: number = 0;
     private _height: number = 0;
@@ -96,7 +96,7 @@ export class CanvasProxy implements CanvasOperator {
     private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
     private _canvas: HTMLCanvasElement | undefined;
 
-    constructor(canvas?: HTMLCanvasElement, canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas)) {
+    constructor(canvas?: HTMLCanvasElement) {
         if(canvas){
             const boundingRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
@@ -105,7 +105,7 @@ export class CanvasProxy implements CanvasOperator {
             this._position = {x: trueRect.left, y: trueRect.top};
             this._canvas = canvas;
         }
-        this._canvasPositionDimensionPublisher = canvasPositionDimensionPublisher;
+        this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
             this._width = rect.width;
             this._height = rect.height;
@@ -156,7 +156,7 @@ export class CanvasProxy implements CanvasOperator {
  * This class only serves as a relay of the updated canvas dimensions and position to the web worker.
  * 
  */
-export class CanvasProxyWorkerRelay implements CanvasOperator {
+export class WorkerRelayCanvas implements Canvas {
 
     private _width: number;
     private _height: number;
@@ -213,7 +213,7 @@ export class CanvasProxyWorkerRelay implements CanvasOperator {
  */
 export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
-    canvas: CanvasOperator;
+    canvas: Canvas;
     notifyOnPan: (delta: Point) => void;
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void;
     notifyOnRotate: (deltaRotation: number) => void;
@@ -230,7 +230,7 @@ export interface KmtInputContext extends BaseContext {
 export class DummyKmtInputContext implements KmtInputContext {
 
     public alignCoordinateSystem: boolean = false;
-    public canvas: CanvasOperator = new DummyCanvasOperator();
+    public canvas: Canvas = new DummyCanvas();
     public initialCursorPosition: Point = {x: 0, y: 0};
 
     constructor(){
@@ -268,11 +268,11 @@ export class DummyKmtInputContext implements KmtInputContext {
 export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
-    private _canvasOperator: CanvasOperator;
+    private _canvasOperator: Canvas;
     private _inputPublisher: UserInputPublisher;
     private _initialCursorPosition: Point;
 
-    constructor(canvasOperator: CanvasOperator, inputPublisher: UserInputPublisher){
+    constructor(canvasOperator: Canvas, inputPublisher: UserInputPublisher){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;
@@ -283,7 +283,7 @@ export class ObservableInputTracker implements KmtInputContext {
         return this._alignCoordinateSystem;
     }
 
-    get canvas(): CanvasOperator {
+    get canvas(): Canvas {
         return this._canvasOperator;
     }
 
