@@ -16,9 +16,6 @@ export class CanvasPositionDimensionPublisher {
         this._observers = new Observable<Parameters<CanvasUpdateObserver>>();
 
         this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
-            if(this.lastRect === undefined){
-                return;
-            }
             for (const entry of entries) {
                 const newRect = entry.target.getBoundingClientRect();
                 const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
@@ -65,6 +62,10 @@ export class CanvasPositionDimensionPublisher {
         this.dispose();
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
+        const boundingRect = canvas.getBoundingClientRect();
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this.lastRect = trueRect;
+
         this.scrollHandler = (() => {
             if(this.lastRect === undefined){
                 return;
@@ -118,9 +119,12 @@ export function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
     return new DOMRect(trueLeft, trueTop, trueWidth, trueHeight);
 }
 
-function rectChanged(r1: DOMRect, r2: DOMRect) {
-  return r1.top !== r2.top || r1.left !== r2.left || 
-         r1.width !== r2.width || r1.height !== r2.height;
+function rectChanged(r1: DOMRect | undefined, r2: DOMRect) {
+    if(r1 === undefined){
+        return true;
+    }
+    return r1.top !== r2.top || r1.left !== r2.left || 
+            r1.width !== r2.width || r1.height !== r2.height;
 }
 
 /**

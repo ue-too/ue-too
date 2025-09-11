@@ -60,10 +60,6 @@ export default class Board {
         const camera = new DefaultBoardCamera();
         camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
 
-        if(canvas != undefined){
-            this.attach(canvas);
-        }
-
         this.bindFunctions();
 
         // TODO this should be removed since we should use canvas operator instead of the canvas itself 
@@ -92,6 +88,10 @@ export default class Board {
         
         this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
         this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
+
+        if(canvas != undefined){
+            this.attach(canvas);
+        }
 
         this.calibrateCanvasDimensions();
         this.setup();

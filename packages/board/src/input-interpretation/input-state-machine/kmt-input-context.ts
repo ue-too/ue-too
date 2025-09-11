@@ -1,7 +1,7 @@
 import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
 import { UserInputPublisher } from "../raw-input-publisher";
-import { CanvasPositionDimensionPublisher, getTrueRect } from "../../utils";
+import { CanvasPositionDimensionPublisher, getTrueRect, zoomLevelBoundariesShouldUpdate } from "../../utils";
 
 export enum CursorStyle {
     GRAB = "grab",
@@ -95,8 +95,24 @@ export class CanvasProxy implements Canvas {
     private _position: Point = {x: 0, y: 0};
     private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
     private _canvas: HTMLCanvasElement | undefined;
+    private _mutationOBserver: MutationObserver;
 
     constructor(canvas?: HTMLCanvasElement) {
+        this._mutationOBserver = new MutationObserver((mutations)=>{
+            console.log('mutation', mutations);
+            for(let mutation of mutations){
+                if(mutation.type === "attributes"){
+                    if(mutation.attributeName === "width"){
+                        // NOTE canvas width change (not the style width)
+                    } else if(mutation.attributeName === "height"){
+                        // NOTE canvas height change (not the style height)
+                    }
+                } else if (mutation.attributeName === "style"){
+                    // NOTE update the canvas dimensions by style
+                }
+            }
+        });
+
         if(canvas){
             const boundingRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
@@ -104,13 +120,24 @@ export class CanvasProxy implements Canvas {
             this._height = trueRect.height;
             this._position = {x: trueRect.left, y: trueRect.top};
             this._canvas = canvas;
+            this._mutationOBserver.observe(canvas, {attributes: true});
         }
+
         this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
+            // the rect is the canvas dimension in the DOM (the width and height attribute would need to multiply by the device pixel ratio)
             this._width = rect.width;
             this._height = rect.height;
             this._position = {x: rect.left, y: rect.top};
+            if(this._canvas){
+                console.log('style width and height', this._canvas.style.width, this._canvas.style.height);
+                this._canvas.style.width = rect.width + "px";
+                this._canvas.style.height = rect.height + "px";
+                this._canvas.width = rect.width * window.devicePixelRatio;
+                this._canvas.height = rect.height * window.devicePixelRatio;
+            }
         });
+
     }
 
     get detached(): boolean {
