@@ -8,7 +8,14 @@ import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./km
  * 
  * @category Input State Machine
  */
-export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL" | "DISABLED";
+export type KmtInputStates = 
+    "IDLE" | 
+    "READY_TO_PAN_VIA_SPACEBAR" | 
+    "READY_TO_PAN_VIA_SCROLL_WHEEL" | 
+    "PAN" | 
+    "INITIAL_PAN" | 
+    "PAN_VIA_SCROLL_WHEEL" | 
+    "DISABLED";
 
 /**
  * @description The payload for the pointer event.

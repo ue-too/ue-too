@@ -119,13 +119,11 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
                 return;
             }
 
-            console.log('width', rect.width);
-
             this._width = rect.width;
             this._height = rect.height;
             this._position = {x: rect.left, y: rect.top};
 
-            console.log('syncing canvas dimension to adjust for high dpi display');
+            // console.log('syncing canvas dimension to adjust for high dpi display');
             this._canvas.style.width = rect.width + "px";
             this._canvas.style.height = rect.height + "px";
             this._canvas.width = rect.width * window.devicePixelRatio;
@@ -188,7 +186,6 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     setCursor(style: "grab" | "default" | "grabbing"): void {
-        console.log('setting cursor', style);
         if(this._canvas){
             this._canvas.style.cursor = style;
         }

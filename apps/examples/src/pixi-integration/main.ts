@@ -22,7 +22,7 @@ import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/board'
     const observableInputTracker = new ObservableInputTracker(canvasProxy, boardInputPublisher);
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     console.log('kmt input state machine', kmtInputStateMachine);
-    const kmtParser = new VanillaKMTEventParser(app.canvas, kmtInputStateMachine);
+    const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, app.canvas);
     kmtParser.setUp();
 
     // Load the bunny texture.
@@ -34,7 +34,7 @@ import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/board'
 
     // Add to stage.
     // console.log(camera.contextTransform);
-    const transform = camera.getTransform(1, true);
+    const transform = camera.getTransform(1);
     app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
 
     app.stage.addChild(bunny);
