@@ -1,19 +1,19 @@
 // Track position changes with ResizeObserver
-import { Observable, Observer, SubscriptionOptions } from "../utils/observable";
+import { Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../utils/observable";
 
 export type CanvasUpdateObserver = (rect: DOMRect) => void;
 
 export class CanvasPositionDimensionPublisher {
 
-    private lastRect: DOMRect | undefined;
+    private lastRect?: DOMRect;
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
-    private scrollHandler: (() => void) | undefined;
-    private resizeHandler: (() => void) | undefined;
-    private _observers: Observable<Parameters<CanvasUpdateObserver>>;
+    private scrollHandler?: (() => void);
+    private resizeHandler?: (() => void);
+    private _observers: SynchronousObservable<Parameters<CanvasUpdateObserver>>;
 
-    constructor(canvas: HTMLCanvasElement | undefined) {
-        this._observers = new Observable<Parameters<CanvasUpdateObserver>>();
+    constructor(canvas?: HTMLCanvasElement) {
+        this._observers = new SynchronousObservable<Parameters<CanvasUpdateObserver>>();
 
         this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
             for (const entry of entries) {

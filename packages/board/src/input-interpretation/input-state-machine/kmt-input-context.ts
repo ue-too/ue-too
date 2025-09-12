@@ -1,7 +1,7 @@
 import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
 import { UserInputPublisher } from "../raw-input-publisher";
-import { CanvasPositionDimensionPublisher, getTrueRect, zoomLevelBoundariesShouldUpdate } from "../../utils";
+import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../../utils";
 
 export enum CursorStyle {
     GRAB = "grab",
@@ -18,9 +18,11 @@ export interface Canvas {
     height: number;
     position: Point;
     setCursor: (style: CursorStyle) => void;
-    dimensions: {width: number, height: number, position: Point};
+    dimensions: CanvasDimensions;
     detached: boolean;
 }
+
+export type CanvasDimensions = {width: number, height: number, position: Point};
 
 /**
  * @description A dummy implementation of the CanvasOperator interface. 
@@ -88,30 +90,17 @@ export class CanvasCacheInWebWorker implements Canvas {
     }
 }
 
-export class CanvasProxy implements Canvas {
+export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
 
     private _width: number = 0;
     private _height: number = 0;
     private _position: Point = {x: 0, y: 0};
     private _canvasPositionDimensionPublisher: CanvasPositionDimensionPublisher;
     private _canvas: HTMLCanvasElement | undefined;
-    private _mutationOBserver: MutationObserver;
+    private _internalSizeUpdateObservable: Observable<[CanvasDimensions]>;
 
     constructor(canvas?: HTMLCanvasElement) {
-        this._mutationOBserver = new MutationObserver((mutations)=>{
-            console.log('mutation', mutations);
-            for(let mutation of mutations){
-                if(mutation.type === "attributes"){
-                    if(mutation.attributeName === "width"){
-                        // NOTE canvas width change (not the style width)
-                    } else if(mutation.attributeName === "height"){
-                        // NOTE canvas height change (not the style height)
-                    }
-                } else if (mutation.attributeName === "style"){
-                    // NOTE update the canvas dimensions by style
-                }
-            }
-        });
+        this._internalSizeUpdateObservable = new SynchronousObservable<[CanvasDimensions]>();
 
         if(canvas){
             const boundingRect = canvas.getBoundingClientRect();
@@ -120,24 +109,42 @@ export class CanvasProxy implements Canvas {
             this._height = trueRect.height;
             this._position = {x: trueRect.left, y: trueRect.top};
             this._canvas = canvas;
-            this._mutationOBserver.observe(canvas, {attributes: true});
         }
 
         this._canvasPositionDimensionPublisher = new CanvasPositionDimensionPublisher(canvas);
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
             // the rect is the canvas dimension in the DOM (the width and height attribute would need to multiply by the device pixel ratio)
+            if(this._canvas == undefined){
+                console.log('is not attached to any canvas should not have getting any updates');
+                return;
+            }
+
+            console.log('width', rect.width);
+
             this._width = rect.width;
             this._height = rect.height;
             this._position = {x: rect.left, y: rect.top};
-            if(this._canvas){
-                console.log('style width and height', this._canvas.style.width, this._canvas.style.height);
-                this._canvas.style.width = rect.width + "px";
-                this._canvas.style.height = rect.height + "px";
-                this._canvas.width = rect.width * window.devicePixelRatio;
-                this._canvas.height = rect.height * window.devicePixelRatio;
-            }
-        });
 
+            console.log('syncing canvas dimension to adjust for high dpi display');
+            this._canvas.style.width = rect.width + "px";
+            this._canvas.style.height = rect.height + "px";
+            this._canvas.width = rect.width * window.devicePixelRatio;
+            this._canvas.height = rect.height * window.devicePixelRatio;
+
+            this._internalSizeUpdateObservable.notify({
+                width: this._width,
+                height: this._height,
+                position: this._position
+            });
+        });
+    }
+
+    subscribe(observer: Observer<[CanvasDimensions]>, options?: SubscriptionOptions): () => void {
+        return this._internalSizeUpdateObservable.subscribe(observer, options);
+    }
+
+    notify(...data: [CanvasDimensions]): void {
+        this._internalSizeUpdateObservable.notify(...data);
     }
 
     get detached(): boolean {
@@ -152,6 +159,26 @@ export class CanvasProxy implements Canvas {
         return this._width;
     }
 
+    /**
+     * set the width of the canvas
+     * the width is synonymous with the canvas style width not the canvas width
+     */
+    setWidth(width: number){
+        if(this._canvas){
+            this._canvas.style.width = width + "px";
+        }
+    }
+
+    /**
+     * set the height of the canvas
+     * the height is synonymous with the canvas style height not the canvas height
+     */
+    setHeight(height: number){
+        if(this._canvas){
+            this._canvas.style.height = height + "px";
+        }
+    }
+
     get height(): number {
         return this._height;
     }
@@ -161,6 +188,7 @@ export class CanvasProxy implements Canvas {
     }
 
     setCursor(style: "grab" | "default" | "grabbing"): void {
+        console.log('setting cursor', style);
         if(this._canvas){
             this._canvas.style.cursor = style;
         }
@@ -174,6 +202,11 @@ export class CanvasProxy implements Canvas {
         this._width = trueRect.width;
         this._height = trueRect.height;
         this._position = {x: trueRect.left, y: trueRect.top};
+        this._internalSizeUpdateObservable.notify({
+            width: this._width,
+            height: this._height,
+            position: this._position
+        });
     }
 }
 

@@ -510,6 +510,10 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
         return this._camera;
     }
 
+    set camera(camera: ObservableBoardCamera){
+        this._camera = camera;
+    }
+
     get config(): CameraRigConfig {
         return this._config;
     }

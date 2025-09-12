@@ -1,4 +1,4 @@
-import { Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
+import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
 import { Point } from "@ue-too/math";
 
 export type DestinationZoomUpdate = {
@@ -30,7 +30,7 @@ export class CameraZoomUpdateBatcher {
     private lastUpdateCount: number = 0;
     
     constructor() {
-        this.observable = new Observable<[ZoomUpdate]>();
+        this.observable = new AsyncObservable<[ZoomUpdate]>();
     }
 
     /**
