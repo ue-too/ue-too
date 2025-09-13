@@ -20,6 +20,7 @@ export interface Canvas {
     setCursor: (style: CursorStyle) => void;
     dimensions: CanvasDimensions;
     detached: boolean;
+    tearDown: () => void;
 }
 
 export type CanvasDimensions = {width: number, height: number, position: Point};
@@ -37,6 +38,7 @@ export class DummyCanvas implements Canvas {
     setCursor: (style: CursorStyle) => void = NO_OP;
     dimensions: {width: number, height: number, position: Point} = {width: 0, height: 0, position: {x: 0, y: 0}};
     detached: boolean = false;
+    tearDown: () => void = NO_OP;
 }
 
 export class CanvasCacheInWebWorker implements Canvas {
@@ -55,6 +57,9 @@ export class CanvasCacheInWebWorker implements Canvas {
 
     get dimensions(): {width: number, height: number, position: Point} {
         return {width: this._width, height: this._height, position: this._position};
+    }
+
+    tearDown(): void {
     }
 
     set width(width: number){
@@ -191,6 +196,10 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         }
     }
 
+    tearDown(): void {
+        this._canvasPositionDimensionPublisher.dispose();
+    }
+
     attach(canvas: HTMLCanvasElement){
         this._canvasPositionDimensionPublisher.attach(canvas);
         this._canvas = canvas;
@@ -220,6 +229,7 @@ export class WorkerRelayCanvas implements Canvas {
     private _position: Point;
     private _webWorker: Worker;
     private _canvas: HTMLCanvasElement;
+    private _canvasDiemsionPublisher: CanvasPositionDimensionPublisher;
 
     constructor(canvas: HTMLCanvasElement, webWorker: Worker, canvasDiemsionPublisher: CanvasPositionDimensionPublisher){
         const boundingRect = canvas.getBoundingClientRect();
@@ -236,6 +246,7 @@ export class WorkerRelayCanvas implements Canvas {
             this._position = {x: rect.left, y: rect.top};
             this._webWorker.postMessage({type: "updateCanvasDimensions", width: rect.width, height: rect.height, position: {x: rect.left, y: rect.top}});
         });
+        this._canvasDiemsionPublisher = canvasDiemsionPublisher;
     }
 
     get width(): number {
@@ -244,6 +255,10 @@ export class WorkerRelayCanvas implements Canvas {
 
     get height(): number {
         return this._height;
+    }
+
+    tearDown(): void {
+        this._canvasDiemsionPublisher.dispose();
     }
 
     get position(): Point {

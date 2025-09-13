@@ -97,7 +97,7 @@ export class CanvasPositionDimensionPublisher {
     }
 
     onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
-        this._observers.subscribe(observer, options);
+        return this._observers.subscribe(observer, options);
     }
 }
 
