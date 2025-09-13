@@ -4,6 +4,7 @@ export default {
     testEnvironment: 'node',
     rootDir: '.',
     testMatch: ['<rootDir>/test/**/*.test.ts'],
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     moduleFileExtensions: ['ts', 'js'],
     extensionsToTreatAsEsm: ['.ts'],
     transform: {

@@ -4,7 +4,12 @@ export interface SubscriptionOptions {
     signal?: AbortSignal;
 }
 
-export class Observable<T extends any[]> {
+export interface Observable<T extends any[]> {
+    subscribe(observer: Observer<T>, options?: SubscriptionOptions): () => void;
+    notify(...data: T): void;
+}
+
+export class AsyncObservable<T extends any[]> implements Observable<T> {
     private observers: Observer<T>[] = [];
 
     subscribe(observer: Observer<T>, options?: SubscriptionOptions): () => void {
@@ -35,6 +40,40 @@ export class Observable<T extends any[]> {
 
     notify(...data: T): void {
         this.observers.forEach(observer => queueMicrotask(() => observer(...data)));
+    }
+}
+
+export class SynchronousObservable<T extends any[]> implements Observable<T> {
+    private observers: Observer<T>[] = [];
+
+    subscribe(observer: Observer<T>, options?: SubscriptionOptions): () => void {
+        this.observers.push(observer);
+
+        // Handle AbortSignal
+        if (options?.signal) {
+            // If signal is already aborted, don't add the observer
+            if (options.signal.aborted) {
+            this.observers = this.observers.filter(o => o !== observer);
+            return () => {};
+            }
+
+            // Add abort handler
+            const abortHandler = () => {
+                this.observers = this.observers.filter(o => o !== observer);
+                options.signal?.removeEventListener('abort', abortHandler);
+            };
+
+            options.signal.addEventListener('abort', abortHandler);
+        }
+
+        // Return unsubscribe function
+        return () => {
+            this.observers = this.observers.filter(o => o !== observer);
+        };
+    }
+
+    notify(...data: T): void {
+        this.observers.forEach(observer => observer(...data));
     }
 }
 

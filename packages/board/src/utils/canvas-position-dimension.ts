@@ -1,22 +1,21 @@
 // Track position changes with ResizeObserver
-import { Observable, Observer, SubscriptionOptions } from "../utils/observable";
+import { Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../utils/observable";
 
 export type CanvasUpdateObserver = (rect: DOMRect) => void;
 
 export class CanvasPositionDimensionPublisher {
 
-    private lastRect: DOMRect;
+    private lastRect?: DOMRect;
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
-    private scrollHandler: () => void;
-    private resizeHandler: () => void;
-    private _observers: Observable<Parameters<CanvasUpdateObserver>>;
+    private scrollHandler?: (() => void);
+    private resizeHandler?: (() => void);
+    private _observers: SynchronousObservable<Parameters<CanvasUpdateObserver>>;
 
-    constructor(canvas: HTMLCanvasElement) {
-        this._observers = new Observable<Parameters<CanvasUpdateObserver>>();
-        this.lastRect = canvas.getBoundingClientRect();
+    constructor(canvas?: HTMLCanvasElement) {
+        this._observers = new SynchronousObservable<Parameters<CanvasUpdateObserver>>();
 
-        this.resizeObserver = new ResizeObserver(entries => {
+        this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
             for (const entry of entries) {
                 const newRect = entry.target.getBoundingClientRect();
                 const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
@@ -25,9 +24,12 @@ export class CanvasPositionDimensionPublisher {
                     this.lastRect = trueRect;
                 }
             }
-        });
+        }).bind(this));
 
-        this.intersectionObserver = new IntersectionObserver(entries => {
+        this.intersectionObserver = new IntersectionObserver(((entries: IntersectionObserverEntry[]) => {
+            if(this.lastRect === undefined){
+                return;
+            }
             for (const entry of entries) {
                 if (entry.isIntersecting) {
                     const newRect = entry.boundingClientRect;
@@ -38,47 +40,36 @@ export class CanvasPositionDimensionPublisher {
                     }
                 }
             }
-        });
-        
-        // Add scroll handler to detect position changes during scrolling
-        this.scrollHandler = (() => {
-            const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
-            if (rectChanged(this.lastRect, trueRect)) {
-                this.publishPositionUpdate(trueRect);
-                this.lastRect = trueRect;
-            }
-        }).bind(this);
+        }).bind(this));
 
-        // Add window resize handler to detect position changes when window size changes
-        this.resizeHandler = (() => {
-            const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
-            if (rectChanged(this.lastRect, trueRect)) {
-                this.publishPositionUpdate(trueRect);
-                this.lastRect = trueRect;
-            }
-        }).bind(this);
-        
-        this.resizeObserver.observe(canvas);
-        this.intersectionObserver.observe(canvas);
-        window.addEventListener('scroll', this.scrollHandler, { passive: true });
-        window.addEventListener('resize', this.resizeHandler, { passive: true });
+        if(canvas){
+            this.attach(canvas);
+        }
     }
     
-    // Add a cleanup method to remove event listeners
     public dispose(): void {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();
-        window.removeEventListener('scroll', this.scrollHandler);
-        window.removeEventListener('resize', this.resizeHandler);
+        if(this.scrollHandler){
+            window.removeEventListener('scroll', this.scrollHandler);
+        }
+        if(this.resizeHandler){
+            window.removeEventListener('resize', this.resizeHandler);
+        }
     }
 
     attach(canvas: HTMLCanvasElement) {
         this.dispose();
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
+        const boundingRect = canvas.getBoundingClientRect();
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this.lastRect = trueRect;
+
         this.scrollHandler = (() => {
+            if(this.lastRect === undefined){
+                return;
+            }
             const newRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
             if (rectChanged(this.lastRect, trueRect)) {
@@ -87,6 +78,9 @@ export class CanvasPositionDimensionPublisher {
             }
         }).bind(this);
         this.resizeHandler = (() => {
+            if(this.lastRect === undefined){
+                return;
+            }
             const newRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
             if (rectChanged(this.lastRect, trueRect)) {
@@ -103,7 +97,7 @@ export class CanvasPositionDimensionPublisher {
     }
 
     onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
-        this._observers.subscribe(observer, options);
+        return this._observers.subscribe(observer, options);
     }
 }
 
@@ -125,9 +119,12 @@ export function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
     return new DOMRect(trueLeft, trueTop, trueWidth, trueHeight);
 }
 
-function rectChanged(r1: DOMRect, r2: DOMRect) {
-  return r1.top !== r2.top || r1.left !== r2.left || 
-         r1.width !== r2.width || r1.height !== r2.height;
+function rectChanged(r1: DOMRect | undefined, r2: DOMRect) {
+    if(r1 === undefined){
+        return true;
+    }
+    return r1.top !== r2.top || r1.left !== r2.left || 
+            r1.width !== r2.width || r1.height !== r2.height;
 }
 
 /**
@@ -212,4 +209,3 @@ export function invertYAxisForDrawImageWith9Args(args: any[]): typeof args {
     }
     return newArgs;
 }
-

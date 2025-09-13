@@ -30,7 +30,7 @@ const cameraRig = createDefaultCameraRig(camera);
 const boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig));
 const observableInputTracker = new ObservableInputTracker(canvasProxy, boardInputPublisher);
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
-const kmtParser = new VanillaKMTEventParser(canvas, kmtInputStateMachine);
+const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
 kmtParser.setUp();
 
 function step(){

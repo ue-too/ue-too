@@ -187,7 +187,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param alignCoorindate Whether to align the coordinate system to the camera's position
      * @returns The transformation matrix
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean): TransformationMatrix {
+    getTransform(devicePixelRatio: number, alignCoorindate: boolean = true): TransformationMatrix {
         return this._baseCamera.getTransform(devicePixelRatio, alignCoorindate);
     }
 

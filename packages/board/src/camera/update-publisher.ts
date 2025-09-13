@@ -1,5 +1,5 @@
 import { Point } from "@ue-too/math";
-import { Observable, Observer, SubscriptionOptions } from "../utils/observable";
+import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../utils/observable";
 
 /**
  * @description The payload for the pan event.
@@ -151,10 +151,10 @@ export class CameraUpdatePublisher {
     private all: Observable<Parameters<Callback<"all">>>;
 
     constructor() {
-        this.pan = new Observable<Parameters<Callback<"pan">>>();
-        this.zoom = new Observable<Parameters<Callback<"zoom">>>();
-        this.rotate = new Observable<Parameters<Callback<"rotate">>>();
-        this.all = new Observable<Parameters<Callback<"all">>>();
+        this.pan = new AsyncObservable<Parameters<Callback<"pan">>>();
+        this.zoom = new AsyncObservable<Parameters<Callback<"zoom">>>();
+        this.rotate = new AsyncObservable<Parameters<Callback<"rotate">>>();
+        this.all = new AsyncObservable<Parameters<Callback<"all">>>();
     }
 
     /**

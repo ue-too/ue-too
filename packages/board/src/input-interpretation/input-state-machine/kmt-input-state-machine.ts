@@ -1,14 +1,21 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
 import { PointCal } from "@ue-too/math";
-import { CanvasOperator, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
+import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
 
 /**
  * @description The possible states of the keyboard mouse and trackpad input state machine.
  * 
  * @category Input State Machine
  */
-export type KmtInputStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "PAN" | "INITIAL_PAN" | "PAN_VIA_SCROLL_WHEEL" | "DISABLED";
+export type KmtInputStates = 
+    "IDLE" | 
+    "READY_TO_PAN_VIA_SPACEBAR" | 
+    "READY_TO_PAN_VIA_SCROLL_WHEEL" | 
+    "PAN" | 
+    "INITIAL_PAN" | 
+    "PAN_VIA_SCROLL_WHEEL" | 
+    "DISABLED";
 
 /**
  * @description The payload for the pointer event.
@@ -77,12 +84,12 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
-export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvasOperator: CanvasOperator): Point {
+export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvasOperator: Canvas): Point {
     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
-export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: CanvasOperator): Point {
+export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: Canvas): Point {
     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
     return PointCal.subVector(point, cameraCenterInWindow);
 }
@@ -275,6 +282,12 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
         disable: {
             action: (context) => context.cancelCurrentAction(),
             defaultTargetState: "DISABLED",
+        },
+        leftPointerMove: {
+            action: (context) => {
+                console.log('leftPointerMoveHandler');
+            },
+            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
         }
     }
 

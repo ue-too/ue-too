@@ -1,4 +1,4 @@
-import { Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
+import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
 
 export type Position = {
     x: number;
@@ -31,7 +31,7 @@ export class CameraPositionUpdateBatcher {
     private lastUpdateCount: number = 0;
     
     constructor() {
-        this.observable = new Observable<[PositionUpdate]>();
+        this.observable = new AsyncObservable<[PositionUpdate]>();
     }
 
     /**

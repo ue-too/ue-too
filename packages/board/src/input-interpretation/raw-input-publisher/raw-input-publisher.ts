@@ -1,7 +1,7 @@
 import type { Point } from "@ue-too/math";
 import { createDefaultCameraMux, CameraMux } from "../../camera/camera-mux";
 import { ObservableBoardCamera } from "../../camera/interface";
-import { Observable, Observer } from "../../utils/observable";
+import { AsyncObservable, Observable, Observer } from "../../utils/observable";
 
 /**
  * @description The unsubscribe to user raw input.
@@ -118,10 +118,10 @@ export class RawUserInputPublisher implements UserInputPublisher {
     private _cameraMux: CameraMux;
 
     constructor(cameraMux: CameraMux){
-        this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
-        this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
-        this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
-        this.all = new Observable<Parameters<RawUserInputCallback<"all">>>();
+        this.pan = new AsyncObservable<Parameters<RawUserInputCallback<"pan">>>();
+        this.zoom = new AsyncObservable<Parameters<RawUserInputCallback<"zoom">>>();
+        this.rotate = new AsyncObservable<Parameters<RawUserInputCallback<"rotate">>>();
+        this.all = new AsyncObservable<Parameters<RawUserInputCallback<"all">>>();
         this._cameraMux = cameraMux;
     }
 
@@ -185,10 +185,10 @@ export class RawUserInputPublisherWithWebWorkerRelay implements UserInputPublish
     private webWorker: Worker;
 
     constructor(webWorker: Worker){
-        this.pan = new Observable<Parameters<RawUserInputCallback<"pan">>>();
-        this.zoom = new Observable<Parameters<RawUserInputCallback<"zoom">>>();
-        this.rotate = new Observable<Parameters<RawUserInputCallback<"rotate">>>();
-        this.all = new Observable<Parameters<RawUserInputCallback<"all">>>();
+        this.pan = new AsyncObservable<Parameters<RawUserInputCallback<"pan">>>();
+        this.zoom = new AsyncObservable<Parameters<RawUserInputCallback<"zoom">>>();
+        this.rotate = new AsyncObservable<Parameters<RawUserInputCallback<"rotate">>>();
+        this.all = new AsyncObservable<Parameters<RawUserInputCallback<"all">>>();
         this.webWorker = webWorker;
     }
 

@@ -1,4 +1,4 @@
-import { Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
+import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../../../utils/observable";
 
 export type Rotation = number; // in radians
 
@@ -27,7 +27,7 @@ export class CameraRotationUpdateBatcher {
     private lastUpdateCount: number = 0;
     
     constructor() {
-        this.observable = new Observable<[RotationUpdate]>();
+        this.observable = new AsyncObservable<[RotationUpdate]>();
     }
 
     /**
