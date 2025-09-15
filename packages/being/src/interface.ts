@@ -7,7 +7,7 @@ type NOOP = () => void;
 
 type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
 
-export type EventArgs<EventPayloadMapping, K extends keyof EventPayloadMapping | string> = 
+export type EventArgs<EventPayloadMapping, K> = 
   K extends keyof EventPayloadMapping
     ? IsEmptyObject<EventPayloadMapping[K]> extends true
       ? [event: K] // No payload needed
@@ -34,7 +34,7 @@ export const NO_OP: NOOP = ()=>{};
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
-    happens<K extends keyof EventPayloadMapping | string>(
+    happens<K extends (keyof EventPayloadMapping)>(
         ...args: EventArgs<EventPayloadMapping, K>
       ): States | undefined;
     setContext(context: Context): void;
@@ -202,7 +202,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): States | undefined {
+    happens<K extends (keyof EventPayloadMapping)>(...args: EventArgs<EventPayloadMapping, K>): States | undefined {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
