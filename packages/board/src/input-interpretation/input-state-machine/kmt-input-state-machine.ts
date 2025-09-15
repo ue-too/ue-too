@@ -1,4 +1,4 @@
-import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine } from "@ue-too/being";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine, EventArgs } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
 import { PointCal } from "@ue-too/math";
 import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
@@ -555,11 +555,11 @@ export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<Kmt
         this._webworker = webworker;
     }
 
-    happens(event: keyof KmtInputEventMapping, payload: KmtInputEventMapping[keyof KmtInputEventMapping]): KmtInputStates | undefined {        
+    happens(...args: EventArgs<KmtInputEventMapping, keyof KmtInputEventMapping | string>): KmtInputStates | undefined {        
         this._webworker.postMessage({
             type: "kmtInputStateMachine",
-            event,
-            payload,
+            event: args[0],
+            payload: args[1],
         });
         return "IDLE";
     }
