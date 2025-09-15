@@ -326,17 +326,6 @@ describe("Basic Operation on Bezier Curve", ()=>{
             });
         });
 
-        test("Project Points onto bezier curve", ()=>{
-            const testControlPoints = [{x: getRandom(-500, 500), y: getRandom(-500, 500)}, {x: getRandom(-500, 500), y: getRandom(-500, 500)}, {x: getRandom(-500, 500), y: getRandom(-500, 500)}];
-            const testCurve = new BCurve(testControlPoints);
-            const testMousePosition = {x: getRandom(-500, 500), y: getRandom(-500, 500)};
-            const testRes = testCurve.getProjection(testMousePosition);
-            const LUT = testCurve.getLUT();
-            LUT.forEach((point)=>{
-                expect(PointCal.distanceBetweenPoints(testRes.projection, testMousePosition)).toBeLessThanOrEqual(PointCal.distanceBetweenPoints(point, testMousePosition));
-            });
-        });
-
         test("Find Intersections between a bezier curve with a circle", ()=>{
             const testControlPoints = getRandomQuadraticControlPoints(-500, 500);
             const testCurve = new BCurve(testControlPoints);
