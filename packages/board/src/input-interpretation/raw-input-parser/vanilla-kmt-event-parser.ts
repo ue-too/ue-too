@@ -172,6 +172,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
+        this.stateMachine.happens("pointerMove", {x: e.clientX, y: e.clientY});
     }
 
     scrollHandler(e: MinimumWheelEvent){

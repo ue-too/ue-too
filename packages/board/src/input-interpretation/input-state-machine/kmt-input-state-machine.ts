@@ -71,6 +71,7 @@ export type KmtInputEventMapping = {
     middlePointerMove: PointerEventPayload;
     disable: EmptyPayload;
     enable: EmptyPayload;
+    pointerMove: PointerEventPayload;
 }
 
 /**
@@ -143,7 +144,11 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         disable: {
             action: NO_OP,
             defaultTargetState: "DISABLED",
-        }
+        },
+        pointerMove: {
+            action: () => console.log("pointerMove"),
+            defaultTargetState: "IDLE",
+        },
     }
 
     uponEnter(context: KmtInputContext): void {

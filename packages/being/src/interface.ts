@@ -34,7 +34,7 @@ export const NO_OP: NOOP = ()=>{};
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
-    happens<K extends (keyof EventPayloadMapping)>(
+    happens<K extends (keyof EventPayloadMapping | string)>(
         ...args: EventArgs<EventPayloadMapping, K>
       ): States | undefined;
     setContext(context: Context): void;
@@ -70,7 +70,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
-    handles<K extends keyof EventPayloadMapping>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
@@ -202,7 +202,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends (keyof EventPayloadMapping)>(...args: EventArgs<EventPayloadMapping, K>): States | undefined {
+    happens<K extends (keyof EventPayloadMapping | string)>(...args: EventArgs<EventPayloadMapping, K>): States | undefined {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
@@ -279,9 +279,9 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log('leave');
     }
 
-    handles<K extends keyof EventPayloadMapping>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined{
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined{
         const eventKey = args[0] as keyof EventPayloadMapping;
-        const eventPayload = args[1] as EventPayloadMapping[K];
+        const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
         if (this.eventReactions[eventKey]) {
             this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
             const targetState = this.eventReactions[eventKey].defaultTargetState;
@@ -300,7 +300,3 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return undefined;
     }
 }
-
-export function placeHolder(){
-    return "placeholder";
-};
