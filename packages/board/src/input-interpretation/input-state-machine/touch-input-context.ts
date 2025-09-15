@@ -1,7 +1,7 @@
 import type { Point } from "@ue-too/math";
 import { RawUserInputPublisher } from "../raw-input-publisher";
 import { BaseContext } from "@ue-too/being";
-import { CanvasOperator } from "./kmt-input-context";
+import { Canvas } from "./kmt-input-context";
 
 /**
  * @description The touch points.
@@ -23,17 +23,17 @@ export interface TouchContext extends BaseContext{
     notifyOnPan: (delta: Point) => void;
     notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
     alignCoordinateSystem: boolean;
-    canvas: CanvasOperator;
+    canvas: Canvas;
 }
 
 export class TouchInputTracker implements TouchContext {
 
     private _inputPublisher: RawUserInputPublisher;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
-    private _canvas: CanvasOperator;
+    private _canvas: Canvas;
     private _alignCoordinateSystem: boolean;
 
-    constructor(canvas: CanvasOperator, inputPublisher: RawUserInputPublisher) {
+    constructor(canvas: Canvas, inputPublisher: RawUserInputPublisher) {
         this._canvas = canvas;
         this._inputPublisher = inputPublisher;
         this._alignCoordinateSystem = true;
@@ -94,7 +94,7 @@ export class TouchInputTracker implements TouchContext {
         this._alignCoordinateSystem = value;
     }
 
-    get canvas(): CanvasOperator {
+    get canvas(): Canvas {
         return this._canvas;
     }
 
