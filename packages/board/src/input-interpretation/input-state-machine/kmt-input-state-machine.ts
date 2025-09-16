@@ -140,14 +140,14 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
             defaultTargetState: "DISABLED",
         },
         pointerMove: {
-            action: () => console.log("pointerMove"),
+            action: this.pointerMoveHandler,
             defaultTargetState: "IDLE",
         },
     }
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
-        context.toggleOffEdgeAutoCameraInput();
+        context.toggleOnEdgeAutoCameraInput();
     }
 
     beforeExit(context: KmtInputContext): void {
@@ -186,6 +186,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     pointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+        context.setCursorPosition(payload);
     }
 }
 
