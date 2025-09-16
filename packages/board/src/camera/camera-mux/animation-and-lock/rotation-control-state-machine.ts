@@ -93,7 +93,7 @@ export class RotateControlStateMachine extends TemplateStateMachine<RotateEventP
      * @category Input Flow Control
      */
     initateTransition(): void{
-        this.happens("initateTransition", {});
+        this.happens("initateTransition");
     }
 
 }
