@@ -5,7 +5,7 @@ export class EdgeAutoCameraInput {
 
     private _cameraMux: CameraMux;
     private _state: 'idle' | 'moving' = 'idle';
-    private _speed: number = 10; // pixels per second in viewport space
+    private _speed: number = 100; // pixels per second in viewport space
 
     private _horizontalDirection: 'left' | 'right' | 'none' = 'none';
     private _verticalDirection: 'up' | 'down' | 'none' = 'none';

@@ -216,6 +216,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._statesArray = Object.keys(states) as States[];
         this._stateChangeCallbacks = [];
         this._happensCallbacks = [];
+        this._states[initialState].uponEnter(context, this, initialState);
     }
 
     switchTo(state: States): void {
