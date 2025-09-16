@@ -35,8 +35,6 @@ function step(timestamp: number){
     const deltaTime = timestamp - lastUpdateFrameTimeStamp;
     lastUpdateFrameTimeStamp = timestamp;
 
-    panAnimation.animate(deltaTime);
-
     const topLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
     const topRightCornerInViewPort = board.alignCoordinateSystem ? {x: board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
     const bottomLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2};
@@ -52,6 +50,8 @@ function step(timestamp: number){
         board.alignCoordinateSystem, 
         board.camera.zoomLevel, 
     );
+
+    panAnimation.animate(deltaTime);
     requestAnimationFrame(step);
 }
 
