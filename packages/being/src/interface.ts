@@ -7,6 +7,15 @@ type NOOP = () => void;
 
 type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
 
+/**
+ * @description Utility type to derive a string literal union from a readonly array of string literals.
+ *
+ * Example:
+ * const TEST_STATES = ["one", "two", "three"] as const;
+ * type TestStates = CreateStateType<typeof TEST_STATES>; // "one" | "two" | "three"
+ */
+export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
+
 export type EventArgs<EventPayloadMapping, K> = 
   K extends keyof EventPayloadMapping
     ? IsEmptyObject<EventPayloadMapping[K]> extends true
@@ -15,6 +24,17 @@ export type EventArgs<EventPayloadMapping, K> =
     : [event: K, payload?: unknown]; // Unknown events
 
 export const NO_OP: NOOP = ()=>{};
+
+export type EventNotHandled = {
+    handled: false;
+}
+
+export type EventHandled<States extends string> = {
+    handled: true;
+    nextState?: States;
+}
+
+export type EventHandledResult<States extends string> = EventNotHandled | EventHandled<States>;
 
 /**
  * @description This is the interface for the state machine. The interface takes in a few generic parameters.
@@ -36,7 +56,7 @@ export interface StateMachine<EventPayloadMapping, Context extends BaseContext, 
     switchTo(state: States): void;
     happens<K extends (keyof EventPayloadMapping | string)>(
         ...args: EventArgs<EventPayloadMapping, K>
-      ): States | undefined;
+      ): EventHandledResult<States>;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -70,7 +90,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
@@ -202,20 +222,20 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends (keyof EventPayloadMapping | string)>(...args: EventArgs<EventPayloadMapping, K>): States | undefined {
+    happens<K extends (keyof EventPayloadMapping | string)>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States> {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
         this._happensCallbacks.forEach(callback => callback(args, this._context));
-        const nextState = this._states[this._currentState].handles(args, this._context, this);
-        if(nextState !== undefined && nextState !== this._currentState){
+        const result = this._states[this._currentState].handles(args, this._context, this);
+        if(result.handled && result.nextState !== undefined && result.nextState !== this._currentState){ // TODO: whether or not to transition to the same state (currently no) (uponEnter and beforeExit will still be called if the state is the same)
             const originalState = this._currentState;
-            this._states[this._currentState].beforeExit(this._context, this, nextState);
-            this.switchTo(nextState);
+            this._states[this._currentState].beforeExit(this._context, this, result.nextState);
+            this.switchTo(result.nextState);
             this._states[this._currentState].uponEnter(this._context, this, originalState);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
-        return nextState;
+        return result;
     }
 
     onStateChange(callback: StateChangeCallback<States>): void {
@@ -279,7 +299,7 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log('leave');
     }
 
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined{
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>{
         const eventKey = args[0] as keyof EventPayloadMapping;
         const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
         if (this.eventReactions[eventKey]) {
@@ -293,10 +313,36 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
                     }
                     return false;
                 });
-                return target ? target.target : targetState;
+                return target ? {handled: true, nextState: target.target} : {handled: true, nextState: targetState};
             }
-            return targetState;
+            return {handled: true, nextState: targetState};
         }
-        return undefined;
+        return {handled: false};
     }
+}
+
+
+/**
+ * Example usage
+ * ```ts
+ type TestSubStates = "subOne" | "subTwo" | "subThree";
+ const TEST_STATES = ["one", "two", "three"] as const;
+ type TestStates = CreateStateType<typeof TEST_STATES>;
+ type AllStates = TestStates | TestSubStates;
+
+ const isTestState = createStateGuard(TEST_STATES);
+
+function test(s: AllStates) {
+	if (isTestState(s)) {
+		// s: TestStates
+    }
+}
+ * ```
+
+ * @param set 
+ * @returns 
+ */
+
+export function createStateGuard<T extends string>(set: readonly T[]) {
+    return (s: string): s is T => set.includes(s as T);
 }
