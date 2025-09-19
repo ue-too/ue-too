@@ -7,7 +7,7 @@
     "tsBuildInfoFile": "dist/border.tsbuildinfo",
     "declaration": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true
   },
   "include": [

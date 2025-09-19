@@ -7,7 +7,7 @@
     "tsBuildInfoFile": "dist/animate.tsbuildinfo",
     "declaration": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "composite": true,
     "strict": true
   },
