@@ -8,6 +8,7 @@ export class CanvasPositionDimensionPublisher {
     private lastRect?: DOMRect;
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
+    private mutationObserver: MutationObserver;
     private scrollHandler?: (() => void);
     private resizeHandler?: (() => void);
     private _observers: SynchronousObservable<Parameters<CanvasUpdateObserver>>;
@@ -42,6 +43,9 @@ export class CanvasPositionDimensionPublisher {
             }
         }).bind(this));
 
+        this.attributeCallBack = this.attributeCallBack.bind(this);
+        this.mutationObserver = new MutationObserver(this.attributeCallBack);
+
         if(canvas){
             this.attach(canvas);
         }
@@ -50,6 +54,7 @@ export class CanvasPositionDimensionPublisher {
     public dispose(): void {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();
+        this.mutationObserver.disconnect();
         if(this.scrollHandler){
             window.removeEventListener('scroll', this.scrollHandler);
         }
@@ -62,6 +67,10 @@ export class CanvasPositionDimensionPublisher {
         this.dispose();
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
+        this.mutationObserver.observe(canvas, {
+            attributes: true,
+            attributeFilter: ["width", "height", "style"]
+        });
         const boundingRect = canvas.getBoundingClientRect();
         const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
         this.lastRect = trueRect;
@@ -98,6 +107,50 @@ export class CanvasPositionDimensionPublisher {
 
     onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
         return this._observers.subscribe(observer, options);
+    }
+
+    private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
+        for(let mutation of mutationsList){
+            if(mutation.type === "attributes"){
+                if(mutation.attributeName === "width"){
+                    const canvas = mutation.target as HTMLCanvasElement;
+                    canvas.style.width = canvas.width / window.devicePixelRatio + "px";
+                    const newRect = (mutation.target as HTMLCanvasElement).getBoundingClientRect();
+                    const trueRect = getTrueRect(newRect, window.getComputedStyle(mutation.target as HTMLCanvasElement));
+                    if (rectChanged(this.lastRect, trueRect)) {
+                        this.publishPositionUpdate(trueRect);
+                        this.lastRect = trueRect;
+                    }
+                } else if(mutation.attributeName === "height"){
+                    const canvas = mutation.target as HTMLCanvasElement;
+                    canvas.style.height = canvas.height / window.devicePixelRatio + "px";
+                    const newRect = canvas.getBoundingClientRect();
+                    const trueRect = getTrueRect(newRect, window.getComputedStyle(mutation.target as HTMLCanvasElement));
+                    if (rectChanged(this.lastRect, trueRect)) {
+                        this.publishPositionUpdate(trueRect);
+                        this.lastRect = trueRect;
+                    }
+                } else if (mutation.attributeName === "style"){
+                    const canvas = mutation.target as HTMLCanvasElement;
+                    const styleWidth = parseFloat((mutation.target as HTMLCanvasElement).style.width);
+                    const styleHeight = parseFloat((mutation.target as HTMLCanvasElement).style.height);
+                    const newWidth = styleWidth * window.devicePixelRatio;
+                    const newHeight = styleHeight * window.devicePixelRatio;
+                    if(newWidth != canvas.width){
+                        canvas.width = newWidth;
+                    }
+                    if(newHeight != canvas.height){
+                        canvas.height = newHeight;
+                    }
+                    const newRect = (mutation.target as HTMLCanvasElement).getBoundingClientRect();
+                    const trueRect = getTrueRect(newRect, window.getComputedStyle(mutation.target as HTMLCanvasElement));
+                    if (rectChanged(this.lastRect, trueRect)) {
+                        this.publishPositionUpdate(trueRect);
+                        this.lastRect = trueRect;
+                    }
+                }
+            }
+        }
     }
 }
 
