@@ -37,7 +37,6 @@ export interface BoardCamera {
     setMaxZoomLevel(maxZoomLevel: number): void;
     setHorizontalBoundaries(min: number, max: number): void;
     setVerticalBoundaries(min: number, max: number): void;
-    getCameraOriginInWindow(centerInWindow: Point): Point;
     convertFromViewPort2WorldSpace(point: Point): Point;
     convertFromWorld2ViewPort(point: Point): Point;
     getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}};

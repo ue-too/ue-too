@@ -1,4 +1,5 @@
 export * from "./base";
+export { default as BaseCamera } from "./base";
 export * from './utils';
 export * from './default-camera';
 export * from './interface';
