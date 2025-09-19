@@ -66,6 +66,7 @@ export default class Board {
     private lastUpdateTime: number = 0;
 
     constructor(canvas?: HTMLCanvasElement){
+        console.log('board constructor');
         const camera = new DefaultBoardCamera();
         camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
 
