@@ -59,5 +59,9 @@
     "typedoc-plugin-mdn-links": "^4.0.13",
     "typescript": "^5.7.3",
     "vite": "^6.1.0"
+  },
+  "packageManager": "pnpm@10.17.0",
+  "engines": {
+    "node": "22.19.0"
   }
 }
