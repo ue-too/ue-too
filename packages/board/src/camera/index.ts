@@ -5,4 +5,5 @@ export * from './interface';
 export * from './update-publisher';
 export * from './camera-rig';
 export * from './camera-mux';
+export * from './camera-edge-auto-input';
 export { default as DefaultBoardCamera } from './default-camera';

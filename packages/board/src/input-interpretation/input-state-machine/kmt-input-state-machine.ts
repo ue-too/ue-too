@@ -147,6 +147,11 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
+        context.toggleOffEdgeAutoCameraInput();
+    }
+
+    beforeExit(context: KmtInputContext): void {
+        context.toggleOffEdgeAutoCameraInput();
     }
 
     scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): void {
@@ -178,6 +183,9 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         // context.canvas.setCursor(CursorStyle.GRABBING);
+    }
+
+    pointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
     }
 }
 

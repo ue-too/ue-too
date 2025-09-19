@@ -60,6 +60,7 @@ export type PanByHandlerFunction = (delta: Point, camera: BoardCamera, config: P
 /**
  * @description Helper function that creates a default "pan to" handler.
  * The default pan to handler will first restrict the pan to the view port, then clamp the pan to the boundaries, and then pan to the destination.
+ * This handler chain works in the world coordinate system.
  * 
  * @see {@link createHandlerChain} to create your own custom pan handler pipeline. (you can also use this function as a part of your own custom pan handler pipeline)
  * @category Camera

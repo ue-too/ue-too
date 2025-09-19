@@ -14,6 +14,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from '../camera/camera-mux';
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
 import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
+import { EdgeAutoCameraInput } from '../camera/camera-edge-auto-input';
 
 /**
  * Usage
@@ -79,11 +80,12 @@ export default class Board {
 
         this.boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig));
 
-        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
+        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher, new EdgeAutoCameraInput(this.boardInputPublisher.cameraMux));
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
 
         const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
         const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
+
         
         this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
         this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
@@ -275,6 +277,8 @@ export default class Board {
             this.syncCameraZoomLevel(this._canvasSizeUpdateQueue);
             this._canvasSizeUpdateQueue = undefined;
         }
+
+        this._observableInputTracker.edgeAutoCameraInput.update(deltaTime);
 
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
