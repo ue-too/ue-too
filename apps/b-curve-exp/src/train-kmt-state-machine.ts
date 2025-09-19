@@ -62,9 +62,15 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn("no possible next joints");
             return null;
         }
-        const firstNextJointNumber: number = possibleNextJoints.values().next().value;
+        const firstNextJointNumber: number | undefined = possibleNextJoints.values().next().value;
+        if(firstNextJointNumber === undefined){
+            return null;
+        }
         const firstNextTrackSegmentNumber = joint.connections.get(firstNextJointNumber);
         const firstNextJoint = this._trackGraph.getJoint(firstNextJointNumber);
+        if(firstNextTrackSegmentNumber === undefined){
+            return null;
+        }
         const firstNextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(firstNextTrackSegmentNumber);
         if(firstNextJoint === null){
             console.warn("first next joint not found");
@@ -158,7 +164,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             return;
         }
         this._trainPositionInTrack.direction = this._trainPositionInTrack.direction === "forward" ? "backward" : "forward";
-        this._trainTangent = PointCal.multiplyVectorByScalar(this._trainTangent, -1);
+        this._trainTangent = this._trainTangent !== null ? PointCal.multiplyVectorByScalar(this._trainTangent, -1) : null;
         this._expandDirection = this._expandDirection === "same" ? "opposite" : "same";
     }
 
@@ -265,7 +271,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             const enteringJoint = this._trackGraph.getJoint(enteringJointNumber);
 
             if(enteringJoint === null){
-                return;
+                return null;
             }
 
             const nextJointDirection = enteringJoint.direction.reverseTangent.has(comingFromJointNumber) ? "tangent" : "reverseTangent";
@@ -286,7 +292,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
 
             if(nextTrackSegment === null){
-                return;
+                return null;
             }
 
             xDirection = nextDirection.direction;

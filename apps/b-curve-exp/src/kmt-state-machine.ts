@@ -337,15 +337,22 @@ export class CurveCreationEngine implements LayoutContext {
 
     flipStartTangent() {
         this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
+        if(this._newStartJoint === null){
+            return;
+        }
+        if(this._newEndJoint === null){
+            return;
+        }
         const newPreviewCurveCPs = getPreviewCurve(
             this._newStartJoint, 
             this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
-            this._previewCurve?.curve, 
-            this._trackGraph
         );
+        if(newPreviewCurveCPs === null){
+            return;
+        }
         if(this._previewCurve == null){
             this._previewCurve = {
                 curve: new BCurve(newPreviewCurveCPs.cps),
@@ -359,15 +366,22 @@ export class CurveCreationEngine implements LayoutContext {
 
     flipEndTangent() {
         this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
+        if(this._newStartJoint === null){
+            return;
+        }
+        if(this._newEndJoint === null){
+            return;
+        }
         const newPreviewCurveCPs = getPreviewCurve(
             this._newStartJoint, 
             this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
-            this._previewCurve?.curve, 
-            this._trackGraph
         );
+        if(newPreviewCurveCPs === null){
+            return;
+        }
         if(this._previewCurve == null){
             this._previewCurve = {
                 curve: new BCurve(newPreviewCurveCPs.cps),
@@ -381,15 +395,22 @@ export class CurveCreationEngine implements LayoutContext {
 
     toggleStraightLine() {
         this._extendAsStraightLine = !this._extendAsStraightLine;
+        if(this._newStartJoint === null){
+            return;
+        }
+        if(this._newEndJoint === null){
+            return;
+        }
         const newPreviewCurveCPs = getPreviewCurve(
             this._newStartJoint, 
             this._newEndJoint, 
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
-            this._previewCurve?.curve, 
-            this._trackGraph
         );
+        if(newPreviewCurveCPs === null){
+            return;
+        }
         if(this._previewCurve == null){
             this._previewCurve = {
                 curve: new BCurve(newPreviewCurveCPs.cps),
@@ -421,9 +442,11 @@ export class CurveCreationEngine implements LayoutContext {
             this._previewStartTangentFlipped, 
             this._previewEndTangentFlipped, 
             this._extendAsStraightLine,
-            this._previewCurve?.curve, 
-            this._trackGraph
         );
+
+        if(newPreviewCurveCPs === null){
+            return;
+        }
 
         if(newPreviewCurveCPs.shouldToggleStartTangentFlip){
             this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
@@ -644,15 +667,13 @@ function getPreviewCurve(
     previewStartTangentFlipped: boolean, 
     previewEndTangentFlipped: boolean, 
     extendAsStraightLine: boolean = false,
-    previewCurve: BCurve | null,
-    trackGraph: TrackGraph,
 ): 
     {
         cps: Point[] // including start and end preview points
         startAndEndSwitched: boolean; // sometimes the new curve would go from end (as t = 0) to start (as t = 1)
         shouldToggleStartTangentFlip: boolean;
         shouldToggleEndTangentFlip: boolean;
-    }
+    } | null
 {
 
     // simplified logic for different combinations of new joint types
@@ -730,7 +751,7 @@ function getPreviewCurve(
             shouldToggleStartTangentFlip: tangentCalibrated && previewStartTangentFlipped,
         };
     } else {
-        newStartJointType.type
+        return null;
     }
 }
 

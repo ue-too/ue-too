@@ -197,7 +197,7 @@ function step(timestamp: number){
 
     lastTimestamp = timestamp;
 
-    if(curveEngine.previewCurve !== null){
+    if(curveEngine.previewCurve !== null && board.context !== undefined){
         const cps = curveEngine.previewCurve.curve.getControlPoints();
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
@@ -217,6 +217,9 @@ function step(timestamp: number){
     }
 
     curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
+        if(board.context === undefined){
+            return;
+        }
         const cps = trackSegment.curve.getControlPoints();
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
@@ -246,8 +249,15 @@ function step(timestamp: number){
     // });
 
     // offset as line segments
+    if(board.context === undefined){
+        return;
+    }
+
     board.context.save();
     curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
+        if(board.context === undefined){
+            return;
+        }
         board.context.beginPath();
         board.context.moveTo(offset.positive[0].x, offset.positive[0].y);
         for(let i = 1; i < offset.positive.length; i++){
@@ -280,6 +290,9 @@ function step(timestamp: number){
     }
 
     curveEngine.trackGraph.getJoints().forEach(({joint, jointNumber})=>{
+        if(board.context === undefined){
+            return;
+        }
         board.context.save();
         board.context.lineWidth = 1 / board.camera.zoomLevel;
         board.context.strokeStyle = "blue";
@@ -338,7 +351,9 @@ function step(timestamp: number){
         board.context.arc(trainPlacementEngine.trainPosition.x, trainPlacementEngine.trainPosition.y, 5, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
-        drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
+        if(trainPlacementEngine.trainTangent !== null){
+            drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
+        }
     }
 
     if(trainPlacementEngine.secondBogiePosition != null){
