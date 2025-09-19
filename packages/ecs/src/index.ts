@@ -81,8 +81,8 @@ export interface CArray {
 export class ComponentArray<T> implements CArray {
 
     private denseArray: T[];
-    private sparse: Entity[]; // maps entity to index in dense array
-    private reverse: Entity[]; // maps index in dense array to entity
+    private sparse: (Entity | null)[]; // maps entity to index in dense array
+    private reverse: (Entity | null)[]; // maps index in dense array to entity
     private _count: number;
 
     constructor(maxEntities: number) {
@@ -104,13 +104,13 @@ export class ComponentArray<T> implements CArray {
         this._count++;
     }
 
-    getData(entity: Entity): T {
+    getData(entity: Entity): T | null {
         if(this.sparse.length <= entity){
             return null;
         }
 
         const denseIndex = this.sparse[entity];
-        if(denseIndex === undefined || denseIndex >= this._count){
+        if(denseIndex === undefined || denseIndex === null || denseIndex >= this._count){
             return null;
         }
 
@@ -123,11 +123,15 @@ export class ComponentArray<T> implements CArray {
 
     removeData(entity: Entity): void {
         const denseIndex = this.sparse[entity];
-        if(denseIndex === undefined || denseIndex >= this._count){
+        if(denseIndex === undefined || denseIndex === null || denseIndex >= this._count){
             return;
         }
 
         const lastEntity = this.reverse[this._count - 1];
+
+        if(lastEntity === null) {
+            return;
+        }
 
         this.denseArray[denseIndex] = this.denseArray[this._count - 1];
         this.reverse[denseIndex] = lastEntity;
@@ -156,8 +160,8 @@ export class ComponentManager {
         this._nextAvailableComponentType++;
     }
 
-    getComponentType(componentName: string): ComponentType {
-        return this._componentNameToTypeMap.get(componentName)?.componentType;
+    getComponentType(componentName: string): ComponentType | null {
+        return this._componentNameToTypeMap.get(componentName)?.componentType ?? null;
     }
 
     addComponentToEntity<T>(componentName: string, entity: Entity, component: T){
@@ -176,7 +180,7 @@ export class ComponentManager {
         componentArray.removeData(entity);
     }
 
-    getComponentFromEntity<T>(componentName: string, entity: Entity): T {
+    getComponentFromEntity<T>(componentName: string, entity: Entity): T | null {
         const componentArray = this._getComponentArray<T>(componentName);
         if(componentArray === null) {
             return null;
@@ -190,7 +194,7 @@ export class ComponentManager {
         }
     }
 
-    private _getComponentArray<T>(componentName: string): ComponentArray<T> {
+    private _getComponentArray<T>(componentName: string): ComponentArray<T> | null {
         const component = this._componentNameToTypeMap.get(componentName);
         if(component === undefined) {
             console.warn(`Component ${componentName} not registered`);
@@ -221,7 +225,12 @@ export class SystemManager {
             console.warn(`System ${systemName} not registered`);
             return;
         }
-        this._systems.get(systemName).signature = signature;
+        const system = this._systems.get(systemName);
+        if(system === undefined) {
+            console.warn(`System ${systemName} not registered`);
+            return;
+        }
+        system.signature = signature;
     }
 
     entityDestroyed(entity: Entity){
@@ -273,7 +282,11 @@ export class Coordinator {
         if(signature === null) {
             signature = 0;
         }
-        signature |= 1 << this._componentManager.getComponentType(componentName);
+        const componentType = this._componentManager.getComponentType(componentName);
+        if(componentType === null) {
+            return;
+        }
+        signature |= 1 << componentType;
         this._entityManager.setSignature(entity, signature);
         this._systemManager.entitySignatureChanged(entity, signature);
     }
@@ -284,17 +297,21 @@ export class Coordinator {
         if(signature === null) {
             signature = 0;
         }
-        signature &= ~(1 << this._componentManager.getComponentType(componentName));
+        const componentType = this._componentManager.getComponentType(componentName);
+        if(componentType === null) {
+            return;
+        }
+        signature &= ~(1 << componentType);
         this._entityManager.setSignature(entity, signature);
         this._systemManager.entitySignatureChanged(entity, signature);
     }
 
-    getComponentFromEntity<T>(componentName: string, entity: Entity): T {
+    getComponentFromEntity<T>(componentName: string, entity: Entity): T | null {
         return this._componentManager.getComponentFromEntity<T>(componentName, entity);
     }
 
-    getComponentType(componentName: string): ComponentType {
-        return this._componentManager.getComponentType(componentName);
+    getComponentType(componentName: string): ComponentType | null {
+        return this._componentManager.getComponentType(componentName) ?? null;
     }
 
     registerSystem(systemName: string, system: System): void {
