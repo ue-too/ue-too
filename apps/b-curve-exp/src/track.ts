@@ -52,6 +52,10 @@ export type ProjectionCurveResult = {
     hitType: "curve";
 } & ProjectionInfo;
 
+export type PointOnJointPositiveResult = {
+
+}
+
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
@@ -315,7 +319,7 @@ export class TrackGraph {
 
         if(startJoint === undefined){
             console.warn("startJoint not found");
-            return;
+            return false;
         }
 
         // NOTE: create the new joint and curve
@@ -436,7 +440,12 @@ export class TrackGraph {
             console.warn("joint not found");
             return null;
         }
-        const segmentNumber: number = joint.connections.values().next().value;
+        const segmentNumber: number | undefined = joint.connections.values().next().value;
+
+        if(segmentNumber === undefined){
+            return null;
+        }
+
         const segment = this._trackCurveManager.getTrackSegmentWithJoints(segmentNumber);
         if(segment == undefined){
             return null;
@@ -454,7 +463,10 @@ export class TrackGraph {
             console.warn("joint not found");
             return null;
         }
-        const firstConnection: number = joint.connections.keys().next().value;
+        const firstConnection: number | undefined = joint.connections.keys().next().value;
+        if(firstConnection === undefined){
+            return null;
+        }
         return firstConnection;
     }
 
@@ -584,7 +596,10 @@ export class TrackGraph {
         if(joint === undefined){
             return null;
         }
-        const firstSegment: number = joint.connections.values().next().value;
+        const firstSegment: number | undefined = joint.connections.values().next().value;
+        if(firstSegment === undefined){
+            return null;
+        }
         const segment = this._trackCurveManager.getTrackSegmentWithJoints(firstSegment);
         if(segment === null){
             return null;
@@ -613,8 +628,9 @@ export class TrackGraph {
     project(point: Point): ProjectionResult {
         const jointRes = this.pointOnJoint(point);
         const curveRes = this.projectPointOnTrack(point);
+
         if(jointRes !== null){
-            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, projectionPoint: this.getJointPosition(jointRes.jointNumber), tangent: jointRes.tangent, curvature: jointRes.curvature};
+            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, projectionPoint: jointRes.position, tangent: jointRes.tangent, curvature: jointRes.curvature};
         }
         if(curveRes !== null){
             return {hit: true, hitType: "curve", ...curveRes};
@@ -666,8 +682,14 @@ export class TrackGraph {
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
             if(distance < minDistance){
                 minDistance = distance;
-                const curveNumber: number = joint.connections.values().next().value;
+                const curveNumber: number | undefined = joint.connections.values().next().value;
+                if(curveNumber === undefined){
+                    continue;
+                }
                 const curve = this._trackCurveManager.getTrackSegmentWithJoints(curveNumber);
+                if(curve === null){
+                    continue;
+                }
                 if(curve === null){
                     continue;
                 }
@@ -683,7 +705,7 @@ export class TrackGraph {
     }
 
     getTrackSegmentCurve(curveNumber: number): BCurve | null {
-        return this._trackCurveManager.getTrackSegmentWithJoints(curveNumber).curve;
+        return this._trackCurveManager.getTrackSegmentWithJoints(curveNumber)?.curve ?? null;
     }
 
     getTrackSegmentWithJoints(curveNumber: number): TrackSegment | null {
@@ -776,7 +798,7 @@ export class TrackCurveManager {
         if(entity < 0 || entity >= this._trackSegmentsWithJoints.length){
             return null;
         }
-        return this._trackSegmentsWithJoints[entity].curve;
+        return this._trackSegmentsWithJoints[entity]?.curve ?? null;
     }
 
     getTrackSegmentsWithJoints(): {curve: BCurve, t0Joint: number, t1Joint: number}[] {
