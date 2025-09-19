@@ -228,6 +228,9 @@ importers:
       '@ue-too/board':
         specifier: workspace:*
         version: link:../../packages/board
+      '@ue-too/curve':
+        specifier: workspace:*
+        version: link:../../packages/curve
       '@ue-too/math':
         specifier: workspace:*
         version: link:../../packages/math
