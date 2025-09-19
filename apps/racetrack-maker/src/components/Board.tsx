@@ -1,17 +1,17 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { Board as Boardify } from "@ue-too/board";
-
+import { useAnimationFrame } from "../hooks/useAnimationFrame";
 
 export type BoardProps = {
     fullScreen?: boolean;
     width?: number;
     height?: number;
+    animationCallback?: (timestamp: number, ctx: CanvasRenderingContext2D) => void;
 }
 
-export default function Board({width, height, fullScreen}: BoardProps) {
+export default function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationFrameRef = useRef<number | null>(null);
     const boardRef = useRef<Boardify | null>(null);
 
     if(boardRef.current == null){
@@ -22,37 +22,26 @@ export default function Board({width, height, fullScreen}: BoardProps) {
 
     useEffect(() => {
         if (!canvasRef.current) return;
-
         boardRef.current?.attach(canvasRef.current);
-        // Initialize the board only once using the conditional pattern
+    }, []);
+
+    const animationCallback = useCallback((timestamp: number) => {
+        boardRef.current?.step(timestamp);
+        const ctx = boardRef.current?.context;
+        if(ctx == undefined){
+            return;
+        }
         
-        // Set up the animation loop
-        const step = (timestamp: number) => {
-            // Example drawing - you can replace this with your own drawing logic
-            boardRef.current?.step(timestamp);
-            const ctx = boardRef.current?.context;
-            if(ctx == undefined){
-                return;
-            }
-            ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(0, 0, 100, 100);
-            
-            ctx.fillStyle = '#2196F3';
-            ctx.beginPath();
-            ctx.arc(200, 200, 50, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            animationFrameRef.current = requestAnimationFrame(step);
-        };
+        if(animationCallbackProp != undefined){
+            animationCallbackProp(timestamp, ctx);
+        }
+    }, []);
 
-        // Start the animation loop
-        animationFrameRef.current = requestAnimationFrame(step);
+    useAnimationFrame(animationCallback);
 
-        // Cleanup function
+    // Cleanup on unmount
+    useEffect(() => {
         return () => {
-            if (animationFrameRef.current) {
-                cancelAnimationFrame(animationFrameRef.current);
-            }
             if (boardRef.current) {
                 boardRef.current.tearDown();
             }
