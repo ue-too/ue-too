@@ -128,12 +128,6 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
             this._height = rect.height;
             this._position = {x: rect.left, y: rect.top};
 
-            // console.log('syncing canvas dimension to adjust for high dpi display');
-            this._canvas.style.width = rect.width + "px";
-            this._canvas.style.height = rect.height + "px";
-            this._canvas.width = rect.width * window.devicePixelRatio;
-            this._canvas.height = rect.height * window.devicePixelRatio;
-
             this._internalSizeUpdateObservable.notify({
                 width: this._width,
                 height: this._height,
@@ -168,6 +162,7 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
      */
     setWidth(width: number){
         if(this._canvas){
+            this._canvas.width = width * window.devicePixelRatio;
             this._canvas.style.width = width + "px";
         }
     }
@@ -178,6 +173,7 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
      */
     setHeight(height: number){
         if(this._canvas){
+            this._canvas.height = height * window.devicePixelRatio;
             this._canvas.style.height = height + "px";
         }
     }
@@ -205,6 +201,10 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         this._canvas = canvas;
         const boundingRect = canvas.getBoundingClientRect();
         const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this._canvas.width = trueRect.width * window.devicePixelRatio;
+        this._canvas.height = trueRect.height * window.devicePixelRatio;
+        this._canvas.style.width = trueRect.width + "px";
+        this._canvas.style.height = trueRect.height + "px";
         this._width = trueRect.width;
         this._height = trueRect.height;
         this._position = {x: trueRect.left, y: trueRect.top};
@@ -214,6 +214,20 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
             position: this._position
         });
     }
+
+    logCanvasTrueSize(){
+        if(this._canvas === undefined){
+            return;
+        }
+        console.log('canvas true size');
+        console.log('style width', this._canvas.style.width);
+        console.log('style height', this._canvas.style.height);
+        console.log('width', this._canvas.width);
+        console.log('height', this._canvas.height);
+        console.log('proxy width', this._width);
+        console.log('proxy height', this._height);
+    }
+
 }
 
 /**

@@ -50,6 +50,8 @@ export default class Board {
     private _observableInputTracker: ObservableInputTracker;
     private _touchInputTracker: TouchInputTracker;
 
+    private _canvasSizeUpdateQueue: CanvasDimensions | undefined = undefined;
+
     private lastUpdateTime: number = 0;
 
     constructor(canvas?: HTMLCanvasElement){
@@ -61,9 +63,7 @@ export default class Board {
         this._canvasProxy = new CanvasProxy(canvas);
 
         this._canvasProxy.subscribe((canvasDimensions)=>{
-            console.log('canvas dimensions updated', canvasDimensions);
-            this.syncViewPortDimensions(canvasDimensions);
-            this.syncCameraZoomLevel(canvasDimensions);
+            this._canvasSizeUpdateQueue = canvasDimensions;
         });
 
         this.cameraRig = new DefaultCameraRig({
@@ -257,11 +257,6 @@ export default class Board {
             return;
         }
 
-        if(this._fullScreen && (this._canvasProxy.width != window.innerWidth || this._canvasProxy.height != window.innerHeight)){
-            this._canvasProxy.setWidth(window.innerWidth);
-            this._canvasProxy.setHeight(window.innerHeight);
-        }
-
         this.cameraRig.update();
         let deltaTime = timestamp - this.lastUpdateTime;
         this.lastUpdateTime = timestamp;
@@ -269,6 +264,17 @@ export default class Board {
 
         this._context.reset();
         this._context.clearRect(0, 0, this._canvasProxy.width * window.devicePixelRatio, this._canvasProxy.height * window.devicePixelRatio);
+
+        if(this._fullScreen && (this._canvasProxy.width != window.innerWidth || this._canvasProxy.height != window.innerHeight)){
+            this._canvasProxy.setWidth(window.innerWidth);
+            this._canvasProxy.setHeight(window.innerHeight);
+        }
+
+        if(this._canvasSizeUpdateQueue != undefined){
+            this.syncViewPortDimensions(this._canvasSizeUpdateQueue);
+            this.syncCameraZoomLevel(this._canvasSizeUpdateQueue);
+            this._canvasSizeUpdateQueue = undefined;
+        }
 
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
