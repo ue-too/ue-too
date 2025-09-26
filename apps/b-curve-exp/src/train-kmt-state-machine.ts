@@ -38,7 +38,6 @@ export function flipDirection(direction: TrainDirection): TrainDirection {
 
 export type TrainDirection = "forward" | "backward";
 
-
 export interface JointDirectionManager {
     getNextJoint(jointNumber: number, direction: "tangent" | "reverseTangent"): {jointNumber: number, direction: "forward" | "backward", curveNumber: number} | null;
 }
@@ -257,7 +256,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         let xTValue = tValue;
         let xTrackSegment = currentTrackSegmentNumber;
 
-        const trackSegment = this._trackGraph.getTrackSegmentWithJoints(xTrackSegment);
+        let trackSegment = this._trackGraph.getTrackSegmentWithJoints(xTrackSegment);
 
         if(trackSegment === null){
             return null;
@@ -289,9 +288,9 @@ export class TrainPlacementEngine implements TrainPlacementContext {
                 };
             }
 
-            const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
+            trackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
 
-            if(nextTrackSegment === null){
+            if(trackSegment === null){
                 return null;
             }
 
@@ -299,13 +298,11 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             xTrackSegment = nextDirection.curveNumber;
 
             distanceToAdvance = Math.abs(nextPosition.remainLength);
-            nextPosition = nextTrackSegment.curve.advanceAtTWithLength(nextDirection.direction === "forward" ? 0 : 1, distanceToAdvance * (nextDirection.direction === "forward" ? 1 : -1));
+            const startTValue = nextDirection.direction === "forward" ? 0 : 1;
+            const advanceLength = distanceToAdvance * (nextDirection.direction === "forward" ? 1 : -1);
+            nextPosition = trackSegment.curve.advanceAtTWithLength(startTValue, advanceLength);
+
             xTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : nextDirection.direction === "forward" ? 1 : 0;
-            if(nextPosition.type === "withinCurve"){
-                xTValue = nextPosition.tVal;
-            } else {
-                xTValue = nextDirection.direction === "forward" ? 1 : 0;
-            }
         }
         xTValue = nextPosition.tVal;
         return {
