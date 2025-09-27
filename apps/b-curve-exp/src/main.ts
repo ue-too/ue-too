@@ -372,6 +372,15 @@ function step(timestamp: number){
 window.requestAnimationFrame(step);
 
 utilButton.addEventListener("click", ()=>{
+    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
+    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
+    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
+    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
+    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
+    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
+    window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
 });
 
 const p1Button = document.getElementById("p1") as HTMLButtonElement;

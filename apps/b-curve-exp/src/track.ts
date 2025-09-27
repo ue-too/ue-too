@@ -1,5 +1,5 @@
 import { BCurve, offset, offset2 } from "@ue-too/curve";
-import { normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
+import { directionAlignedToTangent, normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
 import { NumberManager } from "./utils";
 
 export type TrackSegment = {
@@ -568,13 +568,13 @@ export class TrackGraph {
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
 
-        if(sameDirection(startJointTangentDirection, startTangent)){
+        if(directionAlignedToTangent(startJointTangentDirection, startTangent)){
             startJoint.direction.tangent.add(endJointNumber);
         } else {
             startJoint.direction.reverseTangent.add(endJointNumber);
         }
 
-        if(sameDirection(endJointTangentDirection, endTangent)){
+        if(directionAlignedToTangent(endJointTangentDirection, endTangent)){
             endJoint.direction.reverseTangent.add(startJointNumber);
         } else {
             endJoint.direction.tangent.add(startJointNumber);
@@ -720,6 +720,7 @@ export class TrackGraph {
         for(const [jointNumber, joint] of this.joints.entries()){
             console.log('--------------------------------');
             console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not "}an ending joint`);
+            console.log('joint position', joint.position);
             if(joint.direction){
                 console.log('######')
                 console.log('tangent count', joint.direction.tangent.size);

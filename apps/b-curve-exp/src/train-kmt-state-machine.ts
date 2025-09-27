@@ -146,6 +146,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             console.warn("track segment where the train is on is not found");
             return;
         }
+        this._trainSpeed += this._trainAcceleration * deltaTime;
         let distanceToAdvance = this._trainSpeed * deltaTime;
         if(approximately(distanceToAdvance, 0, 0.001)){
             return;
@@ -291,6 +292,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             trackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
 
             if(trackSegment === null){
+                console.warn("track segment not found");
                 return null;
             }
 
