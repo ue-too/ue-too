@@ -749,7 +749,7 @@ export class BCurve{
             const mid = Math.floor((low + high) / 2);
             const midLength = points[mid].length;
             
-            if (Math.abs(midLength - targetLength) < 1e-10) {
+            if (approximately(midLength, targetLength, 0.01)) {
                 // Found exact match
                 const resultTVal = points[mid].tVal;
                 const point = this.get(resultTVal);
@@ -767,14 +767,14 @@ export class BCurve{
         // Handle edge cases
         if (high < 0) {
             // targetLength is smaller than the first point's length
-            const point = this.get(0);
-            return {type: "withinCurve", tVal: 0, point: point};
+            high = 1;
+            low = 0;
         }
         
         if (low >= points.length) {
             // targetLength is larger than the last point's length
-            const point = this.get(1);
-            return {type: "withinCurve", tVal: 1, point: point};
+            high = points.length - 1;
+            low = points.length - 2;
         }
         
         // Interpolate between points[high] and points[low]

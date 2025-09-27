@@ -388,7 +388,7 @@ const neutralButton = document.getElementById("neutral") as HTMLButtonElement;
 const switchDirectionButton = document.getElementById("switch-direction") as HTMLButtonElement;
 
 p1Button.addEventListener("click", ()=>{
-    trainPlacementEngine.setTrainSpeed(30);
+    trainPlacementEngine.setTrainSpeed(40);
 });
 
 neutralButton.addEventListener("click", ()=>{
