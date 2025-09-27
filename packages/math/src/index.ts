@@ -192,6 +192,15 @@ export function sameDirection(a: Point, b: Point, precision: number = 0.001): bo
    return samePoint(aNormalized, bNormalized, precision);
 }
 
+export function directionAlignedToTangent(direction: Point, tangent: Point): boolean {
+   const directionNormalized = PointCal.unitVector(direction);
+   const tangentNormalized = PointCal.unitVector(tangent);
+   const reversedTangent = {x: -tangent.x, y: -tangent.y, z: tangent.z};
+   const angle = PointCal.angleFromA2B(directionNormalized, tangentNormalized);
+   const angle2 = PointCal.angleFromA2B(directionNormalized, reversedTangent);
+   return (angle < Math.PI / 2 && angle > -Math.PI / 2) && (angle2 > Math.PI / 2 || angle2 < -Math.PI / 2);
+}
+
 export function samePoint(a: Point, b: Point, precision?: number): boolean {
     if(approximatelyTheSame(a.x, b.x, precision) && approximatelyTheSame(a.y, b.y, precision)){
         return true;
