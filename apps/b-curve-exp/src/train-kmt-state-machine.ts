@@ -148,7 +148,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         this._trainSpeed += this._trainAcceleration * deltaTime;
         let distanceToAdvance = this._trainSpeed * deltaTime;
-        if(approximately(distanceToAdvance, 0, 0.001)){
+        if(approximately(distanceToAdvance, 0, 0.01)){
             return;
         }
         const nextPosition = this.getPosition(distanceToAdvance, this._trainPositionInTrack.direction, this._trainPositionInTrack.tValue, this._trainPositionInTrack.trackSegment);
@@ -306,7 +306,8 @@ export class TrainPlacementEngine implements TrainPlacementContext {
 
             xTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : nextDirection.direction === "forward" ? 1 : 0;
         }
-        xTValue = nextPosition.tVal;
+        xTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : xDirection === "forward" ? 1 : 0;
+        
         return {
             trackSegment: xTrackSegment,
             tValue: xTValue,
