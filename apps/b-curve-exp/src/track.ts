@@ -9,6 +9,13 @@ export type TrackSegment = {
     gauge?: number;
 }
 
+export type TrackSegmentWithElevation =  TrackSegment & {
+    elevation: {
+        from: number;
+        to: number;
+    };
+}
+
 export type TrackJoint = {
     position: Point;
     connections: Map<number, number>; // maps joint number -> track segment number
@@ -136,7 +143,7 @@ export class TrackGraph {
         const t0JointTangent = t0Joint.tangent;
         const t0JointTangentFromCurve = segment.curve.derivative(0);
 
-        if(sameDirection(t0JointTangent, t0JointTangentFromCurve)){
+        if(directionAlignedToTangent(t0JointTangent, t0JointTangentFromCurve)){
             t0Joint.direction.tangent.delete(t1JointNumber);
             t0Joint.direction.tangent.add(newJointNumber);
         } else {
@@ -153,7 +160,7 @@ export class TrackGraph {
         const t1JointTangent = t1Joint.tangent;
         const t1JointTangentFromCurve = segment.curve.derivative(1);
 
-        if(sameDirection(t1JointTangent, t1JointTangentFromCurve)){
+        if(directionAlignedToTangent(t1JointTangent, t1JointTangentFromCurve)){
             t1Joint.direction.reverseTangent.delete(t0JointNumber);
             t1Joint.direction.reverseTangent.add(newJointNumber);
         } else {
@@ -676,7 +683,7 @@ export class TrackGraph {
 
     pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
         let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
-        let minDistance:number = 10;
+        let minDistance:number = 5;
 
         for(const [jointNumber, joint] of this.joints.entries()){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
@@ -803,7 +810,8 @@ export class TrackCurveManager {
     }
 
     getTrackSegmentsWithJoints(): {curve: BCurve, t0Joint: number, t1Joint: number}[] {
-        return this._trackSegmentsWithJoints.filter((trackSegment) => trackSegment !== null);
+        return this._trackSegmentsWithJoints.filter((trackSegment) => trackSegment !== null) as 
+        {curve: BCurve, t0Joint: number, t1Joint: number}[];
     }
 
     getTrackSegmentWithJoints(entity: number): {curve: BCurve, t0Joint: number, t1Joint: number} | null {
@@ -862,10 +870,10 @@ export class TrackCurveManager {
     }
 
     get trackOffsets(): BCurve[] {
-        return this._trackOffset.filter((offset) => offset !== null).flat();
+        return this._trackOffset.filter((offset) => offset !== null).flat() as BCurve[];
     }
 
     get experimentTrackOffsets(): {positive: Point[], negative: Point[]}[] {
-        return this._experimentTrackOffsets.filter((offset) => offset !== null);
+        return this._experimentTrackOffsets.filter((offset) => offset !== null) as {positive: Point[], negative: Point[]}[];
     }
 }
