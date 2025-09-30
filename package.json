@@ -16,7 +16,8 @@
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm build && pnpm replace-workspace-deps",
     "release": "changeset publish",
-    "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs"
+    "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs",
+    "dev:examples": "nx dev examples"
   },
   "repository": {
     "type": "git",
