@@ -263,7 +263,7 @@ function getQuadraticTangentCurvature(
     };
 }
 
-export class EntityManager<T> {
+export class GenericEntityManager<T> {
 
     private _availableEntities: number[] = [];
     private _maxEntities: number;
@@ -276,6 +276,25 @@ export class EntityManager<T> {
             this._availableEntities.push(i);
             this._entities.push(null);
         }
+    }
+
+    getLivingEntityCount(): number {
+        return this._livingEntityCount;
+    }
+
+    getLivingEntitesIndex(): number[] {
+        return this._entities.map((entity, index) => entity !== null ? index : null).filter((index): index is number => index !== null);
+    }
+
+    getLivingEntities(): T[] {
+        return this._entities.filter((entity): entity is T => entity !== null);
+    }
+
+    getEntity(entity: number): T | null {
+        if(entity < 0 || entity >= this._entities.length){
+            return null;
+        }
+        return this._entities[entity] ?? null;
     }
 
     createEntity(entity: T): number {

@@ -1,6 +1,6 @@
 import { BCurve, offset, offset2 } from "@ue-too/curve";
 import { directionAlignedToTangent, normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
-import { NumberManager } from "./utils";
+import { GenericEntityManager, NumberManager } from "./utils";
 
 export type TrackSegment = {
     t0Joint: number;
@@ -272,9 +272,9 @@ export class TrackGraph {
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
     }
 
-    get trackOffsets(): BCurve[] {
-        return this._trackCurveManager.trackOffsets;
-    }
+    // get trackOffsets(): BCurve[] {
+    //     return this._trackCurveManager.trackOffsets;
+    // }
 
     removeTrackSegment(trackSegmentNumber: number): void {
         const segment = this._trackCurveManager.getTrackSegmentWithJoints(trackSegmentNumber);
@@ -778,102 +778,69 @@ export class TrackGraph {
     }
 
     get experimentTrackOffsets(): {positive: Point[], negative: Point[]}[] {
-        return this._trackCurveManager.experimentTrackOffsets;
+        return this._trackCurveManager.trackOffsets;
     }
 }
 
 
 export class TrackCurveManager {
 
-    private _availableEntities: number[] = [];
-    private _livingEntities: Set<number> = new Set();
-    private _maxEntities: number;
-    private _livingEntityCount = 0;
-    private _trackSegmentsWithJoints: (TrackSegment | null)[] = [];
-    private _trackOffset: (BCurve[] | null)[] = [];
-
-    private _experimentTrackOffsets: ({positive: Point[], negative: Point[]} | null)[] = [];
+    private _internalTrackCurveManager: GenericEntityManager<{
+        segment: TrackSegment;
+        offsets: {
+            positive: Point[];
+            negative: Point[];
+        };
+    }>;
 
     constructor(initialCount: number) {
-        this._maxEntities = initialCount;
-        for (let i = 0; i < this._maxEntities; i++) {
-            this._availableEntities.push(i);
-            this._trackSegmentsWithJoints.push(null);
-        }
+        this._internalTrackCurveManager = new GenericEntityManager<{
+            segment: TrackSegment;
+            offsets: {
+                positive: Point[];
+                negative: Point[];
+            };
+        }>(initialCount);
     }
 
-    getTrackSegment(entity: number): BCurve | null {
-        if(entity < 0 || entity >= this._trackSegmentsWithJoints.length){
-            return null;
-        }
-        return this._trackSegmentsWithJoints[entity]?.curve ?? null;
+    getTrackSegment(segmentNumber: number): BCurve | null {
+        return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment.curve ?? null;
     }
 
-    getTrackSegmentsWithJoints(): {curve: BCurve, t0Joint: number, t1Joint: number}[] {
-        return this._trackSegmentsWithJoints.filter((trackSegment) => trackSegment !== null) as 
-        {curve: BCurve, t0Joint: number, t1Joint: number}[];
+    getTrackSegmentsWithJoints(): TrackSegment[] {
+        return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
-    getTrackSegmentWithJoints(entity: number): {curve: BCurve, t0Joint: number, t1Joint: number} | null {
-        if(entity < 0 || entity >= this._trackSegmentsWithJoints.length || this._trackSegmentsWithJoints[entity] == undefined){
-            console.log("not exist");
-            return null;
-        }
-        return this._trackSegmentsWithJoints[entity];
+    getTrackSegmentWithJoints(segmentNumber: number): TrackSegment | null {
+        return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
     }
 
     createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, gauge: number = 10): number {
-        const entity = this.createCurve();
-        this._trackSegmentsWithJoints[entity] = {curve: curve, t0Joint: t0Joint, t1Joint: t1Joint};
-        const positiveOffsets = offset(curve, gauge / 2);
-        const negativeOffsets = offset(curve, -gauge / 2);
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
-        this._trackOffset[entity] = [...positiveOffsets, ...negativeOffsets];
-        this._experimentTrackOffsets[entity] = {positive: experimentPositiveOffsets, negative: experimentNegativeOffsets};
-        return entity;
-    }
-
-    private createCurve(): number {
-        if(this._livingEntityCount >= this._maxEntities) {
-            console.info("Max entities reached, increasing max entities");
-            const currentMaxEntities = this._maxEntities;
-            this._maxEntities += currentMaxEntities;
-            for (let i = currentMaxEntities; i < this._maxEntities; i++) {
-                this._availableEntities.push(i);
+        const curveNumber = this._internalTrackCurveManager.createEntity({
+            segment: {
+                curve: curve,
+                t0Joint: t0Joint,
+                t1Joint: t1Joint
+            },
+            offsets: {
+                positive: experimentPositiveOffsets,
+                negative: experimentNegativeOffsets
             }
-        }
-        const entity = this._availableEntities.shift();
-        if(entity === undefined) {
-            throw new Error('No available entities');
-        }
-        this._livingEntityCount++;
-        this._livingEntities.add(entity);
-        return entity;
+        })
+        return curveNumber;
     }
 
     destroyCurve(curveNumber: number): void {
-        if(curveNumber >= this._maxEntities || curveNumber < 0) {
-            throw new Error('Invalid entity out of range');
-        }
-        this._livingEntities.delete(curveNumber);
-        this._availableEntities.push(curveNumber);
-        this._livingEntityCount--;
-        this._trackSegmentsWithJoints[curveNumber] = null;
-        this._trackOffset[curveNumber] = null;
-
-        this._experimentTrackOffsets[curveNumber] = null;
+        this._internalTrackCurveManager.destroyEntity(curveNumber);
     }
 
     get livingEntities(): number[] {
-        return Array.from(this._livingEntities);
+        return this._internalTrackCurveManager.getLivingEntitesIndex();
     }
 
-    get trackOffsets(): BCurve[] {
-        return this._trackOffset.filter((offset) => offset !== null).flat() as BCurve[];
-    }
-
-    get experimentTrackOffsets(): {positive: Point[], negative: Point[]}[] {
-        return this._experimentTrackOffsets.filter((offset) => offset !== null) as {positive: Point[], negative: Point[]}[];
+    get trackOffsets(): {positive: Point[], negative: Point[]}[] {
+        return this._internalTrackCurveManager.getLivingEntities().map((entity) => entity.offsets);
     }
 }
