@@ -1,4 +1,4 @@
-import { EntityManager } from "./utils";
+import { GenericEntityManager } from "./utils";
 
 export type Car = {
     id: number;
@@ -12,9 +12,9 @@ export type Formation = {
 
 export class TrainManager {
 
-    private _carManager: EntityManager<Car>;
+    private _carManager: GenericEntityManager<Car>;
 
     constructor(){
-        this._carManager = new EntityManager<Car>(100);
+        this._carManager = new GenericEntityManager<Car>(100);
     }
 }
