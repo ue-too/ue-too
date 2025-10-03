@@ -270,10 +270,10 @@ export class GenericEntityManager<T> {
     private _livingEntityCount = 0;
     private _entities: (T | null)[] = [];
 
-    private _packedEntityData: T[];
+    private _packedEntityData: (T | null)[];
     private _entityNumberToPackedDataIndex: (number | null)[] = [];
     private _packedDataIndexToEntityNumber: (number | null)[] = [];
-    private _livingEntitiesIndex: number[];
+    private _livingEntitiesIndex: (number | null)[];
     private _liveCount: number = 0;
 
     constructor(initialCount: number) {
@@ -307,7 +307,7 @@ export class GenericEntityManager<T> {
         // });
         // return res;
         return this.getLivingEntitesIndex().map((entityNumber): {index: number, entity: T} => {
-            return {index: entityNumber, entity: this._packedEntityData[entityNumber]};
+            return {index: entityNumber, entity: this._packedEntityData[this._entityNumberToPackedDataIndex[entityNumber] ?? 0] as T};
         });
     }
 
@@ -393,21 +393,15 @@ export class GenericEntityManager<T> {
             return;
         }
 
-        // If we're not destroying the last entity, move the last entity to fill the gap
-        if(packedDataIndex !== this._liveCount - 1) {
-            this._packedEntityData[packedDataIndex] = this._packedEntityData[this._liveCount - 1];
-            this._packedDataIndexToEntityNumber[packedDataIndex] = lastEntity;
-            this._entityNumberToPackedDataIndex[lastEntity] = packedDataIndex;
-            this._livingEntitiesIndex[packedDataIndex] = this._livingEntitiesIndex[this._liveCount - 1];
-        }
-
-        // Clear the last position
-        this._packedEntityData[this._liveCount - 1] = null as any;
-        this._packedDataIndexToEntityNumber[this._liveCount - 1] = null;
-        this._livingEntitiesIndex[this._liveCount - 1] = null as any;
-
-        // Clear the mapping for the destroyed entity
+        this._packedEntityData[packedDataIndex] = this._packedEntityData[this._liveCount - 1];
+        this._packedDataIndexToEntityNumber[packedDataIndex] = lastEntity;
+        this._entityNumberToPackedDataIndex[lastEntity] = packedDataIndex;
         this._entityNumberToPackedDataIndex[entity] = null;
+        this._packedEntityData[this._liveCount - 1] = null;
+
+        this._livingEntitiesIndex[packedDataIndex] = this._livingEntitiesIndex[this._liveCount - 1];
+        this._livingEntitiesIndex[this._liveCount - 1] = null;
+
 
         this._liveCount--;
     }

@@ -678,7 +678,6 @@ export class TrackGraph {
         let minDistance:number = 5;
 
         const joints = this._jointManager.getJoints();
-        console.log('joints', joints);
 
         for(const {jointNumber, joint} of joints){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
