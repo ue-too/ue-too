@@ -66,7 +66,8 @@ export type PointOnJointPositiveResult = {
 export class TrackGraph {
 
     private joints: Map<number, TrackJoint> = new Map();
-    private jointNumberManager: NumberManager = new NumberManager(10);
+    // private jointNumberManager: NumberManager = new NumberManager(10);
+    private _jointManager: TrackJointManager = new TrackJointManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
     getJoints(): {jointNumber: number, joint: TrackJoint}[] {
@@ -93,7 +94,6 @@ export class TrackGraph {
         }
 
         const newControlPointGroups = segment.curve.split(atT);
-        const newJointNumber = this.jointNumberManager.createEntity();
         const t0JointNumber = segment.t0Joint;
         const t1JointNumber = segment.t1Joint;
 
@@ -107,6 +107,20 @@ export class TrackGraph {
 
         const newJointPosition = segment.curve.get(atT);
 
+
+        /*  NOTE: insert the new joint*/
+        const newJoint: TrackJoint = {
+            position: newJointPosition,
+            connections: new Map(),
+            tangent: {x: 0, y: 0},
+            direction: {
+                tangent: new Set<number>(),
+                reverseTangent: new Set<number>()
+            }
+        };
+
+        const newJointNumber = this._jointManager.createJoint(newJoint);
+
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
@@ -115,16 +129,7 @@ export class TrackGraph {
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
 
-        /*  NOTE: insert the new joint*/
-        const newJoint: TrackJoint = {
-            position: newJointPosition,
-            connections: new Map(),
-            tangent: tangentAtNewJoint,
-            direction: {
-                tangent: new Set<number>(),
-                reverseTangent: new Set<number>()
-            }
-        };
+        newJoint.tangent = tangentAtNewJoint;
 
         newJoint.direction.reverseTangent.add(t0JointNumber);
         newJoint.direction.tangent.add(t1JointNumber);
@@ -197,16 +202,30 @@ export class TrackGraph {
         }
 
         const newControlPointGroups = segment.curve.split(atT);
-        const newJointNumber = this.jointNumberManager.createEntity();
         const t0JointNumber = segment.t0Joint;
         const t1JointNumber = segment.t1Joint;
         let t0Joint = startJoint;
         let t1Joint = endJoint;
+
         if(t0JointNumber === endJointNumber) {
             t0Joint = endJoint;
             t1Joint = startJoint;
         }
+
         const newJointPosition = segment.curve.get(atT);
+
+        /*  NOTE: insert the new joint*/
+        const newJoint: TrackJoint = {
+            position: newJointPosition,
+            connections: new Map(),
+            tangent: {x: 0, y: 0},
+            direction: {
+                tangent: new Set<number>(),
+                reverseTangent: new Set<number>()
+            }
+        };
+
+        const newJointNumber = this._jointManager.createJoint(newJoint);
 
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
@@ -216,16 +235,7 @@ export class TrackGraph {
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
 
-        /*  NOTE: insert the new joint*/
-        const newJoint: TrackJoint = {
-            position: newJointPosition,
-            connections: new Map(),
-            tangent: tangentAtNewJoint,
-            direction: {
-                tangent: new Set<number>(),
-                reverseTangent: new Set<number>()
-            }
-        };
+        newJoint.tangent = tangentAtNewJoint;
 
         newJoint.direction.reverseTangent.add(t0JointNumber);
         newJoint.direction.tangent.add(t1JointNumber);
@@ -331,8 +341,6 @@ export class TrackGraph {
 
         // NOTE: create the new joint and curve
         const curve = new BCurve([startJoint.position, ...controlPoints, endPosition]);
-        const newJointNumber = this.jointNumberManager.createEntity();
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, newJointNumber);
 
         const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
 
@@ -345,6 +353,11 @@ export class TrackGraph {
                 reverseTangent: new Set<number>()
             }
         };
+
+        const newJointNumber = this._jointManager.createJoint(newTrackJoint);
+
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, newJointNumber);
+
 
         // NOTE: insert connection to new joint's connections
         newTrackJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -373,7 +386,6 @@ export class TrackGraph {
     }
 
     createNewEmptyJoint(position: Point, tangent: Point): number {
-        const newJointNumber = this.jointNumberManager.createEntity();
         const newJoint: TrackJoint = {
             position,
             connections: new Map(),
@@ -383,15 +395,13 @@ export class TrackGraph {
                 reverseTangent: new Set<number>()
             }
         }
+        const newJointNumber = this._jointManager.createJoint(newJoint);
         this.joints.set(newJointNumber, newJoint);
         return newJointNumber;
     }
 
     createNewTrackSegment(startJointPosition: Point, endJointPosition: Point, controlPoints: Point[]): boolean {
         const curve = new BCurve([startJointPosition, ...controlPoints, endJointPosition]);
-        const startJointNumber = this.jointNumberManager.createEntity();
-        const endJointNumber = this.jointNumberManager.createEntity();
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
 
         const tangentAtStart = PointCal.unitVector(curve.derivative(0));
         const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
@@ -415,6 +425,10 @@ export class TrackGraph {
                 reverseTangent: new Set<number>()
             }
         };
+
+        const startJointNumber = this._jointManager.createJoint(startJoint);
+        const endJointNumber = this._jointManager.createJoint(endJoint);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -530,7 +544,7 @@ export class TrackGraph {
 
         newTrackJoint.direction.reverseTangent.add(startJointNumber);
 
-        const newJointNumber = this.jointNumberManager.createEntity();
+        const newJointNumber = this._jointManager.createJoint(newTrackJoint);
         const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, newJointNumber);
 
         newTrackJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -782,6 +796,19 @@ export class TrackGraph {
     }
 }
 
+export class TrackJointManager {
+    private _internalTrackJointManager: GenericEntityManager<TrackJoint>;
+
+    constructor(initialCount = 10){
+        this._internalTrackJointManager = new GenericEntityManager<TrackJoint>(initialCount);
+    }
+
+    createJoint(joint: TrackJoint): number {
+        return this._internalTrackJointManager.createEntity(joint);
+    }
+
+
+}
 
 export class TrackCurveManager {
 
