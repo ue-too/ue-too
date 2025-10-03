@@ -9,10 +9,24 @@ export type TrackSegment = {
     gauge?: number;
 }
 
+export type TrackJointWithElevation = TrackJoint & {
+    elevation: ELEVATION;
+}
+
+export enum ELEVATION {
+    SUB_3 = -3,
+    SUB_2,
+    SUB_1,
+    GROUND,
+    ABOVE_1,
+    ABOVE_2,
+    ABOVE_3,
+}
+
 export type TrackSegmentWithElevation =  TrackSegment & {
     elevation: {
-        from: number;
-        to: number;
+        from: ELEVATION;
+        to: ELEVATION;
     };
 }
 
@@ -100,14 +114,15 @@ export class TrackGraph {
 
 
         /*  NOTE: insert the new joint*/
-        const newJoint: TrackJoint = {
+        const newJoint: TrackJointWithElevation = {
             position: newJointPosition,
             connections: new Map(),
             tangent: {x: 0, y: 0},
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
         const newJointNumber = this._jointManager.createJoint(newJoint);
@@ -204,14 +219,15 @@ export class TrackGraph {
         const newJointPosition = segment.curve.get(atT);
 
         /*  NOTE: insert the new joint*/
-        const newJoint: TrackJoint = {
+        const newJoint: TrackJointWithElevation = {
             position: newJointPosition,
             connections: new Map(),
             tangent: {x: 0, y: 0},
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
         const newJointNumber = this._jointManager.createJoint(newJoint);
@@ -332,14 +348,15 @@ export class TrackGraph {
 
         const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
 
-        const newTrackJoint: TrackJoint = {
+        const newTrackJoint: TrackJointWithElevation = {
             position: endPosition,
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
         const newJointNumber = this._jointManager.createJoint(newTrackJoint);
@@ -370,14 +387,15 @@ export class TrackGraph {
     }
 
     createNewEmptyJoint(position: Point, tangent: Point): number {
-        const newJoint: TrackJoint = {
+        const newJoint: TrackJointWithElevation = {
             position,
             connections: new Map(),
             tangent,
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         }
         const newJointNumber = this._jointManager.createJoint(newJoint);
         return newJointNumber;
@@ -389,24 +407,26 @@ export class TrackGraph {
         const tangentAtStart = PointCal.unitVector(curve.derivative(0));
         const tangentAtEnd = PointCal.unitVector(curve.derivative(1));
 
-        const startJoint: TrackJoint = {
+        const startJoint: TrackJointWithElevation = {
             position: startJointPosition,
             connections: new Map(),
             tangent: tangentAtStart,
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
-        const endJoint: TrackJoint = {
+        const endJoint: TrackJointWithElevation = {
             position: endJointPosition,
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
         const startJointNumber = this._jointManager.createJoint(startJoint);
@@ -512,14 +532,15 @@ export class TrackGraph {
         const tangentAtStart = PointCal.unitVector(newCurve.derivative(0));
         const tangentAtEnd = PointCal.unitVector(newCurve.derivative(1));
 
-        const newTrackJoint: TrackJoint = {
+        const newTrackJoint: TrackJointWithElevation = {
             position: endPosition,
             connections: new Map(),
             tangent: tangentAtEnd,
             direction: {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
-            }
+            },
+            elevation: ELEVATION.GROUND
         };
 
         newTrackJoint.direction.reverseTangent.add(startJointNumber);
@@ -777,21 +798,21 @@ export class TrackGraph {
 }
 
 export class TrackJointManager {
-    private _internalTrackJointManager: GenericEntityManager<TrackJoint>;
+    private _internalTrackJointManager: GenericEntityManager<TrackJointWithElevation>;
 
     constructor(initialCount = 10){
-        this._internalTrackJointManager = new GenericEntityManager<TrackJoint>(initialCount);
+        this._internalTrackJointManager = new GenericEntityManager<TrackJointWithElevation>(initialCount);
     }
 
-    createJoint(joint: TrackJoint): number {
+    createJoint(joint: TrackJointWithElevation): number {
         return this._internalTrackJointManager.createEntity(joint);
     }
 
-    getJoints(): {jointNumber: number, joint: TrackJoint}[] {
+    getJoints(): {jointNumber: number, joint: TrackJointWithElevation}[] {
         return this._internalTrackJointManager.getLivingEntitiesWithIndex().map(({index, entity}) => ({jointNumber: index, joint: entity}));
     }
 
-    getJoint(jointNumber: number): TrackJoint | null {
+    getJoint(jointNumber: number): TrackJointWithElevation | null {
         return this._internalTrackJointManager.getEntity(jointNumber);
     }
 
