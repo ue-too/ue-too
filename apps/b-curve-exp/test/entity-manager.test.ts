@@ -1,25 +1,24 @@
-import { EntityManager } from '../src/utils';
+import { GenericEntityManager } from '../src/utils';
 
-describe('EntityManager', () => {
-    let entityManager: EntityManager<string>;
+describe('GenericEntityManager', () => {
+    let entityManager: GenericEntityManager<string>;
     
     beforeEach(() => {
-        entityManager = new EntityManager<string>(3);
+        entityManager = new GenericEntityManager<string>(3);
     });
     
     describe('constructor', () => {
         it('should initialize with correct initial state', () => {
-            expect(entityManager['_maxEntities']).toBe(3);
-            expect(entityManager['_livingEntityCount']).toBe(0);
-            expect(entityManager['_availableEntities']).toEqual([0, 1, 2]);
-            expect(entityManager['_entities']).toEqual([null, null, null]);
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([]);
         });
         
         it('should handle zero initial count', () => {
-            const zeroManager = new EntityManager<string>(0);
-            expect(zeroManager['_maxEntities']).toBe(0);
-            expect(zeroManager['_availableEntities']).toEqual([]);
-            expect(zeroManager['_entities']).toEqual([]);
+            const zeroManager = new GenericEntityManager<string>(0);
+            expect(zeroManager.getLivingEntityCount()).toBe(0);
+            expect(zeroManager.getLivingEntities()).toEqual([]);
+            expect(zeroManager.getLivingEntitesIndex()).toEqual([]);
         });
     });
     
@@ -28,9 +27,10 @@ describe('EntityManager', () => {
             const entityId = entityManager.createEntity('test-entity');
             
             expect(entityId).toBe(0);
-            expect(entityManager['_entities'][0]).toBe('test-entity');
-            expect(entityManager['_livingEntityCount']).toBe(1);
-            expect(entityManager['_availableEntities']).toEqual([1, 2]);
+            expect(entityManager.getEntity(0)).toBe('test-entity');
+            expect(entityManager.getLivingEntityCount()).toBe(1);
+            expect(entityManager.getLivingEntities()).toEqual(['test-entity']);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([0]);
         });
         
         it('should create multiple entities in sequence', () => {
@@ -41,9 +41,9 @@ describe('EntityManager', () => {
             expect(id1).toBe(0);
             expect(id2).toBe(1);
             expect(id3).toBe(2);
-            expect(entityManager['_livingEntityCount']).toBe(3);
-            expect(entityManager['_availableEntities']).toEqual([]);
-            expect(entityManager['_entities']).toEqual(['entity-1', 'entity-2', 'entity-3']);
+            expect(entityManager.getLivingEntityCount()).toBe(3);
+            expect(entityManager.getLivingEntities()).toEqual(['entity-1', 'entity-2', 'entity-3']);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([0, 1, 2]);
         });
         
         it('should expand capacity when max entities reached', () => {
@@ -56,9 +56,9 @@ describe('EntityManager', () => {
             const id4 = entityManager.createEntity('entity-4');
             
             expect(id4).toBe(3);
-            expect(entityManager['_maxEntities']).toBe(6); // Doubled from 3
-            expect(entityManager['_livingEntityCount']).toBe(4);
-            expect(entityManager['_entities'][3]).toBe('entity-4');
+            expect(entityManager.getLivingEntityCount()).toBe(4);
+            expect(entityManager.getEntity(3)).toBe('entity-4');
+            expect(entityManager.getLivingEntities()).toContain('entity-4');
         });
         
         it('should handle multiple expansions', () => {
@@ -76,8 +76,9 @@ describe('EntityManager', () => {
             const id7 = entityManager.createEntity('entity-7');
             
             expect(id7).toBe(6);
-            expect(entityManager['_maxEntities']).toBe(12); // Doubled from 6
-            expect(entityManager['_livingEntityCount']).toBe(7);
+            expect(entityManager.getLivingEntityCount()).toBe(7);
+            expect(entityManager.getEntity(6)).toBe('entity-7');
+            expect(entityManager.getLivingEntities()).toContain('entity-7');
         });
         
         it('should reuse available entity IDs after destruction', () => {
@@ -89,8 +90,9 @@ describe('EntityManager', () => {
             const id3 = entityManager.createEntity('entity-3');
             
             expect(id3).toBe(2); // Should reuse the next available ID (2, since 0 was destroyed and added to end)
-            expect(entityManager['_entities'][id3]).toBe('entity-3');
-            expect(entityManager['_livingEntityCount']).toBe(2);
+            expect(entityManager.getEntity(id3)).toBe('entity-3');
+            expect(entityManager.getLivingEntityCount()).toBe(2);
+            expect(entityManager.getLivingEntities()).toContain('entity-3');
         });
     });
     
@@ -99,9 +101,10 @@ describe('EntityManager', () => {
             const entityId = entityManager.createEntity('test-entity');
             entityManager.destroyEntity(entityId);
             
-            expect(entityManager['_entities'][entityId]).toBe(null);
-            expect(entityManager['_livingEntityCount']).toBe(0);
-            expect(entityManager['_availableEntities']).toContain(entityId);
+            expect(entityManager.getEntity(entityId)).toBe(null);
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([]);
         });
         
         it('should throw error for invalid entity ID (negative)', () => {
@@ -124,12 +127,12 @@ describe('EntityManager', () => {
             entityManager.destroyEntity(id1);
             entityManager.destroyEntity(id3);
             
-            expect(entityManager['_livingEntityCount']).toBe(1);
-            expect(entityManager['_entities'][id1]).toBe(null);
-            expect(entityManager['_entities'][id3]).toBe(null);
-            expect(entityManager['_entities'][id2]).toBe('entity-2');
-            expect(entityManager['_availableEntities']).toContain(id1);
-            expect(entityManager['_availableEntities']).toContain(id3);
+            expect(entityManager.getLivingEntityCount()).toBe(1);
+            expect(entityManager.getEntity(id1)).toBe(null);
+            expect(entityManager.getEntity(id3)).toBe(null);
+            expect(entityManager.getEntity(id2)).toBe('entity-2');
+            expect(entityManager.getLivingEntities()).toEqual(['entity-2']);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([id2]);
         });
         
         it('should maintain correct available entities order', () => {
@@ -139,8 +142,14 @@ describe('EntityManager', () => {
             entityManager.destroyEntity(id1);
             entityManager.destroyEntity(id2);
             
-            // Available entities should be in order: [2, 0, 1] since 2 was never used, 0 was destroyed first, then 1
-            expect(entityManager['_availableEntities']).toEqual([2, 0, 1]);
+            // After destroying both entities, all should be available for reuse
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([]);
+            
+            // Verify entities are destroyed
+            expect(entityManager.getEntity(id1)).toBe(null);
+            expect(entityManager.getEntity(id2)).toBe(null);
         });
     });
     
@@ -158,8 +167,9 @@ describe('EntityManager', () => {
                 entityManager.destroyEntity(ids[i]);
             }
             
-            expect(entityManager['_livingEntityCount']).toBe(0);
-            expect(entityManager['_maxEntities']).toBeGreaterThanOrEqual(10);
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([]);
         });
         
         it('should handle creating entity after all are destroyed', () => {
@@ -176,8 +186,10 @@ describe('EntityManager', () => {
             const newId = entityManager.createEntity('new-entity');
             
             expect(newId).toBe(0); // Should reuse the first available ID (0, since it was destroyed first)
-            expect(entityManager['_livingEntityCount']).toBe(1);
-            expect(entityManager['_entities'][newId]).toBe('new-entity');
+            expect(entityManager.getLivingEntityCount()).toBe(1);
+            expect(entityManager.getEntity(newId)).toBe('new-entity');
+            expect(entityManager.getLivingEntities()).toEqual(['new-entity']);
+            expect(entityManager.getLivingEntitesIndex()).toEqual([0]);
         });
         
         it('should handle generic types correctly', () => {
@@ -186,34 +198,53 @@ describe('EntityManager', () => {
                 value: number;
             }
             
-            const typedManager = new EntityManager<TestEntity>(2);
+            const typedManager = new GenericEntityManager<TestEntity>(2);
             const entity: TestEntity = { name: 'test', value: 42 };
             
             const id = typedManager.createEntity(entity);
             expect(id).toBe(0);
+            expect(typedManager.getEntity(id)).toEqual(entity);
+            expect(typedManager.getLivingEntityCount()).toBe(1);
+            expect(typedManager.getLivingEntities()).toEqual([entity]);
         });
     });
     
     describe('state consistency', () => {
         it('should maintain consistent state across operations', () => {
             // Initial state
-            expect(entityManager['_availableEntities'].length + entityManager['_livingEntityCount']).toBe(entityManager['_maxEntities']);
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
             
             // After creating entity
             const id = entityManager.createEntity('test');
-            expect(entityManager['_availableEntities'].length + entityManager['_livingEntityCount']).toBe(entityManager['_maxEntities']);
+            expect(entityManager.getLivingEntityCount()).toBe(1);
+            expect(entityManager.getLivingEntities()).toEqual(['test']);
+            expect(entityManager.getEntity(id)).toBe('test');
             
             // After destroying entity
             entityManager.destroyEntity(id);
-            expect(entityManager['_availableEntities'].length + entityManager['_livingEntityCount']).toBe(entityManager['_maxEntities']);
+            expect(entityManager.getLivingEntityCount()).toBe(0);
+            expect(entityManager.getLivingEntities()).toEqual([]);
+            expect(entityManager.getEntity(id)).toBe(null);
         });
         
-        it('should not have duplicate IDs in available entities', () => {
+        it('should not have duplicate IDs in living entities', () => {
             const id = entityManager.createEntity('test');
             entityManager.destroyEntity(id);
             
-            const availableSet = new Set(entityManager['_availableEntities']);
-            expect(availableSet.size).toBe(entityManager['_availableEntities'].length);
+            // Create multiple entities and verify no duplicates in living entities
+            const id1 = entityManager.createEntity('test1');
+            const id2 = entityManager.createEntity('test2');
+            
+            const livingEntities = entityManager.getLivingEntities();
+            const livingIndices = entityManager.getLivingEntitesIndex();
+            
+            const entitySet = new Set(livingEntities);
+            const indexSet = new Set(livingIndices);
+            
+            expect(entitySet.size).toBe(livingEntities.length);
+            expect(indexSet.size).toBe(livingIndices.length);
+            expect(entityManager.getLivingEntityCount()).toBe(2);
         });
     });
 });

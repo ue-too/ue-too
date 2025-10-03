@@ -270,41 +270,63 @@ export class GenericEntityManager<T> {
     private _livingEntityCount = 0;
     private _entities: (T | null)[] = [];
 
+    private _packedEntityData: T[];
+    private _entityNumberToPackedDataIndex: (number | null)[] = [];
+    private _packedDataIndexToEntityNumber: (number | null)[] = [];
+    private _livingEntitiesIndex: number[];
+    private _liveCount: number = 0;
+
     constructor(initialCount: number) {
         this._maxEntities = initialCount;
         for (let i = 0; i < this._maxEntities; i++) {
             this._availableEntities.push(i);
             this._entities.push(null);
         }
+
+        this._packedEntityData = new Array(this._maxEntities);
+        this._entityNumberToPackedDataIndex = new Array(this._maxEntities);
+        this._packedDataIndexToEntityNumber = new Array(this._maxEntities);
+        this._livingEntitiesIndex = new Array(this._maxEntities);
     }
 
     getLivingEntityCount(): number {
-        return this._livingEntityCount;
+        return this._liveCount;
     }
 
     getLivingEntitesIndex(): number[] {
-        return this._entities.map((entity, index) => entity !== null ? index : null).filter((index): index is number => index !== null);
+        // return this._entities.map((entity, index) => entity !== null ? index : null).filter((index): index is number => index !== null);
+        return this._livingEntitiesIndex.filter((entityNumber): entityNumber is number => entityNumber !== null);
     }
 
     getLivingEntitiesWithIndex(): {index: number, entity: T}[] {
-        const res: {index: number, entity: T}[] = [];
-        this._entities.forEach((entity, index) => {
-            if(entity !== null) {
-                res.push({index, entity});
-            }
+        // const res: {index: number, entity: T}[] = [];
+        // this._entities.forEach((entity, index) => {
+        //     if(entity !== null) {
+        //         res.push({index, entity});
+        //     }
+        // });
+        // return res;
+        return this.getLivingEntitesIndex().map((entityNumber): {index: number, entity: T} => {
+            return {index: entityNumber, entity: this._packedEntityData[entityNumber]};
         });
-        return res;
     }
 
     getLivingEntities(): T[] {
-        return this._entities.filter((entity): entity is T => entity !== null);
+        // return this._entities.filter((entity): entity is T => entity !== null);
+        return this._packedEntityData.filter((entity): entity is T => entity !== null);
     }
 
     getEntity(entity: number): T | null {
-        if(entity < 0 || entity >= this._entities.length){
+        if(entity < 0 || entity >= this._maxEntities){
             return null;
         }
-        return this._entities[entity] ?? null;
+        
+        const packedDataIndex = this._entityNumberToPackedDataIndex[entity];
+        if(packedDataIndex == null) {
+            return null;
+        }
+        
+        return this._packedEntityData[packedDataIndex] ?? null;
     }
 
     createEntity(entity: T): number {
@@ -317,13 +339,37 @@ export class GenericEntityManager<T> {
                 this._availableEntities.push(i);
                 this._entities.push(null);
             }
+
+            const newPackedEntityData = new Array(this._maxEntities);
+            const newEntityNumberToPackedDataIndex = new Array(this._maxEntities);
+            const newPackedDataIndexToEntityNumber = new Array(this._maxEntities);
+            const newLivingEntitiesIndex = new Array(this._maxEntities);
+
+            for (let i = 0; i < currentMaxEntities; i++) {
+                newPackedEntityData[i] = this._packedEntityData[i];
+                newEntityNumberToPackedDataIndex[i] = this._entityNumberToPackedDataIndex[i];
+                newPackedDataIndexToEntityNumber[i] = this._packedDataIndexToEntityNumber[i];
+                newLivingEntitiesIndex[i] = this._livingEntitiesIndex[i];
+            }
+            this._packedEntityData = newPackedEntityData;
+            this._entityNumberToPackedDataIndex = newEntityNumberToPackedDataIndex;
+            this._packedDataIndexToEntityNumber = newPackedDataIndexToEntityNumber;
+            this._livingEntitiesIndex = newLivingEntitiesIndex;
         }
+
         const entityNumber = this._availableEntities.shift();
         if(entityNumber === undefined) {
             throw new Error('No available entities');
         }
         this._entities[entityNumber] = entity;
         this._livingEntityCount++;
+
+        this._packedEntityData[this._liveCount] = entity;
+        this._entityNumberToPackedDataIndex[entityNumber] = this._liveCount;
+        this._packedDataIndexToEntityNumber[this._liveCount] = entityNumber;
+        this._livingEntitiesIndex[this._liveCount] = entityNumber;
+
+        this._liveCount++;
         return entityNumber;
     }
 
@@ -334,6 +380,36 @@ export class GenericEntityManager<T> {
         this._availableEntities.push(entity);
         this._entities[entity] = null;
         this._livingEntityCount--;
+
+        const packedDataIndex = this._entityNumberToPackedDataIndex[entity];
+        if(packedDataIndex == undefined) {
+            return;
+        }
+
+        // Get the last entity in the packed array
+        const lastEntity = this._packedDataIndexToEntityNumber[this._liveCount - 1];
+
+        if(lastEntity == null) {
+            return;
+        }
+
+        // If we're not destroying the last entity, move the last entity to fill the gap
+        if(packedDataIndex !== this._liveCount - 1) {
+            this._packedEntityData[packedDataIndex] = this._packedEntityData[this._liveCount - 1];
+            this._packedDataIndexToEntityNumber[packedDataIndex] = lastEntity;
+            this._entityNumberToPackedDataIndex[lastEntity] = packedDataIndex;
+            this._livingEntitiesIndex[packedDataIndex] = this._livingEntitiesIndex[this._liveCount - 1];
+        }
+
+        // Clear the last position
+        this._packedEntityData[this._liveCount - 1] = null as any;
+        this._packedDataIndexToEntityNumber[this._liveCount - 1] = null;
+        this._livingEntitiesIndex[this._liveCount - 1] = null as any;
+
+        // Clear the mapping for the destroyed entity
+        this._entityNumberToPackedDataIndex[entity] = null;
+
+        this._liveCount--;
     }
 }
 
