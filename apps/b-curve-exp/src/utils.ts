@@ -267,8 +267,8 @@ export class GenericEntityManager<T> {
 
     private _availableEntities: number[] = [];
     private _maxEntities: number;
-    private _livingEntityCount = 0;
-    private _entities: (T | null)[] = [];
+    // private _livingEntityCount = 0;
+    // private _entities: (T | null)[] = [];
 
     private _packedEntityData: (T | null)[];
     private _entityNumberToPackedDataIndex: (number | null)[] = [];
@@ -280,7 +280,7 @@ export class GenericEntityManager<T> {
         this._maxEntities = initialCount;
         for (let i = 0; i < this._maxEntities; i++) {
             this._availableEntities.push(i);
-            this._entities.push(null);
+            // this._entities.push(null);
         }
 
         this._packedEntityData = new Array(this._maxEntities);
@@ -330,14 +330,13 @@ export class GenericEntityManager<T> {
     }
 
     createEntity(entity: T): number {
-        if(this._livingEntityCount >= this._maxEntities) {
-            // throw new Error('Max entities reached');
+        if(this._liveCount >= this._maxEntities) {
             console.info("Max entities reached, increasing max entities");
             const currentMaxEntities = this._maxEntities;
             this._maxEntities += currentMaxEntities;
+
             for (let i = currentMaxEntities; i < this._maxEntities; i++) {
                 this._availableEntities.push(i);
-                this._entities.push(null);
             }
 
             const newPackedEntityData = new Array(this._maxEntities);
@@ -351,6 +350,7 @@ export class GenericEntityManager<T> {
                 newPackedDataIndexToEntityNumber[i] = this._packedDataIndexToEntityNumber[i];
                 newLivingEntitiesIndex[i] = this._livingEntitiesIndex[i];
             }
+
             this._packedEntityData = newPackedEntityData;
             this._entityNumberToPackedDataIndex = newEntityNumberToPackedDataIndex;
             this._packedDataIndexToEntityNumber = newPackedDataIndexToEntityNumber;
@@ -358,11 +358,10 @@ export class GenericEntityManager<T> {
         }
 
         const entityNumber = this._availableEntities.shift();
+
         if(entityNumber === undefined) {
             throw new Error('No available entities');
         }
-        this._entities[entityNumber] = entity;
-        this._livingEntityCount++;
 
         this._packedEntityData[this._liveCount] = entity;
         this._entityNumberToPackedDataIndex[entityNumber] = this._liveCount;
@@ -377,16 +376,13 @@ export class GenericEntityManager<T> {
         if(entity >= this._maxEntities || entity < 0) {
             throw new Error('Invalid entity out of range');
         }
-        this._availableEntities.push(entity);
-        this._entities[entity] = null;
-        this._livingEntityCount--;
 
         const packedDataIndex = this._entityNumberToPackedDataIndex[entity];
+
         if(packedDataIndex == undefined) {
             return;
         }
 
-        // Get the last entity in the packed array
         const lastEntity = this._packedDataIndexToEntityNumber[this._liveCount - 1];
 
         if(lastEntity == null) {
@@ -402,47 +398,7 @@ export class GenericEntityManager<T> {
         this._livingEntitiesIndex[packedDataIndex] = this._livingEntitiesIndex[this._liveCount - 1];
         this._livingEntitiesIndex[this._liveCount - 1] = null;
 
-
-        this._liveCount--;
-    }
-}
-
-export class NumberManager {
-
-    private _availableEntities: number[] = [];
-    private _maxEntities: number;
-    private _livingEntityCount = 0;
-
-    constructor(initialCount: number) {
-        this._maxEntities = initialCount;
-        for (let i = 0; i < this._maxEntities; i++) {
-            this._availableEntities.push(i);
-        }
-    }
-
-    createEntity(): number {
-        if(this._livingEntityCount >= this._maxEntities) {
-            // throw new Error('Max entities reached');
-            console.info("Max entities reached, increasing max entities");
-            const currentMaxEntities = this._maxEntities;
-            this._maxEntities += currentMaxEntities;
-            for (let i = currentMaxEntities; i < this._maxEntities; i++) {
-                this._availableEntities.push(i);
-            }
-        }
-        const entity = this._availableEntities.shift();
-        if(entity === undefined) {
-            throw new Error('No available entities');
-        }
-        this._livingEntityCount++;
-        return entity;
-    }
-
-    destroyEntity(entity: number): void {
-        if(entity >= this._maxEntities || entity < 0) {
-            throw new Error('Invalid entity out of range');
-        }
         this._availableEntities.push(entity);
-        this._livingEntityCount--;
+        this._liveCount--;
     }
 }

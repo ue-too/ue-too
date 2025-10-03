@@ -1,6 +1,6 @@
 import { BCurve, offset, offset2 } from "@ue-too/curve";
 import { directionAlignedToTangent, normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
-import { GenericEntityManager, NumberManager } from "./utils";
+import { GenericEntityManager } from "./utils";
 
 export type TrackSegment = {
     t0Joint: number;
