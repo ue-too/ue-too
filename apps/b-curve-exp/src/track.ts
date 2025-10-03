@@ -677,7 +677,10 @@ export class TrackGraph {
         let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
         let minDistance:number = 5;
 
-        for(const {jointNumber, joint} of this._jointManager.getJoints()){
+        const joints = this._jointManager.getJoints();
+        console.log('joints', joints);
+
+        for(const {jointNumber, joint} of joints){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
             if(distance < minDistance){
                 minDistance = distance;
