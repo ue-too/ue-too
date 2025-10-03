@@ -286,6 +286,16 @@ export class GenericEntityManager<T> {
         return this._entities.map((entity, index) => entity !== null ? index : null).filter((index): index is number => index !== null);
     }
 
+    getLivingEntitiesWithIndex(): {index: number, entity: T}[] {
+        const res: {index: number, entity: T}[] = [];
+        this._entities.forEach((entity, index) => {
+            if(entity !== null) {
+                res.push({index, entity});
+            }
+        });
+        return res;
+    }
+
     getLivingEntities(): T[] {
         return this._entities.filter((entity): entity is T => entity !== null);
     }
