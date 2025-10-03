@@ -65,24 +65,15 @@ export type PointOnJointPositiveResult = {
 
 export class TrackGraph {
 
-    private joints: Map<number, TrackJoint> = new Map();
-    // private jointNumberManager: NumberManager = new NumberManager(10);
     private _jointManager: TrackJointManager = new TrackJointManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
     getJoints(): {jointNumber: number, joint: TrackJoint}[] {
-        const res: {jointNumber: number, joint: TrackJoint}[] = [];
-        this.joints.forEach((joint, jointNumber)=>{
-            res.push({
-                jointNumber,
-                joint: {...joint}
-            })
-        });
-        return res;
+        return this._jointManager.getJoints();
     }
 
     getJoint(jointNumber: number): TrackJoint | null {
-        return this.joints.get(jointNumber) ?? null;
+        return this._jointManager.getJoint(jointNumber);
     }
 
     insertJointIntoTrackSegmentUsingTrackNumber(trackSegmentNumber: number, atT: number): number | null {
@@ -97,10 +88,10 @@ export class TrackGraph {
         const t0JointNumber = segment.t0Joint;
         const t1JointNumber = segment.t1Joint;
 
-        const t0Joint = this.joints.get(t0JointNumber);
-        const t1Joint = this.joints.get(t1JointNumber);
+        const t0Joint = this._jointManager.getJoint(t0JointNumber);
+        const t1Joint = this._jointManager.getJoint(t1JointNumber);
 
-        if(t0Joint === undefined || t1Joint === undefined){
+        if(t0Joint === null || t1Joint === null){
             console.warn("t0Joint or t1Joint not found when inserting joint into track segment using track number");
             return null;
         }
@@ -136,8 +127,6 @@ export class TrackGraph {
 
         newJoint.connections.set(t0JointNumber, firstSegmentNumber);
         newJoint.connections.set(t1JointNumber, secondSegmentNumber);
-
-        this.joints.set(newJointNumber, newJoint);
 
         /* NOTE: update the t0 joint */
 
@@ -178,10 +167,10 @@ export class TrackGraph {
     }
 
     insertJointIntoTrackSegment(startJointNumber: number, endJointNumber: number, atT: number){
-        const startJoint = this.joints.get(startJointNumber);
-        const endJoint = this.joints.get(endJointNumber);
+        const startJoint = this._jointManager.getJoint(startJointNumber);
+        const endJoint = this._jointManager.getJoint(endJointNumber);
 
-        if(startJoint === undefined || endJoint === undefined){
+        if(startJoint === null || endJoint === null){
             console.warn("startJoint or endJoint not found");
             return;
         }
@@ -243,7 +232,6 @@ export class TrackGraph {
         newJoint.connections.set(t0JointNumber, firstSegmentNumber);
         newJoint.connections.set(t1JointNumber, secondSegmentNumber);
 
-        this.joints.set(newJointNumber, newJoint);
 
         /* NOTE: update the t0 joint */
 
@@ -282,9 +270,9 @@ export class TrackGraph {
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
     }
 
-    // get trackOffsets(): BCurve[] {
-    //     return this._trackCurveManager.trackOffsets;
-    // }
+    get trackOffsets(): {positive: Point[], negative: Point[]}[] {
+        return this._trackCurveManager.trackOffsets;
+    }
 
     removeTrackSegment(trackSegmentNumber: number): void {
         const segment = this._trackCurveManager.getTrackSegmentWithJoints(trackSegmentNumber);
@@ -295,10 +283,10 @@ export class TrackGraph {
             return;
         }
 
-        const t0Joint = this.joints.get(segment.t0Joint);
-        const t1Joint = this.joints.get(segment.t1Joint);
+        const t0Joint = this._jointManager.getJoint(segment.t0Joint);
+        const t1Joint = this._jointManager.getJoint(segment.t1Joint);
 
-        if(t0Joint === undefined || t1Joint === undefined){
+        if(t0Joint === null || t1Joint === null){
             console.warn("t0Joint or t1Joint not found");
             return;
         }
@@ -323,18 +311,18 @@ export class TrackGraph {
         t1Joint.direction.reverseTangent.delete(segment.t0Joint);
 
         if(t0Joint.connections.size === 0){
-            this.joints.delete(segment.t0Joint);
+            this._jointManager.destroyJoint(segment.t0Joint);
         }
 
         if(t1Joint.connections.size === 0){
-            this.joints.delete(segment.t1Joint);
+            this._jointManager.destroyJoint(segment.t1Joint);
         }
     }
 
     branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
-        const startJoint = this.joints.get(startJointNumber);
+        const startJoint = this._jointManager.getJoint(startJointNumber);
 
-        if(startJoint === undefined){
+        if(startJoint === null){
             console.warn("startJoint not found");
             return false;
         }
@@ -362,10 +350,6 @@ export class TrackGraph {
         // NOTE: insert connection to new joint's connections
         newTrackJoint.connections.set(startJointNumber, newTrackSegmentNumber);
         newTrackJoint.direction.reverseTangent.add(startJointNumber);
-
-        
-        // NOTE: insert the new joint
-        this.joints.set(newJointNumber, newTrackJoint);
 
         // NOTE: insert connection to the start joint's connections
         startJoint.connections.set(newJointNumber, newTrackSegmentNumber);
@@ -396,7 +380,6 @@ export class TrackGraph {
             }
         }
         const newJointNumber = this._jointManager.createJoint(newJoint);
-        this.joints.set(newJointNumber, newJoint);
         return newJointNumber;
     }
 
@@ -436,15 +419,12 @@ export class TrackGraph {
         startJoint.direction.tangent.add(endJointNumber);
         endJoint.direction.reverseTangent.add(startJointNumber);
 
-        this.joints.set(startJointNumber, startJoint);
-        this.joints.set(endJointNumber, endJoint);
-
         return true;
     }
 
     getTangentAtJoint(jointNumber: number): Point | null {
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             console.warn("Joint does not exist");
             return null;
         }
@@ -456,8 +436,8 @@ export class TrackGraph {
             console.warn("joint is not an ending track");
             return null;
         }
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             console.warn("joint not found");
             return null;
         }
@@ -479,8 +459,8 @@ export class TrackGraph {
             console.warn("joint is not an ending track");
             return null;
         }
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             console.warn("joint not found");
             return null;
         }
@@ -492,8 +472,8 @@ export class TrackGraph {
     }
 
     jointIsEndingTrack(jointNumber: number): boolean {
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             console.warn("joint not found");
             return false;
         }
@@ -507,9 +487,9 @@ export class TrackGraph {
 
     extendTrackFromJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
 
-        const startJoint = this.joints.get(startJointNumber);
+        const startJoint = this._jointManager.getJoint(startJointNumber);
 
-        if(startJoint === undefined){
+        if(startJoint === null){
             console.warn("startJoint not found");
             return false;
         }
@@ -549,8 +529,6 @@ export class TrackGraph {
 
         newTrackJoint.connections.set(startJointNumber, newTrackSegmentNumber);
 
-        this.joints.set(newJointNumber, newTrackJoint);
-
         startJoint.connections.set(newJointNumber, newTrackSegmentNumber);
         if(sameDirection(startJoint.tangent, tangentAtStart)){
             startJoint.direction.tangent.add(newJointNumber);
@@ -562,10 +540,10 @@ export class TrackGraph {
     }
 
     connectJoints(startJointNumber: number, endJointNumber: number, controlPoints: Point[]): boolean {
-        const startJoint = this.joints.get(startJointNumber);
-        const endJoint = this.joints.get(endJointNumber);
+        const startJoint = this._jointManager.getJoint(startJointNumber);
+        const endJoint = this._jointManager.getJoint(endJointNumber);
 
-        if(startJoint === undefined || endJoint === undefined){
+        if(startJoint === null || endJoint === null){
             console.warn("startJoint or endJoint not found");
             return false;
         }
@@ -605,16 +583,16 @@ export class TrackGraph {
     }
 
     getJointPosition(jointNumber: number): Point | null {
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             return null;
         }
         return joint.position;
     }
 
     getCurvatureAtJoint(jointNumber: number): number | null {
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             return null;
         }
         const firstSegment: number | undefined = joint.connections.values().next().value;
@@ -633,8 +611,8 @@ export class TrackGraph {
     }
 
     tangentIsPointingInEmptyDirection(jointNumber: number): boolean {
-        const joint = this.joints.get(jointNumber);
-        if(joint === undefined){
+        const joint = this._jointManager.getJoint(jointNumber);
+        if(joint === null){
             console.warn("joint not found");
             return false;
         }
@@ -699,7 +677,7 @@ export class TrackGraph {
         let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
         let minDistance:number = 5;
 
-        for(const [jointNumber, joint] of this.joints.entries()){
+        for(const {jointNumber, joint} of this._jointManager.getJoints()){
             const distance = PointCal.distanceBetweenPoints(position, joint.position);
             if(distance < minDistance){
                 minDistance = distance;
@@ -738,7 +716,7 @@ export class TrackGraph {
     }
 
     logJoints(){
-        for(const [jointNumber, joint] of this.joints.entries()){
+        for(const {jointNumber, joint} of this._jointManager.getJoints()){
             console.log('--------------------------------');
             console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not "}an ending joint`);
             console.log('joint position', joint.position);
@@ -807,7 +785,17 @@ export class TrackJointManager {
         return this._internalTrackJointManager.createEntity(joint);
     }
 
+    getJoints(): {jointNumber: number, joint: TrackJoint}[] {
+        return this._internalTrackJointManager.getLivingEntitiesWithIndex().map(({index, entity}) => ({jointNumber: index, joint: entity}));
+    }
 
+    getJoint(jointNumber: number): TrackJoint | null {
+        return this._internalTrackJointManager.getEntity(jointNumber);
+    }
+
+    destroyJoint(jointNumber: number): void {
+        this._internalTrackJointManager.destroyEntity(jointNumber);
+    }
 }
 
 export class TrackCurveManager {
