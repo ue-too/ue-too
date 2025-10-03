@@ -130,8 +130,8 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
-        const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber);
-        const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber);
+        const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber, t0Joint.elevation, newJoint.elevation);
+        const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber, newJoint.elevation, t1Joint.elevation);
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
 
@@ -235,8 +235,8 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
-        const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber);
-        const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber);
+        const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber, t0Joint.elevation, newJoint.elevation);
+        const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber, newJoint.elevation, t1Joint.elevation);
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
 
@@ -361,7 +361,7 @@ export class TrackGraph {
 
         const newJointNumber = this._jointManager.createJoint(newTrackJoint);
 
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, newJointNumber);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, newJointNumber, startJoint.elevation, newTrackJoint.elevation);
 
 
         // NOTE: insert connection to new joint's connections
@@ -431,7 +431,7 @@ export class TrackGraph {
 
         const startJointNumber = this._jointManager.createJoint(startJoint);
         const endJointNumber = this._jointManager.createJoint(endJoint);
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(curve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -546,7 +546,7 @@ export class TrackGraph {
         newTrackJoint.direction.reverseTangent.add(startJointNumber);
 
         const newJointNumber = this._jointManager.createJoint(newTrackJoint);
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, newJointNumber);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, newJointNumber, startJoint.elevation, newTrackJoint.elevation);
 
         newTrackJoint.connections.set(startJointNumber, newTrackSegmentNumber);
 
@@ -583,7 +583,7 @@ export class TrackGraph {
         const endJointTangentDirection = endJoint.tangent;
 
         const straightCurve = new BCurve([startJoint.position, ...controlPoints, endJoint.position]);
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(straightCurve, startJointNumber, endJointNumber);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(straightCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -824,7 +824,7 @@ export class TrackJointManager {
 export class TrackCurveManager {
 
     private _internalTrackCurveManager: GenericEntityManager<{
-        segment: TrackSegment;
+        segment: TrackSegmentWithElevation;
         offsets: {
             positive: Point[];
             negative: Point[];
@@ -833,7 +833,7 @@ export class TrackCurveManager {
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
-            segment: TrackSegment;
+            segment: TrackSegmentWithElevation;
             offsets: {
                 positive: Point[];
                 negative: Point[];
@@ -845,22 +845,26 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment.curve ?? null;
     }
 
-    getTrackSegmentsWithJoints(): TrackSegment[] {
+    getTrackSegmentsWithJoints(): TrackSegmentWithElevation[] {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
-    getTrackSegmentWithJoints(segmentNumber: number): TrackSegment | null {
+    getTrackSegmentWithJoints(segmentNumber: number): TrackSegmentWithElevation | null {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
     }
 
-    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, gauge: number = 10): number {
+    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 10): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
         const curveNumber = this._internalTrackCurveManager.createEntity({
             segment: {
                 curve: curve,
                 t0Joint: t0Joint,
-                t1Joint: t1Joint
+                t1Joint: t1Joint,
+                elevation: {
+                    from: t0Elevation,
+                    to: t1Elevation
+                }
             },
             offsets: {
                 positive: experimentPositiveOffsets,
