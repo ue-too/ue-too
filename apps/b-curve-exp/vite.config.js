@@ -27,4 +27,7 @@ export default defineConfig({
         host: true,
         strictPort: false,
     },
+    optimizeDeps: {
+        include: ['**/*.json']
+    }
 });

@@ -147,9 +147,13 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     setZoomLevel(zoomLevel: number){
+        console.log('setZoomLevel', zoomLevel);
+        const currentZoomLevel = this._baseCamera.zoomLevel;
         if(!this._baseCamera.setZoomLevel(zoomLevel)){
+            console.log('cannot set zoom level', zoomLevel);
             return false;
         }
+        this._observer.notifyZoom({deltaZoomAmount: this._baseCamera.zoomLevel - currentZoomLevel}, {position: this._baseCamera.position, rotation: this._baseCamera.rotation, zoomLevel: this._baseCamera.zoomLevel});
         return true;
     }
 
