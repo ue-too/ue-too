@@ -6,10 +6,12 @@
     "allowImportingTsExtensions": false,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true
+    "strict": true,
+    "resolveJsonModule": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "assets/*.json"
   ],
   "references": [
     {

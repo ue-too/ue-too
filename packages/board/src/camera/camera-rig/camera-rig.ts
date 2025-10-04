@@ -395,8 +395,9 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
      * @description Zoom by a certain amount at a certain point. The point is in the viewport coordinate system.
      */
     zoomByAt(delta: number, at: Point): void {
+        const convertedDelta = delta * this._camera.zoomLevel;
         let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
-        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
+        const transformedDelta = this._zoomBy(convertedDelta, this._camera, this._config);
         this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
         let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
         const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);

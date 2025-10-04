@@ -1,15 +1,128 @@
-import { Board, drawArrow } from "@ue-too/board";
+import { Board, convertDeltaToComplyWithRestriction, drawArrow } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
+import { mercatorProjection } from "@ue-too/border";
+import districtGeoJSON from "./tainan-district";
+import villageGeoJSON from "./tainan-village";
+import "./media";
+
+
+const testCoordinate = { longitude: 120.20, latitude: 22.98 };
+
+const testProjection = mercatorProjection(testCoordinate, 120.20);
+console.log('testProjection', testProjection);
+
+// Function to download ImageData as PNG
+function downloadImageDataAsPNG(imageData: ImageData, filename: string = 'canvas-capture.png') {
+    // Create a temporary canvas to convert ImageData to PNG
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = imageData.width;
+    tempCanvas.height = imageData.height;
+    const tempContext = tempCanvas.getContext('2d');
+    
+    if (!tempContext) {
+        console.error('Could not get 2D context for temporary canvas');
+        return;
+    }
+    
+    // Put the image data onto the temporary canvas
+    tempContext.putImageData(imageData, 0, 0);
+    
+    // Convert canvas to PNG data URL and download
+    const dataURL = tempCanvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataURL;
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    console.log(`Downloaded ${filename}`);
+}
+
+// GeoJSON types
+interface GeoJSONFeature {
+    type: "Feature";
+    geometry: {
+        type: "Polygon" | "MultiPolygon";
+        coordinates: number[][][] | number[][][][];
+    };
+    properties: Record<string, any>;
+}
+
+interface GeoJSONFeatureCollection {
+    type: "FeatureCollection";
+    features: GeoJSONFeature[];
+}
 
 const getRandomPoint = (min: number, max: number) => {
     return {
         x: Math.random() * (max - min) + min,
         y: Math.random() * (max - min) + min,
     }
+}
+
+
+// Function to convert GeoJSON coordinates to world coordinates
+function geoJSONToWorldCoordinates(geoJSON: GeoJSONFeatureCollection, bounds?: { minLng: number, minLat: number, maxLng: number, maxLat: number }) {
+    const features = geoJSON.features;
+    const worldFeatures: Array<{ coordinates: number[][], properties: Record<string, any> }> = [];
+    
+    // Calculate bounds if not provided
+    if (!bounds) {
+        let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+        
+        features.forEach(feature => {
+            const coords = feature.geometry.coordinates;
+            coords.forEach(ring => {
+                ring.forEach(coord => {
+                    const [lng, lat] = coord as [number, number];
+                    minLng = Math.min(minLng, lng);
+                    minLat = Math.min(minLat, lat);
+                    maxLng = Math.max(maxLng, lng);
+                    maxLat = Math.max(maxLat, lat);
+                });
+            });
+        });
+        
+        bounds = { minLng, minLat, maxLng, maxLat };
+    }
+    
+    // Convert to world coordinates (you can adjust the scaling as needed)
+    const scale = 1; // Adjust this to fit your coordinate system
+    const width = bounds.maxLng - bounds.minLng;
+    const height = bounds.maxLat - bounds.minLat;
+    
+    features.forEach(feature => {
+        const coords = feature.geometry.coordinates;
+        const worldCoords: number[][] = [];
+        
+        coords.forEach(ring => {
+            const worldRing: number[] = [];
+            ring.forEach(coord => {
+                const [lng, lat] = coord as [number, number];
+                // Normalize coordinates to 0-1 range
+                const normalizedX = (lng - bounds!.minLng) / width;
+                const normalizedY = (lat - bounds!.minLat) / height;
+                // Convert to world coordinates
+                const projectionPoint = PointCal.subVector(mercatorProjection({ longitude: lng, latitude: lat }, 120.35), {x: 0, y: 2650000});
+                worldRing.push(projectionPoint.x * scale, -projectionPoint.y * scale);
+            });
+            worldCoords.push(worldRing);
+        });
+        
+        worldFeatures.push({
+            coordinates: worldCoords,
+            properties: feature.properties
+        });
+    });
+    
+    return { worldFeatures, bounds };
 }
 
 const utilButton = document.getElementById("util") as HTMLButtonElement;
@@ -28,10 +141,85 @@ stats.dom.style.position = "absolute";
 stats.dom.style.top = "0px";
 stats.dom.style.left = "0px";
 
-const board = new Board(canvas);
+const board = new Board(canvas, true);
+console.log('camera zoom boundaries', board.camera.zoomBoundaries);
+console.log('camera boundaries', board.camera.boundaries);
+
+board.camera.setMinZoomLevel(0.000001);
+console.log('camera zoom boundaries', board.camera.zoomBoundaries);
+
+board.camera.on("zoom", (event, cameraState)=>{
+    console.log('zoom level', cameraState.zoomLevel);
+});
 
 const curveEngine = new CurveCreationEngine();
 const stateMachine = createLayoutStateMachine(curveEngine);
+
+// GeoJSON data storage
+let districtData: GeoJSONFeatureCollection | null = null;
+let villageData: GeoJSONFeatureCollection | null = null;
+let worldDistrictFeatures: Array<{ coordinates: number[][], properties: Record<string, any> }> = [];
+let worldVillageFeatures: Array<{ coordinates: number[][], properties: Record<string, any> }> = [];
+
+// Visibility toggles
+let showDistricts = true;
+let showVillages = true;
+
+// Function to render GeoJSON polygons
+function renderGeoJSONPolygons(features: Array<{ coordinates: number[][], properties: Record<string, any> }>, color: string = "rgba(0, 0, 255, 0.3)", strokeColor: string = "blue") {
+    if (board.context === undefined) return;
+    
+    board.context.save();
+    board.context.fillStyle = color;
+    board.context.strokeStyle = strokeColor;
+    board.context.lineWidth = 1 / board.camera.zoomLevel;
+    
+    features.forEach(feature => {
+        feature.coordinates.forEach(ring => {
+            board.context!.beginPath();
+            for (let i = 0; i < ring.length; i += 2) {
+                const x = ring[i];
+                const y = ring[i + 1];
+                if (i === 0) {
+                    board.context!.moveTo(x, y);
+                } else {
+                    board.context!.lineTo(x, y);
+                }
+            }
+            board.context!.closePath();
+            board.context!.fill();
+            board.context!.stroke();
+        });
+    });
+    
+    board.context.restore();
+}
+
+// Initialize GeoJSON data
+function initializeGeoJSON() {
+    try {
+        console.log("Initializing GeoJSON data...");
+        
+        // Use imported data directly
+        districtData = districtGeoJSON as GeoJSONFeatureCollection;
+        villageData = villageGeoJSON as GeoJSONFeatureCollection;
+        
+        // Convert to world coordinates
+        const districtResult = geoJSONToWorldCoordinates(districtData);
+        const villageResult = geoJSONToWorldCoordinates(villageData);
+        
+        worldDistrictFeatures = districtResult.worldFeatures;
+        worldVillageFeatures = villageResult.worldFeatures;
+        
+        console.log(`Loaded ${worldDistrictFeatures.length} district features and ${worldVillageFeatures.length} village features`);
+        
+        // You can adjust the camera view to fit the data
+        // board.camera.setViewport(districtResult.bounds);
+        
+    } catch (error) {
+        console.error("Failed to initialize GeoJSON data:", error);
+    }
+}
 
 stateMachine.onStateChange((currentState, nextState)=>{
     switch(nextState){
@@ -186,6 +374,7 @@ stateMachine.onStateChange((currentState, nextState )=>{
 
 let lastTimestamp = 0;
 
+let capture = false;
 
 function step(timestamp: number){
 
@@ -272,6 +461,14 @@ function step(timestamp: number){
         board.context.stroke();
     });
     board.context.restore();
+
+    // Render GeoJSON polygons
+    if (showDistricts && worldDistrictFeatures.length > 0) {
+        renderGeoJSONPolygons(worldDistrictFeatures, "rgba(0, 100, 255, 0.2)", "rgba(0, 100, 255, 0.8)");
+    }
+    if (showVillages && worldVillageFeatures.length > 0) {
+        renderGeoJSONPolygons(worldVillageFeatures, "rgba(255, 100, 0, 0.1)", "rgba(255, 100, 0, 0.6)");
+    }
 
     if(curveEngine.previewCurveForDeletion !== null){
         const cps = curveEngine.previewCurveForDeletion.getControlPoints();
@@ -365,11 +562,21 @@ function step(timestamp: number){
         board.context.restore();
     }
 
+    if(capture){
+        
+        const imageData = board.context.getImageData(0, 0, canvas.width, canvas.height);
+        downloadImageDataAsPNG(imageData);
+        capture = false;
+    }
+
     stats.end();
     window.requestAnimationFrame(step);
 }
 
 window.requestAnimationFrame(step);
+
+// Initialize GeoJSON data
+initializeGeoJSON();
 
 utilButton.addEventListener("click", ()=>{
     canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
@@ -400,3 +607,26 @@ switchDirectionButton.addEventListener("click", ()=>{
     trainPlacementEngine.switchDirection();
 });
 
+// GeoJSON toggle buttons
+const toggleDistrictsButton = document.getElementById("toggle-districts") as HTMLButtonElement;
+const toggleVillagesButton = document.getElementById("toggle-villages") as HTMLButtonElement;
+
+toggleDistrictsButton.addEventListener("click", ()=>{
+    showDistricts = !showDistricts;
+    toggleDistrictsButton.textContent = showDistricts ? "Hide Districts" : "Show Districts";
+});
+
+toggleVillagesButton.addEventListener("click", ()=>{
+    showVillages = !showVillages;
+    toggleVillagesButton.textContent = showVillages ? "Hide Villages" : "Show Villages";
+});
+
+// Initialize button text
+toggleDistrictsButton.textContent = "Hide Districts";
+toggleVillagesButton.textContent = "Hide Villages";
+
+const captureButton = document.getElementById("capture") as HTMLButtonElement;
+
+captureButton.addEventListener("click", ()=>{
+    capture = true;
+});
