@@ -376,10 +376,6 @@ export class ObservableInputTracker implements KmtInputContext {
         this._edgeAutoCameraInput = edgeAutoCameraInput;
     }
 
-    get edgeAutoCameraInput(): EdgeAutoCameraInput {
-        return this._edgeAutoCameraInput;
-    }
-
     get alignCoordinateSystem(): boolean {
         return this._alignCoordinateSystem;
     }
