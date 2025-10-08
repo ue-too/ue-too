@@ -123,6 +123,10 @@ export default class Board {
         this._touchParser.attach(canvas);
         this._canvasProxy.attach(canvas);
 
+        if(this.limitEntireViewPort) {
+            this.syncCameraZoomLevel(this._canvasProxy.dimensions);
+        }
+
         this._context = newContext;
         this._reversedContext = reverseYAxis(this._context);
     }
