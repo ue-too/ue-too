@@ -250,6 +250,11 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
+        context.toggleOnEdgeAutoCameraInput();
+    }
+
+    beforeExit(context: KmtInputContext): void {
+        context.toggleOffEdgeAutoCameraInput();
     }
 
     get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
@@ -257,6 +262,11 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
             "enable": {
                 action: NO_OP,
                 defaultTargetState: "IDLE",
+            },
+            "pointerMove": {
+                action: (context, eventPayload) => {
+                    context.setCursorPosition({x: eventPayload.x, y: eventPayload.y});
+                }
             }
         };
     }

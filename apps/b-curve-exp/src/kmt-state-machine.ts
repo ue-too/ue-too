@@ -2,8 +2,9 @@ import { BCurve } from "@ue-too/curve";
 import { sameDirection, type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
-import { ProjectionCurveResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
+import { ELEVATION, ProjectionCurveResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
 import { PointCal, normalizeAngleZero2TwoPI } from "@ue-too/math";
+import { Observable, Observer, SynchronousObservable } from "@ue-too/board";
 
 
 export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT" | "HOVER_FOR_CURVE_DELETION";
@@ -29,6 +30,9 @@ export type LayoutEvents = {
     "toggleStraightLine": {};
     "startDeletion": {};
     "endDeletion": {};
+    "scroll": {
+        positive: boolean;
+    };
 }
 
 export interface LayoutContext extends BaseContext {
@@ -44,6 +48,9 @@ export interface LayoutContext extends BaseContext {
     hoverForCurveDeletion: (position: Point) => void;
     deleteCurrentCurve: () => void;
     cancelCurrentDeletion: () => void;
+    setCurrentJointElevation: (elevation: ELEVATION) => void;
+    bumpCurrentJointElevation: () => void;
+    lowerCurrentJointElevation: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
     lastCurveSuccess: boolean;
@@ -63,7 +70,7 @@ class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutS
         "startDeletion": {
             action: NO_OP,
             defaultTargetState: "HOVER_FOR_CURVE_DELETION",
-        }
+        },
     };
 
     get eventReactions() {
@@ -129,6 +136,12 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
             },
             defaultTargetState: "IDLE",
         },
+        "escapeKey": {
+            action: (context, event) => {
+                context.cancelCurrentCurve();
+            },
+            defaultTargetState: "IDLE",
+        },
         "flipEndTangent": {
             action: (context, event) => {
                 context.flipEndTangent();
@@ -146,6 +159,15 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
                 context.cancelCurrentCurve();
             },
             defaultTargetState: "HOVER_FOR_CURVE_DELETION",
+        },
+        "scroll": {
+            action: (context, event) => {
+                if(event.positive){
+                    context.bumpCurrentJointElevation();
+                } else {
+                    context.lowerCurrentJointElevation();
+                }
+            },
         }
     };
 
@@ -210,6 +232,15 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
                 context.cancelCurrentCurve();
             },
             defaultTargetState: "HOVER_FOR_CURVE_DELETION",
+        },
+        "scroll": {
+            action: (context, event) => {
+                if(event.positive){
+                    context.bumpCurrentJointElevation();
+                } else {
+                    context.lowerCurrentJointElevation();
+                }
+            },
         }
     };
 
@@ -249,26 +280,27 @@ export function createLayoutStateMachine(context: LayoutContext): StateMachine<L
 
 export type BrandNewJoint = {
     type: "new";
+} & BaseJoint;
+
+export type BaseJoint = {
     position: Point;
+    elevation: ELEVATION;
 }
 
 export type BranchJoint = {
     type: "branchJoint";
-    position: Point;
     constraint: ProjectionJointResult;
-}
+} & BaseJoint;
 
 export type ExtendingTrackJoint = {
     type: "extendingTrack";
-    position: Point;
     constraint: ProjectionJointResult;
-}
+} & BaseJoint;
 
 export type BranchCurveJoint = {
     type: "branchCurve";
-    position: Point;
     constraint: ProjectionCurveResult;
-}
+} & BaseJoint;
 
 export type NewJointType = BrandNewJoint | BranchJoint | ExtendingTrackJoint | BranchCurveJoint;
 
@@ -295,6 +327,9 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _previewCurveForDeletion: number | null = null;
 
+    public _currentJointElevation: ELEVATION | null = null;
+    private _elevationObservable: Observable<[ELEVATION | null]> = new SynchronousObservable<[ELEVATION | null]>();
+
     constructor() {
         this._trackGraph = new TrackGraph();
     }
@@ -316,6 +351,35 @@ export class CurveCreationEngine implements LayoutContext {
         // this.cancelCurrentCurve();
     }
 
+    setCurrentJointElevation(elevation: ELEVATION) {
+        if(elevation != this._currentJointElevation){
+            this._elevationObservable.notify(elevation);
+        }
+        this._currentJointElevation = elevation;
+    }
+
+    bumpCurrentJointElevation() {
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation >= ELEVATION.ABOVE_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation + 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+    }
+
+    lowerCurrentJointElevation() {
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation <= ELEVATION.SUB_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation - 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+    }
+
+    onElevationChange(observer: Observer<[ELEVATION | null]>) {
+        this._elevationObservable.subscribe(observer);
+    }
+
     hoverForCurveDeletion(position: Point) {
         const res = this._trackGraph.project(position);
         if(res.hit && res.hitType === "curve") {
@@ -327,7 +391,8 @@ export class CurveCreationEngine implements LayoutContext {
 
     hoverForStartingPoint(position: Point) {
         const res = this._trackGraph.project(position);
-        this._newStartJoint = this.determineNewJointType(position, res);
+        const elevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        this._newStartJoint = this.determineNewJointType(position, res, elevation);
         if(res.hit){
             this._previewStartProjection = res;
         } else {
@@ -428,7 +493,8 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         const res = this._trackGraph.project(position);
-        this._newEndJoint = this.determineNewJointType(position, res);
+        const elevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        this._newEndJoint = this.determineNewJointType(position, res, elevation);
 
         if(res.hit){
             this._previewEndProjection = res;
@@ -553,7 +619,7 @@ export class CurveCreationEngine implements LayoutContext {
         if(this._newStartJoint.type === "new"){
             const startTangent = this._previewCurve.previewStartAndEndSwitched ? 
             PointCal.unitVector(this._previewCurve.curve.derivative(1)) : PointCal.unitVector(this._previewCurve.curve.derivative(0));
-            startJointNumber = this._trackGraph.createNewEmptyJoint(this._newStartJoint.position, startTangent);
+            startJointNumber = this._trackGraph.createNewEmptyJoint(this._newStartJoint.position, startTangent, this._newStartJoint.elevation);
         } else if(this._newStartJoint.type === "branchCurve"){
             const constraint = this._newStartJoint.constraint;
             const trackSegmentNumber = constraint.curve;
@@ -569,7 +635,7 @@ export class CurveCreationEngine implements LayoutContext {
             const previewCurveCPs = this._previewCurve.curve.getControlPoints();
             const endPosition = previewCurveStartAndEndSwitched ? previewCurveCPs[0] : previewCurveCPs[2];
             res = endPosition;
-            endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent);
+            endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent, this._newEndJoint.elevation);
         } else if (this._newEndJoint.type === "branchCurve"){
             const constraint = this._newEndJoint.constraint;
             const trackSegmentNumber = constraint.curve;
@@ -624,11 +690,12 @@ export class CurveCreationEngine implements LayoutContext {
         return this._trackGraph;
     }
 
-    determineNewJointType(rawPosition: Point, projection: ProjectionResult): NewJointType {
+    determineNewJointType(rawPosition: Point, projection: ProjectionResult, elevation: ELEVATION = ELEVATION.GROUND): NewJointType {
         if(!projection.hit){
             return {
                 type: "new",
-                position: rawPosition
+                position: rawPosition,
+                elevation: elevation,
             };
         }
 
@@ -640,6 +707,7 @@ export class CurveCreationEngine implements LayoutContext {
                         type: "extendingTrack",
                         position: projection.projectionPoint,
                         constraint: projection,
+                        elevation: elevation,
                     };
                 } else {
                     // branching out from a joint that is not an ending track
@@ -647,6 +715,7 @@ export class CurveCreationEngine implements LayoutContext {
                         type: "branchJoint",
                         position: projection.projectionPoint,
                         constraint: projection,
+                        elevation: elevation,
                     }
                 }
             case "curve":
@@ -654,6 +723,7 @@ export class CurveCreationEngine implements LayoutContext {
                     type: "branchCurve",
                     position: projection.projectionPoint,
                     constraint: projection,
+                    elevation: elevation,
                 }
         }
     }

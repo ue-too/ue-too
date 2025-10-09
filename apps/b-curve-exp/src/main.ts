@@ -15,6 +15,8 @@ const testCoordinate = { longitude: 120.20, latitude: 22.98 };
 const testProjection = mercatorProjection(testCoordinate, 120.20);
 console.log('testProjection', testProjection);
 
+const elevationText = document.getElementById("elevation") as HTMLParagraphElement;
+
 // Function to download ImageData as PNG
 function downloadImageDataAsPNG(imageData: ImageData, filename: string = 'canvas-capture.png') {
     // Create a temporary canvas to convert ImageData to PNG
@@ -153,6 +155,13 @@ board.camera.on("zoom", (event, cameraState)=>{
 });
 
 const curveEngine = new CurveCreationEngine();
+curveEngine.onElevationChange((elevation)=>{
+    if(elevation != null){
+        elevationText.textContent = `Elevation: ${elevation}`;
+    } else {
+        elevationText.textContent = `Elevation: N/A`;
+    }
+})
 const stateMachine = createLayoutStateMachine(curveEngine);
 
 // GeoJSON data storage
@@ -230,12 +239,14 @@ stateMachine.onStateChange((currentState, nextState)=>{
             layoutDeleteToggleButton.disabled = false;
             break;
         case "HOVER_FOR_STARTING_POINT":
+            board.cameraMovementOnMouseEdge.toggleOn();
             layoutDeleteToggleButton.textContent = "Start Layout Deletion";
             layoutDeleteToggleButton.disabled = true;
             layoutToggleButton.textContent = "End Layout";
             layoutToggleButton.disabled = false;
             break;
         case "IDLE":
+            board.cameraMovementOnMouseEdge.toggleOff();
             layoutDeleteToggleButton.textContent = "Start Layout Deletion";
             layoutDeleteToggleButton.disabled = false;
             layoutToggleButton.textContent = "Start Layout";
@@ -280,6 +291,12 @@ canvas.addEventListener("pointerdown", (event) => {
 
     trainStateMachine.happens("pointerdown", {
         position: worldPosition,
+    });
+});
+
+canvas.addEventListener("wheel", (event)=>{
+    stateMachine.happens("scroll", {
+        positive: event.deltaY > 0,
     });
 });
 
@@ -336,14 +353,14 @@ canvas.addEventListener("pointermove", (event) => {
 
 layoutToggleButton.addEventListener("click", ()=>{
     if(layoutToggleButton.textContent === "Start Layout"){
-        stateMachine.happens("startLayout", {});
+        stateMachine.happens("startLayout");
         console.log("start layout");
         board.kmtParser.stateMachine.happens("disable");
         layoutToggleButton.textContent = "End Layout";
         trainPlacementToggleButton.textContent = "Start Train Placement";
-        trainStateMachine.happens("endPlacement", {});
+        trainStateMachine.happens("endPlacement");
     } else {
-        stateMachine.happens("endLayout", {});
+        stateMachine.happens("endLayout");
         board.kmtParser.stateMachine.happens("enable");
         layoutToggleButton.textContent = "Start Layout";
         trainPlacementToggleButton.disabled = false;
@@ -352,14 +369,14 @@ layoutToggleButton.addEventListener("click", ()=>{
 
 trainPlacementToggleButton.addEventListener("click", ()=>{
     if(trainPlacementToggleButton.textContent === "Start Train Placement"){
-        trainStateMachine.happens("startPlacement", {});
-        stateMachine.happens("endLayout", {});
+        trainStateMachine.happens("startPlacement");
+        stateMachine.happens("endLayout");
         board.kmtParser.disabled = true;
         trainPlacementToggleButton.textContent = "End Train Placement";
         layoutToggleButton.disabled = true;
         layoutToggleButton.textContent = "Start Layout";
     } else {
-        trainStateMachine.happens("endPlacement", {});
+        trainStateMachine.happens("endPlacement");
         board.kmtParser.disabled = false;
         trainPlacementToggleButton.textContent = "Start Train Placement";
         layoutToggleButton.disabled = false;
