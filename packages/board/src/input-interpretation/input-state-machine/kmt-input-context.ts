@@ -2,6 +2,7 @@ import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
 import { UserInputPublisher } from "../raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../../utils";
+import { EdgeAutoCameraInput } from "src/camera";
 
 export enum CursorStyle {
     GRAB = "grab",
@@ -306,6 +307,9 @@ export interface KmtInputContext extends BaseContext {
     setInitialCursorPosition: (position: Point) => void;
     cancelCurrentAction: () => void;
     initialCursorPosition: Point;
+    setCursorPosition: (position: Point) => void;
+    toggleOnEdgeAutoCameraInput: () => void;
+    toggleOffEdgeAutoCameraInput: () => void;
 }
 
 /**
@@ -322,6 +326,10 @@ export class DummyKmtInputContext implements KmtInputContext {
     constructor(){
 
     }
+
+    toggleOnEdgeAutoCameraInput: () => void = NO_OP;
+    toggleOffEdgeAutoCameraInput: () => void = NO_OP;
+    setCursorPosition: (position: Point) => void = NO_OP;
 
     notifyOnPan(delta: Point): void {
     }
@@ -357,12 +365,15 @@ export class ObservableInputTracker implements KmtInputContext {
     private _canvasOperator: Canvas;
     private _inputPublisher: UserInputPublisher;
     private _initialCursorPosition: Point;
+    private _edgeAutoCameraInput: EdgeAutoCameraInput;
+    private _padding: number = 50;
 
-    constructor(canvasOperator: Canvas, inputPublisher: UserInputPublisher){
+    constructor(canvasOperator: Canvas, inputPublisher: UserInputPublisher, edgeAutoCameraInput: EdgeAutoCameraInput){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._inputPublisher = inputPublisher;
         this._initialCursorPosition = {x: 0, y: 0};
+        this._edgeAutoCameraInput = edgeAutoCameraInput;
     }
 
     get alignCoordinateSystem(): boolean {
@@ -401,9 +412,51 @@ export class ObservableInputTracker implements KmtInputContext {
         this._initialCursorPosition = position;
     }
 
+    toggleOnEdgeAutoCameraInput(): void {
+        this._edgeAutoCameraInput.toggleOn();
+    }
+
+    toggleOffEdgeAutoCameraInput(): void {
+        this._edgeAutoCameraInput.toggleOff();
+    }
+
+    setCursorPosition(position: Point): void {
+        if(withinEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding)){
+            const horizontalEdge = pointInWhichHorizontalEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding);
+            const verticalEdge = pointInWhichVerticalEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding);
+            this._edgeAutoCameraInput.setDirection(horizontalEdge, verticalEdge);
+        } else {
+            this._edgeAutoCameraInput.setDirection('none', 'none');
+        }
+    }
+
     cleanup(): void {
     }
 
     setup(): void {
     }
+}
+
+function withinEdgeOfCanvas(position: Point, boundingBox: {left: number, top: number, width: number, height: number}, padding: number): boolean {
+    return position.x <= boundingBox.left + padding || position.x >= boundingBox.left + boundingBox.width - padding || position.y <= boundingBox.top + padding || position.y >= boundingBox.top + boundingBox.height - padding;
+}
+
+function pointInWhichHorizontalEdgeOfCanvas(position: Point, boundingBox: {left: number, top: number, width: number, height: number}, padding: number): 'left' | 'right' | 'none' {
+    if(position.x <= boundingBox.left + padding){
+        return 'left';
+    }
+    if(position.x >= boundingBox.left + boundingBox.width - padding){
+        return 'right';
+    }
+    return 'none';
+}
+
+function pointInWhichVerticalEdgeOfCanvas(position: Point, boundingBox: {left: number, top: number, width: number, height: number}, padding: number): 'up' | 'down' | 'none' {
+    if(position.y <= boundingBox.top + padding){
+        return 'up';
+    }
+    if(position.y >= boundingBox.top + boundingBox.height - padding){
+        return 'down';
+    }
+    return 'none';
 }

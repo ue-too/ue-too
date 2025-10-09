@@ -14,6 +14,7 @@ import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher 
 import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from '../camera/camera-mux';
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
 import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
+import { EdgeAutoCameraInput } from '../camera/camera-edge-auto-input';
 
 /**
  * Usage
@@ -21,14 +22,23 @@ import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchI
  * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
  * const board = new Board(canvasElement);
  * 
- * const stepFn = board.getStepFunction(); 
- * const context = board.getContext();
+ * function draw(timestamp: number) {
+ *   board.step(timestamp);
  * 
- * function step(timestamp: number){
- *    stepFn(timestamp);
- * // do other stuff after the board has stepped
- * //.
+ *   // because board can be initialized without a canvas element, the context can be undefined until the canvas is attached
+ *   if(board.context == undefined) {
+ *     return;
+ *   }
+ * 
+ *   // draw after the board has stepped
+ *   // the coordinate system is the same as before; just that (0, 0) is at the center of the canvas when the camera position is at (0, 0)
+ *   board.context.beginPath();
+ *   board.context.rect(0, 0, 100, 100);
+ *   board.context.fill();
+ * 
+ *   requestAnimationFrame(draw);
  * }
+ * 
  * ```
  * @category Board
  * 
@@ -47,6 +57,7 @@ export default class Board {
     
     private cameraRig: CameraRig;
     private boardInputPublisher: RawUserInputPublisher;
+    private _edgeAutoCameraInput: EdgeAutoCameraInput;
     private _observableInputTracker: ObservableInputTracker;
     private _touchInputTracker: TouchInputTracker;
 
@@ -79,11 +90,13 @@ export default class Board {
 
         this.boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig));
 
-        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher);
+        this._edgeAutoCameraInput = new EdgeAutoCameraInput(this.boardInputPublisher.cameraMux);
+        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher, this._edgeAutoCameraInput);
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
 
         const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
         const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
+
         
         this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
         this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
@@ -109,6 +122,10 @@ export default class Board {
         this._kmtParser.attach(canvas);
         this._touchParser.attach(canvas);
         this._canvasProxy.attach(canvas);
+
+        if(this.limitEntireViewPort) {
+            this.syncCameraZoomLevel(this._canvasProxy.dimensions);
+        }
 
         this._context = newContext;
         this._reversedContext = reverseYAxis(this._context);
@@ -248,6 +265,10 @@ export default class Board {
         this.boardInputPublisher.cameraMux = cameraMux;
     }
 
+    get cameraMovementOnMouseEdge(): EdgeAutoCameraInput{
+        return this._edgeAutoCameraInput;
+    }
+
     /**
      * @description This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.
      * @param timestamp 
@@ -275,6 +296,8 @@ export default class Board {
             this.syncCameraZoomLevel(this._canvasSizeUpdateQueue);
             this._canvasSizeUpdateQueue = undefined;
         }
+
+        this._edgeAutoCameraInput.update(deltaTime);
 
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);

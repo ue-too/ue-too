@@ -236,7 +236,7 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
     }
 
     initateTransition(): void {
-        this.happens("initiateTransition", {});
+        this.happens("initiateTransition");
     }
 }
 

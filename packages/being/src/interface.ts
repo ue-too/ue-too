@@ -5,7 +5,36 @@ export interface BaseContext {
 
 type NOOP = () => void;
 
+type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
+
+/**
+ * @description Utility type to derive a string literal union from a readonly array of string literals.
+ *
+ * Example:
+ * const TEST_STATES = ["one", "two", "three"] as const;
+ * type TestStates = CreateStateType<typeof TEST_STATES>; // "one" | "two" | "three"
+ */
+export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
+
+export type EventArgs<EventPayloadMapping, K> = 
+  K extends keyof EventPayloadMapping
+    ? IsEmptyObject<EventPayloadMapping[K]> extends true
+      ? [event: K] // No payload needed
+      : [event: K, payload: EventPayloadMapping[K]] // Payload required
+    : [event: K, payload?: unknown]; // Unknown events
+
 export const NO_OP: NOOP = ()=>{};
+
+export type EventNotHandled = {
+    handled: false;
+}
+
+export type EventHandled<States extends string> = {
+    handled: true;
+    nextState?: States;
+}
+
+export type EventHandledResult<States extends string> = EventNotHandled | EventHandled<States>;
 
 /**
  * @description This is the interface for the state machine. The interface takes in a few generic parameters.
@@ -25,17 +54,14 @@ export const NO_OP: NOOP = ()=>{};
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
-    // Overload for known events - maintains type inference
-    happens<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never): States | undefined;
-    // Overload for known events - maintains type inference
-    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
-    // Overload for unknown events - accepts any event and payload
-    happens(event: string, payload?: any): States | undefined;
+    happens<K extends (keyof EventPayloadMapping | string)>(
+        ...args: EventArgs<EventPayloadMapping, K>
+      ): EventHandledResult<States>;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
     possibleStates: States[];
-    onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void;
+    onHappens(callback: (args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void): void;
 }
 
 /**
@@ -64,12 +90,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
 export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
-    // Overload for events with empty payloads - payload is optional
-    handles<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never, context?: Context, stateMachine?: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
-    // Overload for known events - maintains type inference
-    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
-    // Overload for unknown events - accepts any event and payload
-    handles(event: string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>;
     eventReactions: EventReactions<EventPayloadMapping, Context, States>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
@@ -185,7 +206,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     protected _context: Context;
     protected _statesArray: States[];
     protected _stateChangeCallbacks: StateChangeCallback<States>[];
-    protected _happensCallbacks: ((event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void)[];
+    protected _happensCallbacks: ((args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void)[];
     protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context){
@@ -195,42 +216,34 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._statesArray = Object.keys(states) as States[];
         this._stateChangeCallbacks = [];
         this._happensCallbacks = [];
+        this._states[initialState].uponEnter(context, this, initialState);
     }
 
     switchTo(state: States): void {
         this._currentState = state;
     }
     
-    // Overload for events with empty payloads - payload is optional
-    happens<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never): States | undefined;
-    // Overload for known events - maintains type inference
-    happens<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K]): States | undefined;
-    // Overload for unknown events - accepts any event and payload
-    happens(event: string, payload: any): States | undefined;
-    // Implementation that handles both cases
-    happens(event: keyof EventPayloadMapping | string, payload: any): States | undefined {
+    happens<K extends (keyof EventPayloadMapping | string)>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States> {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
-        // If payload is undefined, use an empty object as default
-        const actualPayload = payload ?? {};
-        this._happensCallbacks.forEach(callback => callback(event as keyof EventPayloadMapping, actualPayload, this._context));
-        const nextState = this._states[this._currentState].handles(event as keyof EventPayloadMapping, actualPayload, this._context, this);
-        if(nextState !== undefined && nextState !== this._currentState){
+        this._happensCallbacks.forEach(callback => callback(args, this._context));
+        const result = this._states[this._currentState].handles(args, this._context, this);
+        if(result.handled && result.nextState !== undefined && result.nextState !== this._currentState){ // TODO: whether or not to transition to the same state (currently no) (uponEnter and beforeExit will still be called if the state is the same)
             const originalState = this._currentState;
-            this._states[this._currentState].beforeExit(this._context, this, nextState);
-            this.switchTo(nextState);
+            this._states[this._currentState].beforeExit(this._context, this, result.nextState);
+            this.switchTo(result.nextState);
             this._states[this._currentState].uponEnter(this._context, this, originalState);
             this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
         }
-        return nextState;
+        return result;
     }
 
     onStateChange(callback: StateChangeCallback<States>): void {
         this._stateChangeCallbacks.push(callback);
     }
 
-    onHappens(callback: (event: keyof EventPayloadMapping, payload: EventPayloadMapping[keyof EventPayloadMapping], context: Context) => void): void {
+    onHappens(callback: (args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void): void {
         this._happensCallbacks.push(callback);
     }
 
@@ -287,17 +300,11 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         // console.log('leave');
     }
 
-    // Overload for events with empty payloads - payload is optional
-    handles<K extends keyof EventPayloadMapping>(event: K, payload?: EventPayloadMapping[K] extends {} ? EventPayloadMapping[K] : never, context?: Context, stateMachine?: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
-    // Overload for known events - maintains type inference
-    handles<K extends keyof EventPayloadMapping>(event: K, payload: EventPayloadMapping[K], context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
-    // Overload for unknown events - accepts any event and payload
-    handles(event: string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined;
-    // Implementation that handles both cases
-    handles(event: keyof EventPayloadMapping | string, payload: any, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): States | undefined {
-        const eventKey = event as keyof EventPayloadMapping;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>{
+        const eventKey = args[0] as keyof EventPayloadMapping;
+        const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
         if (this.eventReactions[eventKey]) {
-            this.eventReactions[eventKey].action(context, payload, stateMachine);
+            this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
             const targetState = this.eventReactions[eventKey].defaultTargetState;
             const guardToEvaluate = this._eventGuards[eventKey];
             if(guardToEvaluate){
@@ -307,14 +314,36 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
                     }
                     return false;
                 });
-                return target ? target.target : targetState;
+                return target ? {handled: true, nextState: target.target} : {handled: true, nextState: targetState};
             }
-            return targetState;
+            return {handled: true, nextState: targetState};
         }
-        return undefined;
+        return {handled: false};
     }
 }
 
-export function placeHolder(){
-    return "placeholder";
-};
+
+/**
+ * Example usage
+ * ```ts
+ type TestSubStates = "subOne" | "subTwo" | "subThree";
+ const TEST_STATES = ["one", "two", "three"] as const;
+ type TestStates = CreateStateType<typeof TEST_STATES>;
+ type AllStates = TestStates | TestSubStates;
+
+ const isTestState = createStateGuard(TEST_STATES);
+
+function test(s: AllStates) {
+	if (isTestState(s)) {
+		// s: TestStates
+    }
+}
+ * ```
+
+ * @param set 
+ * @returns 
+ */
+
+export function createStateGuard<T extends string>(set: readonly T[]) {
+    return (s: string): s is T => set.includes(s as T);
+}

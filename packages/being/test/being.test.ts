@@ -56,7 +56,7 @@ describe("being", ()=>{
             "SECOND": new SecondState()
         }, "IDLE", testContext);
 
-        stateMachine.happens("EVENT_1", {});
+        stateMachine.happens("EVENT_1");
         expect(stateMachine.currentState).toBe("FIRST");
     });
 
@@ -82,7 +82,7 @@ describe("being", ()=>{
         stateMachine.happens("EVENT_WITH_DATA", { data: "test" });
         
         // This should also work - providing payload for event with empty payload
-        stateMachine.happens("EVENT_1", {});
+        stateMachine.happens("EVENT_1");
         
         // This should work - omitting payload for event with empty payload
         stateMachine.happens("EVENT_1");
@@ -105,7 +105,7 @@ describe("being", ()=>{
             "SECOND": new SecondState()
         }, "IDLE", testContext);
 
-        stateMachine.happens("EVENT_1", {});
+        stateMachine.happens("EVENT_1");
         expect(mockAction).toHaveBeenCalled();
         expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
         expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
@@ -128,7 +128,7 @@ describe("being", ()=>{
             "SECOND": new SecondState()
         }, "IDLE", testContext);
 
-        stateMachine.happens("EVENT_1", {});
+        stateMachine.happens("EVENT_1");
         expect(idleState.beforeExit).toHaveBeenCalledWith(testContext, stateMachine, "FIRST");
         expect(firstState.uponEnter).toHaveBeenCalledWith(testContext, stateMachine, "IDLE");
     });
@@ -140,7 +140,7 @@ describe("being", ()=>{
             "SECOND": new SecondState()
         }, "IDLE", testContext);
 
-        stateMachine.happens("EVENT_3", {});
+        stateMachine.happens("EVENT_3");
         expect(stateMachine.currentState).toBe("IDLE");
     });
 });

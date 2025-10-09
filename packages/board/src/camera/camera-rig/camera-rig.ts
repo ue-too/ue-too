@@ -451,16 +451,15 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
      */
     panByViewPort(delta: Point): void {
         const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
-        const transformedDelta = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
+        this.panByWorld(diffInWorld);
     }
 
     /**
      * @description Pan to a certain point. (target is in the world coordinate system)
      */
     panByWorld(delta: Point): void {
-        const diffInViewPort = this._camera.convertFromWorld2ViewPort(delta);
-        this.panByViewPort(diffInViewPort);
+        const transformedDelta = this._panBy(delta, this._camera, this._config);
+        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
     }
 
     /**

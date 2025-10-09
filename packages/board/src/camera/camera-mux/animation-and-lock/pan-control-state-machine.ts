@@ -97,7 +97,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * @category Input Flow Control
      */
     initateTransition(): void{
-        this.happens("initateTransition", {});
+        this.happens("initateTransition");
     }
 
     set limitEntireViewPort(limit: boolean){

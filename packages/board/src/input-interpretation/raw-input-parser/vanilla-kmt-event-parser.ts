@@ -172,6 +172,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
+        this.stateMachine.happens("pointerMove", {x: e.clientX, y: e.clientY});
     }
 
     scrollHandler(e: MinimumWheelEvent){
@@ -193,7 +194,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            this.stateMachine.happens("spacebarDown", {});
+            this.stateMachine.happens("spacebarDown");
         }
     }
 
@@ -202,7 +203,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.stateMachine.happens("spacebarUp", {});
+            this.stateMachine.happens("spacebarUp");
         }
     }
 
