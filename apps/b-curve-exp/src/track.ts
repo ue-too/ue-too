@@ -2,6 +2,10 @@ import { BCurve, offset, offset2 } from "@ue-too/curve";
 import { directionAlignedToTangent, normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
 import { GenericEntityManager } from "./utils";
 
+const VERTICAL_CLEARANCE = 3;
+
+const LEVEL_HEIGHT = 10;
+
 export type TrackSegment = {
     t0Joint: number;
     t1Joint: number;
@@ -28,6 +32,59 @@ export type TrackSegmentWithElevation =  TrackSegment & {
         from: ELEVATION;
         to: ELEVATION;
     };
+}
+
+export function getElevationAtT(t: number, trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): number {
+
+    const startJointNumber = trackSegment.t0Joint;
+    const endJointNumber = trackSegment.t1Joint;
+
+    const startJoint = trackJointManager.getJoint(startJointNumber);
+    const endJoint = trackJointManager.getJoint(endJointNumber);
+
+    if(startJoint === null || endJoint === null){
+        return ELEVATION.GROUND;
+    }
+
+    const startElevationLevel = startJoint.elevation;
+    const endElevationLevel = endJoint.elevation;
+
+    const startElevation = startElevationLevel * LEVEL_HEIGHT;
+    const endElevation = endElevationLevel * LEVEL_HEIGHT;
+
+    const elevation = startElevation + (endElevation - startElevation) * t;
+    
+    return elevation;
+}
+
+export function trackIsSloped(trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
+    const startJointNumber = trackSegment.t0Joint;
+    const endJointNumber = trackSegment.t1Joint;
+    
+    const startJoint = trackJointManager.getJoint(startJointNumber);
+    const endJoint = trackJointManager.getJoint(endJointNumber);
+
+    if(startJoint === null || endJoint === null){
+        return false;
+    }
+
+    return startJoint.elevation !== endJoint.elevation;
+}
+
+export function intersectionSatisfiesVerticalClearance(intersectionTVal: number, trackSegment: TrackSegmentWithElevation, intersectionTVal2: number, trackSegment2: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
+    const elevation1 = getElevationAtT(intersectionTVal, trackSegment, trackJointManager);
+    const elevation2 = getElevationAtT(intersectionTVal2, trackSegment2, trackJointManager);
+
+    const diff = Math.abs(elevation1 - elevation2);
+
+    return satisfiesVerticalClearance(diff);
+}
+
+export function satisfiesVerticalClearance(elevation: number): boolean {
+    if(elevation >= VERTICAL_CLEARANCE){
+        return true;
+    }
+    return false;
 }
 
 export type TrackJoint = {
@@ -386,7 +443,7 @@ export class TrackGraph {
         return true;
     }
 
-    createNewEmptyJoint(position: Point, tangent: Point): number {
+    createNewEmptyJoint(position: Point, tangent: Point, elevation: ELEVATION = ELEVATION.GROUND): number {
         const newJoint: TrackJointWithElevation = {
             position,
             connections: new Map(),
@@ -395,7 +452,7 @@ export class TrackGraph {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
             },
-            elevation: ELEVATION.GROUND
+            elevation,
         }
         const newJointNumber = this._jointManager.createJoint(newJoint);
         return newJointNumber;
@@ -738,11 +795,66 @@ export class TrackGraph {
         return this._trackCurveManager.getTrackSegmentsWithJoints();
     }
 
+    /**
+     * Get track segments sorted by elevation for proper drawing order.
+     * SUB_3 elevation segments are drawn first, highest elevation segments are drawn last.
+     * For segments with different start/end elevations, uses the minimum elevation for sorting.
+     * @returns Track segments sorted by elevation (ascending order)
+     */
+    getSortedTrackSegments(): TrackSegmentWithElevation[] {
+        const segments = this._trackCurveManager.getTrackSegmentsWithJoints();
+        
+        // Sort by minimum elevation of the segment (start or end, whichever is lower)
+        return segments.sort((a, b) => {
+            const minElevationA = Math.min(a.elevation.from, a.elevation.to);
+            const minElevationB = Math.min(b.elevation.from, b.elevation.to);
+            
+            return minElevationA - minElevationB;
+        });
+    }
+
+    /**
+     * Get track segments sorted by elevation for proper drawing order.
+     * SUB_3 elevation segments are drawn first, highest elevation segments are drawn last.
+     * For segments with different start/end elevations, uses the maximum elevation for sorting.
+     * @returns Track segments sorted by elevation (ascending order)
+     */
+    getSortedTrackSegmentsByMaxElevation(): TrackSegmentWithElevation[] {
+        const segments = this._trackCurveManager.getTrackSegmentsWithJoints();
+        
+        // Sort by maximum elevation of the segment (start or end, whichever is higher)
+        return segments.sort((a, b) => {
+            const maxElevationA = Math.max(a.elevation.from, a.elevation.to);
+            const maxElevationB = Math.max(b.elevation.from, b.elevation.to);
+            
+            return maxElevationA - maxElevationB;
+        });
+    }
+
+    /**
+     * Get track segments sorted by elevation for proper drawing order.
+     * SUB_3 elevation segments are drawn first, highest elevation segments are drawn last.
+     * For segments with different start/end elevations, uses the average elevation for sorting.
+     * @returns Track segments sorted by elevation (ascending order)
+     */
+    getSortedTrackSegmentsByAverageElevation(): TrackSegmentWithElevation[] {
+        const segments = this._trackCurveManager.getTrackSegmentsWithJoints();
+        
+        // Sort by average elevation of the segment
+        return segments.sort((a, b) => {
+            const avgElevationA = (a.elevation.from + a.elevation.to) / 2;
+            const avgElevationB = (b.elevation.from + b.elevation.to) / 2;
+            
+            return avgElevationA - avgElevationB;
+        });
+    }
+
     logJoints(){
         for(const {jointNumber, joint} of this._jointManager.getJoints()){
             console.log('--------------------------------');
             console.log(`joint ${jointNumber} is ${this.jointIsEndingTrack(jointNumber) ? "" : "not "}an ending joint`);
             console.log('joint position', joint.position);
+            console.log('joint elevation', joint.elevation);
             if(joint.direction){
                 console.log('######')
                 console.log('tangent count', joint.direction.tangent.size);
