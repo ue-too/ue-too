@@ -16,9 +16,7 @@
 <p align="center">
   <a href="#overview">Overview</a> •
   <a href="#packages">Packages</a> •
-  <a href="#installation">Installation</a> •
   <a href="#examples">Examples</a> •
-  <a href="#documentation">Documentation</a> •
   <a href="#development">Development</a>
 </p>
 
@@ -26,16 +24,14 @@
 
 ue-too is organized into modular packages:
 
-### Core Packages
-
-- **`@ue-too/being`** - Finite state machine
-- **`@ue-too/board`** - Canvas viewport management with pan, zoom, and rotate functionality
-- **`@ue-too/math`** - Mathematical utilities for 2D point operations, transformations, and calculations
-- **`@ue-too/animate`** - Animation system for smooth transitions and keyframe animations
-- **`@ue-too/dynamics`** - 2D physics engine with collision detection, rigid bodies, and constraints
-- **`@ue-too/curve`** - Curve and path tools including Bézier curves, lines, and composite paths
-- **`@ue-too/border`** - Geographic projection utilities (great circle, rhumb line, map projections)
-- **`@ue-too/ecs`** - Entity Component System architecture support
+- [**`@ue-too/being`**](./packages/being/readme.md) - Finite state machine
+- [**`@ue-too/board`**](./packages/board/readme.md) - Canvas viewport management with pan, zoom, and rotate functionality
+- [**`@ue-too/math`**](./packages/math/readme.md) - Mathematical utilities for 2D point operations, transformations, and calculations
+- [**`@ue-too/animate`**](./packages/animate/readme.md) - Animation system for smooth transitions and keyframe animations
+- [**`@ue-too/dynamics`**](./packages/dynamics/readme.md) - 2D physics engine with collision detection, rigid bodies, and constraints
+- [**`@ue-too/curve`**](./packages/curve/readme.md) - Curve and path tools including Bézier curves, lines, and composite paths
+- [**`@ue-too/border`**](./packages/border/readme.md) - Geographic projection utilities (great circle, rhumb line, map projections)
+- [**`@ue-too/ecs`**](./packages/ecs/readme.md) - Entity Component System architecture support
 
 ## Install Individual Packages
 ```bash
@@ -48,16 +44,16 @@ npm install @ue-too/board @ue-too/math @ue-too/animate
 The monorepo includes comprehensive examples demonstrating various packages and integrations:
 
 ### Core Examples
-- **Base Example** - Basic canvas functionality
-- **Navigation Example** - Advanced navigation controls
+- **Base Example** - Basic canvas viewport management functionality
+- **Navigation Example** - Advanced navigation controls with keyboard shortcuts
 - **Ruler Example** - Measurement tools and overlays
-- **Camera Animation** - Smooth camera transitions
-- **Image Example** - Image manipulation and display
+- **Camera Animation** - Smooth camera transitions on mouse click
+- **Image Example** - Drawing an image on the pannable and zoomable canvas
 
 ### Framework Integrations
-- **PixiJS Integration** - High-performance graphics
-- **Konva Integration** - Canvas-based graphics
-- **Fabric Integration** - Interactive canvas objects
+- **PixiJS Integration**
+- **Konva Integration**
+- **Fabric Integration**
 
 ### Advanced Features
 - **Physics Example** - 2D physics simulation
@@ -100,8 +96,10 @@ pnpm test
 pnpm build
 
 # Start development server
-pnpm dev
+pnpm dev:examples
 ```
+
+Refer to the read me of each libary and application for more detail.
 
 ### Project Structure
 ```
@@ -121,47 +119,12 @@ ue-too/
 └── scripts/           # Build and deployment scripts
 ```
 
-### Available Scripts
-- `pnpm test` - Run all tests
-- `pnpm build` - Build all packages
-- `pnpm dev` - Start development server
-- `pnpm changeset` - Create changeset for versioning
-- `pnpm release` - Publish packages
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
 ## License
 
 MIT License - see [LICENSE.txt](LICENSE.txt) for details.
 
-## Roadmap
-
-### Planned Features
-- [ ] React integration examples
-- [ ] Vue.js integration examples  
-- [ ] Svelte integration examples
-- [ ] Enhanced documentation site
-- [ ] Performance benchmarking tools
-- [ ] Additional physics constraints
-- [ ] WebGL acceleration support
-
 ## Support
 
 - [GitHub Issues](https://github.com/ue-too/ue-too/issues) - Bug reports and feature requests
-- [Discussions](https://github.com/ue-too/ue-too/discussions) - Community discussions and questions
-- [Documentation](https://ue-too.github.io/ue-too/) - Complete API reference
 
----
-
-<p align="center">
-    Built with ❤️ by the uē-tôo team
-</p>
+> Currently not accepting contributions yet. If there's any features you want to see, please let me know by creating an issue.
