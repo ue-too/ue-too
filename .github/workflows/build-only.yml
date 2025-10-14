@@ -17,16 +17,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Setup and Build
-        uses: ./.github/actions/setup-node-env/action.yml
-        with:
-          node-version: ${{ inputs.node-version }}
-          build: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    uses: ./.github/actions/setup-environment/action.yml
+    with:
+      node-version: ${{ inputs.node-version }}
+      build: true
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PAT: ${{ secrets.PAT }}
       
