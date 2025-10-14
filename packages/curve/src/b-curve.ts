@@ -909,8 +909,8 @@ export class BCurve{
         return i;
     }
 
-    getCurveIntersections(curve: BCurve): {selfT: number, otherT: number}[]{
-        return getIntersectionsBetweenCurves(this, curve);
+    getCurveIntersections(curve: BCurve, deduplicationTolerance?: number): {selfT: number, otherT: number}[]{
+        return getIntersectionsBetweenCurves(this, curve, deduplicationTolerance);
     }
 
     get AABB():{min: Point, max: Point}{
@@ -1323,8 +1323,8 @@ export function getCubicRoots(pa: number, pb: number, pc: number, pd: number) {
     return [root1].filter(accept);
 }
 
-export function getIntersectionsBetweenCurves(curve: BCurve, curve2: BCurve): {selfT: number, otherT: number}[]{
-    const threshold = 0.0001;
+export function getIntersectionsBetweenCurves(curve: BCurve, curve2: BCurve, deduplicationTolerance: number = 0.01): {selfT: number, otherT: number}[]{
+    const threshold = 0.5;
     let pairs: {curve1: {curve: BCurve, startTVal: number, endTVal: number}, curve2: {curve: BCurve, startTVal: number, endTVal: number}}[] = [{curve1: {curve: curve, startTVal: 0, endTVal: 1}, curve2: {curve: curve2, startTVal: 0, endTVal: 1}}];
     const finalRes = [];
     while (pairs.length > 0){
@@ -1392,21 +1392,55 @@ export function getIntersectionsBetweenCurves(curve: BCurve, curve2: BCurve): {s
         }
     }
 
+    // Improved deduplication logic that handles close tvals on both curves
     const tVals: {selfT: number, otherT: number}[] = [];
-    const tVal1s: number[] = [];
-    finalRes.forEach((intersections)=>{
-        let within = false;
-        for(let index = 0; index < tVal1s.length; index++){
-            if (approximately(intersections.tVal1, tVal1s[index], 0.000005)){
-                within = true;
+    
+    // Sort intersections by tVal1 for more predictable deduplication
+    finalRes.sort((a, b) => a.tVal1 - b.tVal1);
+    
+    for (const intersection of finalRes) {
+        let isDuplicate = false;
+        
+        // Check against all existing intersections
+        for (const existing of tVals) {
+            // Check if this intersection is close to an existing one on either curve
+            const selfTClose = approximately(intersection.tVal1, existing.selfT, deduplicationTolerance);
+            const otherTClose = approximately(intersection.tVal2, existing.otherT, deduplicationTolerance);
+            
+            // Consider it a duplicate if both t-values are close
+            if (selfTClose && otherTClose) {
+                isDuplicate = true;
                 break;
             }
+            
+            // Also check for cases where intersections might be very close on the same curve
+            // This handles cases where curves are nearly tangent or have very close intersections
+            const selfTVeryClose = approximately(intersection.tVal1, existing.selfT, deduplicationTolerance * 10);
+            const otherTVeryClose = approximately(intersection.tVal2, existing.otherT, deduplicationTolerance * 10);
+            
+            if (selfTVeryClose || otherTVeryClose) {
+                // Additional check: if the intersection points are very close spatially
+                const point1 = curve.get(intersection.tVal1);
+                const point2 = curve2.get(intersection.tVal2);
+                const existingPoint1 = curve.get(existing.selfT);
+                const existingPoint2 = curve2.get(existing.otherT);
+                
+                const distance1 = PointCal.distanceBetweenPoints(point1, existingPoint1);
+                const distance2 = PointCal.distanceBetweenPoints(point2, existingPoint2);
+                
+                // If both intersection points are spatially very close, consider it a duplicate
+                if (distance1 < deduplicationTolerance * 100 && distance2 < deduplicationTolerance * 100) {
+                    isDuplicate = true;
+                    break;
+                }
+            }
         }
-        if (!within){
-            tVal1s.push(intersections.tVal1);
-            tVals.push({selfT: intersections.tVal1, otherT: intersections.tVal2});
+        
+        if (!isDuplicate) {
+            tVals.push({selfT: intersection.tVal1, otherT: intersection.tVal2});
         }
-    });
+    }
+    
     return tVals;
 }
 

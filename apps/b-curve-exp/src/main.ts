@@ -8,7 +8,70 @@ import { mercatorProjection } from "@ue-too/border";
 import districtGeoJSON from "./tainan-district";
 import villageGeoJSON from "./tainan-village";
 import "./media";
+import { ELEVATION, trackIsSloped } from "./track";
+import { Bezier } from "bezier-js";
 
+// curve 1 control points [
+//     {
+//       "x": 82.79468411364182,
+//       "y": 281.7059900498813,
+//       "z": 0
+//     },
+//     {
+//       "x": 169.1029913563118,
+//       "y": 199.1776976370353,
+//       "z": 0
+//     },
+//     {
+//       "x": 228.60937554640233,
+//       "y": 82.27781065247305,
+//       "z": 0
+//     }
+//   ]
+//   track.ts:1019 curve 2 control points [
+//     {
+//       "x": -51.31285263434981,
+//       "y": 380.48305072064204,
+//       "z": 0
+//     },
+//     {
+//       "x": 127.40804188978572,
+//       "y": 281.08714225887155,
+//       "z": 0
+//     },
+//     {
+//       "x": 228.60937554640233,
+//       "y": 82.27781065247305,
+//       "z": 0
+//     }
+//   ]
+
+const testCurve1 = new BCurve([
+    {x: 82.79468411364182, y: 281.7059900498813, z: 0},
+    {x: 169.1029913563118, y: 199.1776976370353, z: 0},
+    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
+]);
+const testCurve2 = new BCurve([
+    {x: -51.31285263434981, y: 380.48305072064204, z: 0},
+    {x: 127.40804188978572, y: 281.08714225887155, z: 0},
+    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
+]);
+
+const testCurve1Bezier = new Bezier([
+    {x: 82.79468411364182, y: 281.7059900498813, z: 0},
+    {x: 169.1029913563118, y: 199.1776976370353, z: 0},
+    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
+]);
+const testCurve2Bezier = new Bezier([
+    {x: -51.31285263434981, y: 380.48305072064204, z: 0},
+    {x: 127.40804188978572, y: 281.08714225887155, z: 0},
+    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
+]);
+
+const intersections = testCurve1Bezier.intersects(testCurve2Bezier);
+console.log('intersections', intersections);
+
+const testRes = testCurve1.getCurveIntersections(testCurve2);
 
 const testCoordinate = { longitude: 120.20, latitude: 22.98 };
 
@@ -149,10 +212,6 @@ console.log('camera boundaries', board.camera.boundaries);
 
 board.camera.setMinZoomLevel(0.000001);
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
-
-board.camera.on("zoom", (event, cameraState)=>{
-    console.log('zoom level', cameraState.zoomLevel);
-});
 
 const curveEngine = new CurveCreationEngine();
 curveEngine.onElevationChange((elevation)=>{
@@ -422,14 +481,68 @@ function step(timestamp: number){
         trackCacheVersion++;
     }
 
-    curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
+    // curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
+    //     if(board.context === undefined){
+    //         return;
+    //     }
+    //     const cps = trackSegment.curve.getControlPoints();
+    //     board.context.save();
+    //     board.context.lineWidth = 1 / board.camera.zoomLevel;
+    //     board.context.strokeStyle = "green";
+    //     board.context.beginPath();
+    //     board.context.moveTo(cps[0].x, cps[0].y);
+    //     if(cps.length === 3){
+    //         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+    //     } else {
+    //         board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+    //     }
+    //     board.context.stroke();
+    //     board.context.restore();
+    // });
+
+    curveEngine.trackGraph.getSortedTrackSegments().forEach((trackSegment)=>{
         if(board.context === undefined){
             return;
         }
         const cps = trackSegment.curve.getControlPoints();
         board.context.save();
-        board.context.lineWidth = 1 / board.camera.zoomLevel;
-        board.context.strokeStyle = "green";
+        board.context.lineWidth = 5 / board.camera.zoomLevel;
+        
+        // Helper function to get color for elevation
+        const getElevationColor = (elevation: ELEVATION): string => {
+            switch(elevation){
+                case ELEVATION.SUB_3:
+                    return "red";
+                case ELEVATION.SUB_2:
+                    return "orange";
+                case ELEVATION.SUB_1:
+                    return "yellow";
+                case ELEVATION.GROUND:
+                    return "green";
+                case ELEVATION.ABOVE_1:
+                    return "cyan";
+                case ELEVATION.ABOVE_2:
+                    return "magenta";
+                case ELEVATION.ABOVE_3:
+                    return "blue";
+                default:
+                    return "gray";
+            }
+        };
+        
+        // Create linear gradient from start to end of the curve
+        const startColor = getElevationColor(trackSegment.elevation.from);
+        const endColor = getElevationColor(trackSegment.elevation.to);
+        
+        // Create gradient along the curve from start point to end point
+        const gradient = board.context.createLinearGradient(
+            cps[0].x, cps[0].y,
+            cps[cps.length - 1].x, cps[cps.length - 1].y
+        );
+        gradient.addColorStop(0, startColor);
+        gradient.addColorStop(1, endColor);
+        
+        board.context.strokeStyle = gradient;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -439,20 +552,21 @@ function step(timestamp: number){
         }
         board.context.stroke();
         board.context.restore();
+
+        board.context.save();
+        board.context.fillStyle = "rgba(255, 0, 0, 0.5)";
+        trackSegment.collision.forEach((collision)=>{
+            if(board.context === undefined){
+                return;
+            }
+            board.context.beginPath();
+            const point = trackSegment.curve.get(collision.selfT);
+            board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+            board.context.fill();
+        });
+        board.context.restore();
     });
 
-    // offset as bezier curve
-    // curveEngine.trackGraph.trackOffsets.forEach((curve)=>{
-    //     const cps = curve.getControlPoints();
-    //     board.context.beginPath();
-    //     board.context.moveTo(cps[0].x, cps[0].y);
-    //     if(cps.length === 3){
-    //         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    //     } else {
-    //         board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
-    //     }
-    //     board.context.stroke();
-    // });
 
     // offset as line segments
     if(board.context === undefined){

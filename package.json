@@ -65,5 +65,8 @@
   "packageManager": "pnpm@10.17.0",
   "engines": {
     "node": "22.19.0"
+  },
+  "dependencies": {
+    "tsx": "^4.20.6"
   }
 }
