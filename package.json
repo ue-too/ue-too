@@ -62,8 +62,5 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.9"
   },
-  "packageManager": "pnpm@10.17.0",
-  "engines": {
-    "node": "22.19.0"
-  }
+  "dependencies": {}
 }
