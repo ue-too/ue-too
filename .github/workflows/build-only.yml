@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    uses: ./.github/actions/setup-environment/action.yml
+    uses: ./.github/workflows/setup-environment.yml
     with:
       node-version: ${{ inputs.node-version }}
       build: true
