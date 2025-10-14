@@ -1,5 +1,8 @@
 name: Setup Environment
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
