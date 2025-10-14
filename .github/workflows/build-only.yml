@@ -21,4 +21,7 @@ jobs:
     with:
       node-version: ${{ inputs.node-version }}
       build: true
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PAT: ${{ secrets.PAT }}
       
