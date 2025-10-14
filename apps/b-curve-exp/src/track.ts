@@ -1,6 +1,7 @@
 import { BCurve, offset, offset2 } from "@ue-too/curve";
 import { directionAlignedToTangent, normalizeAngleZero2TwoPI, Point, PointCal, sameDirection } from "@ue-too/math";
 import { GenericEntityManager } from "./utils";
+import { Rectangle, RTree } from "./r-tree";
 
 const VERTICAL_CLEARANCE = 3;
 
@@ -34,6 +35,16 @@ export type TrackSegmentWithElevation =  TrackSegment & {
     };
 }
 
+export type TrackSegmentWithCollision = TrackSegmentWithElevation & {
+    collision: {
+        selfT: number;
+        anotherCurve: {
+            curve: BCurve;
+            tVal: number;
+        }
+    }[];
+}
+
 export function getElevationAtT(t: number, trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): number {
 
     const startJointNumber = trackSegment.t0Joint;
@@ -57,7 +68,7 @@ export function getElevationAtT(t: number, trackSegment: TrackSegmentWithElevati
     return elevation;
 }
 
-export function trackIsSloped(trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
+export function trackIsSlopedByJoints(trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
     const startJointNumber = trackSegment.t0Joint;
     const endJointNumber = trackSegment.t1Joint;
     
@@ -69,6 +80,10 @@ export function trackIsSloped(trackSegment: TrackSegmentWithElevation, trackJoin
     }
 
     return startJoint.elevation !== endJoint.elevation;
+}
+
+export function trackIsSloped(trackSegment: TrackSegmentWithElevation): boolean {
+    return trackSegment.elevation.from !== trackSegment.elevation.to;
 }
 
 export function intersectionSatisfiesVerticalClearance(intersectionTVal: number, trackSegment: TrackSegmentWithElevation, intersectionTVal2: number, trackSegment2: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
@@ -801,7 +816,7 @@ export class TrackGraph {
      * For segments with different start/end elevations, uses the minimum elevation for sorting.
      * @returns Track segments sorted by elevation (ascending order)
      */
-    getSortedTrackSegments(): TrackSegmentWithElevation[] {
+    getSortedTrackSegments(): TrackSegmentWithCollision[] {
         const segments = this._trackCurveManager.getTrackSegmentsWithJoints();
         
         // Sort by minimum elevation of the segment (start or end, whichever is lower)
@@ -933,19 +948,31 @@ export class TrackJointManager {
     }
 }
 
+export type TrackSegmentRTreeEntry = {
+    segmentNumber: number;
+    elevation: {
+        from: ELEVATION;
+        to: ELEVATION;
+    };
+    t0Joint: number;
+    t1Joint: number;
+}
+
 export class TrackCurveManager {
 
     private _internalTrackCurveManager: GenericEntityManager<{
-        segment: TrackSegmentWithElevation;
+        segment: TrackSegmentWithCollision;
         offsets: {
             positive: Point[];
             negative: Point[];
         };
     }>;
 
+    private _internalRTree: RTree<TrackSegmentWithElevation> = new RTree<TrackSegmentWithElevation>();
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
-            segment: TrackSegmentWithElevation;
+            segment: TrackSegmentWithCollision;
             offsets: {
                 positive: Point[];
                 negative: Point[];
@@ -957,32 +984,67 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment.curve ?? null;
     }
 
-    getTrackSegmentsWithJoints(): TrackSegmentWithElevation[] {
+    getTrackSegmentsWithJoints(): TrackSegmentWithCollision[] {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
-    getTrackSegmentWithJoints(segmentNumber: number): TrackSegmentWithElevation | null {
+    getTrackSegmentWithJoints(segmentNumber: number): TrackSegmentWithCollision | null {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
     }
 
     createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 10): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
-        const curveNumber = this._internalTrackCurveManager.createEntity({
-            segment: {
+        const aabb = curve.AABB;
+        const aabbRectangle = new Rectangle(aabb.min.x, aabb.min.y, aabb.max.x, aabb.max.y);
+        const possibleCollisions = this._internalRTree.search(aabbRectangle);
+
+        const collisions: {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] = [];
+
+        possibleCollisions.forEach((segment)=>{
+            console.log(`collision found with segment ${segment.curve}`);
+            console.log('start finding intersections');
+            console.log('possible collisions', segment.curve);
+            const intersections = segment.curve.getCurveIntersections(curve).map((intersection)=>{
+                console.log(`collision found at t value = ${intersection.otherT}`);
+                return {selfT: intersection.otherT, anotherCurve: {curve: segment.curve, tVal: intersection.selfT}};
+            });
+
+            collisions.push(...intersections);
+
+            if(intersections.length > 10){
+                console.log('--------------------------------');
+                console.log("weird");
+                console.log('curve 1 control points', JSON.stringify(curve.getControlPoints(), null, 2));
+                console.log('curve 2 control points', JSON.stringify(segment.curve.getControlPoints(), null, 2));
+                console.log('intersection t values on curve 1', JSON.stringify(intersections.map((intersection)=>intersection.selfT), null, 2));
+                console.log('intersection t values on curve 2', JSON.stringify(intersections.map((intersection)=>intersection.anotherCurve.tVal), null, 2));
+            }
+
+            console.log('end finding intersections');
+        });
+
+        const trackSegmentEntry: TrackSegmentWithCollision = 
+            {
                 curve: curve,
                 t0Joint: t0Joint,
                 t1Joint: t1Joint,
                 elevation: {
                     from: t0Elevation,
                     to: t1Elevation
-                }
-            },
+                },
+                collision: collisions
+            };
+        
+        const curveNumber = this._internalTrackCurveManager.createEntity({
+            segment: trackSegmentEntry,
             offsets: {
                 positive: experimentPositiveOffsets,
                 negative: experimentNegativeOffsets
             }
-        })
+        });
+
+        this._internalRTree.insert(aabbRectangle, trackSegmentEntry);
         return curveNumber;
     }
 

@@ -19,7 +19,6 @@ export class EdgeAutoCameraInput {
     }
 
     toggleOn(){
-        console.trace('toggle on');
         this._state = 'moving';
     }
 
@@ -33,8 +32,6 @@ export class EdgeAutoCameraInput {
         if(this._state === 'idle') {
             return;
         }
-
-        console.log('update', this._state);
 
         const direction = {
             x: this._horizontalDirection === 'left' ? -1 : this._horizontalDirection === 'right' ? 1 : 0,
