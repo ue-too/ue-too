@@ -17,25 +17,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    name: Rollup Build
-    steps:
-      - uses: actions/checkout@v4
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ inputs.node-version }}
-          registry-url: 'https://registry.npmjs.org'
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
-      - name: Install dependencies
-        run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile || pnpm install
-          else
-            pnpm install
-          fi
-      - name: Build
-        run: pnpm build
+    uses: ./.github/workflows/setup-environment.yml
+    with:
+      node-version: ${{ inputs.node-version }}
+      build: true
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PAT: ${{ secrets.PAT }}
       
