@@ -17,11 +17,10 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/setup-environment.yml
-    with:
-      node-version: ${{ inputs.node-version }}
-      build: true
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      PAT: ${{ secrets.PAT }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup and Build
+        uses: ./.github/actions/setup-node-env/action.yml
+        with:
+          build: true
       
