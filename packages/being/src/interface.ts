@@ -9,10 +9,12 @@ type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
 
 /**
  * @description Utility type to derive a string literal union from a readonly array of string literals.
- *
+ * 
  * Example:
+ * ```ts
  * const TEST_STATES = ["one", "two", "three"] as const;
  * type TestStates = CreateStateType<typeof TEST_STATES>; // "one" | "two" | "three"
+ * ```
  */
 export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
 
