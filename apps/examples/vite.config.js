@@ -1,10 +1,10 @@
 import { defineConfig } from "vite";
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 
 export default defineConfig({
     root: resolve(__dirname, "./src"),
     build: {
-        outDir: resolve(__dirname, "dist"),
+        outDir: resolve(join(__dirname, "../../"), "dist"),
         emptyOutDir: true,
         sourcemap: true,
         assetsDir: "assets",
