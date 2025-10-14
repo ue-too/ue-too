@@ -8,26 +8,29 @@ export type BoardProps = {
     height?: number;
 }
 
-const board = new Boardify();
-
 export default function Board({width, height, fullScreen}: BoardProps) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameRef = useRef<number | null>(null);
+    const boardRef = useRef<Boardify | null>(null);
 
-    board.fullScreen = fullScreen ?? false;
+    if(boardRef.current == null){
+        boardRef.current = new Boardify();
+    }
+
+    boardRef.current.fullScreen = fullScreen ?? false;
 
     useEffect(() => {
         if (!canvasRef.current) return;
 
-        board.attach(canvasRef.current);
+        boardRef.current?.attach(canvasRef.current);
         // Initialize the board only once using the conditional pattern
         
         // Set up the animation loop
         const step = (timestamp: number) => {
             // Example drawing - you can replace this with your own drawing logic
-            board.step(timestamp);
-            const ctx = board.context;
+            boardRef.current?.step(timestamp);
+            const ctx = boardRef.current?.context;
             if(ctx == undefined){
                 return;
             }
@@ -50,8 +53,8 @@ export default function Board({width, height, fullScreen}: BoardProps) {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
-            if (board) {
-                board.tearDown();
+            if (boardRef.current) {
+                boardRef.current.tearDown();
             }
         };
     }, []);
@@ -61,7 +64,6 @@ export default function Board({width, height, fullScreen}: BoardProps) {
             width={width}
             height={height}
             ref={canvasRef} 
-            id="graph"
         />
     );
 }
