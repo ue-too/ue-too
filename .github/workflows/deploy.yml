@@ -22,29 +22,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    uses: ./.github/workflows/setup-environment.yml
-    with:
-      build: true
-
-
   # Single deploy job since we're just deploying
   deploy:
-    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
       - name: Setup and Build
         uses: ./.github/actions/setup-node-env/action.yml
         with:
           build: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Upload entire repository
           path: './dist/'
+      
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
