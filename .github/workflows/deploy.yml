@@ -36,8 +36,8 @@ jobs:
         uses: ./.github/actions/setup-node-env
         with:
           build: true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          pat: ${{ secrets.PAT }}
       
       - name: Setup Pages
         uses: actions/configure-pages@v5
