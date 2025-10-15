@@ -69,4 +69,4 @@ runs:
     - name: Build packages
       if: ${{ inputs.build }}
       shell: bash
-      run: pnpm build
+      run: pnpm build:examples
