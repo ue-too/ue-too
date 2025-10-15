@@ -1058,7 +1058,7 @@ export function offset(curve: BCurve, t: number, d?: number | undefined) {
     });
 }
 
-export function offset2(curve: BCurve, d: number){
+export function offset2(curve: BCurve, d: number): Point[]{
     const lut = curve.getLUTWithTVal(100);
 
     const res = lut.map((item)=>{

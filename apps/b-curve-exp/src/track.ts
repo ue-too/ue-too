@@ -15,7 +15,7 @@ export type TrackSegment = {
 }
 
 export type TrackJointWithElevation = TrackJoint & {
-    elevation: ELEVATION;
+    elevation: ELEVATION; // this is the resulting elevation: result = base (terrain) + joint elevation
 }
 
 export enum ELEVATION {
@@ -30,7 +30,7 @@ export enum ELEVATION {
 
 export type TrackSegmentWithElevation =  TrackSegment & {
     elevation: {
-        from: ELEVATION;
+        from: ELEVATION; // this is the resulting elevation: result = base (terrain) + track elevation
         to: ELEVATION;
     };
 }
