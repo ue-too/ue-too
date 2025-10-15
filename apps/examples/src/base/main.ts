@@ -1,9 +1,7 @@
 import { Board } from "@ue-too/board";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
-const utilButton = document.getElementById("util") as HTMLButtonElement;
 const board = new Board(canvas);
-board.fullScreen = true;
 
 function step(){
     board.step(performance.now());

@@ -7,10 +7,10 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/ue-too.svg?style=for-the-badge)](https://www.npmjs.com/package/ue-too)
-[![ci tests](https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge)](https://github.com/niuee/board/actions/workflows/ci-test.yml)
-[![License](https://img.shields.io/github/license/niuee/board?style=for-the-badge)](https://github.com/niuee/board/blob/main/LICENSE.txt)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/ue-too?color=success&label=gzipped%20bundle%20size&style=for-the-badge)](https://bundlephobia.com/package/ue-too)
+[![npm version](https://img.shields.io/npm/v/@ue-too/board.svg?style=for-the-badge)](https://www.npmjs.com/package/@ue-too/board)
+[![ci tests](https://img.shields.io/github/actions/workflow/status/ue-too/ue-too/ci-test.yml?label=test&style=for-the-badge)](https://github.com/ue-too/ue-too/actions/workflows/ci-test.yml)
+[![License](https://img.shields.io/github/license/ue-too/ue-too?style=for-the-badge)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@ue-too/board?color=success&label=gzipped%20bundle%20size&style=for-the-badge)](https://bundlephobia.com/package/@ue-too/board)
 
 </div>
 
@@ -23,7 +23,7 @@
   <a href="#under-the-hood">Basic API Overview</a>
 </p>
 
-![small-demo](./doc-media/small-demo-with-cursor.gif)
+![small-demo](../../doc-media/small-demo-with-cursor.gif)
 
 <p align="center">
     A demonstration of uē-tôo's core functionality.
@@ -60,30 +60,23 @@ Even if you're not building a drawing app, `ue-too` is useful for any canvas tha
 Additional examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory show integration with pixi.js, fabric.js, and Konva (incomplete but providing general implementation guidance).
 
 ## Documentation
-- [API Documentation](https://ue-too.github.io/ue-too/)
-- [中文文件連結](https://ue-too.github.io/ue-too/tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u)
+- [API Documentation](https://ue-too.github.io/ue-too/) (Deprecated)
+- [中文文件連結](https://ue-too.github.io/ue-too/tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u) (Deprecated)
 
 ## Installation and Usage
 
 ### Package Manager
 ```bash
-npm install ue-too
+npm install @ue-too/board
 ```
 
 ```javascript
-import { Board } from "ue-too";
-```
-
-### Download from GitHub
-Download the bundled JavaScript (ue-too.js) from the [releases](https://github.com/ue-too/ue-too/releases/) page and import it in your project:
-
-```javascript
-import { Board } from "./ue-too.js";
+import { Board } from "@ue-too/board";
 ```
 
 ### Import from jsdelivr
 ```javascript
-import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
+import { Board } from "https://cdn.jsdelivr.net/npm/@ue-too/board@latest/index.js";
 ```
 
 > Note: IIFE format is no longer supported.
@@ -96,60 +89,20 @@ import { Board } from "https://cdn.jsdelivr.net/npm/ue-too@latest/index.mjs";
 
 ## Quick Start (HTML Canvas)
 
-This example is based on the MDN documentation for the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API).
-
-You can follow along using [CodeSandbox](https://codesandbox.io), [Stackblitz](https://stackblitz.com/), or any other online IDE.
-
-Following the MDN example, you'll have a green rectangle in the canvas with this HTML and JavaScript:
+This example is based on the MDN documentation for the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). (turning the MDN example into an infinite canvas)
 
 HTML:
 ```html
-<canvas id="canvas"></canvas>
+<canvas id="graph"></canvas>
 ```
 
-JavaScript:
 ```javascript
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+import { Board } from "@ue-too/board";
 
-ctx.fillStyle = "green";
-ctx.fillRect(10, 10, 150, 100);
-```
+const canvas = document.getElementById("graph");
 
-To add `ue-too` functionality:
-
-1. Import `ue-too` and create a new `Board` instance:
-```javascript
-import { Board } from "ue-too";
-
-const canvas = document.getElementById("canvas");
-
-// remove the ctx constant
-
-// instantiate the board by passing in the canvas element
 const board = new Board(canvas);
 
-// comment these out for now
-// ctx.fillStyle = "green";
-// ctx.fillRect(10, 10, 150, 100);
-```
-
-2. Set up the animation loop:
-```javascript
-function draw(timestamp) {
-    // step the board 
-    board.step(timestamp);
-    
-    // request the next frame
-    requestAnimationFrame(draw);
-}
-
-// start the animation loop
-requestAnimationFrame(draw);
-```
-
-3. Add the rectangle to the canvas:
-```javascript
 function draw(timestamp) {
     // step the board 
     board.step(timestamp);
@@ -196,24 +149,13 @@ For detailed camera control information, refer to the [Board Camera](./src/board
 
 > This section is for working directly with the library's source code. If you're using the library and need to customize component behavior, skip to the [Under the Hood](#under-the-hood) section.
 
-1. Clone the repository
-2. Install dependencies:
-```bash
-pnpm i
-```
+> Currently not ready for contribution. If you have any suggestions or ideas, please let me know by creating an issue.
 
-I am using pnpm as the package manager for this project.
-Node version 20.11.0 is used for development. (Some of the scripts that I wrote for ci/cd uses node version 20 APIs and is not compatible with 22 (specifically the `assert`) I will migrate them to use node version 22 APIs when I have time.)
+Please refer to the [README](./README.md) in the root directory for the overall development setup.
 
-The dev environment setup for this project is relatively simple. Let me break down the different aspects.
-- Bundling (rollup): `pnpm build` Bundling is done through rollup. There's a `rollup.config.js` in charge of that. Every subdirectory in the `src` directory gets its own bundled index.js file.
-- Unit Testing (jest): `pnpm test` There's not a lot of tests right now. Only the core functionalities revolving around the camera are unit tested. The next section I will move on to test is the input state machine.
-- Dev Server (vite): `pnpm dev` The `devserver` directory contains the current examples of the board. It's sort of like a playground. The more complete example is the in the `main.ts` file.
-- Docs Dev Server (vite): `pnpm dev:docs` would spin up a docs server serving files from the directory `docs-staging`
-- Documentation (typedoc): `pnpm doc:default` would generate a `docs-staging/en` and then `pnpm doc:move2prod` would copy the entire `docs-staging` to `docs`
-- Translation: __Pending__ This is a work in progress probably not going to be ready for the version 0.2 release. The flow of how things should be done is still in discussion.
+1. This package is within a monorepo, and is managed by nx and pnpm. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me. (if you have any suggestions on how to improve the setup, please let me know!)
+2. Bundling the package is done through rollup and testing through jest.
 
-The [API documentation](https://ue-too.github.io/ue-too/) has all the APIs listed.
 
 ## Under the Hood
 
@@ -224,15 +166,15 @@ ue-too consists of 3 core components:
 - `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 
 To see detail of each component navigate to the respective readme in the subdirectories.
-- [Board Camera](./src/board-camera/README.md)
-- [Camera Mux](./src/camera-mux/README.md)
+- [Board Camera](./src/camera/README.md)
+- [Camera Mux](./src/camera/camera-mux/README.md)
 - [User Input Interpreter](./src/input-interpretation/README.md)
 
 It's recommended to start with the [Board Camera](./src/board-camera/README.md) since the other parts are built on top of it.
 
 Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
 
-![data-flow](./doc-media/entire-process.png)
+![data-flow](../../doc-media/entire-process.png)
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.

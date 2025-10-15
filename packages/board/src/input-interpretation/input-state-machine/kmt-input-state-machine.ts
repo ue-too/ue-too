@@ -147,11 +147,6 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
-        context.toggleOnEdgeAutoCameraInput();
-    }
-
-    beforeExit(context: KmtInputContext): void {
-        context.toggleOffEdgeAutoCameraInput();
     }
 
     scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): void {

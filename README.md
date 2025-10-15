@@ -7,7 +7,6 @@
 
 <div align="center">
 
-[![npm version](https://img.shields.io/npm/v/ue-too.svg?style=for-the-badge)](https://www.npmjs.com/package/ue-too)
 [![ci tests](https://img.shields.io/github/actions/workflow/status/niuee/board/ci-test.yml?label=test&style=for-the-badge)](https://github.com/niuee/board/actions/workflows/ci-test.yml)
 [![License](https://img.shields.io/github/license/niuee/board?style=for-the-badge)](https://github.com/niuee/board/blob/main/LICENSE.txt)
 
@@ -24,14 +23,14 @@
 
 ue-too is organized into modular packages:
 
-- [**`@ue-too/being`**](./packages/being/readme.md) - Finite state machine
-- [**`@ue-too/board`**](./packages/board/readme.md) - Canvas viewport management with pan, zoom, and rotate functionality
-- [**`@ue-too/math`**](./packages/math/readme.md) - Mathematical utilities for 2D point operations, transformations, and calculations
-- [**`@ue-too/animate`**](./packages/animate/readme.md) - Animation system for smooth transitions and keyframe animations
-- [**`@ue-too/dynamics`**](./packages/dynamics/readme.md) - 2D physics engine with collision detection, rigid bodies, and constraints
-- [**`@ue-too/curve`**](./packages/curve/readme.md) - Curve and path tools including Bézier curves, lines, and composite paths
-- [**`@ue-too/border`**](./packages/border/readme.md) - Geographic projection utilities (great circle, rhumb line, map projections)
-- [**`@ue-too/ecs`**](./packages/ecs/readme.md) - Entity Component System architecture support
+- [**`@ue-too/being`**](./packages/being/README.md) - Finite state machine <img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/board`**](./packages/board/README.md) - Canvas viewport management with pan, zoom, and rotate functionality <img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/math`**](./packages/math/README.md) - Mathematical utilities for 2D point operations, transformations, and calculations <img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/animate`**](./packages/animate/README.md) - Animation system for smooth transitions and keyframe animations <img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/dynamics`**](./packages/dynamics/README.md) - 2D physics engine with collision detection, rigid bodies, and constraints <img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/curve`**](./packages/curve/README.md) - Curve and path tools including Bézier curves, lines, and composite paths <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/border`**](./packages/border/README.md) - Geographic projection utilities (great circle, rhumb line, map projections) <img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="npm version" style="vertical-align: middle">
 
 ## Install Individual Packages
 ```bash
@@ -41,26 +40,29 @@ npm install @ue-too/board @ue-too/math @ue-too/animate
 
 ## Examples
 
-The monorepo includes comprehensive examples demonstrating various packages and integrations:
+A live website containing the examples is available [here](https://ue-too.github.io/ue-too/).
+
+This monorepo includes comprehensive examples demonstrating various packages and integrations:
 
 ### Core Examples
-- **Base Example** - Basic canvas viewport management functionality
-- **Navigation Example** - Advanced navigation controls with keyboard shortcuts
-- **Ruler Example** - Measurement tools and overlays
-- **Camera Animation** - Smooth camera transitions on mouse click
-- **Image Example** - Drawing an image on the pannable and zoomable canvas
+- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport management functionality
+- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Advanced navigation controls with keyboard shortcuts
+- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement tools and overlays
+- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth camera transitions on mouse click
+- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Drawing an image on the pannable and zoomable canvas
 
 ### Framework Integrations
-- **PixiJS Integration**
-- **Konva Integration**
-- **Fabric Integration**
+- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/)
+- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/)
+- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/)
 
 ### Advanced Features
-- **Physics Example** - 2D physics simulation
-- **Collision Example** - Collision detection and response
-- **Bézier Curve Experiment** - Interactive curve manipulation
+- [**Physics Example**](https://ue-too.github.io/ue-too/physics/) - 2D physics simulation (WIP)
+- [**Collision Example**](https://ue-too.github.io/ue-too/collision/) - Collision detection and response (WIP)
 
 ### Running Examples
+
+To run the examples locally:
 
 ```bash
 # Clone the repository
@@ -74,7 +76,7 @@ pnpm install
 pnpm dev:examples
 ```
 
-Visit `http://localhost:5173` to explore all examples.
+Then, visit `http://localhost:5173` to explore all examples.
 
 ## Development
 
@@ -115,7 +117,7 @@ ue-too/
 │   └── ecs/           # ECS architecture
 ├── apps/              # Example applications
 │   ├── examples/      # Interactive examples
-│   └── b-curve-exp/   # Bézier curve experiment 
+│   └── b-curve-exp/   # Bézier curve experiment (WIP)
 └── scripts/           # Build and deployment scripts
 ```
 
