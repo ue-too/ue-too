@@ -58,6 +58,7 @@ runs:
 
     - name: Install dependencies
       if: ${{ inputs.install-deps }}
+      shell: bash
       run: |
         if [ -f pnpm-lock.yaml ]; then
           pnpm install --frozen-lockfile || pnpm install
@@ -67,4 +68,5 @@ runs:
 
     - name: Build packages
       if: ${{ inputs.build }}
+      shell: bash
       run: pnpm build
