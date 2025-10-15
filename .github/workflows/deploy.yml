@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Setup and Build
-        uses: ./.github/workflows/setup-node-env.yml
+        uses: ./.github/actions/setup-node-env
         with:
           build: true
         env:
