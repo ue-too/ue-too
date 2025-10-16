@@ -11,7 +11,7 @@ export type TrackSegment = {
     t0Joint: number;
     t1Joint: number;
     curve: BCurve;
-    gauge?: number;
+    gauge: number;
 }
 
 export type TrackJointWithElevation = TrackJoint & {
@@ -134,8 +134,12 @@ export type ProjectionFalseResult = {
 
 export type ProjectionPositiveResult = {
     hit: true;
-} & (ProjectionJointResult | ProjectionCurveResult);
+} & (ProjectionJointResult | ProjectionCurveResult | ProjectionEdgeResult);
 
+
+export type ProjectionEdgeResult = {
+    hitType: "edge";
+} & ProjectionInfo;
 
 export type ProjectionJointResult = {
     hitType: "joint";
@@ -724,51 +728,28 @@ export class TrackGraph {
     project(point: Point): ProjectionResult {
         const jointRes = this.pointOnJoint(point);
         const curveRes = this.projectPointOnTrack(point);
+        const edgeRes = this.onTrackSegmentEdge(point);
 
         if(jointRes !== null){
             return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, projectionPoint: jointRes.position, tangent: jointRes.tangent, curvature: jointRes.curvature};
         }
         if(curveRes !== null){
+            console.log("curve hit", curveRes);
             return {hit: true, hitType: "curve", ...curveRes};
+        }
+        if(edgeRes !== null){
+            console.log("edge hit", edgeRes);
+            return {hit: true, hitType: "edge", ...edgeRes};
         }
         return {hit: false};
     }
 
     projectPointOnTrack(position: Point): ProjectionInfo | null {
-        // let minDistance = 10;
-        // let projectionInfo: ProjectionInfo | null = null;
-        // this._trackCurveManager.livingEntities.forEach((entity)=>{
-        //     const trackSegment = this._trackCurveManager.getTrackSegmentWithJoints(entity);
-        //     if(trackSegment === null){
-        //         return;
-        //     }
-        //     const res = trackSegment.curve.getProjection(position);
-        //     if(res != null){
-        //         const distance = PointCal.distanceBetweenPoints(position, res.projection);
-        //         if(distance < minDistance){
-        //             minDistance = distance;
-        //             if(projectionInfo === null){
-        //                 projectionInfo = {
-        //                     curve: entity,
-        //                     atT: res.tVal,
-        //                     projectionPoint: res.projection,
-        //                     t0Joint: trackSegment.t0Joint,
-        //                     t1Joint: trackSegment.t1Joint,
-        //                     tangent: trackSegment.curve.derivative(res.tVal),
-        //                     curvature: trackSegment.curve.curvature(res.tVal)
-        //                 };
-        //                 return;
-        //             }
-        //             projectionInfo.atT = res.tVal;
-        //             projectionInfo.projectionPoint = res.projection;
-        //             projectionInfo.curve = entity;
-        //             projectionInfo.t0Joint = trackSegment.t0Joint;
-        //             projectionInfo.t1Joint = trackSegment.t1Joint;
-        //         }
-        //     }
-        // });
-        // return projectionInfo;
         return this._trackCurveManager.projectOnCurve(position);
+    }
+
+    onTrackSegmentEdge(position: Point): ProjectionInfo | null {
+        return this._trackCurveManager.onTrackSegmentEdge(position);
     }
 
     pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
@@ -997,8 +978,54 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
     }
 
-    projectOnCurve(position: Point): ProjectionInfo | null {
-        let minDistance = 10;
+    onTrackSegmentEdge(position: Point): ProjectionInfo | null {
+        let minDistance = 30;
+        let projectionInfo: ProjectionInfo | null = null;
+        const bbox = new Rectangle(position.x - 10, position.y - 10, position.x + 10, position.y + 10);
+        const possibleTrackSegments = this._internalRTree.search(bbox);
+        possibleTrackSegments.forEach((trackSegment)=>{
+
+            const res = trackSegment.curve.getProjection(position);
+            if(res != null){
+                const distance = PointCal.distanceBetweenPoints(position, res.projection);
+                if(distance < minDistance && distance > trackSegment.gauge / 2){
+                    minDistance = distance;
+                    const tangent = PointCal.unitVector(trackSegment.curve.derivative(res.tVal));
+                    const curvature = trackSegment.curve.curvature(res.tVal);
+                    const direction = PointCal.unitVectorFromA2B(res.projection, position);
+                    const angle = PointCal.angleFromA2B(tangent, direction);
+                    let orthogonalDirection = PointCal.unitVector({x: -tangent.y, y: tangent.x});
+                    if(angle < 0) {
+                        orthogonalDirection = PointCal.multiplyVectorByScalar(orthogonalDirection, -1);
+                    }
+                    const projectedPosition = PointCal.addVector(res.projection, PointCal.multiplyVectorByScalar(orthogonalDirection, trackSegment.gauge));
+                    if(projectionInfo === null){
+                        projectionInfo = {
+                            curve: trackSegment.trackSegmentNumber,
+                            atT: res.tVal,
+                            projectionPoint: projectedPosition,
+                            t0Joint: trackSegment.t0Joint,
+                            t1Joint: trackSegment.t1Joint,
+                            tangent,
+                            curvature,
+                        };
+                        return;
+                    }
+                    projectionInfo.atT = res.tVal;
+                    projectionInfo.projectionPoint = projectedPosition;
+                    projectionInfo.curve = trackSegment.trackSegmentNumber;
+                    projectionInfo.t0Joint = trackSegment.t0Joint;
+                    projectionInfo.t1Joint = trackSegment.t1Joint;
+                    projectionInfo.tangent = tangent;
+                    projectionInfo.curvature = curvature;
+                }
+            }
+        });
+        return projectionInfo;
+    }
+
+    projectOnCurve(position: Point, maxDistance: number = 10): ProjectionInfo | null {
+        let minDistance = maxDistance;
         let projectionInfo: ProjectionInfo | null = null;
         const bbox = new Rectangle(position.x - 0.1, position.y - 0.1, position.x + 0.1, position.y + 0.1);
         const possibleTrackSegments = this._internalRTree.search(bbox);
@@ -1007,6 +1034,8 @@ export class TrackCurveManager {
             const res = trackSegment.curve.getProjection(position);
             if(res != null){
                 const distance = PointCal.distanceBetweenPoints(position, res.projection);
+                const tangent = trackSegment.curve.derivative(res.tVal);
+                const curvature = trackSegment.curve.curvature(res.tVal);
                 if(distance < minDistance){
                     minDistance = distance;
                     if(projectionInfo === null){
@@ -1016,8 +1045,8 @@ export class TrackCurveManager {
                             projectionPoint: res.projection,
                             t0Joint: trackSegment.t0Joint,
                             t1Joint: trackSegment.t1Joint,
-                            tangent: trackSegment.curve.derivative(res.tVal),
-                            curvature: trackSegment.curve.curvature(res.tVal)
+                            tangent,
+                            curvature,
                         };
                         return;
                     }
@@ -1026,6 +1055,8 @@ export class TrackCurveManager {
                     projectionInfo.curve = trackSegment.trackSegmentNumber;
                     projectionInfo.t0Joint = trackSegment.t0Joint;
                     projectionInfo.t1Joint = trackSegment.t1Joint;
+                    projectionInfo.tangent = tangent;
+                    projectionInfo.curvature = curvature;
                 }
             }
         });
@@ -1073,7 +1104,8 @@ export class TrackCurveManager {
                     from: t0Elevation,
                     to: t1Elevation
                 },
-                collision: collisions
+                collision: collisions,
+                gauge
             };
         
         const curveNumber = this._internalTrackCurveManager.createEntity({
@@ -1094,6 +1126,18 @@ export class TrackCurveManager {
     }
 
     destroyCurve(curveNumber: number): void {
+        const trackSegment = this._internalTrackCurveManager.getEntity(curveNumber);
+        if(trackSegment === null){
+            console.warn("track segment not found");
+            return;
+        }
+        const rectangle = new Rectangle(trackSegment.segment.curve.AABB.min.x, trackSegment.segment.curve.AABB.min.y, trackSegment.segment.curve.AABB.max.x, trackSegment.segment.curve.AABB.max.y);
+        const trackSegmentTreeEntry = this._internalRTree.search(rectangle).find((segment)=>segment.trackSegmentNumber === curveNumber);
+        if(trackSegmentTreeEntry == null){
+            console.warn("track segment tree entry not found");
+            return;
+        }
+        this._internalRTree.remove(rectangle, trackSegmentTreeEntry);
         this._internalTrackCurveManager.destroyEntity(curveNumber);
     }
 

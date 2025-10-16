@@ -82,6 +82,9 @@ export class PointCal {
         return {x: point.x * Math.cos(angleFromOriginalAxis2DestAxis) + point.y * Math.sin(angleFromOriginalAxis2DestAxis), y: -point.x * Math.sin(angleFromOriginalAxis2DestAxis) + point.y * Math.cos(angleFromOriginalAxis2DestAxis)};
     }
 
+    /**
+     * @description Gets the angle from vector a to vector b. (returned angle is always between -π to π)
+     */
     static angleFromA2B(a: point, b: point): number {
         return Math.atan2(a.x * b.y - a.y * b.x, a.x * b.x + a.y * b.y);
     }

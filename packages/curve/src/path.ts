@@ -1,6 +1,25 @@
 import { Line } from "./line";
 import { Point } from "@ue-too/math";
 
+type AdvanceAtTWithLengthWithinCurveRes = {
+    type: "withinCurve";
+    tVal: number;
+    point: Point;
+}
+
+type AdvanceAtWithLengthBeforeCurveRes = {
+    type: "beforeCurve";
+    remainLength: number;
+}
+
+type AdvanceAtWithLengthAfterCurveRes = {
+    type: "afterCurve";
+    remainLength: number;
+}
+
+type AdvanceAtTWithLengthOutofCurveRes = AdvanceAtWithLengthBeforeCurveRes | AdvanceAtWithLengthAfterCurveRes;
+
+type AdvanceAtTWithLengthRes = AdvanceAtTWithLengthWithinCurveRes | AdvanceAtTWithLengthOutofCurveRes;
 export class Path {
 
     private lines: Line[];
@@ -32,6 +51,8 @@ export class Path {
         });
         return res;
     }
+
+    // advanceByDistancAtPercentage(percentage: number, distance: number): {destination: Point}
 
     getPercentages(): {start: number, end: number}[]{
         const length = this.getLength();
