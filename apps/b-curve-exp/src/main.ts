@@ -1,7 +1,7 @@
 import { Board, convertDeltaToComplyWithRestriction, drawArrow } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
-import { createLayoutStateMachine, CurveCreationEngine } from "./kmt-state-machine";
+import { createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 import { mercatorProjection } from "@ue-too/border";
@@ -654,9 +654,18 @@ function step(timestamp: number){
         board.context.restore();
     }
 
+    if(curveEngine.newStartJointType != null) {
+        board.context.save();
+        board.context.fillStyle = colorForJoint(curveEngine.newStartJointType);
+        board.context.beginPath();
+        board.context.arc(curveEngine.newStartJointType.position.x, curveEngine.newStartJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
     if(curveEngine.newEndJointType != null){
         board.context.save();
-        board.context.fillStyle = "purple";
+        board.context.fillStyle = colorForJoint(curveEngine.newEndJointType);
         board.context.beginPath();
         board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 5, 0, 2 * Math.PI);
         board.context.fill();
@@ -761,3 +770,18 @@ const captureButton = document.getElementById("capture") as HTMLButtonElement;
 captureButton.addEventListener("click", ()=>{
     capture = true;
 });
+
+function colorForJoint(joint: NewJointType) {
+    switch(joint.type) {
+        case "new":
+            return "purple";
+        case "contrained":
+            return "red";
+        case "branchJoint":
+            return "green";
+        case "extendingTrack":
+            return "blue";
+        case "branchCurve":
+            return "yellow";
+    }
+}
