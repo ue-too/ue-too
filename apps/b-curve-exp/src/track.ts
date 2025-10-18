@@ -147,6 +147,7 @@ export type ProjectionJointResult = {
     projectionPoint: Point;
     tangent: Point;
     curvature: number;
+    endingJoint: boolean;
 }
 
 export type ProjectionCurveResult = {
@@ -662,8 +663,7 @@ export class TrackGraph {
         const startJointTangentDirection = startJoint.tangent;
         const endJointTangentDirection = endJoint.tangent;
 
-        const straightCurve = new BCurve([startJoint.position, ...controlPoints, endJoint.position]);
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(straightCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -731,7 +731,7 @@ export class TrackGraph {
         const edgeRes = this.onTrackSegmentEdge(point);
 
         if(jointRes !== null){
-            return {hit: true, hitType: "joint", jointNumber: jointRes.jointNumber, projectionPoint: jointRes.position, tangent: jointRes.tangent, curvature: jointRes.curvature};
+            return {hit: true, ...jointRes};
         }
         if(curveRes !== null){
             console.log("curve hit", curveRes);
@@ -752,8 +752,8 @@ export class TrackGraph {
         return this._trackCurveManager.onTrackSegmentEdge(position);
     }
 
-    pointOnJoint(position: Point): {jointNumber: number, tangent: Point, position: Point, curvature: number} | null {
-        let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number} | null = null;
+    pointOnJoint(position: Point): ProjectionJointResult | null {
+        let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number, endingJoint: boolean} | null = null;
         let minDistance:number = 5;
 
         const joints = this._jointManager.getJoints();
@@ -775,11 +775,12 @@ export class TrackGraph {
                 }
                 const tVal = curve.t0Joint === jointNumber ? 0 : 1;
                 const curvature = curve.curve.curvature(tVal);
-                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent, position: joint.position, curvature: curvature};
+                const endingJoint = this.jointIsEndingTrack(jointNumber);
+                closestJoint = {jointNumber: jointNumber, distance: distance, tangent: joint.tangent, position: joint.position, curvature: curvature, endingJoint: endingJoint};
             }
         }
         if(closestJoint !== null){
-            return {jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, position: closestJoint.position, curvature: closestJoint.curvature};
+            return {hitType: "joint", jointNumber: closestJoint.jointNumber, tangent: closestJoint.tangent, projectionPoint: closestJoint.position, curvature: closestJoint.curvature, endingJoint: closestJoint.endingJoint};
         }
         return null;
     }
@@ -1063,7 +1064,7 @@ export class TrackCurveManager {
         return projectionInfo;
     }
 
-    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 10): number {
+    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 10, excludeSegmentsForCollisionCheck: Set<number> = new Set()): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
         const aabb = curve.AABB;
@@ -1072,7 +1073,7 @@ export class TrackCurveManager {
 
         const collisions: {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] = [];
 
-        possibleCollisions.forEach((segment)=>{
+        possibleCollisions.filter((segment)=>!excludeSegmentsForCollisionCheck.has(segment.trackSegmentNumber)).forEach((segment)=>{
             console.log(`collision found with segment ${segment.curve}`);
             console.log('start finding intersections');
             console.log('possible collisions', segment.curve);

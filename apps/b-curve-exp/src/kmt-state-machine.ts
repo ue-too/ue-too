@@ -364,6 +364,9 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     bumpCurrentJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
         const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
         if(currentElevation >= ELEVATION.ABOVE_3){
             return;
@@ -373,6 +376,9 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     lowerCurrentJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
         const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
         if(currentElevation <= ELEVATION.SUB_3){
             return;
@@ -559,6 +565,7 @@ export class CurveCreationEngine implements LayoutContext {
 
     endCurve(): Point | null {
         const res = this.endCurveInternal();
+        console.log("endCurve", res);
         if(res !== null) {
             this._lastCurveSuccess = true;
         } else {
@@ -646,6 +653,7 @@ export class CurveCreationEngine implements LayoutContext {
                 res = endPosition;
                 endJointNumber = this._trackGraph.createNewEmptyJoint(endPosition, endTangent, this._newEndJoint.elevation);
             } else {
+                res = this._newEndJoint.position;
                 endJointNumber = this._trackGraph.createNewEmptyJoint(this._newEndJoint.position, this._newEndJoint.constraint.tangent, this._newEndJoint.elevation);
             }
         } else if (this._newEndJoint.type === "branchCurve"){
