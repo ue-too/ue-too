@@ -319,7 +319,7 @@ describe("Basic Operation on Bezier Curve", ()=>{
             const radius = getRandom(-300, 300);
             const testRes = testCurve.getCircleIntersections(circleCenter, radius);
             testRes.forEach((intersection)=>{
-                expect(PointCal.distanceBetweenPoints(intersection.intersection, circleCenter)).toBeCloseTo(radius);
+                expect(PointCal.distanceBetweenPoints(intersection.intersection, circleCenter)).toBeCloseTo(radius, 2);
             });
         });
     });
@@ -565,7 +565,7 @@ describe("Basic Operation on Bezier Curve", ()=>{
             const radius = getRandom(-300, 300);
             const testRes = testCurve.getCircleIntersections(circleCenter, radius);
             testRes.forEach((intersection)=>{
-                expect(PointCal.distanceBetweenPoints(intersection.intersection, circleCenter)).toBeCloseTo(radius);
+                expect(PointCal.distanceBetweenPoints(intersection.intersection, circleCenter)).toBeCloseTo(radius, 2);
             });
         });
 
