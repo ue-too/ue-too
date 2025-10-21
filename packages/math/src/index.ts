@@ -82,6 +82,9 @@ export class PointCal {
         return {x: point.x * Math.cos(angleFromOriginalAxis2DestAxis) + point.y * Math.sin(angleFromOriginalAxis2DestAxis), y: -point.x * Math.sin(angleFromOriginalAxis2DestAxis) + point.y * Math.cos(angleFromOriginalAxis2DestAxis)};
     }
 
+    /**
+     * @description Gets the angle from vector a to vector b. (returned angle is always between -π to π)
+     */
     static angleFromA2B(a: point, b: point): number {
         return Math.atan2(a.x * b.y - a.y * b.x, a.x * b.x + a.y * b.y);
     }
@@ -190,6 +193,15 @@ export function sameDirection(a: Point, b: Point, precision: number = 0.001): bo
    const aNormalized = PointCal.unitVector(a);
    const bNormalized = PointCal.unitVector(b);
    return samePoint(aNormalized, bNormalized, precision);
+}
+
+export function directionAlignedToTangent(direction: Point, tangent: Point): boolean {
+   const directionNormalized = PointCal.unitVector(direction);
+   const tangentNormalized = PointCal.unitVector(tangent);
+   const reversedTangent = {x: -tangent.x, y: -tangent.y, z: tangent.z};
+   const angle = PointCal.angleFromA2B(directionNormalized, tangentNormalized);
+   const angle2 = PointCal.angleFromA2B(directionNormalized, reversedTangent);
+   return (angle < Math.PI / 2 && angle > -Math.PI / 2) && (angle2 > Math.PI / 2 || angle2 < -Math.PI / 2);
 }
 
 export function samePoint(a: Point, b: Point, precision?: number): boolean {
