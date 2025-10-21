@@ -114,23 +114,16 @@ jobs:
               # Remove @ue-too/ prefix and any special characters for filename
               clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
               
-              # Create package subdirectory in temp folder
-              package_temp_dir="$RELEASE_FILES_DIR/$clean_name"
-              mkdir -p "$package_temp_dir"
-              
-              # Copy and rename files
+              # Copy and rename only .js and .js.map files to temp folder root
               for file in "${package_dir}dist"/*; do
                 if [ -f "$file" ]; then
                   filename=$(basename "$file")
                   if [ "$filename" = "index.js" ]; then
                     # Rename index.js to package-name.js
-                    cp "$file" "$package_temp_dir/${clean_name}.js"
+                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
                   elif [ "$filename" = "index.js.map" ]; then
                     # Rename index.js.map to package-name.js.map
-                    cp "$file" "$package_temp_dir/${clean_name}.js.map"
-                  else
-                    # Copy other files as-is
-                    cp "$file" "$package_temp_dir/"
+                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
                   fi
                 fi
               done
