@@ -81,9 +81,8 @@ jobs:
           VERSION=$(node -p "require('./packages/math/package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-      - name: Create git tag
+      - name: List git tag
         run: |
-          git tag -a ${{ steps.get-version.outputs.tag }} -m "v${{ steps.get-version.outputs.version }}"
           git tag -l ${{ steps.get-version.outputs.tag }}
       - name: Push to branch
         if: ${{ github.event.inputs.dry-run != 'true' }}
