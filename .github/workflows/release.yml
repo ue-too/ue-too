@@ -92,7 +92,7 @@ jobs:
         if: github.event.inputs.dry-run != 'true' && github.ref == 'refs/heads/main'
         run: |
           git switch -c version/${{ steps.get-version.outputs.version }}
-          gpsup
+          git push --set-upstream origin version/${{ steps.get-version.outputs.version }}
       - name: Get current release branch
         id: get-release-branch
         if: ${{ github.event.inputs.dry-run != 'true' }}
