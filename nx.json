@@ -14,12 +14,34 @@
           "watchDepsName": "watch-deps"
         }
       }
+    },
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "test",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "vite:preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "vite:typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
     }
   ],
   "release": {
     "releaseTagPattern": "v{version}",
     "changelog": {
       "automaticFromRef": true
+    }
+  },
+  "generators": {
+    "@nx/web:application": {
+      "style": "css",
+      "linter": "none",
+      "unitTestRunner": "none",
+      "e2eTestRunner": "none"
     }
   }
 }
