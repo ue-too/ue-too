@@ -1,6 +1,6 @@
-import { useRef, useEffect, useCallback } from "react";
-import { Board as Boardify } from "@ue-too/board";
+import { useRef, useCallback, useSyncExternalStore } from "react";
 import { useAnimationFrame } from "../hooks/useAnimationFrame";
+import { useBoardify } from "../hooks/useBoardify";
 
 export type BoardProps = {
     fullScreen?: boolean;
@@ -12,47 +12,35 @@ export type BoardProps = {
 export default function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
 
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const boardRef = useRef<Boardify | null>(null);
+    const {board, subscribe} = useBoardify(canvasRef, fullScreen);
 
-    if(boardRef.current == null){
-        boardRef.current = new Boardify();
-    }
-
-    boardRef.current.fullScreen = fullScreen ?? false;
-
-    useEffect(() => {
-        if (!canvasRef.current) return;
-        boardRef.current?.attach(canvasRef.current);
-    }, []);
+    const position = useSyncExternalStore(subscribe, () => {
+        return board.camera.position;
+    });
 
     const animationCallback = useCallback((timestamp: number) => {
-        boardRef.current?.step(timestamp);
-        const ctx = boardRef.current?.context;
+        board.step(timestamp);
+        const ctx = board.context;
         if(ctx == undefined){
+            console.warn('Canvas context not available');
             return;
         }
         
         if(animationCallbackProp != undefined){
             animationCallbackProp(timestamp, ctx);
         }
-    }, []);
+    }, [animationCallbackProp, board]);
 
     useAnimationFrame(animationCallback);
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            if (boardRef.current) {
-                boardRef.current.tearDown();
-            }
-        };
-    }, []);
-
     return (
-        <canvas 
-            width={width}
-            height={height}
-            ref={canvasRef} 
-        />
+        <>
+            <div>camera position: {position.x}, {position.y}</div>
+            <canvas 
+                width={width}
+                height={height}
+                ref={canvasRef} 
+            />
+        </>
     );
 }
