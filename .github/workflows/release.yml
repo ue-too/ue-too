@@ -89,7 +89,7 @@ jobs:
         if: ${{ github.event.inputs.dry-run != 'true' }}
         run: git push --follow-tags
       - name: Add new release branch if release from main branch
-        if: ${{ github.event.inputs.dry-run != 'true' }} && github.ref == 'refs/heads/main'
+        if: github.event.inputs.dry-run != 'true' && github.ref == 'refs/heads/main'
         run: |
           git switch -c version/${{ steps.get-version.outputs.version }}
           gpsup
