@@ -4,7 +4,7 @@
     "rootDir": "src",
     "baseUrl": ".",
     "outDir": "dist",
-    "tsBuildInfoFile": "dist/b-curve-exp.tsbuildinfo",
+    "tsBuildInfoFile": "dist/banana.tsbuildinfo",
     "declaration": true
   },
   "include": ["test/**/*"]
