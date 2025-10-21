@@ -10,6 +10,8 @@ import { ZoomLevelLimits } from "../camera/utils/zoom";
 export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
     const width = translationWidthOf(boundaries);
     const height = translationHeightOf(boundaries);
+    console.log('width', width);
+    console.log('height', height);
     if(width == undefined || height == undefined){
         return undefined;
     }

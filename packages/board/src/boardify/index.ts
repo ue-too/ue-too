@@ -65,9 +65,10 @@ export default class Board {
 
     private lastUpdateTime: number = 0;
 
-    constructor(canvas?: HTMLCanvasElement){
+    constructor(canvas?: HTMLCanvasElement, debug: boolean = false){
         const camera = new DefaultBoardCamera();
-        camera.boundaries = {min: {x: -5000, y: -5000}, max: {x: 5000, y: 5000}};
+        const bound = 50000;
+        camera.boundaries = {min: {x: -bound, y: -bound}, max: {x: bound, y: bound}};
 
         this.bindFunctions();
 
@@ -103,7 +104,7 @@ export default class Board {
 
         if(canvas != undefined){
             console.log('canvas exists on creation of board')
-            this.attach(canvas);
+            this.attach(canvas, debug);
             this.syncViewPortDimensions({width: canvas.width, height: canvas.height});
         }
     }
@@ -113,8 +114,8 @@ export default class Board {
         this.camera.viewPortWidth = canvasDimensions.width;
     }
 
-    attach(canvas: HTMLCanvasElement){
-        const newContext = canvas.getContext('2d');
+    attach(canvas: HTMLCanvasElement, debug: boolean = false){
+        const newContext = canvas.getContext('2d', {willReadFrequently: debug});
         if(newContext == null){
             console.error("new canvas context is null");
             return;
@@ -358,6 +359,10 @@ export default class Board {
     private syncCameraZoomLevel(canvasDimensions: CanvasDimensions){
         if(this.limitEntireViewPort){
             const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, canvasDimensions.width, canvasDimensions.height, this.camera.rotation);
+            console.log('canvasDimensions', canvasDimensions);
+            console.log('zoom boundaries', this.camera.zoomBoundaries);
+            console.log('boundaries', this.camera.boundaries);
+            console.log('targetMinZoomLevel', targetMinZoomLevel);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
                 this.camera.setMinZoomLevel(targetMinZoomLevel);
             }

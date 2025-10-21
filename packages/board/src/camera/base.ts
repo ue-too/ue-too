@@ -147,12 +147,13 @@ export default class BaseCamera implements BoardCamera {
      * @category Camera
      */
     set zoomBoundaries(zoomBoundaries: ZoomLevelLimits | undefined){
-        if(zoomBoundaries !== undefined && zoomBoundaries.min !== undefined && zoomBoundaries.max !== undefined && zoomBoundaries.min > zoomBoundaries.max){
-            let temp = zoomBoundaries.max;
-            zoomBoundaries.max = zoomBoundaries.min;
-            zoomBoundaries.min = temp;
+        const newZoomBoundaries = {...zoomBoundaries};
+        if(newZoomBoundaries !== undefined && newZoomBoundaries.min !== undefined && newZoomBoundaries.max !== undefined && newZoomBoundaries.min > newZoomBoundaries.max){
+            let temp = newZoomBoundaries.max;
+            newZoomBoundaries.max = newZoomBoundaries.min;
+            newZoomBoundaries.min = temp;
         }
-        this._zoomBoundaries = zoomBoundaries;
+        this._zoomBoundaries = newZoomBoundaries;
     }
 
     setMaxZoomLevel(maxZoomLevel: number){
@@ -163,6 +164,7 @@ export default class BaseCamera implements BoardCamera {
             return false;
         }
         this._zoomBoundaries.max = maxZoomLevel;
+        console.trace('setMaxZoomLevel', maxZoomLevel);
         return true
     }
 
@@ -177,6 +179,7 @@ export default class BaseCamera implements BoardCamera {
         if(this._zoomLevel < minZoomLevel){
             this._zoomLevel = minZoomLevel;
         }
+        console.trace('setMinZoomLevel', minZoomLevel);
         return true;
     }
 

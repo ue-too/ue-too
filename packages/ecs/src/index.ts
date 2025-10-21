@@ -80,7 +80,7 @@ export interface CArray {
 
 export class ComponentArray<T> implements CArray {
 
-    private denseArray: T[];
+    private denseArray: T[]; // packed array of data
     private sparse: (Entity | null)[]; // maps entity to index in dense array
     private reverse: (Entity | null)[]; // maps index in dense array to entity
     private _count: number;
