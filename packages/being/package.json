@@ -1,7 +1,7 @@
 {
   "name": "@ue-too/being",
   "type": "module",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "scripts": {
     "test": "jest",
     "build": "rm -rf dist && rollup -c rollup.config.js"
