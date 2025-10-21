@@ -22,12 +22,12 @@ jobs:
   release-package:
     runs-on: ubuntu-latest
     name: Publish Package to npmjs
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true'
     steps:
       - name: Fail if branch is not main
-        if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')))
+        if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')) && github.event.inputs.dry-run != 'true')
         run: |
-          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main"
+          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main or version except for dry-run"
           exit 1
       - uses: actions/checkout@v4
         with:
@@ -58,6 +58,7 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "vntchang@gmail.com"
       - name: Bump version
+        id: bump-version
         run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
             pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
@@ -74,32 +75,78 @@ jobs:
         run: pnpm publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
       - name: Log git log
         run: git log -1 --pretty | cat
+      - name: Get version number
+        id: get-version
+        run: |
+          VERSION=$(node -p "require('./packages/math/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+      - name: Create git tag
+        run: |
+          git tag -a ${{ steps.get-version.outputs.tag }} -m "v${{ steps.get-version.outputs.version }}"
+          git tag -l ${{ steps.get-version.outputs.tag }}
       - name: Push to branch
         if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: git push
-      # - name: Determine release branch
-      #   id: get-branch
-      #   if: ${{ github.event.inputs.dry-run != 'true' }}
-      #   run: |
-      #     echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-      # - name: Create release
-      #   if: ${{ github.event.inputs.dry-run != 'true' }}
-      #   env:
-      #     GH_TOKEN: ${{ secrets.PAT }}
-      #     tag: v${{ steps.get-version.outputs.version }}
-      #   run: |
-      #     gh release create "$tag" \
-      #         --repo="$GITHUB_REPOSITORY" \
-      #         --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
-      #         --target="${{ steps.get-branch.outputs.branch }}" \
-      #         --generate-notes
-      #         # Upload dist files from all packages
-      #         for package_dir in packages/*/; do
-      #           if [ -d "${package_dir}dist" ]; then
-      #             for file in "${package_dir}dist"/*; do
-      #               if [ -f "$file" ]; then
-      #                 gh release upload "$tag" "$file" --repo="$GITHUB_REPOSITORY"
-      #               fi
-      #             done
-      #           fi
-      #         done
+        run: git push --follow-tags
+      - name: Add new release branch if release from main branch
+        if: github.event.inputs.dry-run != 'true' && github.ref == 'refs/heads/main'
+        run: |
+          git switch -c version/${{ steps.get-version.outputs.version }}
+          gpsup
+      - name: Get current release branch
+        id: get-release-branch
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        run: |
+          echo "release-branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+      - name: Prepare release files
+        run: |
+          # Create a temporary directory for all renamed files in current directory
+          export RELEASE_FILES_DIR="./release-files-temp"
+          mkdir -p "$RELEASE_FILES_DIR"
+          echo "RELEASE_FILES_DIR=$RELEASE_FILES_DIR" >> $GITHUB_ENV
+          
+          # Process each package's dist files
+          for package_dir in ./packages/*/; do
+            if [ -d "${package_dir}dist" ]; then
+              # Extract package name from package.json (remove trailing slash)
+              package_path="${package_dir%/}"
+              package_name=$(node -p "require('./${package_path}/package.json').name")
+              # Remove @ue-too/ prefix and any special characters for filename
+              clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
+              
+              # Copy and rename only .js and .js.map files to temp folder root
+              for file in "${package_dir}dist"/*; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file")
+                  if [ "$filename" = "index.js" ]; then
+                    # Rename index.js to package-name.js
+                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
+                  elif [ "$filename" = "index.js.map" ]; then
+                    # Rename index.js.map to package-name.js.map
+                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
+                  fi
+                fi
+              done
+            fi
+          done
+          
+          echo "Release files prepared in: $RELEASE_FILES_DIR"
+          ls -la "$RELEASE_FILES_DIR"
+      - name: Create release
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
+          tag: v${{ steps.get-version.outputs.version }}
+        run: |
+          gh release create "$tag" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
+              --target="${{ steps.get-release-branch.outputs.release-branch }}" \
+              --generate-notes
+              
+          # Upload all prepared files from the temporary directory
+          cd "$RELEASE_FILES_DIR"
+          find . -type f -exec gh release upload "$tag" {} --repo="$GITHUB_REPOSITORY" \;
+          
+          # Clean up temporary directory
+          rm -rf "$RELEASE_FILES_DIR"
