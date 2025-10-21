@@ -107,8 +107,9 @@ jobs:
           # Process each package's dist files
           for package_dir in packages/*/; do
             if [ -d "${package_dir}dist" ]; then
-              # Extract package name from package.json
-              package_name=$(node -p "require('${package_dir}package.json').name")
+              # Extract package name from package.json (remove trailing slash)
+              package_path="${package_dir%/}"
+              package_name=$(node -p "require('${package_path}/package.json').name")
               # Remove @ue-too/ prefix and any special characters for filename
               clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
               
