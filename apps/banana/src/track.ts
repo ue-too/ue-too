@@ -211,6 +211,8 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
+        this._trackCurveManager.destroyCurve(trackSegmentNumber);
+
         const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber, t0Joint.elevation, newJoint.elevation);
         const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber, newJoint.elevation, t1Joint.elevation);
 
@@ -258,7 +260,6 @@ export class TrackGraph {
             t1Joint.direction.tangent.add(newJointNumber);
         }
 
-        this._trackCurveManager.destroyCurve(trackSegmentNumber);
         return newJointNumber;
     }
 
@@ -316,6 +317,8 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
+        this._trackCurveManager.destroyCurve(trackSegmentNumber);
+
         const firstSegmentNumber = this._trackCurveManager.createCurveWithJoints(firstCurve, t0JointNumber, newJointNumber, t0Joint.elevation, newJoint.elevation);
         const secondSegmentNumber = this._trackCurveManager.createCurveWithJoints(secondCurve, newJointNumber, t1JointNumber, newJoint.elevation, t1Joint.elevation);
 
@@ -364,7 +367,6 @@ export class TrackGraph {
             t1Joint.direction.tangent.add(newJointNumber);
         }
 
-        this._trackCurveManager.destroyCurve(trackSegmentNumber);
     }
 
     get trackOffsets(): {positive: Point[], negative: Point[]}[] {
