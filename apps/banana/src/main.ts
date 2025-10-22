@@ -9,7 +9,14 @@ import districtGeoJSON from "./tainan-district";
 import villageGeoJSON from "./tainan-village";
 import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
-import { Bezier } from "bezier-js";
+import { Bezier, Point } from "bezier-js";
+
+const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
+const res = testCurve.splitIn3Curves(0.25, 0.75);
+
+const firstCurve = res[0];
+const secondCurve = res[1];
+const thirdCurve = res[2];
 
 // curve 1 control points [
 //     {
@@ -481,14 +488,49 @@ function step(timestamp: number){
         trackCacheVersion++;
     }
 
-    // curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
+    // curveEngine.trackGraph.getSortedTrackSegments().forEach((trackSegment)=>{
     //     if(board.context === undefined){
     //         return;
     //     }
     //     const cps = trackSegment.curve.getControlPoints();
     //     board.context.save();
-    //     board.context.lineWidth = 1 / board.camera.zoomLevel;
-    //     board.context.strokeStyle = "green";
+    //     board.context.lineWidth = 5 / board.camera.zoomLevel;
+        
+    //     // Helper function to get color for elevation
+    //     const getElevationColor = (elevation: ELEVATION): string => {
+    //         switch(elevation){
+    //             case ELEVATION.SUB_3:
+    //                 return "red";
+    //             case ELEVATION.SUB_2:
+    //                 return "orange";
+    //             case ELEVATION.SUB_1:
+    //                 return "yellow";
+    //             case ELEVATION.GROUND:
+    //                 return "green";
+    //             case ELEVATION.ABOVE_1:
+    //                 return "cyan";
+    //             case ELEVATION.ABOVE_2:
+    //                 return "magenta";
+    //             case ELEVATION.ABOVE_3:
+    //                 return "blue";
+    //             default:
+    //                 return "gray";
+    //         }
+    //     };
+        
+    //     // Create linear gradient from start to end of the curve
+    //     const startColor = getElevationColor(trackSegment.elevation.from);
+    //     const endColor = getElevationColor(trackSegment.elevation.to);
+        
+    //     // Create gradient along the curve from start point to end point
+    //     const gradient = board.context.createLinearGradient(
+    //         cps[0].x, cps[0].y,
+    //         cps[cps.length - 1].x, cps[cps.length - 1].y
+    //     );
+    //     gradient.addColorStop(0, startColor);
+    //     gradient.addColorStop(1, endColor);
+        
+    //     board.context.strokeStyle = gradient;
     //     board.context.beginPath();
     //     board.context.moveTo(cps[0].x, cps[0].y);
     //     if(cps.length === 3){
@@ -498,51 +540,31 @@ function step(timestamp: number){
     //     }
     //     board.context.stroke();
     //     board.context.restore();
+
+    //     board.context.save();
+    //     board.context.fillStyle = "rgba(255, 0, 0, 0.5)";
+    //     trackSegment.collision.forEach((collision)=>{
+    //         if(board.context === undefined){
+    //             return;
+    //         }
+    //         board.context.beginPath();
+    //         const point = trackSegment.curve.get(collision.selfT);
+    //         board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+    //         board.context.fill();
+    //     });
+    //     board.context.restore();
     // });
 
-    curveEngine.trackGraph.getSortedTrackSegments().forEach((trackSegment)=>{
+    curveEngine.trackGraph.experimental().forEach((drawData)=>{
         if(board.context === undefined){
             return;
         }
-        const cps = trackSegment.curve.getControlPoints();
+
+        const cps = drawData.curve.getControlPoints();
+
         board.context.save();
+        board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
         board.context.lineWidth = 5 / board.camera.zoomLevel;
-        
-        // Helper function to get color for elevation
-        const getElevationColor = (elevation: ELEVATION): string => {
-            switch(elevation){
-                case ELEVATION.SUB_3:
-                    return "red";
-                case ELEVATION.SUB_2:
-                    return "orange";
-                case ELEVATION.SUB_1:
-                    return "yellow";
-                case ELEVATION.GROUND:
-                    return "green";
-                case ELEVATION.ABOVE_1:
-                    return "cyan";
-                case ELEVATION.ABOVE_2:
-                    return "magenta";
-                case ELEVATION.ABOVE_3:
-                    return "blue";
-                default:
-                    return "gray";
-            }
-        };
-        
-        // Create linear gradient from start to end of the curve
-        const startColor = getElevationColor(trackSegment.elevation.from);
-        const endColor = getElevationColor(trackSegment.elevation.to);
-        
-        // Create gradient along the curve from start point to end point
-        const gradient = board.context.createLinearGradient(
-            cps[0].x, cps[0].y,
-            cps[cps.length - 1].x, cps[cps.length - 1].y
-        );
-        gradient.addColorStop(0, startColor);
-        gradient.addColorStop(1, endColor);
-        
-        board.context.strokeStyle = gradient;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -551,19 +573,6 @@ function step(timestamp: number){
             board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
         }
         board.context.stroke();
-        board.context.restore();
-
-        board.context.save();
-        board.context.fillStyle = "rgba(255, 0, 0, 0.5)";
-        trackSegment.collision.forEach((collision)=>{
-            if(board.context === undefined){
-                return;
-            }
-            board.context.beginPath();
-            const point = trackSegment.curve.get(collision.selfT);
-            board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-            board.context.fill();
-        });
         board.context.restore();
     });
 
@@ -784,4 +793,43 @@ function colorForJoint(joint: NewJointType) {
         case "branchCurve":
             return "yellow";
     }
+}
+
+const getElevationColor = (elevation: ELEVATION): string => {
+    switch(elevation){
+        case ELEVATION.SUB_3:
+            return "red";
+        case ELEVATION.SUB_2:
+            return "orange";
+        case ELEVATION.SUB_1:
+            return "yellow";
+        case ELEVATION.GROUND:
+            return "green";
+        case ELEVATION.ABOVE_1:
+            return "cyan";
+        case ELEVATION.ABOVE_2:
+            return "magenta";
+        case ELEVATION.ABOVE_3:
+            return "blue";
+        default:
+            return "gray";
+    }
+};
+
+function createGradient(context: CanvasRenderingContext2D, startElevation: ELEVATION, endElevation: ELEVATION, startPoint: Point, endPoint: Point){ 
+
+    // Create linear gradient from start to end of the curve
+    const startColor = getElevationColor(startElevation);
+    const endColor = getElevationColor(endElevation);
+    
+    // Create gradient along the curve from start point to end point
+    const gradient = context.createLinearGradient(
+        startPoint.x, startPoint.y,
+        endPoint.x, endPoint.y
+    );
+    
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+
+    return gradient;
 }

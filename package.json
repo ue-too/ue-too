@@ -5,6 +5,7 @@
   "sideEffects": false,
   "scripts": {
     "test": "nx run-many --target=test",
+    "dev:banana": "nx dev banana",
     "build": "nx run-many --target=build --projects=math,being,animate,border,curve,dynamics,board,ecs --parallel=false",
     "build:packages": "nx run-many --target=build --projects=packages/* --parallel=true",
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",

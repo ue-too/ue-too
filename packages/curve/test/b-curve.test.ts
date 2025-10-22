@@ -404,6 +404,12 @@ describe("Basic Operation on Bezier Curve", ()=>{
                 expect(point.y).toBeCloseTo(expectRightHalf[index].y);
             });
         });
+         
+        test("Split curve in 3 at given t values", ()=>{
+            const curve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
+            const testRes = curve.splitIn3Curves(0.25, 0.75);
+            expect(testRes[1].getControlPoints()).toEqual([{x: 64.21875, y: 65.625}, {x: 58.90625, y: 88.75}, {x: 85.46875, y: 106.875}, {x: 112.65625, y: 137.5}]);
+        });
 
         test("Set control point at given index i", ()=>{
             const newPoint = {x: getRandom(-500, 500), y: getRandom(-500, 500)};

@@ -315,6 +315,11 @@ export class BCurve{
         return this.arcLengthLUT;
     }
 
+    splitIntoCurves(tVal: number): [BCurve, BCurve]{
+        const res = this.split(tVal);
+        return [new BCurve(res[0]), new BCurve(res[1])];
+    }
+
     public split(tVal: number): [Point[], Point[]]{
         this.validateTVal(tVal);
         if (this.controlPoints.length == 3){

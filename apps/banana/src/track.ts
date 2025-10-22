@@ -12,6 +12,8 @@ export type TrackSegment = {
     t1Joint: number;
     curve: BCurve;
     gauge: number;
+    splits: number[];
+    splitCurves: {curve: BCurve, elevation: {from: number, to: number}, tValInterval: {start: number, end: number}}[];
 }
 
 export type TrackJointWithElevation = TrackJoint & {
@@ -45,29 +47,37 @@ export type TrackSegmentWithCollision = TrackSegmentWithElevation & {
     }[];
 }
 
+export type TrackSegmentDrawData = {
+    curve: BCurve;
+    originalTrackSegment: {
+        trackSegmentNumber: number;
+        startJointPosition: Point;
+        endJointPosition: Point;
+        tValInterval: {
+            start: number;
+            end: number;
+        }
+    }
+    elevation: {
+        from: number;
+        to: number;
+    };
+    originalElevation: {
+        from: ELEVATION;
+        to: ELEVATION;
+    }
+    excludeSegmentsForCollisionCheck: Set<number>;
+}
+
 export type TrackSegmentWithCollisionAndNumber = TrackSegmentWithCollision & {
     trackSegmentNumber: number;
 }
 
-export function getElevationAtT(t: number, trackSegment: TrackSegmentWithElevation, trackJointManager: TrackJointManager): number {
+export function getElevationAtT(t: number, trackSegment: {elevation: {from: number, to: number}}): number {
+    const startElevationLevel = trackSegment.elevation.from;
+    const endElevationLevel = trackSegment.elevation.to;
 
-    const startJointNumber = trackSegment.t0Joint;
-    const endJointNumber = trackSegment.t1Joint;
-
-    const startJoint = trackJointManager.getJoint(startJointNumber);
-    const endJoint = trackJointManager.getJoint(endJointNumber);
-
-    if(startJoint === null || endJoint === null){
-        return ELEVATION.GROUND;
-    }
-
-    const startElevationLevel = startJoint.elevation;
-    const endElevationLevel = endJoint.elevation;
-
-    const startElevation = startElevationLevel * LEVEL_HEIGHT;
-    const endElevation = endElevationLevel * LEVEL_HEIGHT;
-
-    const elevation = startElevation + (endElevation - startElevation) * t;
+    const elevation = startElevationLevel + (endElevationLevel - startElevationLevel) * t;
     
     return elevation;
 }
@@ -86,13 +96,13 @@ export function trackIsSlopedByJoints(trackSegment: TrackSegmentWithElevation, t
     return startJoint.elevation !== endJoint.elevation;
 }
 
-export function trackIsSloped(trackSegment: TrackSegmentWithElevation): boolean {
+export function trackIsSloped(trackSegment: {elevation: {from: ELEVATION, to: ELEVATION}}): boolean {
     return trackSegment.elevation.from !== trackSegment.elevation.to;
 }
 
-export function intersectionSatisfiesVerticalClearance(intersectionTVal: number, trackSegment: TrackSegmentWithElevation, intersectionTVal2: number, trackSegment2: TrackSegmentWithElevation, trackJointManager: TrackJointManager): boolean {
-    const elevation1 = getElevationAtT(intersectionTVal, trackSegment, trackJointManager);
-    const elevation2 = getElevationAtT(intersectionTVal2, trackSegment2, trackJointManager);
+export function intersectionSatisfiesVerticalClearance(intersectionTVal: number, trackSegment: {elevation: {from: ELEVATION, to: ELEVATION}}, intersectionTVal2: number, trackSegment2: {elevation: {from: ELEVATION, to: ELEVATION}}): boolean {
+    const elevation1 = getElevationAtT(intersectionTVal, {elevation: {from: trackSegment.elevation.from * LEVEL_HEIGHT, to: trackSegment.elevation.to * LEVEL_HEIGHT}});
+    const elevation2 = getElevationAtT(intersectionTVal2, {elevation: {from: trackSegment2.elevation.from * LEVEL_HEIGHT, to: trackSegment2.elevation.to * LEVEL_HEIGHT}});
 
     const diff = Math.abs(elevation1 - elevation2);
 
@@ -101,6 +111,18 @@ export function intersectionSatisfiesVerticalClearance(intersectionTVal: number,
 
 export function satisfiesVerticalClearance(elevation: number): boolean {
     if(elevation >= VERTICAL_CLEARANCE){
+        return true;
+    }
+    return false;
+}
+
+export function elevationIntervalOverlaps(track1: {elevation: {from: ELEVATION, to: ELEVATION}}, track2: {elevation: {from: ELEVATION, to: ELEVATION}}): boolean {
+    const t1Min = Math.min(track1.elevation.from, track1.elevation.to);
+    const t1Max = Math.max(track1.elevation.from, track1.elevation.to);
+    const t2Min = Math.min(track2.elevation.from, track2.elevation.to);
+    const t2Max = Math.max(track2.elevation.from, track2.elevation.to);
+
+    if(t1Min <= t2Max && t2Min <= t1Max){
         return true;
     }
     return false;
@@ -191,6 +213,10 @@ export class TrackGraph {
             return null;
         }
 
+        if(t0Joint.elevation !== t1Joint.elevation){
+            return null;
+        }
+
         const newJointPosition = segment.curve.get(atT);
 
 
@@ -203,7 +229,7 @@ export class TrackGraph {
                 tangent: new Set<number>(),
                 reverseTangent: new Set<number>()
             },
-            elevation: ELEVATION.GROUND
+            elevation: t0Joint.elevation
         };
 
         const newJointNumber = this._jointManager.createJoint(newJoint);
@@ -270,6 +296,11 @@ export class TrackGraph {
         if(startJoint === null || endJoint === null){
             console.warn("startJoint or endJoint not found");
             return;
+        }
+
+        if(startJoint.elevation !== endJoint.elevation){
+            // sloped tracks cannot be splited
+            return null;
         }
 
         // get the id of the track segment from the start and end joint number
@@ -665,7 +696,9 @@ export class TrackGraph {
         const startJointTangentDirection = startJoint.tangent;
         const endJointTangentDirection = endJoint.tangent;
 
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation);
+        const excludeSegementSet = new Set([...startJoint.direction.reverseTangent, ...startJoint.direction.tangent, ...endJoint.direction.reverseTangent, ...endJoint.direction.tangent]);
+
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation, 10, excludeSegementSet);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -853,6 +886,37 @@ export class TrackGraph {
         });
     }
 
+    experimental(): TrackSegmentDrawData[] {
+        const segments = this._trackCurveManager.experimental();
+        
+        return segments.sort((a, b) => {
+            if(!trackIsSloped(a) && !trackIsSloped(b)){
+                return a.elevation.from - b.elevation.from;
+            }
+
+            const overlaps = elevationIntervalOverlaps(a, b);
+            const aMax = Math.max(a.elevation.from, a.elevation.to);
+            const bMax = Math.max(b.elevation.from, b.elevation.to);
+            if(!overlaps){
+                return aMax - bMax;
+            }
+            if(a.excludeSegmentsForCollisionCheck.has(b.originalTrackSegment.trackSegmentNumber) || b.excludeSegmentsForCollisionCheck.has(a.originalTrackSegment.trackSegmentNumber)){
+                return 0;
+            }
+            const collision = a.curve.getCurveIntersections(b.curve);
+            if(collision.length === 0){
+                return aMax - bMax;
+            }
+            if(collision.length !== 1){
+                console.warn('something wrong in the sorting of track segments draw order')
+                return 0;
+            }
+            const aElevation = getElevationAtT(collision[0].selfT, {elevation: {from: a.elevation.from * LEVEL_HEIGHT, to: a.elevation.to * LEVEL_HEIGHT}});
+            const bElevation = getElevationAtT(collision[0].otherT, {elevation: {from: b.elevation.from * LEVEL_HEIGHT, to: b.elevation.to * LEVEL_HEIGHT}});
+            return aElevation - bElevation;
+        });
+    }
+
     logJoints(){
         for(const {jointNumber, joint} of this._jointManager.getJoints()){
             console.log('--------------------------------');
@@ -977,8 +1041,56 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
+    experimental(): TrackSegmentDrawData[] {
+        const res: TrackSegmentDrawData[] = [];
+        const tracks = this._internalTrackCurveManager.getLivingEntitiesWithIndex();
+        tracks.forEach((track)=>{
+            const trackSegment = track.entity; 
+            const index = track.index;
+            trackSegment.segment.splitCurves.forEach((splitCurve)=>{
+                const cps = trackSegment.segment.curve.getControlPoints();
+                const startPosition = cps[0];
+                const endPosition = cps[cps.length - 1];
+                const drawData: TrackSegmentDrawData = {
+                    curve: splitCurve.curve,
+                    originalTrackSegment: {
+                        trackSegmentNumber: index,
+                        tValInterval: {
+                            start: splitCurve.tValInterval.start,
+                            end: splitCurve.tValInterval.end,
+                        },
+                        startJointPosition: startPosition,
+                        endJointPosition: endPosition,
+                    },
+                    originalElevation: {
+                        from: trackSegment.segment.elevation.from,
+                        to: trackSegment.segment.elevation.to,
+                    },
+                    elevation: splitCurve.elevation,
+                    excludeSegmentsForCollisionCheck: new Set(),
+                };
+                res.push(drawData);
+            });
+        });
+        return res;
+    }
+
     getTrackSegmentWithJoints(segmentNumber: number): TrackSegmentWithCollision | null {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
+    }
+
+    checkForCollisions(curve: BCurve, excludeSegmentsForCollisionCheck: Set<number> = new Set()): {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] {
+        const collisions: {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] = [];
+        const rect = new Rectangle(curve.AABB.min.x, curve.AABB.min.y, curve.AABB.max.x, curve.AABB.max.y);
+        const possibleCollisions = this._internalRTree.search(rect);
+        possibleCollisions.filter((segment)=>!excludeSegmentsForCollisionCheck.has(segment.trackSegmentNumber)).forEach((segment)=>{
+            const intersections = segment.curve.getCurveIntersections(curve).map((intersection)=>{
+                return {selfT: intersection.otherT, anotherCurve: {curve: segment.curve, tVal: intersection.selfT}};
+            });
+            collisions.push(...intersections);
+        });
+
+        return collisions;
     }
 
     onTrackSegmentEdge(position: Point): ProjectionInfo | null {
@@ -1076,27 +1188,43 @@ export class TrackCurveManager {
         const collisions: {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] = [];
 
         possibleCollisions.filter((segment)=>!excludeSegmentsForCollisionCheck.has(segment.trackSegmentNumber)).forEach((segment)=>{
-            console.log(`collision found with segment ${segment.curve}`);
-            console.log('start finding intersections');
-            console.log('possible collisions', segment.curve);
             const intersections = segment.curve.getCurveIntersections(curve).map((intersection)=>{
-                console.log(`collision found at t value = ${intersection.otherT}`);
                 return {selfT: intersection.otherT, anotherCurve: {curve: segment.curve, tVal: intersection.selfT}};
             });
-
             collisions.push(...intersections);
-
-            if(intersections.length > 10){
-                console.log('--------------------------------');
-                console.log("weird");
-                console.log('curve 1 control points', JSON.stringify(curve.getControlPoints(), null, 2));
-                console.log('curve 2 control points', JSON.stringify(segment.curve.getControlPoints(), null, 2));
-                console.log('intersection t values on curve 1', JSON.stringify(intersections.map((intersection)=>intersection.selfT), null, 2));
-                console.log('intersection t values on curve 2', JSON.stringify(intersections.map((intersection)=>intersection.anotherCurve.tVal), null, 2));
-            }
-
-            console.log('end finding intersections');
         });
+
+        let startT = 0;
+
+        const insertionT: number[] = [];
+
+        if(t0Elevation !== t1Elevation){
+
+            const internalIntersections = this.checkForCollisions(curve, excludeSegmentsForCollisionCheck);
+
+            internalIntersections.forEach((intersection)=>{
+                const insertT = Math.round(((intersection.selfT + startT) / 2) * 100) / 100;
+                insertionT.push(insertT);
+                startT = intersection.selfT;
+            });
+        }
+
+        startT = 0;
+
+        const splits: {curve: BCurve, elevation: {from: number, to: number}, tValInterval: {start: number, end: number}}[] = [];
+
+        insertionT.forEach((tVal)=>{
+            const [_, secondCurve] = curve.splitIn3Curves(startT, tVal);
+            const startElevation = getElevationAtT(startT, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+            const endElevation = getElevationAtT(tVal, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+            splits.push({curve: secondCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: startT, end: tVal}});
+            startT = tVal;
+        });
+
+        const [_, endingCurve] = curve.splitIn3Curves(startT, 1);
+        const startElevation = getElevationAtT(startT, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+        const endElevation = getElevationAtT(1, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+        splits.push({curve: endingCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: startT, end: 1}});
 
         const trackSegmentEntry: TrackSegmentWithCollision = 
             {
@@ -1108,7 +1236,9 @@ export class TrackCurveManager {
                     to: t1Elevation
                 },
                 collision: collisions,
-                gauge
+                gauge,
+                splits: insertionT,
+                splitCurves: splits,
             };
         
         const curveNumber = this._internalTrackCurveManager.createEntity({

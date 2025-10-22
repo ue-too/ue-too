@@ -667,6 +667,12 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         if(startJointNumber === null || endJointNumber === null){
+            if(startJointNumber === null){
+                console.warn('startJointNumber is null');
+            }
+            if(endJointNumber === null){
+                console.warn('endJointNumber is null');
+            }
             this.cancelCurrentCurve();
             return null;
         }
