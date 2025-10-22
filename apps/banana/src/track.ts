@@ -185,6 +185,9 @@ export class TrackGraph {
     private _jointManager: TrackJointManager = new TrackJointManager(10);
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
+    private _drawDataDirty = true;
+    private _drawData: TrackSegmentDrawData[] = [];
+
     getJoints(): {jointNumber: number, joint: TrackJoint}[] {
         return this._jointManager.getJoints();
     }
@@ -714,7 +717,7 @@ export class TrackGraph {
         } else {
             endJoint.direction.tangent.add(startJointNumber);
         }
-        
+        this._drawDataDirty = true;
         return true;
     }
 
@@ -888,8 +891,10 @@ export class TrackGraph {
 
     experimental(): TrackSegmentDrawData[] {
         const segments = this._trackCurveManager.experimental();
-        
-        return segments.sort((a, b) => {
+        if(!this._drawDataDirty){
+            return this._drawData;
+        }
+        this._drawData = segments.sort((a, b) => {
             if(!trackIsSloped(a) && !trackIsSloped(b)){
                 return a.elevation.from - b.elevation.from;
             }
@@ -915,6 +920,8 @@ export class TrackGraph {
             const bElevation = getElevationAtT(collision[0].otherT, {elevation: {from: b.elevation.from * LEVEL_HEIGHT, to: b.elevation.to * LEVEL_HEIGHT}});
             return aElevation - bElevation;
         });
+        this._drawDataDirty = false;
+        return this._drawData;
     }
 
     logJoints(){
@@ -1023,6 +1030,9 @@ export class TrackCurveManager {
 
     private _internalRTree: RTree<TrackSegmentWithCollisionAndNumber> = new RTree<TrackSegmentWithCollisionAndNumber>();
 
+    private _internalDrawData: TrackSegmentDrawData[] = [];
+    private _drawDataDirty = true;
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
             segment: TrackSegmentWithCollision;
@@ -1042,6 +1052,9 @@ export class TrackCurveManager {
     }
 
     experimental(): TrackSegmentDrawData[] {
+        if(!this._drawDataDirty){
+            return this._internalDrawData;
+        }
         const res: TrackSegmentDrawData[] = [];
         const tracks = this._internalTrackCurveManager.getLivingEntitiesWithIndex();
         tracks.forEach((track)=>{
@@ -1072,6 +1085,8 @@ export class TrackCurveManager {
                 res.push(drawData);
             });
         });
+        this._internalDrawData = res;
+        this._drawDataDirty = false;
         return res;
     }
 
@@ -1255,6 +1270,7 @@ export class TrackCurveManager {
         }
 
         this._internalRTree.insert(aabbRectangle, trackSegmentTreeEntry);
+        this._drawDataDirty = true;
         return curveNumber;
     }
 
@@ -1272,6 +1288,7 @@ export class TrackCurveManager {
         }
         this._internalRTree.remove(rectangle, trackSegmentTreeEntry);
         this._internalTrackCurveManager.destroyEntity(curveNumber);
+        this._drawDataDirty = true;
     }
 
     get livingEntities(): number[] {
