@@ -1051,10 +1051,53 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
+    experimentalWith(): TrackSegmentDrawData[]{
+        if(!this._drawDataDirty){
+            return this._internalDrawData;
+        }
+        const rectangle = new Rectangle(0, 0, 200, 200);
+        const trackWithInViewport = this._internalRTree.search(rectangle);
+        const res: TrackSegmentDrawData[] = [];
+        trackWithInViewport.forEach((track)=>{
+            const trackSegment = track; 
+            const index = track.trackSegmentNumber;
+            trackSegment.splitCurves.forEach((splitCurve)=>{
+                const cps = trackSegment.curve.getControlPoints();
+                const startPosition = cps[0];
+                const endPosition = cps[cps.length - 1];
+                const drawData: TrackSegmentDrawData = {
+                    curve: splitCurve.curve,
+                    originalTrackSegment: {
+                        trackSegmentNumber: index,
+                        tValInterval: {
+                            start: splitCurve.tValInterval.start,
+                            end: splitCurve.tValInterval.end,
+                        },
+                        startJointPosition: startPosition,
+                        endJointPosition: endPosition,
+                    },
+                    originalElevation: {
+                        from: trackSegment.elevation.from,
+                        to: trackSegment.elevation.to,
+                    },
+                    elevation: splitCurve.elevation,
+                    excludeSegmentsForCollisionCheck: new Set(),
+                };
+                res.push(drawData);
+            });
+        });
+        this._internalDrawData = res;
+        this._drawDataDirty = false;
+        return res;
+
+    }
+
     experimental(): TrackSegmentDrawData[] {
         if(!this._drawDataDirty){
             return this._internalDrawData;
         }
+        const rectangle = new Rectangle(0, 0, 200, 200);
+        const trackWithInViewport = this._internalRTree.search(rectangle);
         const res: TrackSegmentDrawData[] = [];
         const tracks = this._internalTrackCurveManager.getLivingEntitiesWithIndex();
         tracks.forEach((track)=>{

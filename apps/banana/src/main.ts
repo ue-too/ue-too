@@ -11,6 +11,7 @@ import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
 import { Bezier, Point } from "bezier-js";
 
+
 const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
 const res = testCurve.splitIn3Curves(0.25, 0.75);
 
@@ -214,6 +215,7 @@ stats.dom.style.top = "0px";
 stats.dom.style.left = "0px";
 
 const board = new Board(canvas, true);
+console.log('view port in world space', board.camera.viewPortInWorldSpace());
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 console.log('camera boundaries', board.camera.boundaries);
 

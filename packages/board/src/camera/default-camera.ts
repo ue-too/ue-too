@@ -308,4 +308,8 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}} {
         return this._baseCamera.getTRS(devicePixelRatio, alignCoordinateSystem);
     }
+
+    viewPortInWorldSpace(alignCoordinate: boolean = true): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}}{
+        return this._baseCamera.viewPortInWorldSpace(alignCoordinate);
+    }
 }

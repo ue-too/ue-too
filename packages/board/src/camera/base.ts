@@ -399,4 +399,16 @@ export default class BaseCamera implements BoardCamera {
         this._boundaries.min.y = min;
         this._boundaries.max.y = max;
     }
+
+    viewPortInWorldSpace(alignCoordinate: boolean = true): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}}{
+        const topLeftCorner = convert2WorldSpaceAnchorAtCenter({x: -this._viewPortWidth / 2, y: alignCoordinate ? -this._viewPortHeight / 2 : this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
+        const topRightCorner = convert2WorldSpaceAnchorAtCenter({x: this._viewPortWidth / 2, y: alignCoordinate ? -this._viewPortHeight / 2 : this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
+        const bottomLeftCorner = convert2WorldSpaceAnchorAtCenter({x: -this._viewPortWidth / 2, y: alignCoordinate ? this._viewPortHeight / 2 : -this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
+        const bottomRightCorner = convert2WorldSpaceAnchorAtCenter({x: this._viewPortWidth / 2, y: alignCoordinate ? this._viewPortHeight / 2 : -this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
+
+        return {
+            top: {left: topLeftCorner, right: topRightCorner},
+            bottom: {left: bottomLeftCorner, right: bottomRightCorner},
+        }
+    }
 }

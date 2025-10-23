@@ -30,6 +30,7 @@ export interface BoardCamera {
     boundaries?: Boundaries;
     zoomBoundaries?: ZoomLevelLimits;
     rotationBoundaries?: RotationLimits;
+    viewPortInWorldSpace(alignCoordinate?: boolean): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}};
     setPosition(destination: Point): boolean;
     setZoomLevel(zoomLevel: number): boolean;
     setRotation(rotation: number): boolean;
