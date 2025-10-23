@@ -312,4 +312,8 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     viewPortInWorldSpace(alignCoordinate: boolean = true): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}}{
         return this._baseCamera.viewPortInWorldSpace(alignCoordinate);
     }
+
+    viewPortAABB(alignCoordinate: boolean = true): {min: Point, max: Point}{
+        return this._baseCamera.viewPortAABB(alignCoordinate);
+    }
 }

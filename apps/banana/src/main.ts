@@ -1,4 +1,4 @@
-import { Board, convertDeltaToComplyWithRestriction, drawArrow } from "@ue-too/board";
+import { Board, convertDeltaToComplyWithRestriction, drawArrow, drawRuler } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
 import { createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
@@ -10,6 +10,7 @@ import villageGeoJSON from "./tainan-village";
 import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
 import { Bezier, Point } from "bezier-js";
+import { Rectangle } from "./r-tree";
 
 
 const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
@@ -499,7 +500,13 @@ function step(timestamp: number){
     }
 
     // NOTE with draw order sorted by elevation
-    curveEngine.trackGraph.experimental().forEach((drawData)=>{
+    const viewportAABB = board.camera.viewPortAABB();
+    const viewportRange = new Rectangle(viewportAABB.min.x, viewportAABB.min.y, viewportAABB.max.x - viewportAABB.min.x, viewportAABB.max.y - viewportAABB.min.y);
+    const drawData = curveEngine.trackGraph.getDrawData(viewportRange)
+    if(drawData.length === 0){
+        console.log('no draw data');
+    }
+    drawData.forEach((drawData)=>{
         if(board.context === undefined){
             return;
         }
@@ -658,6 +665,23 @@ function step(timestamp: number){
         capture = false;
     }
 
+    const topLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
+    const topRightCornerInViewPort = board.alignCoordinateSystem ? {x: board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
+    const bottomLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2};
+
+    const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(topLeftCornerInViewPort);
+    const topRightCornerInWorld = board.camera.convertFromViewPort2WorldSpace(topRightCornerInViewPort);
+    const bottomLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(bottomLeftCornerInViewPort);
+
+    drawRuler(
+        board.context, 
+        topLeftCornerInWorld, 
+        topRightCornerInWorld, 
+        bottomLeftCornerInWorld, 
+        board.alignCoordinateSystem, 
+        board.camera.zoomLevel, 
+    );
+
     stats.end();
     window.requestAnimationFrame(step);
 }
@@ -668,15 +692,17 @@ window.requestAnimationFrame(step);
 initializeGeoJSON();
 
 utilButton.addEventListener("click", ()=>{
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
-    window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
+    // window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+
+    console.log('viewport aabb', board.camera.viewPortAABB());
 });
 
 const p1Button = document.getElementById("p1") as HTMLButtonElement;

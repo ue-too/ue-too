@@ -411,4 +411,13 @@ export default class BaseCamera implements BoardCamera {
             bottom: {left: bottomLeftCorner, right: bottomRightCorner},
         }
     }
+
+    viewPortAABB(alignCoordinate?: boolean): {min: Point, max: Point}{
+        const {top: {left: topLeft, right: topRight}, bottom: {left: bottomLeft, right: bottomRight}} = this.viewPortInWorldSpace(alignCoordinate);
+
+        return {
+            min: {x: Math.min(topLeft.x, bottomLeft.x, topRight.x, bottomRight.x), y: Math.min(topLeft.y, bottomLeft.y, topRight.y, bottomRight.y)},
+            max: {x: Math.max(topLeft.x, bottomLeft.x, topRight.x, bottomRight.x), y: Math.max(topLeft.y, bottomLeft.y, topRight.y, bottomRight.y)},
+        };
+    }
 }

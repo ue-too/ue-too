@@ -889,6 +889,41 @@ export class TrackGraph {
         });
     }
 
+    getDrawData(viewportRange: Rectangle): TrackSegmentDrawData[] {
+        const segments = this._trackCurveManager.experimentalWith(viewportRange);
+        if(!this._drawDataDirty){
+            return this._drawData;
+        }
+        this._drawData = segments.sort((a, b) => {
+            if(!trackIsSloped(a) && !trackIsSloped(b)){
+                return a.elevation.from - b.elevation.from;
+            }
+
+            const overlaps = elevationIntervalOverlaps(a, b);
+            const aMax = Math.max(a.elevation.from, a.elevation.to);
+            const bMax = Math.max(b.elevation.from, b.elevation.to);
+            if(!overlaps){
+                return aMax - bMax;
+            }
+            if(a.excludeSegmentsForCollisionCheck.has(b.originalTrackSegment.trackSegmentNumber) || b.excludeSegmentsForCollisionCheck.has(a.originalTrackSegment.trackSegmentNumber)){
+                return 0;
+            }
+            const collision = a.curve.getCurveIntersections(b.curve);
+            if(collision.length === 0){
+                return aMax - bMax;
+            }
+            if(collision.length !== 1){
+                console.warn('something wrong in the sorting of track segments draw order')
+                return 0;
+            }
+            const aElevation = getElevationAtT(collision[0].selfT, {elevation: {from: a.elevation.from * LEVEL_HEIGHT, to: a.elevation.to * LEVEL_HEIGHT}});
+            const bElevation = getElevationAtT(collision[0].otherT, {elevation: {from: b.elevation.from * LEVEL_HEIGHT, to: b.elevation.to * LEVEL_HEIGHT}});
+            return aElevation - bElevation;
+        });
+        this._drawDataDirty = false;
+        return this._drawData;
+    }
+
     experimental(): TrackSegmentDrawData[] {
         const segments = this._trackCurveManager.experimental();
         if(!this._drawDataDirty){
@@ -1051,12 +1086,11 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
-    experimentalWith(): TrackSegmentDrawData[]{
+    experimentalWith(viewportRange: Rectangle): TrackSegmentDrawData[]{
         if(!this._drawDataDirty){
             return this._internalDrawData;
         }
-        const rectangle = new Rectangle(0, 0, 200, 200);
-        const trackWithInViewport = this._internalRTree.search(rectangle);
+        const trackWithInViewport = this._internalRTree.search(viewportRange);
         const res: TrackSegmentDrawData[] = [];
         trackWithInViewport.forEach((track)=>{
             const trackSegment = track; 
