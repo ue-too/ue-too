@@ -469,7 +469,11 @@ function step(timestamp: number){
 
     lastTimestamp = timestamp;
 
-    if(curveEngine.previewCurve !== null && board.context !== undefined){
+    if(board.context === undefined){
+        return;
+    }
+
+    if(curveEngine.previewCurve !== null){
         const cps = curveEngine.previewCurve.curve.getControlPoints();
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
@@ -578,10 +582,6 @@ function step(timestamp: number){
 
 
     // offset as line segments
-    if(board.context === undefined){
-        return;
-    }
-
     board.context.save();
     curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
         if(board.context === undefined){

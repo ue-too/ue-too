@@ -772,11 +772,11 @@ export class TrackGraph {
             return {hit: true, ...jointRes};
         }
         if(curveRes !== null){
-            console.log("curve hit", curveRes);
+            // console.log("curve hit", curveRes);
             return {hit: true, hitType: "curve", ...curveRes};
         }
         if(edgeRes !== null){
-            console.log("edge hit", edgeRes);
+            // console.log("edge hit", edgeRes);
             return {hit: true, hitType: "edge", ...edgeRes};
         }
         return {hit: false};
