@@ -1148,11 +1148,11 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getEntity(segmentNumber)?.segment ?? null;
     }
 
-    checkForCollisions(curve: BCurve, excludeSegmentsForCollisionCheck: Set<number> = new Set()): {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] {
+    checkForCollisions(curve: BCurve, excludeSegmentsForCollisionCheck: Set<number> = new Set(), skipFlat: boolean = false): {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] {
         const collisions: {selfT: number, anotherCurve: {curve: BCurve, tVal: number}}[] = [];
         const rect = new Rectangle(curve.AABB.min.x, curve.AABB.min.y, curve.AABB.max.x, curve.AABB.max.y);
         const possibleCollisions = this._internalRTree.search(rect);
-        possibleCollisions.filter((segment)=>!excludeSegmentsForCollisionCheck.has(segment.trackSegmentNumber)).forEach((segment)=>{
+        possibleCollisions.filter((segment)=>!excludeSegmentsForCollisionCheck.has(segment.trackSegmentNumber) && (!skipFlat || segment.elevation.from !== segment.elevation.to)).forEach((segment)=>{
             const intersections = segment.curve.getCurveIntersections(curve).map((intersection)=>{
                 return {selfT: intersection.otherT, anotherCurve: {curve: segment.curve, tVal: intersection.selfT}};
             });
@@ -1269,8 +1269,18 @@ export class TrackCurveManager {
         const collisionT: number[] = [];
 
         if(t0Elevation !== t1Elevation){
-
+            // the new curve is sloped
             const internalIntersections = this.checkForCollisions(curve, excludeSegmentsForCollisionCheck);
+
+            internalIntersections.sort((a, b) => a.selfT - b.selfT).forEach((intersection)=>{
+                collisionT.push(intersection.selfT);
+                const insertT = Math.round(((intersection.selfT + startT) / 2) * 100) / 100;
+                insertionT.push(insertT);
+                startT = intersection.selfT;
+            });
+        } else {
+            // the new curve is flat
+            const internalIntersections = this.checkForCollisions(curve, excludeSegmentsForCollisionCheck, true);
 
             internalIntersections.sort((a, b) => a.selfT - b.selfT).forEach((intersection)=>{
                 collisionT.push(intersection.selfT);
