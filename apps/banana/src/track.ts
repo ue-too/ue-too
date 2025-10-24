@@ -1290,20 +1290,27 @@ export class TrackCurveManager {
         if(insertionT.length === 0){
             splits.push({curve: curve, elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}, tValInterval: {start: 0, end: 1}});
         } else {
-            {
-                const [startingCurve, _] = curve.splitIntoCurves(insertionT[0]);
-                const startElevation = getElevationAtT(startT, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
-                const endElevation = getElevationAtT(insertionT[0], {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
-                splits.push({curve: startingCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: 0, end: insertionT[0]}});
-            }
+            // {
+            //     const [startingCurve, _] = curve.splitIntoCurves(insertionT[0]);
+            //     const startElevation = getElevationAtT(startT, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+            //     const endElevation = getElevationAtT(insertionT[0], {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+            //     splits.push({curve: startingCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: 0, end: insertionT[0]}});
+            // }
 
             // for(let i = 0; i < insertionT.length - 1; i++){
-            //     const tVal = insertionT[i];
-            //     const nextTVal = insertionT[i + 1];
-            //     const [_, secondCurve] = curve.splitIn3Curves(tVal, nextTVal);
-            //     const startElevation = getElevationAtT(tVal, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
-            //     const endElevation = getElevationAtT(nextTVal, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
-            //     splits.push({curve: secondCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: tVal, end: nextTVal}});
+                const tVal = insertionT[0];
+                const nextTVal = insertionT[1];
+                const [firstCurve, secondCurve, thirdCurve] = curve.splitIn3Curves(tVal, nextTVal);
+                const [firstCurve1, secondCurve1] = curve.splitIntoCurves(nextTVal);
+                console.log('firstCurve', firstCurve);
+                console.log('secondCurve', secondCurve);
+                console.log('thirdCurve', thirdCurve);
+
+                console.log('firstCurve1', firstCurve1);
+                console.log('secondCurve1', secondCurve1);
+                const startElevation = getElevationAtT(tVal, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+                const endElevation = getElevationAtT(nextTVal, {elevation: {from: t0Elevation * LEVEL_HEIGHT, to: t1Elevation * LEVEL_HEIGHT}});
+                splits.push({curve: secondCurve, elevation: {from: startElevation, to: endElevation}, tValInterval: {start: tVal, end: nextTVal}});
             // }
 
             {

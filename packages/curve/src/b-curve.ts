@@ -355,8 +355,10 @@ export class BCurve{
         const firstSplit = this.split(tVal);
 
         const secondHalf = new BCurve(firstSplit[1]);
+
+        const mappedTVal2 = map(tVal2, tVal, 1, 0, 1);
         
-        const secondSplit = secondHalf.split(tVal2);
+        const secondSplit = secondHalf.split(mappedTVal2);
 
         return [firstSplit[0], secondSplit[0], secondSplit[1]];
     }
@@ -371,7 +373,8 @@ export class BCurve{
 
         const secondHalf = new BCurve(firstSplit[1]);
         
-        const secondSplit = secondHalf.split(tVal2);
+        const mappedTVal2 = map(tVal2, tVal, 1, 0, 1);
+        const secondSplit = secondHalf.split(mappedTVal2);
 
         return [new BCurve(firstSplit[0]), new BCurve(secondSplit[0]), new BCurve(secondSplit[1])];
     }
