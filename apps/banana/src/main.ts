@@ -710,21 +710,30 @@ const curveCalculator = new PreviewCurveCalculator();
 
 utilButton.addEventListener("click", ()=>{
 
+    // NOTE check track draw order
+    const trackSegmentNumber = 1;
+    const tVal = 0.5;
+    const order = curveEngine.trackGraph.getTrackDrawDataOrder(trackSegmentNumber, tVal);
+    const totalCount = curveEngine.trackGraph.getDrawData(board.camera.viewPortAABB()).length;
+    console.log('totalCount', totalCount);
+    console.log('order', order);
 
-    for(let i = 0; i < 10; i++){
-        const viewportAABB = board.camera.viewPortAABB();
-        const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-        const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-        const tangent = PointCal.unitVector(getRandomPoint(0, 1));
-        const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
-        const elevation = Math.floor(Math.random() * 7) - 3;
-        const elevation2 = Math.floor(Math.random() * 7) - 3;
-        const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
-        const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
-        const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
-        curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
-    }
+    // NOTE pressure test
+    // for(let i = 0; i < 10; i++){
+    //     const viewportAABB = board.camera.viewPortAABB();
+    //     const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+    //     const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+    //     const tangent = PointCal.unitVector(getRandomPoint(0, 1));
+    //     const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
+    //     const elevation = Math.floor(Math.random() * 7) - 3;
+    //     const elevation2 = Math.floor(Math.random() * 7) - 3;
+    //     const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
+    //     const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
+    //     const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
+    //     curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
+    // }
 
+    // NOTE debug same direction
     // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
     // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
     // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));

@@ -186,7 +186,7 @@ export class TrackGraph {
     private _trackCurveManager: TrackCurveManager = new TrackCurveManager(10);
 
     private _drawDataDirty = true;
-    private _drawData: TrackSegmentDrawData[] = [];
+    private _drawData: (TrackSegmentDrawData & {callback(index: number): void})[] = [];
 
     getJoints(): {jointNumber: number, joint: TrackJoint}[] {
         return this._jointManager.getJoints();
@@ -918,9 +918,7 @@ export class TrackGraph {
             if(!broad){
                 return aMax - bMax;
             }
-            console.time('collision');
             const collision = a.curve.getCurveIntersections(b.curve);
-            console.timeEnd('collision');
             if(collision.length === 0){
                 return aMax - bMax;
             }
@@ -938,8 +936,62 @@ export class TrackGraph {
             const aabb = segment.curve.AABB;
             return AABBIntersects(viewportAABB, aabb);
         });
+        res.forEach((segment, index)=>{
+            segment.callback(index);
+        });
         return res;
     }
+
+    getTrackDrawDataOrder(trackSegmentNumber: number, tVal: number): number | null {
+
+        const trackSegment = this._trackCurveManager.getTrackSegmentWithJoints(trackSegmentNumber);
+        if(trackSegment === null){
+            console.warn('track segment not found in getTrackDrawDataOrder');
+            return null;
+        }
+
+        const splits = trackSegment.splitCurves;
+
+        const index = this._findTValIntervalIndex(splits, tVal);
+
+        if(index === null){
+            console.warn('tVal is not in any of the tVal intervals');
+            return null;
+        }
+
+        const interval = splits[index].tValInterval;
+
+        const order = this._trackCurveManager.getTrackOrder(trackSegmentNumber, interval);
+
+        if(order === null){
+            console.warn('track order not found in getTrackDrawDataOrder');
+            return null;
+        }
+
+        return order;
+    }
+
+    private _findTValIntervalIndex(splits: {tValInterval: {start: number, end: number}}[], tVal: number): number | null {
+        let left = 0;
+        let right = splits.length - 1;
+
+        while(left <= right){
+            const mid = Math.floor((left + right) / 2);
+            const midStartTVal = splits[mid].tValInterval.start;
+            const midEndTVal = splits[mid].tValInterval.end;
+            if(tVal >= midStartTVal && tVal <= midEndTVal){
+                return mid;
+            }
+            if(tVal < midStartTVal){
+                right = mid - 1;
+            }
+            else{
+                left = mid + 1;
+            }
+        }
+        return null;
+    }
+
 
     experimental(): TrackSegmentDrawData[] {
         const segments = this._trackCurveManager.experimental();
@@ -1082,8 +1134,10 @@ export class TrackCurveManager {
 
     private _internalRTree: RTree<TrackSegmentWithCollisionAndNumber> = new RTree<TrackSegmentWithCollisionAndNumber>();
 
-    private _internalDrawData: TrackSegmentDrawData[] = [];
+    private _internalDrawData: (TrackSegmentDrawData & {callback(index: number): void})[] = [];
     private _drawDataDirty = true;
+
+    private _trackOrderMap: Map<string, number> = new Map();
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
@@ -1103,14 +1157,19 @@ export class TrackCurveManager {
         return this._internalTrackCurveManager.getLivingEntities().map((trackSegment) => trackSegment.segment)
     }
 
-    experimental(): TrackSegmentDrawData[] {
+    getTrackOrder(trackSegmentNumber: number, tValInterval: {start: number, end: number}): number | null {
+        console.log(this._trackOrderMap);
+        console.log(JSON.stringify({trackSegmentNumber, tValInterval}));
+        return this._trackOrderMap.get(JSON.stringify({trackSegmentNumber, tValInterval})) ?? null;
+    }
+
+    experimental(): (TrackSegmentDrawData & {callback(index: number): void})[] {
         if(!this._drawDataDirty){
             return this._internalDrawData;
         }
-        const rectangle = new Rectangle(0, 0, 200, 200);
-        const trackWithInViewport = this._internalRTree.search(rectangle);
-        const res: TrackSegmentDrawData[] = [];
+        const res: (TrackSegmentDrawData & {callback(index: number): void})[] = [];
         const tracks = this._internalTrackCurveManager.getLivingEntitiesWithIndex();
+        this._trackOrderMap.clear();
         tracks.forEach((track)=>{
             const trackSegment = track.entity; 
             const index = track.index;
@@ -1118,7 +1177,9 @@ export class TrackCurveManager {
                 const cps = trackSegment.segment.curve.getControlPoints();
                 const startPosition = cps[0];
                 const endPosition = cps[cps.length - 1];
-                const drawData: TrackSegmentDrawData = {
+                const drawData: TrackSegmentDrawData & {
+                    callback(index: number): void;
+                } = {
                     curve: splitCurve.curve,
                     originalTrackSegment: {
                         trackSegmentNumber: index,
@@ -1135,6 +1196,9 @@ export class TrackCurveManager {
                     },
                     elevation: splitCurve.elevation,
                     excludeSegmentsForCollisionCheck: new Set(),
+                    callback: ((drawIndex: number) => {
+                        this._trackOrderMap.set(JSON.stringify({trackSegmentNumber: index, tValInterval: splitCurve.tValInterval}), drawIndex);
+                    }).bind(this)
                 };
                 res.push(drawData);
             });
