@@ -1,7 +1,7 @@
 import { Board, convertDeltaToComplyWithRestriction, drawArrow, drawRuler } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
-import { createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
+import { createCubicFromTangentsCurvatures, createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 import { mercatorProjection } from "@ue-too/border";
@@ -11,6 +11,7 @@ import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
 import { Bezier, Point } from "bezier-js";
 import { Rectangle } from "./r-tree";
+import { PreviewCurveCalculator } from "./new-joint";
 
 
 const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
@@ -139,6 +140,10 @@ const getRandomPoint = (min: number, max: number) => {
         x: Math.random() * (max - min) + min,
         y: Math.random() * (max - min) + min,
     }
+}
+
+const getRandomNumber = (min: number, max: number) => {
+    return Math.random() * (max - min) + min;
 }
 
 
@@ -501,17 +506,27 @@ function step(timestamp: number){
 
     // NOTE with draw order sorted by elevation
     const viewportAABB = board.camera.viewPortAABB();
-    const viewportRange = new Rectangle(viewportAABB.min.x, viewportAABB.min.y, viewportAABB.max.x - viewportAABB.min.x, viewportAABB.max.y - viewportAABB.min.y);
-    const drawData = curveEngine.trackGraph.getDrawData(viewportRange)
-    if(drawData.length === 0){
-        console.log('no draw data');
-    }
+    const drawData = curveEngine.trackGraph.getDrawData(viewportAABB);
+
     drawData.forEach((drawData)=>{
         if(board.context === undefined){
             return;
         }
 
         const cps = drawData.curve.getControlPoints();
+
+        board.context.save();
+        board.context.beginPath();
+        board.context.arc(cps[0].x, cps[0].y, 3, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
+        board.context.save();
+        board.context.beginPath();
+        board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 3, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
 
         board.context.save();
         board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
@@ -691,7 +706,25 @@ window.requestAnimationFrame(step);
 // Initialize GeoJSON data
 initializeGeoJSON();
 
+const curveCalculator = new PreviewCurveCalculator();
+
 utilButton.addEventListener("click", ()=>{
+
+
+    for(let i = 0; i < 10; i++){
+        const viewportAABB = board.camera.viewPortAABB();
+        const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+        const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+        const tangent = PointCal.unitVector(getRandomPoint(0, 1));
+        const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
+        const elevation = Math.floor(Math.random() * 7) - 3;
+        const elevation2 = Math.floor(Math.random() * 7) - 3;
+        const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
+        const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
+        const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
+        curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
+    }
+
     // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
     // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
     // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
@@ -702,8 +735,10 @@ utilButton.addEventListener("click", ()=>{
     // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
     // window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
 
+
     console.log('viewport aabb', board.camera.viewPortAABB());
 });
+
 
 const p1Button = document.getElementById("p1") as HTMLButtonElement;
 const neutralButton = document.getElementById("neutral") as HTMLButtonElement;

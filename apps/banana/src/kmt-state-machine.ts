@@ -931,7 +931,7 @@ function calibrateTangent(rawTangent: Point, curveStartPoint: Point, curveEndPoi
     };
 }
 
-function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
+export function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
     const unitStartTangent = PointCal.unitVector(startTangent);
     const unitEndTangent = PointCal.unitVector(endTangent);
     
