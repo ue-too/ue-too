@@ -5,8 +5,6 @@ import { createCubicFromTangentsCurvatures, createLayoutStateMachine, CurveCreat
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 import { mercatorProjection } from "@ue-too/border";
-import districtGeoJSON from "./tainan-district";
-import villageGeoJSON from "./tainan-village";
 import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
 import { Bezier, Point } from "bezier-js";
@@ -279,13 +277,19 @@ function renderGeoJSONPolygons(features: Array<{ coordinates: number[][], proper
 }
 
 // Initialize GeoJSON data
-function initializeGeoJSON() {
+async function initializeGeoJSON() {
     try {
         console.log("Initializing GeoJSON data...");
-        
-        // Use imported data directly
-        districtData = districtGeoJSON as GeoJSONFeatureCollection;
-        villageData = villageGeoJSON as GeoJSONFeatureCollection;
+        const base = import.meta.env.BASE_URL || "/";
+        const [districtResp, villageResp] = await Promise.all([
+            fetch(`${base}tainan-district.json`),
+            fetch(`${base}tainan-village.json`),
+        ]);
+        if (!districtResp.ok || !villageResp.ok) {
+            throw new Error(`Failed to fetch GeoJSON: ${districtResp.status}/${villageResp.status}`);
+        }
+        districtData = await districtResp.json() as GeoJSONFeatureCollection;
+        villageData = await villageResp.json() as GeoJSONFeatureCollection;
         
         // Convert to world coordinates
         const districtResult = geoJSONToWorldCoordinates(districtData);

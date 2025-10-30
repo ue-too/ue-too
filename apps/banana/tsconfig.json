@@ -7,11 +7,12 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
   },
   "include": [
     "src/**/*",
-    "assets/*.json"
+    "assets/*.json",
   ],
   "references": [
     {
