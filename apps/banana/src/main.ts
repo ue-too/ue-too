@@ -1,15 +1,23 @@
-import { Board, convertDeltaToComplyWithRestriction, drawArrow } from "@ue-too/board";
+import { Board, convertDeltaToComplyWithRestriction, drawArrow, drawRuler } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
-import { createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
+import { createCubicFromTangentsCurvatures, createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 import { mercatorProjection } from "@ue-too/border";
-import districtGeoJSON from "./tainan-district";
-import villageGeoJSON from "./tainan-village";
 import "./media";
 import { ELEVATION, trackIsSloped } from "./track";
-import { Bezier } from "bezier-js";
+import { Bezier, Point } from "bezier-js";
+import { Rectangle } from "./r-tree";
+import { PreviewCurveCalculator } from "./new-joint";
+
+
+const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
+const res = testCurve.splitIn3Curves(0.25, 0.75);
+
+const firstCurve = res[0];
+const secondCurve = res[1];
+const thirdCurve = res[2];
 
 // curve 1 control points [
 //     {
@@ -132,6 +140,10 @@ const getRandomPoint = (min: number, max: number) => {
     }
 }
 
+const getRandomNumber = (min: number, max: number) => {
+    return Math.random() * (max - min) + min;
+}
+
 
 // Function to convert GeoJSON coordinates to world coordinates
 function geoJSONToWorldCoordinates(geoJSON: GeoJSONFeatureCollection, bounds?: { minLng: number, minLat: number, maxLng: number, maxLat: number }) {
@@ -207,6 +219,7 @@ stats.dom.style.top = "0px";
 stats.dom.style.left = "0px";
 
 const board = new Board(canvas, true);
+console.log('view port in world space', board.camera.viewPortInWorldSpace());
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 console.log('camera boundaries', board.camera.boundaries);
 
@@ -264,13 +277,19 @@ function renderGeoJSONPolygons(features: Array<{ coordinates: number[][], proper
 }
 
 // Initialize GeoJSON data
-function initializeGeoJSON() {
+async function initializeGeoJSON() {
     try {
         console.log("Initializing GeoJSON data...");
-        
-        // Use imported data directly
-        districtData = districtGeoJSON as GeoJSONFeatureCollection;
-        villageData = villageGeoJSON as GeoJSONFeatureCollection;
+        const base = import.meta.env.BASE_URL || "/";
+        const [districtResp, villageResp] = await Promise.all([
+            fetch(`${base}tainan-district.json`),
+            fetch(`${base}tainan-village.json`),
+        ]);
+        if (!districtResp.ok || !villageResp.ok) {
+            throw new Error(`Failed to fetch GeoJSON: ${districtResp.status}/${villageResp.status}`);
+        }
+        districtData = await districtResp.json() as GeoJSONFeatureCollection;
+        villageData = await villageResp.json() as GeoJSONFeatureCollection;
         
         // Convert to world coordinates
         const districtResult = geoJSONToWorldCoordinates(districtData);
@@ -462,16 +481,8 @@ function step(timestamp: number){
 
     lastTimestamp = timestamp;
 
-    if(curveEngine.previewCurve !== null && board.context !== undefined){
-        const cps = curveEngine.previewCurve.curve.getControlPoints();
-        board.context.beginPath();
-        board.context.moveTo(cps[0].x, cps[0].y);
-        if(cps.length === 3){
-            board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-        } else {
-            board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
-        }
-        board.context.stroke();
+    if(board.context === undefined){
+        return;
     }
     
     // Clear offset cache when track changes (simple version - clear when number of segments changes)
@@ -481,68 +492,11 @@ function step(timestamp: number){
         trackCacheVersion++;
     }
 
-    // curveEngine.trackGraph.trackSegments.forEach((trackSegment, index)=>{ 
-    //     if(board.context === undefined){
-    //         return;
-    //     }
-    //     const cps = trackSegment.curve.getControlPoints();
-    //     board.context.save();
-    //     board.context.lineWidth = 1 / board.camera.zoomLevel;
-    //     board.context.strokeStyle = "green";
-    //     board.context.beginPath();
-    //     board.context.moveTo(cps[0].x, cps[0].y);
-    //     if(cps.length === 3){
-    //         board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
-    //     } else {
-    //         board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
-    //     }
-    //     board.context.stroke();
-    //     board.context.restore();
-    // });
-
-    curveEngine.trackGraph.getSortedTrackSegments().forEach((trackSegment)=>{
-        if(board.context === undefined){
-            return;
-        }
-        const cps = trackSegment.curve.getControlPoints();
+    if(curveEngine.previewCurve !== null){
+        const cps = curveEngine.previewCurve.curve.getControlPoints();
         board.context.save();
+        board.context.strokeStyle = createGradient(board.context, curveEngine.previewCurve.elevation.from, curveEngine.previewCurve.elevation.to, cps[0], cps[1]);
         board.context.lineWidth = 5 / board.camera.zoomLevel;
-        
-        // Helper function to get color for elevation
-        const getElevationColor = (elevation: ELEVATION): string => {
-            switch(elevation){
-                case ELEVATION.SUB_3:
-                    return "red";
-                case ELEVATION.SUB_2:
-                    return "orange";
-                case ELEVATION.SUB_1:
-                    return "yellow";
-                case ELEVATION.GROUND:
-                    return "green";
-                case ELEVATION.ABOVE_1:
-                    return "cyan";
-                case ELEVATION.ABOVE_2:
-                    return "magenta";
-                case ELEVATION.ABOVE_3:
-                    return "blue";
-                default:
-                    return "gray";
-            }
-        };
-        
-        // Create linear gradient from start to end of the curve
-        const startColor = getElevationColor(trackSegment.elevation.from);
-        const endColor = getElevationColor(trackSegment.elevation.to);
-        
-        // Create gradient along the curve from start point to end point
-        const gradient = board.context.createLinearGradient(
-            cps[0].x, cps[0].y,
-            cps[cps.length - 1].x, cps[cps.length - 1].y
-        );
-        gradient.addColorStop(0, startColor);
-        gradient.addColorStop(1, endColor);
-        
-        board.context.strokeStyle = gradient;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -552,27 +506,48 @@ function step(timestamp: number){
         }
         board.context.stroke();
         board.context.restore();
+    }
+
+    // NOTE with draw order sorted by elevation
+    const viewportAABB = board.camera.viewPortAABB();
+    const drawData = curveEngine.trackGraph.getDrawData(viewportAABB);
+
+    drawData.forEach((drawData)=>{
+        if(board.context === undefined){
+            return;
+        }
+
+        const cps = drawData.curve.getControlPoints();
 
         board.context.save();
-        board.context.fillStyle = "rgba(255, 0, 0, 0.5)";
-        trackSegment.collision.forEach((collision)=>{
-            if(board.context === undefined){
-                return;
-            }
-            board.context.beginPath();
-            const point = trackSegment.curve.get(collision.selfT);
-            board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-            board.context.fill();
-        });
+        board.context.beginPath();
+        board.context.arc(cps[0].x, cps[0].y, 3, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
+        board.context.save();
+        board.context.beginPath();
+        board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 3, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
+
+        board.context.save();
+        board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
+        board.context.lineWidth = 5 / board.camera.zoomLevel;
+        board.context.beginPath();
+        board.context.moveTo(cps[0].x, cps[0].y);
+        if(cps.length === 3){
+            board.context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        } else {
+            board.context.bezierCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y, cps[3].x, cps[3].y);
+        }
+        board.context.stroke();
         board.context.restore();
     });
 
 
     // offset as line segments
-    if(board.context === undefined){
-        return;
-    }
-
     board.context.save();
     curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
         if(board.context === undefined){
@@ -709,6 +684,23 @@ function step(timestamp: number){
         capture = false;
     }
 
+    const topLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
+    const topRightCornerInViewPort = board.alignCoordinateSystem ? {x: board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};
+    const bottomLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2};
+
+    const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(topLeftCornerInViewPort);
+    const topRightCornerInWorld = board.camera.convertFromViewPort2WorldSpace(topRightCornerInViewPort);
+    const bottomLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(bottomLeftCornerInViewPort);
+
+    drawRuler(
+        board.context, 
+        topLeftCornerInWorld, 
+        topRightCornerInWorld, 
+        bottomLeftCornerInWorld, 
+        board.alignCoordinateSystem, 
+        board.camera.zoomLevel, 
+    );
+
     stats.end();
     window.requestAnimationFrame(step);
 }
@@ -718,17 +710,48 @@ window.requestAnimationFrame(step);
 // Initialize GeoJSON data
 initializeGeoJSON();
 
+const curveCalculator = new PreviewCurveCalculator();
+
 utilButton.addEventListener("click", ()=>{
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
-    canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
-    canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
-    window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+
+    // NOTE check track draw order
+    const trackSegmentNumber = 1;
+    const tVal = 0.5;
+    const order = curveEngine.trackGraph.getTrackDrawDataOrder(trackSegmentNumber, tVal);
+    const totalCount = curveEngine.trackGraph.getDrawData(board.camera.viewPortAABB()).length;
+    console.log('totalCount', totalCount);
+    console.log('order', order);
+
+    // NOTE pressure test
+    // for(let i = 0; i < 10; i++){
+    //     const viewportAABB = board.camera.viewPortAABB();
+    //     const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+    //     const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
+    //     const tangent = PointCal.unitVector(getRandomPoint(0, 1));
+    //     const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
+    //     const elevation = Math.floor(Math.random() * 7) - 3;
+    //     const elevation2 = Math.floor(Math.random() * 7) - 3;
+    //     const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
+    //     const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
+    //     const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
+    //     curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
+    // }
+
+    // NOTE debug same direction
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
+    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
+    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
+    // window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
+
+
+    console.log('viewport aabb', board.camera.viewPortAABB());
 });
+
 
 const p1Button = document.getElementById("p1") as HTMLButtonElement;
 const neutralButton = document.getElementById("neutral") as HTMLButtonElement;
@@ -784,4 +807,43 @@ function colorForJoint(joint: NewJointType) {
         case "branchCurve":
             return "yellow";
     }
+}
+
+const getElevationColor = (elevation: ELEVATION): string => {
+    switch(elevation){
+        case ELEVATION.SUB_3:
+            return "red";
+        case ELEVATION.SUB_2:
+            return "orange";
+        case ELEVATION.SUB_1:
+            return "yellow";
+        case ELEVATION.GROUND:
+            return "green";
+        case ELEVATION.ABOVE_1:
+            return "cyan";
+        case ELEVATION.ABOVE_2:
+            return "magenta";
+        case ELEVATION.ABOVE_3:
+            return "blue";
+        default:
+            return "gray";
+    }
+};
+
+function createGradient(context: CanvasRenderingContext2D, startElevation: ELEVATION, endElevation: ELEVATION, startPoint: Point, endPoint: Point){ 
+
+    // Create linear gradient from start to end of the curve
+    const startColor = getElevationColor(startElevation);
+    const endColor = getElevationColor(endElevation);
+    
+    // Create gradient along the curve from start point to end point
+    const gradient = context.createLinearGradient(
+        startPoint.x, startPoint.y,
+        endPoint.x, endPoint.y
+    );
+    
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+
+    return gradient;
 }

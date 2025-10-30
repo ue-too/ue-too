@@ -5,6 +5,7 @@ import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { ELEVATION, ProjectionCurveResult, ProjectionEdgeResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
 import { PointCal, normalizeAngleZero2TwoPI } from "@ue-too/math";
 import { Observable, Observer, SynchronousObservable } from "@ue-too/board";
+import { PreviewCurveCalculator } from "./new-joint";
 
 
 export type LayoutStates = "IDLE" | "HOVER_FOR_STARTING_POINT" | "HOVER_FOR_ENDING_POINT" | "HOVER_FOR_CURVE_DELETION";
@@ -51,6 +52,10 @@ export interface LayoutContext extends BaseContext {
     setCurrentJointElevation: (elevation: ELEVATION) => void;
     bumpCurrentJointElevation: () => void;
     lowerCurrentJointElevation: () => void;
+    bumpStartJointElevation: () => void;
+    lowerStartJointElevation: () => void;
+    bumpEndJointElevation: () => void;
+    lowerEndJointElevation: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
     lastCurveSuccess: boolean;
@@ -163,9 +168,9 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
         "scroll": {
             action: (context, event) => {
                 if(event.positive){
-                    context.bumpCurrentJointElevation();
+                    context.bumpStartJointElevation();
                 } else {
-                    context.lowerCurrentJointElevation();
+                    context.lowerStartJointElevation();
                 }
             },
         }
@@ -236,9 +241,9 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
         "scroll": {
             action: (context, event) => {
                 if(event.positive){
-                    context.bumpCurrentJointElevation();
+                    context.bumpEndJointElevation();
                 } else {
-                    context.lowerCurrentJointElevation();
+                    context.lowerEndJointElevation();
                 }
             },
         }
@@ -322,18 +327,21 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewCurve: {
         curve: BCurve;
         previewStartAndEndSwitched: boolean; 
+        elevation: {
+            from: ELEVATION;
+            to: ELEVATION;
+        }
     } | null = null;
-
-    private _previewStartTangentFlipped: boolean = false;
-    private _previewEndTangentFlipped: boolean = false;
-    private _extendAsStraightLine: boolean = false;
 
     private _lastCurveSuccess: boolean = false;
 
     private _previewCurveForDeletion: number | null = null;
 
     public _currentJointElevation: ELEVATION | null = null;
+    private _startJointElevation: ELEVATION | null = null;
     private _elevationObservable: Observable<[ELEVATION | null]> = new SynchronousObservable<[ELEVATION | null]>();
+
+    private _previewCurveCalculator: PreviewCurveCalculator = new PreviewCurveCalculator();
 
     constructor() {
         this._trackGraph = new TrackGraph();
@@ -363,6 +371,46 @@ export class CurveCreationEngine implements LayoutContext {
         this._currentJointElevation = elevation;
     }
 
+    bumpStartJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation >= ELEVATION.ABOVE_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation + 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+        if(this._newStartJoint === null){
+            return;
+        }
+        this._newStartJoint.elevation = currentElevation + 1;
+        if(this._newEndJoint === null){
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    bumpEndJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation >= ELEVATION.ABOVE_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation + 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+        if(this._newEndJoint === null){
+            return;
+        }
+        this._newEndJoint.elevation = currentElevation + 1;
+        if(this._newStartJoint === null){
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
     bumpCurrentJointElevation() {
         if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
             return;
@@ -373,6 +421,46 @@ export class CurveCreationEngine implements LayoutContext {
         }
         this._currentJointElevation = currentElevation + 1;
         this._elevationObservable.notify(this._currentJointElevation);
+    }
+
+    lowerStartJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation <= ELEVATION.SUB_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation - 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+        if(this._newStartJoint === null){
+            return;
+        }
+        this._newStartJoint.elevation = currentElevation - 1;
+        if(this._newEndJoint === null){
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    lowerEndJointElevation() {
+        if(this._newStartJoint !== null && (this._newStartJoint.type === "branchCurve" || this._newStartJoint.type === "branchJoint")){
+            return;
+        }
+        const currentElevation = this._currentJointElevation != null ? this._currentJointElevation : ELEVATION.GROUND;
+        if(currentElevation <= ELEVATION.SUB_3){
+            return;
+        }
+        this._currentJointElevation = currentElevation - 1;
+        this._elevationObservable.notify(this._currentJointElevation);
+        if(this._newEndJoint === null){
+            return;
+        }
+        this._newEndJoint.elevation = currentElevation - 1;
+        if(this._newStartJoint === null){
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
     }
 
     lowerCurrentJointElevation() {
@@ -412,90 +500,63 @@ export class CurveCreationEngine implements LayoutContext {
     }
 
     flipStartTangent() {
-        this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
+        this._previewCurveCalculator.toggleStartTangentFlip();
         if(this._newStartJoint === null){
             return;
         }
         if(this._newEndJoint === null){
             return;
         }
-        const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJoint, 
-            this._newEndJoint, 
-            this._previewStartTangentFlipped, 
-            this._previewEndTangentFlipped,
-            this._extendAsStraightLine,
-        );
-        if(newPreviewCurveCPs === null){
-            return;
-        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    private _updatePreviewCurve(startJoint: NewJointType, endJoint: NewJointType){
+        const newPreviewCurve = this._previewCurveCalculator.getPreviewCurve(startJoint, endJoint);
         if(this._previewCurve == null){
             this._previewCurve = {
-                curve: new BCurve(newPreviewCurveCPs.cps),
-                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
+                curve: new BCurve(newPreviewCurve.cps),
+                previewStartAndEndSwitched: newPreviewCurve.startAndEndSwitched,
+                elevation: newPreviewCurve.startAndEndSwitched ? {
+                    from: endJoint.elevation,
+                    to: startJoint.elevation,
+                } : {
+                    from: startJoint.elevation,
+                    to: endJoint.elevation,
+                }
             };
         } else {
-            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
-            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
+            this._previewCurve.curve.setControlPoints(newPreviewCurve.cps);
+            this._previewCurve.previewStartAndEndSwitched = newPreviewCurve.startAndEndSwitched;
+            this._previewCurve.elevation = newPreviewCurve.startAndEndSwitched ? {
+                from: endJoint.elevation,
+                to: startJoint.elevation,
+            } : {
+                from: startJoint.elevation,
+                to: endJoint.elevation,
+            };
         }
     }
 
     flipEndTangent() {
-        this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
+        this._previewCurveCalculator.toggleEndTangentFlip();
         if(this._newStartJoint === null){
             return;
         }
         if(this._newEndJoint === null){
             return;
         }
-        const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJoint, 
-            this._newEndJoint, 
-            this._previewStartTangentFlipped, 
-            this._previewEndTangentFlipped, 
-            this._extendAsStraightLine,
-        );
-        if(newPreviewCurveCPs === null){
-            return;
-        }
-        if(this._previewCurve == null){
-            this._previewCurve = {
-                curve: new BCurve(newPreviewCurveCPs.cps),
-                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
-            };
-        } else {
-            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
-            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
-        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
     }
 
     toggleStraightLine() {
-        this._extendAsStraightLine = !this._extendAsStraightLine;
+        this._previewCurveCalculator.toggleStraightLine();
         if(this._newStartJoint === null){
             return;
         }
         if(this._newEndJoint === null){
             return;
         }
-        const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJoint, 
-            this._newEndJoint, 
-            this._previewStartTangentFlipped, 
-            this._previewEndTangentFlipped, 
-            this._extendAsStraightLine,
-        );
-        if(newPreviewCurveCPs === null){
-            return;
-        }
-        if(this._previewCurve == null){
-            this._previewCurve = {
-                curve: new BCurve(newPreviewCurveCPs.cps),
-                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
-            };
-        } else {
-            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
-            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
-        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
     }
 
     hoveringForEndJoint(position: Point) {
@@ -513,40 +574,16 @@ export class CurveCreationEngine implements LayoutContext {
             this._previewEndProjection = null;
         }
 
-        const newPreviewCurveCPs = getPreviewCurve(
-            this._newStartJoint, 
-            this._newEndJoint, 
-            this._previewStartTangentFlipped, 
-            this._previewEndTangentFlipped, 
-            this._extendAsStraightLine,
-        );
-
-        if(newPreviewCurveCPs === null){
-            return;
-        }
-
-        if(newPreviewCurveCPs.shouldToggleStartTangentFlip){
-            this._previewStartTangentFlipped = !this._previewStartTangentFlipped;
-        }
-        if(newPreviewCurveCPs.shouldToggleEndTangentFlip){
-            this._previewEndTangentFlipped = !this._previewEndTangentFlipped;
-        }
-
-        if(this._previewCurve == null){
-            this._previewCurve = {
-                curve: new BCurve(newPreviewCurveCPs.cps),
-                previewStartAndEndSwitched: newPreviewCurveCPs.startAndEndSwitched,
-            };
-        } else {
-            this._previewCurve.curve.setControlPoints(newPreviewCurveCPs.cps);
-            this._previewCurve.previewStartAndEndSwitched = newPreviewCurveCPs.startAndEndSwitched;
-        }
-
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
     }
 
     get previewCurve(): {
         curve: BCurve;
         previewStartAndEndSwitched: boolean;
+        elevation: {
+            from: ELEVATION;
+            to: ELEVATION;
+        }
     } | null {
         return this._previewCurve;
     }
@@ -569,6 +606,7 @@ export class CurveCreationEngine implements LayoutContext {
         if(res !== null) {
             this._lastCurveSuccess = true;
         } else {
+            this.cancelCurrentCurve();
             this._lastCurveSuccess = false;
         }
 
@@ -629,6 +667,13 @@ export class CurveCreationEngine implements LayoutContext {
                 return null;
             }
         }
+
+        if(this._newStartJoint.type == "branchCurve" || this._newStartJoint.type == "branchJoint" || this._newEndJoint.type == "branchCurve" || this._newEndJoint.type == "branchJoint"){
+            if(this._newStartJoint.elevation != this._newEndJoint.elevation){
+                return null;
+            }
+        }
+
         // END OF VALIDATION PIPELINE
 
         if(this._newStartJoint.type === "new" || this._newStartJoint.type === "contrained"){
@@ -667,6 +712,12 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         if(startJointNumber === null || endJointNumber === null){
+            if(startJointNumber === null){
+                console.warn('startJointNumber is null');
+            }
+            if(endJointNumber === null){
+                console.warn('endJointNumber is null');
+            }
             this.cancelCurrentCurve();
             return null;
         }
@@ -689,9 +740,6 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewCurve = null;
         this._newStartJoint = null;
         this._newEndJoint = null;
-        this._previewStartTangentFlipped = false;
-        this._previewEndTangentFlipped = false;
-        this._extendAsStraightLine = false;
     }
 
     cancelCurrentDeletion(){
@@ -757,7 +805,7 @@ export class CurveCreationEngine implements LayoutContext {
 }
 
 
-
+// TODO: deprecate
 function getPreviewCurve(
     newStartJointType: NewJointType, 
     newEndJointType: NewJointType, 
@@ -883,7 +931,7 @@ function calibrateTangent(rawTangent: Point, curveStartPoint: Point, curveEndPoi
     };
 }
 
-function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
+export function createCubicFromTangentsCurvatures(startPoint: Point, endPoint: Point, startTangent: Point, endTangent: Point, startCurvature: number, endCurvature: number, tension = 1.0) {
     const unitStartTangent = PointCal.unitVector(startTangent);
     const unitEndTangent = PointCal.unitVector(endTangent);
     

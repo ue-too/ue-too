@@ -26,7 +26,7 @@
         "path": "./packages/curve"
       },
       {
-        "path": "./apps/b-curve-exp"
+        "path": "./apps/banana"
       },
       {
         "path": "./packages/ecs"

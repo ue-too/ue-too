@@ -5,11 +5,13 @@
   "sideEffects": false,
   "scripts": {
     "test": "nx run-many --target=test",
+    "dev:banana": "nx dev banana",
     "build": "nx run-many --target=build --projects=math,being,animate,border,curve,dynamics,board,ecs --parallel=false",
     "build:packages": "nx run-many --target=build --projects=packages/* --parallel=true",
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",
     "build:affected": "nx affected --target=build --parallel=true",
     "build:examples": "nx build examples",
+    "build:banana": "nx build banana",
     "bump-version": "nx release --skip-publish",
     "bump-version:dry-run": "nx release --skip-publish --dry-run",
     "move-packageJson": "nx run-many --target=move-package --parallel=true",
