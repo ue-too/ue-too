@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/board.tsbuildinfo",
+    "declaration": true,
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "strict": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../being"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../board"
+    }
+  ]
+}
