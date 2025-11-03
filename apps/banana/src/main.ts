@@ -346,6 +346,7 @@ layoutDeleteToggleButton.addEventListener("click", ()=>{
 
 const trainPlacementToggleButton = document.getElementById("train-placement-toggle") as HTMLButtonElement;
 const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
+const train = trainPlacementEngine.train;
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
 // Cache for track segment offset curves to avoid recalculating every frame
@@ -477,7 +478,7 @@ function step(timestamp: number){
     board.step(timestamp);
 
     const deltaTime = timestamp - lastTimestamp; // in milliseconds
-    trainPlacementEngine.update(deltaTime);
+    train.update(deltaTime);
 
     lastTimestamp = timestamp;
 
@@ -647,38 +648,31 @@ function step(timestamp: number){
         board.context.restore();
     }
 
-    if(trainPlacementEngine.previewPosition != null){
-        board.context.save();
-        board.context.fillStyle = "red";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.previewPosition.x, trainPlacementEngine.previewPosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
-    }
-
-    if(trainPlacementEngine.trainPosition != null){
-        board.context.save();
-        board.context.fillStyle = "green";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.trainPosition.x, trainPlacementEngine.trainPosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
-        if(trainPlacementEngine.trainTangent !== null){
-            drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
+    if(train.previewBogiePositions !== null){
+        for(const bogiePosition of train.previewBogiePositions){
+            board.context.save();
+            board.context.fillStyle = "green";
+            board.context.beginPath();
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 3, 0, 2 * Math.PI);
+            board.context.fill();
+            board.context.restore();
         }
     }
 
-    if(trainPlacementEngine.secondBogiePosition != null){
+    const bogiePositions = train.getBogiePositions();
+    if(bogiePositions !== null){
         board.context.save();
-        board.context.fillStyle = "green";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.secondBogiePosition.x, trainPlacementEngine.secondBogiePosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
+        board.context.fillStyle = "blue";
+        for(const bogiePosition of bogiePositions){
+            board.context.beginPath();
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 3, 0, 2 * Math.PI);
+            board.context.fill();
+        }
         board.context.restore();
     }
 
+
     if(capture){
-        
         const imageData = board.context.getImageData(0, 0, canvas.width, canvas.height);
         downloadImageDataAsPNG(imageData);
         capture = false;
@@ -722,6 +716,8 @@ utilButton.addEventListener("click", ()=>{
     console.log('totalCount', totalCount);
     console.log('order', order);
 
+    console.log('occupied joint numbers', train.occupiedJointNumbers);
+
     // NOTE pressure test
     // for(let i = 0; i < 10; i++){
     //     const viewportAABB = board.camera.viewPortAABB();
@@ -758,16 +754,19 @@ const neutralButton = document.getElementById("neutral") as HTMLButtonElement;
 const switchDirectionButton = document.getElementById("switch-direction") as HTMLButtonElement;
 
 p1Button.addEventListener("click", ()=>{
-    trainPlacementEngine.setTrainSpeed(40);
+    // trainPlacementEngine.setTrainSpeed(-40);
+    // trainPlacementEngine.setTrainAcceleration(40);
+    train.setThrottleStep("p5");
 });
 
 neutralButton.addEventListener("click", ()=>{
-    trainPlacementEngine.setTrainSpeed(0);
-    trainPlacementEngine.setTrainAcceleration(0);
+    // trainPlacementEngine.setTrainSpeed(0);
+    // trainPlacementEngine.setTrainAcceleration(0);
+    train.setThrottleStep("N");
 });
 
 switchDirectionButton.addEventListener("click", ()=>{
-    trainPlacementEngine.switchDirection();
+    train.switchDirection();
 });
 
 // GeoJSON toggle buttons
