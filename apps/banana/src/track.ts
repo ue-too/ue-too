@@ -130,8 +130,8 @@ export function elevationIntervalOverlaps(track1: {elevation: {from: ELEVATION, 
 
 export type TrackJoint = {
     position: Point;
-    connections: Map<number, number>; // maps joint number -> track segment number
-    tangent: Point;
+    connections: Map<number, number>; // maps joint number -> track segment number; this joint is connected to the track segment by this connection
+    tangent: Point; // the tangent direction of the joint
     direction: {
         tangent: Set<number>; // to the next joint number
         reverseTangent: Set<number>; // to the next joint number
