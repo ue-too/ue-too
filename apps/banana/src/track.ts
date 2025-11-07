@@ -702,7 +702,7 @@ export class TrackGraph {
 
         const excludeSegementSet = new Set([...startJoint.direction.reverseTangent, ...startJoint.direction.tangent, ...endJoint.direction.reverseTangent, ...endJoint.direction.tangent]);
 
-        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation, 10, excludeSegementSet);
+        const newTrackSegmentNumber = this._trackCurveManager.createCurveWithJoints(newCurve, startJointNumber, endJointNumber, startJoint.elevation, endJoint.elevation, 1.067, excludeSegementSet);
 
         startJoint.connections.set(endJointNumber, newTrackSegmentNumber);
         endJoint.connections.set(startJointNumber, newTrackSegmentNumber);
@@ -897,6 +897,10 @@ export class TrackGraph {
                 const aabb = segment.curve.AABB;
                 return AABBIntersects(viewportAABB, aabb);
             });
+            this._trackCurveManager.clearInternalDrawDataOrderMap();
+            res.forEach((segment, index)=>{
+                segment.callback(index);
+            });
             return res;
         }
         console.time('sort');
@@ -990,42 +994,6 @@ export class TrackGraph {
             }
         }
         return null;
-    }
-
-
-    experimental(): TrackSegmentDrawData[] {
-        const segments = this._trackCurveManager.experimental();
-        if(!this._drawDataDirty){
-            return this._drawData;
-        }
-        this._drawData = segments.sort((a, b) => {
-            if(!trackIsSloped(a) && !trackIsSloped(b)){
-                return a.elevation.from - b.elevation.from;
-            }
-
-            const overlaps = elevationIntervalOverlaps(a, b);
-            const aMax = Math.max(a.elevation.from, a.elevation.to);
-            const bMax = Math.max(b.elevation.from, b.elevation.to);
-            if(!overlaps){
-                return aMax - bMax;
-            }
-            if(a.excludeSegmentsForCollisionCheck.has(b.originalTrackSegment.trackSegmentNumber) || b.excludeSegmentsForCollisionCheck.has(a.originalTrackSegment.trackSegmentNumber)){
-                return 0;
-            }
-            const collision = a.curve.getCurveIntersections(b.curve);
-            if(collision.length === 0){
-                return aMax - bMax;
-            }
-            if(collision.length !== 1){
-                console.warn('something wrong in the sorting of track segments draw order')
-                return 0;
-            }
-            const aElevation = getElevationAtT(collision[0].selfT, {elevation: {from: a.elevation.from * LEVEL_HEIGHT, to: a.elevation.to * LEVEL_HEIGHT}});
-            const bElevation = getElevationAtT(collision[0].otherT, {elevation: {from: b.elevation.from * LEVEL_HEIGHT, to: b.elevation.to * LEVEL_HEIGHT}});
-            return aElevation - bElevation;
-        });
-        this._drawDataDirty = false;
-        return this._drawData;
     }
 
     logJoints(){
@@ -1161,6 +1129,10 @@ export class TrackCurveManager {
         console.log(this._trackOrderMap);
         console.log(JSON.stringify({trackSegmentNumber, tValInterval}));
         return this._trackOrderMap.get(JSON.stringify({trackSegmentNumber, tValInterval})) ?? null;
+    }
+
+    clearInternalDrawDataOrderMap(): void {
+        this._trackOrderMap.clear();
     }
 
     experimental(): (TrackSegmentDrawData & {callback(index: number): void})[] {
@@ -1311,7 +1283,7 @@ export class TrackCurveManager {
         return projectionInfo;
     }
 
-    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 10, excludeSegmentsForCollisionCheck: Set<number> = new Set()): number {
+    createCurveWithJoints(curve: BCurve, t0Joint: number, t1Joint: number, t0Elevation: ELEVATION, t1Elevation: ELEVATION, gauge: number = 1.067, excludeSegmentsForCollisionCheck: Set<number> = new Set()): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
         const aabb = curve.AABB;
