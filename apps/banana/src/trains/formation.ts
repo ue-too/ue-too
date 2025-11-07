@@ -126,9 +126,9 @@ export class Train {
                 // console.warn('cannot put the whole train at the current position');
                 return null;
             }
-            if(index === this._offsets.length - 1){
+            if(index === this._offsets.length - 1 && bogiePosition.passedJointNumbers.length > 0){
                 const lastBogiePositionPassedJointNumbers = bogiePosition.passedJointNumbers;
-                const lastJointNumber = lastBogiePositionPassedJointNumbers[lastBogiePositionPassedJointNumbers.length - 1];
+                const lastJointNumber = lastBogiePositionPassedJointNumbers[0];
                 const index = this._occupiedJointNumbers.lastIndexOf(lastJointNumber);
                 if(index !== -1){
                     this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, index + 1);
@@ -204,7 +204,7 @@ export class Train {
             this._throttle = "N";
             return;
         }
-        this._occupiedJointNumbers = this._occupiedJointNumbers.concat(nextPosition.passedJointNumbers);
+        this._occupiedJointNumbers = nextPosition.passedJointNumbers.concat(this._occupiedJointNumbers);
         this._position = nextPosition;
     }
 
@@ -267,7 +267,7 @@ export function getPosition(distance: number, position: TrainPosition, trackGrap
             };
         }
 
-        passedJointNumbers.push(enteringJointNumber);
+        passedJointNumbers.unshift(enteringJointNumber);
 
         trackSegment = trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
 
