@@ -520,22 +520,22 @@ function step(timestamp: number){
 
         const cps = drawData.curve.getControlPoints();
 
-        board.context.save();
-        board.context.beginPath();
-        board.context.arc(cps[0].x, cps[0].y, 3, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
+        // board.context.save();
+        // board.context.beginPath();
+        // board.context.arc(cps[0].x, cps[0].y, 1.067 / 2, 0, 2 * Math.PI);
+        // board.context.fill();
+        // board.context.restore();
 
-        board.context.save();
-        board.context.beginPath();
-        board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 3, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
+        // board.context.save();
+        // board.context.beginPath();
+        // board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 1.067 / 2, 0, 2 * Math.PI);
+        // board.context.fill();
+        // board.context.restore();
 
 
         board.context.save();
         board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
-        board.context.lineWidth = 5 / board.camera.zoomLevel;
+        board.context.lineWidth = (1.067 / 2) / board.camera.zoomLevel;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -550,6 +550,7 @@ function step(timestamp: number){
 
     // offset as line segments
     board.context.save();
+    board.context.lineWidth = 1 / board.camera.zoomLevel;
     curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
         if(board.context === undefined){
             return;
@@ -601,8 +602,9 @@ function step(timestamp: number){
         board.context.lineWidth = 1 / board.camera.zoomLevel;
         board.context.strokeStyle = "blue";
         board.context.beginPath();
-        board.context.arc(joint.position.x, joint.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(joint.position.x, joint.position.y, 5 / board.camera.zoomLevel, 0, 2 * Math.PI);
         board.context.stroke();
+        board.context.font = `${12 / board.camera.zoomLevel}px Arial`;
         board.context.textAlign = "center";
         board.context.textBaseline = "middle";
         drawArrow(board.context, board.camera.zoomLevel, joint.position, PointCal.addVector(PointCal.multiplyVectorByScalar(joint.tangent, 10), joint.position));
@@ -615,7 +617,7 @@ function step(timestamp: number){
         board.context.fillStyle = "red";
         const point = curveEngine.previewStartProjection.projectionPoint;
         board.context.beginPath();
-        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -625,7 +627,7 @@ function step(timestamp: number){
         board.context.fillStyle = "green";
         const point = curveEngine.previewEndProjection.projectionPoint;
         board.context.beginPath();
-        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -634,7 +636,7 @@ function step(timestamp: number){
         board.context.save();
         board.context.fillStyle = colorForJoint(curveEngine.newStartJointType);
         board.context.beginPath();
-        board.context.arc(curveEngine.newStartJointType.position.x, curveEngine.newStartJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(curveEngine.newStartJointType.position.x, curveEngine.newStartJointType.position.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -643,7 +645,7 @@ function step(timestamp: number){
         board.context.save();
         board.context.fillStyle = colorForJoint(curveEngine.newEndJointType);
         board.context.beginPath();
-        board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -653,7 +655,7 @@ function step(timestamp: number){
             board.context.save();
             board.context.fillStyle = "green";
             board.context.beginPath();
-            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 3, 0, 2 * Math.PI);
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 1.067 / 2, 0, 2 * Math.PI);
             board.context.fill();
             board.context.restore();
         }
@@ -665,7 +667,7 @@ function step(timestamp: number){
         board.context.fillStyle = "blue";
         for(const bogiePosition of bogiePositions){
             board.context.beginPath();
-            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 3, 0, 2 * Math.PI);
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 1.067 / 2, 0, 2 * Math.PI);
             board.context.fill();
         }
         board.context.restore();
@@ -718,31 +720,6 @@ utilButton.addEventListener("click", ()=>{
 
     console.log('occupied joint numbers', train.occupiedJointNumbers);
 
-    // NOTE pressure test
-    // for(let i = 0; i < 10; i++){
-    //     const viewportAABB = board.camera.viewPortAABB();
-    //     const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-    //     const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-    //     const tangent = PointCal.unitVector(getRandomPoint(0, 1));
-    //     const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
-    //     const elevation = Math.floor(Math.random() * 7) - 3;
-    //     const elevation2 = Math.floor(Math.random() * 7) - 3;
-    //     const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
-    //     const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
-    //     const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
-    //     curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
-    // }
-
-    // NOTE debug same direction
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
-    // window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
 
 
     console.log('viewport aabb', board.camera.viewPortAABB());
