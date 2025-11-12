@@ -56,9 +56,14 @@ export type EventHandledResult<States extends string> = EventNotHandled | EventH
  */
 export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
     switchTo(state: States): void;
-    happens<K extends (keyof EventPayloadMapping | string)>(
+    // Overload for known events - provides IntelliSense
+    happens<K extends keyof EventPayloadMapping>(
         ...args: EventArgs<EventPayloadMapping, K>
-      ): EventHandledResult<States>;
+    ): EventHandledResult<States>;
+    // Overload for unknown events - maintains backward compatibility
+    happens<K extends string>(
+        ...args: EventArgs<EventPayloadMapping, K>
+    ): EventHandledResult<States>;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -225,7 +230,10 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         this._currentState = state;
     }
     
-    happens<K extends (keyof EventPayloadMapping | string)>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States> {
+    // Implementation signature - matches both overloads
+    happens<K extends keyof EventPayloadMapping>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States>;
+    happens<K extends string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States>;
+    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States> {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
