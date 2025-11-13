@@ -722,8 +722,7 @@ utilButton.addEventListener("click", ()=>{
     console.log('order', order);
 
     console.log('occupied joint numbers', train.occupiedJointNumbers);
-
-
+    console.log('occupied track segments', train.occupiedTrackSegments);
 
     console.log('viewport aabb', board.camera.viewPortAABB());
 });
