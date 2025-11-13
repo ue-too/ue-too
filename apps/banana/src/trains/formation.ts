@@ -29,7 +29,10 @@ export type AdvancedTrainPositionRes = {
     tValue: number;
     direction: 'tangent' | 'reverseTangent'; // the direction of the train on the bezier curve; forward is t = 0 -> t = 1; backward is t = 1 -> t = 0
     point: Point;
-    passedJointNumbers: number[];
+    passedJointNumbers: {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent'; // the direction to travel 
+    }[];
 }
 
 const THROTTLE_STEPS_KEYS = ["er", "b7", "b6", "b5", "b4", "b3", "b2", "b1", "N", "p1", "p2", "p3", "p4", "p5"] as const;
@@ -88,7 +91,10 @@ export class Train {
     private _throttle: ThrottleSteps = "N";
     private _previewPositions: TrainPosition[] | null = null;
     private _previewPositionCache: TrainPosition | null = null;
-    private _occupiedJointNumbers: number[] = [];
+    private _occupiedJointNumbers: {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[] = [];
 
     constructor(carNumber: number, position: TrainPosition | null, bogieOffsets: number[], trackGraph: TrackGraph, jointDirectionManager: JointDirectionManager) {
         this._carNumber = carNumber;
@@ -117,8 +123,6 @@ export class Train {
 
         let accuOffset = 0;
 
-        const lastBogiePositionPassedJointNumbers: number[] = [];
-
         for(let index = 0; index < this._offsets.length; index++){
             accuOffset += this._offsets[index];
             const bogiePosition = getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager);
@@ -128,8 +132,14 @@ export class Train {
             }
             if(index === this._offsets.length - 1 && bogiePosition.passedJointNumbers.length > 0){
                 const lastBogiePositionPassedJointNumbers = bogiePosition.passedJointNumbers;
-                const lastJointNumber = lastBogiePositionPassedJointNumbers[0];
-                const index = this._occupiedJointNumbers.lastIndexOf(lastJointNumber);
+                const lastJointNumber = lastBogiePositionPassedJointNumbers[0].jointNumber;
+                let index = -1;
+                for(let i = this._occupiedJointNumbers.length - 1; i >= 0; i--){
+                    if(this._occupiedJointNumbers[i].jointNumber === lastJointNumber){
+                        index = i;
+                        break;
+                    }
+                }
                 if(index !== -1){
                     this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, index + 1);
                 }
@@ -154,7 +164,10 @@ export class Train {
         return this._previewPositions;
     }
 
-    get occupiedJointNumbers(): number[] {
+    get occupiedJointNumbers(): {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[] {
         return this._occupiedJointNumbers;
     }
 
@@ -204,7 +217,13 @@ export class Train {
             this._throttle = "N";
             return;
         }
-        this._occupiedJointNumbers = nextPosition.passedJointNumbers.concat(this._occupiedJointNumbers);
+        const flipped = nextPosition.passedJointNumbers.map((joint)=>{
+            return {
+                jointNumber: joint.jointNumber,
+                direction: flipDirection(joint.direction)
+            };
+        });
+        this._occupiedJointNumbers = flipped.concat(this._occupiedJointNumbers);
         this._position = nextPosition;
     }
 
@@ -220,8 +239,13 @@ export class Train {
         this._position = lastBogiePosition;
         this._offsets = this._offsets.reverse();
         this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
+        this._occupiedJointNumbers = this._occupiedJointNumbers.map((joint)=>{
+            return {
+                ...joint,
+                direction: flipDirection(joint.direction)
+            };
+        });
     }
-    
 }
 
 export function getPosition(distance: number, position: TrainPosition, trackGraph: TrackGraph, jointDirectionManager: JointDirectionManager): AdvancedTrainPositionRes | null{
@@ -237,7 +261,10 @@ export function getPosition(distance: number, position: TrainPosition, trackGrap
         return null;
     }
 
-    const passedJointNumbers: number[] = [];
+    const passedJointNumbers: {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[] = [];
 
     const advanceLength = distanceToAdvance * (xDirection === "tangent" ? 1 : -1);
     let nextPosition = trackSegment.curve.advanceAtTWithLength(xTValue, advanceLength);
@@ -267,7 +294,10 @@ export function getPosition(distance: number, position: TrainPosition, trackGrap
             };
         }
 
-        passedJointNumbers.unshift(enteringJointNumber);
+        passedJointNumbers.unshift({
+            jointNumber: enteringJointNumber,
+            direction: nextJointDirection,
+        });
 
         trackSegment = trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
 

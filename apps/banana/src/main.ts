@@ -665,7 +665,10 @@ function step(timestamp: number){
     if(bogiePositions !== null){
         board.context.save();
         board.context.fillStyle = "blue";
-        for(const bogiePosition of bogiePositions){
+        const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "gray", "black", "white"];
+        for(let i = 0; i < bogiePositions.length; i++){
+            const bogiePosition = bogiePositions[i];
+            board.context.fillStyle = colors[i % colors.length];
             board.context.beginPath();
             board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 1.067 / 2, 0, 2 * Math.PI);
             board.context.fill();
