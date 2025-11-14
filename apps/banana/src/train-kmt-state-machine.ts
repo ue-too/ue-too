@@ -19,12 +19,14 @@ export type TrainPlacementEvents = {
     "escapeKey": {};
     "startPlacement": {};
     "endPlacement": {};
+    "flipTrainDirection": {};
 }
 
 export interface TrainPlacementContext extends BaseContext {
     cancelCurrentTrainPlacement: () => void;
     placeTrain: (position: Point) => void;
     hoverForPlacement: (position: Point) => void;
+    flipTrainDirection: () => void;
 }
 
 export function flipDirection(direction: 'tangent' | 'reverseTangent'): 'tangent' | 'reverseTangent' {
@@ -182,21 +184,12 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 export class TrainPlacementEngine implements TrainPlacementContext {
 
     private _trackGraph: TrackGraph;
-    private _trainPosition: Point | null = null;
-    private _previewPosition: Point | null = null;
     private _trainTangent: Point | null = null;
-    private _previewTangent: Point | null = null;
-    private _trainSpeed: number = 0; // train speed should never be negative since the direction already takes care of it
-    private _trainAcceleration: number = 0;
-    private _trainStep: ThrottleSteps = "N";
-    private _trainPositionInTrack: TrainPosition | null = null;
+
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
-    private _friction: number = -0.05;
-    private _expandDirection: "same" | "opposite" = "opposite";
     private _train: Train;
 
-    private _secondBogieOffset: number = 40;
 
     constructor(trackGraph: TrackGraph) {
         this._trackGraph = trackGraph;
@@ -205,15 +198,11 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     }
 
     cancelCurrentTrainPlacement(){
-        this._previewPosition = null;
+        this._train.clearPreviewPosition();
     };
 
     get train(): Train{
         return this._train;
-    }
-
-    setTrainStep(step: ThrottleSteps){
-        this._trainStep = step;
     }
 
     placeTrain(){
@@ -225,18 +214,6 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         this._train.setPosition(previewPosition);
         this._train.clearPreviewPosition();
         console.log('placed train');
-    }
-
-    setTrainAcceleration(acceleration: number){
-        this._trainAcceleration = acceleration;
-    }
-
-    setTrainSpeed(speed: number){
-        this._trainSpeed = speed;
-    }
-
-    get trainTangent(): Point | null {
-        return this._trainTangent;
     }
 
     hoverForPlacement(position: Point){
@@ -259,7 +236,6 @@ export class TrainPlacementEngine implements TrainPlacementContext {
                         console.warn("track segment not found");
                         return;
                     }
-                    this._previewPosition = res.projectionPoint;
                     this._potentialTrainPlacement = {
                         trackSegment: res.curve,
                         tValue: res.atT,
@@ -269,11 +245,13 @@ export class TrainPlacementEngine implements TrainPlacementContext {
                     this._train.getPreviewBogiePositions(this._potentialTrainPlacement);
                     break;
             }
-            this._previewTangent = res.tangent;
         } else {
-            this._previewPosition = null;
             this._train.clearPreviewPosition();
         }
+    }
+
+    flipTrainDirection(){
+        this._train.flipTrainDirection();
     }
 
     setup(){
@@ -332,6 +310,12 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<TrainPla
                 context.cancelCurrentTrainPlacement();
             },
             defaultTargetState: "IDLE"
+        },
+        "flipTrainDirection": {
+            action: (context) => {
+                context.flipTrainDirection();
+            },
+            defaultTargetState: "HOVER_FOR_PLACEMENT"
         }
     }
 }

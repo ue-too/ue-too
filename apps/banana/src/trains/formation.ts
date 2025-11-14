@@ -107,7 +107,6 @@ export class Train {
         inTrackDirection: 'tangent' | 'reverseTangent'; // the direction is to go from the start of the train to the end of the train
     }[] = [];
 
-    private _cacheBogiePosition: boolean = false;
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
     constructor(carNumber: number, position: TrainPosition | null, bogieOffsets: number[], trackGraph: TrackGraph, jointDirectionManager: JointDirectionManager) {
@@ -132,6 +131,7 @@ export class Train {
     }
 
     _getBogiePositions(position: TrainPosition, preview: boolean = false): TrainPosition[] | null {
+        console.log('get bogie positions', position, preview);
         const expandDirection = flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
@@ -139,53 +139,53 @@ export class Train {
 
         for(let index = 0; index < this._offsets.length; index++){
             accuOffset += this._offsets[index];
-            const bogiePosition = getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager, this._occupiedJointNumbers, this._occupiedTrackSegments);
+            const bogiePosition = !preview ? getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager, this._occupiedJointNumbers, this._occupiedTrackSegments) : getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager);
             if(bogiePosition === null || bogiePosition.stop){
                 // console.warn('cannot put the whole train at the current position');
                 return null;
             }
-            if(!preview && index === this._offsets.length - 1 && bogiePosition.passedJointNumbers.length > 0){
-                const lastBogiePositionPassedJointNumbers = bogiePosition.passedJointNumbers;
-                const lastJointNumber = lastBogiePositionPassedJointNumbers[0].jointNumber;
-                let index = -1;
-                for(let i = this._occupiedJointNumbers.length - 1; i >= 0; i--){
-                    if(this._occupiedJointNumbers[i].jointNumber === lastJointNumber){
-                        index = i;
-                        break;
+            if(!preview){
+                if(index === this._offsets.length - 1 && bogiePosition.passedJointNumbers.length > 0){
+                    const lastBogiePositionPassedJointNumbers = bogiePosition.passedJointNumbers;
+                    const lastJointNumber = lastBogiePositionPassedJointNumbers[0].jointNumber;
+                    let index = -1;
+                    for(let i = this._occupiedJointNumbers.length - 1; i >= 0; i--){
+                        if(this._occupiedJointNumbers[i].jointNumber === lastJointNumber){
+                            index = i;
+                            break;
+                        }
+                    }
+                    if(index !== -1){
+                        this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, index + 1);
                     }
                 }
-                if(index !== -1){
-                    this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, index + 1);
+                if(index === this._offsets.length - 1 && this._occupiedJointNumbers.length == 0 && bogiePosition.passedJointNumbers.length > 0) {
+                    this._occupiedJointNumbers = [...(bogiePosition.passedJointNumbers.reverse())];
                 }
-            }
-            if(!preview && index === this._offsets.length - 1 && this._occupiedJointNumbers.length == 0 && bogiePosition.passedJointNumbers.length > 0) {
-                this._occupiedJointNumbers = [...(bogiePosition.passedJointNumbers.reverse())];
-            }
-            if(!preview && index === this._offsets.length - 1 && bogiePosition.enteringTrackSegments.length > 0) {
-                const lastBogiePositionEnteringTrackSegments = bogiePosition.enteringTrackSegments;
-                const lastOccupiedTrackSegment = lastBogiePositionEnteringTrackSegments[0].trackNumber;
-                let trackIndex = -1;
-                for(let i = this._occupiedTrackSegments.length - 1; i >= 0; i--){
-                    if(this._occupiedTrackSegments[i].trackNumber === lastOccupiedTrackSegment){
-                        trackIndex = i;
-                        break;
+                if(index === this._offsets.length - 1 && bogiePosition.enteringTrackSegments.length > 0) {
+                    const lastBogiePositionEnteringTrackSegments = bogiePosition.enteringTrackSegments;
+                    const lastOccupiedTrackSegment = lastBogiePositionEnteringTrackSegments[0].trackNumber;
+                    let trackIndex = -1;
+                    for(let i = this._occupiedTrackSegments.length - 1; i >= 0; i--){
+                        if(this._occupiedTrackSegments[i].trackNumber === lastOccupiedTrackSegment){
+                            trackIndex = i;
+                            break;
+                        }
+                    }
+                    if(trackIndex !== -1){
+                        this._occupiedTrackSegments = this._occupiedTrackSegments.slice(0, trackIndex + 1);
                     }
                 }
-                if(trackIndex !== -1){
-                    this._occupiedTrackSegments = this._occupiedTrackSegments.slice(0, trackIndex + 1);
+                if(index === this._offsets.length - 1 && this._occupiedTrackSegments.length == 0) {
+                    this._occupiedTrackSegments = [...(bogiePosition.enteringTrackSegments.reverse())];
+                    this._occupiedTrackSegments.unshift({
+                        trackNumber: position.trackSegment,
+                        inTrackDirection: flipDirection(position.direction)
+                    });
                 }
-            }
-            if(!preview && index === this._offsets.length - 1 && this._occupiedTrackSegments.length == 0) {
-                this._occupiedTrackSegments = [...(bogiePosition.enteringTrackSegments.reverse())];
-                this._occupiedTrackSegments.unshift({
-                    trackNumber: position.trackSegment,
-                    inTrackDirection: flipDirection(position.direction)
-                });
             }
             positions.push(bogiePosition);
         }
-        this._cachedBogiePositions = positions;
-        this._cacheBogiePosition = true;
         return positions;
     }
     
@@ -197,7 +197,13 @@ export class Train {
         if(this._position == null){
             return null;
         }
-        return this._getBogiePositions(this._position, preview);
+        if(preview){
+            return this._getBogiePositions(this._position, preview);
+        }
+        if(this._cachedBogiePositions == null){
+            this._cachedBogiePositions = this._getBogiePositions(this._position, false);
+        }
+        return this._cachedBogiePositions;
     }
 
     get previewBogiePositions(): TrainPosition[] | null {
@@ -230,6 +236,14 @@ export class Train {
         this._previewPositionCache = previewPosition;
         this._previewPositions = this._getBogiePositions(previewPosition, true);
         return this._previewPositions;
+    }
+
+    flipTrainDirection(){
+        if(this._previewPositionCache == null){
+            return;
+        }
+        this._previewPositionCache.direction = flipDirection(this._previewPositionCache.direction);
+        this._previewPositions = this._getBogiePositions(this._previewPositionCache, true);
     }
     
     update(deltaTime: number){ // delta time is in millisecond
@@ -282,7 +296,7 @@ export class Train {
         this._occupiedTrackSegments.unshift(...flippedEnteringTrackSegments);
 
         this._position = nextPosition;
-        this._cacheBogiePosition = false;
+        this._cachedBogiePositions = this._getBogiePositions(nextPosition, false);
     }
 
     switchDirection(){
@@ -309,6 +323,7 @@ export class Train {
                 inTrackDirection: flipDirection(track.inTrackDirection)
             };
         });
+        this._cachedBogiePositions = this._getBogiePositions(this._position, false);
     }
 }
 

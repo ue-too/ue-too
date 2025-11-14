@@ -406,6 +406,7 @@ window.addEventListener("keydown", (event)=>{
         stateMachine.happens("escapeKey");
     } else if(event.key === "f"){
         stateMachine.happens("flipEndTangent");
+        trainStateMachine.happens("flipTrainDirection");
     } else if(event.key === "g"){
         stateMachine.happens("flipStartTangent");
     } else if(event.key === "q"){
