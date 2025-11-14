@@ -139,7 +139,7 @@ export class Train {
 
         for(let index = 0; index < this._offsets.length; index++){
             accuOffset += this._offsets[index];
-            const bogiePosition = getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager);
+            const bogiePosition = getPosition(accuOffset, {...position, direction: expandDirection}, this._trackGraph, this._jointDirectionManager, this._occupiedJointNumbers, this._occupiedTrackSegments);
             if(bogiePosition === null || bogiePosition.stop){
                 // console.warn('cannot put the whole train at the current position');
                 return null;
@@ -312,7 +312,7 @@ export class Train {
     }
 }
 
-export function getPosition(distance: number, position: TrainPosition, trackGraph: TrackGraph, jointDirectionManager: JointDirectionManager): AdvancedTrainPositionRes | null{
+export function getPosition(distance: number, position: TrainPosition, trackGraph: TrackGraph, jointDirectionManager: JointDirectionManager, occupiedJoints?: {jointNumber: number, direction: 'tangent' | 'reverseTangent'}[], occupiedTrackSegments?: {trackNumber: number, inTrackDirection: 'tangent' | 'reverseTangent'}[]): AdvancedTrainPositionRes | null{
     let distanceToAdvance = distance;
 
     let xDirection = position.direction;
@@ -349,7 +349,7 @@ export function getPosition(distance: number, position: TrainPosition, trackGrap
         }
 
         const nextJointDirection = enteringJoint.direction.reverseTangent.has(comingFromJointNumber) ? "tangent" : "reverseTangent";
-        const nextDirection = jointDirectionManager.getNextJoint(enteringJointNumber, nextJointDirection);
+        const nextDirection = jointDirectionManager.getNextJoint(enteringJointNumber, nextJointDirection, occupiedJoints, occupiedTrackSegments);
 
         if(nextDirection === null){
             // console.warn("end of the track");
