@@ -121,7 +121,7 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         this._canvasPositionDimensionPublisher.onPositionUpdate((rect)=>{
             // the rect is the canvas dimension in the DOM (the width and height attribute would need to multiply by the device pixel ratio)
             if(this._canvas == undefined){
-                console.log('is not attached to any canvas should not have getting any updates');
+                console.error('is not attached to any canvas should not have getting any updates');
                 return;
             }
 
