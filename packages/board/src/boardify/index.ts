@@ -103,7 +103,7 @@ export default class Board {
         this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
 
         if(canvas != undefined){
-            console.log('canvas exists on creation of board')
+            console.log('canvas exists on creation of board');
             this.attach(canvas, debug);
             this.syncViewPortDimensions({width: canvas.width, height: canvas.height});
         }
@@ -359,10 +359,6 @@ export default class Board {
     private syncCameraZoomLevel(canvasDimensions: CanvasDimensions){
         if(this.limitEntireViewPort){
             const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, canvasDimensions.width, canvasDimensions.height, this.camera.rotation);
-            console.log('canvasDimensions', canvasDimensions);
-            console.log('zoom boundaries', this.camera.zoomBoundaries);
-            console.log('boundaries', this.camera.boundaries);
-            console.log('targetMinZoomLevel', targetMinZoomLevel);
             if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
                 this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
