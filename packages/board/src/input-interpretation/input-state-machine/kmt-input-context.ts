@@ -195,6 +195,10 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
 
     tearDown(): void {
         this._canvasPositionDimensionPublisher.dispose();
+        this._canvas = undefined;
+        this._width = 0;
+        this._height = 0;
+        this._position = {x: 0, y: 0};
     }
 
     attach(canvas: HTMLCanvasElement){
