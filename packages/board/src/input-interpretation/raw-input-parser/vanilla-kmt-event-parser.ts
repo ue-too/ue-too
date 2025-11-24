@@ -121,6 +121,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
     tearDown(): void {
         this._abortController.abort();
         this._abortController = new AbortController();
+        this._canvas = undefined;
     }
 
     bindFunctions(): void {

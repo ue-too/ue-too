@@ -79,6 +79,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
     tearDown(): void {
         this._abortController.abort();
         this._abortController = new AbortController();
+        this._canvas = undefined;
     }
 
     get disabled(): boolean {
