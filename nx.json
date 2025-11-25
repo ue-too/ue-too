@@ -19,7 +19,10 @@
   "release": {
     "releaseTagPattern": "v{version}",
     "changelog": {
-      "automaticFromRef": true
+      "automaticFromRef": true,
+      "workspaceChangelog": {
+        "renderer": "nx/release/changelog-renderer"
+      }
     }
   }
 }
