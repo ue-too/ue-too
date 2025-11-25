@@ -250,11 +250,11 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
-        context.toggleOnEdgeAutoCameraInput();
+        // context.toggleOnEdgeAutoCameraInput();
     }
 
     beforeExit(context: KmtInputContext): void {
-        context.toggleOffEdgeAutoCameraInput();
+        // context.toggleOffEdgeAutoCameraInput();
     }
 
     get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
