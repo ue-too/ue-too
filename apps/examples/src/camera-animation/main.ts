@@ -1,5 +1,5 @@
 import { Board, CameraMuxWithAnimationAndLock, drawRuler } from "@ue-too/board";
-import { Animation, Keyframe, PointAnimationHelper, EasingFunctions } from "@niuee/bounce";
+import { Animation, Keyframe, linear, PointAnimationHelper } from "@ue-too/animate";
 import { Point } from "@ue-too/math";
 
 // Create an image object
@@ -63,14 +63,14 @@ canvas.addEventListener("click", (e) => {
         {
             percentage: 0,
             value: board.camera.position,
-            easingFn: EasingFunctions.easeInOutSine,
+            easingFn: linear,
         },
         {
             percentage: 1,
             value: worldCoord,
         }
     ]
-    panAnimation.startAnimation();
+    panAnimation.start();
 });
 
 requestAnimationFrame(step);
