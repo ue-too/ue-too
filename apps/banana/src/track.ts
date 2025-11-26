@@ -450,6 +450,7 @@ export class TrackGraph {
         if(t1Joint.connections.size === 0){
             this._jointManager.destroyJoint(segment.t1Joint);
         }
+        this._drawDataDirty = true;
     }
 
     branchToNewJoint(startJointNumber: number, endPosition: Point, controlPoints: Point[]): boolean{
