@@ -536,7 +536,7 @@ function step(timestamp: number){
 
         board.context.save();
         board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
-        board.context.lineWidth = (1.067 / 2) / board.camera.zoomLevel;
+        board.context.lineWidth = 1.067;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){

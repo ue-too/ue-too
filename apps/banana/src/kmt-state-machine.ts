@@ -1,5 +1,5 @@
 import { BCurve } from "@ue-too/curve";
-import { sameDirection, type Point } from "@ue-too/math";
+import { directionAlignedToTangent, sameDirection, type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { ELEVATION, ProjectionCurveResult, ProjectionEdgeResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
@@ -906,7 +906,7 @@ function extendTrackIsPossible(startJointNumber: number, startJointTangent: Poin
     const jointTangentIsPointingInEmptyDirection = trackGraph.tangentIsPointingInEmptyDirection(startJointNumber);
     const emptyTangentDirection = jointTangentIsPointingInEmptyDirection ? startJointTangent : PointCal.multiplyVectorByScalar(startJointTangent, -1);
 
-    if(sameDirection(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint, 0.01)){
+    if(directionAlignedToTangent(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint)){
         return true;
     }
 
