@@ -780,6 +780,7 @@ export class TrackGraph {
             // console.log("edge hit", edgeRes);
             return {hit: true, hitType: "edge", ...edgeRes};
         }
+        console.log("no hit");
         return {hit: false};
     }
 
@@ -793,7 +794,7 @@ export class TrackGraph {
 
     pointOnJoint(position: Point): ProjectionJointResult | null {
         let closestJoint: {jointNumber: number, distance: number, tangent: Point, position: Point, curvature: number, endingJoint: boolean} | null = null;
-        let minDistance:number = 5;
+        let minDistance:number = 1;
 
         const joints = this._jointManager.getJoints();
 
@@ -1199,7 +1200,7 @@ export class TrackCurveManager {
     }
 
     onTrackSegmentEdge(position: Point): ProjectionInfo | null {
-        let minDistance = 30;
+        let minDistance = 2;
         let projectionInfo: ProjectionInfo | null = null;
         const bbox = new Rectangle(position.x - 10, position.y - 10, position.x + 10, position.y + 10);
         const possibleTrackSegments = this._internalRTree.search(bbox);
@@ -1244,7 +1245,7 @@ export class TrackCurveManager {
         return projectionInfo;
     }
 
-    projectOnCurve(position: Point, maxDistance: number = 10): ProjectionInfo | null {
+    projectOnCurve(position: Point, maxDistance: number = 1): ProjectionInfo | null {
         let minDistance = maxDistance;
         let projectionInfo: ProjectionInfo | null = null;
         const bbox = new Rectangle(position.x - 0.1, position.y - 0.1, position.x + 0.1, position.y + 0.1);
