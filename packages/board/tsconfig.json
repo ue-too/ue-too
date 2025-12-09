@@ -8,17 +8,10 @@
     "declaration": true,
     "moduleResolution": "bundler",
     "module": "esnext",
-    "strict": true
+    "strict": true,
+    "types": []
   },
   "include": [
     "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../being"
-    },
-    {
-      "path": "../math"
-    }
   ]
 }

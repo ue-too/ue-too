@@ -8,15 +8,11 @@
     "declaration": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true
+    "strict": true,
+    "types": []
   },
   "include": [
     "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../math"
-    }
   ]
 }
   

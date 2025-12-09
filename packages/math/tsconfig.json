@@ -9,6 +9,7 @@
     "moduleResolution": "bundler",
     "module": "esnext",
     "strict": true,
+    "types": []
   },
   "include": ["src/**/*"]
 }

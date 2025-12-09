@@ -33,25 +33,18 @@ jobs:
         with:
           token: ${{ secrets.PAT }}
       # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: '22.19.0'
+          bun-version: '1.3.4'
           registry-url: 'https://registry.npmjs.org'
           scope: '@ue-too'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
       - name: Install dependencies
         run: |
-          if [ -f pnpm-lock.yaml ]; then
-            pnpm install --frozen-lockfile || pnpm install
-          else
-            pnpm install
-          fi
+          bun ci
       - name: Build packages
-        run: pnpm build
+        run: bun run build
 
       - name: Setup git user
         run: |
@@ -61,18 +54,18 @@ jobs:
         id: bump-version
         run: |
           if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
-            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
+            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
           elif [[ ${{ github.event.inputs.version-type }} == 'minor' ]]; then
-            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier minor
+            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier minor
           elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
-            pnpm bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
+            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
           fi
       - name: Move package.json to dist
-        run: pnpm move-packageJson
+        run: bun run move-packageJson
       - name: Replace workspace deps
-        run: pnpm replace-workspace-deps
+        run: bun run replace-workspace-deps
       - name: Publish packages
-        run: pnpm publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
+        run: bun run publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
       - name: Log git log
         run: git log -1 --pretty | cat
       - name: Get version number

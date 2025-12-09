@@ -7,7 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm build",
+        "command": "bun run build.ts",
+        "cwd": "packages/border"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
         "cwd": "packages/border"
       }
     },
@@ -21,7 +28,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm test",
+        "command": "bun test",
         "cwd": "packages/border"
       }
     },

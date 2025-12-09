@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm build",
+        "command": "bun run build",
         "cwd": "apps/examples"
       }
     }

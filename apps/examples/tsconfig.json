@@ -5,7 +5,8 @@
     "declaration": true,
     "allowImportingTsExtensions": false,
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "types": []
   },
   "include": [
     "src/**/*"

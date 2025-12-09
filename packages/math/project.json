@@ -7,7 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm build",
+        "command": "bun run build.ts",
+        "cwd": "packages/math"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
         "cwd": "packages/math"
       }
     },
@@ -21,7 +28,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm test",
+        "command": "bun test",
         "cwd": "packages/math"
       }
     },
