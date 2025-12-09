@@ -2,6 +2,7 @@ import { BaseContext, EventReactions, NO_OP, TemplateState, TemplateStateMachine
 import { Point, PointCal } from "@ue-too/math";
 import { TrackGraph } from "./track";
 import { approximately } from "@ue-too/curve";
+import { Train, TrainPosition } from "./trains/formation";
 
 export type TrainPlacementStates = "IDLE" | "HOVER_FOR_PLACEMENT";
 
@@ -18,28 +19,22 @@ export type TrainPlacementEvents = {
     "escapeKey": {};
     "startPlacement": {};
     "endPlacement": {};
+    "flipTrainDirection": {};
 }
 
 export interface TrainPlacementContext extends BaseContext {
     cancelCurrentTrainPlacement: () => void;
     placeTrain: (position: Point) => void;
     hoverForPlacement: (position: Point) => void;
+    flipTrainDirection: () => void;
 }
 
-export type TrainPosition = {
-    trackSegment: number;
-    tValue: number;
-    direction: TrainDirection; // the direction of the train on the bezier curve; forward is t = 0 -> t = 1; backward is t = 1 -> t = 0
+export function flipDirection(direction: 'tangent' | 'reverseTangent'): 'tangent' | 'reverseTangent' {
+    return direction === "tangent" ? "reverseTangent" : "tangent";
 }
-
-export function flipDirection(direction: TrainDirection): TrainDirection {
-    return direction === "forward" ? "backward" : "forward";
-}
-
-export type TrainDirection = "forward" | "backward";
 
 export interface JointDirectionManager {
-    getNextJoint(jointNumber: number, direction: "tangent" | "reverseTangent"): {jointNumber: number, direction: "forward" | "backward", curveNumber: number} | null;
+    getNextJoint(jointNumber: number, direction: "tangent" | "reverseTangent", occupiedJoints?: {jointNumber: number, direction: 'tangent' | 'reverseTangent'}[], occupiedTrackSegments?: {trackNumber: number, inTrackDirection: 'tangent' | 'reverseTangent'}[]): {jointNumber: number, direction: 'tangent' | 'reverseTangent', curveNumber: number} | null;
 }
 
 export class DefaultJointDirectionManager implements JointDirectionManager {
@@ -50,12 +45,64 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
         this._trackGraph = trackGraph;
     }
 
-    getNextJoint(jointNumber: number, direction: "tangent" | "reverseTangent"): {jointNumber: number, direction: "forward" | "backward", curveNumber: number} | null {
+    getNextJoint(jointNumber: number, direction: "tangent" | "reverseTangent", occupiedJoints?: {jointNumber: number, direction: 'tangent' | 'reverseTangent'}[], occupiedTrackSegments?: {trackNumber: number, inTrackDirection: 'tangent' | 'reverseTangent'}[]): {jointNumber: number, direction: 'tangent' | 'reverseTangent', curveNumber: number} | null {
         const joint = this._trackGraph.getJoint(jointNumber);
         if(joint === null){
             console.warn("starting joint not found");
             return null;
         }
+
+        // short circuit
+        if(occupiedJoints && occupiedJoints.length > 0){
+            for(let i = 0; i < occupiedJoints.length; i++){
+                if(occupiedJoints[i].jointNumber === jointNumber && occupiedJoints[i].direction === direction){
+                    if(i < occupiedJoints.length - 1){
+                        const nextJointNumber = occupiedJoints[i + 1].jointNumber;
+                        const nextTrackSegmentNumber = joint.connections.get(nextJointNumber);
+                        const nextJoint = this._trackGraph.getJoint(nextJointNumber);
+                        if(nextJoint === null){
+                            console.warn("next joint not found, something wrong about the occupied joints");
+                            return null;
+                        }
+                        if(nextTrackSegmentNumber === undefined){
+                            console.warn("next track segment is not connected to the joint, something wrong about the occupied joints");
+                            return null;
+                        }
+                        const nextTrack = this._trackGraph.getTrackSegmentWithJoints(nextTrackSegmentNumber);
+                        if(nextTrack === null){
+                            console.warn("next track segment is not found, something wrong about the occupied joints");
+                            return null;
+                        }
+                        const nextDirection: 'tangent' | 'reverseTangent' = nextTrack.t0Joint === jointNumber ? "tangent" : "reverseTangent";
+                        return {
+                            jointNumber: nextJointNumber,
+                            direction: nextDirection,
+                            curveNumber: nextTrackSegmentNumber
+                        }
+                    } else if(occupiedTrackSegments && occupiedTrackSegments.length > 0){
+                        const lastOccupiedTrack = occupiedTrackSegments[occupiedTrackSegments.length - 1];
+                        const lastOccupiedTrackSegment = this._trackGraph.getTrackSegmentWithJoints(lastOccupiedTrack.trackNumber);
+                        if(lastOccupiedTrackSegment == null){
+                            console.warn("last occupied track segment not found");
+                            break;
+                        }
+                        const nextJointNumber = lastOccupiedTrack.inTrackDirection === "tangent" ? lastOccupiedTrackSegment.t1Joint : lastOccupiedTrackSegment.t0Joint;
+                        const nextJoint = this._trackGraph.getJoint(nextJointNumber);
+                        if(nextJoint == null){
+                            console.warn("next joint not found");
+                            break;
+                        }
+                        return {
+                            jointNumber: nextJointNumber,
+                            curveNumber: lastOccupiedTrack.trackNumber,
+                            direction: lastOccupiedTrack.inTrackDirection,
+                        };
+                    }
+                }
+            }
+        }
+        // short circuit
+
         const possibleNextJoints = joint.direction[direction];
         if(possibleNextJoints.size === 0){
             console.warn("no possible next joints");
@@ -79,7 +126,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn("first next track segment not found");
             return null;
         }
-        const nextDirection = firstNextTrackSegment.t0Joint === jointNumber ? "forward" : "backward";
+        let nextDirection: 'tangent' | 'reverseTangent' = firstNextTrackSegment.t0Joint === jointNumber ? "tangent" : "reverseTangent";
         return {
             jointNumber: firstNextJointNumber,
             direction: nextDirection,
@@ -88,88 +135,85 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
     }
 }
 
+
+const THROTTLE_STEPS_KEYS = ["er", "b7", "b6", "b5", "b4", "b3", "b2", "b1", "N", "p1", "p2", "p3", "p4", "p5"] as const;
+
+export type ThrottleStepValues<T extends readonly string[]> = {
+    [K in T[number]]: number;
+};
+
+
+type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
+
+export type ThrottleSteps = CreateStateType<typeof THROTTLE_STEPS_KEYS>;
+
+/**
+ * Utility type that creates an object type mapping each key from a string union type to a value type.
+ * @template Keys - The string union type to use as keys
+ * @template Value - The type to map each key to (defaults to number)
+ * 
+ * @example
+ * type MyKeys = "a" | "b" | "c";
+ * type MyMap = MapStringUnionToValue<MyKeys, number>;
+ * // Results in: { a: number; b: number; c: number; }
+ */
+export type MapStringUnionToValue<Keys extends string, Value = number> = {
+    [K in Keys]: Value;
+};
+
+export type ThrottleAccelerationMap = MapStringUnionToValue<ThrottleSteps>;
+
+export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
+    "er": -1.3,
+    "b7": -1.2,
+    "b6": -1.0,
+    "b5": -0.7,
+    "b4": -0.5,
+    "b3": -0.3,
+    "b2": -0.2,
+    "b1": -0.1,
+    "N": 0,
+    "p1": 0.1,
+    "p2": 0.2,
+    "p3": 0.3,
+    "p4": 0.5,
+    "p5": 0.7
+};
+
+
 export class TrainPlacementEngine implements TrainPlacementContext {
 
     private _trackGraph: TrackGraph;
-    private _trainPosition: Point | null = null;
-    private _previewPosition: Point | null = null;
     private _trainTangent: Point | null = null;
-    private _previewTangent: Point | null = null;
-    private _trainSpeed: number = 0; // train speed should never be negative since the direction already takes care of it
-    private _trainAcceleration: number = 0;
-    private _trainPositionInTrack: TrainPosition | null = null;
+
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
-    private _friction: number = -0.05;
-    private _expandDirection: "same" | "opposite" = "opposite";
+    private _train: Train;
 
-    private _secondBogieOffset: number = 40;
 
     constructor(trackGraph: TrackGraph) {
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(trackGraph);
+        this._train = new Train(1, null, [40, 10, 40, 10, 40], trackGraph, this._jointDirectionManager);
     }
 
     cancelCurrentTrainPlacement(){
-        this._previewPosition = null;
+        this._train.clearPreviewPosition();
     };
 
+    get train(): Train{
+        return this._train;
+    }
+
     placeTrain(){
-        if(this._previewPosition === null){
+        const previewPosition = this._train.getPreviewPosition();
+        if(previewPosition === null){
+            console.warn('no preview position');
             return;
         }
-        if(this._potentialTrainPlacement !== null){
-            this._trainPositionInTrack = {...this._potentialTrainPlacement};
-            this._potentialTrainPlacement = null;
-        }
-        this._trainPosition = this._previewPosition;
-        this._previewPosition = null;
-        this._trainTangent = this._previewTangent;
-        this._previewTangent = null;
-    }
-
-    setTrainAcceleration(acceleration: number){
-        this._trainAcceleration = acceleration;
-    }
-
-    setTrainSpeed(speed: number){
-        this._trainSpeed = speed;
-    }
-
-    update(deltaTime: number){
-        deltaTime /= 1000;
-        if(this._trainPositionInTrack === null){
-            return;
-        }
-        const trackSegment = this._trackGraph.getTrackSegmentWithJoints(this._trainPositionInTrack.trackSegment);
-        if(trackSegment === null){
-            console.warn("track segment where the train is on is not found");
-            return;
-        }
-        this._trainSpeed += this._trainAcceleration * deltaTime;
-        let distanceToAdvance = this._trainSpeed * deltaTime;
-        if(approximately(distanceToAdvance, 0, 0.01)){
-            return;
-        }
-        const nextPosition = this.getPosition(distanceToAdvance, this._trainPositionInTrack.direction, this._trainPositionInTrack.tValue, this._trainPositionInTrack.trackSegment);
-        if(nextPosition === null){
-            return;
-        }
-        this._trainPositionInTrack = nextPosition;
-        this._trainPosition = null;
-    }
-
-    switchDirection(){
-        if(this._trainPositionInTrack === null){
-            return;
-        }
-        this._trainPositionInTrack.direction = this._trainPositionInTrack.direction === "forward" ? "backward" : "forward";
-        this._trainTangent = this._trainTangent !== null ? PointCal.multiplyVectorByScalar(this._trainTangent, -1) : null;
-        this._expandDirection = this._expandDirection === "same" ? "opposite" : "same";
-    }
-
-    get trainTangent(): Point | null {
-        return this._trainTangent;
+        this._train.setPosition(previewPosition);
+        this._train.clearPreviewPosition();
+        console.log('placed train');
     }
 
     hoverForPlacement(position: Point){
@@ -192,127 +236,22 @@ export class TrainPlacementEngine implements TrainPlacementContext {
                         console.warn("track segment not found");
                         return;
                     }
-                    this._previewPosition = res.projectionPoint;
                     this._potentialTrainPlacement = {
                         trackSegment: res.curve,
                         tValue: res.atT,
-                        direction: "forward"
+                        direction: "tangent",
+                        point: res.projectionPoint
                     };
+                    this._train.getPreviewBogiePositions(this._potentialTrainPlacement);
                     break;
             }
-            this._previewTangent = res.tangent;
         } else {
-            this._previewPosition = null;
+            this._train.clearPreviewPosition();
         }
     }
 
-    get trainPosition(): Point | null {
-        if(this._trainPosition !== null) {
-            return this._trainPosition;
-        }
-        if(this._trainPositionInTrack !== null){
-            const trackSegment = this._trackGraph.getTrackSegmentWithJoints(this._trainPositionInTrack.trackSegment);
-            if(trackSegment !== null){
-                const tangent = PointCal.unitVector(trackSegment.curve.derivative(this._trainPositionInTrack.tValue));
-                this._trainTangent = this._trainPositionInTrack.direction === "forward" ? tangent : PointCal.multiplyVectorByScalar(tangent, -1);
-                this._trainPosition = trackSegment.curve.get(this._trainPositionInTrack.tValue);
-                return this._trainPosition;
-            }
-        }
-        return null;
-    }
-
-    get secondBogiePosition(): Point | null {
-        const secondBogiePosition = this.getSecondBogiePosition();
-        if(secondBogiePosition === null){
-            return null;
-        }
-        const trackSegment = this._trackGraph.getTrackSegmentWithJoints(secondBogiePosition.trackSegment);
-        if(trackSegment === null){
-            return null;
-        }
-        return trackSegment.curve.get(secondBogiePosition.tValue);
-    }
-
-    get previewPosition(): Point | null {
-        return this._previewPosition;
-    }
-
-    getSecondBogiePosition(): TrainPosition | null {
-        if(this._trainPositionInTrack === null){
-            return null;
-        }
-        const expandDirection = this._expandDirection === "same" ? this._trainPositionInTrack.direction : flipDirection(this._trainPositionInTrack.direction);
-        const secondBogiePosition = this.getPosition(this._secondBogieOffset, expandDirection, this._trainPositionInTrack.tValue, this._trainPositionInTrack.trackSegment);
-        if(secondBogiePosition === null){
-            return null;
-        }
-        return secondBogiePosition;
-    }
-
-    getPosition(distance: number, direction: TrainDirection, tValue: number, currentTrackSegmentNumber: number): TrainPosition | null{
-        let distanceToAdvance = distance;
-
-        let xDirection = direction;
-        let xTValue = tValue;
-        let xTrackSegment = currentTrackSegmentNumber;
-
-        let trackSegment = this._trackGraph.getTrackSegmentWithJoints(xTrackSegment);
-
-        if(trackSegment === null){
-            return null;
-        }
-
-        const advanceLength = distanceToAdvance * (xDirection === "forward" ? 1 : -1);
-        let nextPosition = trackSegment.curve.advanceAtTWithLength(xTValue, advanceLength);
-        while(nextPosition.type !== "withinCurve"){
-            const comingFromJointNumber = xDirection === "forward" ? trackSegment.t0Joint : trackSegment.t1Joint;
-            const enteringJointNumber = xDirection === "forward" ? trackSegment.t1Joint : trackSegment.t0Joint;
-            const enteringJoint = this._trackGraph.getJoint(enteringJointNumber);
-
-            if(enteringJoint === null){
-                return null;
-            }
-
-            const nextJointDirection = enteringJoint.direction.reverseTangent.has(comingFromJointNumber) ? "tangent" : "reverseTangent";
-            const nextDirection = this._jointDirectionManager.getNextJoint(enteringJointNumber, nextJointDirection);
-
-            if(nextDirection === null){
-                console.warn("end of the track");
-                this._trainAcceleration = 0;
-                this._trainSpeed = 0;
-                xTValue = xDirection === "forward" ? 1 : 0;
-                return {
-                    trackSegment: xTrackSegment,
-                    tValue: xTValue,
-                    direction: xDirection
-                };
-            }
-
-            trackSegment = this._trackGraph.getTrackSegmentWithJoints(nextDirection.curveNumber);
-
-            if(trackSegment === null){
-                console.warn("track segment not found");
-                return null;
-            }
-
-            xDirection = nextDirection.direction;
-            xTrackSegment = nextDirection.curveNumber;
-
-            distanceToAdvance = Math.abs(nextPosition.remainLength);
-            const startTValue = nextDirection.direction === "forward" ? 0 : 1;
-            const advanceLength = distanceToAdvance * (nextDirection.direction === "forward" ? 1 : -1);
-            nextPosition = trackSegment.curve.advanceAtTWithLength(startTValue, advanceLength);
-
-            xTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : nextDirection.direction === "forward" ? 1 : 0;
-        }
-        xTValue = nextPosition.type === "withinCurve" ? nextPosition.tVal : xDirection === "forward" ? 1 : 0;
-        
-        return {
-            trackSegment: xTrackSegment,
-            tValue: xTValue,
-            direction: xDirection
-        }
+    flipTrainDirection(){
+        this._train.flipTrainDirection();
     }
 
     setup(){
@@ -371,6 +310,12 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<TrainPla
                 context.cancelCurrentTrainPlacement();
             },
             defaultTargetState: "IDLE"
+        },
+        "flipTrainDirection": {
+            action: (context) => {
+                context.flipTrainDirection();
+            },
+            defaultTargetState: "HOVER_FOR_PLACEMENT"
         }
     }
 }

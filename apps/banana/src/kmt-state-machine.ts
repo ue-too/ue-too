@@ -1,5 +1,5 @@
 import { BCurve } from "@ue-too/curve";
-import { sameDirection, type Point } from "@ue-too/math";
+import { directionAlignedToTangent, sameDirection, type Point } from "@ue-too/math";
 import type { StateMachine, BaseContext, EventReactions, EventGuards, Guard } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { ELEVATION, ProjectionCurveResult, ProjectionEdgeResult, ProjectionJointResult, ProjectionPositiveResult, ProjectionResult, TrackGraph } from "./track";
@@ -906,7 +906,7 @@ function extendTrackIsPossible(startJointNumber: number, startJointTangent: Poin
     const jointTangentIsPointingInEmptyDirection = trackGraph.tangentIsPointingInEmptyDirection(startJointNumber);
     const emptyTangentDirection = jointTangentIsPointingInEmptyDirection ? startJointTangent : PointCal.multiplyVectorByScalar(startJointTangent, -1);
 
-    if(sameDirection(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint, 0.01)){
+    if(directionAlignedToTangent(emptyTangentDirection, previewCurveTangentInTheDirectionToOtherJoint)){
         return true;
     }
 
@@ -1018,7 +1018,8 @@ function createQuadraticFromTangentCurvature(
     startPoint: Point, 
     endPoint: Point, 
     tangentDirection: Point, 
-    curvature: number
+    curvature: number,
+    tension = 1.5
 ): {p0: Point, p1: Point, p2: Point} {
     
     // Ensure tangent direction is normalized
@@ -1033,7 +1034,7 @@ function createQuadraticFromTangentCurvature(
     // The control point distance is inversely related to curvature magnitude
     
     // Base control distance as a fraction of chord length
-    let controlDistance = chordLength * 0.5;
+    let controlDistance = chordLength * tension / 3.0;
     
     // Adjust control distance based on curvature
     // Higher curvature magnitude requires closer control points for tighter curves

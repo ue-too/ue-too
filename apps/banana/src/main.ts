@@ -346,6 +346,7 @@ layoutDeleteToggleButton.addEventListener("click", ()=>{
 
 const trainPlacementToggleButton = document.getElementById("train-placement-toggle") as HTMLButtonElement;
 const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
+const train = trainPlacementEngine.train;
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
 // Cache for track segment offset curves to avoid recalculating every frame
@@ -405,6 +406,7 @@ window.addEventListener("keydown", (event)=>{
         stateMachine.happens("escapeKey");
     } else if(event.key === "f"){
         stateMachine.happens("flipEndTangent");
+        trainStateMachine.happens("flipTrainDirection");
     } else if(event.key === "g"){
         stateMachine.happens("flipStartTangent");
     } else if(event.key === "q"){
@@ -477,7 +479,7 @@ function step(timestamp: number){
     board.step(timestamp);
 
     const deltaTime = timestamp - lastTimestamp; // in milliseconds
-    trainPlacementEngine.update(deltaTime);
+    train.update(deltaTime);
 
     lastTimestamp = timestamp;
 
@@ -519,22 +521,22 @@ function step(timestamp: number){
 
         const cps = drawData.curve.getControlPoints();
 
-        board.context.save();
-        board.context.beginPath();
-        board.context.arc(cps[0].x, cps[0].y, 3, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
+        // board.context.save();
+        // board.context.beginPath();
+        // board.context.arc(cps[0].x, cps[0].y, 1.067 / 2, 0, 2 * Math.PI);
+        // board.context.fill();
+        // board.context.restore();
 
-        board.context.save();
-        board.context.beginPath();
-        board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 3, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
+        // board.context.save();
+        // board.context.beginPath();
+        // board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 1.067 / 2, 0, 2 * Math.PI);
+        // board.context.fill();
+        // board.context.restore();
 
 
         board.context.save();
         board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);
-        board.context.lineWidth = 5 / board.camera.zoomLevel;
+        board.context.lineWidth = 1.067;
         board.context.beginPath();
         board.context.moveTo(cps[0].x, cps[0].y);
         if(cps.length === 3){
@@ -549,6 +551,7 @@ function step(timestamp: number){
 
     // offset as line segments
     board.context.save();
+    board.context.lineWidth = 1 / board.camera.zoomLevel;
     curveEngine.trackGraph.experimentTrackOffsets.forEach((offset)=>{
         if(board.context === undefined){
             return;
@@ -600,8 +603,9 @@ function step(timestamp: number){
         board.context.lineWidth = 1 / board.camera.zoomLevel;
         board.context.strokeStyle = "blue";
         board.context.beginPath();
-        board.context.arc(joint.position.x, joint.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(joint.position.x, joint.position.y, 5 / board.camera.zoomLevel, 0, 2 * Math.PI);
         board.context.stroke();
+        board.context.font = `${12 / board.camera.zoomLevel}px Arial`;
         board.context.textAlign = "center";
         board.context.textBaseline = "middle";
         drawArrow(board.context, board.camera.zoomLevel, joint.position, PointCal.addVector(PointCal.multiplyVectorByScalar(joint.tangent, 10), joint.position));
@@ -614,7 +618,7 @@ function step(timestamp: number){
         board.context.fillStyle = "red";
         const point = curveEngine.previewStartProjection.projectionPoint;
         board.context.beginPath();
-        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -624,7 +628,7 @@ function step(timestamp: number){
         board.context.fillStyle = "green";
         const point = curveEngine.previewEndProjection.projectionPoint;
         board.context.beginPath();
-        board.context.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -633,7 +637,7 @@ function step(timestamp: number){
         board.context.save();
         board.context.fillStyle = colorForJoint(curveEngine.newStartJointType);
         board.context.beginPath();
-        board.context.arc(curveEngine.newStartJointType.position.x, curveEngine.newStartJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(curveEngine.newStartJointType.position.x, curveEngine.newStartJointType.position.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
@@ -642,43 +646,39 @@ function step(timestamp: number){
         board.context.save();
         board.context.fillStyle = colorForJoint(curveEngine.newEndJointType);
         board.context.beginPath();
-        board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 5, 0, 2 * Math.PI);
+        board.context.arc(curveEngine.newEndJointType.position.x, curveEngine.newEndJointType.position.y, 1.067 / 2, 0, 2 * Math.PI);
         board.context.fill();
         board.context.restore();
     }
 
-    if(trainPlacementEngine.previewPosition != null){
-        board.context.save();
-        board.context.fillStyle = "red";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.previewPosition.x, trainPlacementEngine.previewPosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
-    }
-
-    if(trainPlacementEngine.trainPosition != null){
-        board.context.save();
-        board.context.fillStyle = "green";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.trainPosition.x, trainPlacementEngine.trainPosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
-        board.context.restore();
-        if(trainPlacementEngine.trainTangent !== null){
-            drawArrow(board.context, board.camera.zoomLevel, trainPlacementEngine.trainPosition, PointCal.addVector(PointCal.multiplyVectorByScalar(PointCal.unitVector(trainPlacementEngine.trainTangent), 10), trainPlacementEngine.trainPosition));
+    if(train.previewBogiePositions !== null){
+        for(const bogiePosition of train.previewBogiePositions){
+            board.context.save();
+            board.context.fillStyle = "green";
+            board.context.beginPath();
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 1.067 / 2, 0, 2 * Math.PI);
+            board.context.fill();
+            board.context.restore();
         }
     }
 
-    if(trainPlacementEngine.secondBogiePosition != null){
+    const bogiePositions = train.getBogiePositions();
+    if(bogiePositions !== null){
         board.context.save();
-        board.context.fillStyle = "green";
-        board.context.beginPath();
-        board.context.arc(trainPlacementEngine.secondBogiePosition.x, trainPlacementEngine.secondBogiePosition.y, 5, 0, 2 * Math.PI);
-        board.context.fill();
+        board.context.fillStyle = "blue";
+        const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink", "brown", "gray", "black", "white"];
+        for(let i = 0; i < bogiePositions.length; i++){
+            const bogiePosition = bogiePositions[i];
+            board.context.fillStyle = colors[i % colors.length];
+            board.context.beginPath();
+            board.context.arc(bogiePosition.point.x, bogiePosition.point.y, 1.067 / 2, 0, 2 * Math.PI);
+            board.context.fill();
+        }
         board.context.restore();
     }
 
+
     if(capture){
-        
         const imageData = board.context.getImageData(0, 0, canvas.width, canvas.height);
         downloadImageDataAsPNG(imageData);
         capture = false;
@@ -722,32 +722,8 @@ utilButton.addEventListener("click", ()=>{
     console.log('totalCount', totalCount);
     console.log('order', order);
 
-    // NOTE pressure test
-    // for(let i = 0; i < 10; i++){
-    //     const viewportAABB = board.camera.viewPortAABB();
-    //     const p1 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-    //     const p2 = {x: getRandomNumber(viewportAABB.min.x, viewportAABB.max.x), y: getRandomNumber(viewportAABB.min.y, viewportAABB.max.y)};
-    //     const tangent = PointCal.unitVector(getRandomPoint(0, 1));
-    //     const tangent2 = PointCal.unitVector(getRandomPoint(0, 1));
-    //     const elevation = Math.floor(Math.random() * 7) - 3;
-    //     const elevation2 = Math.floor(Math.random() * 7) - 3;
-    //     const joint1 = curveEngine.trackGraph.createNewEmptyJoint({x: p1.x, y: p1.y}, tangent)
-    //     const joint2 = curveEngine.trackGraph.createNewEmptyJoint({x: p2.x, y: p2.y}, tangent)
-    //     const curve = createCubicFromTangentsCurvatures(p1, p2, tangent, tangent2, Math.random(), Math.random());
-    //     curveEngine.trackGraph.connectJoints(joint1, joint2, [curve.p1, curve.p2]);
-    // }
-
-    // NOTE debug same direction
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -174.12109375, clientY: 59.125}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -174.12109375, clientY: 59.125}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: -27.76562499999997, clientY: 45.4296875}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove',{clientX: 86.41796875, clientY: -32.3203125}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 86.41796875, clientY: -32.3203125}));
-    // canvas.dispatchEvent(new PointerEvent('pointermove', {clientX: 209.05078125, clientY: -160.5234375}));
-    // canvas.dispatchEvent(new PointerEvent('pointerup', {clientX: 209.05078125, clientY: -160.5234375}));
-    // window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape'}));
-
+    console.log('occupied joint numbers', train.occupiedJointNumbers);
+    console.log('occupied track segments', train.occupiedTrackSegments);
 
     console.log('viewport aabb', board.camera.viewPortAABB());
 });
@@ -758,16 +734,19 @@ const neutralButton = document.getElementById("neutral") as HTMLButtonElement;
 const switchDirectionButton = document.getElementById("switch-direction") as HTMLButtonElement;
 
 p1Button.addEventListener("click", ()=>{
-    trainPlacementEngine.setTrainSpeed(40);
+    // trainPlacementEngine.setTrainSpeed(-40);
+    // trainPlacementEngine.setTrainAcceleration(40);
+    train.setThrottleStep("p5");
 });
 
 neutralButton.addEventListener("click", ()=>{
-    trainPlacementEngine.setTrainSpeed(0);
-    trainPlacementEngine.setTrainAcceleration(0);
+    // trainPlacementEngine.setTrainSpeed(0);
+    // trainPlacementEngine.setTrainAcceleration(0);
+    train.setThrottleStep("N");
 });
 
 switchDirectionButton.addEventListener("click", ()=>{
-    trainPlacementEngine.switchDirection();
+    train.switchDirection();
 });
 
 // GeoJSON toggle buttons
