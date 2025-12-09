@@ -40,6 +40,12 @@ jobs:
         # env:
           # NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Install dependencies
+        run: |
+          bun ci
+      - name: Build packages
+        run: bun run build
+
       - name: Setup Node.js
         id: setup-node
         uses: actions/setup-node@v3
@@ -49,12 +55,6 @@ jobs:
           scope: '@ue-too'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Install dependencies
-        run: |
-          bun ci
-      - name: Build packages
-        run: bun run build
-
       - name: Setup git user
         run: |
           git config --global user.name "GitHub Actions Bot"
