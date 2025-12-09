@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/animate/dist"
+        "packageRoot": "packages/animate/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

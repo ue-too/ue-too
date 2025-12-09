@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/border/dist"
+        "packageRoot": "packages/border/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

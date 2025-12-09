@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/dynamics/dist"
+        "packageRoot": "packages/dynamics/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/curve/dist"
+        "packageRoot": "packages/curve/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

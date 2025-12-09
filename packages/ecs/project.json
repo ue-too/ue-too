@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/ecs/dist"
+        "packageRoot": "packages/ecs/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

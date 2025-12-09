@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/board/dist"
+        "packageRoot": "packages/board/dist",
+        "publishCommand": "npm publish"
       }
     }
   },

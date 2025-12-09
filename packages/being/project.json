@@ -34,7 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/being/dist"
+        "packageRoot": "packages/being/dist",
+        "publishCommand": "npm publish"
       }
     }
   },
