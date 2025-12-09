@@ -69,6 +69,8 @@ jobs:
         run: bun run move-packageJson
       - name: Replace workspace deps
         run: bun run replace-workspace-deps
+      - name: Update npm
+        run: npm install -g npm@latest
       - name: Publish packages
         run: npm run publish-packages ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
         # env:
