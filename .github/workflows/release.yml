@@ -40,15 +40,6 @@ jobs:
           scope: '@ue-too'
         env:
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '22.19.0'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@ue-too'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Install dependencies
         run: |
           bun ci
