@@ -146,3 +146,4 @@ README-for-docusaurus.md
 .rollup.cache
 
 vite.config.*.timestamp*
+vitest.config.*.timestamp*
