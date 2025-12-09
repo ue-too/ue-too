@@ -2,14 +2,14 @@
   "name": "@ue-too/ecs",
   "author": "niuee",
   "type": "module",
-  "version": "0.7.1",
+  "version": "0.7.0",
   "description": "Entity Component System for uē-tôo",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/niuee/ue-too.git"
+    "url": "https://github.com/ue-too/ue-too.git"
   },
-  "homepage": "https://github.com/niuee/ue-too",
+  "homepage": "https://github.com/ue-too/ue-too",
   "exports": {
     ".": {
       "types": "./src/index.ts",
