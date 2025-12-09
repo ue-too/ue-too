@@ -9,6 +9,7 @@
     "strict": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
+    "types": []
   },
   "include": [
     "src/**/*",

@@ -81,7 +81,6 @@
     "vitest": "^4.0.0",
     "vue-tsc": "^2.2.8"
   },
-  "packageManager": "pnpm@10.17.0",
   "engines": {
     "node": "22.19.0"
   },
@@ -91,5 +90,9 @@
     "react-router-dom": "6.29.0",
     "vue": "^3.5.13",
     "zustand": "^5.0.9"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

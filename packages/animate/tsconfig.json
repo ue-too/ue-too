@@ -9,7 +9,8 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "composite": true,
-    "strict": true
+    "strict": true,
+    "types": []
   },
   "include": [
     "src/**/*"
