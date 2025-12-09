@@ -11,6 +11,13 @@
         "cwd": "packages/animate"
       }
     },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
+        "cwd": "packages/animate"
+      }
+    },
     "move-package": {
       "executor": "nx:run-commands",
       "options": {
