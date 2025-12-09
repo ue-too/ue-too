@@ -34,8 +34,8 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "packages/animate/dist",
-        "publishCommand": "npm publish"
+        "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks",
+        "cwd": "packages/animate/dist"
       }
     }
   },
