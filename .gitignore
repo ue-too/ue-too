@@ -144,3 +144,5 @@ README-for-docusaurus.md
 .github/instructions/nx.instructions.md
 
 .rollup.cache
+
+vite.config.*.timestamp*

@@ -93,6 +93,9 @@ export class ComponentArray<T> implements CArray {
     }
 
     insertData(entity: Entity, data: T): void {
+        if(this.getData(entity) !== null) {
+            this.removeData(entity);
+        }
         if(this.sparse.length < entity){
             // resize the array for the new entity but normally this should not happen
             this.sparse = [...this.sparse, ...new Array(entity - this.sparse.length).fill(null)];
@@ -153,7 +156,7 @@ export class ComponentManager {
     
     registerComponent<T>(componentName: string){
         if(this._componentNameToTypeMap.has(componentName)) {
-            console.warn(`Component ${componentName} already registered`);
+            console.warn(`Component ${componentName} already registered; registering with the given new type`);
         }
         const componentType = this._nextAvailableComponentType;
         this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
@@ -284,6 +287,7 @@ export class Coordinator {
         }
         const componentType = this._componentManager.getComponentType(componentName);
         if(componentType === null) {
+            console.warn(`Component ${componentName} not registered`);
             return;
         }
         signature |= 1 << componentType;
