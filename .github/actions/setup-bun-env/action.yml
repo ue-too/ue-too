@@ -37,11 +37,11 @@ runs:
       with:
         token: ${{ inputs.pat }}
 
-    - name: Setup Node.js
-      id: setup-node
-      uses: actions/setup-node@v3
+    - name: Setup Bun
+      id: setup-bun
+      uses: oven-sh/setup-bun@v2
       with:
-        bun-version: ${{ inputs.node-version }}
+        bun-version: ${{ inputs.bun-version }}
         registry-url: ${{ inputs.registry-url }}
         scope: ${{ inputs.scope }}
       env:
@@ -56,4 +56,4 @@ runs:
     - name: Build packages
       if: ${{ inputs.build }}
       shell: bash
-      run: bun build:examples
+      run: bun run build:examples
