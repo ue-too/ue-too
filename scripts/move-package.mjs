@@ -49,3 +49,9 @@ try {
 } catch (error) {
   console.log("LICENSE.txt not found, skipping...");
 }
+
+try {
+  copyFileSync("../.npmignore", join(packageBuildDir, ".npmignore"));
+} catch (error) {
+  console.log("npmignore not found, skipping...");
+}
