@@ -1,3 +1,13 @@
+## 0.9.2 (2025-12-09)
+
+### 🩹 Fixes
+
+- add tsbuildinfo to git ignore ([f70b58f](https://github.com/ue-too/ue-too/commit/f70b58f))
+
+### ❤️ Thank You
+
+- niuee
+
 ## 0.9.1 (2025-12-09)
 
 ### 🩹 Fixes
