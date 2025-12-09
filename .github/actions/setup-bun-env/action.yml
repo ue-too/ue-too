@@ -1,0 +1,59 @@
+name: 'Setup Bun Environment'
+description: 'Setup Bun and install dependencies'
+inputs:
+  bun-version:
+    description: 'bun version'
+    required: false
+    default: '1.3.4'
+  registry-url:
+    description: 'NPM registry URL'
+    required: false
+    default: 'https://registry.npmjs.org'
+  scope:
+    description: 'NPM scope'
+    required: false
+    default: '@ue-too'
+  install-deps:
+    description: 'Whether to install dependencies'
+    required: false
+    default: 'true'
+  build:
+    description: 'Whether to build packages'
+    required: false
+    default: 'false'
+  npm-token:
+    description: 'NPM token for authentication'
+    required: false
+  pat:
+    description: 'Personal Access Token for checkout'
+    required: false
+
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.pat }}
+
+    - name: Setup Node.js
+      id: setup-node
+      uses: actions/setup-node@v3
+      with:
+        bun-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+        scope: ${{ inputs.scope }}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+
+    - name: Install dependencies
+      if: ${{ inputs.install-deps }}
+      shell: bash
+      run: |
+        bun ci
+
+    - name: Build packages
+      if: ${{ inputs.build }}
+      shell: bash
+      run: bun build:examples

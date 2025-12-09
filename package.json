@@ -6,8 +6,9 @@
   "scripts": {
     "test": "nx run-many --target=test",
     "dev:banana": "nx dev banana",
-    "build": "nx run-many --target=build --projects=math,being,animate,border,curve,dynamics,board,ecs --parallel=false",
+    "build": "nx run-many --target=build:bun --projects=math,being,animate,border,curve,dynamics,board,ecs --parallel=false",
     "build:packages": "nx run-many --target=build --projects=packages/* --parallel=true",
+    "bun-build:packages": "nx run-many --target=build:bun --projects=packages/* --parallel=true",
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",
     "build:affected": "nx affected --target=build --parallel=true",
     "build:examples": "nx build examples",
@@ -95,5 +96,6 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "packageManager": "pnpm@10.17.0+sha512.fce8a3dd29a4ed2ec566fb53efbb04d8c44a0f05bc6f24a73046910fb9c3ce7afa35a0980500668fa3573345bd644644fa98338fa168235c80f4aa17aa17fbef"
 }

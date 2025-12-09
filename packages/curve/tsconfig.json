@@ -13,11 +13,6 @@
   },
   "include": [
     "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../math"
-    }
   ]
 }
   

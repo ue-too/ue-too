@@ -1,6 +1,69 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+
+# original pnpm workflow
+# name: CI Test
+
+# permissions:
+#   contents: read
+
+# on:
+#   pull_request:
+#     branches: [ "main", "dev", "version/**" ]
+#   workflow_dispatch:
+
+# jobs:
+#   unit-test:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         node-version: [22.19.0]
+#         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+#     steps:
+#     - uses: actions/checkout@v3
+#     - uses: pnpm/action-setup@v3
+#       with:
+#         version: 10
+#     - name: Use Node.js ${{ matrix.node-version }}
+#       uses: actions/setup-node@v3
+#       with:
+#         node-version: ${{ matrix.node-version }}
+#         cache: 'pnpm'
+#         registry-url: 'https://registry.npmjs.org'
+#     - name: Debug Environment
+#       run: |
+#         echo "Node version: $(node --version)"
+#         echo "PNPM version: $(pnpm --version)"
+#         echo "Working directory: $(pwd)"
+#         echo "Directory contents:"
+#         ls -la
+#         echo "Package.json contents:"
+#         cat package.json
+#         echo "Nx version: $(npx nx --version)"
+#     - name: Install dependencies
+#       run: pnpm install
+#     - name: Debug After Install
+#       run: |
+#         echo "Node modules directory:"
+#         ls -la node_modules/ | head -10
+#         echo "PNPM store info:"
+#         pnpm store path
+#         echo "Available packages:"
+#         ls -la packages/
+#         echo "Nx projects:"
+#         npx nx show projects
+#     - name: Run unit tests
+#       run: pnpm test
+#     - name: Test build
+#       run: | 
+#         pnpm build
+#         pnpm build:apps
+
+
 name: CI Test
 
 permissions:
@@ -14,46 +77,17 @@ on:
 jobs:
   unit-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [22.19.0]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
-    - uses: actions/checkout@v3
-    - uses: pnpm/action-setup@v3
+    - name: Setup and Build
+      uses: ./.github/actions/setup-bun-env
       with:
-        version: 10
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'pnpm'
-        registry-url: 'https://registry.npmjs.org'
-    - name: Debug Environment
-      run: |
-        echo "Node version: $(node --version)"
-        echo "PNPM version: $(pnpm --version)"
-        echo "Working directory: $(pwd)"
-        echo "Directory contents:"
-        ls -la
-        echo "Package.json contents:"
-        cat package.json
-        echo "Nx version: $(npx nx --version)"
-    - name: Install dependencies
-      run: pnpm install
-    - name: Debug After Install
-      run: |
-        echo "Node modules directory:"
-        ls -la node_modules/ | head -10
-        echo "PNPM store info:"
-        pnpm store path
-        echo "Available packages:"
-        ls -la packages/
-        echo "Nx projects:"
-        npx nx show projects
+        build: true
+        npm-token: ${{ secrets.NPM_TOKEN }}
+        pat: ${{ secrets.PAT }}
+
     - name: Run unit tests
-      run: pnpm test
+      run: bun run test
     - name: Test build
       run: | 
-        pnpm build
-        pnpm build:apps
+        bun run build
+        bun run build:apps
