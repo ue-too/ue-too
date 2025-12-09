@@ -10,4 +10,4 @@ webpack.config.js
 playground
 htmlTemplate
 docs
-.npmignore
+*.tsbuildinfo
