@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import vue from "@vitejs/plugin-vue";
 import { resolve, join } from 'path';
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), vue()],
     root: resolve(__dirname, "./src"),
     publicDir: resolve(__dirname, "public"),
     build: {
@@ -23,4 +24,3 @@ export default defineConfig({
         strictPort: false,
     },
 });
-

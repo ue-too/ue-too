@@ -12,6 +12,10 @@
     "jsx": "react-jsx",
     "lib": ["ES2020", "DOM", "DOM.Iterable"]
   },
+  "vueCompilerOptions": {
+    "target": 3,
+    "strictTemplates": true
+  },
   "include": [
     "src/**/*"
   ]

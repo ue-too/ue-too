@@ -1,5 +1,3 @@
-import { create } from "zustand";
-
 function App() {
   return (
     <div className="app">

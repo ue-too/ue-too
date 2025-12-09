@@ -1,4 +1,4 @@
-import { Coordinator, Entity, System } from "@ue-too/ecs";
+import { ComponentType, Coordinator, Entity, System } from "@ue-too/ecs";
 
 export type OwnershipComponent = {
     owner: Entity | null;
@@ -62,6 +62,18 @@ export class OwnershipSystem implements System {
 
     getOwnerEntities(owner: Entity): Entity[] {
         return Array.from(this.entities).filter((entity) => this.getOwnerOf(entity) === owner);
+    }
+
+    countEntitiesWithComponentByOwner(componentName: string, owner: Entity): number {
+        const entities = this.getOwnerEntities(owner);
+        let count = 0;
+        for(const entity of entities){
+            const component = this.coordinator.getComponentFromEntity<unknown>(componentName, entity);
+            if(component != undefined  && typeof component === 'object' && 'value' in component){
+                count++;
+            }
+        }
+        return count;
     }
 
     removeAllFromOwner(owner: Entity): void {
