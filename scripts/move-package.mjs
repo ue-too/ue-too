@@ -51,7 +51,7 @@ try {
 }
 
 try {
-  copyFileSync("../.npmignore", join(packageBuildDir, ".npmignore"));
+  copyFileSync(join(rootPackagesDir, ".npmignore"), join(packageBuildDir, ".npmignore"));
 } catch (error) {
   console.log("npmignore not found, skipping...");
 }
