@@ -11,6 +11,13 @@
         "cwd": "packages/ecs"
       }
     },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
+        "cwd": "packages/ecs"
+      }
+    },
     "move-package": {
       "executor": "nx:run-commands",
       "options": {

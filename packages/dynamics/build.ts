@@ -1,8 +1,8 @@
-
 const result = await Bun.build({
   entrypoints: ['./src/index.ts'],
   outdir: './dist',
   sourcemap: 'external',
+  external: ['@ue-too/math'],
 });
 
 if (!result.success) {
