@@ -78,6 +78,9 @@ jobs:
   unit-test:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
     - name: Setup and Build
       uses: ./.github/actions/setup-bun-env
       with:
