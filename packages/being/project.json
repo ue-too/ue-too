@@ -11,6 +11,13 @@
         "cwd": "packages/being"
       }
     },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
+        "cwd": "packages/being"
+      }
+    },
     "move-package": {
       "executor": "nx:run-commands",
       "options": {
