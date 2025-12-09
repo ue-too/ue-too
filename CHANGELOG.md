@@ -1,3 +1,13 @@
+## 0.9.1 (2025-12-09)
+
+### 🩹 Fixes
+
+- npmignore path ([#287](https://github.com/ue-too/ue-too/pull/287))
+
+### ❤️ Thank You
+
+- niuee @niuee
+
 ## 0.9.0 (2025-12-09)
 
 ### 🩹 Fixes
