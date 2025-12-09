@@ -11,6 +11,13 @@
         "cwd": "packages/curve"
       }
     },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun run build.ts",
+        "cwd": "packages/curve"
+      }
+    },
     "move-package": {
       "executor": "nx:run-commands",
       "options": {
