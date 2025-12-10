@@ -1,21 +1,20 @@
 import { useRef, useCallback, useSyncExternalStore } from "react";
 import { useAnimationFrame } from "../hooks/useAnimationFrame";
-import { useBoardify } from "../hooks/useBoardify";
+import { BoardProvider, useBoard, useBoardCameraState, useBoardify } from "../hooks/useBoardify";
 
 export type BoardProps = {
     fullScreen?: boolean;
     width?: number;
     height?: number;
     animationCallback?: (timestamp: number, ctx: CanvasRenderingContext2D) => void;
+    children?: React.ReactNode;
 }
 
-export default function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
+export function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
 
-    const {board, subscribe} = useBoardify(fullScreen);
+    console.log('Board rendered');
 
-    const position = useSyncExternalStore(subscribe, () => {
-        return board.camera.position;
-    });
+    const board = useBoard();
 
     const animationCallback = useCallback((timestamp: number) => {
         board.step(timestamp);
@@ -34,7 +33,6 @@ export default function Board({width, height, fullScreen, animationCallback: ani
 
     return (
         <>
-            <div>camera position: {position.x}, {position.y}</div>
             <canvas 
                 width={width}
                 height={height}
@@ -47,5 +45,14 @@ export default function Board({width, height, fullScreen, animationCallback: ani
                 }} 
             />
         </>
+    );
+}
+
+export default function BoardWrapperWithChildren({width, height, fullScreen, animationCallback: animationCallbackProp, children}: BoardProps) {
+    return (
+        <BoardProvider>
+            <Board width={width} height={height} fullScreen={fullScreen} animationCallback={animationCallbackProp} />
+            {children}
+        </BoardProvider>
     );
 }
