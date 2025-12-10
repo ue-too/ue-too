@@ -7,14 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run ../../scripts/build.ts --external @ue-too/math",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
         "cwd": "packages/border"
       }
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run ../../scripts/build.ts --external @ue-too/math",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
         "cwd": "packages/border"
       }
     },

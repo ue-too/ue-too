@@ -7,14 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run ../../scripts/build.ts",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
         "cwd": "packages/math"
       }
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run ../../scripts/build.ts",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
         "cwd": "packages/math"
       }
     },
