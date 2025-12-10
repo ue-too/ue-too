@@ -110,6 +110,13 @@
         "ts-jest": "^29.4.5",
       },
     },
+    "apps/board-react": {
+      "name": "@ue-too/board-react",
+      "version": "0.5.0",
+      "dependencies": {
+        "@ue-too/board": "workspace:*",
+      },
+    },
     "apps/examples": {
       "name": "@ue-too/examples",
       "version": "0.5.0",
@@ -1042,6 +1049,8 @@
     "@ue-too/blast": ["@ue-too/blast@workspace:apps/blast"],
 
     "@ue-too/board": ["@ue-too/board@workspace:packages/board"],
+
+    "@ue-too/board-react": ["@ue-too/board-react@workspace:apps/board-react"],
 
     "@ue-too/border": ["@ue-too/border@workspace:packages/border"],
 
