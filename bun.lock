@@ -107,6 +107,13 @@
         "ts-jest": "^29.4.5",
       },
     },
+    "apps/board-react": {
+      "name": "@ue-too/board-react",
+      "version": "0.5.0",
+      "dependencies": {
+        "@ue-too/board": "workspace:*",
+      },
+    },
     "apps/examples": {
       "name": "@ue-too/examples",
       "version": "0.5.0",
@@ -126,18 +133,18 @@
     },
     "packages/animate": {
       "name": "@ue-too/animate",
-      "version": "0.7.1",
+      "version": "0.9.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/being": {
       "name": "@ue-too/being",
-      "version": "0.7.1",
+      "version": "0.9.0",
     },
     "packages/board": {
       "name": "@ue-too/board",
-      "version": "0.7.1",
+      "version": "0.9.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -145,14 +152,14 @@
     },
     "packages/border": {
       "name": "@ue-too/border",
-      "version": "0.7.1",
+      "version": "0.9.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/curve": {
       "name": "@ue-too/curve",
-      "version": "0.7.1",
+      "version": "0.9.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
@@ -164,7 +171,7 @@
     },
     "packages/dynamics": {
       "name": "@ue-too/dynamics",
-      "version": "0.7.1",
+      "version": "0.9.0",
       "dependencies": {
         "@ue-too/ecs": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -172,11 +179,11 @@
     },
     "packages/ecs": {
       "name": "@ue-too/ecs",
-      "version": "0.7.1",
+      "version": "0.9.0",
     },
     "packages/math": {
       "name": "@ue-too/math",
-      "version": "0.7.1",
+      "version": "0.9.0",
     },
   },
   "packages": {
@@ -1023,6 +1030,8 @@
     "@ue-too/blast": ["@ue-too/blast@workspace:apps/blast"],
 
     "@ue-too/board": ["@ue-too/board@workspace:packages/board"],
+
+    "@ue-too/board-react": ["@ue-too/board-react@workspace:apps/board-react"],
 
     "@ue-too/border": ["@ue-too/border@workspace:packages/border"],
 
