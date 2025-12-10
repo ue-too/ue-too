@@ -20,7 +20,7 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "rm -rf dist && rollup -c rollup.config.js"
+    "build:legacy": "rm -rf dist && rollup -c rollup.config.js"
   },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
