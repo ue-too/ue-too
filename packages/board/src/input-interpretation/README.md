@@ -4,7 +4,7 @@ This module demonstrates how to interpret user input using the state machine pat
 
 You can implement your own input interpretation logic. After processing the input, you can either:
 1. Set the camera state directly using the `setPosition`, `setZoomLevel`, and `setRotation` methods
-2. Use the camera rig as described in the [board camera README](../camera/README.md)
+2. Use the camera rig as described in the [board camera README](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera)
 
 The module consists of two main components:
 1. Input event handler layer
@@ -18,9 +18,9 @@ This layer registers event handlers for different input events. Since event syst
 The state machine manages different input states and transitions. Below are the state diagrams for different input types:
 
 #### Keyboard, Mouse, and Trackpad Input
-![kmt-input-state-machine](../../../../doc-media/kmt-input-state-machine.png)
+![kmt-input-state-machine](https://ue-too.github.io/ue-too/assets/doc-media/kmt-input-state-machine.png)
 
 #### Touch Input
-![touch-input-state-machine](../../../../doc-media/touch-input-state-machine.png)
+![touch-input-state-machine](https://ue-too.github.io/ue-too/assets/doc-media/touch-input-state-machine.png)
 
-You can customize the state machine's behavior by defining relationships between states. The `@ue-too/being` library is used to implement the state machine. Please refer to the [being README](../../..//being/README.md) for more details.
+You can customize the state machine's behavior by defining relationships between states. The `@ue-too/being` library is used to implement the state machine. Please refer to the [being README](https://github.com/ue-too/ue-too/tree/main/packages/being) for more details.

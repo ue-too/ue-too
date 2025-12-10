@@ -23,7 +23,7 @@
   <a href="#under-the-hood">Basic API Overview</a>
 </p>
 
-![small-demo](../../doc-media/small-demo-with-cursor.gif)
+![small-demo](https://ue-too.github.io/ue-too/assets/doc-media/small-demo-with-cursor.gif)
 
 <p align="center">
     A demonstration of uē-tôo's core functionality.
@@ -58,10 +58,6 @@ Even if you're not building a drawing app, `ue-too` is useful for any canvas tha
 [Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): This example demonstrates the basic functionality shown in the [Quick Start](#quick-start-using-only-html-canvas) section.
 
 Additional examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory show integration with pixi.js, fabric.js, and Konva (incomplete but providing general implementation guidance).
-
-## Documentation
-- [API Documentation](https://ue-too.github.io/ue-too/) (Deprecated)
-- [中文文件連結](https://ue-too.github.io/ue-too/tw/index.html) (還在努力補沒翻完的，還要開發新功能，時間真的不太夠 u.u) (Deprecated)
 
 ## Installation and Usage
 
@@ -143,7 +139,7 @@ The `Board` class handles:
 
 All components and utility functions are accessible, allowing you to create your own board implementation without using the `requestAnimationFrame` callback method.
 
-For detailed camera control information, refer to the [Board Camera](./src/board-camera/README.md) section.
+For detailed camera control information, refer to the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) section.
 
 ## Development
 
@@ -151,7 +147,7 @@ For detailed camera control information, refer to the [Board Camera](./src/board
 
 > Currently not ready for contribution. If you have any suggestions or ideas, please let me know by creating an issue.
 
-Please refer to the [README](./README.md) in the root directory for the overall development setup.
+Please refer to the [README](https://github.com/ue-too/ue-too/) in the root directory for the overall development setup.
 
 1. This package is within a monorepo, and is managed by nx and pnpm. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me. (if you have any suggestions on how to improve the setup, please let me know!)
 2. Bundling the package is done through rollup and testing through jest.
@@ -166,15 +162,15 @@ ue-too consists of 3 core components:
 - `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 
 To see detail of each component navigate to the respective readme in the subdirectories.
-- [Board Camera](./src/camera/README.md)
-- [Camera Mux](./src/camera/camera-mux/README.md)
-- [User Input Interpreter](./src/input-interpretation/README.md)
+- [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera)
+- [Camera Mux](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera/camera-mux)
+- [User Input Interpreter](https://github.com/ue-too/ue-too/tree/main/packages/board/src/input-interpretation)
 
-It's recommended to start with the [Board Camera](./src/board-camera/README.md) since the other parts are built on top of it.
+It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
 Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
 
-![data-flow](../../doc-media/entire-process.png)
+![data-flow](https://ue-too.github.io/ue-too/assets/doc-media/entire-process.png)
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
