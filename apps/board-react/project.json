@@ -1,0 +1,24 @@
+{
+  "name": "board-react",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/board-react/src",
+  "projectType": "application",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project board-react --web",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/board-react"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "apps/board-react"
+      }
+    }
+  }
+}
