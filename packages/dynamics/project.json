@@ -7,14 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run build.ts",
+        "command": "bun run ../../scripts/build.ts --external @ue-too/math",
         "cwd": "packages/dynamics"
       }
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "bun run build.ts",
+        "command": "bun run ../../scripts/build.ts --external @ue-too/math",
         "cwd": "packages/dynamics"
       }
     },

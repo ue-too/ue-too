@@ -1,8 +1,29 @@
+import { parseArgs } from "util";
+
+const { values, positionals } = parseArgs({
+  args: Bun.argv,
+  options: {
+    external: {
+      type: "string",
+      multiple: true,
+    },
+    entrypoints: {
+      type: "string",
+      multiple: true,
+    },
+  },
+  strict: true,
+  allowPositionals: true,
+});
+
+console.log(values);
 
 const result = await Bun.build({
-  entrypoints: ['./src/index.ts'],
+  entrypoints: values.entrypoints || ['./src/index.ts'],
   outdir: './dist',
   sourcemap: 'external',
+  minify: true,
+  external: values.external || [],
 });
 
 if (!result.success) {
@@ -26,5 +47,3 @@ if (!result.success) {
     console.log("Types generated successfully");
   }
 }
-
-export {};
