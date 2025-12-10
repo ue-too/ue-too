@@ -56,4 +56,4 @@ runs:
     - name: Build packages
       if: ${{ inputs.build }}
       shell: bash
-      run: bun run build:examples && mkdir -p dist/assets/doc-media/ && cp -r doc-media/ dist/assets/doc-media/
+      run: rm -rf dist && bun run build:examples && mkdir -p dist/assets/doc-media/ && cp -r doc-media/. dist/assets/doc-media/

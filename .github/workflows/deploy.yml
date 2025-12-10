@@ -39,7 +39,7 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
           pat: ${{ secrets.PAT }}
       - name: List dist directory
-        run: ls -la dist
+        run: ls -la dist/assets/doc-media/
       - name: Setup Pages
         uses: actions/configure-pages@v5
       
