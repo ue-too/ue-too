@@ -298,6 +298,7 @@ export default class BaseCamera implements BoardCamera {
 
     setRotation(rotation: number){
         if(!rotationWithinLimits(rotation, this._rotationBoundaries)){
+            console.warn(`Rotation ${rotation} is not within the boundaries ${this._rotationBoundaries}`);
             return false;
         }
         rotation = normalizeAngleZero2TwoPI(rotation);
