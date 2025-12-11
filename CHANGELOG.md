@@ -1,3 +1,13 @@
+## 0.9.4 (2025-12-11)
+
+### 🩹 Fixes
+
+- deploy documentation branch rule ([4cc9cb0](https://github.com/ue-too/ue-too/commit/4cc9cb0))
+
+### ❤️ Thank You
+
+- niuee
+
 ## 0.9.3 (2025-12-11)
 
 ### 🩹 Fixes
