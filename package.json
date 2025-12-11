@@ -23,7 +23,8 @@
     "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs",
     "dev:examples": "nx dev examples",
     "scaffold:react": "node scripts/scaffold-react.mjs",
-    "scaffold:vue": "node scripts/scaffold-vue.mjs"
+    "scaffold:vue": "node scripts/scaffold-vue.mjs",
+    "docs:build": "nx run-many --target=docs:build --projects=packages/* --parallel=true"
   },
   "repository": {
     "type": "git",
@@ -78,6 +79,9 @@
     "tsc-alias": "^1.8.16",
     "tslib": "^2.8.1",
     "tsx": "^4.20.6",
+    "typedoc": "^0.28.15",
+    "typedoc-plugin-markdown": "^4.9.0",
+    "typedoc-vitepress-theme": "^1.1.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.2",
     "vitest": "^4.0.0",

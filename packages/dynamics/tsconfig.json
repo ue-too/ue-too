@@ -13,14 +13,6 @@
   },
   "include": [
     "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../ecs"
-    },
-    {
-      "path": "../math"
-    }
   ]
 }
   

@@ -38,6 +38,12 @@
         "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks",
         "cwd": "packages/curve/dist"
       }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf docs/board && bun run typedoc --entryPoints packages/board/src/index.ts --out docs/board"
+      }
     }
   },
   "tags": [],
