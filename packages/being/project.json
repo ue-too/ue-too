@@ -38,6 +38,12 @@
         "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks",
         "cwd": "packages/being/dist"
       }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf docs/being && bun run typedoc --entryPoints packages/being/src/index.ts --out docs/being"
+      }
     }
   },
   "tags": []
