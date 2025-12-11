@@ -6,6 +6,16 @@ import { cwd } from "process";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const isDryRun =
+  process.env.NX_RELEASE_DRY_RUN === "true" ||
+  process.env.NX_DRY_RUN === "true" ||
+  process.argv.some(arg => 
+    arg === "--dry-run" || 
+    arg === "--dryRun" || 
+    arg.startsWith("--dryRun=") ||
+    arg.startsWith("--dry-run=")
+  );
+
 // Read package.json from current working directory instead of root
 const packageJsonPath = join(cwd(), "package.json");
 const data = JSON.parse(readFileSync(packageJsonPath, "utf8"));
@@ -33,6 +43,10 @@ data.exports = {
         "default": "./index.js"
     },
     "./package.json": "./package.json"
+}
+
+if(isDryRun){
+  data.version = "0.0.0";
 }
 
 writeFileSync(join(packageBuildDir, "package.json"), JSON.stringify(data, null, 2));

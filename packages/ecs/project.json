@@ -35,14 +35,15 @@
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks",
+        "command": "node ../../../scripts/publish-package.mjs",
+        "forwardAllArgs": false,
         "cwd": "packages/ecs/dist"
       }
     },
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/ecs && bun run typedoc --entryPoints packages/ecs/src/index.ts --out docs/ecs"
+        "command": "rm -rf docs/{args.version}/ecs && bun run typedoc --skipErrorChecking --entryPoints packages/ecs/src/index.ts --out docs/{args.version}/ecs"
       }
     }
   },
