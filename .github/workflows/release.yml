@@ -180,7 +180,7 @@ jobs:
           doc-version: ${{ steps.get-version.outputs.version }}
           target-repo: 'ue-too/documentation'
           target-branch: 'main'
-          pr-branch: 'update-docs'
+          pr-branch: 'update-docs-v${{ steps.get-version.outputs.version }}'
           pr-title: 'Update documentation for v${{ steps.get-version.outputs.version }}'
           pr-body: 'Automated documentation update'
           pat: ${{ secrets.PAT }}
