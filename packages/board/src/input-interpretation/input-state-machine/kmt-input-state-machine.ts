@@ -68,6 +68,22 @@ export type KmtInputEventMapping = {
     pointerMove: PointerEventPayload;
 }
 
+type PanEventOutput = {
+    type: "pan";
+    delta: Point;
+};
+
+type ZoomEventOutput = {
+    type: "zoom";
+    delta: number;
+    anchorPoint: Point;
+};
+
+export type KmtInputEventOutputMapping = {
+    spacebarDown: number;
+    middlePointerMove: PanEventOutput | ZoomEventOutput;
+}
+
 /**
  * @description Converts the point from window coordinates(browser) to view port coordinates.
  * 
@@ -101,7 +117,7 @@ export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEB
  * 
  * @category Input State Machine
  */
-export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
@@ -114,11 +130,11 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtInputStates, KmtInputContext, Guard<KmtInputContext>>> = {
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         spacebarDown: {
             action: this.spacebarDownHandler,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -171,8 +187,9 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
     }
 
-    spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): void {
+    spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): number  {
         // context.canvas.setCursor(CursorStyle.GRAB);
+        return 1;
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
@@ -210,7 +227,7 @@ export type SelectionContext = {
  * 
  * @category Input State Machine
  */
-export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> {
+export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
@@ -222,7 +239,7 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, Sele
         context.toggleSelectionBox(true);
     }).bind(this);
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> = {
         leftPointerUp: {
             action: () => "IDLE",
             defaultTargetState: "IDLE",
@@ -237,13 +254,13 @@ export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, Sele
         },
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
 }
 
-export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
     constructor() {
         super();
     }
@@ -257,7 +274,7 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
         // context.toggleOffEdgeAutoCameraInput();
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return {
             "enable": {
                 action: NO_OP,
@@ -277,13 +294,13 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
  * 
  * @category Input State Machine
  */
-export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         spacebarUp: {
             action: NO_OP,
             defaultTargetState: "IDLE",
@@ -306,7 +323,7 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
         context.canvas.setCursor(CursorStyle.GRAB);
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
@@ -320,13 +337,13 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMappi
  * 
  * @category Input State Machine
  */
-export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         leftPointerUp: {
             action: NO_OP,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -345,7 +362,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         },
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
@@ -371,13 +388,13 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
  * 
  * @category Input State Machine
  */
-export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         middlePointerUp: {
             action: NO_OP,
             defaultTargetState: "IDLE",
@@ -388,7 +405,7 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
         },
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
@@ -402,13 +419,13 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
  * 
  * @category Input State Machine
  */
-export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         leftPointerUp: {
             action: NO_OP,
             defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
@@ -423,7 +440,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         },
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
@@ -453,9 +470,9 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
  * 
  * @category Input State Machine
  */
-export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> = {
+    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
         middlePointerUp: {
             action: NO_OP,
             defaultTargetState: "IDLE",
@@ -466,11 +483,11 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         },
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
 
-    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): PanEventOutput {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -480,6 +497,10 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         }
         context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        return {
+            type: "pan",
+            delta: delta,
+        };
     }
 
     uponEnter(context: KmtInputContext): void {
@@ -487,19 +508,19 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 }
 
-export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     constructor() {
         super();
     }
 
-    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+    get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return {};
     }
     
 }
 
-export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates>;
+export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>;
 
 /**
  * @description Creates the keyboard mouse and trackpad input state machine.
@@ -516,10 +537,10 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
         DISABLED: new DisabledState(),
     }
-    return new TemplateStateMachine(states, "IDLE", context);
+    return new TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>(states, "IDLE", context);
 }
 
-export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates> {
+export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
     private _webworker: Worker;
 
