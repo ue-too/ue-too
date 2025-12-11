@@ -1,3 +1,13 @@
+## 0.9.3 (2025-12-11)
+
+### 🩹 Fixes
+
+- package without subdirectory import ([#295](https://github.com/ue-too/ue-too/pull/295))
+
+### ❤️ Thank You
+
+- niuee @niuee
+
 ## 0.9.2 (2025-12-09)
 
 ### 🩹 Fixes
