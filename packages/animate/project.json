@@ -35,14 +35,14 @@
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks",
+        "command": "node ../../../scripts/publish-package.mjs",
         "cwd": "packages/animate/dist"
       }
     },
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/animate && bun run typedoc --entryPoints packages/animate/src/index.ts --out docs/animate"
+        "command": "rm -rf docs/{args.version}/animate && bun run typedoc --skipErrorChecking --entryPoints packages/animate/src/index.ts --out docs/{args.version}/animate"
       }
     }
   },
