@@ -165,3 +165,4 @@ jobs:
           pr-branch: 'update-docs'
           pr-title: 'Update documentation for v${{ steps.get-version.outputs.version }}'
           pr-body: 'Automated documentation update'
+          pat: ${{ secrets.PAT }}
