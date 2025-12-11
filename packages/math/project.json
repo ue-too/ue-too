@@ -35,7 +35,7 @@
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm publish --access public --registry https://registry.npmjs.org --no-git-checks $( [ \"{args.dryRun}\" = \"true\" ] && echo \"--dry-run\" )",
+        "command": "if [ \"$NX_DRY_RUN\" = \"true\" ]; then npm publish --access public --registry https://registry.npmjs.org --no-git-checks --dry-run; else npm publish --access public --registry https://registry.npmjs.org --no-git-checks; fi",
         "forwardAllArgs": false,
         "cwd": "packages/math/dist"
       }
