@@ -165,8 +165,7 @@ jobs:
           bun run docs:build -- -- --version=${{ steps.get-minor-version.outputs.minor-version }}
       
       - name: Upload documentation artifacts
-        #  github.event.inputs.dry-run != 'true' 
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || github.ref == 'refs/heads/feat/doc-deploy')
+        if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
         uses: actions/upload-artifact@v4
         with:
           name: built-docs
@@ -174,7 +173,7 @@ jobs:
           retention-days: 1
       
       - name: Open Documentation Update Pull Request
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version') || github.ref == 'refs/heads/feat/doc-deploy')
+        if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
         uses: ./.github/actions/open-doc-pr
         with:
           doc-version: ${{ steps.get-version.outputs.version }}
