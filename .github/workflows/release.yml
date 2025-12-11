@@ -22,7 +22,7 @@ jobs:
   release-package:
     runs-on: ubuntu-latest
     name: Publish Package to npmjs
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true' || github.ref == 'refs/heads/feat/doc-deploy'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true' || github.ref == 'refs/heads/test/release' || github.ref == 'refs/heads/feat/doc-deploy'
     steps:
       - name: Fail if branch is not main
         if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')) && github.event.inputs.dry-run != 'true')
@@ -85,6 +85,13 @@ jobs:
           VERSION=$(node -p "require('./packages/math/package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+      # NOTE: if in the future we advanced to the major version, we need to update this to get the major version
+      - name: Get minor version
+        id: get-minor-version
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          MINOR_VERSION=$(echo "$VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+.*$/\1.x/')
+          echo "minor-version=$MINOR_VERSION" >> $GITHUB_OUTPUT
       - name: List git tag
         run: |
           git tag -l ${{ steps.get-version.outputs.tag }}
@@ -154,13 +161,12 @@ jobs:
           # Clean up temporary directory
           rm -rf "$RELEASE_FILES_DIR"
       - name: Build documentation
-        # github.event.inputs.dry-run != 'true'
         run: |
-          bun run docs:build
+          bun run docs:build -- --version=${{ steps.get-minor-version.outputs.minor-version }}
       
       - name: Upload documentation artifacts
-        # if: ${{ github.event.inputs.dry-run != 'true' }}
-        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/doc-deploy')
+        #  github.event.inputs.dry-run != 'true' 
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || github.ref == 'refs/heads/feat/doc-deploy')
         uses: actions/upload-artifact@v4
         with:
           name: built-docs
@@ -168,8 +174,7 @@ jobs:
           retention-days: 1
       
       - name: Open Documentation Update Pull Request
-        # github.event.inputs.dry-run != 'true'
-        if:  github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/doc-deploy'
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version') || github.ref == 'refs/heads/feat/doc-deploy')
         uses: ./.github/actions/open-doc-pr
         with:
           doc-version: ${{ steps.get-version.outputs.version }}

@@ -42,7 +42,7 @@
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/animate && bun run typedoc --skipErrorChecking --entryPoints packages/animate/src/index.ts --out docs/animate"
+        "command": "rm -rf docs/{args.version}/animate && bun run typedoc --skipErrorChecking --entryPoints packages/animate/src/index.ts --out docs/{args.version}/animate"
       }
     }
   },
