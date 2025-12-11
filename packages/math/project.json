@@ -43,7 +43,7 @@
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/{args.version}/math && bun run typedoc --skipErrorChecking --entryPoints packages/math/src/index.ts --out docs/{args.version}/math"
+        "command": "rm -rf docs/math && bun run typedoc --skipErrorChecking --entryPoints packages/math/src/index.ts --out docs/math"
       }
     }
   },
