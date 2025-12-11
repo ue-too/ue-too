@@ -155,7 +155,7 @@ jobs:
         
       - name: Open Documentation Update Pull Request
         # github.event.inputs.dry-run != 'true'
-        if:  github.ref == 'refs/heads/main'
+        if:  github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/doc-deploy'
         uses: ./.github/actions/open-doc-pr
         with:
           doc-version: ${{ steps.get-version.outputs.version }}
