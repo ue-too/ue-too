@@ -38,33 +38,19 @@ inputs:
     description: 'Whether to build documentation'
     required: false
     default: 'false'
+  docs-destination:
+    description: 'Destination path in target repo for documentation files (relative to repo root)'
+    required: false
+    default: 'docs'
 
 runs:
   using: 'composite'
   steps:
-    - name: Checkout source repository
-      uses: actions/checkout@v4
+    - name: Download documentation artifacts
+      uses: actions/download-artifact@v4
       with:
-        token: ${{ inputs.pat }}
-
-    - name: Setup Bun
-      id: setup-bun
-      uses: oven-sh/setup-bun@v2
-      with:
-        bun-version: ${{ inputs.bun-version }}
-
-    - name: Install dependencies
-      if: ${{ inputs.install-deps == 'true' }}
-      shell: bash
-      run: |
-        bun ci
-
-    # TODO: Build Documentation
-    # - name: Build Documentation
-    #   if: ${{ inputs.build == 'true' }}
-    #   shell: bash
-    #   run: |
-    #     rm -rf dist && bun run build:examples && mkdir -p dist/assets/doc-media/ && cp -r doc-media/. dist/assets/doc-media/
+        name: built-docs
+        path: ./source-docs
 
     - name: Checkout target repository
       shell: bash
@@ -88,9 +74,13 @@ runs:
           git checkout -b ${{ inputs.pr-branch }}
         fi
         
-        # TODO: Add your file copying/update logic here
-        # Example: Copy files from source repo to target repo
-        # cp -r "$GITHUB_WORKSPACE/dist"/* ./docs/
+        # Copy built documentation from source repo to target repo
+        if [ -d "$GITHUB_WORKSPACE/source-docs" ]; then
+          # Create destination directory if it doesn't exist
+          mkdir -p "./${{ inputs.docs-destination }}"
+          # Copy all docs directories to the target repo
+          cp -r "$GITHUB_WORKSPACE/source-docs"/* "./${{ inputs.docs-destination }}/"
+        fi
         
         echo "BRANCH_NAME=${{ inputs.pr-branch }}" >> $GITHUB_ENV
 

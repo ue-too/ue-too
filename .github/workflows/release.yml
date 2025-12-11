@@ -153,7 +153,20 @@ jobs:
           
           # Clean up temporary directory
           rm -rf "$RELEASE_FILES_DIR"
-        
+      - name: Build documentation
+        # github.event.inputs.dry-run != 'true'
+        run: |
+          bun run docs:build
+      
+      - name: Upload documentation artifacts
+        # if: ${{ github.event.inputs.dry-run != 'true' }}
+        if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/doc-deploy')
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-docs
+          path: docs/
+          retention-days: 1
+      
       - name: Open Documentation Update Pull Request
         # github.event.inputs.dry-run != 'true'
         if:  github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/doc-deploy'
