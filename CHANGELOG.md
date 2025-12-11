@@ -1,3 +1,13 @@
+## 0.9.5 (2025-12-11)
+
+### 🩹 Fixes
+
+- do not differentiate version on documentation ([a8e10e3](https://github.com/ue-too/ue-too/commit/a8e10e3))
+
+### ❤️ Thank You
+
+- niuee
+
 ## 0.9.4 (2025-12-11)
 
 ### 🩹 Fixes
