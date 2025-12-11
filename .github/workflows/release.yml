@@ -162,7 +162,8 @@ jobs:
           rm -rf "$RELEASE_FILES_DIR"
       - name: Build documentation
         run: |
-          bun run docs:build -- -- --version=${{ steps.get-minor-version.outputs.minor-version }}
+          bun run docs:build
+        # -- -- --version=${{ steps.get-minor-version.outputs.minor-version }}
       
       - name: Upload documentation artifacts
         if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))

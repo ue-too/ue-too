@@ -43,7 +43,7 @@
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/{args.version}/curve && bun run typedoc --skipErrorChecking --entryPoints packages/curve/src/index.ts --out docs/{args.version}/curve"
+        "command": "rm -rf docs/curve && bun run typedoc --skipErrorChecking --entryPoints packages/curve/src/index.ts --out docs/curve"
       }
     }
   },
