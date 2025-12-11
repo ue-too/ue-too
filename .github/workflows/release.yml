@@ -22,7 +22,7 @@ jobs:
   release-package:
     runs-on: ubuntu-latest
     name: Publish Package to npmjs
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true' || github.ref == 'refs/heads/feat/doc-deploy'
     steps:
       - name: Fail if branch is not main
         if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')) && github.event.inputs.dry-run != 'true')
@@ -152,3 +152,15 @@ jobs:
           
           # Clean up temporary directory
           rm -rf "$RELEASE_FILES_DIR"
+        
+      - name: Open Documentation Update Pull Request
+        # github.event.inputs.dry-run != 'true'
+        if:  github.ref == 'refs/heads/main'
+        uses: ./.github/actions/open-doc-pr
+        with:
+          doc-version: ${{ steps.get-version.outputs.version }}
+          target-repo: 'ue-too/documentation'
+          target-branch: 'main'
+          pr-branch: 'update-docs'
+          pr-title: 'Update documentation for v${{ steps.get-version.outputs.version }}'
+          pr-body: 'Automated documentation update'
