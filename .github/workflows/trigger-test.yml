@@ -7,6 +7,8 @@ permissions:
   contents: read
 
 on:
+  push:
+    branches: [ "test/trigger-test" ]
   workflow_dispatch:
 
 jobs:
