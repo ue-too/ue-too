@@ -105,8 +105,9 @@ export interface UserInputPublisher {
 
 /**
  * @description The raw user input publisher.
- * Publishs raw user input events to the input flow control, and subscribers.
- * 
+ * Broadcasts raw user input events to subscribers only (no camera control).
+ * Camera control is handled by the InputOrchestrator.
+ *
  * @category Event Parser
  */
 export class RawUserInputPublisher implements UserInputPublisher {
@@ -115,34 +116,29 @@ export class RawUserInputPublisher implements UserInputPublisher {
     private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
     private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
     private all: Observable<Parameters<RawUserInputCallback<"all">>>;
-    private _cameraMux: CameraMux;
 
-    constructor(cameraMux: CameraMux){
+    constructor(){
         this.pan = new AsyncObservable<Parameters<RawUserInputCallback<"pan">>>();
         this.zoom = new AsyncObservable<Parameters<RawUserInputCallback<"zoom">>>();
         this.rotate = new AsyncObservable<Parameters<RawUserInputCallback<"rotate">>>();
         this.all = new AsyncObservable<Parameters<RawUserInputCallback<"all">>>();
-        this._cameraMux = cameraMux;
     }
 
     notifyPan(diff: Point): void {
-        this._cameraMux.notifyPanInput(diff);
         this.pan.notify({diff: diff});
         this.all.notify({type: "pan", diff: diff});
     }
 
     notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
-        this._cameraMux.notifyZoomInput(deltaZoomAmount, anchorPoint);
         this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
         this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
     }
 
     notifyRotate(deltaRotation: number): void {
-        this._cameraMux.notifyRotationInput(deltaRotation);
         this.rotate.notify({deltaRotation: deltaRotation});
         this.all.notify({type: "rotate", deltaRotation: deltaRotation});
     }
-    
+
     on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
         switch (eventName){
         case "pan":
@@ -157,23 +153,15 @@ export class RawUserInputPublisher implements UserInputPublisher {
             throw new Error("Invalid raw user input event name");
         }
     }
-
-    get cameraMux(): CameraMux {
-        return this._cameraMux;
-    }
-
-    set cameraMux(cameraMux: CameraMux){
-        this._cameraMux = cameraMux;
-    }
 }
 
 /**
  * @description Creates a default raw user input publisher.
- * 
+ *
  * @category Event Parser
  */
-export function createDefaultRawUserInputPublisher(camera: ObservableBoardCamera): RawUserInputPublisher {
-    return new RawUserInputPublisher(createDefaultCameraMux(camera));
+export function createDefaultRawUserInputPublisher(): RawUserInputPublisher {
+    return new RawUserInputPublisher();
 }
 
 export class RawUserInputPublisherWithWebWorkerRelay implements UserInputPublisher {

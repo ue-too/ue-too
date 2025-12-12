@@ -1,10 +1,11 @@
 import { TouchInputStateMachine } from "../../input-interpretation/input-state-machine/touch-input-state-machine";
 import { TouchInputTracker, TouchPoints } from "../../input-interpretation/input-state-machine/touch-input-context";
+import type { InputOrchestrator } from "../input-orchestrator";
 
 /**
  * @description The touch event parser.
  * This is for the interoperability between the vanilla javascript and the pixijs event system.
- * 
+ *
  * @category Event Parser
  */
 export interface TouchEventParser {
@@ -15,12 +16,15 @@ export interface TouchEventParser {
     setUp(): void;
     tearDown(): void;
     attach(canvas: HTMLCanvasElement): void;
+    stateMachine: TouchInputStateMachine;
+    orchestrator: InputOrchestrator;
 }
 
 /**
  * @description The vanilla touch event parser.
  * This parser converts the raw events to events that can be used by the input state machine.
- * 
+ * The parser has a direct dependency on the state machine and requires an orchestrator for consistency.
+ *
  * @category Event Parser
  */
 export class VanillaTouchEventParser implements TouchEventParser {
@@ -31,21 +35,31 @@ export class VanillaTouchEventParser implements TouchEventParser {
     private _zoomDisabled: boolean = false;
     private _rotateDisabled: boolean = false;
 
-    private touchSM: TouchInputStateMachine;
+    private _stateMachine: TouchInputStateMachine;
+    private _orchestrator: InputOrchestrator;
 
     private _abortController: AbortController;
 
-    constructor(touchInputStateMachine: TouchInputStateMachine, canvas?: HTMLCanvasElement){
+    constructor(touchInputStateMachine: TouchInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement){
         this._canvas = canvas;
         this._disabled = false;
-        this.touchSM = touchInputStateMachine;
+        this._stateMachine = touchInputStateMachine;
+        this._orchestrator = orchestrator;
         this._abortController = new AbortController();
 
         this.bindListeners();
     }
 
+    get stateMachine(): TouchInputStateMachine {
+        return this._stateMachine;
+    }
+
+    get orchestrator(): InputOrchestrator {
+        return this._orchestrator;
+    }
+
     get touchStateMachine(): TouchInputStateMachine {
-        return this.touchSM;
+        return this._stateMachine;
     }
 
     bindListeners(): void{
@@ -119,7 +133,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchstart", {points: pointsAdded});
+        const result = this._stateMachine.happens("touchstart", {points: pointsAdded});
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
+        }
         e.preventDefault();
     }
 
@@ -131,7 +148,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved});
+        const result = this._stateMachine.happens("touchend", {points: pointsRemoved});
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
+        }
     }
 
     touchendHandler(e: TouchEvent){
@@ -142,7 +162,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.changedTouches.length; i++) {
             pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
         }
-        this.touchSM.happens("touchend", {points: pointsRemoved});
+        const result = this._stateMachine.happens("touchend", {points: pointsRemoved});
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
+        }
     }
 
     touchmoveHandler(e: TouchEvent){
@@ -154,7 +177,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
         for (let i = 0; i < e.targetTouches.length; i++) {
             pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
         }
-        this.touchSM.happens("touchmove", {points: pointsMoved});
+        const result = this._stateMachine.happens("touchmove", {points: pointsMoved});
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
+        }
     }
 
     attach(canvas: HTMLCanvasElement){

@@ -299,15 +299,13 @@ export class WorkerRelayCanvas implements Canvas {
 
 /**
  * @description The context for the keyboard mouse and trackpad input state machine.
- * 
+ * Simplified for orchestrator pattern - no longer directly notifies on input events.
+ *
  * @category Input State Machine
  */
 export interface KmtInputContext extends BaseContext {
     alignCoordinateSystem: boolean;
     canvas: Canvas;
-    notifyOnPan: (delta: Point) => void;
-    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void;
-    notifyOnRotate: (deltaRotation: number) => void;
     setInitialCursorPosition: (position: Point) => void;
     cancelCurrentAction: () => void;
     initialCursorPosition: Point;
@@ -335,15 +333,6 @@ export class DummyKmtInputContext implements KmtInputContext {
     toggleOffEdgeAutoCameraInput: () => void = NO_OP;
     setCursorPosition: (position: Point) => void = NO_OP;
 
-    notifyOnPan(delta: Point): void {
-    }
-
-    notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-    }
-
-    notifyOnRotate(deltaRotation: number): void {
-    }
-    
     setInitialCursorPosition(position: Point): void {
     }
 
@@ -360,22 +349,21 @@ export class DummyKmtInputContext implements KmtInputContext {
 /**
  * @description The observable input tracker.
  * This is used as the context for the keyboard mouse and trackpad input state machine.
- * 
+ * Simplified for orchestrator pattern - no longer publishes input events directly.
+ *
  * @category Input State Machine
  */
 export class ObservableInputTracker implements KmtInputContext {
 
     private _alignCoordinateSystem: boolean;
     private _canvasOperator: Canvas;
-    private _inputPublisher: UserInputPublisher;
     private _initialCursorPosition: Point;
     private _edgeAutoCameraInput: EdgeAutoCameraInput;
     private _padding: number = 50;
 
-    constructor(canvasOperator: Canvas, inputPublisher: UserInputPublisher, edgeAutoCameraInput: EdgeAutoCameraInput){
+    constructor(canvasOperator: Canvas, edgeAutoCameraInput: EdgeAutoCameraInput){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
-        this._inputPublisher = inputPublisher;
         this._initialCursorPosition = {x: 0, y: 0};
         this._edgeAutoCameraInput = edgeAutoCameraInput;
     }
@@ -394,18 +382,6 @@ export class ObservableInputTracker implements KmtInputContext {
 
     set alignCoordinateSystem(value: boolean){
         this._alignCoordinateSystem = value;
-    }
-
-    notifyOnPan(delta: Point): void {
-        this._inputPublisher.notifyPan(delta);
-    }
-
-    notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this._inputPublisher.notifyZoom(zoomAmount, anchorPoint);
-    }
-
-    notifyOnRotate(deltaRotation: number): void {
-        this._inputPublisher.notifyRotate(deltaRotation);
     }
 
     cancelCurrentAction(): void {

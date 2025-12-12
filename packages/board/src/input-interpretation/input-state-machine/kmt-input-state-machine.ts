@@ -79,9 +79,25 @@ type ZoomEventOutput = {
     anchorPoint: Point;
 };
 
+/**
+ * @description Output events from the state machine to the orchestrator.
+ * These events represent the actions that should be taken in response to user input.
+ *
+ * @category Input State Machine
+ */
+export type KmtOutputEvent =
+    | { type: "pan", delta: Point }
+    | { type: "zoom", delta: number, anchorPoint: Point }
+    | { type: "rotate", deltaRotation: number }
+    | { type: "cursor", style: CursorStyle }
+    | { type: "none" };
+
 export type KmtInputEventOutputMapping = {
     spacebarDown: number;
-    middlePointerMove: PanEventOutput | ZoomEventOutput;
+    middlePointerMove: KmtOutputEvent;
+    scroll: KmtOutputEvent;
+    scrollWithCtrl: KmtOutputEvent;
+    leftPointerMove: KmtOutputEvent;
 }
 
 /**
@@ -165,15 +181,18 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
-    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): void {
+    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtOutputEvent {
         const delta = {...payload}
         if(!context.alignCoordinateSystem){
             delta.deltaY = -delta.deltaY;
         }
-        context.notifyOnPan({x: delta.deltaX, y: delta.deltaY});
+        return {
+            type: "pan",
+            delta: {x: delta.deltaX, y: delta.deltaY}
+        };
     }
 
-    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): void {
+    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent {
         let scrollSensitivity = 0.005;
         if(Math.abs(payload.deltaY) > 100){
             scrollSensitivity = 0.0005;
@@ -184,7 +203,11 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         if(!context.alignCoordinateSystem){
             anchorPoint.y = -anchorPoint.y;
         }
-        context.notifyOnZoom(-(zoomAmount * 5), anchorPoint);
+        return {
+            type: "zoom",
+            delta: -(zoomAmount * 5),
+            anchorPoint: anchorPoint
+        };
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): number  {
@@ -370,7 +393,7 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
-    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -378,8 +401,11 @@ export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInpu
         if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
-        context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        return {
+            type: "pan",
+            delta: delta
+        };
     }
 }
 
@@ -452,7 +478,7 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
-    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -460,8 +486,11 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
-        context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        return {
+            type: "pan",
+            delta: delta
+        };
     }
 }
 
@@ -487,7 +516,7 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         return this._eventReactions;
     }
 
-    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): PanEventOutput {
+    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
@@ -495,7 +524,6 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
         if(!context.alignCoordinateSystem){
             delta.y = -delta.y;
         }
-        context.notifyOnPan(delta);
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
         return {
             type: "pan",

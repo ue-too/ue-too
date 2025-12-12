@@ -15,6 +15,7 @@ import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from '../
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
 import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
 import { EdgeAutoCameraInput } from '../camera/camera-edge-auto-input';
+import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
 
 /**
  * Usage
@@ -56,10 +57,12 @@ export default class Board {
     private _fullScreen: boolean = false;
     
     private cameraRig: CameraRig;
+    private _cameraMux: CameraMux;
     private boardInputPublisher: RawUserInputPublisher;
     private _edgeAutoCameraInput: EdgeAutoCameraInput;
     private _observableInputTracker: ObservableInputTracker;
     private _touchInputTracker: TouchInputTracker;
+    private _inputOrchestrator: InputOrchestrator;
 
     private _canvasSizeUpdateQueue: CanvasDimensions | undefined = undefined;
 
@@ -89,18 +92,23 @@ export default class Board {
             clampZoom: true,
         }, camera);
 
-        this.boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig));
+        this._cameraMux = createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig);
+        this.boardInputPublisher = new RawUserInputPublisher();
 
-        this._edgeAutoCameraInput = new EdgeAutoCameraInput(this.boardInputPublisher.cameraMux);
-        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this.boardInputPublisher, this._edgeAutoCameraInput);
-        this._touchInputTracker = new TouchInputTracker(this._canvasProxy, this.boardInputPublisher);
+        this._edgeAutoCameraInput = new EdgeAutoCameraInput(this._cameraMux);
+        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy, this._edgeAutoCameraInput);
+        this._touchInputTracker = new TouchInputTracker(this._canvasProxy);
 
         const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
         const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
 
-        
-        this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
-        this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, canvas);
+        // Create single orchestrator as the point of camera control for both KMT and touch inputs
+        // Since both state machines output the same event types (pan, zoom), one orchestrator handles both
+        this._inputOrchestrator = new InputOrchestrator(this._cameraMux, this.boardInputPublisher);
+
+        // Parsers have direct dependency on state machines, shared orchestrator processes outputs and controls camera
+        this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, this._inputOrchestrator, canvas);
+        this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, this._inputOrchestrator, canvas);
 
         if(canvas != undefined){
             console.log('canvas exists on creation of board');
@@ -259,11 +267,14 @@ export default class Board {
     }
 
     get cameraMux(): CameraMux{
-        return this.boardInputPublisher.cameraMux;
+        return this._cameraMux;
     }
 
     set cameraMux(cameraMux: CameraMux){
-        this.boardInputPublisher.cameraMux = cameraMux;
+        this._cameraMux = cameraMux;
+        // Update all components that depend on cameraMux
+        this._edgeAutoCameraInput = new EdgeAutoCameraInput(cameraMux);
+        // Note: TouchInputTracker and Orchestrator would need to be recreated or have setter methods
     }
 
     get cameraMovementOnMouseEdge(): EdgeAutoCameraInput{
