@@ -7,9 +7,6 @@
 
 name: Trigger Test
 
-permissions:
-  contents: read
-
 on:
   push:
     branches: [ "test/workflow-on-branch" ]
