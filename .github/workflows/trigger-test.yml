@@ -10,7 +10,7 @@ permissions:
 
 on:
   push:
-    branches: [ "test/trigger-test" ]
+    branches: [ "test/workflow-on-branch" ]
   workflow_dispatch:
 
 jobs:
