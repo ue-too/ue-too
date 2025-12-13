@@ -168,13 +168,14 @@ To see detail of each component navigate to the respective readme in the subdire
 
 It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
-Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
+Below is a diagram showing from the user input to how the camera is updated and everything in the middle.
 ```mermaid
 %%{init: {'flowchart': {'curve': 'stepAfter'}}}%%
 graph TD
     %% Define styles for red elements and notes
     classDef redNote fill:#fff,stroke:red,color:red,stroke-dasharray: 5 5;
     classDef redText color:red;
+    classDef orchestratorBox fill:#e6f3ff,stroke:#0066cc,stroke-width:2px;
 
     %% Top section
     CDP["canvas dimension publisher"]
@@ -184,7 +185,7 @@ graph TD
     %% User Input and Parsing
     CEP["canvas event parsers"]
     CE -->|"user inputs (mouse,<br>trackpad, keyboard,<br>touch)"| CEP
-    
+
     %% Red Note about event listeners
     Note_Listeners["register event listeners from either<br>the html canvas, pixi.js stage,<br>fabric.js canvas, or konva"]:::redText
     Note_Listeners -.->|points to| CEP
@@ -192,7 +193,7 @@ graph TD
     %% State Machine
     ISM["input state machine"]
     CEP -->|"state machine events"| ISM
-    
+
     %% Red Note about interpretation
     Note_Interp["input interpretation happens here"]:::redText
     Note_Interp -.- ISM
@@ -201,33 +202,49 @@ graph TD
     subgraph ISMC_Context ["input state machine context<br>(input tracker)"]
         CC["canvas cache"]
     end
-    ISM -->|"dispatch actions<br>(track inputs; issue<br>camera control<br>command)"| ISMC_Context
     CDP -->|"update canvas position and dimensions"| ISMC_Context
+    ISM -->|"dispatch actions<br>(track inputs)"| ISMC_Context
 
-    %% Raw Input
+    %% State Machine Output
+    ISM -->|"output events<br>(pan, zoom, rotate)"| IO
+
+    %% Input Orchestrator (Central Hub)
+    subgraph IO_Group [" "]
+        style IO_Group stroke:#0066cc,stroke-width:3px,stroke-dasharray: 5 5
+        IO["input orchestrator"]:::orchestratorBox
+    end
+
+    %% Red Note about Orchestrator
+    Note_Orchestrator["central hub that processes state machine outputs<br>and routes them to publisher (parallel) and camera mux<br>(permission check)"]:::redText
+    Note_Orchestrator -.- IO_Group
+
+    %% Parallel Path 1: Publisher
     RIP["raw input publisher"]
-    ISMC_Context -->|"raw user camera<br>input (pan, zoom,<br>rotate) in view port<br>coordinate"| RIP
+    IO -->|"parallel path:<br>raw user camera<br>input (pan, zoom,<br>rotate) in view port<br>coordinate"| RIP
 
     RIO["raw input observer<br>(callbacks)"]
     RIP --> RIO
 
-    %% Camera Mux Subgraph (Red Dashed Box)
+    %% Parallel Path 2: Camera Mux
     subgraph CM_Group [" "]
         style CM_Group stroke:red,stroke-width:2px,stroke-dasharray: 5 5
         CM["camera mux"]
     end
-    RIP --> CM
+    IO -->|"parallel path:<br>ask for permission"| CM
 
     OCIS["other camera input source<br>(like animation)"]
     OCIS --> CM
 
     %% Red Note about Camera Mux
-    Note_Mux["this part is for controlling the data flow of the<br>camera inputs (e.g. user input can cancel animation<br>input etc.) the simplest form is just a relay from<br>the raw input publisher to the camera rig"]:::redText
+    Note_Mux["this part controls the data flow of camera inputs<br>(e.g. user input can cancel animation input)<br>returns {allowPassThrough: true/false, ...data}<br>does NOT execute camera operations directly"]:::redText
     Note_Mux -.- CM_Group
+
+    %% Camera Mux Output back to Orchestrator
+    CM -->|"output with<br>permission decision<br>(allowPassThrough)"| IO
 
     %% Camera Rig and Pipeline
     CR["camera rig"]
-    CM --> CR
+    IO -->|"if allowPassThrough:<br>execute camera<br>operations"| CR
 
     CIP["camera input pipeline<br>(this deals with camera<br>movement restrictions,<br>input manipulation e.g.<br>clamping etc.)"]
     CR --> CIP
