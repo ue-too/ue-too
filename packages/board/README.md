@@ -169,8 +169,78 @@ To see detail of each component navigate to the respective readme in the subdire
 It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
 Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
+```mermaid
+%%{init: {'flowchart': {'curve': 'stepAfter'}}}%%
+graph TD
+    %% Define styles for red elements and notes
+    classDef redNote fill:#fff,stroke:red,color:red,stroke-dasharray: 5 5;
+    classDef redText color:red;
 
-![data-flow](https://ue-too.github.io/ue-too/assets/doc-media/entire-process.png)
+    %% Top section
+    CDP["canvas dimension publisher"]
+    CE["canvas element<br>(regardless of offscreen or not)"]
+    CDP -->|"set up position tracking"| CE
+
+    %% User Input and Parsing
+    CEP["canvas event parsers"]
+    CE -->|"user inputs (mouse,<br>trackpad, keyboard,<br>touch)"| CEP
+    
+    %% Red Note about event listeners
+    Note_Listeners["register event listeners from either<br>the html canvas, pixi.js stage,<br>fabric.js canvas, or konva"]:::redText
+    Note_Listeners -.->|points to| CEP
+
+    %% State Machine
+    ISM["input state machine"]
+    CEP -->|"state machine events"| ISM
+    
+    %% Red Note about interpretation
+    Note_Interp["input interpretation happens here"]:::redText
+    Note_Interp -.- ISM
+
+    %% State Machine Context
+    subgraph ISMC_Context ["input state machine context<br>(input tracker)"]
+        CC["canvas cache"]
+    end
+    ISM -->|"dispatch actions<br>(track inputs; issue<br>camera control<br>command)"| ISMC_Context
+    CDP -->|"update canvas position and dimensions"| ISMC_Context
+
+    %% Raw Input
+    RIP["raw input publisher"]
+    ISMC_Context -->|"raw user camera<br>input (pan, zoom,<br>rotate) in view port<br>coordinate"| RIP
+
+    RIO["raw input observer<br>(callbacks)"]
+    RIP --> RIO
+
+    %% Camera Mux Subgraph (Red Dashed Box)
+    subgraph CM_Group [" "]
+        style CM_Group stroke:red,stroke-width:2px,stroke-dasharray: 5 5
+        CM["camera mux"]
+    end
+    RIP --> CM
+
+    OCIS["other camera input source<br>(like animation)"]
+    OCIS --> CM
+
+    %% Red Note about Camera Mux
+    Note_Mux["this part is for controlling the data flow of the<br>camera inputs (e.g. user input can cancel animation<br>input etc.) the simplest form is just a relay from<br>the raw input publisher to the camera rig"]:::redText
+    Note_Mux -.- CM_Group
+
+    %% Camera Rig and Pipeline
+    CR["camera rig"]
+    CM --> CR
+
+    CIP["camera input pipeline<br>(this deals with camera<br>movement restrictions,<br>input manipulation e.g.<br>clamping etc.)"]
+    CR --> CIP
+
+    %% Final Camera Object
+    subgraph Camera_Container ["camera"]
+        OC["observable camera"]
+    end
+    CIP --> OC
+
+    ACMO["'actual' camera<br>movement<br>observer<br>(callbacks)"]
+    OC --> ACMO
+```
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.

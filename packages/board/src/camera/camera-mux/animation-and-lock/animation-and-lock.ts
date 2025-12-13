@@ -31,8 +31,24 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
         this._rotateStateMachine = rotateStateMachine;
     }
 
-    notifyPanToAnimationInput(target: Point): void {
-        this._panStateMachine.notifyPanToAnimationInput(target);
+    notifyPanToAnimationInput(target: Point): CameraMuxPanOutput {
+        const res = this._panStateMachine.notifyPanToAnimationInput(target);
+
+        if(res.handled) {
+            const output = res.output;
+            if(output !== undefined){
+                switch(output.type){
+                    case 'panByViewPort':
+                        return { allowPassThrough: true, delta: output.delta };
+                    case 'panToWorld':
+                        return { allowPassThrough: true, delta: output.target };
+                    default:
+                        return { allowPassThrough: false };
+                }
+
+            }
+        }
+        return { allowPassThrough: false };
     }
 
     notifyPanInput(delta: Point): CameraMuxPanOutput {
@@ -57,12 +73,12 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
         return { allowPassThrough: false };
     }
 
-    notifyRotateByInput(delta: number): void {
-        this._rotateStateMachine.notifyRotateByInput(delta);
+    notifyRotateByInput(delta: number) {
+        return this._rotateStateMachine.notifyRotateByInput(delta);
     }
 
-    notifyRotateToAnimationInput(target: number): void {
-        this._rotateStateMachine.notifyRotateToAnimationInput(target);
+    notifyRotateToAnimationInput(target: number) {
+        return this._rotateStateMachine.notifyRotateToAnimationInput(target);
     }
 
     notifyZoomInputAnimation(targetZoom: number, at: Point = {x: 0, y: 0}): void {

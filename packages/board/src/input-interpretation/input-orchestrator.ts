@@ -2,7 +2,7 @@ import type {Point} from "@ue-too/math";
 import {KmtOutputEvent} from "./input-state-machine/kmt-input-state-machine";
 import {TouchOutputEvent} from "./input-state-machine/touch-input-state-machine";
 import {UserInputPublisher} from "./raw-input-publisher/raw-input-publisher";
-import {CameraMux} from "../camera/camera-mux";
+import {CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput} from "../camera/camera-mux";
 import {CameraRig} from "../camera/camera-rig";
 
 /**
@@ -39,12 +39,12 @@ export class InputOrchestrator {
     public processOutput(output: any): void {
         // Handle different output types
         if (this.isOutputEvent(output)) {
-            this.routeOutputEvent(output);
+            this.handleStateMachineOutput(output);
         } else if (Array.isArray(output)) {
             // Handle multiple outputs
             output.forEach(item => {
                 if (this.isOutputEvent(item)) {
-                    this.routeOutputEvent(item);
+                    this.handleStateMachineOutput(item);
                 }
             });
         }
@@ -58,33 +58,31 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Routes output events to the camera mux, camera rig, and optional publisher.
-     * The orchestrator asks CameraMux for permission, then executes on CameraRig if allowed.
-     * Handles outputs from both KMT and Touch state machines.
-     * Only executes on CameraRig and publishes events if CameraMux allows passthrough.
+     * @description Handles output events from state machines.
+     * Publishes to observers (parallel path) and asks CameraMux for permission.
      */
-    private routeOutputEvent(event: OutputEvent): void {
+    private handleStateMachineOutput(event: OutputEvent): void {
         switch (event.type) {
             case "pan":
+                // Publish to observers (parallel path)
                 this._publisher?.notifyPan(event.delta);
+                // Ask CameraMux for permission and process its output
                 const panOutput = this._cameraMux.notifyPanInput(event.delta);
-                if (panOutput.allowPassThrough) {
-                    this._cameraRig.panByViewPort(panOutput.delta);
-                }
+                this.processPanMuxOutput(panOutput);
                 break;
             case "zoom":
-                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
+                // Publish to observers (parallel path)
                 this._publisher?.notifyZoom(event.delta, event.anchorPoint);
-                if (zoomOutput.allowPassThrough) {
-                    this._cameraRig.zoomByAt(zoomOutput.delta, zoomOutput.anchorPoint);
-                }
+                // Ask CameraMux for permission and process its output
+                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
+                this.processZoomMuxOutput(zoomOutput);
                 break;
             case "rotate":
-                const rotateOutput = this._cameraMux.notifyRotationInput(event.deltaRotation);
+                // Publish to observers (parallel path)
                 this._publisher?.notifyRotate(event.deltaRotation);
-                if (rotateOutput.allowPassThrough) {
-                    this._cameraRig.rotateBy(rotateOutput.delta);
-                }
+                // Ask CameraMux for permission and process its output
+                const rotateOutput = this._cameraMux.notifyRotationInput(event.deltaRotation);
+                this.processRotateMuxOutput(rotateOutput);
                 break;
             case "cursor":
                 // Cursor changes are handled by the state machine's uponEnter/beforeExit methods
@@ -93,6 +91,36 @@ export class InputOrchestrator {
             case "none":
                 // No action needed
                 break;
+        }
+    }
+
+    /**
+     * @description Processes pan output from CameraMux.
+     * Executes on CameraRig if CameraMux allows passthrough.
+     */
+    private processPanMuxOutput(output: CameraMuxPanOutput): void {
+        if (output.allowPassThrough) {
+            this._cameraRig.panByViewPort(output.delta);
+        }
+    }
+
+    /**
+     * @description Processes zoom output from CameraMux.
+     * Executes on CameraRig if CameraMux allows passthrough.
+     */
+    private processZoomMuxOutput(output: CameraMuxZoomOutput): void {
+        if (output.allowPassThrough) {
+            this._cameraRig.zoomByAt(output.delta, output.anchorPoint);
+        }
+    }
+
+    /**
+     * @description Processes rotation output from CameraMux.
+     * Executes on CameraRig if CameraMux allows passthrough.
+     */
+    private processRotateMuxOutput(output: CameraMuxRotationOutput): void {
+        if (output.allowPassThrough) {
+            this._cameraRig.rotateBy(output.delta);
         }
     }
 
