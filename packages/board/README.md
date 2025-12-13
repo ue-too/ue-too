@@ -168,96 +168,73 @@ To see detail of each component navigate to the respective readme in the subdire
 
 It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
-Below is a diagram showing from the user input to how the camera is updated and everything in the middle.
+Below is a diagram showing the data flow from user input to camera updates.
+
 ```mermaid
-%%{init: {'flowchart': {'curve': 'stepAfter'}}}%%
-graph TD
-    %% Define styles for red elements and notes
-    classDef redNote fill:#fff,stroke:red,color:red,stroke-dasharray: 5 5;
-    classDef redText color:red;
-    classDef orchestratorBox fill:#e6f3ff,stroke:#0066cc,stroke-width:2px;
+flowchart TB
+    subgraph Input ["Input Layer"]
+        CE["🖼️ Canvas Element"]
+        CDP["📐 Canvas Proxy"]
+        CEP["🎯 Event Parsers<br/><small>KMT + Touch</small>"]
+    end
 
-    %% Top section
-    CDP["canvas dimension publisher"]
-    CE["canvas element<br>(regardless of offscreen or not)"]
-    CDP -->|"set up position tracking"| CE
+    subgraph Interpretation ["Input Interpretation"]
+        ISM["🔄 Input State Machine<br/><small>interprets user intent</small>"]
+        IT["📋 Input Tracker<br/><small>cursor position, canvas info</small>"]
+    end
 
-    %% User Input and Parsing
-    CEP["canvas event parsers"]
-    CE -->|"user inputs (mouse,<br>trackpad, keyboard,<br>touch)"| CEP
+    subgraph Orchestration ["Input Orchestration"]
+        IO["🎛️ Input Orchestrator<br/><small>central routing hub</small>"]
+    end
 
-    %% Red Note about event listeners
-    Note_Listeners["register event listeners from either<br>the html canvas, pixi.js stage,<br>fabric.js canvas, or konva"]:::redText
-    Note_Listeners -.->|points to| CEP
+    subgraph Publishing ["Raw Input Publishing"]
+        RIP["📡 Raw Input Publisher"]
+        RIO["👂 User Callbacks<br/><small>onInput handlers</small>"]
+    end
 
-    %% State Machine
-    ISM["input state machine"]
+    subgraph CameraControl ["Camera Control"]
+        CM["🚦 Camera Mux<br/><small>permission control</small>"]
+        OCIS["🎬 Other Input Sources<br/><small>animations, programmatic</small>"]
+        CR["🎮 Camera Rig<br/><small>restrictions & clamping</small>"]
+    end
+
+    subgraph Camera ["Camera"]
+        OC["📷 Observable Camera"]
+        ACMO["👂 Camera Observers<br/><small>on handlers</small>"]
+    end
+
+    %% Canvas setup
+    CDP -.->|"tracks dimensions"| CE
+    CE -->|"DOM events"| CEP
+    CDP -->|"canvas info"| IT
+
+    %% Input interpretation
     CEP -->|"state machine events"| ISM
+    ISM <-->|"read/update context"| IT
+    ISM -->|"pan, zoom, rotate"| IO
 
-    %% Red Note about interpretation
-    Note_Interp["input interpretation happens here"]:::redText
-    Note_Interp -.- ISM
-
-    %% State Machine Context
-    subgraph ISMC_Context ["input state machine context<br>(input tracker)"]
-        CC["canvas cache"]
-    end
-    CDP -->|"update canvas position and dimensions"| ISMC_Context
-    ISM -->|"dispatch actions<br>(track inputs)"| ISMC_Context
-
-    %% State Machine Output
-    ISM -->|"output events<br>(pan, zoom, rotate)"| IO
-
-    %% Input Orchestrator (Central Hub)
-    subgraph IO_Group [" "]
-        style IO_Group stroke:#0066cc,stroke-width:3px,stroke-dasharray: 5 5
-        IO["input orchestrator"]:::orchestratorBox
-    end
-
-    %% Red Note about Orchestrator
-    Note_Orchestrator["central hub that processes state machine outputs<br>and routes them to publisher (parallel) and camera mux<br>(permission check)"]:::redText
-    Note_Orchestrator -.- IO_Group
-
-    %% Parallel Path 1: Publisher
-    RIP["raw input publisher"]
-    IO -->|"parallel path:<br>raw user camera<br>input (pan, zoom,<br>rotate) in view port<br>coordinate"| RIP
-
-    RIO["raw input observer<br>(callbacks)"]
+    %% Orchestrator routing (parallel paths)
+    IO -->|"always publish"| RIP
     RIP --> RIO
+    IO -->|"ask permission"| CM
+    
+    %% Camera Mux
+    OCIS -->|"request input"| CM
+    CM -->|"allowPassThrough?"| IO
 
-    %% Parallel Path 2: Camera Mux
-    subgraph CM_Group [" "]
-        style CM_Group stroke:red,stroke-width:2px,stroke-dasharray: 5 5
-        CM["camera mux"]
-    end
-    IO -->|"parallel path:<br>ask for permission"| CM
-
-    OCIS["other camera input source<br>(like animation)"]
-    OCIS --> CM
-
-    %% Red Note about Camera Mux
-    Note_Mux["this part controls the data flow of camera inputs<br>(e.g. user input can cancel animation input)<br>returns {allowPassThrough: true/false, ...data}<br>does NOT execute camera operations directly"]:::redText
-    Note_Mux -.- CM_Group
-
-    %% Camera Mux Output back to Orchestrator
-    CM -->|"output with<br>permission decision<br>(allowPassThrough)"| IO
-
-    %% Camera Rig and Pipeline
-    CR["camera rig"]
-    IO -->|"if allowPassThrough:<br>execute camera<br>operations"| CR
-
-    CIP["camera input pipeline<br>(this deals with camera<br>movement restrictions,<br>input manipulation e.g.<br>clamping etc.)"]
-    CR --> CIP
-
-    %% Final Camera Object
-    subgraph Camera_Container ["camera"]
-        OC["observable camera"]
-    end
-    CIP --> OC
-
-    ACMO["'actual' camera<br>movement<br>observer<br>(callbacks)"]
+    %% Camera execution
+    IO -->|"if allowed"| CR
+    CR --> OC
     OC --> ACMO
 ```
+
+**Key concepts:**
+- **Event Parsers**: Register listeners on canvas (works with vanilla, pixi.js, fabric.js, konva)
+- **Input State Machine**: Interprets raw events into camera intents (pan/zoom/rotate)
+- **Input Orchestrator**: Routes outputs in parallel — always publishes raw input, and asks CameraMux for permission
+- **Camera Mux**: Controls input priority (e.g., user input can cancel animations). Returns `{allowPassThrough: true/false}`
+- **Camera Rig**: Applies movement restrictions and clamping before updating camera
+- **Observable Camera**: Final camera state with change observers
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
