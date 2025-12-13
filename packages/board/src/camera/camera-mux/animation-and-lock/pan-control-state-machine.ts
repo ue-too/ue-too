@@ -32,7 +32,7 @@ type EmptyPayload = {};
 
 /**
  * @description The payload mapping for the events of the pan control state machine.
- * 
+ *
  * @category Input Flow Control
  */
 export type PanEventPayloadMapping = {
@@ -44,6 +44,31 @@ export type PanEventPayloadMapping = {
     "lockedOnObjectPanToInput": PanToInputEventPayload,
     "unlock": EmptyPayload,
     "initateTransition": EmptyPayload,
+};
+
+/**
+ * @description Output events from the pan control state machine.
+ * These events represent the pan operations that should be executed.
+ *
+ * @category Input Flow Control
+ */
+export type PanControlOutputEvent =
+    | { type: "panByViewPort", delta: Point }
+    | { type: "panToWorld", target: Point }
+    | { type: "none" };
+
+/**
+ * @description Output mapping for pan control events.
+ *
+ * @category Input Flow Control
+ */
+export type PanControlOutputMapping = {
+    "userPanByInput": PanControlOutputEvent,
+    "userPanToInput": PanControlOutputEvent,
+    "transitionPanByInput": PanControlOutputEvent,
+    "transitionPanToInput": PanControlOutputEvent,
+    "lockedOnObjectPanByInput": PanControlOutputEvent,
+    "lockedOnObjectPanToInput": PanControlOutputEvent,
 };
 
 /**
@@ -128,20 +153,24 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
         initateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     }
 
-    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
+    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
         context.panByViewPort(payload.diff);
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
+    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
         context.panToWorld(payload.target);
+        return { type: "panToWorld", target: payload.target };
     }
 
-    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
+    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
         context.panByViewPort(payload.diff);
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
+    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
         context.panToWorld(payload.target);
+        return { type: "panToWorld", target: payload.target };
     }
 
 }
@@ -166,34 +195,34 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates | PanControlOutputEvent {
         context.panByViewPort(payload.diff);
-        return "ACCEPTING_USER_INPUT";
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates | PanControlOutputEvent {
         context.panToWorld(payload.target);
-        return "ACCEPTING_USER_INPUT";
+        return { type: "panToWorld", target: payload.target };
     }
 
-    transitionPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    transitionPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
         context.panByViewPort(payload.diff);
-        return "TRANSITION";
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    transitionPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    transitionPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
         context.panToWorld(payload.target);
-        return "TRANSITION";
+        return { type: "panToWorld", target: payload.target };
     }
 
-    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates {
+    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates | PanControlOutputEvent {
         context.panByViewPort(payload.diff);
-        return "LOCKED_ON_OBJECT";
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates {
+    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates | PanControlOutputEvent {
         context.panToWorld(payload.target);
-        return "LOCKED_ON_OBJECT";
+        return { type: "panToWorld", target: payload.target };
     }
 
 }
@@ -215,12 +244,14 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, P
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): void {
+    lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
         context.panByViewPort(payload.diff);
+        return { type: "panByViewPort", delta: payload.diff };
     }
 
-    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): void {
+    lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
         context.panToWorld(payload.target);
+        return { type: "panToWorld", target: payload.target };
     }
 
 }

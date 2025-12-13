@@ -57,20 +57,27 @@ export class InputOrchestrator {
      * @description Routes output events to the camera mux and optional publisher.
      * The orchestrator controls the camera directly and optionally broadcasts events to observers.
      * Handles outputs from both KMT and Touch state machines.
+     * Only publishes events if CameraMux allows passthrough.
      */
     private routeOutputEvent(event: OutputEvent): void {
         switch (event.type) {
             case "pan":
-                this._cameraMux.notifyPanInput(event.delta);
-                this._publisher?.notifyPan(event.delta);
+                const panOutput = this._cameraMux.notifyPanInput(event.delta);
+                if (panOutput.allowPassThrough) {
+                    this._publisher?.notifyPan(panOutput.delta);
+                }
                 break;
             case "zoom":
-                this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
-                this._publisher?.notifyZoom(event.delta, event.anchorPoint);
+                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
+                if (zoomOutput.allowPassThrough) {
+                    this._publisher?.notifyZoom(zoomOutput.delta, zoomOutput.anchorPoint);
+                }
                 break;
             case "rotate":
-                this._cameraMux.notifyRotationInput(event.deltaRotation);
-                this._publisher?.notifyRotate(event.deltaRotation);
+                const rotateOutput = this._cameraMux.notifyRotationInput(event.deltaRotation);
+                if (rotateOutput.allowPassThrough) {
+                    this._publisher?.notifyRotate(rotateOutput.delta);
+                }
                 break;
             case "cursor":
                 // Cursor changes are handled by the state machine's uponEnter/beforeExit methods

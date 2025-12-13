@@ -31,7 +31,7 @@ type EmptyPayload = {};
 
 /**
  * @description The payload mapping for the events of the rotate control state machine.
- * 
+ *
  * @category Input Flow Control
  */
 export type RotateEventPayloadMapping = {
@@ -43,6 +43,31 @@ export type RotateEventPayloadMapping = {
     "lockedOnObjectRotateToInput": RotateToInputEventPayload,
     "unlock": EmptyPayload,
     "initateTransition": EmptyPayload,
+};
+
+/**
+ * @description Output events from the rotate control state machine.
+ * These events represent the rotate operations that should be executed.
+ *
+ * @category Input Flow Control
+ */
+export type RotateControlOutputEvent =
+    | { type: "rotateBy", delta: number }
+    | { type: "rotateTo", target: number }
+    | { type: "none" };
+
+/**
+ * @description Output mapping for rotate control events.
+ *
+ * @category Input Flow Control
+ */
+export type RotateControlOutputMapping = {
+    "userRotateByInput": RotateControlOutputEvent,
+    "userRotateToInput": RotateControlOutputEvent,
+    "transitionRotateByInput": RotateControlOutputEvent,
+    "transitionRotateToInput": RotateControlOutputEvent,
+    "lockedOnObjectRotateByInput": RotateControlOutputEvent,
+    "lockedOnObjectRotateToInput": RotateControlOutputEvent,
 };
 
 /**
@@ -117,20 +142,24 @@ export class RotationAcceptingUserInputState extends TemplateState<RotateEventPa
         initateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     }
 
-    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): void {
+    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         context.rotateBy(payload.diff);
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): void {
+    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         context.rotateTo(payload.target);
+        return { type: "rotateTo", target: payload.target };
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): void {
+    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         context.rotateBy(payload.diff);
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): void {
+    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         context.rotateTo(payload.target);
+        return { type: "rotateTo", target: payload.target };
     }
 
 }
@@ -155,34 +184,34 @@ export class RotationTransitionState extends TemplateState<RotateEventPayloadMap
         lockedOnObjectRotateToInput: {action: this.lockedOnObjectRotateToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates {
+    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates | RotateControlOutputEvent {
         context.rotateBy(payload.diff);
-        return "ACCEPTING_USER_INPUT";
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates {
+    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates | RotateControlOutputEvent {
         context.rotateTo(payload.target);
-        return "ACCEPTING_USER_INPUT";
+        return { type: "rotateTo", target: payload.target };
     }
 
-    transitionRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates {
+    transitionRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         context.rotateBy(payload.diff);
-        return "TRANSITION";
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    transitionRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates {
+    transitionRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         context.rotateTo(payload.target);
-        return "TRANSITION";
+        return { type: "rotateTo", target: payload.target };
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates {
+    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates | RotateControlOutputEvent {
         context.rotateBy(payload.diff);
-        return "LOCKED_ON_OBJECT";
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates {
+    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates | RotateControlOutputEvent {
         context.rotateTo(payload.target);
-        return "LOCKED_ON_OBJECT";
+        return { type: "rotateTo", target: payload.target };
     }
 
 }
@@ -204,12 +233,14 @@ export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloa
         lockedOnObjectRotateToInput: {action: this.lockedOnObjectRotateToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): void {
+    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         context.rotateBy(payload.diff);
+        return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): void {
+    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         context.rotateTo(payload.target);
+        return { type: "rotateTo", target: payload.target };
     }
 
 }

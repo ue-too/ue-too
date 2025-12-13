@@ -1,7 +1,7 @@
 import DefaultBoardCamera from "../default-camera";
 import { ObservableBoardCamera } from "../interface";
 import { CameraRig, createDefaultCameraRig } from "../camera-rig";
-import { CameraMux } from "./interface";
+import { CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput } from "./interface";
 import { Point } from "@ue-too/math";
 
 /**
@@ -18,16 +18,19 @@ export class Relay implements CameraMux {
         this._cameraRig = cameraRig;
     }
 
-    notifyPanInput(diff: Point): void {
+    notifyPanInput(diff: Point): CameraMuxPanOutput {
         this._cameraRig.panByViewPort(diff);
-    }
-    
-    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): void {
-        this._cameraRig.zoomByAt(deltaZoomAmount, anchorPoint);
+        return { allowPassThrough: true, delta: diff };
     }
 
-    notifyRotationInput(deltaRotation: number): void {
+    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): CameraMuxZoomOutput {
+        this._cameraRig.zoomByAt(deltaZoomAmount, anchorPoint);
+        return { allowPassThrough: true, delta: deltaZoomAmount, anchorPoint: anchorPoint };
+    }
+
+    notifyRotationInput(deltaRotation: number): CameraMuxRotationOutput {
         this._cameraRig.rotateBy(deltaRotation);
+        return { allowPassThrough: true, delta: deltaRotation };
     }
     
 }
