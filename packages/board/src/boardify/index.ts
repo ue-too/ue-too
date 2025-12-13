@@ -104,7 +104,8 @@ export default class Board {
 
         // Create single orchestrator as the point of camera control for both KMT and touch inputs
         // Since both state machines output the same event types (pan, zoom), one orchestrator handles both
-        this._inputOrchestrator = new InputOrchestrator(this._cameraMux, this.boardInputPublisher);
+        // Orchestrator receives CameraRig to execute camera operations when CameraMux allows passthrough
+        this._inputOrchestrator = new InputOrchestrator(this._cameraMux, this.cameraRig, this.boardInputPublisher);
 
         // Parsers have direct dependency on state machines, shared orchestrator processes outputs and controls camera
         this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, this._inputOrchestrator, canvas);

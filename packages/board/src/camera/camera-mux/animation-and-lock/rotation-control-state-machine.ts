@@ -143,22 +143,18 @@ export class RotationAcceptingUserInputState extends TemplateState<RotateEventPa
     }
 
     userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 
     lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 
@@ -185,32 +181,26 @@ export class RotationTransitionState extends TemplateState<RotateEventPayloadMap
     }
 
     userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates | RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates | RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 
     transitionRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     transitionRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 
     lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlStates | RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlStates | RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 
@@ -234,12 +224,10 @@ export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloa
     }
 
     lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
-        context.rotateBy(payload.diff);
         return { type: "rotateBy", delta: payload.diff };
     }
 
     lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
-        context.rotateTo(payload.target);
         return { type: "rotateTo", target: payload.target };
     }
 

@@ -154,22 +154,18 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
     }
 
     userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 
@@ -196,32 +192,26 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, PanCo
     }
 
     userPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates | PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     userPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates | PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 
     transitionPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     transitionPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlStates | PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlStates | PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 
@@ -245,12 +235,10 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, P
     }
 
     lockedOnObjectPanByInputHandler(context: PanContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        context.panByViewPort(payload.diff);
         return { type: "panByViewPort", delta: payload.diff };
     }
 
     lockedOnObjectPanToInputHandler(context: PanContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        context.panToWorld(payload.target);
         return { type: "panToWorld", target: payload.target };
     }
 

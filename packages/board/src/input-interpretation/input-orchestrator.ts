@@ -3,6 +3,7 @@ import {KmtOutputEvent} from "./input-state-machine/kmt-input-state-machine";
 import {TouchOutputEvent} from "./input-state-machine/touch-input-state-machine";
 import {UserInputPublisher} from "./raw-input-publisher/raw-input-publisher";
 import {CameraMux} from "../camera/camera-mux";
+import {CameraRig} from "../camera/camera-rig";
 
 /**
  * @description Union type of all output events from state machines.
@@ -11,7 +12,8 @@ export type OutputEvent = KmtOutputEvent | TouchOutputEvent;
 
 /**
  * @description The input orchestrator processes outputs from state machines and routes them to camera/publisher.
- * It receives outputs from both KMT and Touch state machines and routes them to the camera mux and optional publisher.
+ * It receives outputs from both KMT and Touch state machines and routes them to the camera mux and camera rig.
+ * The orchestrator asks CameraMux for permission (via outputs), and if allowed, executes on CameraRig.
  * This decouples state machines from camera control, making each component unaware of its neighbors.
  * The orchestrator is the single point of control for camera operations.
  *
@@ -21,10 +23,12 @@ export type OutputEvent = KmtOutputEvent | TouchOutputEvent;
  */
 export class InputOrchestrator {
     private _cameraMux: CameraMux;
+    private _cameraRig: CameraRig;
     private _publisher?: UserInputPublisher;
 
-    constructor(cameraMux: CameraMux, publisher?: UserInputPublisher) {
+    constructor(cameraMux: CameraMux, cameraRig: CameraRig, publisher?: UserInputPublisher) {
         this._cameraMux = cameraMux;
+        this._cameraRig = cameraRig;
         this._publisher = publisher;
     }
 
@@ -54,29 +58,32 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Routes output events to the camera mux and optional publisher.
-     * The orchestrator controls the camera directly and optionally broadcasts events to observers.
+     * @description Routes output events to the camera mux, camera rig, and optional publisher.
+     * The orchestrator asks CameraMux for permission, then executes on CameraRig if allowed.
      * Handles outputs from both KMT and Touch state machines.
-     * Only publishes events if CameraMux allows passthrough.
+     * Only executes on CameraRig and publishes events if CameraMux allows passthrough.
      */
     private routeOutputEvent(event: OutputEvent): void {
         switch (event.type) {
             case "pan":
+                this._publisher?.notifyPan(event.delta);
                 const panOutput = this._cameraMux.notifyPanInput(event.delta);
                 if (panOutput.allowPassThrough) {
-                    this._publisher?.notifyPan(panOutput.delta);
+                    this._cameraRig.panByViewPort(panOutput.delta);
                 }
                 break;
             case "zoom":
                 const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
+                this._publisher?.notifyZoom(event.delta, event.anchorPoint);
                 if (zoomOutput.allowPassThrough) {
-                    this._publisher?.notifyZoom(zoomOutput.delta, zoomOutput.anchorPoint);
+                    this._cameraRig.zoomByAt(zoomOutput.delta, zoomOutput.anchorPoint);
                 }
                 break;
             case "rotate":
                 const rotateOutput = this._cameraMux.notifyRotationInput(event.deltaRotation);
+                this._publisher?.notifyRotate(event.deltaRotation);
                 if (rotateOutput.allowPassThrough) {
-                    this._publisher?.notifyRotate(rotateOutput.delta);
+                    this._cameraRig.rotateBy(rotateOutput.delta);
                 }
                 break;
             case "cursor":

@@ -1,6 +1,4 @@
 import type { Point } from "@ue-too/math";
-import { createDefaultCameraMux, CameraMux } from "../../camera/camera-mux";
-import { ObservableBoardCamera } from "../../camera/interface";
 import { AsyncObservable, Observable, Observer } from "../../utils/observable";
 
 /**
