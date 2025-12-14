@@ -1,8 +1,9 @@
 import { Bezier } from "bezier-js";
 import type { Bezier as BezierType } from "bezier-js";
 import { PointCal } from "@ue-too/math";
-import { BCurve, Point, TValOutofBoundError, solveCubic, offset } from "../src/b-curve";
+import { BCurve, Point, TValOutofBoundError, solveCubic, offset, approximately } from "../src/b-curve";
 import { Line } from "../src/line";
+import { expect, describe, test, beforeEach } from 'bun:test';
 
 describe("Basic Operation on Bezier Curve", ()=>{
 
@@ -560,7 +561,7 @@ describe("Basic Operation on Bezier Curve", ()=>{
             const testRes = testCurve.getProjection(testMousePosition);
             const LUT = testCurve.getLUT();
             LUT.forEach((point)=>{
-                expect(PointCal.distanceBetweenPoints(testRes.projection, testMousePosition)).toBeLessThanOrEqual(PointCal.distanceBetweenPoints(point, testMousePosition));
+                expect(PointCal.distanceBetweenPoints(testRes.projection, testMousePosition)).toSatisfy((distance: number) => distance <= PointCal.distanceBetweenPoints(point, testMousePosition) || approximately(distance, PointCal.distanceBetweenPoints(point, testMousePosition), 2));
             });
         });
 

@@ -1,10 +1,10 @@
 
-import { CameraMux } from "../interface";
+import { CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput } from "../interface";
 import { Point } from "@ue-too/math";
 import { ObservableBoardCamera } from "../../interface";
-import { createDefaultPanControlStateMachine, PanControlStateMachine } from "./pan-control-state-machine";
-import { createDefaultZoomControlStateMachine, ZoomControlStateMachine } from "./zoom-control-state-machine";
-import { createDefaultRotateControlStateMachine, RotateControlStateMachine } from "./rotation-control-state-machine";
+import { createDefaultPanControlStateMachine, PanControlStateMachine, PanControlOutputEvent } from "./pan-control-state-machine";
+import { createDefaultZoomControlStateMachine, ZoomControlStateMachine, ZoomControlOutputEvent } from "./zoom-control-state-machine";
+import { createDefaultRotateControlStateMachine, RotateControlStateMachine, RotateControlOutputEvent } from "./rotation-control-state-machine";
 import { CameraRig } from "../../camera-rig";
 import { createDefaultCameraRig } from "../../camera-rig";
 
@@ -31,24 +31,54 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
         this._rotateStateMachine = rotateStateMachine;
     }
 
-    notifyPanToAnimationInput(target: Point): void {
-        this._panStateMachine.notifyPanToAnimationInput(target);
+    notifyPanToAnimationInput(target: Point): CameraMuxPanOutput {
+        const res = this._panStateMachine.notifyPanToAnimationInput(target);
+
+        if(res.handled) {
+            const output = res.output;
+            if(output !== undefined){
+                switch(output.type){
+                    case 'panByViewPort':
+                        return { allowPassThrough: true, delta: output.delta };
+                    case 'panToWorld':
+                        return { allowPassThrough: true, delta: output.target };
+                    default:
+                        return { allowPassThrough: false };
+                }
+
+            }
+        }
+        return { allowPassThrough: false };
     }
 
-    notifyPanInput(delta: Point): void {
-        this._panStateMachine.notifyPanInput(delta);
+    notifyPanInput(delta: Point): CameraMuxPanOutput {
+        const result = this._panStateMachine.happens("userPanByInput", { diff: delta });
+        if (result.handled && 'output' in result && result.output) {
+            const output = result.output as PanControlOutputEvent;
+            if (output.type !== "none") {
+                return { allowPassThrough: true, delta: delta };
+            }
+        }
+        return { allowPassThrough: false };
     }
 
-    notifyZoomInput(delta: number, at: Point): void {
-        this._zoomStateMachine.notifyZoomByAtInput(delta, at);
+    notifyZoomInput(delta: number, at: Point): CameraMuxZoomOutput {
+        const result = this._zoomStateMachine.happens("userZoomByAtInput", { deltaZoom: delta, anchorPoint: at });
+        if (result.handled && 'output' in result && result.output) {
+            const output = result.output as ZoomControlOutputEvent;
+            if (output.type !== "none") {
+                return { allowPassThrough: true, delta: delta, anchorPoint: at };
+            }
+        }
+        return { allowPassThrough: false };
     }
 
-    notifyRotateByInput(delta: number): void {
-        this._rotateStateMachine.notifyRotateByInput(delta);
+    notifyRotateByInput(delta: number) {
+        return this._rotateStateMachine.notifyRotateByInput(delta);
     }
 
-    notifyRotateToAnimationInput(target: number): void {
-        this._rotateStateMachine.notifyRotateToAnimationInput(target);
+    notifyRotateToAnimationInput(target: number) {
+        return this._rotateStateMachine.notifyRotateToAnimationInput(target);
     }
 
     notifyZoomInputAnimation(targetZoom: number, at: Point = {x: 0, y: 0}): void {
@@ -59,8 +89,15 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
         this._zoomStateMachine.notifyZoomToAtWorldInput(targetZoom, at);
     }
 
-    notifyRotationInput(delta: number): void {
-        console.error("Rotation input is not implemented");
+    notifyRotationInput(delta: number): CameraMuxRotationOutput {
+        const result = this._rotateStateMachine.happens("userRotateByInput", { diff: delta });
+        if (result.handled && 'output' in result && result.output) {
+            const output = result.output as RotateControlOutputEvent;
+            if (output.type !== "none") {
+                return { allowPassThrough: true, delta: delta };
+            }
+        }
+        return { allowPassThrough: false };
     }
 
     initatePanTransition(): void {

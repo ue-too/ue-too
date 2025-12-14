@@ -1,11 +1,10 @@
 import type { Point } from "@ue-too/math";
-import { RawUserInputPublisher } from "../raw-input-publisher";
 import { BaseContext } from "@ue-too/being";
 import { Canvas } from "./kmt-input-context";
 
 /**
  * @description The touch points.
- * 
+ *
  * @category Input State Machine
  */
 export type TouchPoints = {
@@ -20,22 +19,18 @@ export interface TouchContext extends BaseContext{
     getCurrentTouchPointsCount: () => number;
     getInitialTouchPointsPositions: (idents: number[]) => TouchPoints[];
     updateTouchPoints: (pointsMoved: TouchPoints[]) => void;
-    notifyOnPan: (delta: Point) => void;
-    notifyOnZoom: (zoomAmount: number, anchorPoint: Point) => void; 
     alignCoordinateSystem: boolean;
     canvas: Canvas;
 }
 
 export class TouchInputTracker implements TouchContext {
 
-    private _inputPublisher: RawUserInputPublisher;
     private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
     private _canvas: Canvas;
     private _alignCoordinateSystem: boolean;
 
-    constructor(canvas: Canvas, inputPublisher: RawUserInputPublisher) {
+    constructor(canvas: Canvas) {
         this._canvas = canvas;
-        this._inputPublisher = inputPublisher;
         this._alignCoordinateSystem = true;
     }
 
@@ -76,14 +71,6 @@ export class TouchInputTracker implements TouchContext {
                 this._touchPointsMap.set(point.ident, {...point});
             }
         });
-    }
-
-    notifyOnPan(delta: Point): void {
-        this._inputPublisher.notifyPan(delta);
-    }
-
-    notifyOnZoom(zoomAmount: number, anchorPoint: Point): void {
-        this._inputPublisher.notifyZoom(zoomAmount, anchorPoint);
     }
 
     get alignCoordinateSystem(): boolean {

@@ -31,12 +31,37 @@ export type EventNotHandled = {
     handled: false;
 }
 
-export type EventHandled<States extends string> = {
+/**
+ * @description The result when an event is handled by a state.
+ * 
+ * Generic parameters:
+ * - States: All of the possible states that the state machine can be in.
+ * - Output: The output type for this event. Defaults to void.
+ * 
+ * @category being
+ */
+export type EventHandled<States extends string, Output = void> = {
     handled: true;
     nextState?: States;
+    output?: Output;
 }
 
-export type EventHandledResult<States extends string> = EventNotHandled | EventHandled<States>;
+/**
+ * @description The result of handling an event. Either handled (with optional output) or not handled.
+ * 
+ * @category being
+ */
+export type EventHandledResult<States extends string, Output = void> = EventNotHandled | EventHandled<States, Output>;
+
+/**
+ * @description A default output mapping that maps all events to void.
+ * Used as default when no output mapping is provided.
+ * 
+ * @category being
+ */
+export type DefaultOutputMapping<EventPayloadMapping> = {
+    [K in keyof EventPayloadMapping]: void;
+};
 
 /**
  * @description This is the interface for the state machine. The interface takes in a few generic parameters.
@@ -45,6 +70,7 @@ export type EventHandledResult<States extends string> = EventNotHandled | EventH
  * - EventPayloadMapping: A mapping of events to their payloads.
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
  * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * - EventOutputMapping: A mapping of events to their output types. Defaults to void for all events.
  * 
  * You can probably get by using the TemplateStateMachine class.
  * The naming is that an event would "happen" and the state of the state machine would "handle" it.
@@ -54,18 +80,23 @@ export type EventHandledResult<States extends string> = EventNotHandled | EventH
  * 
  * @category being
  */
-export interface StateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> {
+export interface StateMachine<
+    EventPayloadMapping, 
+    Context extends BaseContext, 
+    States extends string = 'IDLE',
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> {
     switchTo(state: States): void;
-    // Overload for known events - provides IntelliSense
+    // Overload for known events - provides IntelliSense with typed output
     happens<K extends keyof EventPayloadMapping>(
         ...args: EventArgs<EventPayloadMapping, K>
-    ): EventHandledResult<States>;
+    ): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
     // Overload for unknown events - maintains backward compatibility
     happens<K extends string>(
         ...args: EventArgs<EventPayloadMapping, K>
-    ): EventHandledResult<States>;
+    ): EventHandledResult<States, unknown>;
     setContext(context: Context): void;
-    states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States>>;
+    states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States, EventOutputMapping>>;
     onStateChange(callback: StateChangeCallback<States>): void;
     possibleStates: States[];
     onHappens(callback: (args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void): void;
@@ -86,6 +117,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  * - EventPayloadMapping: A mapping of events to their payloads.
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
  * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * - EventOutputMapping: A mapping of events to their output types. Defaults to void for all events.
  * 
  * A state's all possible states can be only a subset of the possible states of the state machine. (a state only needs to know what states it can transition to)
  * This allows for a state to be reusable across different state machines.
@@ -94,14 +126,19 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  * 
  * @category being
  */
-export interface State<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> { 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void;
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void;
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>;
-    eventReactions: EventReactions<EventPayloadMapping, Context, States>;
+export interface State<
+    EventPayloadMapping, 
+    Context extends BaseContext, 
+    States extends string = 'IDLE',
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> { 
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States): void;
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States): void;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
+    eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
-    delay: Delay<Context, EventPayloadMapping, States> | undefined;
+    delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined;
 }
 
 /**
@@ -111,12 +148,24 @@ export interface State<EventPayloadMapping, Context extends BaseContext, States 
  * - EventPayloadMapping: A mapping of events to their payloads.
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
  * - States: All of the possible states that the state machine can be in. e.g. a string literal union like "IDLE" | "SELECTING" | "PAN" | "ZOOM"
+ * - EventOutputMapping: A mapping of events to their output types. Defaults to void for all events.
+ * 
+ * The action function can now return an output value that will be included in the EventHandledResult.
  * 
  * @category being
  */
-export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
+export type EventReactions<
+    EventPayloadMapping, 
+    Context extends BaseContext, 
+    States extends string,
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> = {
     [K in keyof Partial<EventPayloadMapping>]: { 
-        action: (context: Context, event: EventPayloadMapping[K], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
+        action: (
+            context: Context, 
+            event: EventPayloadMapping[K], 
+            stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>
+        ) => K extends keyof EventOutputMapping ? (EventOutputMapping[K] | void) : void;
         defaultTargetState?: States;
     };
 };
@@ -147,14 +196,25 @@ export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
 }
 
-export type Action<Context extends BaseContext, EventPayloadMapping, States extends string> = {
-    action: (context: Context, event: EventPayloadMapping[keyof EventPayloadMapping], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
+export type Action<
+    Context extends BaseContext, 
+    EventPayloadMapping, 
+    States extends string,
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>,
+    Output = void
+> = {
+    action: (context: Context, event: EventPayloadMapping[keyof EventPayloadMapping], stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>) => Output | void;
     defaultTargetState?: States;
 }
 
-export type Delay<Context extends BaseContext, EventPayloadMapping, States extends string> = {
+export type Delay<
+    Context extends BaseContext, 
+    EventPayloadMapping, 
+    States extends string,
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> = {
     time: number;
-    action: Action<Context, EventPayloadMapping, States>;
+    action: Action<Context, EventPayloadMapping, States, EventOutputMapping>;
 }
 
 /**
@@ -206,17 +266,22 @@ export type EventGuards<EventPayloadMapping, States extends string, Context exte
  * 
  * @category being
  */
-export class TemplateStateMachine<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements StateMachine<EventPayloadMapping, Context, States> {
+export class TemplateStateMachine<
+    EventPayloadMapping, 
+    Context extends BaseContext, 
+    States extends string = 'IDLE',
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> implements StateMachine<EventPayloadMapping, Context, States, EventOutputMapping> {
 
     protected _currentState: States;
-    protected _states: Record<States, State<EventPayloadMapping, Context, States>>;
+    protected _states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>;
     protected _context: Context;
     protected _statesArray: States[];
     protected _stateChangeCallbacks: StateChangeCallback<States>[];
     protected _happensCallbacks: ((args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void)[];
     protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
 
-    constructor(states: Record<States, State<EventPayloadMapping, Context, States>>, initialState: States, context: Context){
+    constructor(states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>, initialState: States, context: Context){
         this._states = states;
         this._currentState = initialState;
         this._context = context;
@@ -231,9 +296,9 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
     }
     
     // Implementation signature - matches both overloads
-    happens<K extends keyof EventPayloadMapping>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States>;
-    happens<K extends string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States>;
-    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States> {
+    happens<K extends keyof EventPayloadMapping>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
+    happens<K extends string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, unknown>;
+    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, unknown> {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
@@ -269,7 +334,7 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
         return this._statesArray;
     }
 
-    get states(): Record<States, State<EventPayloadMapping, Context, States>> {
+    get states(): Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>> {
         return this._states;
     }
 }
@@ -283,12 +348,17 @@ export class TemplateStateMachine<EventPayloadMapping, Context extends BaseConte
  * 
  * @category being
  */
-export abstract class TemplateState<EventPayloadMapping, Context extends BaseContext, States extends string = 'IDLE'> implements State<EventPayloadMapping, Context, States> {
+export abstract class TemplateState<
+    EventPayloadMapping, 
+    Context extends BaseContext, 
+    States extends string = 'IDLE',
+    EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+> implements State<EventPayloadMapping, Context, States, EventOutputMapping> {
 
-    public abstract eventReactions: EventReactions<EventPayloadMapping, Context, States>;
+    public abstract eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     protected _guards: Guard<Context> = {} as Guard<Context>;
     protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {} as Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
-    protected _delay: Delay<Context, EventPayloadMapping, States> | undefined = undefined;
+    protected _delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined = undefined;
 
     get guards(): Guard<Context> {
         return this._guards;
@@ -298,23 +368,24 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
         return this._eventGuards;
     }
 
-    get delay(): Delay<Context, EventPayloadMapping, States> | undefined {
+    get delay(): Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined {
         return this._delay;
     }
 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, from: States): void {
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States): void {
         // console.log("enter");
     }
 
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>, to: States): void {
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States): void {
         // console.log('leave');
     }
 
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States>): EventHandledResult<States>{
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>{
         const eventKey = args[0] as keyof EventPayloadMapping;
         const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
         if (this.eventReactions[eventKey]) {
-            this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
+            // Capture the output from the action
+            const output = this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
             const targetState = this.eventReactions[eventKey].defaultTargetState;
             const guardToEvaluate = this._eventGuards[eventKey];
             if(guardToEvaluate){
@@ -324,9 +395,11 @@ export abstract class TemplateState<EventPayloadMapping, Context extends BaseCon
                     }
                     return false;
                 });
-                return target ? {handled: true, nextState: target.target} : {handled: true, nextState: targetState};
+                return target 
+                    ? {handled: true, nextState: target.target, output: output as any} 
+                    : {handled: true, nextState: targetState, output: output as any};
             }
-            return {handled: true, nextState: targetState};
+            return {handled: true, nextState: targetState, output: output as any};
         }
         return {handled: false};
     }

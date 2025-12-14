@@ -9,6 +9,7 @@ tileImage.src = new URL('./tile.png', import.meta.url).href;
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 const cameraMux = board.cameraMux as CameraMuxWithAnimationAndLock;
+const cameraRig = board.getCameraRig();
 
 const panAnimationKeyframes: Keyframe<Point>[] = [
     {
@@ -22,7 +23,10 @@ const panAnimationKeyframes: Keyframe<Point>[] = [
 ];
 
 const panAnimation = new Animation(panAnimationKeyframes, (value)=>{
-    cameraMux.notifyPanToAnimationInput(value);
+    const res = cameraMux.notifyPanToAnimationInput(value);
+    if(res.allowPassThrough){
+        cameraRig.panToWorld(value);
+    }
 }, new PointAnimationHelper(), 1000);
 
 let lastUpdateFrameTimeStamp = 0;

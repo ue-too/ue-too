@@ -168,9 +168,73 @@ To see detail of each component navigate to the respective readme in the subdire
 
 It's recommended to start with the [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera) since the other parts are built on top of it.
 
-Below is a diagram showing from the user input to how the camera is updated and everything in the middle. 
+Below is a diagram showing the data flow from user input to camera updates.
 
-![data-flow](https://ue-too.github.io/ue-too/assets/doc-media/entire-process.png)
+```mermaid
+flowchart TB
+    subgraph Input ["Input Layer"]
+        CE["🖼️ Canvas Element"]
+        CDP["📐 Canvas Proxy"]
+        CEP["🎯 Event Parsers<br/><small>KMT + Touch</small>"]
+    end
+
+    subgraph Interpretation ["Input Interpretation"]
+        ISM["🔄 Input State Machine<br/><small>interprets user intent</small>"]
+        IT["📋 Input Tracker<br/><small>cursor position, canvas info</small>"]
+    end
+
+    subgraph Orchestration ["Input Orchestration"]
+        IO["🎛️ Input Orchestrator<br/><small>central routing hub</small>"]
+    end
+
+    subgraph Publishing ["Raw Input Publishing"]
+        RIP["📡 Raw Input Publisher"]
+        RIO["👂 User Callbacks<br/><small>onInput handlers</small>"]
+    end
+
+    subgraph CameraControl ["Camera Control"]
+        CM["🚦 Camera Mux<br/><small>permission control</small>"]
+        OCIS["🎬 Other Input Sources<br/><small>animations, programmatic</small>"]
+        CR["🎮 Camera Rig<br/><small>restrictions & clamping</small>"]
+    end
+
+    subgraph Camera ["Camera"]
+        OC["📷 Observable Camera"]
+        ACMO["👂 Camera Observers<br/><small>on handlers</small>"]
+    end
+
+    %% Canvas setup
+    CDP -.->|"tracks dimensions"| CE
+    CE -->|"DOM events"| CEP
+    CDP -->|"canvas info"| IT
+
+    %% Input interpretation
+    CEP -->|"state machine events"| ISM
+    ISM <-->|"read/update context"| IT
+    ISM -->|"pan, zoom, rotate"| IO
+
+    %% Orchestrator routing (parallel paths)
+    IO -->|"always publish"| RIP
+    RIP --> RIO
+    IO -->|"ask permission"| CM
+    
+    %% Camera Mux
+    OCIS -->|"request input"| CM
+    CM -->|"allowPassThrough?"| IO
+
+    %% Camera execution
+    IO -->|"if allowed"| CR
+    CR --> OC
+    OC --> ACMO
+```
+
+**Key concepts:**
+- **Event Parsers**: Register listeners on canvas (works with vanilla, pixi.js, fabric.js, konva)
+- **Input State Machine**: Interprets raw events into camera intents (pan/zoom/rotate)
+- **Input Orchestrator**: Routes outputs in parallel — always publishes raw input, and asks CameraMux for permission
+- **Camera Mux**: Controls input priority (e.g., user input can cancel animations). Returns `{allowPassThrough: true/false}`
+- **Camera Rig**: Applies movement restrictions and clamping before updating camera
+- **Observable Camera**: Final camera state with change observers
 
 ## TODO
 - [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.

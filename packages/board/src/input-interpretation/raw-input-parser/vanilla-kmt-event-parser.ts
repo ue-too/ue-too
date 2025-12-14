@@ -1,4 +1,5 @@
 import type { KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
+import type { InputOrchestrator } from "../input-orchestrator";
 
 /**
  * @category Event Parser
@@ -10,6 +11,7 @@ export interface KMTEventParser {
     tearDown(): void;
     attach(canvas: HTMLCanvasElement): void;
     stateMachine: KmtInputStateMachine;
+    orchestrator: InputOrchestrator;
 }
 
 /**
@@ -67,23 +69,26 @@ export type EventTargetWithPointerEvents = {
 /**
  * @description The vanilla keyboard mouse and trackpad(KMT) event parser.
  * This parser converts the raw events to events that can be used by the input state machine.
- * 
+ * The parser has a direct dependency on the state machine and requires an orchestrator to process outputs.
+ *
  * @category Event Parser
  */
 export class VanillaKMTEventParser implements KMTEventParser {
 
     private _disabled: boolean = false;
     private _stateMachine: KmtInputStateMachine;
+    private _orchestrator: InputOrchestrator;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
     private _canvas?: HTMLCanvasElement;
 
 
-    constructor(kmtInputStateMachine: KmtInputStateMachine, canvas?: HTMLCanvasElement){
+    constructor(kmtInputStateMachine: KmtInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement){
         this._canvas = canvas;
         this.bindFunctions();
         this._abortController = new AbortController();
         this._stateMachine = kmtInputStateMachine;
+        this._orchestrator = orchestrator;
         this._keyfirstPressed = new Map();
     }
 
@@ -97,6 +102,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
 
     get stateMachine(): KmtInputStateMachine {
         return this._stateMachine;
+    }
+
+    get orchestrator(): InputOrchestrator {
+        return this._orchestrator;
     }
 
     addEventListeners(signal: AbortSignal){
@@ -138,11 +147,17 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
+            const result = this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
+            const result = this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
     }
@@ -152,11 +167,17 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
+            const result = this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
+            const result = this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
     }
@@ -165,24 +186,38 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(this._disabled){
             return;
         }
+        let result;
         if((e.buttons === 1) && e.pointerType === "mouse"){
-            this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+            result = this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
         if((e.buttons  === 4) && e.pointerType === "mouse"){
-            this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
+            result = this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
             return;
         }
-        this.stateMachine.happens("pointerMove", {x: e.clientX, y: e.clientY});
+        result = this.stateMachine.happens("pointerMove", {x: e.clientX, y: e.clientY});
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
+        }
     }
 
     scrollHandler(e: MinimumWheelEvent){
         if(this._disabled) return;
         e.preventDefault();
+        let result;
         if(e.ctrlKey){
-            this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+            result = this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+            result = this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+        }
+        if(result.handled && 'output' in result && result.output){
+            this._orchestrator.processOutput(result.output);
         }
     }
 
@@ -195,7 +230,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            this.stateMachine.happens("spacebarDown");
+            const result = this.stateMachine.happens("spacebarDown");
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
         }
     }
 
@@ -204,7 +242,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.stateMachine.happens("spacebarUp");
+            const result = this.stateMachine.happens("spacebarUp");
+            if(result.handled && 'output' in result && result.output){
+                this._orchestrator.processOutput(result.output);
+            }
         }
     }
 
