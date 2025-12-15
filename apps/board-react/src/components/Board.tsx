@@ -1,6 +1,8 @@
-import { useRef, useCallback, useSyncExternalStore } from "react";
-import { useAnimationFrame } from "../hooks/useAnimationFrame";
-import { BoardProvider, useBoard, useBoardCameraState, useBoardify } from "../hooks/useBoardify";
+import {useRef, useCallback, useSyncExternalStore, useMemo} from "react";
+import {useAnimationFrame} from "../hooks/useAnimationFrame";
+import {BoardProvider, useBoard, useBoardCameraState, useBoardify, useCustomCameraMux} from "../hooks/useBoardify";
+import { Point } from "@ue-too/math";
+import type { CameraMux } from "@ue-too/board/camera";
 
 export type BoardProps = {
     fullScreen?: boolean;
@@ -19,30 +21,55 @@ export function Board({width, height, fullScreen, animationCallback: animationCa
     const animationCallback = useCallback((timestamp: number) => {
         board.step(timestamp);
         const ctx = board.context;
-        if(ctx == undefined){
+        if (ctx == undefined) {
             console.warn('Canvas context not available');
             return;
         }
-        
-        if(animationCallbackProp != undefined){
+
+        if (animationCallbackProp != undefined) {
             animationCallbackProp(timestamp, ctx);
         }
-    }, [animationCallbackProp, board]);
+    }, [animationCallbackProp, board]); 
+
+    const cameraMux = useMemo<CameraMux>(()=>{
+        return {
+            notifyPanInput: (value: Point) => {
+                console.log('notifyPanInput', value);
+                return {
+                    allowPassThrough: false,
+                }
+            },
+            notifyZoomInput: (value: number) => {
+                console.log('notifyZoomInput', value);
+                return {
+                    allowPassThrough: false,
+                }
+            },
+            notifyRotationInput: (value: number) => {
+                console.log('notifyRotateInput', value);
+                return {
+                    allowPassThrough: false,
+                }
+            },
+        }
+    }, []);
+
+    useCustomCameraMux(cameraMux);
 
     useAnimationFrame(animationCallback);
 
     return (
         <>
-            <canvas 
+            <canvas
                 width={width}
                 height={height}
-                ref={(ref)=>{
-                    if(ref == null){
+                ref={(ref) => {
+                    if (ref == null) {
                         board.tearDown();
                         return;
                     }
                     board.attach(ref);
-                }} 
+                }}
             />
         </>
     );

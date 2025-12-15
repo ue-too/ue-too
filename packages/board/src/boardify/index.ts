@@ -276,6 +276,9 @@ export default class Board {
         // Update all components that depend on cameraMux
         this._edgeAutoCameraInput = new EdgeAutoCameraInput(cameraMux);
         // Note: TouchInputTracker and Orchestrator would need to be recreated or have setter methods
+
+        // input orchestrator
+        this._inputOrchestrator.cameraMux = cameraMux;
     }
 
     get cameraMovementOnMouseEdge(): EdgeAutoCameraInput{
@@ -491,6 +494,7 @@ export default class Board {
     set clampRotation(value: boolean){
         this.cameraRig.configure({clampRotation: value});
     }
+
 
     getCameraRig(): CameraRig {
         return this.cameraRig;

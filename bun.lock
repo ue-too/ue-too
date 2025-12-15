@@ -115,6 +115,7 @@
       "version": "0.5.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
+        "@ue-too/math": "workspace:*",
       },
     },
     "apps/examples": {

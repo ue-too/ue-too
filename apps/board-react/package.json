@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ue-too/board": "workspace:*"
+    "@ue-too/board": "workspace:*",
+    "@ue-too/math": "workspace:*"
   }
 }

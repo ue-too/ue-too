@@ -7,9 +7,15 @@ import { useBoardCameraState } from '../hooks/useBoardify';
 
 function PositionDisplay() {
   const position = useBoardCameraState("position");
+
   return (
     <div>
       <div>position: {position.x}, {position.y}</div>
+      <button onClick={()=>{
+        position.x += 10;
+      }}>
+        Set Camera Position
+      </button>
     </div>
   );
 

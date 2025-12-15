@@ -1,4 +1,4 @@
-import type { KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
+import type { KmtInputEventMapping, KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
 import type { InputOrchestrator } from "../input-orchestrator";
 
 /**
@@ -142,22 +142,25 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
+    private processEvent(
+        ...args: Parameters<KmtInputStateMachine['happens']>
+    ): void {
+        const result = this.stateMachine.happens(...args);
+        if (result.handled && result.output) {
+            this._orchestrator.processInputStateMachineResult(result.output);
+        }
+    }
+
     pointerDownHandler(e: MinimumPointerEvent){
         if(this._disabled){
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            const result = this.stateMachine.happens("leftPointerDown", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("leftPointerDown", {x: e.clientX, y: e.clientY});
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            const result = this.stateMachine.happens("middlePointerDown", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("middlePointerDown", {x: e.clientX, y: e.clientY});
             return;
         }
     }
@@ -167,17 +170,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
             return;
         }
         if(e.button === 0 && e.pointerType === "mouse"){
-            const result = this.stateMachine.happens("leftPointerUp", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("leftPointerUp", {x: e.clientX, y: e.clientY});
             return;
         }
         if(e.button === 1 && e.pointerType === "mouse"){
-            const result = this.stateMachine.happens("middlePointerUp", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("middlePointerUp", {x: e.clientX, y: e.clientY});
             return;
         }
     }
@@ -186,38 +183,24 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(this._disabled){
             return;
         }
-        let result;
         if((e.buttons === 1) && e.pointerType === "mouse"){
-            result = this.stateMachine.happens("leftPointerMove", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("leftPointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
         if((e.buttons  === 4) && e.pointerType === "mouse"){
-            result = this.stateMachine.happens("middlePointerMove", {x: e.clientX, y: e.clientY});
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("middlePointerMove", {x: e.clientX, y: e.clientY});
             return;
         }
-        result = this.stateMachine.happens("pointerMove", {x: e.clientX, y: e.clientY});
-        if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
-        }
+        this.processEvent("pointerMove", {x: e.clientX, y: e.clientY});
     }
 
     scrollHandler(e: MinimumWheelEvent){
         if(this._disabled) return;
         e.preventDefault();
-        let result;
         if(e.ctrlKey){
-            result = this.stateMachine.happens("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+            this.processEvent("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            result = this.stateMachine.happens("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
-        }
-        if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
+            this.processEvent("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
         }
     }
 
@@ -230,10 +213,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            const result = this.stateMachine.happens("spacebarDown");
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("spacebarDown", {});
         }
     }
 
@@ -242,10 +222,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            const result = this.stateMachine.happens("spacebarUp");
-            if(result.handled && 'output' in result && result.output){
-                this._orchestrator.processOutput(result.output);
-            }
+            this.processEvent("spacebarUp", {});
         }
     }
 
