@@ -17,7 +17,7 @@ const projectName = process.argv[2];
 
 if (!projectName) {
   console.error('Error: Project name is required');
-  console.error('Usage: pnpm scaffold:vue <project-name>');
+  console.error('Usage: bun run scaffold:vue <project-name>');
   process.exit(1);
 }
 
@@ -27,7 +27,7 @@ console.log(`Scaffolding Vue app "${projectName}" in ${directory}...`);
 
 try {
   execSync(
-    `pnpm nx g @nx/vue:app ${projectName} --bundler=vite --directory=${directory} --e2eTestRunner=none`,
+    `bun nx g @nx/vue:app ${projectName} --bundler=vite --directory=${directory} --e2eTestRunner=none`,
     {
       stdio: 'inherit',
       cwd: path.resolve(__dirname, '..'),
@@ -87,7 +87,7 @@ try {
 
   console.log(`\n✅ Successfully scaffolded Vue app "${projectName}"`);
   console.log(`\nYou can now run:`);
-  console.log(`  pnpm nx dev ${projectName}`);
+  console.log(`  bun nx dev ${projectName}`);
 } catch (error) {
   console.error(`\n❌ Failed to scaffold Vue app: ${error.message}`);
   process.exit(1);

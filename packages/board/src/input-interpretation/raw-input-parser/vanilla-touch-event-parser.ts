@@ -135,7 +135,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         }
         const result = this._stateMachine.happens("touchstart", {points: pointsAdded});
         if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
+            this._orchestrator.processInputStateMachineResult(result.output);
         }
         e.preventDefault();
     }
@@ -150,7 +150,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         }
         const result = this._stateMachine.happens("touchend", {points: pointsRemoved});
         if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
+            this._orchestrator.processInputStateMachineResult(result.output);
         }
     }
 
@@ -164,7 +164,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         }
         const result = this._stateMachine.happens("touchend", {points: pointsRemoved});
         if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
+            this._orchestrator.processInputStateMachineResult(result.output);
         }
     }
 
@@ -179,7 +179,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         }
         const result = this._stateMachine.happens("touchmove", {points: pointsMoved});
         if(result.handled && 'output' in result && result.output){
-            this._orchestrator.processOutput(result.output);
+            this._orchestrator.processInputStateMachineResult(result.output);
         }
     }
 

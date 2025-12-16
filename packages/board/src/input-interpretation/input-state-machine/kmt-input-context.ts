@@ -2,7 +2,7 @@ import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
 import { UserInputPublisher } from "../raw-input-publisher";
 import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../../utils";
-import { EdgeAutoCameraInput } from "src/camera";
+import { EdgeAutoCameraInput } from "../../camera";
 
 export enum CursorStyle {
     GRAB = "grab",

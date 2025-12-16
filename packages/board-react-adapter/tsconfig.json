@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/board-react-adapter.tsbuildinfo",
+    "declaration": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "types": [],
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*"]
+}
+  

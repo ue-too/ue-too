@@ -17,7 +17,7 @@
     "move-packageJson": "nx run-many --target=move-package --parallel=true",
     "publish-packages": "nx release publish",
     "changeset": "changeset",
-    "version-packages": "changeset version && pnpm build && pnpm replace-workspace-deps",
+    "version-packages": "changeset version && bun run build && bun run replace-workspace-deps",
     "release": "changeset publish",
     "replace-workspace-deps": "node scripts/replace-workspace-deps.mjs",
     "dev:examples": "nx dev examples",
@@ -99,5 +99,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+ ]
 }
