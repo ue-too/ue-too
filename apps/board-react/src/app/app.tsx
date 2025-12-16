@@ -1,9 +1,9 @@
 // Uncomment this line to use CSS modules
 // import styles from './app.module.css';
 import NxWelcome from './nx-welcome';
-import Board from '../components/Board';
 import { Route, Routes, Link } from 'react-router-dom';
-import { useBoardCameraState } from '../hooks/useBoardify';
+import { useBoardCameraState } from '@ue-too/board-react-adapter';
+import  {Board} from '@ue-too/board-react-adapter/components';
 
 function PositionDisplay() {
   const position = useBoardCameraState("position");

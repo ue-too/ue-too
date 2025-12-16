@@ -1,0 +1,51 @@
+{
+  "name": "board-react-adapter",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/board-react-adapter/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react react-dom",
+        "cwd": "packages/board-react-adapter"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react react-dom",
+        "cwd": "packages/board-react-adapter"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/board-react-adapter"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "packages/board-react-adapter"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../../scripts/publish-package.mjs",
+        "forwardAllArgs": false,
+        "cwd": "packages/board-react-adapter/dist"
+      }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf docs/board-react-adapter && bun run typedoc --skipErrorChecking --entryPoints packages/board-react-adapter/src/index.ts --out docs/board-react-adapter"
+      }
+    }
+  },
+  "tags": []
+}

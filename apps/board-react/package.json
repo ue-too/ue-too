@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ue-too/board": "workspace:*",
+    "@ue-too/board-react-adapter": "workspace:*",
     "@ue-too/math": "workspace:*"
   }
 }
