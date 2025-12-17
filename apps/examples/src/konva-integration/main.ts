@@ -1,5 +1,5 @@
 import Konva from "konva";
-import { DefaultBoardCamera, createDefaultCameraRig } from "@ue-too/board";
+import { DefaultBoardCamera, InputOrchestrator, EdgeAutoCameraInput, createDefaultCameraRig } from "@ue-too/board";
 import { createCameraMuxWithAnimationAndLockWithCameraRig } from "@ue-too/board";
 import { CanvasProxy, ObservableInputTracker } from "@ue-too/board";
 import { createKmtInputStateMachine } from "@ue-too/board";
@@ -11,10 +11,10 @@ const camera = new DefaultBoardCamera(800, 600);
 
 const canvasProxy = new CanvasProxy(canvas);
 const cameraRig = createDefaultCameraRig(camera);
-const boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig));
-const observableInputTracker = new ObservableInputTracker(canvasProxy, boardInputPublisher);
+const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig), cameraRig, new RawUserInputPublisher());
+const observableInputTracker = new ObservableInputTracker(canvasProxy, new EdgeAutoCameraInput(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig)));
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
-const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, canvas);
+const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, canvas);
 
 kmtParser.setUp();
 
