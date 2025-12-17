@@ -1,4 +1,4 @@
-import { DefaultBoardCamera, createDefaultCameraRig } from '@ue-too/board';
+import { DefaultBoardCamera, EdgeAutoCameraInput, InputOrchestrator, createDefaultCameraRig } from '@ue-too/board';
 import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.js';
 import { VanillaKMTEventParser } from '@ue-too/board';
 import { RawUserInputPublisher } from '@ue-too/board';
@@ -18,11 +18,11 @@ import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/board'
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
     const canvasProxy = new CanvasProxy(app.canvas);
     const cameraRig = createDefaultCameraRig(camera);
-    const boardInputPublisher = new RawUserInputPublisher(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig));
-    const observableInputTracker = new ObservableInputTracker(canvasProxy, boardInputPublisher);
+    const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig), cameraRig, new RawUserInputPublisher());
+    const observableInputTracker = new ObservableInputTracker(canvasProxy, new EdgeAutoCameraInput(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig)));
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     console.log('kmt input state machine', kmtInputStateMachine);
-    const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, app.canvas);
+    const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, app.canvas);
     kmtParser.setUp();
 
     // Load the bunny texture.
