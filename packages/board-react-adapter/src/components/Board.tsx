@@ -1,5 +1,5 @@
 import {useRef, useCallback, useSyncExternalStore, useMemo} from "react";
-import {useAnimationFrame} from "../hooks/useAnimationFrame";
+import {useAnimationFrame, useAnimationFrameWithBoard} from "../hooks/useAnimationFrame";
 import {BoardProvider, useBoard, useBoardCameraState, useBoardify, useCustomCameraMux} from "../hooks/useBoardify";
 import { Point } from "@ue-too/math";
 import type { CameraMux } from "@ue-too/board/camera";
@@ -18,35 +18,29 @@ function Board({width, height, fullScreen, animationCallback: animationCallbackP
 
     const board = useBoard();
 
-    const animationCallback = useCallback((timestamp: number) => {
-        board.step(timestamp);
-        const ctx = board.context;
-        if (ctx == undefined) {
-            console.warn('Canvas context not available');
-            return;
-        }
-
-        if (animationCallbackProp != undefined) {
-            animationCallbackProp(timestamp, ctx);
-        }
-    }, [animationCallbackProp, board]); 
-
-    useAnimationFrame(animationCallback);
+    useAnimationFrameWithBoard(animationCallbackProp);
 
     return (
-        <>
-            <canvas
-                width={width}
-                height={height}
-                ref={(ref) => {
-                    if (ref == null) {
-                        board.tearDown();
-                        return;
-                    }
-                    board.attach(ref);
-                }}
-            />
-        </>
+        <canvas
+            width={width}
+            height={height}
+            ref={(ref) => {
+                if (ref == null) {
+                    board.tearDown();
+                    return;
+                }
+
+                console.log('Board attached');
+                board.attach(ref);
+            }}
+            onPointerDown={(e)=>{
+                const worldPosition = board.convertWindowPoint2WorldCoord({
+                    x: e.clientX,
+                    y: e.clientY,
+                });
+                console.log('worldPosition', worldPosition);
+            }}
+        />
     );
 }
 

@@ -409,14 +409,16 @@ export class DefaultCameraRig implements CameraRig { // this is used as a contex
      * @description Zoom to a certain zoom level with respect to the center of the viewport.
      */
     zoomTo(targetZoom: number): void {
-        this._zoomTo(targetZoom, this._camera, this._config);
+        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        this._camera.setZoomLevel(transformedTarget);
     }
 
     /**
      * @description Zoom by a certain amount with respect to the center of the viewport.
      */
     zoomBy(delta: number): void {
-        this._zoomBy(delta, this._camera, this._config);
+        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
+        this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
     }
 
     /**

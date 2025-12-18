@@ -80,10 +80,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
     private _orchestrator: InputOrchestrator;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
-    private _canvas?: HTMLCanvasElement;
+    private _canvas?: HTMLCanvasElement | SVGSVGElement;
 
 
-    constructor(kmtInputStateMachine: KmtInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement){
+    constructor(kmtInputStateMachine: KmtInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement | SVGSVGElement){
         this._canvas = canvas;
         this.bindFunctions();
         this._abortController = new AbortController();
@@ -112,10 +112,10 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(this._canvas == undefined){
             return;
         }
-        this._canvas.addEventListener('pointerdown', this.pointerDownHandler, {signal});
-        this._canvas.addEventListener('pointerup', this.pointerUpHandler, {signal});
-        this._canvas.addEventListener('pointermove', this.pointerMoveHandler, {signal});
-        this._canvas.addEventListener('wheel', this.scrollHandler, {signal});
+        this._canvas.addEventListener('pointerdown', this.pointerDownHandler as EventListener, {signal});
+        this._canvas.addEventListener('pointerup', this.pointerUpHandler as EventListener, {signal});
+        this._canvas.addEventListener('pointermove', this.pointerMoveHandler as EventListener, {signal});
+        this._canvas.addEventListener('wheel', this.scrollHandler as EventListener, {signal});
         window.addEventListener('keydown', this.keypressHandler, {signal});
         window.addEventListener('keyup', this.keyupHandler, {signal});
     }
@@ -151,7 +151,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
     }
 
-    pointerDownHandler(e: MinimumPointerEvent){
+    pointerDownHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
@@ -165,7 +165,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
     }
 
-    pointerUpHandler(e: MinimumPointerEvent){
+    pointerUpHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
@@ -179,7 +179,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
     }
 
-    pointerMoveHandler(e: MinimumPointerEvent){
+    pointerMoveHandler(e: PointerEvent){
         if(this._disabled){
             return;
         }
@@ -194,7 +194,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this.processEvent("pointerMove", {x: e.clientX, y: e.clientY});
     }
 
-    scrollHandler(e: MinimumWheelEvent){
+    scrollHandler(e: WheelEvent){
         if(this._disabled) return;
         e.preventDefault();
         if(e.ctrlKey){

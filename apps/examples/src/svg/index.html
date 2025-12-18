@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + TS</title>
+  </head>
+  <body style="overflow: hidden;">
+    <div style="display: flex; justify-content: center; flex-direction: column; align-items: center;">
+      <!-- <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas> -->
+       <svg id="graph" style="border: 1px solid black; background-color: white;">
+        <g id="camera">
+          <rect x="0" y="0" width="100" height="100" fill="red" />
+        </g>
+       </svg>
+    </div>
+    <button id="toggle-camera">Reset Camera</button>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

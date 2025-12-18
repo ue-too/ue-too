@@ -7,14 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math @ue-too/being",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
         "cwd": "packages/ecs"
       }
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math @ue-too/being",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
         "cwd": "packages/ecs"
       }
     },

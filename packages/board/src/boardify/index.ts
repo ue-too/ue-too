@@ -320,6 +320,7 @@ export default class Board {
     }
 
     /**
+     * TODO add the option to make the camera position to be at the top left corner of the canvas; or better yet any point in the viewport (within the viewport boundaries)
      * @description Converts a point from window coordinates to world coordinates.
      * @param clickPointInWindow The point in window coordinates to convert.
      * @returns The converted point in world coordinates.

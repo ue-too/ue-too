@@ -99,7 +99,7 @@ export default class BaseCamera implements BoardCamera {
      * @category Camera
      */
     get position(): Point{
-        return this._position;
+        return {...this._position};
     }
 
     /**
@@ -224,6 +224,7 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
+     * TODO add the option to make the camera position to be at the top left corner of the canvas; or better yet any point in the viewport (within the viewport boundaries)
      * @description The order of the transformation is as follows:
      * 1. Scale (scale the context using the device pixel ratio)
      * 2. Translation (move the origin of the context to the center of the canvas)
@@ -248,8 +249,8 @@ export default class BaseCamera implements BoardCamera {
         ){
             return {...this.currentCachedTransform.transform, cached: true};
         }
-        const tx = devicePixelRatio * this._viewPortWidth / 2;
-        const ty = devicePixelRatio * this._viewPortHeight / 2;
+        const tx = devicePixelRatio * this._viewPortWidth / 2; // 0 if the camera position represents the position at the top left corner of the canvas in the world
+        const ty = devicePixelRatio * this._viewPortHeight / 2; // 0 if the camera position represents the position at the top left corner of the canvas in the world
         const tx2 = -this._position.x;
         const ty2 = alignCoorindate ? -this._position.y : this._position.y;
 
@@ -288,6 +289,8 @@ export default class BaseCamera implements BoardCamera {
      */
     setUsingTransformationMatrix(transformationMatrix: TransformationMatrix){
         const decomposed = decomposeCameraMatrix(transformationMatrix, this._viewPortWidth, this._viewPortHeight, this._zoomLevel);
+
+        // TODO clamp the attributes?
         this.setPosition(decomposed.position);
         this.setRotation(decomposed.rotation);
         this.setZoomLevel(decomposed.zoom);
