@@ -1,4 +1,4 @@
-import { Board, DefaultBoardCamera, DummyCanvas, EdgeAutoCameraInput, InputOrchestrator, ObservableInputTracker, VanillaKMTEventParser, createCameraMuxWithAnimationAndLockWithCameraRig, createDefaultCameraRig, createKmtInputStateMachine } from "@ue-too/board";
+import { Board, DefaultBoardCamera, DummyCanvas, EdgeAutoCameraInput, InputOrchestrator, ObservableInputTracker, SvgPositionDimensionPublisher, VanillaKMTEventParser, createCameraMuxWithAnimationAndLockWithCameraRig, createDefaultCameraRig, createKmtInputStateMachine } from "@ue-too/board";
 
 const svg = document.querySelector("#graph") as SVGSVGElement;
 
@@ -17,6 +17,12 @@ const edgeAutoCameraInput = new EdgeAutoCameraInput(cameraMux);
 const observableInputTracker = new ObservableInputTracker(new DummyCanvas(), edgeAutoCameraInput);
 
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
+
+const svgPositionDimensionPublisher = new SvgPositionDimensionPublisher(svg);
+
+svgPositionDimensionPublisher.onPositionUpdate((rect)=>{
+    console.log(rect);
+});
 
 const cameraGroup = document.querySelector("#camera") as SVGGElement;
 

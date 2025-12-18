@@ -1,4 +1,4 @@
-import type { KmtInputEventMapping, KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
+import type { KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
 import type { InputOrchestrator } from "../input-orchestrator";
 
 /**

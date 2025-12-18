@@ -17,12 +17,10 @@ import DefaultBoardCamera from "../default-camera";
 import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./rotation-handler";
 import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation-handler";
 import { ObservableBoardCamera } from "../interface";
-import { PanContext } from "../camera-mux/animation-and-lock/pan-control-state-machine";
-import { ZoomContext } from "../camera-mux/animation-and-lock/zoom-control-state-machine";
 import { Point } from "@ue-too/math";
-import { RotateContext } from "../camera-mux/animation-and-lock/rotation-control-state-machine";
 import { CameraPositionUpdateBatcher, CameraRotationUpdateBatcher, CameraZoomUpdateBatcher } from "./update-batcher";
 import { convertDeltaInViewPortToWorldSpace } from "../utils";
+import { BaseContext } from "node_modules/@ue-too/being/src/interface";
 
 /**
  * @description The config for the camera rig.
@@ -32,11 +30,23 @@ import { convertDeltaInViewPortToWorldSpace } from "../utils";
  */
 export type CameraRigConfig = PanHandlerConfig & ZoomHandlerConfig & RotationHandlerConfig;
 
-export interface CameraRig extends PanContext, ZoomContext, RotateContext {
+export interface CameraRig extends BaseContext {
     camera: ObservableBoardCamera;
     config: CameraRigConfig;
     configure(config: Partial<CameraRigConfig>): void;
     update(): void;
+    panByViewPort: (delta: Point) => void;
+    panToViewPort: (target: Point) => void;
+    panByWorld: (delta: Point) => void;
+    panToWorld: (target: Point) => void;
+    rotateBy: (delta: number) => void;
+    rotateTo: (target: number) => void;
+    zoomToAt: (targetZoom: number, at: Point) => void;
+    zoomByAt: (delta: number, at: Point) => void;
+    zoomTo: (targetZoom: number) => void;
+    zoomBy: (delta: number) => void;
+    zoomToAtWorld: (targetZoom: number, at: Point) => void;
+    zoomByAtWorld: (delta: number, at: Point) => void;
 }
 
 

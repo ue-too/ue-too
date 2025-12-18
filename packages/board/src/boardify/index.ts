@@ -210,7 +210,7 @@ export default class Board {
      * If set to false, only the center of the camera is bounded by the boundaries.
      */
     set limitEntireViewPort(value: boolean){
-        this.cameraRig.limitEntireViewPort = value;
+        this.cameraRig.config.limitEntireViewPort = value;
         if(this._canvasProxy.detached){
             return;
         }
@@ -220,7 +220,7 @@ export default class Board {
     }
 
     get limitEntireViewPort(): boolean{
-        return this.cameraRig.limitEntireViewPort;
+        return this.cameraRig.config.limitEntireViewPort;
     }
 
     /**
