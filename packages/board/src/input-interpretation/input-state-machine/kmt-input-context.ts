@@ -1,7 +1,6 @@
 import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
-import { UserInputPublisher } from "../raw-input-publisher";
-import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../../utils";
+import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SvgPositionDimensionPublisher, SynchronousObservable } from "../../utils";
 import { EdgeAutoCameraInput } from "../../camera";
 
 export enum CursorStyle {
@@ -229,6 +228,141 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         console.log('style height', this._canvas.style.height);
         console.log('width', this._canvas.width);
         console.log('height', this._canvas.height);
+        console.log('proxy width', this._width);
+        console.log('proxy height', this._height);
+    }
+
+}
+
+export class SvgProxy implements Canvas, Observable<[CanvasDimensions]> {
+
+    private _width: number = 0;
+    private _height: number = 0;
+    private _position: Point = {x: 0, y: 0};
+    private _svgPositionDimensionPublisher: SvgPositionDimensionPublisher;
+    private _svg: SVGSVGElement | undefined;
+    private _internalSizeUpdateObservable: Observable<[CanvasDimensions]>;
+
+    constructor(svg?: SVGSVGElement) {
+        this._internalSizeUpdateObservable = new SynchronousObservable<[CanvasDimensions]>();
+
+        if(svg){
+            const boundingRect = svg.getBoundingClientRect();
+            const trueRect = getTrueRect(boundingRect, window.getComputedStyle(svg));
+            this._width = trueRect.width;
+            this._height = trueRect.height;
+            this._position = {x: trueRect.left, y: trueRect.top};
+            this._svg = svg;
+        }
+
+        this._svgPositionDimensionPublisher = new SvgPositionDimensionPublisher(svg);
+        this._svgPositionDimensionPublisher.onPositionUpdate((rect)=>{
+            // the rect is the canvas dimension in the DOM (the width and height attribute would need to multiply by the device pixel ratio)
+            if(this._svg == undefined){
+                console.error('is not attached to any canvas should not have getting any updates');
+                return;
+            }
+
+            this._width = rect.width;
+            this._height = rect.height;
+            this._position = {x: rect.left, y: rect.top};
+
+            this._internalSizeUpdateObservable.notify({
+                width: this._width,
+                height: this._height,
+                position: this._position
+            });
+        });
+    }
+
+    subscribe(observer: Observer<[CanvasDimensions]>, options?: SubscriptionOptions): () => void {
+        return this._internalSizeUpdateObservable.subscribe(observer, options);
+    }
+
+    notify(...data: [CanvasDimensions]): void {
+        this._internalSizeUpdateObservable.notify(...data);
+    }
+
+    get detached(): boolean {
+        return this._svg === undefined;
+    }
+
+    get dimensions(): {width: number, height: number, position: Point} {
+        return {width: this._width, height: this._height, position: this._position};
+    }
+
+    get width(): number {
+        return this._width;
+    }
+
+    /**
+     * set the width of the canvas
+     * the width is synonymous with the canvas style width not the canvas width
+     */
+    setWidth(width: number){
+        if(this._svg){
+            this._svg.style.width = width + "px";
+        }
+    }
+
+    /**
+     * set the height of the canvas
+     * the height is synonymous with the canvas style height not the canvas height
+     */
+    setHeight(height: number){
+        if(this._svg){
+            this._svg.style.height = height + "px";
+        }
+    }
+
+    get height(): number {
+        return this._height;
+    }
+
+    get position(): Point {
+        return this._position;
+    }
+
+    setCursor(style: "grab" | "default" | "grabbing"): void {
+        if(this._svg){
+            this._svg.style.cursor = style;
+        }
+    }
+
+    tearDown(): void {
+        this._svgPositionDimensionPublisher.dispose();
+        this._svg = undefined;
+        this._width = 0;
+        this._height = 0;
+        this._position = {x: 0, y: 0};
+    }
+
+    attach(svg: SVGSVGElement){
+        this._svgPositionDimensionPublisher.attach(svg);
+        this._svg = svg;
+        const boundingRect = svg.getBoundingClientRect();
+        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(svg));
+        this._svg.style.width = trueRect.width + "px";
+        this._svg.style.height = trueRect.height + "px";
+        this._width = trueRect.width;
+        this._height = trueRect.height;
+        this._position = {x: trueRect.left, y: trueRect.top};
+        this._internalSizeUpdateObservable.notify({
+            width: this._width,
+            height: this._height,
+            position: this._position
+        });
+    }
+
+    logCanvasTrueSize(){
+        if(this._svg === undefined){
+            return;
+        }
+        console.log('canvas true size');
+        console.log('style width', this._svg.style.width);
+        console.log('style height', this._svg.style.height);
+        console.log('width', this._svg.width);
+        console.log('height', this._svg.height);
         console.log('proxy width', this._width);
         console.log('proxy height', this._height);
     }
