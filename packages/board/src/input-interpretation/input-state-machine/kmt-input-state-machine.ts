@@ -113,13 +113,14 @@ export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasEleme
 
 export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvasOperator: Canvas): Point {
     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
+    // const cameraCenterInWindow = {x: canvasOperator.position.x, y: canvasOperator.position.y};
     return PointCal.subVector(point, cameraCenterInWindow);
 }
 
-export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: Canvas): Point {
-    const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
-    return PointCal.subVector(point, cameraCenterInWindow);
-}
+// export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: Canvas): Point {
+//     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
+//     return PointCal.subVector(point, cameraCenterInWindow);
+// }
 
 /**
  * @description The possible target states of the idle state.
@@ -199,7 +200,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPoint = convertFromWindow2ViewPortCanvasOperator(cursorPosition, context.canvas);
+        const anchorPoint = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas);
         if(!context.alignCoordinateSystem){
             anchorPoint.y = -anchorPoint.y;
         }

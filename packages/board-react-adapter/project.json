@@ -7,14 +7,14 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react react-dom",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react --external react-dom --external @ue-too/math --external @ue-too/board",
         "cwd": "packages/board-react-adapter"
       }
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react react-dom",
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external react --external react-dom --external @ue-too/math --external @ue-too/board",
         "cwd": "packages/board-react-adapter"
       }
     },

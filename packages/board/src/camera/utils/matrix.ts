@@ -19,6 +19,7 @@ export type TransformationMatrix = {
 };
 
 /**
+ * TODO add the option to make the camera position to be at the top left corner of the canvas; or better yet any point in the viewport (within the viewport boundaries)
  * Decomposes a camera transformation matrix back to camera parameters
  * 
  * Transformation order:

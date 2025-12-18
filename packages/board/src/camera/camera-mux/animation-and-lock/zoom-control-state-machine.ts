@@ -99,41 +99,27 @@ export type ZoomControlOutputMapping = {
 };
 
 /**
- * @description The context for the zoom control state machine.
- * 
- * @category Input Flow Control
- */
-export interface ZoomContext extends BaseContext {
-    zoomToAt: (targetZoom: number, at: Point) => void;
-    zoomByAt: (delta: number, at: Point) => void;
-    zoomTo: (targetZoom: number) => void;
-    zoomBy: (delta: number) => void;
-    zoomToAtWorld: (targetZoom: number, at: Point) => void;
-    zoomByAtWorld: (delta: number, at: Point) => void;
-};
-
-/**
  * @description The accepting user input state of the zoom control state machine.
  * 
  * @category Input Flow Control
  */
-export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         initiateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     };
 
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
         return this._eventReactions;
     }
 
-    userZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
+    userZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
 
-    userZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
+    userZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAt", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 }
@@ -143,13 +129,13 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
  * 
  * @category Input Flow Control
  */
-export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
 
     constructor(){
         super();
     }
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
@@ -160,43 +146,43 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
 
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
         return this._eventReactions;
     }
 
-    lockedOnObjectZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {
+    lockedOnObjectZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomBy", deltaZoom: payload.deltaZoom };
     }
 
-    lockedOnObjectZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlOutputEvent {
+    lockedOnObjectZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomTo", targetZoom: payload.targetZoom };
     }
 
-    userZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
+    userZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
 
-    userZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
+    userZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAt", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 
-    transitionZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtInput"]): ZoomControlOutputEvent {
+    transitionZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["transitionZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
 
-    transitionZoomByAtCenterInput(context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomByAtCenterInput"]): ZoomControlOutputEvent {
+    transitionZoomByAtCenterInput(context: BaseContext, payload: ZoomEventPayloadMapping["transitionZoomByAtCenterInput"]): ZoomControlOutputEvent {
         return { type: "zoomBy", deltaZoom: payload.deltaZoom };
     }
 
-    transitionZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlOutputEvent {
+    transitionZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["transitionZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAt", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 
-    transitionZoomToAtCenterInput(context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtCenterInput"]): ZoomControlOutputEvent {
+    transitionZoomToAtCenterInput(context: BaseContext, payload: ZoomEventPayloadMapping["transitionZoomToAtCenterInput"]): ZoomControlOutputEvent {
         return { type: "zoomTo", targetZoom: payload.targetZoom };
     }
 
-    transitionZoomToAtWorldInput(context: ZoomContext, payload: ZoomEventPayloadMapping["transitionZoomToAtWorldInput"]): ZoomControlOutputEvent {
+    transitionZoomToAtWorldInput(context: BaseContext, payload: ZoomEventPayloadMapping["transitionZoomToAtWorldInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAtWorld", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 }
@@ -206,36 +192,36 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
  * 
  * @category Input Flow Control
  */
-export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
 
     constructor(){
         super();
     }
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
     }
 
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
         return this._eventReactions;
     }
 
-    lockedOnObjectZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {
+    lockedOnObjectZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
 
-    lockedOnObjectZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlOutputEvent {
+    lockedOnObjectZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAt", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 
-    userZoomByAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
+    userZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
 
-    userZoomToAtInput(context: ZoomContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
+    userZoomToAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomToAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomToAt", targetZoom: payload.targetZoom, anchorPoint: payload.anchorPoint };
     }
 }
@@ -245,9 +231,9 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
  * 
  * @category Input Flow Control
  */
-export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping> {
+export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
 
-    constructor(states: Record<ZoomControlStates, State<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping>>, initialState: ZoomControlStates, context: ZoomContext){
+    constructor(states: Record<ZoomControlStates, State<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping>>, initialState: ZoomControlStates, context: BaseContext){
         super(states, initialState, context);
     }
 
@@ -277,7 +263,7 @@ export class ZoomControlStateMachine extends TemplateStateMachine<ZoomEventPaylo
  * 
  * @category Input Flow Control
  */
-export function createDefaultZoomControlStates(): Record<ZoomControlStates, State<ZoomEventPayloadMapping, ZoomContext, ZoomControlStates, ZoomControlOutputMapping>> {
+export function createDefaultZoomControlStates(): Record<ZoomControlStates, State<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping>> {
     return {
         ACCEPTING_USER_INPUT: new ZoomAcceptingUserInputState(),
         TRANSITION: new ZoomTransitionState(),
@@ -290,6 +276,6 @@ export function createDefaultZoomControlStates(): Record<ZoomControlStates, Stat
  * 
  * @category Input Flow Control
  */
-export function createDefaultZoomControlStateMachine(context: ZoomContext): ZoomControlStateMachine {
+export function createDefaultZoomControlStateMachine(context: BaseContext): ZoomControlStateMachine {
     return new ZoomControlStateMachine(createDefaultZoomControlStates(), "ACCEPTING_USER_INPUT", context);
 }

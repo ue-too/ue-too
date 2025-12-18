@@ -71,26 +71,15 @@ export type RotateControlOutputMapping = {
 };
 
 /**
- * @description The context for the rotate control state machine.
- * 
- * @category Input Flow Control
- */
-export interface RotateContext extends BaseContext {
-    camera: BoardCamera;
-    rotateBy: (delta: number) => void;
-    rotateTo: (target: number) => void;
-};
-
-/**
  * @description The pan control state machine.
  * It's not created directly using the TemplateStateMachine class.
  * A few helper functions are in place to make it easier to use. (user don't have to memorize the event names)
  * 
  * @category Input Flow Control
  */
-export class RotateControlStateMachine extends TemplateStateMachine<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> {
+export class RotateControlStateMachine extends TemplateStateMachine<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> {
 
-    constructor(states: Record<RotateControlStates, State<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping>>, initialState: RotateControlStates, context: RotateContext){
+    constructor(states: Record<RotateControlStates, State<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping>>, initialState: RotateControlStates, context: BaseContext){
         super(states, initialState, context);
     }
 
@@ -128,13 +117,13 @@ export class RotateControlStateMachine extends TemplateStateMachine<RotateEventP
  * 
  * @category Input Flow Control
  */
-export class RotationAcceptingUserInputState extends TemplateState<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> {
+export class RotationAcceptingUserInputState extends TemplateState<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> {
 
     constructor(){
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> = {
+    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         userRotateByInput: {action: this.userRotateByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userRotateToInput: {action: this.userRotateToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectRotateByInput: {action: this.lockedOnObjectRotateByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
@@ -142,19 +131,19 @@ export class RotationAcceptingUserInputState extends TemplateState<RotateEventPa
         initateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     }
 
-    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    userRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    userRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
@@ -165,13 +154,13 @@ export class RotationAcceptingUserInputState extends TemplateState<RotateEventPa
  * 
  * @category Input Flow Control
  */
-export class RotationTransitionState extends TemplateState<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> {
+export class RotationTransitionState extends TemplateState<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> {
 
     constructor(){
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> = {
+    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         userRotateByInput: {action: this.userRotateByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userRotateToInput: {action: this.userRotateToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         transitionRotateByInput: {action: this.transitionRotateByInputHandler, defaultTargetState: "TRANSITION"},
@@ -180,27 +169,27 @@ export class RotationTransitionState extends TemplateState<RotateEventPayloadMap
         lockedOnObjectRotateToInput: {action: this.lockedOnObjectRotateToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    userRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    userRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    userRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    userRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
-    transitionRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    transitionRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    transitionRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    transitionRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
@@ -211,23 +200,23 @@ export class RotationTransitionState extends TemplateState<RotateEventPayloadMap
  * 
  * @category Input Flow Control
  */
-export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> {
+export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> {
 
     constructor(){
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping> = {
+    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         unlock: {action: NO_OP, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectRotateByInput: {action: this.lockedOnObjectRotateByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectRotateToInput: {action: this.lockedOnObjectRotateToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
     }
 
-    lockedOnObjectRotateByInputHandler(context: RotateContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateByInputHandler(context: BaseContext, payload: RotateByInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateBy", delta: payload.diff };
     }
 
-    lockedOnObjectRotateToInputHandler(context: RotateContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
+    lockedOnObjectRotateToInputHandler(context: BaseContext, payload: RotateToInputEventPayload): RotateControlOutputEvent {
         return { type: "rotateTo", target: payload.target };
     }
 
@@ -238,7 +227,7 @@ export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloa
  * 
  * @category Input Flow Control
  */
-export function createDefaultRotateControlStates(): Record<RotateControlStates, State<RotateEventPayloadMapping, RotateContext, RotateControlStates, RotateControlOutputMapping>> {
+export function createDefaultRotateControlStates(): Record<RotateControlStates, State<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping>> {
     return {
         ACCEPTING_USER_INPUT: new RotationAcceptingUserInputState(),
         TRANSITION: new RotationTransitionState(),
@@ -251,6 +240,6 @@ export function createDefaultRotateControlStates(): Record<RotateControlStates, 
  * 
  * @category Input Flow Control
  */
-export function createDefaultRotateControlStateMachine(context: RotateContext): RotateControlStateMachine {
+export function createDefaultRotateControlStateMachine(context: BaseContext): RotateControlStateMachine {
     return new RotateControlStateMachine(createDefaultRotateControlStates(), "ACCEPTING_USER_INPUT", context);
 }
