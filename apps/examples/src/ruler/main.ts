@@ -9,7 +9,7 @@ board.alignCoordinateSystem = false;
 function step(){
 
     board.step(performance.now());
-    board.context.rect(0, 100, 100, 100);
+    board.context.rect(0, 0, 100, -100);
     board.context.fill();
 
     const topLeftCornerInViewPort = board.alignCoordinateSystem ? {x: -board.camera.viewPortWidth / 2, y: -board.camera.viewPortHeight / 2} : {x: -board.camera.viewPortWidth / 2, y: board.camera.viewPortHeight / 2};

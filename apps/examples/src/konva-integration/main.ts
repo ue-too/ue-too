@@ -25,20 +25,18 @@ const stage = new Konva.Stage({
     height: 600,
 });
 
-const {scale, rotation, translation} = camera.getTRS(1, true);
 
-stage.x(translation.x);
-stage.y(translation.y);
-stage.scale({x: scale.x, y: scale.y});
-stage.rotation(rotation);
-camera.on("all", (_, cameraState)=>{
+function update(){
     const {scale, rotation, translation} = camera.getTRS(1, true);
-
     stage.x(translation.x);
     stage.y(translation.y);
     stage.scale({x: scale.x, y: scale.y});
     stage.rotation(rotation);
-});
+    requestAnimationFrame(update);
+}
+
+requestAnimationFrame(update);
+
 // then create layer
 const layer = new Konva.Layer();
 

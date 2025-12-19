@@ -72,9 +72,9 @@ export class InputOrchestrator {
                 break;
             case "zoom":
                 // Publish to observers (parallel path)
-                this._publisher?.notifyZoom(event.delta, event.anchorPoint);
+                this._publisher?.notifyZoom(event.delta, event.anchorPointInViewPort);
                 // Ask CameraMux for permission and process its output
-                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPoint);
+                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPointInViewPort);
                 this.processZoomMuxOutput(zoomOutput);
                 break;
             case "rotate":

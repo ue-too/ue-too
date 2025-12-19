@@ -22,7 +22,7 @@ export type TouchEventPayload = {
  */
 export type TouchOutputEvent =
     | { type: "pan", delta: Point }
-    | { type: "zoom", delta: number, anchorPoint: Point }
+    | { type: "zoom", delta: number, anchorPointInViewPort: Point }
     | { type: "none" };
 
 /**
@@ -141,7 +141,7 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
                 return {
                     type: "zoom",
                     delta: (currentStartAndEndDistance - initialStartAndEndDistance) * 0.005,
-                    anchorPoint: midPointInViewPort
+                    anchorPointInViewPort: midPointInViewPort
                 };
             case "PANNING":
                 return {
@@ -203,7 +203,7 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
                 return {
                     type: "zoom",
                     delta: -(initialStartAndEndDistance -  currentStartAndEndDistance) * 0.005,
-                    anchorPoint: midPointInViewPort
+                    anchorPointInViewPort: midPointInViewPort
                 };
             case "PANNING":
                 if(!context.alignCoordinateSystem){
