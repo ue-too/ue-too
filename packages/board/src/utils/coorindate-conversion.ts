@@ -19,7 +19,7 @@ export function pointConversion(point: Point) {
  * 
  * @category Input State Machine
  */
-export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvas: Canvas): Point {
+export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvas: Canvas, viewportOriginInCanvasSpace: Point = {x: canvas.width / 2, y: canvas.height / 2}, viewportHasFlippedYAxis: boolean = false): Point {
     const pointInCanvas = convertFromWindow2Canvas(point, canvas);
-    return convertFromCanvas2ViewPort(pointInCanvas, {x: canvas.width / 2, y: canvas.height / 2}, false);
+    return convertFromCanvas2ViewPort(pointInCanvas, viewportOriginInCanvasSpace, viewportHasFlippedYAxis);
 }

@@ -179,10 +179,7 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas);
-        if(!context.alignCoordinateSystem){
-            anchorPointInViewPort.y = -anchorPointInViewPort.y;
-        }
+        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas, {x: context.canvas.width / 2, y: context.canvas.height / 2}, !context.alignCoordinateSystem);
         return {
             type: "zoom",
             delta: -(zoomAmount * 5),

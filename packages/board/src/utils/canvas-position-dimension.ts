@@ -322,8 +322,8 @@ function rectChanged(r1: DOMRect | undefined, r2: DOMRect) {
  * @internal
  */
 const methodsToFlip: Record<string, number[]> = {
-    fillRect: [1],        // [yIndex] - indices of y-coordinates to flip
-    strokeRect: [1],
+    fillRect: [1, 3],        // [yIndex] - indices of y-coordinates to flip
+    strokeRect: [1, 3],
     fillText: [2],
     strokeText: [1],
     lineTo: [1],
@@ -332,8 +332,8 @@ const methodsToFlip: Record<string, number[]> = {
     bezierCurveTo: [1, 3, 5],
     arc: [1],
     drawImage: [2],        // Base case for first two signatures
-    rect: [1],
-    roundRect: [1],
+    rect: [1, 3],
+    roundRect: [1, 3],
 };
 
 export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRenderingContext2D {

@@ -3,6 +3,10 @@ import { Board } from "@ue-too/board";
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 
+board.alignCoordinateSystem = false;
+
+board.camera.setRotation(Math.PI / 4);
+
 function step(){
     board.step(performance.now());
     if(board.context != undefined){
@@ -14,3 +18,9 @@ function step(){
 }
 
 requestAnimationFrame(step);
+
+canvas.addEventListener('click', (event) => {
+    const point = {x: event.clientX, y: event.clientY};
+    const pointInViewPort = board.convertWindowPoint2WorldCoord(point);
+    console.log(pointInViewPort);
+});
