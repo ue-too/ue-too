@@ -1,5 +1,7 @@
 import { Point, PointCal } from "@ue-too/math";
 import { multiplyMatrix, TransformationMatrix } from "./matrix";
+import { convertFromCanvas2ViewPort, convertFromViewPort2Canvas } from "../../utils/coordinate-conversions/canvas-viewport";
+import { convertFromViewport2World, convertFromWorld2Viewport } from "../../utils/coordinate-conversions/viewport-world";
 
 /**
  * @description Finds the world space coordinate of the interest point if the camera is at target position.
@@ -9,11 +11,8 @@ import { multiplyMatrix, TransformationMatrix } from "./matrix";
  * @category Camera
  */
 export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Point, viewPortWidth: number, viewPortHeight: number, cameraZoomLevel: number, cameraRotation: number): Point{
-    let cameraFrameCenter = {x: viewPortWidth / 2, y: viewPortHeight / 2};
-    let delta2Point = PointCal.subVector(interestPoint, cameraFrameCenter);
-    delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / cameraZoomLevel);
-    delta2Point = PointCal.rotatePoint(delta2Point, cameraRotation);
-    return PointCal.addVector(targetPosition, delta2Point);
+    const interestPointInViewPort = convertFromCanvas2ViewPort(interestPoint, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
+    return convertFromViewport2World(interestPointInViewPort, targetPosition, cameraZoomLevel, cameraRotation, false);
 }
 
 /**
@@ -24,11 +23,8 @@ export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Poin
  * @category Camera
  */
 export function convert2WorldSpace(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    let cameraFrameCenter = {x: viewPortWidth / 2, y: viewPortHeight / 2};
-    let delta2Point = PointCal.subVector(point, cameraFrameCenter);
-    delta2Point = PointCal.multiplyVectorByScalar(delta2Point, 1 / cameraZoomLevel);
-    delta2Point = PointCal.rotatePoint(delta2Point, cameraRotation);
-    return PointCal.addVector(cameraPosition, delta2Point);
+    const pointInViewPort = convertFromCanvas2ViewPort(point, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
+    return convertFromViewport2World(pointInViewPort, cameraPosition, cameraZoomLevel, cameraRotation, false);
 }
 
 /**
@@ -39,10 +35,7 @@ export function convert2WorldSpace(point: Point, viewPortWidth: number, viewPort
  * @category Camera
  */
 export function convert2WorldSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    const scaledBack = PointCal.multiplyVectorByScalar(point, 1 / cameraZoomLevel);
-    const rotatedBack = PointCal.rotatePoint(scaledBack, cameraRotation);
-    const withOffset = PointCal.addVector(rotatedBack, cameraPosition);
-    return withOffset;
+    return convertFromViewport2World(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
 }
 
 /**
@@ -54,10 +47,7 @@ export function convert2WorldSpaceAnchorAtCenter(point: Point, cameraPosition: P
  * @category Camera
  */
 export function convert2ViewPortSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    const withOffset = PointCal.subVector(point, cameraPosition);
-    const scaled = PointCal.multiplyVectorByScalar(withOffset, cameraZoomLevel);
-    const rotated = PointCal.rotatePoint(scaled, -cameraRotation);
-    return rotated;
+    return convertFromWorld2Viewport(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
 }
 
 /**
@@ -69,11 +59,8 @@ export function convert2ViewPortSpaceAnchorAtCenter(point: Point, cameraPosition
  * @category Camera
  */
 export function invertFromWorldSpace(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    let cameraFrameCenter = {x: viewPortWidth / 2, y: viewPortHeight / 2};
-    let delta2Point = PointCal.subVector(point, cameraPosition);
-    delta2Point = PointCal.rotatePoint(delta2Point, -cameraRotation);
-    delta2Point = PointCal.multiplyVectorByScalar(delta2Point, cameraZoomLevel);
-    return PointCal.addVector(cameraFrameCenter, delta2Point);
+    const pointInViewPort = convertFromWorld2Viewport(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
+    return convertFromViewPort2Canvas(pointInViewPort, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
 }
 
 /**

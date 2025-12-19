@@ -249,8 +249,10 @@ export default class BaseCamera implements BoardCamera {
         ){
             return {...this.currentCachedTransform.transform, cached: true};
         }
+
         const tx = devicePixelRatio * this._viewPortWidth / 2; // 0 if the camera position represents the position at the top left corner of the canvas in the world
         const ty = devicePixelRatio * this._viewPortHeight / 2; // 0 if the camera position represents the position at the top left corner of the canvas in the world
+
         const tx2 = -this._position.x;
         const ty2 = alignCoorindate ? -this._position.y : this._position.y;
 

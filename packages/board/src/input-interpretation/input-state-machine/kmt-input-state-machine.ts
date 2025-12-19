@@ -1,7 +1,7 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine, EventArgs, EventHandledResult, CreateStateType } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
-import { PointCal } from "@ue-too/math";
-import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
+import { CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
+import { convertFromWindow2ViewPortWithCanvasOperator } from "../../utils/coorindate-conversion";
 
 const KMT_INPUT_STATES = ["IDLE", "READY_TO_PAN_VIA_SPACEBAR", "READY_TO_PAN_VIA_SCROLL_WHEEL", "PAN", "INITIAL_PAN", "PAN_VIA_SCROLL_WHEEL", "DISABLED"] as const;
 /**
@@ -87,7 +87,7 @@ type ZoomEventOutput = {
  */
 export type KmtOutputEvent =
     | { type: "pan", delta: Point }
-    | { type: "zoom", delta: number, anchorPoint: Point }
+    | { type: "zoom", delta: number, anchorPointInViewPort: Point }
     | { type: "rotate", deltaRotation: number }
     | { type: "cursor", style: CursorStyle }
     | { type: "none" };
@@ -100,27 +100,6 @@ export type KmtInputEventOutputMapping = {
     leftPointerMove: KmtOutputEvent;
 }
 
-/**
- * @description Converts the point from window coordinates(browser) to view port coordinates.
- * 
- * @category Input State Machine
- */
-export function convertFromWindow2ViewPort(point: Point, canvas: HTMLCanvasElement): Point {
-    const canvasBoundingRect = canvas.getBoundingClientRect();
-    const cameraCenterInWindow = {x: canvasBoundingRect.left + (canvasBoundingRect.right - canvasBoundingRect.left) / 2, y: canvasBoundingRect.top + (canvasBoundingRect.bottom - canvasBoundingRect.top) / 2};
-    return PointCal.subVector(point, cameraCenterInWindow);
-}
-
-export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvasOperator: Canvas): Point {
-    const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
-    // const cameraCenterInWindow = {x: canvasOperator.position.x, y: canvasOperator.position.y};
-    return PointCal.subVector(point, cameraCenterInWindow);
-}
-
-// export function convertFromWindow2ViewPortCanvasOperator(point: Point, canvasOperator: Canvas): Point {
-//     const cameraCenterInWindow = {x: canvasOperator.position.x + (canvasOperator.width / 2), y: canvasOperator.position.y + (canvasOperator.height / 2)};
-//     return PointCal.subVector(point, cameraCenterInWindow);
-// }
 
 /**
  * @description The possible target states of the idle state.
@@ -200,14 +179,14 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
         const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPoint = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas);
+        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas);
         if(!context.alignCoordinateSystem){
-            anchorPoint.y = -anchorPoint.y;
+            anchorPointInViewPort.y = -anchorPointInViewPort.y;
         }
         return {
             type: "zoom",
             delta: -(zoomAmount * 5),
-            anchorPoint: anchorPoint
+            anchorPointInViewPort,
         };
     }
 
@@ -224,64 +203,6 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     pointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
         context.setCursorPosition(payload);
     }
-}
-
-/**
- * @description The possible target states of the ready to select state.
- * 
- * @category Input State Machine
- */
-export type ReadyToSelectStatePossibleTargetStates = "IDLE" | "SELECTING" | "DISABLED";
-
-/**
- * @description The context for the ready to select state.
- * 
- * @category Input State Machine
- */
-export type SelectionContext = {
-    setSelectionEndPoint: (point: Point) => void;
-    toggleSelectionBox: (show: boolean) => void;
-    cleanup: () => void;
-    setup: () => void;
-    canvas: HTMLCanvasElement;
-}
-
-/**
- * @description The ready to select state of the keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
- */
-export class ReadyToSelectState extends TemplateState<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> {
-
-    constructor() {
-        super();
-    }
-
-    leftPointerMove = ((context: SelectionContext, payload: PointerEventPayload): void => {
-        const viewportPoint = convertFromWindow2ViewPort({x: payload.x, y: payload.y}, context.canvas);
-        context.setSelectionEndPoint(viewportPoint);
-        context.toggleSelectionBox(true);
-    }).bind(this);
-
-    protected _eventReactions: EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> = {
-        leftPointerUp: {
-            action: () => "IDLE",
-            defaultTargetState: "IDLE",
-        },
-        leftPointerMove: {
-            action: this.leftPointerMove,
-            defaultTargetState: "SELECTING",
-        },
-        disable: {
-            action: NO_OP,
-            defaultTargetState: "DISABLED",
-        },
-    }
-
-    get eventReactions(): EventReactions<KmtInputEventMapping, SelectionContext, ReadyToSelectStatePossibleTargetStates, KmtInputEventOutputMapping> {
-        return this._eventReactions;
-    }
-
 }
 
 export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
