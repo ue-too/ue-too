@@ -23,14 +23,14 @@
 
 ue-too is organized into modular packages:
 
-- [**`@ue-too/being`**](./packages/being/README.md) - Finite state machine <img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/board`**](./packages/board/README.md) - Canvas viewport management with pan, zoom, and rotate functionality <img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/math`**](./packages/math/README.md) - Mathematical utilities for 2D point operations, transformations, and calculations <img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/animate`**](./packages/animate/README.md) - Animation system for smooth transitions and keyframe animations <img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/dynamics`**](./packages/dynamics/README.md) - 2D physics engine with collision detection, rigid bodies, and constraints <img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/being`**](./packages/being/README.md) - Finite state machine <a href="https://www.npmjs.com/package/@ue-too/being"><img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/board`**](./packages/board/README.md) - Canvas viewport management with pan, zoom, and rotate functionality <a href="https://www.npmjs.com/package/@ue-too/board"><img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/math`**](./packages/math/README.md) - Mathematical utilities for 2D point operations, transformations, and calculations <a href="https://www.npmjs.com/package/@ue-too/math"><img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/animate`**](./packages/animate/README.md) - Animation system for smooth transitions and keyframe animations <a href="https://www.npmjs.com/package/@ue-too/animate"><img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/dynamics`**](./packages/dynamics/README.md) - 2D physics engine with collision detection, rigid bodies, and constraints <a href="https://www.npmjs.com/package/@ue-too/dynamics"><img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="npm version" style="vertical-align: middle"></a>
 - [**`@ue-too/curve`**](./packages/curve/README.md) - Curve and path tools including Bézier curves, lines, and composite paths <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/border`**](./packages/border/README.md) - Geographic projection utilities (great circle, rhumb line, map projections) <img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="npm version" style="vertical-align: middle">
-- [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="npm version" style="vertical-align: middle">
+- [**`@ue-too/border`**](./packages/border/README.md) - Geographic projection utilities (great circle, rhumb line, map projections) <a href="https://www.npmjs.com/package/@ue-too/border"><img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="npm version" style="vertical-align: middle"></a>
 
 ## Install Individual Packages
 ```bash
