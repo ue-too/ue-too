@@ -1,6 +1,5 @@
 import type { EventReactions, State, BaseContext } from "@ue-too/being";
 import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
-import { BoardCamera } from "../../interface";
 
 /**
  * @description The states of the pan control state machine.

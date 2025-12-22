@@ -1,4 +1,3 @@
-import type { Point } from "@ue-too/math";
 import { BaseContext } from "@ue-too/being";
 import { Canvas } from "./kmt-input-context";
 

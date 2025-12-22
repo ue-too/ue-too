@@ -51,7 +51,7 @@ export type EventHandled<States extends string, Output = void> = {
  * 
  * @category being
  */
-export type EventHandledResult<States extends string, Output = void> = EventNotHandled | EventHandled<States, Output>;
+export type EventResult<States extends string, Output = void> = EventNotHandled | EventHandled<States, Output>;
 
 /**
  * @description A default output mapping that maps all events to void.
@@ -90,11 +90,11 @@ export interface StateMachine<
     // Overload for known events - provides IntelliSense with typed output
     happens<K extends keyof EventPayloadMapping>(
         ...args: EventArgs<EventPayloadMapping, K>
-    ): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
+    ): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
     // Overload for unknown events - maintains backward compatibility
     happens<K extends string>(
         ...args: EventArgs<EventPayloadMapping, K>
-    ): EventHandledResult<States, unknown>;
+    ): EventResult<States, unknown>;
     setContext(context: Context): void;
     states: Record<States, State<EventPayloadMapping, Context, string extends States ? string : States, EventOutputMapping>>;
     onStateChange(callback: StateChangeCallback<States>): void;
@@ -134,7 +134,7 @@ export interface State<
 > { 
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States): void;
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
     eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
@@ -296,9 +296,9 @@ export class TemplateStateMachine<
     }
     
     // Implementation signature - matches both overloads
-    happens<K extends keyof EventPayloadMapping>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
-    happens<K extends string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, unknown>;
-    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): EventHandledResult<States, unknown> {
+    happens<K extends keyof EventPayloadMapping>(...args: EventArgs<EventPayloadMapping, K>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
+    happens<K extends string>(...args: EventArgs<EventPayloadMapping, K>): EventResult<States, unknown>;
+    happens<K extends keyof EventPayloadMapping | string>(...args: EventArgs<EventPayloadMapping, K>): EventResult<States, unknown> {
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
@@ -380,16 +380,16 @@ export abstract class TemplateState<
         // console.log('leave');
     }
 
-    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventHandledResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>{
+    handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>{
         const eventKey = args[0] as keyof EventPayloadMapping;
         const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
         if (this.eventReactions[eventKey]) {
             // Capture the output from the action
             const output = this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
             const targetState = this.eventReactions[eventKey].defaultTargetState;
-            const guardToEvaluate = this._eventGuards[eventKey];
-            if(guardToEvaluate){
-                const target = guardToEvaluate.find((guard)=>{
+            const guardsToEvaluate = this._eventGuards[eventKey];
+            if(guardsToEvaluate){
+                const target = guardsToEvaluate.find((guard)=>{
                     if(this.guards[guard.guard]){
                         return this.guards[guard.guard](context);
                     }

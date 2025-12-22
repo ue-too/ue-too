@@ -36,7 +36,7 @@ export class InputOrchestrator {
      * @description Processes output events from state machines and routes them to the camera and publisher.
      * Called by parsers after state machine returns output.
      */
-    public processInputStateMachineResult(output: any): void {
+    public processInputEventOutput(output: any): void {
         // Handle different output types
         if (this.isOutputEvent(output)) {
             this.handleStateMachineOutput(output);
