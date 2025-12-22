@@ -1,7 +1,7 @@
 import { TouchEventMapping, TouchInputStateMachine } from "../../input-interpretation/input-state-machine/touch-input-state-machine";
 import { TouchPoints } from "../../input-interpretation/input-state-machine/touch-input-context";
 import type { InputOrchestrator } from "../input-orchestrator";
-import { EventArgs } from "node_modules/@ue-too/being/src/interface";
+import { EventArgs } from "@ue-too/being";
 
 /**
  * @description The touch event parser.
