@@ -1,4 +1,5 @@
-import type { KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
+import type { EventArgs } from "@ue-too/being";
+import type { KmtInputEventMapping, KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
 import type { InputOrchestrator } from "../input-orchestrator";
 
 /**
@@ -142,12 +143,12 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    private processEvent(
-        ...args: Parameters<KmtInputStateMachine['happens']>
+    private processEvent<K extends keyof KmtInputEventMapping>(
+        ...args: EventArgs<KmtInputEventMapping, K>
     ): void {
-        const result = this.stateMachine.happens(...args);
+        const result = this._stateMachine.happens(...args);
         if (result.handled && result.output) {
-            this._orchestrator.processInputStateMachineResult(result.output);
+            this._orchestrator.processInputEventOutput(result.output);
         }
     }
 
@@ -200,7 +201,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if(e.ctrlKey){
             this.processEvent("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         } else {
-            this.processEvent("scroll", {deltaX: e.deltaX, deltaY: e.deltaY});
+            this.processEvent("scroll", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
         }
     }
 
@@ -213,7 +214,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         }
         this._keyfirstPressed.set(e.key, true);
         if(e.key === " "){
-            this.processEvent("spacebarDown", {});
+            this.processEvent("spacebarDown");
         }
     }
 
@@ -222,7 +223,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
             this._keyfirstPressed.delete(e.key);
         }
         if(e.key === " "){
-            this.processEvent("spacebarUp", {});
+            this.processEvent("spacebarUp");
         }
     }
 

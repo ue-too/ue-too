@@ -1,4 +1,4 @@
-import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, StateMachine, EventArgs, EventHandledResult, CreateStateType } from "@ue-too/being";
+import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, EventArgs, EventResult, CreateStateType } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
 import { CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
 import { convertFromWindow2ViewPortWithCanvasOperator } from "../../utils/coorindate-conversion";
@@ -58,7 +58,7 @@ export type KmtInputEventMapping = {
     spacebarUp: EmptyPayload;
     stayIdle: EmptyPayload;
     cursorOnElement: EmptyPayload;
-    scroll: ScrollEventPayload;
+    scroll: ScrollWithCtrlEventPayload;
     scrollWithCtrl: ScrollWithCtrlEventPayload;
     middlePointerDown: PointerEventPayload;
     middlePointerUp: PointerEventPayload;
@@ -126,6 +126,49 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtInputStates, KmtInputContext, Guard<KmtInputContext>>> = {
     }
 
+    // Arrow function properties must be defined before _eventReactions to ensure proper initialization order
+    scrollPan = (context: KmtInputContext, payload: ScrollEventPayload): KmtOutputEvent => {
+        const delta = {...payload}
+        if(!context.alignCoordinateSystem){
+            delta.deltaY = -delta.deltaY;
+        }
+        return {
+            type: "pan",
+            delta: {x: delta.deltaX, y: delta.deltaY}
+        };
+    }
+
+    scrollZoom = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
+        let scrollSensitivity = 0.005;
+        if(Math.abs(payload.deltaY) > 100){
+            scrollSensitivity = 0.0005;
+        }
+        const zoomAmount = payload.deltaY * scrollSensitivity;
+        const cursorPosition = {x: payload.x, y: payload.y};
+        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas, {x: context.canvas.width / 2, y: context.canvas.height / 2}, !context.alignCoordinateSystem);
+        return {
+            type: "zoom",
+            delta: -(zoomAmount * 5),
+            anchorPointInViewPort,
+        };
+    }
+
+    scrollHandler = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
+        if(payload.deltaX !== 0){
+            // probably from a trackpad
+            context.subtractKmtTrackpadTrackScore();
+        }
+        if(context.mode === "kmt"){
+            return this.scrollZoom(context, payload);
+        } else {
+            return this.scrollPan(context, payload);
+        }
+    }
+
+    scrollWithCtrlHandler = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
+        return this.scrollZoom(context, payload);
+    }
+
     get eventReactions(): EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
         return this._eventReactions;
     }
@@ -151,40 +194,10 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
             action: NO_OP,
             defaultTargetState: "DISABLED",
         },
-        pointerMove: {
-            action: this.pointerMoveHandler,
-            defaultTargetState: "IDLE",
-        },
     }
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
-    }
-
-    scrollHandler(context: KmtInputContext, payload: ScrollEventPayload): KmtOutputEvent {
-        const delta = {...payload}
-        if(!context.alignCoordinateSystem){
-            delta.deltaY = -delta.deltaY;
-        }
-        return {
-            type: "pan",
-            delta: {x: delta.deltaX, y: delta.deltaY}
-        };
-    }
-
-    scrollWithCtrlHandler(context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent {
-        let scrollSensitivity = 0.005;
-        if(Math.abs(payload.deltaY) > 100){
-            scrollSensitivity = 0.0005;
-        }
-        const zoomAmount = payload.deltaY * scrollSensitivity;
-        const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas, {x: context.canvas.width / 2, y: context.canvas.height / 2}, !context.alignCoordinateSystem);
-        return {
-            type: "zoom",
-            delta: -(zoomAmount * 5),
-            anchorPointInViewPort,
-        };
     }
 
     spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): number  {
@@ -193,13 +206,14 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+        // probably from kmt
+        context.addKmtTrackpadTrackScore();
+        if(context.mode === "TBD") {
+            context.setMode("kmt");
+        }
         context.setInitialCursorPosition({x: payload.x, y: payload.y});
-        // context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
-    pointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.setCursorPosition(payload);
-    }
 }
 
 export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
@@ -222,11 +236,6 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
                 action: NO_OP,
                 defaultTargetState: "IDLE",
             },
-            "pointerMove": {
-                action: (context, eventPayload) => {
-                    context.setCursorPosition({x: eventPayload.x, y: eventPayload.y});
-                }
-            }
         };
     }
 }
@@ -504,7 +513,7 @@ export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<Kmt
         this._webworker = webworker;
     }
 
-    happens(...args: EventArgs<KmtInputEventMapping, keyof KmtInputEventMapping | string>): EventHandledResult<KmtInputStates> {        
+    happens(...args: EventArgs<KmtInputEventMapping, keyof KmtInputEventMapping | string>): EventResult<KmtInputStates> {        
         this._webworker.postMessage({
             type: "kmtInputStateMachine",
             event: args[0],

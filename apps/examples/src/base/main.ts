@@ -3,9 +3,9 @@ import { Board } from "@ue-too/board";
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const board = new Board(canvas);
 
-board.alignCoordinateSystem = false;
+board.fullScreen = true;
 
-board.camera.setRotation(Math.PI / 4);
+board.alignCoordinateSystem = false;
 
 function step(){
     board.step(performance.now());

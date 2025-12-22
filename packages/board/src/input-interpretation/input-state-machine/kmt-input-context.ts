@@ -443,9 +443,11 @@ export interface KmtInputContext extends BaseContext {
     setInitialCursorPosition: (position: Point) => void;
     cancelCurrentAction: () => void;
     initialCursorPosition: Point;
-    setCursorPosition: (position: Point) => void;
-    toggleOnEdgeAutoCameraInput: () => void;
-    toggleOffEdgeAutoCameraInput: () => void;
+    kmtTrackpadTrackScore: number;
+    subtractKmtTrackpadTrackScore: () => void;
+    addKmtTrackpadTrackScore: () => void;
+    setMode: (mode: 'kmt' | 'trackpad' | 'TBD') => void;
+    mode: 'kmt' | 'trackpad' | 'TBD';
 }
 
 /**
@@ -476,6 +478,23 @@ export class DummyKmtInputContext implements KmtInputContext {
     setup(): void {
     }
 
+    get kmtTrackpadTrackScore(): number {
+        return 0;
+    }
+
+    subtractKmtTrackpadTrackScore(): void {
+    }
+
+    addKmtTrackpadTrackScore(): void {
+    }
+
+    setMode(mode: 'kmt' | 'trackpad' | 'TBD'): void {
+    }
+
+    get mode(): 'kmt' | 'trackpad' | 'TBD' {
+        return 'kmt';
+    }
+
     cancelCurrentAction(): void {
     }
 }
@@ -492,14 +511,35 @@ export class ObservableInputTracker implements KmtInputContext {
     private _alignCoordinateSystem: boolean;
     private _canvasOperator: Canvas;
     private _initialCursorPosition: Point;
-    private _edgeAutoCameraInput: EdgeAutoCameraInput;
-    private _padding: number = 50;
+    private _kmtTrackpadTrackScore: number; // > 0 for kmt; < 0 for trackpad; 0 for TBD;
+    private _mode: 'kmt' | 'trackpad' | 'TBD';
 
-    constructor(canvasOperator: Canvas, edgeAutoCameraInput: EdgeAutoCameraInput){
+    constructor(canvasOperator: Canvas){
         this._alignCoordinateSystem = true;
         this._canvasOperator = canvasOperator;
         this._initialCursorPosition = {x: 0, y: 0};
-        this._edgeAutoCameraInput = edgeAutoCameraInput;
+        this._kmtTrackpadTrackScore = 0;
+        this._mode = 'TBD';
+    }
+
+    get mode(): 'kmt' | 'trackpad' | 'TBD' {
+        return this._mode;
+    }
+
+    setMode(mode: 'kmt' | 'trackpad' | 'TBD'): void {
+        this._mode = mode;
+    }
+
+    get kmtTrackpadTrackScore(): number {
+        return this._kmtTrackpadTrackScore;
+    }
+
+    subtractKmtTrackpadTrackScore(): void {
+        this._kmtTrackpadTrackScore--;
+    }
+
+    addKmtTrackpadTrackScore(): void {
+        this._kmtTrackpadTrackScore++;
     }
 
     get alignCoordinateSystem(): boolean {
@@ -524,24 +564,6 @@ export class ObservableInputTracker implements KmtInputContext {
 
     setInitialCursorPosition(position: Point): void {
         this._initialCursorPosition = position;
-    }
-
-    toggleOnEdgeAutoCameraInput(): void {
-        this._edgeAutoCameraInput.toggleOn();
-    }
-
-    toggleOffEdgeAutoCameraInput(): void {
-        this._edgeAutoCameraInput.toggleOff();
-    }
-
-    setCursorPosition(position: Point): void {
-        if(withinEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding)){
-            const horizontalEdge = pointInWhichHorizontalEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding);
-            const verticalEdge = pointInWhichVerticalEdgeOfCanvas(position, {left: this._canvasOperator.dimensions.position.x, top: this._canvasOperator.dimensions.position.y, width: this._canvasOperator.dimensions.width, height: this._canvasOperator.dimensions.height}, this._padding);
-            this._edgeAutoCameraInput.setDirection(horizontalEdge, verticalEdge);
-        } else {
-            this._edgeAutoCameraInput.setDirection('none', 'none');
-        }
     }
 
     cleanup(): void {
