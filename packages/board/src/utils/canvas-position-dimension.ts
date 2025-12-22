@@ -1,5 +1,5 @@
 // Track position changes with ResizeObserver
-import { Observable, Observer, SubscriptionOptions, SynchronousObservable } from "../utils/observable";
+import { Observer, SubscriptionOptions, SynchronousObservable } from "../utils/observable";
 
 export class SvgPositionDimensionPublisher {
 

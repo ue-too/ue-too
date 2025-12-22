@@ -1,4 +1,4 @@
-import { Point, PointCal } from "@ue-too/math";
+import { Point } from "@ue-too/math";
 import { Canvas } from "../input-interpretation/input-state-machine/kmt-input-context";
 import { convertFromWindow2Canvas } from "./coordinate-conversions/window-canvas";
 import { convertFromCanvas2ViewPort } from "./coordinate-conversions/canvas-viewport";
