@@ -43,7 +43,8 @@
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/ecs && bun run typedoc --skipErrorChecking --entryPoints packages/ecs/src/index.ts --out docs/ecs"
+        "command": "rm -rf ../../docs/ecs && bun run typedoc --options typedoc.json --skipErrorChecking",
+        "cwd": "packages/ecs"
       }
     }
   },

@@ -43,7 +43,8 @@
     "docs:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf docs/dynamics && bun run typedoc --skipErrorChecking --entryPoints packages/dynamics/src/index.ts --out docs/dynamics"
+        "command": "rm -rf ../../docs/dynamics && bun run typedoc --options typedoc.json --skipErrorChecking",
+        "cwd": "packages/dynamics"
       }
     }
   },

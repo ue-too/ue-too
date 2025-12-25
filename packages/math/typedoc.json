@@ -1,0 +1,21 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "extends": "../../typedoc.json",
+    "entryPoints": ["src/index.ts"],
+    "out": "../../docs/math",
+    "name": "@ue-too/math",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "categorizeByGroup": true,
+    "categoryOrder": [
+        "Vector Arithmetic",
+        "Vector Operations",
+        "Transformations",
+        "Geometric Calculations",
+        "Angle Utilities",
+        "Comparison",
+        "*"
+    ],
+    "sort": ["kind", "static-first", "alphabetical"]
+}
+
