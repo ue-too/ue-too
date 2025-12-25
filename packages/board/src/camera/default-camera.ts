@@ -10,32 +10,94 @@ import { ObservableBoardCamera } from './interface';
 import BaseCamera from './base';
 import { SubscriptionOptions } from '../utils/observable';
 
+/** Default viewport width in CSS pixels */
 export const DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH = 1000;
+
+/** Default viewport height in CSS pixels */
 export const DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT = 1000;
 
+/** Default zoom level constraints (0.1x to 10x) */
 export const DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES: ZoomLevelLimits = {min: 0.1, max: 10};
+
+/** Default position boundaries (±10000 on both axes) */
 export const DEFAULT_BOARD_CAMERA_BOUNDARIES: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}};
+
+/** Default rotation boundaries (unrestricted) */
 export const DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES: RotationLimits | undefined = undefined;
 
 /**
- * @description The default board camera. This is basically the same as the {@link BaseCamera} class.
- * But it's observable.
- * 
+ * Observable camera implementation that extends {@link BaseCamera} with event notification.
+ * This is the recommended camera class for most applications.
+ *
+ * @remarks
+ * DefaultBoardCamera wraps {@link BaseCamera} and adds an event system via {@link CameraUpdatePublisher}.
+ * All camera state changes (pan, zoom, rotate) trigger corresponding events that observers can subscribe to.
+ *
+ * Use this class when you need to:
+ * - React to camera changes in your UI or game logic
+ * - Synchronize multiple systems with camera state
+ * - Implement camera-dependent features (minimap, LOD, culling)
+ *
+ * For a non-observable camera without event overhead, use {@link BaseCamera} directly.
+ *
+ * @example
+ * ```typescript
+ * const camera = new DefaultBoardCamera(1920, 1080);
+ *
+ * // Subscribe to camera events
+ * camera.on('zoom', (event, state) => {
+ *   console.log(`Zoomed by ${event.deltaZoomAmount}`);
+ *   console.log(`New zoom level: ${state.zoomLevel}`);
+ * });
+ *
+ * camera.on('pan', (event, state) => {
+ *   console.log(`Panned by (${event.diff.x}, ${event.diff.y})`);
+ * });
+ *
+ * // Camera updates trigger events
+ * camera.setZoomLevel(2.0);
+ * camera.setPosition({ x: 100, y: 200 });
+ * ```
+ *
  * @category Camera
+ * @see {@link BaseCamera} for non-observable camera
+ * @see {@link ObservableBoardCamera} for the interface definition
  */
 export default class DefaultBoardCamera implements ObservableBoardCamera {
 
     private _baseCamera: BaseCamera;
     private _observer: CameraUpdatePublisher;
     /**
-     * @param position The position of the camera in the world coordinate system
-     * @param rotation The rotation of the camera in the world coordinate system
-     * @param zoomLevel The zoom level of the camera
-     * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
-     * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
-     * @param boundaries The boundaries of the camera in the world coordinate system
-     * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
-     * @param rotationBoundaries The boundaries of the rotation of the camera
+     * Creates a new observable camera with event notification capabilities.
+     *
+     * @param viewPortWidth - Width of the viewport in CSS pixels (default: 1000)
+     * @param viewPortHeight - Height of the viewport in CSS pixels (default: 1000)
+     * @param position - Initial camera position in world coordinates (default: {x: 0, y: 0})
+     * @param rotation - Initial rotation in radians (default: 0)
+     * @param zoomLevel - Initial zoom level (default: 1.0)
+     * @param boundaries - Position constraints (default: ±10000 on both axes)
+     * @param zoomLevelBoundaries - Zoom constraints (default: 0.1 to 10)
+     * @param rotationBoundaries - Optional rotation constraints (default: unrestricted)
+     *
+     * @example
+     * ```typescript
+     * // Camera with default settings
+     * const camera1 = new DefaultBoardCamera();
+     *
+     * // Camera with custom viewport
+     * const camera2 = new DefaultBoardCamera(1920, 1080);
+     *
+     * // Camera with all options
+     * const camera3 = new DefaultBoardCamera(
+     *   1920, 1080,
+     *   { x: 0, y: 0 },
+     *   0,
+     *   1.0,
+     *   { min: { x: -5000, y: -5000 }, max: { x: 5000, y: 5000 } },
+     *   { min: 0.5, max: 4 },
+     *   { start: 0, end: Math.PI * 2 }
+     * );
+     * ```
      */
     constructor(viewPortWidth: number = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, viewPortHeight: number = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, zoomLevelBoundaries: ZoomLevelLimits = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, rotationBoundaries: RotationLimits | undefined = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES){
         this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
@@ -91,13 +153,23 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     /**
-     * @description This function is used to set the position of the camera.
-     * @param destination The destination point of the camera.
-     * @returns Whether the position is set successfully.
-     * 
-     * @description This function has a guard that checks if the destination point is within the boundaries of the camera.
-     * If the destination point is not within the boundaries, the function will return false and the position will not be updated.
-     * If the destination point is within the boundaries, the function will return true and the position will be updated.
+     * Sets the camera position and notifies observers if successful.
+     *
+     * @param destination - Target position in world coordinates
+     * @returns True if position was updated, false if rejected by boundaries or negligible change
+     *
+     * @remarks
+     * If the position changes, a 'pan' event is triggered with the position delta and new camera state.
+     * All 'pan' and 'all' event subscribers will be notified.
+     *
+     * @example
+     * ```typescript
+     * camera.on('pan', (event, state) => {
+     *   console.log(`Camera moved by (${event.diff.x}, ${event.diff.y})`);
+     * });
+     *
+     * camera.setPosition({ x: 100, y: 200 }); // Triggers pan event
+     * ```
      */
     setPosition(destination: Point){
         const currentPosition = {...this._baseCamera.position};
@@ -146,6 +218,26 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return true;
     }
 
+    /**
+     * Sets the camera zoom level and notifies observers if successful.
+     *
+     * @param zoomLevel - Target zoom level (1.0 = 100%, 2.0 = 200%, etc.)
+     * @returns True if zoom was updated, false if outside boundaries or already at limit
+     *
+     * @remarks
+     * If the zoom changes, a 'zoom' event is triggered with the zoom delta and new camera state.
+     * All 'zoom' and 'all' event subscribers will be notified.
+     *
+     * @example
+     * ```typescript
+     * camera.on('zoom', (event, state) => {
+     *   console.log(`Zoom changed by ${event.deltaZoomAmount}`);
+     *   console.log(`New zoom: ${state.zoomLevel}`);
+     * });
+     *
+     * camera.setZoomLevel(2.0); // Triggers zoom event
+     * ```
+     */
     setZoomLevel(zoomLevel: number){
         const currentZoomLevel = this._baseCamera.zoomLevel;
         if(!this._baseCamera.setZoomLevel(zoomLevel)){
@@ -156,9 +248,9 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     /**
-     * @description The rotation of the camera in the world coordinate system.
-     * 
-     * @category Camera
+     * Gets the current camera rotation in radians.
+     *
+     * @returns Current rotation angle (0 to 2π)
      */
     get rotation(): number{
         return this._baseCamera.rotation;
@@ -194,9 +286,24 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     /**
-     * @description This function is used to set the rotation of the camera.
-     * @param rotation The rotation of the camera in the world coordinate system.
-     * @returns Whether the rotation is set successfully.
+     * Sets the camera rotation and notifies observers if successful.
+     *
+     * @param rotation - Target rotation in radians
+     * @returns True if rotation was updated, false if outside boundaries or already at limit
+     *
+     * @remarks
+     * If the rotation changes, a 'rotate' event is triggered with the rotation delta and new camera state.
+     * All 'rotate' and 'all' event subscribers will be notified.
+     * Rotation is automatically normalized to 0-2π range.
+     *
+     * @example
+     * ```typescript
+     * camera.on('rotate', (event, state) => {
+     *   console.log(`Camera rotated by ${event.deltaRotation} radians`);
+     * });
+     *
+     * camera.setRotation(Math.PI / 4); // Triggers rotate event
+     * ```
      */
     setRotation(rotation: number){
         const currentRotation = this._baseCamera.rotation;
@@ -295,11 +402,54 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
     }
 
     /**
-     * @description This function is used to subscribe to the camera events.
-     * @param eventName The name of the event to subscribe to.
-     * @param callback The callback function to be called when the event is triggered.
-     * @param options The options for the subscription.
-     * @returns The unsubscribe function.
+     * Subscribes to camera events with optional AbortController for cancellation.
+     *
+     * @typeParam K - The event type key from CameraEventMap
+     * @param eventName - Event type to listen for: 'pan', 'zoom', 'rotate', or 'all'
+     * @param callback - Function called when event occurs, receives event data and camera state
+     * @param options - Optional subscription configuration including AbortController signal
+     * @returns Function to unsubscribe from this event
+     *
+     * @remarks
+     * Available events:
+     * - 'pan': Triggered when camera position changes
+     * - 'zoom': Triggered when zoom level changes
+     * - 'rotate': Triggered when rotation changes
+     * - 'all': Triggered for any camera change (pan, zoom, or rotate)
+     *
+     * Use the AbortController pattern to manage multiple subscriptions:
+     *
+     * @example
+     * ```typescript
+     * // Basic subscription
+     * const unsubscribe = camera.on('pan', (event, state) => {
+     *   console.log(`Panned by (${event.diff.x}, ${event.diff.y})`);
+     *   console.log(`New position: (${state.position.x}, ${state.position.y})`);
+     * });
+     *
+     * // Later: unsubscribe
+     * unsubscribe();
+     *
+     * // Subscribe to all events
+     * camera.on('all', (event, state) => {
+     *   if (event.type === 'pan') {
+     *     console.log('Pan event:', event.diff);
+     *   } else if (event.type === 'zoom') {
+     *     console.log('Zoom event:', event.deltaZoomAmount);
+     *   } else if (event.type === 'rotate') {
+     *     console.log('Rotate event:', event.deltaRotation);
+     *   }
+     * });
+     *
+     * // Using AbortController for batch unsubscribe
+     * const controller = new AbortController();
+     * camera.on('pan', handlePan, { signal: controller.signal });
+     * camera.on('zoom', handleZoom, { signal: controller.signal });
+     * camera.on('rotate', handleRotate, { signal: controller.signal });
+     *
+     * // Unsubscribe all at once
+     * controller.abort();
+     * ```
      */
     on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
         return this._observer.on(eventName, callback, options);

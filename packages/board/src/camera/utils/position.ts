@@ -2,9 +2,43 @@ import { Point, PointCal } from "@ue-too/math";
 import { convert2WorldSpaceWRT } from "./coordinate-conversion";
 
 /**
- * @description The boundaries of a camera.
- * The x and y are in world space.
- * 
+ * Position boundaries for camera movement in world space.
+ * Allows optional constraints on x and y axes independently.
+ *
+ * @property min - Minimum position constraints (both x and y are optional)
+ * @property max - Maximum position constraints (both x and y are optional)
+ *
+ * @remarks
+ * All coordinates are in world space. Each axis (x, y) can be:
+ * - Fully constrained: both min and max defined
+ * - Partially constrained: only min or max defined
+ * - Unconstrained: neither min nor max defined
+ *
+ * This allows for flexible boundary configurations like:
+ * - Horizontal-only boundaries (x constrained, y free)
+ * - Vertical-only boundaries (y constrained, x free)
+ * - One-sided boundaries (e.g., minimum x but no maximum)
+ *
+ * @example
+ * ```typescript
+ * // Fully constrained rectangular boundary
+ * const rect: Boundaries = {
+ *   min: { x: -1000, y: -1000 },
+ *   max: { x: 1000, y: 1000 }
+ * };
+ *
+ * // Horizontal constraints only
+ * const horizontal: Boundaries = {
+ *   min: { x: -500 },
+ *   max: { x: 500 }
+ * };
+ *
+ * // One-sided constraint (can't go below y=0)
+ * const floor: Boundaries = {
+ *   min: { y: 0 }
+ * };
+ * ```
+ *
  * @category Camera
  */
 export type Boundaries = {
@@ -13,8 +47,34 @@ export type Boundaries = {
 }
 
 /**
- * @description Checks if a point is within the boundaries.
- * 
+ * Checks if a point is within the specified boundaries.
+ *
+ * @param point - Point to check in world coordinates
+ * @param boundaries - Optional boundary constraints
+ * @returns True if point is within boundaries or no boundaries specified, false otherwise
+ *
+ * @remarks
+ * Returns true if:
+ * - No boundaries are defined (undefined)
+ * - Point satisfies all defined constraints
+ *
+ * Each axis is checked independently. A missing constraint on an axis means
+ * that axis is unbounded.
+ *
+ * @example
+ * ```typescript
+ * const bounds: Boundaries = {
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * };
+ *
+ * withinBoundaries({ x: 0, y: 0 }, bounds);      // true (inside)
+ * withinBoundaries({ x: 150, y: 0 }, bounds);    // false (x too large)
+ * withinBoundaries({ x: 0, y: -100 }, bounds);   // false (y too small)
+ * withinBoundaries({ x: 100, y: 50 }, bounds);   // true (on boundary)
+ * withinBoundaries({ x: 0, y: 0 }, undefined);   // true (no bounds)
+ * ```
+ *
  * @category Camera
  */
 export function withinBoundaries(point: Point, boundaries: Boundaries | undefined): boolean{
@@ -43,8 +103,29 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
 }
 
 /**
- * @description Checks if the boundaries are valid.
- * 
+ * Validates that boundaries are logically consistent.
+ *
+ * @param boundaries - The boundaries to validate
+ * @returns True if boundaries are valid or undefined, false if min >= max on any axis
+ *
+ * @remarks
+ * Returns false if:
+ * - On any axis, both min and max are defined AND min >= max
+ *
+ * Returns true if:
+ * - Boundaries are undefined
+ * - Only min or max is defined on an axis
+ * - Both are defined and min < max on all axes
+ *
+ * @example
+ * ```typescript
+ * isValidBoundaries({ min: { x: 0, y: 0 }, max: { x: 100, y: 100 } }); // true
+ * isValidBoundaries({ min: { x: 100 }, max: { x: 0 } });               // false (min > max)
+ * isValidBoundaries({ min: { x: 50, y: 50 }, max: { x: 50, y: 60 } }); // false (x min == max)
+ * isValidBoundaries({ min: { x: 0 } });                                // true (partial)
+ * isValidBoundaries(undefined);                                         // true
+ * ```
+ *
  * @category Camera
  */
 export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
@@ -65,8 +146,31 @@ export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
 }
 
 /**
- * @description Checks if the boundaries are fully defined.
- * 
+ * Checks if boundaries have all four constraints (min/max for both x and y) defined.
+ *
+ * @param boundaries - The boundaries to check
+ * @returns True if all four constraints are defined, false otherwise
+ *
+ * @remarks
+ * Returns true only if boundaries define a complete rectangular region:
+ * - min.x, min.y, max.x, and max.y are all defined
+ *
+ * @example
+ * ```typescript
+ * boundariesFullyDefined({
+ *   min: { x: 0, y: 0 },
+ *   max: { x: 100, y: 100 }
+ * }); // true
+ *
+ * boundariesFullyDefined({
+ *   min: { x: 0, y: 0 },
+ *   max: { x: 100 }  // missing max.y
+ * }); // false
+ *
+ * boundariesFullyDefined({ min: { x: 0 } }); // false
+ * boundariesFullyDefined(undefined);          // false
+ * ```
+ *
  * @category Camera
  */
 export function boundariesFullyDefined(boundaries: Boundaries | undefined): boolean{
@@ -83,8 +187,32 @@ export function boundariesFullyDefined(boundaries: Boundaries | undefined): bool
 }
 
 /**
- * @description Clamps a point to the boundaries.
- * 
+ * Clamps a point to stay within specified boundaries.
+ *
+ * @param point - Point to clamp in world coordinates
+ * @param boundaries - Optional boundary constraints
+ * @returns Clamped point, or original if already within bounds or no boundaries
+ *
+ * @remarks
+ * Each axis is clamped independently:
+ * - If a min constraint exists on an axis, ensures point >= min
+ * - If a max constraint exists on an axis, ensures point <= max
+ * - If no constraint exists on an axis, that axis is unchanged
+ *
+ * @example
+ * ```typescript
+ * const bounds: Boundaries = {
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * };
+ *
+ * clampPoint({ x: 0, y: 0 }, bounds);       // { x: 0, y: 0 } (inside)
+ * clampPoint({ x: 150, y: 0 }, bounds);     // { x: 100, y: 0 } (clamped x)
+ * clampPoint({ x: 0, y: -100 }, bounds);    // { x: 0, y: -50 } (clamped y)
+ * clampPoint({ x: 200, y: -200 }, bounds);  // { x: 100, y: -50 } (both clamped)
+ * clampPoint({ x: 0, y: 0 }, undefined);    // { x: 0, y: 0 } (no bounds)
+ * ```
+ *
  * @category Camera
  */
 export function clampPoint(point: Point, boundaries: Boundaries | undefined): Point{
@@ -114,8 +242,26 @@ export function clampPoint(point: Point, boundaries: Boundaries | undefined): Po
 }
 
 /**
- * @description Gets the translation width of the boundaries.
- * 
+ * Calculates the width (x-axis span) of the boundaries.
+ *
+ * @param boundaries - The boundaries to measure
+ * @returns Width in world units, or undefined if x boundaries are not fully defined
+ *
+ * @remarks
+ * Returns undefined if boundaries don't have both min.x and max.x defined.
+ * Result is always non-negative for valid boundaries (max.x - min.x).
+ *
+ * @example
+ * ```typescript
+ * translationWidthOf({
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * }); // 200
+ *
+ * translationWidthOf({ min: { x: 0 } }); // undefined (no max.x)
+ * translationWidthOf(undefined);          // undefined
+ * ```
+ *
  * @category Camera
  */
 export function translationWidthOf(boundaries: Boundaries | undefined): number | undefined{
@@ -126,8 +272,23 @@ export function translationWidthOf(boundaries: Boundaries | undefined): number |
 }
 
 /**
- * @description Gets the half translation width of the boundaries.
- * 
+ * Calculates half the width (x-axis half-span) of the boundaries.
+ *
+ * @param boundaries - The boundaries to measure
+ * @returns Half-width in world units, or undefined if x boundaries are not fully defined
+ *
+ * @remarks
+ * Useful for calculating radius or offset from center for x-axis.
+ * Equivalent to `translationWidthOf(boundaries) / 2`.
+ *
+ * @example
+ * ```typescript
+ * halfTranslationWidthOf({
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * }); // 100
+ * ```
+ *
  * @category Camera
  */
 export function halfTranslationWidthOf(boundaries: Boundaries | undefined): number | undefined{
@@ -136,8 +297,26 @@ export function halfTranslationWidthOf(boundaries: Boundaries | undefined): numb
 }
 
 /**
- * @description Gets the translation height of the boundaries.
- * 
+ * Calculates the height (y-axis span) of the boundaries.
+ *
+ * @param boundaries - The boundaries to measure
+ * @returns Height in world units, or undefined if y boundaries are not fully defined
+ *
+ * @remarks
+ * Returns undefined if boundaries don't have both min.y and max.y defined.
+ * Result is always non-negative for valid boundaries (max.y - min.y).
+ *
+ * @example
+ * ```typescript
+ * translationHeightOf({
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * }); // 100
+ *
+ * translationHeightOf({ min: { y: 0 } }); // undefined (no max.y)
+ * translationHeightOf(undefined);          // undefined
+ * ```
+ *
  * @category Camera
  */
 export function translationHeightOf(boundaries: Boundaries | undefined): number | undefined{
@@ -148,8 +327,23 @@ export function translationHeightOf(boundaries: Boundaries | undefined): number 
 }
 
 /**
- * @description Gets the half translation height of the boundaries.
- * 
+ * Calculates half the height (y-axis half-span) of the boundaries.
+ *
+ * @param boundaries - The boundaries to measure
+ * @returns Half-height in world units, or undefined if y boundaries are not fully defined
+ *
+ * @remarks
+ * Useful for calculating radius or offset from center for y-axis.
+ * Equivalent to `translationHeightOf(boundaries) / 2`.
+ *
+ * @example
+ * ```typescript
+ * halfTranslationHeightOf({
+ *   min: { x: -100, y: -50 },
+ *   max: { x: 100, y: 50 }
+ * }); // 50
+ * ```
+ *
  * @category Camera
  */
 export function halfTranslationHeightOf(boundaries: Boundaries | undefined): number | undefined{
@@ -158,9 +352,53 @@ export function halfTranslationHeightOf(boundaries: Boundaries | undefined): num
 }
 
 /**
- * @description Clamps the entire viewport within the boundaries
- * 
+ * Clamps camera position to ensure the entire viewport stays within boundaries.
+ * More restrictive than {@link clampPoint} as it considers viewport size and rotation.
+ *
+ * @param point - Proposed camera position in world coordinates
+ * @param viewPortWidth - Width of the viewport in CSS pixels
+ * @param viewPortHeight - Height of the viewport in CSS pixels
+ * @param boundaries - Optional boundary constraints in world space
+ * @param cameraZoomLevel - Current camera zoom level
+ * @param cameraRotation - Current camera rotation in radians
+ * @returns Adjusted camera position that keeps entire viewport within boundaries
+ *
+ * @remarks
+ * This function ensures no part of the viewport extends outside the boundaries.
+ * It accounts for:
+ * - Viewport dimensions (width/height)
+ * - Camera rotation (viewport corners rotate around camera center)
+ * - Zoom level (affects world-space size of viewport)
+ *
+ * The algorithm:
+ * 1. Calculates all four viewport corners in world space
+ * 2. Clamps each corner to boundaries
+ * 3. Finds the maximum displacement needed across all corners
+ * 4. Adjusts camera position by that displacement
+ *
+ * Use this for "edge-stop" behavior where viewport cannot scroll past boundaries.
+ * For "center-stop" behavior, use {@link clampPoint} instead.
+ *
+ * @example
+ * ```typescript
+ * const bounds: Boundaries = {
+ *   min: { x: 0, y: 0 },
+ *   max: { x: 1000, y: 1000 }
+ * };
+ *
+ * // Camera at center of bounds, viewport extends outside
+ * const adjusted = clampPointEntireViewPort(
+ *   { x: 100, y: 100 },  // camera position
+ *   800, 600,             // viewport size
+ *   bounds,
+ *   1.0,                  // zoom
+ *   0                     // rotation
+ * );
+ * // Returns position that prevents viewport from exceeding bounds
+ * ```
+ *
  * @category Camera
+ * @see {@link clampPoint} for clamping camera center only
  */
 export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries | undefined, cameraZoomLevel: number, cameraRotation: number): Point{
     if(boundaries == undefined){

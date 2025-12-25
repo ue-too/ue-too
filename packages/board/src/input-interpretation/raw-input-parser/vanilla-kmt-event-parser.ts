@@ -3,63 +3,100 @@ import type { KmtInputEventMapping, KmtInputStateMachine } from "../../input-int
 import type { InputOrchestrator } from "../input-orchestrator";
 
 /**
- * @category Event Parser
+ * Interface for KMT (Keyboard/Mouse/Trackpad) event parsers.
+ *
+ * @remarks
+ * Event parsers bridge the gap between DOM events and the state machine.
+ * They listen for raw DOM events, convert them to state machine events,
+ * and coordinate with the orchestrator for output processing.
+ *
+ * @category Raw Input Parser
  */
-
 export interface KMTEventParser {
+    /** Whether the parser is currently disabled */
     disabled: boolean;
+    /** Initializes event listeners */
     setUp(): void;
+    /** Removes event listeners and cleans up */
     tearDown(): void;
+    /** Attaches to a new canvas element */
     attach(canvas: HTMLCanvasElement): void;
+    /** The state machine that processes parsed events */
     stateMachine: KmtInputStateMachine;
+    /** The orchestrator that handles state machine outputs */
     orchestrator: InputOrchestrator;
 }
 
 /**
- * @description The minimum pointer event.
- * This is for the interoperability between the vanilla javascript and the pixijs event system.
- * 
- * @category Event Parser
+ * Minimal pointer event interface for framework interoperability.
+ *
+ * @remarks
+ * This subset of the DOM PointerEvent interface allows the parser to work with
+ * both vanilla JavaScript PointerEvents and framework-wrapped events (e.g., PixiJS).
+ *
+ * @category Raw Input Parser
  */
 export type MinimumPointerEvent = {
+    /** Mouse button number (0=left, 1=middle, 2=right) */
     button: number;
+    /** Pointer type ("mouse", "pen", "touch") */
     pointerType: string;
+    /** X coordinate in window space */
     clientX: number;
+    /** Y coordinate in window space */
     clientY: number;
+    /** Bitmask of currently pressed buttons */
     buttons: number;
 }
 
 /**
- * @description The minimum wheel event.
- * This is for the interoperability between the vanilla javascript and the pixijs event system.
- * 
- * @category Event Parser
+ * Minimal wheel event interface for framework interoperability.
+ *
+ * @remarks
+ * This subset of the DOM WheelEvent interface allows the parser to work with
+ * both vanilla JavaScript WheelEvents and framework-wrapped events.
+ *
+ * @category Raw Input Parser
  */
 export type MinimumWheelEvent = {
+    /** Prevents default scroll behavior */
     preventDefault: () => void;
+    /** Horizontal scroll delta */
     deltaX: number;
+    /** Vertical scroll delta */
     deltaY: number;
+    /** Whether Ctrl key is pressed (for zoom) */
     ctrlKey: boolean;
+    /** X coordinate in window space */
     clientX: number;
+    /** Y coordinate in window space */
     clientY: number;
 }
 
 /**
- * @description The minimum keyboard event.
- * This is for the interoperability between the vanilla javascript and the pixijs event system.
- * 
- * @category Event Parser
+ * Minimal keyboard event interface for framework interoperability.
+ *
+ * @remarks
+ * This subset of the DOM KeyboardEvent interface allows the parser to work with
+ * both vanilla JavaScript KeyboardEvents and framework-wrapped events.
+ *
+ * @category Raw Input Parser
  */
 export type MinimumKeyboardEvent = {
+    /** Prevents default keyboard behavior */
     preventDefault: () => void;
+    /** The key that was pressed */
     key: string;
 };
 
 /**
- * @description The event target with pointer events.
- * This is for the interoperability between the vanilla javascript and the pixijs event system.
- * 
- * @category Event Parser
+ * Minimal event target interface for framework interoperability.
+ *
+ * @remarks
+ * This interface allows the parser to attach event listeners to different
+ * types of event targets (HTMLElement, Canvas, PixiJS Container, etc.).
+ *
+ * @category Raw Input Parser
  */
 export type EventTargetWithPointerEvents = {
     addEventListener: (type: string, listener: (event: any) => void, options?: {passive: boolean}) => void;
@@ -68,11 +105,53 @@ export type EventTargetWithPointerEvents = {
 
 
 /**
- * @description The vanilla keyboard mouse and trackpad(KMT) event parser.
- * This parser converts the raw events to events that can be used by the input state machine.
- * The parser has a direct dependency on the state machine and requires an orchestrator to process outputs.
+ * DOM event parser for Keyboard/Mouse/Trackpad input.
  *
- * @category Event Parser
+ * @remarks
+ * This parser converts raw DOM events into state machine events and coordinates with
+ * the orchestrator to process outputs. It serves as the entry point for all KMT input
+ * in the input interpretation pipeline.
+ *
+ * **Event Flow**:
+ * ```
+ * DOM Events → Parser → State Machine → Parser → Orchestrator → Camera/Observers
+ * ```
+ *
+ * **Responsibilities**:
+ * 1. Listen for DOM pointer, wheel, and keyboard events
+ * 2. Convert DOM events to state machine event format
+ * 3. Send events to the state machine
+ * 4. Forward state machine outputs to the orchestrator
+ *
+ * **Handled DOM Events**:
+ * - pointerdown/up/move (canvas-scoped)
+ * - wheel (canvas-scoped)
+ * - keydown/up (window-scoped for spacebar)
+ *
+ * **Keyboard Handling**:
+ * Keyboard events are only processed when `document.body` is the target,
+ * preventing interference with text inputs and other UI elements.
+ *
+ * The parser can be disabled to temporarily stop input processing (e.g., during
+ * modal dialogs or animations).
+ *
+ * @category Raw Input Parser
+ *
+ * @example
+ * ```typescript
+ * const canvasElement = document.getElementById("canvas");
+ * const stateMachine = createKmtInputStateMachine(context);
+ * const orchestrator = new InputOrchestrator(cameraMux, cameraRig, publisher);
+ * const parser = new VanillaKMTEventParser(stateMachine, orchestrator, canvasElement);
+ *
+ * parser.setUp(); // Starts listening for events
+ *
+ * // Later, to disable input temporarily
+ * parser.disabled = true;
+ *
+ * // Cleanup when done
+ * parser.tearDown();
+ * ```
  */
 export class VanillaKMTEventParser implements KMTEventParser {
 

@@ -3,9 +3,47 @@ import {createContext, useContext, useEffect, useMemo, useRef, useSyncExternalSt
 import { CameraMux, CameraState } from "@ue-too/board/camera";
 import { Point } from "@ue-too/math";
 
+/**
+ * Maps camera state keys to their corresponding event names.
+ * @internal
+ */
 type StateToEventKey<K extends keyof CameraState> =
     K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
 
+/**
+ * Hook to create and manage a Board instance.
+ *
+ * @remarks
+ * This hook creates a stable Board instance that persists across re-renders.
+ * The board is created once and stored in a ref, making it suitable for use
+ * in React components without recreating the board on every render.
+ *
+ * **Important**: This hook creates an independent board instance. If you need
+ * to share a board across multiple components, use {@link BoardProvider} and
+ * {@link useBoard} instead.
+ *
+ * @param fullScreen - Whether the board should be in fullscreen mode (resizes with window)
+ * @returns Object containing the board instance and a subscribe function
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { board, subscribe } = useBoardify(true);
+ *
+ *   useEffect(() => {
+ *     // Subscribe to camera pan events
+ *     const unsubscribe = subscribe(() => {
+ *       console.log('Camera panned');
+ *     });
+ *     return unsubscribe;
+ *   }, [subscribe]);
+ *
+ *   return <canvas ref={(ref) => ref && board.attach(ref)} />;
+ * }
+ * ```
+ *
+ * @category Hooks
+ */
 export function useBoardify(fullScreen: boolean = false) {
 
     const boardRef = useRef<Boardify>(new Boardify());
@@ -27,6 +65,43 @@ export function useBoardify(fullScreen: boolean = false) {
     }
 }
 
+/**
+ * Hook to subscribe to a specific camera state property with automatic re-rendering.
+ *
+ * @remarks
+ * This hook uses React's `useSyncExternalStore` to efficiently subscribe to camera state changes.
+ * It only triggers re-renders when the specified property actually changes, and uses caching
+ * to maintain referential equality for object values (like position).
+ *
+ * **Performance**: The hook is optimized to prevent unnecessary re-renders by:
+ * - Caching object values (position) to maintain referential equality
+ * - Using `useSyncExternalStore` for efficient subscription management
+ * - Only subscribing to the specific state property needed
+ *
+ * @typeParam K - Key of the camera state to subscribe to
+ * @param state - The camera state property to track ("position", "rotation", or "zoomLevel")
+ * @returns The current value of the specified camera state property
+ *
+ * @example
+ * ```tsx
+ * function CameraInfo() {
+ *   const position = useBoardCameraState('position');
+ *   const rotation = useBoardCameraState('rotation');
+ *   const zoomLevel = useBoardCameraState('zoomLevel');
+ *
+ *   return (
+ *     <div>
+ *       Position: {position.x}, {position.y}<br/>
+ *       Rotation: {rotation}<br/>
+ *       Zoom: {zoomLevel}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @category Hooks
+ * @see {@link useAllBoardCameraState} for subscribing to all camera state at once
+ */
 export function useBoardCameraState<K extends keyof CameraState>(state: K): CameraState[K] {
     const board = useBoard();
     const stateKey = (state === "position" ? "pan" : state === "zoomLevel" ? "zoom" : "rotate") as StateToEventKey<K>;
@@ -58,6 +133,47 @@ export function useBoardCameraState<K extends keyof CameraState>(state: K): Came
     );
 }
 
+/**
+ * Hook to get camera control functions for programmatic camera manipulation.
+ *
+ * @remarks
+ * This hook provides a stable set of functions to control the camera programmatically.
+ * The functions are memoized and only recreate when the board instance changes.
+ *
+ * All camera operations go through the camera rig, which enforces boundaries,
+ * restrictions, and other constraints configured on the board.
+ *
+ * @returns Object containing camera control functions:
+ * - `panToWorld` - Pan camera to a world position
+ * - `panToViewPort` - Pan camera to a viewport position
+ * - `zoomTo` - Set camera zoom to specific level
+ * - `zoomBy` - Adjust camera zoom by delta
+ * - `rotateTo` - Set camera rotation to specific angle
+ * - `rotateBy` - Adjust camera rotation by delta
+ *
+ * @example
+ * ```tsx
+ * function CameraControls() {
+ *   const { panToWorld, zoomTo, rotateTo } = useCameraInput();
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={() => panToWorld({ x: 0, y: 0 })}>
+ *         Center Camera
+ *       </button>
+ *       <button onClick={() => zoomTo(1.0)}>
+ *         Reset Zoom
+ *       </button>
+ *       <button onClick={() => rotateTo(0)}>
+ *         Reset Rotation
+ *       </button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @category Hooks
+ */
 export function useCameraInput(){
     const board = useBoard();
 
@@ -90,6 +206,41 @@ export function useCameraInput(){
     return test;
 }
 
+/**
+ * Hook to subscribe to all camera state properties with automatic re-rendering.
+ *
+ * @remarks
+ * This hook provides a snapshot of all camera state (position, rotation, zoomLevel) and
+ * re-renders only when any of these values change. It's more efficient than using multiple
+ * {@link useBoardCameraState} calls when you need all state properties.
+ *
+ * **Performance**: The hook uses snapshot caching to maintain referential equality when
+ * values haven't changed, preventing unnecessary re-renders in child components.
+ *
+ * @returns Object containing:
+ * - `position` - Current camera position {x, y}
+ * - `rotation` - Current camera rotation in radians
+ * - `zoomLevel` - Current camera zoom level
+ *
+ * @example
+ * ```tsx
+ * function CameraStateDisplay() {
+ *   const { position, rotation, zoomLevel } = useAllBoardCameraState();
+ *
+ *   return (
+ *     <div>
+ *       <h3>Camera State</h3>
+ *       <p>Position: ({position.x.toFixed(2)}, {position.y.toFixed(2)})</p>
+ *       <p>Rotation: {rotation.toFixed(2)} rad</p>
+ *       <p>Zoom: {zoomLevel.toFixed(2)}x</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @category Hooks
+ * @see {@link useBoardCameraState} for subscribing to individual state properties
+ */
 export function useAllBoardCameraState()  {
     const board = useBoard();
     const cachedSnapshotRef = useRef<{
@@ -130,6 +281,33 @@ export function useAllBoardCameraState()  {
     )
 }
 
+/**
+ * Hook to set a custom camera multiplexer on the board.
+ *
+ * @remarks
+ * This hook allows you to replace the board's default camera mux with a custom implementation.
+ * Useful when you need custom input coordination, animation control, or state-based input blocking.
+ *
+ * The camera mux is updated whenever the provided `cameraMux` instance changes.
+ *
+ * @param cameraMux - Custom camera mux implementation to use
+ *
+ * @example
+ * ```tsx
+ * function CustomMuxBoard() {
+ *   const myCustomMux = useMemo(() => {
+ *     return createCameraMuxWithAnimationAndLock(camera);
+ *   }, []);
+ *
+ *   useCustomCameraMux(myCustomMux);
+ *
+ *   return <Board />;
+ * }
+ * ```
+ *
+ * @category Hooks
+ * @see {@link CameraMux} from @ue-too/board for camera mux interface
+ */
 export function useCustomCameraMux(cameraMux: CameraMux) {
     const board = useBoard();
 
@@ -138,13 +316,75 @@ export function useCustomCameraMux(cameraMux: CameraMux) {
     }, [cameraMux]);
 }
 
+/**
+ * React context for sharing a Board instance across components.
+ * @internal
+ */
 const BoardContext = createContext<Boardify | null>(null);
 
+/**
+ * Provider component for sharing a Board instance across the component tree.
+ *
+ * @remarks
+ * This component creates a single Board instance and makes it available to all child
+ * components via the {@link useBoard} hook. This is the recommended way to use the
+ * board in React applications when you need to access it from multiple components.
+ *
+ * The board instance is created once when the provider mounts and persists for the
+ * lifetime of the provider.
+ *
+ * @param props - Component props
+ * @param props.children - Child components that will have access to the board
+ *
+ * @example
+ * ```tsx
+ * function App() {
+ *   return (
+ *     <BoardProvider>
+ *       <Board width={800} height={600} />
+ *       <CameraControls />
+ *       <CameraStateDisplay />
+ *     </BoardProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @category Components
+ * @see {@link useBoard} for accessing the board instance
+ */
 export function BoardProvider({children}: {children: React.ReactNode}) {
     const board = useMemo(() => new Boardify(), []);
     return <BoardContext.Provider value={board}>{children}</BoardContext.Provider>;
 }
 
+/**
+ * Hook to access the Board instance from context.
+ *
+ * @remarks
+ * This hook retrieves the Board instance provided by {@link BoardProvider}.
+ * It must be used within a component that is a descendant of BoardProvider,
+ * otherwise it will throw an error.
+ *
+ * @returns The Board instance from context
+ * @throws Error if used outside of BoardProvider
+ *
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const board = useBoard();
+ *
+ *   useEffect(() => {
+ *     // Configure board
+ *     board.camera.boundaries = { min: { x: -1000, y: -1000 }, max: { x: 1000, y: 1000 } };
+ *   }, [board]);
+ *
+ *   return <div>Board ready</div>;
+ * }
+ * ```
+ *
+ * @category Hooks
+ * @see {@link BoardProvider} for providing the board instance
+ */
 export function useBoard() {
     const board = useContext(BoardContext);
     if (board == null) {
@@ -153,6 +393,33 @@ export function useBoard() {
     return board;
 }
 
+/**
+ * Hook to access the camera instance from the Board context.
+ *
+ * @remarks
+ * This is a convenience hook that returns the camera from the board instance.
+ * Equivalent to calling `useBoard().camera` but more concise.
+ *
+ * @returns The camera instance from the board
+ * @throws Error if used outside of BoardProvider
+ *
+ * @example
+ * ```tsx
+ * function CameraConfig() {
+ *   const camera = useBoardCamera();
+ *
+ *   useEffect(() => {
+ *     camera.setMinZoomLevel(0.5);
+ *     camera.setMaxZoomLevel(4.0);
+ *   }, [camera]);
+ *
+ *   return null;
+ * }
+ * ```
+ *
+ * @category Hooks
+ * @see {@link useBoard} for accessing the full board instance
+ */
 export function useBoardCamera() {
     const board = useBoard();
     return board.camera;

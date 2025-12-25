@@ -1,10 +1,51 @@
 import { Point, PointCal } from "@ue-too/math";
 import { RigidBody } from "./rigidbody";
 
+/**
+ * Physics constraint interface.
+ *
+ * @remarks
+ * Constraints restrict the motion of rigid bodies. Common examples include
+ * pin joints, distance constraints, and angle limits.
+ *
+ * Constraints are solved using iterative methods and Baumgarte stabilization
+ * to prevent drift over time.
+ *
+ * @category Constraints
+ */
 export interface Constraint {
+    /**
+     * Enforces the constraint for one timestep.
+     *
+     * @param dt - Timestep in seconds
+     */
     enforce(dt: number): void;
 }
 
+/**
+ * Pin joint connecting a body to a fixed world point.
+ *
+ * @remarks
+ * Creates a pendulum-like constraint where a point on the body is pinned
+ * to a fixed location in world space. The body can rotate around this point.
+ *
+ * Uses Baumgarte stabilization to prevent drift.
+ *
+ * @example
+ * Create a pendulum
+ * ```typescript
+ * const bob = new Circle({ x: 0, y: 100 }, 20, 0, 10, false);
+ * const joint = new FixedPinJoint(
+ *   bob,
+ *   { x: 0, y: 0 },  // Anchor on bob (center)
+ *   { x: 0, y: 0 }   // World anchor (ceiling)
+ * );
+ * world.addRigidBody('bob', bob);
+ * world.addConstraint(joint);
+ * ```
+ *
+ * @category Constraints
+ */
 export class FixedPinJoint implements Constraint {
 
     private anchorA: Point;
@@ -65,6 +106,35 @@ export class FixedPinJoint implements Constraint {
     }
 }
 
+/**
+ * Pin joint connecting two bodies together.
+ *
+ * @remarks
+ * Connects two bodies at specified anchor points. The bodies can rotate
+ * relative to each other around the joint.
+ *
+ * Useful for creating chains, ragdolls, and mechanical linkages.
+ *
+ * @example
+ * Create a chain
+ * ```typescript
+ * const link1 = new Circle({ x: 0, y: 0 }, 10);
+ * const link2 = new Circle({ x: 30, y: 0 }, 10);
+ *
+ * const joint = new PinJoint(
+ *   link1,
+ *   link2,
+ *   { x: 10, y: 0 },   // Right edge of link1
+ *   { x: -10, y: 0 }   // Left edge of link2
+ * );
+ *
+ * world.addRigidBody('link1', link1);
+ * world.addRigidBody('link2', link2);
+ * world.addConstraint(joint);
+ * ```
+ *
+ * @category Constraints
+ */
 export class PinJoint implements Constraint {
 
     private anchorA: Point;

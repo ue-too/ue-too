@@ -80,6 +80,52 @@ type AdvanceAtTWithLengthOutofCurveRes = AdvanceAtWithLengthBeforeCurveRes | Adv
 
 type AdvanceAtTWithLengthRes = AdvanceAtTWithLengthWithinCurveRes | AdvanceAtTWithLengthOutofCurveRes;
 
+/**
+ * Bezier curve class supporting quadratic (3 points) and cubic (4 points) curves.
+ *
+ * @remarks
+ * BCurve provides a comprehensive implementation of Bezier curves with:
+ * - Curve evaluation at any parameter t (0 to 1)
+ * - Arc-length calculation with caching for performance
+ * - Curve splitting and subdivision
+ * - Geometric queries (projection, intersection, extrema)
+ * - Advanced operations (offset, arc fitting, curvature)
+ *
+ * ## Performance Optimizations
+ * - Optimized formulas for quadratic and cubic curves
+ * - Arc-length caching to avoid recomputation
+ * - Lazy computation of lookup tables (LUT)
+ * - Gauss-Legendre quadrature for arc-length calculation
+ *
+ * ## Coordinate System
+ * - Parameter t ranges from 0 (start) to 1 (end)
+ * - Points use {x, y} coordinates
+ * - Supports 2D curves (z-coordinate optional but not used)
+ *
+ * @example
+ * Create and evaluate a cubic Bezier curve
+ * ```typescript
+ * const curve = new BCurve([
+ *   { x: 0, y: 0 },     // Start point
+ *   { x: 33, y: 100 },  // Control point 1
+ *   { x: 66, y: 100 },  // Control point 2
+ *   { x: 100, y: 0 }    // End point
+ * ]);
+ *
+ * // Evaluate at different positions
+ * const start = curve.get(0);    // { x: 0, y: 0 }
+ * const mid = curve.get(0.5);    // Midpoint
+ * const end = curve.get(1);      // { x: 100, y: 0 }
+ *
+ * // Get curve length
+ * console.log('Length:', curve.fullLength);
+ *
+ * // Get derivative (tangent vector)
+ * const tangent = curve.derivative(0.5);
+ * ```
+ *
+ * @category Bezier Curves
+ */
 export class BCurve{
 
     private controlPoints: Point[];

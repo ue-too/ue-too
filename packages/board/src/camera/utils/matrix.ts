@@ -1,12 +1,54 @@
 /**
- * @description The transform matrix for the camera.
- * It's in the format like this:
+ * 2D affine transformation matrix in standard CSS/Canvas format.
+ *
+ * Represents a 3x3 matrix in homogeneous coordinates, stored in the compact 6-parameter form:
  * ```
- * | a    c    e |
- * | b    d    f |
- * | 0    0    1 |
+ * | a  c  e |
+ * | b  d  f |
+ * | 0  0  1 |
  * ```
- * 
+ *
+ * @property a - Horizontal scaling / rotation component (m11)
+ * @property b - Vertical skewing / rotation component (m12)
+ * @property c - Horizontal skewing / rotation component (m21)
+ * @property d - Vertical scaling / rotation component (m22)
+ * @property e - Horizontal translation (tx)
+ * @property f - Vertical translation (ty)
+ *
+ * @remarks
+ * This format is compatible with:
+ * - Canvas 2D context: `ctx.setTransform(a, b, c, d, e, f)`
+ * - CSS transforms: `matrix(a, b, c, d, e, f)`
+ * - SVG transforms: `matrix(a b c d e f)`
+ *
+ * Common transformation types:
+ * - **Translation**: `{a: 1, b: 0, c: 0, d: 1, e: tx, f: ty}`
+ * - **Scaling**: `{a: sx, b: 0, c: 0, d: sy, e: 0, f: 0}`
+ * - **Rotation**: `{a: cos(θ), b: sin(θ), c: -sin(θ), d: cos(θ), e: 0, f: 0}`
+ *
+ * @example
+ * ```typescript
+ * // Identity matrix (no transformation)
+ * const identity: TransformationMatrix = {
+ *   a: 1, b: 0, c: 0, d: 1, e: 0, f: 0
+ * };
+ *
+ * // Translation by (100, 50)
+ * const translate: TransformationMatrix = {
+ *   a: 1, b: 0, c: 0, d: 1, e: 100, f: 50
+ * };
+ *
+ * // 2x scale
+ * const scale: TransformationMatrix = {
+ *   a: 2, b: 0, c: 0, d: 2, e: 0, f: 0
+ * };
+ *
+ * // 45° rotation
+ * const rotate: TransformationMatrix = {
+ *   a: 0.707, b: 0.707, c: -0.707, d: 0.707, e: 0, f: 0
+ * };
+ * ```
+ *
  * @category Camera
  */
 export type TransformationMatrix = {
@@ -19,17 +61,51 @@ export type TransformationMatrix = {
 };
 
 /**
- * TODO add the option to make the camera position to be at the top left corner of the canvas; or better yet any point in the viewport (within the viewport boundaries)
- * Decomposes a camera transformation matrix back to camera parameters
- * 
- * Transformation order:
- * 1. Scale by device pixel ratio
+ * Decomposes a camera transformation matrix back to camera parameters.
+ * Inverse operation of {@link createCameraMatrix}.
+ *
+ * @param transformMatrix - The combined transformation matrix to decompose
+ * @param devicePixelRatio - Device pixel ratio used when creating the matrix
+ * @param canvasWidth - Canvas width in CSS pixels
+ * @param canvasHeight - Canvas height in CSS pixels
+ * @returns Camera parameters: position, zoom, and rotation
+ *
+ * @remarks
+ * This function reverses the transformation chain applied by {@link createCameraMatrix}:
+ * 1. Scale by devicePixelRatio
  * 2. Translate to canvas center
  * 3. Rotate by -camera.rotation
  * 4. Scale by zoom level
  * 5. Translate by -camera.position
- * 
- * Final matrix: M = S1 * T1 * R * S2 * T2
+ *
+ * Final matrix: M = Scale(DPR) * Translate(center) * Rotate * Scale(zoom) * Translate(-position)
+ *
+ * The decomposition extracts:
+ * - **Rotation**: From the orientation of the transformation (atan2)
+ * - **Zoom**: From the total scale after removing devicePixelRatio
+ * - **Position**: By reversing the translation chain
+ *
+ * @example
+ * ```typescript
+ * // Create and then decompose a matrix
+ * const matrix = createCameraMatrix(
+ *   { x: 100, y: 200 },
+ *   2.0,
+ *   Math.PI / 4,
+ *   window.devicePixelRatio,
+ *   1920, 1080
+ * );
+ *
+ * const params = decomposeCameraMatrix(
+ *   matrix,
+ *   window.devicePixelRatio,
+ *   1920, 1080
+ * );
+ * // params ≈ { position: {x: 100, y: 200}, zoom: 2.0, rotation: π/4 }
+ * ```
+ *
+ * @category Camera
+ * @see {@link createCameraMatrix} for the inverse operation
  */
 
 export function decomposeCameraMatrix(transformMatrix: TransformationMatrix, devicePixelRatio: number, canvasWidth: number, canvasHeight: number) {
@@ -144,8 +220,55 @@ function decomposeCameraMatrixVerbose(transformMatrix: TransformationMatrix, dev
     };
 }
 
-// Helper function to create the transformation matrix from camera parameters
-// canvas width and height are the css style width and height, not the canvas.width and canvas.height
+/**
+ * Creates a camera transformation matrix from camera parameters.
+ * This matrix transforms world coordinates to canvas pixel coordinates.
+ *
+ * @param cameraPos - Camera position in world coordinates
+ * @param zoom - Zoom level (1.0 = 100%, 2.0 = 200%, etc.)
+ * @param rotation - Camera rotation in radians
+ * @param devicePixelRatio - Device pixel ratio (typically window.devicePixelRatio)
+ * @param canvasWidth - Canvas width in CSS pixels (not canvas.width!)
+ * @param canvasHeight - Canvas height in CSS pixels (not canvas.height!)
+ * @returns Transformation matrix for world→canvas conversion
+ *
+ * @remarks
+ * **Important**: canvasWidth and canvasHeight are CSS pixel dimensions,
+ * not the internal canvas buffer size (canvas.width/canvas.height).
+ * Use element.clientWidth/clientHeight or the CSS dimensions.
+ *
+ * Transformation order:
+ * 1. Scale by devicePixelRatio (for high-DPI displays)
+ * 2. Translate to canvas center
+ * 3. Rotate by -camera.rotation (negated for correct direction)
+ * 4. Scale by zoom
+ * 5. Translate by -camera.position (world offset)
+ *
+ * The resulting matrix can be applied to a canvas context:
+ * ```typescript
+ * const {a, b, c, d, e, f} = createCameraMatrix(...);
+ * ctx.setTransform(a, b, c, d, e, f);
+ * // Now draw at world coordinates
+ * ```
+ *
+ * @example
+ * ```typescript
+ * const matrix = createCameraMatrix(
+ *   { x: 100, y: 200 },          // camera position
+ *   2.0,                          // 2x zoom
+ *   Math.PI / 6,                  // 30° rotation
+ *   window.devicePixelRatio,
+ *   canvas.clientWidth,           // CSS width, not canvas.width!
+ *   canvas.clientHeight
+ * );
+ *
+ * ctx.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+ * ctx.fillRect(100, 200, 50, 50);  // Draws at world coordinates (100, 200)
+ * ```
+ *
+ * @category Camera
+ * @see {@link decomposeCameraMatrix} for extracting camera parameters from a matrix
+ */
 export function createCameraMatrix(cameraPos: {x: number, y: number}, zoom: number, rotation: number, devicePixelRatio: number, canvasWidth: number, canvasHeight: number) {
     // Step 1: Scale by device pixel ratio
     let matrix: TransformationMatrix = {
@@ -201,7 +324,55 @@ export function createCameraMatrix(cameraPos: {x: number, y: number}, zoom: numb
     return translatedMatrix;
 }
 
-// Matrix multiplication helper (2D transformation matrices)
+/**
+ * Multiplies two 2D transformation matrices.
+ * Order matters: M = m1 × m2 applies m2 first, then m1.
+ *
+ * @param m1 - First transformation matrix (applied second)
+ * @param m2 - Second transformation matrix (applied first)
+ * @returns Combined transformation matrix
+ *
+ * @remarks
+ * Matrix multiplication is not commutative: m1 × m2 ≠ m2 × m1
+ *
+ * The result applies transformations in right-to-left order:
+ * - Result = m1 × m2
+ * - Applying result to point P: (m1 × m2) × P = m1 × (m2 × P)
+ * - m2 is applied first, then m1
+ *
+ * Common use: Building composite transformations
+ * ```typescript
+ * // Translate then rotate (rotate happens first!)
+ * const translate = { a: 1, b: 0, c: 0, d: 1, e: 100, f: 0 };
+ * const rotate = { a: 0, b: 1, c: -1, d: 0, e: 0, f: 0 }; // 90° ccw
+ * const combined = multiplyMatrix(translate, rotate);
+ * // Points are rotated, then translated
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Combine scale and translation
+ * const scale2x: TransformationMatrix = {
+ *   a: 2, b: 0, c: 0, d: 2, e: 0, f: 0
+ * };
+ * const translate: TransformationMatrix = {
+ *   a: 1, b: 0, c: 0, d: 1, e: 100, f: 50
+ * };
+ *
+ * // Scale then translate
+ * const combined = multiplyMatrix(translate, scale2x);
+ * // Points are scaled by 2, then translated by (100, 50)
+ *
+ * // Chain multiple transformations
+ * const m = multiplyMatrix(
+ *   multiplyMatrix(translate, rotate),
+ *   scale
+ * );
+ * // Equivalent to: scale → rotate → translate
+ * ```
+ *
+ * @category Matrix
+ */
 export function multiplyMatrix(m1: TransformationMatrix, m2: TransformationMatrix) {
     const a1 = m1.a;
     const b1 = m1.b;
@@ -216,7 +387,7 @@ export function multiplyMatrix(m1: TransformationMatrix, m2: TransformationMatri
     const d2 = m2.d;
     const tx2 = m2.e;
     const ty2 = m2.f;
-    
+
     return {
         a: a1 * a2 + c1 * b2,      // a
         b: b1 * a2 + d1 * b2,      // b
@@ -294,14 +465,42 @@ export function decomposeTRS(matrix: TransformationMatrix): {
 }
 
 /**
- * Creates a transformation matrix from TRS components
- * 
- * @param translation - Translation vector
- * @param rotation - Rotation in radians
- * @param scale - Scale vector
- * @returns Transformation matrix
- * 
+ * Creates a transformation matrix from Translation, Rotation, and Scale components.
+ * Inverse of {@link decomposeTRS}.
+ *
+ * @param translation - Translation vector (tx, ty)
+ * @param rotation - Rotation angle in radians (counter-clockwise)
+ * @param scale - Scale vector (sx, sy)
+ * @returns Transformation matrix combining TRS
+ *
+ * @remarks
+ * Transformation order: Scale → Rotate → Translate
+ *
+ * The resulting matrix is in standard form compatible with Canvas/CSS/SVG.
+ * Applying this matrix transforms points as:
+ * 1. Scale by (sx, sy)
+ * 2. Rotate by θ radians
+ * 3. Translate by (tx, ty)
+ *
+ * @example
+ * ```typescript
+ * // Create a transform that scales 2x, rotates 45°, then moves to (100, 50)
+ * const matrix = createTRSMatrix(
+ *   { x: 100, y: 50 },            // translation
+ *   Math.PI / 4,                   // 45° rotation
+ *   { x: 2, y: 2 }                 // 2x scale
+ * );
+ *
+ * ctx.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+ * // Now drawing happens with scale→rotate→translate applied
+ *
+ * // Round-trip test
+ * const decomposed = decomposeTRS(matrix);
+ * // decomposed ≈ { translation: {x:100, y:50}, rotation: π/4, scale: {x:2, y:2} }
+ * ```
+ *
  * @category Matrix
+ * @see {@link decomposeTRS} for extracting TRS from a matrix
  */
 export function createTRSMatrix(
     translation: { x: number; y: number },

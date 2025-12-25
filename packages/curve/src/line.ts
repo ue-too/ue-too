@@ -1,5 +1,34 @@
 import { PointCal, Point } from "@ue-too/math";
 
+/**
+ * Line segment class with geometric utilities.
+ *
+ * @remarks
+ * Represents a straight line segment between two points with operations for:
+ * - Line-line intersection
+ * - Point projection onto line
+ * - Point-in-line testing
+ * - Linear interpolation (lerp)
+ *
+ * @example
+ * ```typescript
+ * const line = new Line({ x: 0, y: 0 }, { x: 100, y: 100 });
+ *
+ * // Get length
+ * console.log('Length:', line.length());
+ *
+ * // Interpolate at midpoint
+ * const mid = line.lerp(0.5); // { x: 50, y: 50 }
+ *
+ * // Project a point onto the line
+ * const result = line.projectPoint({ x: 50, y: 0 });
+ * if (result.within) {
+ *   console.log('Projection:', result.projectionPoint);
+ * }
+ * ```
+ *
+ * @category Geometry
+ */
 export class Line {
     private startPoint: Point;
     private endPoint: Point;

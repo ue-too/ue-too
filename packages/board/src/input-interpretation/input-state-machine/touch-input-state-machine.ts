@@ -3,22 +3,55 @@ import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine
 import { TouchContext, TouchPoints } from "./touch-input-context";
 import type { Point } from "@ue-too/math";
 
+/**
+ * Possible states of the touch input state machine.
+ *
+ * @remarks
+ * State transitions:
+ * - **IDLE**: No touches active, or single touch (reserved for UI)
+ * - **PENDING**: Exactly two touches active, waiting for movement to determine gesture type
+ * - **IN_PROGRESS**: Two-finger gesture in progress (pan or zoom)
+ *
+ * The state machine only handles two-finger gestures. Single-finger touches are ignored
+ * to avoid interfering with UI interactions (button clicks, text selection, etc.).
+ *
+ * @category Input State Machine - Touch
+ */
 export type TouchStates = "IDLE" | "PENDING" | "IN_PROGRESS";
 
 /**
- * @description The touch event payload.
+ * Payload for touch events containing active touch points.
  *
- * @category Input State Machine
+ * @property points - Array of touch points involved in this event
+ *
+ * @category Input State Machine - Touch
  */
 export type TouchEventPayload = {
     points: TouchPoints[];
 };
 
 /**
- * @description Output events from the touch state machine to the orchestrator.
- * These events represent the actions that should be taken in response to user input.
+ * Output events produced by the touch state machine for the orchestrator.
  *
- * @category Input State Machine
+ * @remarks
+ * Touch gestures are recognized from two-finger interactions:
+ *
+ * **Pan Gesture**:
+ * - Two fingers move in the same direction
+ * - Delta is calculated from the midpoint movement
+ * - Triggers when midpoint delta > distance delta
+ *
+ * **Zoom Gesture**:
+ * - Two fingers move toward/away from each other (pinch)
+ * - Delta is calculated from distance change between fingers
+ * - Anchor point is the midpoint between fingers
+ * - Triggers when distance delta > midpoint delta
+ *
+ * **Coordinate Spaces**:
+ * - Pan delta is in window pixels
+ * - Zoom anchor point is in viewport coordinates
+ *
+ * @category Input State Machine - Touch
  */
 export type TouchOutputEvent =
     | { type: "pan", delta: Point }
@@ -26,9 +59,13 @@ export type TouchOutputEvent =
     | { type: "none" };
 
 /**
- * @description The touch event mapping.
+ * Event mapping for the touch input state machine.
  *
- * @category Input State Machine
+ * @remarks
+ * Maps touch event names to their payload types. The state machine handles
+ * the three core touch events: touchstart, touchmove, and touchend.
+ *
+ * @category Input State Machine - Touch
  */
 export type TouchEventMapping = {
     touchstart: TouchEventPayload;
@@ -36,14 +73,31 @@ export type TouchEventMapping = {
     touchend: TouchEventPayload;
 }
 
+/**
+ * Mapping of events to their output types.
+ *
+ * @remarks
+ * Only touchmove produces outputs (pan or zoom gestures).
+ * touchstart and touchend only manage state transitions.
+ *
+ * @category Input State Machine - Touch
+ */
 export type TouchInputEventOutputMapping = {
     touchmove: TouchOutputEvent;
 }
 
 /**
- * @description The idle state of the touch input state machine.
+ * IDLE state - waiting for two-finger touch.
  *
- * @category Input State Machine
+ * @remarks
+ * This state handles touch lifecycle but only transitions to PENDING when exactly
+ * two touches are active. Single touches and three+ touches are ignored.
+ *
+ * **Guard Condition**:
+ * Transitions to PENDING only when `getCurrentTouchPointsCount() === 2`.
+ * This ensures the state machine only handles two-finger gestures.
+ *
+ * @category Input State Machine - Touch
  */
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
 
@@ -225,12 +279,59 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
 }
 
 /**
- * @description The touch input state machine.
+ * Type alias for the touch input state machine.
  *
- * @category Input State Machine
+ * @category Input State Machine - Touch
  */
 export type TouchInputStateMachine = TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping>;
 
+/**
+ * Creates a new touch input state machine for multi-touch gesture recognition.
+ *
+ * @param context - The context providing touch point tracking and canvas access
+ * @returns A configured state machine ready to process touch events
+ *
+ * @remarks
+ * This factory creates a state machine that recognizes two-finger pan and pinch-to-zoom gestures.
+ *
+ * **State Flow**:
+ * ```
+ * IDLE → (2 touches start) → PENDING → (touch move) → IN_PROGRESS
+ * IN_PROGRESS → (touch end) → IDLE
+ * ```
+ *
+ * **Gesture Recognition Algorithm**:
+ * 1. Wait for exactly 2 touches (IDLE → PENDING)
+ * 2. On first move, determine gesture type:
+ *    - If distance change > midpoint change: ZOOM
+ *    - If midpoint change > distance change: PAN
+ * 3. Continue producing pan/zoom outputs until touches end
+ *
+ * **Pan Gesture**:
+ * Delta = current midpoint - initial midpoint
+ *
+ * **Zoom Gesture**:
+ * Delta = (current distance - initial distance) * 0.005
+ * Anchor = midpoint in viewport coordinates
+ *
+ * @category Input State Machine - Touch
+ *
+ * @example
+ * ```typescript
+ * const canvasProxy = new CanvasProxy(canvasElement);
+ * const context = new TouchInputTracker(canvasProxy);
+ * const stateMachine = createTouchInputStateMachine(context);
+ *
+ * // Process a touch start event with 2 fingers
+ * const result = stateMachine.happens("touchstart", {
+ *   points: [
+ *     {ident: 0, x: 100, y: 200},
+ *     {ident: 1, x: 300, y: 200}
+ *   ]
+ * });
+ * console.log(result.nextState); // "PENDING"
+ * ```
+ */
 export function createTouchInputStateMachine(context: TouchContext): TouchInputStateMachine {
     return new TemplateStateMachine<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping>(
         {

@@ -1,20 +1,61 @@
 /**
- * @description The limits of the rotation.
- * 
+ * Constraints for camera rotation defining an angular range with direction.
+ *
+ * @property start - Starting angle of the allowed range in radians
+ * @property end - Ending angle of the allowed range in radians
+ * @property ccw - If true, the range is measured counter-clockwise from start to end. If false, clockwise
+ * @property startAsTieBreaker - When clamping and distance to start equals distance to end, clamp to start if true, end if false
+ *
+ * @remarks
+ * Rotation limits define an angular arc. The direction (ccw) determines which
+ * way around the circle the range extends from start to end.
+ *
+ * For example:
+ * - start=0, end=π/2, ccw=true: allows 0 to π/2 (0° to 90°)
+ * - start=0, end=π/2, ccw=false: allows 0 to -3π/2 going clockwise (0° to 270° the other way)
+ *
  * @category Camera
  */
 export type RotationLimits = {start: number, end: number, ccw: boolean, startAsTieBreaker: boolean};
 
 /**
- * @description The boundary of the rotation. (experimental)
- * 
+ * Experimental rotation boundary type with positive/negative direction semantics.
+ *
+ * @property start - Starting angle of the boundary in radians
+ * @property end - Ending angle of the boundary in radians
+ * @property positiveDirection - If true, range extends in positive angle direction. If false, negative direction
+ * @property startAsTieBreaker - When equidistant from start and end, prefer start if true, end if false
+ *
+ * @remarks
+ * This is an experimental alternative to {@link RotationLimits} with different direction semantics.
+ *
  * @category Camera
  */
 export type RotationBoundary = {start: number, end: number, positiveDirection: boolean, startAsTieBreaker: boolean};
 
 /**
- * @description Clamps the rotation within the limits.
- * 
+ * Clamps a rotation angle to stay within specified angular limits.
+ *
+ * @param rotation - The rotation angle to clamp in radians
+ * @param rotationLimits - Optional rotation constraints with direction
+ * @returns The clamped rotation angle, or original if already within limits
+ *
+ * @remarks
+ * If the rotation is outside the allowed arc, it's clamped to the nearest
+ * boundary (start or end). When equidistant from both, the `startAsTieBreaker`
+ * flag determines which boundary to use.
+ *
+ * The rotation is normalized to [0, 2π] before clamping.
+ *
+ * @example
+ * ```typescript
+ * const limits = { start: 0, end: Math.PI/2, ccw: true, startAsTieBreaker: true };
+ *
+ * clampRotation(Math.PI/4, limits);  // π/4 (within range)
+ * clampRotation(Math.PI, limits);    // π/2 (clamped to end)
+ * clampRotation(-0.1, limits);       // 0 (clamped to start)
+ * ```
+ *
  * @category Camera
  */
 export function clampRotation(rotation: number, rotationLimits?: RotationLimits): number{
@@ -37,8 +78,30 @@ export function clampRotation(rotation: number, rotationLimits?: RotationLimits)
 }
 
 /**
- * @description Checks if the rotation is within the limits.
- * 
+ * Checks if a rotation angle is within specified angular limits.
+ *
+ * @param rotation - The rotation angle to check in radians
+ * @param rotationLimits - Optional rotation constraints with direction
+ * @returns True if rotation is within the allowed arc or no limits specified, false otherwise
+ *
+ * @remarks
+ * Returns true if:
+ * - No limits are specified (undefined)
+ * - Start and end angles are effectively equal (full circle allowed)
+ * - Rotation falls within the arc from start to end in the specified direction
+ *
+ * The rotation is normalized to [0, 2π] before checking.
+ *
+ * @example
+ * ```typescript
+ * const limits = { start: 0, end: Math.PI/2, ccw: true, startAsTieBreaker: true };
+ *
+ * rotationWithinLimits(Math.PI/4, limits);   // true (within range)
+ * rotationWithinLimits(Math.PI, limits);     // false (outside range)
+ * rotationWithinLimits(0, limits);           // true (at start)
+ * rotationWithinLimits(Math.PI/2, limits);   // true (at end)
+ * ```
+ *
  * @category Camera
  */
 export function rotationWithinLimits(rotation: number, rotationLimits?: RotationLimits): boolean{
@@ -61,8 +124,16 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
 }
 
 /**
- * @description Checks if the rotation is within the boundary. (experimental)
- * 
+ * Checks if a rotation angle is within an experimental rotation boundary.
+ *
+ * @param rotation - The rotation angle to check in radians
+ * @param rotationBoundary - Rotation boundary with positive/negative direction
+ * @returns True if rotation is within the boundary range, false otherwise
+ *
+ * @remarks
+ * This is an experimental alternative to {@link rotationWithinLimits} using
+ * positive/negative direction semantics instead of ccw/cw.
+ *
  * @category Camera
  */
 export function rotationWithinBoundary(rotation: number, rotationBoundary: RotationBoundary): boolean {
@@ -94,22 +165,57 @@ export function rotationWithinBoundary(rotation: number, rotationBoundary: Rotat
 }
 
 /**
- * @description Normalizes the angle to be between 0 and 2π.
- * 
+ * Normalizes an angle to the range [0, 2π).
+ *
+ * @param angle - Angle in radians (can be any value)
+ * @returns Equivalent angle in the range [0, 2π)
+ *
+ * @remarks
+ * This function wraps angles to the standard [0, 2π) range. Useful for
+ * ensuring consistent angle representation when comparing or storing angles.
+ *
+ * @example
+ * ```typescript
+ * normalizeAngleZero2TwoPI(0);           // 0
+ * normalizeAngleZero2TwoPI(Math.PI);     // π
+ * normalizeAngleZero2TwoPI(3 * Math.PI); // π (wraps around)
+ * normalizeAngleZero2TwoPI(-Math.PI/2);  // 3π/2 (negative becomes positive)
+ * normalizeAngleZero2TwoPI(2 * Math.PI); // 0 (full rotation)
+ * ```
+ *
  * @category Camera
  */
 export function normalizeAngleZero2TwoPI(angle: number){
-    // reduce the angle  
+    // reduce the angle
     angle = angle % (Math.PI * 2);
 
-    // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI 
-    angle = (angle + Math.PI * 2) % (Math.PI * 2); 
+    // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI
+    angle = (angle + Math.PI * 2) % (Math.PI * 2);
     return angle;
 }
 
 /**
- * @description Gets the smaller angle span between two angles. (in radians)
- * 
+ * Calculates the signed angular distance between two angles, taking the shorter path.
+ *
+ * @param from - Starting angle in radians
+ * @param to - Target angle in radians
+ * @returns Signed angular difference in radians, in the range (-π, π]
+ *
+ * @remarks
+ * Returns the shortest angular path from `from` to `to`:
+ * - Positive value: rotate counter-clockwise (positive direction)
+ * - Negative value: rotate clockwise (negative direction)
+ * - Always returns the smaller of the two possible paths
+ *
+ * @example
+ * ```typescript
+ * angleSpan(0, Math.PI/2);        // π/2 (90° ccw)
+ * angleSpan(Math.PI/2, 0);        // -π/2 (90° cw)
+ * angleSpan(0, 3*Math.PI/2);      // -π/2 (shorter to go cw)
+ * angleSpan(3*Math.PI/2, 0);      // π/2 (shorter to go ccw)
+ * angleSpan(0, Math.PI);          // π (180°, ambiguous)
+ * ```
+ *
  * @category Camera
  */
 export function angleSpan(from: number, to: number): number{
@@ -117,7 +223,7 @@ export function angleSpan(from: number, to: number): number{
     from = normalizeAngleZero2TwoPI(from);
     to = normalizeAngleZero2TwoPI(to);
     let angleDiff = to - from;
-    
+
     if(angleDiff > Math.PI){
         angleDiff = - (Math.PI * 2 - angleDiff);
     }
@@ -129,8 +235,20 @@ export function angleSpan(from: number, to: number): number{
 }
 
 /**
- * @description Converts degrees to radians.
- * 
+ * Converts degrees to radians.
+ *
+ * @param deg - Angle in degrees
+ * @returns Equivalent angle in radians
+ *
+ * @example
+ * ```typescript
+ * deg2rad(0);     // 0
+ * deg2rad(90);    // π/2
+ * deg2rad(180);   // π
+ * deg2rad(360);   // 2π
+ * deg2rad(-45);   // -π/4
+ * ```
+ *
  * @category Camera
  */
 export function deg2rad(deg: number): number{
@@ -138,8 +256,20 @@ export function deg2rad(deg: number): number{
 }
 
 /**
- * @description Converts radians to degrees.
- * 
+ * Converts radians to degrees.
+ *
+ * @param rad - Angle in radians
+ * @returns Equivalent angle in degrees
+ *
+ * @example
+ * ```typescript
+ * rad2deg(0);             // 0
+ * rad2deg(Math.PI/2);     // 90
+ * rad2deg(Math.PI);       // 180
+ * rad2deg(2 * Math.PI);   // 360
+ * rad2deg(-Math.PI/4);    // -45
+ * ```
+ *
  * @category Camera
  */
 export function rad2deg(rad: number): number{

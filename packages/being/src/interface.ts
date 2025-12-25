@@ -1,3 +1,31 @@
+/**
+ * Base context interface for state machines.
+ *
+ * @remarks
+ * The context is shared across all states in a state machine and can be used to store data
+ * that persists between state transitions. All custom contexts must extend this interface.
+ *
+ * The setup and cleanup methods provide lifecycle hooks for resource management:
+ * - `setup()`: Called when the context is initialized
+ * - `cleanup()`: Called when the context is destroyed
+ *
+ * @example
+ * ```typescript
+ * interface MyContext extends BaseContext {
+ *   counter: number;
+ *   data: string[];
+ *   setup() {
+ *     this.counter = 0;
+ *     this.data = [];
+ *   }
+ *   cleanup() {
+ *     this.data = [];
+ *   }
+ * }
+ * ```
+ *
+ * @category State Machine Core
+ */
 export interface BaseContext {
     setup(): void;
     cleanup(): void;
@@ -5,40 +33,100 @@ export interface BaseContext {
 
 type NOOP = () => void;
 
+/**
+ * Utility type to check if an object type is empty.
+ * @internal
+ */
 type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
 
 /**
- * @description Utility type to derive a string literal union from a readonly array of string literals.
- * 
- * Example:
- * ```ts
+ * Utility type to derive a string literal union from a readonly array of string literals.
+ *
+ * @remarks
+ * This helper type extracts the element types from a readonly array to create a union type.
+ * Useful for defining state machine states from an array.
+ *
+ * @example
+ * ```typescript
  * const TEST_STATES = ["one", "two", "three"] as const;
  * type TestStates = CreateStateType<typeof TEST_STATES>; // "one" | "two" | "three"
  * ```
+ *
+ * @category Type Utilities
  */
 export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
 
-export type EventArgs<EventPayloadMapping, K> = 
+/**
+ * Type for event arguments with conditional payload requirement.
+ *
+ * @remarks
+ * This utility type determines whether an event requires a payload argument based on the
+ * event payload mapping. If the payload is an empty object, no payload is required.
+ *
+ * @typeParam EventPayloadMapping - Mapping of event names to their payload types
+ * @typeParam K - The event key
+ *
+ * @category Type Utilities
+ */
+export type EventArgs<EventPayloadMapping, K> =
   K extends keyof EventPayloadMapping
     ? IsEmptyObject<EventPayloadMapping[K]> extends true
       ? [event: K] // No payload needed
       : [event: K, payload: EventPayloadMapping[K]] // Payload required
     : [event: K, payload?: unknown]; // Unknown events
 
+/**
+ * No-operation function constant used as a placeholder for optional actions.
+ *
+ * @remarks
+ * Use this when you need to provide a function but don't want it to do anything,
+ * such as for default state transition actions that have no side effects.
+ *
+ * @category State Machine Core
+ */
 export const NO_OP: NOOP = ()=>{};
 
+/**
+ * Result type indicating an event was not handled by the current state.
+ *
+ * @remarks
+ * When a state doesn't have a handler defined for a particular event, it returns this type.
+ * The state machine will not transition and the event is effectively ignored.
+ *
+ * @category State Machine Core
+ */
 export type EventNotHandled = {
     handled: false;
 }
 
 /**
- * @description The result when an event is handled by a state.
- * 
- * Generic parameters:
- * - States: All of the possible states that the state machine can be in.
- * - Output: The output type for this event. Defaults to void.
- * 
- * @category being
+ * Result type when an event is successfully handled by a state.
+ *
+ * @remarks
+ * This type represents a successful event handling result. It can optionally include:
+ * - `nextState`: The state to transition to (if different from current)
+ * - `output`: A return value from the event handler
+ *
+ * @typeParam States - Union of all possible state names in the state machine
+ * @typeParam Output - The output type for this event (defaults to void)
+ *
+ * @example
+ * ```typescript
+ * // Simple transition without output
+ * const result: EventHandled<"IDLE" | "ACTIVE"> = {
+ *   handled: true,
+ *   nextState: "ACTIVE"
+ * };
+ *
+ * // With output value
+ * const resultWithOutput: EventHandled<"IDLE" | "ACTIVE", number> = {
+ *   handled: true,
+ *   nextState: "IDLE",
+ *   output: 42
+ * };
+ * ```
+ *
+ * @category State Machine Core
  */
 export type EventHandled<States extends string, Output = void> = {
     handled: true;
@@ -47,9 +135,19 @@ export type EventHandled<States extends string, Output = void> = {
 }
 
 /**
- * @description The result of handling an event. Either handled (with optional output) or not handled.
- * 
- * @category being
+ * Discriminated union representing the result of event handling.
+ *
+ * @remarks
+ * Every event handler returns an EventResult, which is either:
+ * - {@link EventHandled}: The event was processed successfully
+ * - {@link EventNotHandled}: The event was not recognized/handled
+ *
+ * Use the `handled` discriminant to narrow the type in TypeScript.
+ *
+ * @typeParam States - Union of all possible state names
+ * @typeParam Output - The output type for handled events
+ *
+ * @category State Machine Core
  */
 export type EventResult<States extends string, Output = void> = EventNotHandled | EventHandled<States, Output>;
 
@@ -257,14 +355,74 @@ export type EventGuards<EventPayloadMapping, States extends string, Context exte
 }
 
 /**
- * @description This is the template for the state machine.
- * 
- * You can use this class to create a state machine. Usually this is all you need for the state machine. Unless you need extra functionality.
- * To create a state machine, just instantiate this class and pass in the states, initial state and context.
- * 
- * @see {@link createKmtInputStateMachine} for an example of how to create a state machine.
- * 
- * @category being
+ * Concrete implementation of a finite state machine.
+ *
+ * @remarks
+ * This class provides a complete, ready-to-use state machine implementation. It's generic enough
+ * to handle most use cases without requiring custom extensions.
+ *
+ * ## Features
+ *
+ * - **Type-safe events**: Events and their payloads are fully typed via the EventPayloadMapping
+ * - **State transitions**: Automatic state transitions based on event handlers
+ * - **Event outputs**: Handlers can return values that are included in the result
+ * - **Lifecycle hooks**: States can define `uponEnter` and `beforeExit` callbacks
+ * - **State change listeners**: Subscribe to state transitions
+ * - **Shared context**: All states access the same context object for persistent data
+ *
+ * ## Usage Pattern
+ *
+ * 1. Define your event payload mapping type
+ * 2. Define your states as a string union type
+ * 3. Create state classes extending {@link TemplateState}
+ * 4. Instantiate TemplateStateMachine with your states and initial state
+ *
+ * @typeParam EventPayloadMapping - Object mapping event names to their payload types
+ * @typeParam Context - Context type shared across all states
+ * @typeParam States - Union of all possible state names (string literals)
+ * @typeParam EventOutputMapping - Optional mapping of events to their output types
+ *
+ * @example
+ * Basic vending machine state machine
+ * ```typescript
+ * type Events = {
+ *   insertCoin: { amount: number };
+ *   selectItem: { itemId: string };
+ *   cancel: {};
+ * };
+ *
+ * type States = "IDLE" | "PAYMENT" | "DISPENSING";
+ *
+ * interface VendingContext extends BaseContext {
+ *   balance: number;
+ *   setup() { this.balance = 0; }
+ *   cleanup() {}
+ * }
+ *
+ * const context: VendingContext = {
+ *   balance: 0,
+ *   setup() { this.balance = 0; },
+ *   cleanup() {}
+ * };
+ *
+ * const machine = new TemplateStateMachine<Events, VendingContext, States>(
+ *   {
+ *     IDLE: new IdleState(),
+ *     PAYMENT: new PaymentState(),
+ *     DISPENSING: new DispensingState()
+ *   },
+ *   "IDLE",
+ *   context
+ * );
+ *
+ * // Trigger events
+ * machine.happens("insertCoin", { amount: 100 });
+ * machine.happens("selectItem", { itemId: "A1" });
+ * ```
+ *
+ * @category State Machine Core
+ * @see {@link TemplateState} for creating state implementations
+ * @see {@link StateMachine} for the interface definition
  */
 export class TemplateStateMachine<
     EventPayloadMapping, 
@@ -339,14 +497,88 @@ export class TemplateStateMachine<
     }
 }
 /**
- * @description This is the template for the state.
- * 
- * This is a base template that you can extend to create a state.
- * Unlike the TemplateStateMachine, this class is abstract. You need to implement the specific methods that you need.
- * The core part off the state is the event reactions in which you would define how to handle each event in a state.
- * You can define an eventReactions object that maps only the events that you need. If this state does not need to handle a specific event, you can just not define it in the eventReactions object.
- * 
- * @category being
+ * Abstract base class for state machine states.
+ *
+ * @remarks
+ * This abstract class provides the foundation for implementing individual states in a state machine.
+ * Each state defines how it responds to events through the `eventReactions` object.
+ *
+ * ## Key Concepts
+ *
+ * - **Event Reactions**: Define handlers for events this state cares about. Unhandled events are ignored.
+ * - **Guards**: Conditional logic that determines which state to transition to based on context
+ * - **Lifecycle Hooks**: `uponEnter` and `beforeExit` callbacks for state transition side effects
+ * - **Selective Handling**: Only define reactions for events relevant to this state
+ *
+ * ## Implementation Pattern
+ *
+ * 1. Extend this class for each state in your state machine
+ * 2. Implement the `eventReactions` property with handlers for relevant events
+ * 3. Optionally override `uponEnter` and `beforeExit` for lifecycle logic
+ * 4. Optionally define `guards` and `eventGuards` for conditional transitions
+ *
+ * @typeParam EventPayloadMapping - Object mapping event names to their payload types
+ * @typeParam Context - Context type shared across all states
+ * @typeParam States - Union of all possible state names (string literals)
+ * @typeParam EventOutputMapping - Optional mapping of events to their output types
+ *
+ * @example
+ * Simple state implementation
+ * ```typescript
+ * class IdleState extends TemplateState<MyEvents, MyContext, MyStates> {
+ *   eventReactions = {
+ *     start: {
+ *       action: (context, event) => {
+ *         console.log('Starting...');
+ *         context.startTime = Date.now();
+ *       },
+ *       defaultTargetState: "ACTIVE"
+ *     },
+ *     reset: {
+ *       action: (context, event) => {
+ *         context.counter = 0;
+ *       }
+ *       // No state transition - stays in IDLE
+ *     }
+ *   };
+ *
+ *   uponEnter(context, stateMachine, fromState) {
+ *     console.log(`Entered IDLE from ${fromState}`);
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * State with guards for conditional transitions
+ * ```typescript
+ * class PaymentState extends TemplateState<Events, VendingContext, States> {
+ *   guards = {
+ *     hasEnoughMoney: (context) => context.balance >= context.itemPrice,
+ *     needsChange: (context) => context.balance > context.itemPrice
+ *   };
+ *
+ *   eventReactions = {
+ *     selectItem: {
+ *       action: (context, event) => {
+ *         context.selectedItem = event.itemId;
+ *         context.itemPrice = getPrice(event.itemId);
+ *       },
+ *       defaultTargetState: "IDLE" // Fallback if no guard matches
+ *     }
+ *   };
+ *
+ *   eventGuards = {
+ *     selectItem: [
+ *       { guard: 'hasEnoughMoney', target: 'DISPENSING' },
+ *       // If hasEnoughMoney is false, uses defaultTargetState (IDLE)
+ *     ]
+ *   };
+ * }
+ * ```
+ *
+ * @category State Machine Core
+ * @see {@link TemplateStateMachine} for the state machine implementation
+ * @see {@link EventReactions} for defining event handlers
  */
 export abstract class TemplateState<
     EventPayloadMapping, 
@@ -407,26 +639,40 @@ export abstract class TemplateState<
 
 
 /**
- * Example usage
- * ```ts
- type TestSubStates = "subOne" | "subTwo" | "subThree";
- const TEST_STATES = ["one", "two", "three"] as const;
- type TestStates = CreateStateType<typeof TEST_STATES>;
- type AllStates = TestStates | TestSubStates;
-
- const isTestState = createStateGuard(TEST_STATES);
-
-function test(s: AllStates) {
-	if (isTestState(s)) {
-		// s: TestStates
-    }
-}
+ * Creates a type guard function for checking if a value belongs to a specific set of states.
+ *
+ * @remarks
+ * This utility function generates a TypeScript type guard that narrows a string type
+ * to a specific union of string literals. Useful when you have multiple state types
+ * and need to distinguish between them at runtime.
+ *
+ * @typeParam T - String literal type to guard for
+ * @param set - Readonly array of string literals defining the valid states
+ * @returns A type guard function that checks if a string is in the set
+ *
+ * @example
+ * Creating state guards for hierarchical state machines
+ * ```typescript
+ * type MainStates = "idle" | "active" | "paused";
+ * type SubStates = "loading" | "processing" | "complete";
+ * type AllStates = MainStates | SubStates;
+ *
+ * const MAIN_STATES = ["idle", "active", "paused"] as const;
+ * const isMainState = createStateGuard(MAIN_STATES);
+ *
+ * function handleState(state: AllStates) {
+ *   if (isMainState(state)) {
+ *     // TypeScript knows state is MainStates here
+ *     console.log('Main state:', state);
+ *   } else {
+ *     // TypeScript knows state is SubStates here
+ *     console.log('Sub state:', state);
+ *   }
+ * }
  * ```
-
- * @param set 
- * @returns 
+ *
+ * @category Type Utilities
  */
-
 export function createStateGuard<T extends string>(set: readonly T[]) {
     return (s: string): s is T => set.includes(s as T);
 }

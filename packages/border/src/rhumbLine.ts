@@ -7,6 +7,38 @@ import { GeoCoord } from "./projection";
 /* www.movable-type.co.uk/scripts/js/geodesy/geodesy-library.html#dms                             */
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
 
+/**
+ * Calculates the distance along a rhumb line between two points.
+ *
+ * @remarks
+ * A rhumb line (also called loxodrome) is a path of constant bearing. Unlike great
+ * circles, rhumb lines appear as straight lines on Mercator projections, making them
+ * easier for navigation.
+ *
+ * Rhumb lines are generally slightly longer than great circle routes, except when
+ * traveling due east/west along the equator or due north/south.
+ *
+ * Uses Earth's mean radius of 6,371,000 meters.
+ *
+ * @param startCoord - The starting geographic coordinate
+ * @param endCoord - The ending geographic coordinate
+ * @returns The distance in meters along the rhumb line
+ *
+ * @example
+ * ```typescript
+ * const start = { latitude: 50.0, longitude: -5.0 };
+ * const end = { latitude: 58.0, longitude: 3.0 };
+ *
+ * const distance = rhumbDistance(start, end);
+ * console.log('Rhumb distance:', distance / 1000, 'km');
+ *
+ * // Compare with great circle distance
+ * const gcDistance = greatCircleDistance(start, end);
+ * console.log('Great circle is', (distance - gcDistance) / 1000, 'km shorter');
+ * ```
+ *
+ * @category Rhumb Line
+ */
 export function rhumbDistance(startCoord: GeoCoord, endCoord: GeoCoord): number{
     const R = 6371e3; // metres
     const φ1 = startCoord.latitude * Math.PI/180; // φ, λ in radians
@@ -23,6 +55,31 @@ export function rhumbDistance(startCoord: GeoCoord, endCoord: GeoCoord): number{
     return dist;
 }
 
+/**
+ * Calculates the constant bearing along a rhumb line.
+ *
+ * @remarks
+ * Unlike great circles where the bearing changes along the path, rhumb lines
+ * maintain a constant bearing. This makes them simpler for navigation - you can
+ * follow a single compass direction.
+ *
+ * @param startCoord - The starting geographic coordinate
+ * @param endCoord - The ending geographic coordinate
+ * @returns The constant bearing in degrees (0-360)
+ *
+ * @example
+ * ```typescript
+ * const start = { latitude: 50.0, longitude: -5.0 };
+ * const end = { latitude: 58.0, longitude: 3.0 };
+ *
+ * const bearing = rhumbBearing(start, end);
+ * console.log('Constant bearing:', bearing, 'degrees');
+ *
+ * // This bearing stays constant along the entire path
+ * ```
+ *
+ * @category Rhumb Line
+ */
 export function rhumbBearing(startCoord: GeoCoord, endCoord: GeoCoord): number{
     const φ1 = startCoord.latitude * Math.PI / 180; // φ, λ in radians
     const φ2 = endCoord.latitude * Math.PI / 180;
@@ -36,6 +93,32 @@ export function rhumbBearing(startCoord: GeoCoord, endCoord: GeoCoord): number{
     return brng;
 }
 
+/**
+ * Calculates the destination point given a start point, constant bearing, and distance on a rhumb line.
+ *
+ * @remarks
+ * Starting from a given point and traveling at a constant bearing for a given
+ * distance, this calculates where you'll end up. The bearing remains constant
+ * throughout the journey.
+ *
+ * This is the rhumb line equivalent of {@link destinationFromOriginOnGreatCircle}.
+ *
+ * @param startCoord - The starting geographic coordinate
+ * @param bearing - The constant bearing in degrees (0 = north, 90 = east, etc.)
+ * @param distance - The distance to travel in meters
+ * @returns The destination coordinate
+ *
+ * @example
+ * ```typescript
+ * const start = { latitude: 40.0, longitude: -74.0 };
+ *
+ * // Travel 500km on constant bearing of 45 degrees (northeast)
+ * const destination = destinationFromOriginOnRhumbLine(start, 45, 500000);
+ * console.log('Destination:', destination);
+ * ```
+ *
+ * @category Rhumb Line
+ */
 export function destinationFromOriginOnRhumbLine(startCoord: GeoCoord, bearing: number, distance: number): GeoCoord{
     const R = 6371e3; // metres
     const φ1 = startCoord.latitude * Math.PI / 180; // φ, λ in radians
@@ -57,6 +140,27 @@ export function destinationFromOriginOnRhumbLine(startCoord: GeoCoord, bearing: 
     return {latitude: φ2, longitude: λ2};
 }
 
+/**
+ * Calculates the midpoint along a rhumb line.
+ *
+ * @remarks
+ * Finds the point exactly halfway along a rhumb line path between two points.
+ *
+ * @param startCoord - The starting geographic coordinate
+ * @param endCoord - The ending geographic coordinate
+ * @returns The midpoint on the rhumb line path
+ *
+ * @example
+ * ```typescript
+ * const start = { latitude: 50.0, longitude: -5.0 };
+ * const end = { latitude: 58.0, longitude: 3.0 };
+ *
+ * const mid = midPointOnRhumbLine(start, end);
+ * console.log('Midpoint:', mid);
+ * ```
+ *
+ * @category Rhumb Line
+ */
 export function midPointOnRhumbLine(startCoord: GeoCoord, endCoord: GeoCoord): GeoCoord{
     let λ1 = startCoord.longitude * Math.PI / 180;  
     const λ2 = endCoord.longitude * Math.PI / 180;

@@ -1,3 +1,22 @@
+/**
+ * Input state machine module exports.
+ *
+ * @remarks
+ * This module provides state machines for interpreting raw input events into high-level gestures.
+ * Separate state machines handle keyboard/mouse/trackpad (KMT) and touch input.
+ *
+ * ## Components
+ *
+ * - **KMT State Machine**: {@link createKmtInputStateMachine} for keyboard/mouse/trackpad gestures
+ * - **Touch State Machine**: {@link createTouchInputStateMachine} for touch gestures (pan, pinch, rotate)
+ * - **Input Contexts**: {@link ObservableInputTracker}, {@link TouchInputTracker} for tracking input state
+ *
+ * @see {@link createKmtInputStateMachine} for KMT gesture recognition
+ * @see {@link createTouchInputStateMachine} for touch gesture recognition
+ *
+ * @module
+ */
+
 export * from "./kmt-input-context";
 export * from "./touch-input-context";
 export * from "./touch-input-state-machine";

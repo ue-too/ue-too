@@ -17,31 +17,155 @@ import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchI
 import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
 
 /**
- * Usage
+ * Main user-facing API class that provides an infinite canvas with pan, zoom, and rotate capabilities.
+ *
+ * The Board class is the primary entry point for using the board package. It integrates all subsystems
+ * including camera management, input handling, and state machines into a simple, unified API for
+ * creating interactive 2D canvases with advanced camera controls.
+ *
+ * @remarks
+ * ## Architecture Overview
+ *
+ * The Board class orchestrates several subsystems:
+ *
+ * - **Camera System**: Manages viewport transformations (pan/zoom/rotate) through {@link ObservableBoardCamera}.
+ *   The camera can be configured with boundaries, zoom limits, and various movement constraints.
+ *
+ * - **Input System**: Processes user input through state machines for both mouse/keyboard/trackpad (KMT)
+ *   and touch events. Input is parsed, interpreted, and translated into camera movements.
+ *
+ * - **Camera Rig**: Enforces constraints and restrictions on camera movement (boundaries, zoom limits,
+ *   clamping behavior). See {@link CameraRig} for details.
+ *
+ * - **Camera Multiplexer**: Coordinates between different camera control sources (user input, animations,
+ *   programmatic control) to ensure smooth transitions. See {@link CameraMux} for details.
+ *
+ * ## Coordinate Systems
+ *
+ * The Board supports three coordinate systems:
+ *
+ * 1. **World Coordinates**: The infinite canvas space where your content lives. When the camera is at
+ *    position (0, 0) with no zoom or rotation, world coordinates map directly to viewport coordinates.
+ *
+ * 2. **Viewport Coordinates**: The visible area of the canvas relative to the camera center. The camera
+ *    center is at (0, 0) in viewport space, with coordinates extending in both directions based on the
+ *    canvas size.
+ *
+ * 3. **Window/Canvas Coordinates**: The browser's coordinate system, with (0, 0) at the top-left corner
+ *    of the canvas element. Use {@link convertWindowPoint2WorldCoord} to convert from window to world space.
+ *
+ * By default, {@link alignCoordinateSystem} is `true`, which means the Y-axis points down (standard HTML
+ * canvas orientation). Set it to `false` to use a mathematical coordinate system where Y points up.
+ *
+ * ## Main Features
+ *
+ * - **Camera Control**: Pan, zoom, and rotate the viewport through user input or programmatic API
+ * - **Boundaries**: Define world-space boundaries to constrain camera movement
+ * - **Zoom Limits**: Set minimum and maximum zoom levels
+ * - **Input Modes**: Support for mouse/keyboard/trackpad and touch input with customizable parsers
+ * - **Event System**: Subscribe to camera events (pan, zoom, rotate) and input events
+ * - **Coordinate Conversion**: Convert between window and world coordinates
+ * - **Flexible Configuration**: Extensive options for restricting/clamping camera movement
+ *
+ * @example
+ * Basic setup with drawing
  * ```typescript
  * const canvasElement = document.querySelector("canvas") as HTMLCanvasElement;
  * const board = new Board(canvasElement);
- * 
+ *
  * function draw(timestamp: number) {
  *   board.step(timestamp);
- * 
- *   // because board can be initialized without a canvas element, the context can be undefined until the canvas is attached
+ *
+ *   // Because board can be initialized without a canvas element,
+ *   // the context can be undefined until the canvas is attached
  *   if(board.context == undefined) {
  *     return;
  *   }
- * 
- *   // draw after the board has stepped
- *   // the coordinate system is the same as before; just that (0, 0) is at the center of the canvas when the camera position is at (0, 0)
+ *
+ *   // Draw after the board has stepped
+ *   // The coordinate system has (0, 0) at the center of the canvas when camera position is at (0, 0)
  *   board.context.beginPath();
  *   board.context.rect(0, 0, 100, 100);
  *   board.context.fill();
- * 
+ *
  *   requestAnimationFrame(draw);
  * }
- * 
+ *
+ * requestAnimationFrame(draw);
  * ```
+ *
+ * @example
+ * Handling camera and input events
+ * ```typescript
+ * const board = new Board(canvasElement);
+ *
+ * // Listen to camera pan events
+ * board.on('pan', (event, cameraState) => {
+ *   console.log('Camera panned to:', cameraState.position);
+ * });
+ *
+ * // Listen to camera zoom events
+ * board.on('zoom', (event, cameraState) => {
+ *   console.log('Camera zoom level:', cameraState.zoomLevel);
+ * });
+ *
+ * // Listen to raw input events (before camera movement)
+ * board.onInput('pan', (event) => {
+ *   console.log('User is panning');
+ * });
+ * ```
+ *
+ * @example
+ * Configuring boundaries and zoom limits
+ * ```typescript
+ * const board = new Board(canvasElement);
+ *
+ * // Set world boundaries
+ * board.camera.boundaries = {
+ *   min: { x: -1000, y: -1000 },
+ *   max: { x: 1000, y: 1000 }
+ * };
+ *
+ * // Set zoom limits
+ * board.camera.setMinZoomLevel(0.1);
+ * board.camera.setMaxZoomLevel(5.0);
+ *
+ * // Ensure entire viewport stays within boundaries
+ * board.limitEntireViewPort = true;
+ *
+ * // Clamp camera position to boundaries
+ * board.clampTranslation = true;
+ * board.clampZoom = true;
+ * ```
+ *
+ * @example
+ * Converting window coordinates to world coordinates
+ * ```typescript
+ * const board = new Board(canvasElement);
+ *
+ * canvasElement.addEventListener('click', (event) => {
+ *   const windowPoint = { x: event.clientX, y: event.clientY };
+ *   const worldPoint = board.convertWindowPoint2WorldCoord(windowPoint);
+ *   console.log('Clicked at world position:', worldPoint);
+ * });
+ * ```
+ *
+ * @example
+ * Using fullscreen mode
+ * ```typescript
+ * const board = new Board();
+ * board.fullScreen = true; // Canvas will resize with window
+ *
+ * // Attach canvas later
+ * const canvasElement = document.createElement('canvas');
+ * document.body.appendChild(canvasElement);
+ * board.attach(canvasElement);
+ * ```
+ *
  * @category Board
- * 
+ * @see {@link ObservableBoardCamera} for camera API details
+ * @see {@link CameraRig} for camera constraint configuration
+ * @see {@link CameraMux} for camera control coordination
  */
 export default class Board {
     
@@ -64,6 +188,84 @@ export default class Board {
 
     private lastUpdateTime: number = 0;
 
+    /**
+     * Creates a new Board instance with an optional canvas element.
+     *
+     * The constructor initializes all subsystems including the camera, input parsers, state machines,
+     * and event publishers. The board can be created with or without a canvas element - if no canvas
+     * is provided, you can attach one later using {@link attach}.
+     *
+     * @param canvas - Optional HTMLCanvasElement to attach to the board. If provided, the board will
+     *   immediately initialize with this canvas. If omitted, you must call {@link attach} before the
+     *   board can be used.
+     * @param debug - Optional debug flag that enables `willReadFrequently` hint on the canvas context,
+     *   which optimizes the canvas for frequent readback operations. Default is `false`. Only use this
+     *   if you need to frequently read pixel data from the canvas.
+     *
+     * @remarks
+     * ## Initialization Sequence
+     *
+     * When the constructor is called, it performs the following initialization:
+     *
+     * 1. **Camera Setup**: Creates a {@link DefaultBoardCamera} with default boundaries of ±50,000 units
+     *    in both X and Y directions. This provides a large working area for most use cases.
+     *
+     * 2. **Canvas Proxy**: Initializes a {@link CanvasProxy} that observes canvas dimension changes and
+     *    automatically updates the camera's viewport dimensions.
+     *
+     * 3. **Camera Rig**: Creates a {@link CameraRig} with default configuration:
+     *    - `limitEntireViewPort: true` - Entire viewport is constrained within boundaries
+     *    - `clampTranslation: true` - Camera position is clamped to boundaries
+     *    - `clampZoom: true` - Zoom level is clamped to min/max limits
+     *    - All translation restrictions are disabled by default
+     *
+     * 4. **Input System**: Initializes both keyboard/mouse/trackpad (KMT) and touch input parsers,
+     *    state machines, and the input orchestrator that coordinates camera control.
+     *
+     * 5. **Canvas Attachment** (if canvas provided): If a canvas element is provided, it's immediately
+     *    attached and the viewport dimensions are synchronized with the canvas size.
+     *
+     * ## Default Configuration
+     *
+     * The board is created with sensible defaults:
+     * - World boundaries: (-50000, -50000) to (50000, 50000)
+     * - Coordinate system: Aligned with HTML canvas (Y-axis points down)
+     * - Camera position: (0, 0)
+     * - Zoom level: 1.0
+     * - Rotation: 0 radians
+     * - Full screen: disabled
+     *
+     * You can customize these defaults after construction by setting properties on the board or camera.
+     *
+     * @example
+     * Create board with canvas element
+     * ```typescript
+     * const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+     * const board = new Board(canvas);
+     * // Board is ready to use immediately
+     * ```
+     *
+     * @example
+     * Create board without canvas, attach later
+     * ```typescript
+     * const board = new Board();
+     * // ... later, when canvas is ready
+     * const canvas = document.createElement('canvas');
+     * document.body.appendChild(canvas);
+     * board.attach(canvas);
+     * ```
+     *
+     * @example
+     * Enable debug mode for pixel readback
+     * ```typescript
+     * const board = new Board(canvas, true);
+     * // Now getImageData() and similar operations will be optimized
+     * ```
+     *
+     * @group LifeCycle
+     * @see {@link attach} for attaching a canvas after construction
+     * @see {@link tearDown} for cleanup when done with the board
+     */
     constructor(canvas?: HTMLCanvasElement, debug: boolean = false){
         const camera = new DefaultBoardCamera();
         const bound = 50000;
@@ -120,6 +322,75 @@ export default class Board {
         this.camera.viewPortWidth = canvasDimensions.width;
     }
 
+    /**
+     * Attaches a canvas element to the board, enabling rendering and input handling.
+     *
+     * This method connects a canvas element to the board's rendering and input systems. It must be
+     * called before the board can be used if no canvas was provided to the constructor. If a canvas
+     * was already attached, this method will replace it with the new canvas.
+     *
+     * @param canvas - The HTMLCanvasElement to attach to the board. This canvas will be used for
+     *   rendering and will receive all input events.
+     * @param debug - Optional debug flag that enables `willReadFrequently` hint on the canvas context.
+     *   Default is `false`. Set to `true` if you need to frequently read pixel data from the canvas,
+     *   which will optimize the context for readback operations.
+     *
+     * @remarks
+     * When a canvas is attached, the following happens:
+     *
+     * 1. **Context Creation**: A 2D rendering context is obtained from the canvas with the specified
+     *    debug settings.
+     *
+     * 2. **Input Parser Attachment**: Both KMT (keyboard/mouse/trackpad) and touch input parsers are
+     *    attached to the canvas to begin receiving input events.
+     *
+     * 3. **Canvas Proxy Attachment**: The canvas proxy begins observing the canvas for dimension changes,
+     *    automatically updating the camera's viewport dimensions when the canvas is resized.
+     *
+     * 4. **Zoom Level Synchronization**: If {@link limitEntireViewPort} is enabled, the minimum zoom
+     *    level is calculated and set to ensure the entire viewport can fit within the camera boundaries.
+     *
+     * 5. **Coordinate System Setup**: Both standard and Y-reversed rendering contexts are created to
+     *    support both coordinate system modes (see {@link alignCoordinateSystem}).
+     *
+     * @example
+     * Attach canvas during construction
+     * ```typescript
+     * const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+     * const board = new Board(canvas);
+     * // No need to call attach() - already attached
+     * ```
+     *
+     * @example
+     * Attach canvas after construction
+     * ```typescript
+     * const board = new Board();
+     *
+     * // Later, when canvas is ready...
+     * const canvas = document.createElement('canvas');
+     * canvas.width = 800;
+     * canvas.height = 600;
+     * document.body.appendChild(canvas);
+     *
+     * board.attach(canvas);
+     * // Board is now ready to use
+     * ```
+     *
+     * @example
+     * Switch to a different canvas
+     * ```typescript
+     * const board = new Board(canvas1);
+     *
+     * // Later, switch to a different canvas
+     * const canvas2 = document.querySelector('#other-canvas') as HTMLCanvasElement;
+     * board.attach(canvas2);
+     * // Board is now rendering to canvas2
+     * ```
+     *
+     * @group LifeCycle
+     * @see {@link tearDown} for detaching and cleaning up
+     * @see {@link context} for accessing the rendering context
+     */
     attach(canvas: HTMLCanvasElement, debug: boolean = false){
         const newContext = canvas.getContext('2d', {willReadFrequently: debug});
         if(newContext == null){

@@ -4,29 +4,84 @@ import type { InputOrchestrator } from "../input-orchestrator";
 import { EventArgs } from "@ue-too/being";
 
 /**
- * @description The touch event parser.
- * This is for the interoperability between the vanilla javascript and the pixijs event system.
+ * Interface for touch event parsers.
  *
- * @category Event Parser
+ * @remarks
+ * Touch event parsers bridge DOM TouchEvents and the touch state machine.
+ * They provide granular control over which gesture types are enabled.
+ *
+ * @category Raw Input Parser
  */
 export interface TouchEventParser {
+    /** Whether all touch input is disabled */
     disabled: boolean;
+    /** Whether pan gestures are disabled */
     panDisabled: boolean;
+    /** Whether zoom gestures are disabled */
     zoomDisabled: boolean;
+    /** Whether rotation gestures are disabled (currently unused) */
     rotateDisabled: boolean;
+    /** Initializes event listeners */
     setUp(): void;
+    /** Removes event listeners and cleans up */
     tearDown(): void;
+    /** Attaches to a new canvas element */
     attach(canvas: HTMLCanvasElement): void;
+    /** The state machine that processes parsed events */
     stateMachine: TouchInputStateMachine;
+    /** The orchestrator that handles state machine outputs */
     orchestrator: InputOrchestrator;
 }
 
 /**
- * @description The vanilla touch event parser.
- * This parser converts the raw events to events that can be used by the input state machine.
- * The parser has a direct dependency on the state machine and requires an orchestrator for consistency.
+ * DOM event parser for touch input.
  *
- * @category Event Parser
+ * @remarks
+ * This parser converts raw DOM TouchEvents into state machine events and coordinates
+ * with the orchestrator to process outputs. It serves as the entry point for all touch
+ * input in the input interpretation pipeline.
+ *
+ * **Event Flow**:
+ * ```
+ * DOM TouchEvents → Parser → State Machine → Parser → Orchestrator → Camera/Observers
+ * ```
+ *
+ * **Responsibilities**:
+ * 1. Listen for DOM touch events (touchstart/move/end/cancel)
+ * 2. Extract touch point data (identifier, x, y)
+ * 3. Convert to state machine event format
+ * 4. Send events to the state machine
+ * 5. Forward state machine outputs to the orchestrator
+ *
+ * **Touch Point Extraction**:
+ * - touchstart/touchend: Uses `changedTouches` (only new/removed touches)
+ * - touchmove: Uses `targetTouches` (all touches on the canvas)
+ *
+ * **Gesture Control**:
+ * Individual gesture types (pan, zoom, rotate) can be disabled independently,
+ * though currently the state machine outputs are filtered by the orchestrator
+ * rather than the parser.
+ *
+ * The parser prevents default touch behavior to avoid browser scroll/zoom
+ * interfering with canvas gestures.
+ *
+ * @category Raw Input Parser
+ *
+ * @example
+ * ```typescript
+ * const canvasElement = document.getElementById("canvas");
+ * const stateMachine = createTouchInputStateMachine(context);
+ * const orchestrator = new InputOrchestrator(cameraMux, cameraRig, publisher);
+ * const parser = new VanillaTouchEventParser(stateMachine, orchestrator, canvasElement);
+ *
+ * parser.setUp(); // Starts listening for touch events
+ *
+ * // Disable zoom gestures temporarily
+ * parser.zoomDisabled = true;
+ *
+ * // Cleanup when done
+ * parser.tearDown();
+ * ```
  */
 export class VanillaTouchEventParser implements TouchEventParser {
 
