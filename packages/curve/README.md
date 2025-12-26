@@ -1,5 +1,7 @@
 # @ue-too/curve
 
+This is a library that basically follows the algorithms in Pomax's superb [Primer on Bezier Curves](https://pomax.github.io/bezierinfo/) by Pomax. Of course, with my own interpretations on the inputs and outputs.
+
 Bezier curve and geometric path library for TypeScript canvas applications.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/curve.svg)](https://www.npmjs.com/package/@ue-too/curve)
