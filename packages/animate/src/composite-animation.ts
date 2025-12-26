@@ -1,10 +1,31 @@
 import { AnimatableAttributeHelper, Keyframe } from "./animatable-attribute";
 
-
+/**
+ * Linear easing function (no easing).
+ *
+ * @param percentage - Animation progress (0.0 to 1.0)
+ * @returns Same as input (linear progression)
+ *
+ * @category Easing
+ */
 export const linear = (percentage: number) => {
     return percentage;
 }
 
+/**
+ * Core interface for all animators in the animation system.
+ *
+ * @remarks
+ * The Animator interface defines the contract for both individual animations ({@link Animation})
+ * and composite animations ({@link CompositeAnimation}). All animators support:
+ * - Lifecycle control (start, stop, pause, resume)
+ * - Duration management with delays and drag time
+ * - Looping with optional max loop count
+ * - Parent-child relationships for composition
+ * - Event callbacks for start and end
+ *
+ * @category Core
+ */
 export interface Animator{
     loops: boolean;
     duration: number;
@@ -30,14 +51,65 @@ export interface Animator{
     playing: boolean;
 }
 
+/**
+ * Function type for unsubscribing from animation events.
+ *
+ * @category Core
+ */
 export type UnSubscribe = () => void;
 
+/**
+ * Interface for containers that hold and manage child animators.
+ *
+ * @remarks
+ * Implemented by {@link CompositeAnimation} to manage hierarchical animation structures.
+ * Handles duration updates and prevents cyclic dependencies.
+ *
+ * @category Core
+ */
 export interface AnimatorContainer {
     updateDuration(): void;
     checkCyclicChildren(): boolean;
     containsAnimation(animationInInterest: Animator): boolean;
 }
 
+/**
+ * Container for sequencing and composing multiple animations.
+ *
+ * @remarks
+ * CompositeAnimation allows you to orchestrate complex animation sequences by:
+ * - **Sequencing**: Add animations to play one after another
+ * - **Overlapping**: Start animations before previous ones complete
+ * - **Synchronizing**: Play multiple animations simultaneously
+ * - **Nesting**: Compose animations contain other composite animations
+ *
+ * ## Key Features
+ *
+ * - Add animations at specific time offsets
+ * - Position animations relative to other animations (`addAnimationAfter`, `addAnimationBefore`)
+ * - Automatic duration calculation based on child animations
+ * - Hierarchical composition for complex sequences
+ * - Prevent cyclic animation dependencies
+ *
+ * @example
+ * Basic sequence
+ * ```typescript
+ * const sequence = new CompositeAnimation();
+ *
+ * // Add first animation at start (time 0)
+ * sequence.addAnimation('fadeIn', fadeAnimation, 0);
+ *
+ * // Add second animation after first completes
+ * sequence.addAnimationAfter('slideIn', slideAnimation, 'fadeIn');
+ *
+ * // Add third animation to overlap with second (100ms after second starts)
+ * sequence.addAnimationAdmist('scaleUp', scaleAnimation, 'slideIn', 100);
+ *
+ * sequence.start();
+ * ```
+ *
+ * @category Core
+ */
 export class CompositeAnimation implements Animator, AnimatorContainer{
 
     private animations: Map<string, {animator: Animator, startTime?: number}>;
@@ -533,6 +605,54 @@ export class CompositeAnimation implements Animator, AnimatorContainer{
     }
 }
 
+/**
+ * Keyframe-based animation for a single value.
+ *
+ * @remarks
+ * The Animation class interpolates a value through a series of keyframes over time.
+ * It handles:
+ * - Keyframe interpolation with binary search for efficiency
+ * - Easing functions for smooth motion curves
+ * - Reverse playback
+ * - Looping with optional max loop count
+ * - Delays before start and drag time after completion
+ * - Lifecycle callbacks
+ *
+ * ## How It Works
+ *
+ * 1. Define keyframes at percentages (0.0 to 1.0) along the timeline
+ * 2. Provide a callback to apply the animated value
+ * 3. Provide an interpolation helper for the value type
+ * 4. Call `animate(deltaTime)` each frame to progress the animation
+ *
+ * @typeParam T - The type of value being animated
+ *
+ * @example
+ * Animating a number with easing
+ * ```typescript
+ * let opacity = 0;
+ *
+ * const fadeIn = new Animation(
+ *   [
+ *     { percentage: 0, value: 0 },
+ *     { percentage: 1, value: 1, easingFn: (t) => t * t } // Ease-in
+ *   ],
+ *   (value) => { opacity = value; },
+ *   numberHelperFunctions,
+ *   1000 // 1 second duration
+ * );
+ *
+ * fadeIn.start();
+ *
+ * // In animation loop
+ * function loop(deltaTime: number) {
+ *   fadeIn.animate(deltaTime);
+ *   element.style.opacity = opacity;
+ * }
+ * ```
+ *
+ * @category Core
+ */
 export class Animation<T> implements Animator{
 
     private localTime: number; // local time starting from 0 up til duration

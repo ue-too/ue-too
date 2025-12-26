@@ -8,8 +8,59 @@ import { PinJointConstraint } from "./constraint";
 import { PairManager, PairEvents } from "./pair-manager";
 import { canCollide } from "./collision-filter";
 
+/**
+ * Spatial indexing algorithm types.
+ *
+ * @remarks
+ * Different algorithms have different performance characteristics:
+ * - **quadtree**: Best for static or mostly-static worlds
+ * - **dynamictree**: Good balance for mixed static/dynamic
+ * - **sap**: Best for many dynamic bodies (sweep-and-prune)
+ *
+ * @category Core
+ */
 export type SpatialIndexType = 'quadtree' | 'dynamictree' | 'sap';
 
+/**
+ * Main physics world managing rigid body simulation.
+ *
+ * @remarks
+ * The World class is the main entry point for physics simulation. It manages
+ * all rigid bodies, runs collision detection and response, enforces constraints,
+ * and provides performance optimizations like sleeping and spatial indexing.
+ *
+ * ### Simulation Loop
+ *
+ * Call `world.step(deltaTime)` each frame to advance the simulation. This:
+ * 1. Updates sleeping states
+ * 2. Detects collisions (broad and narrow phase)
+ * 3. Resolves collisions with impulses
+ * 4. Enforces constraints
+ * 5. Updates body positions and velocities
+ *
+ * ### Performance Tuning
+ *
+ * - Choose appropriate spatial index for your use case
+ * - Enable sleeping for better performance with many bodies
+ * - Use collision filtering to reduce collision checks
+ *
+ * @example
+ * Basic setup
+ * ```typescript
+ * const world = new World(2000, 2000, 'dynamictree');
+ *
+ * // Add bodies
+ * const ball = new Circle({ x: 0, y: 100 }, 20, 0, 10, false);
+ * world.addRigidBody('ball', ball);
+ *
+ * // Simulation loop
+ * function update(dt: number) {
+ *   world.step(dt);
+ * }
+ * ```
+ *
+ * @category Core
+ */
 export class World {
     private rigidBodyList: RigidBody[];
     private rigidBodyMap: Map<string, RigidBody>;

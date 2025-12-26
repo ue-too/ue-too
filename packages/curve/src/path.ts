@@ -1,25 +1,50 @@
 import { Line } from "./line";
 import { Point } from "@ue-too/math";
 
+/**
+ * Result type for advancing within curve bounds.
+ * @category Types
+ */
 type AdvanceAtTWithLengthWithinCurveRes = {
     type: "withinCurve";
     tVal: number;
     point: Point;
 }
 
+/**
+ * Result type for advancing before curve start.
+ * @category Types
+ */
 type AdvanceAtWithLengthBeforeCurveRes = {
     type: "beforeCurve";
     remainLength: number;
 }
 
+/**
+ * Result type for advancing after curve end.
+ * @category Types
+ */
 type AdvanceAtWithLengthAfterCurveRes = {
     type: "afterCurve";
     remainLength: number;
 }
 
+/**
+ * Combined result type for advancing outside curve bounds.
+ * @category Types
+ */
 type AdvanceAtTWithLengthOutofCurveRes = AdvanceAtWithLengthBeforeCurveRes | AdvanceAtWithLengthAfterCurveRes;
 
+/**
+ * Result type for advancing along curve.
+ * @category Types
+ */
 type AdvanceAtTWithLengthRes = AdvanceAtTWithLengthWithinCurveRes | AdvanceAtTWithLengthOutofCurveRes;
+
+/**
+ * Path made of sequential line segments.
+ * @category Core
+ */
 export class Path {
 
     private lines: Line[];

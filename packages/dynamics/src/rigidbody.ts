@@ -1,17 +1,37 @@
 import { PointCal, Point } from "@ue-too/math";
 import { CollisionFilter, DEFAULT_COLLISION_FILTER } from "./collision-filter";
 
+/**
+ * Rigid body interface for 2D physics simulation.
+ *
+ * @remarks
+ * Represents a physical object in the physics world with mass, velocity,
+ * rotation, and collision properties. Can be either static (immovable) or
+ * dynamic (responds to forces).
+ *
+ * Implemented by {@link Circle} and {@link Polygon} classes.
+ *
+ * @category Core
+ */
 export interface RigidBody {
+    /** Center position in world coordinates */
     center: Point;
+    /** Rotation angle in radians */
     orientationAngle: number;
+    /** Linear velocity (pixels/second) */
     linearVelocity: Point;
+    /** Angular velocity (radians/second) */
     angularVelocity: number;
+    /** Axis-Aligned Bounding Box for broad phase collision */
     AABB: {min: Point, max: Point};
+    /** Mass in arbitrary units (affects force response) */
     mass: number;
+    /** Static friction coefficient (0-1) */
     staticFrictionCoeff: number;
+    /** Moment of inertia (rotational mass) */
     momentOfInertia: number;
-    
-    // Collision filtering
+
+    /** Collision filtering configuration */
     collisionFilter: CollisionFilter;
     
     // Sleeping system

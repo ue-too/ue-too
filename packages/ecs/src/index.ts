@@ -1,14 +1,140 @@
-/** This is a direct port of the tutorial from https://austinmorlan.com/posts/entity_component_system/  with slight modifications */
+/**
+ * @packageDocumentation
+ * Entity Component System (ECS) implementation for TypeScript.
+ *
+ * @remarks
+ * The `@ue-too/ecs` package provides a high-performance Entity Component System architecture
+ * based on the tutorial from https://austinmorlan.com/posts/entity_component_system/
+ *
+ * ## ECS Architecture
+ *
+ * - **Entities**: Unique identifiers (numbers) representing game objects
+ * - **Components**: Data containers attached to entities
+ * - **Systems**: Logic that operates on entities with specific component combinations
+ * - **Signatures**: Bit flags indicating which components an entity has
+ *
+ * ## Key Features
+ *
+ * - **Efficient Storage**: Component arrays using sparse-set data structure
+ * - **Fast Iteration**: Dense packing for cache-friendly iteration
+ * - **Type-Safe**: TypeScript generics for component type safety
+ * - **Signature Matching**: Automatic system updates when entity signatures change
+ * - **Pooling**: Entity ID recycling for memory efficiency
+ *
+ * ## Core Classes
+ *
+ * - {@link Coordinator}: Main ECS coordinator managing all subsystems
+ * - {@link EntityManager}: Creates and destroys entities
+ * - {@link ComponentManager}: Registers components and manages component data
+ * - {@link SystemManager}: Registers systems and maintains entity sets
+ * - {@link ComponentArray}: Efficient sparse-set storage for component data
+ *
+ * @example
+ * Basic ECS usage
+ * ```typescript
+ * import { Coordinator } from '@ue-too/ecs';
+ *
+ * // Define component types
+ * type Position = { x: number; y: number };
+ * type Velocity = { x: number; y: number };
+ *
+ * // Create coordinator
+ * const coordinator = new Coordinator();
+ *
+ * // Register components
+ * coordinator.registerComponent<Position>('Position');
+ * coordinator.registerComponent<Velocity>('Velocity');
+ *
+ * // Create entity with components
+ * const entity = coordinator.createEntity();
+ * coordinator.addComponentToEntity('Position', entity, { x: 0, y: 0 });
+ * coordinator.addComponentToEntity('Velocity', entity, { x: 1, y: 1 });
+ *
+ * // Query components
+ * const pos = coordinator.getComponentFromEntity<Position>('Position', entity);
+ * console.log('Position:', pos);
+ * ```
+ *
+ * @example
+ * System registration
+ * ```typescript
+ * import { Coordinator, System } from '@ue-too/ecs';
+ *
+ * const coordinator = new Coordinator();
+ * coordinator.registerComponent<Position>('Position');
+ * coordinator.registerComponent<Velocity>('Velocity');
+ *
+ * // Create a movement system
+ * const movementSystem: System = {
+ *   entities: new Set()
+ * };
+ *
+ * coordinator.registerSystem('Movement', movementSystem);
+ *
+ * // Set signature (entities with Position AND Velocity)
+ * const posType = coordinator.getComponentType('Position')!;
+ * const velType = coordinator.getComponentType('Velocity')!;
+ * const signature = (1 << posType) | (1 << velType);
+ * coordinator.setSystemSignature('Movement', signature);
+ *
+ * // Update loop
+ * function update(deltaTime: number) {
+ *   movementSystem.entities.forEach(entity => {
+ *     const pos = coordinator.getComponentFromEntity<Position>('Position', entity)!;
+ *     const vel = coordinator.getComponentFromEntity<Velocity>('Velocity', entity)!;
+ *     pos.x += vel.x * deltaTime;
+ *     pos.y += vel.y * deltaTime;
+ *   });
+ * }
+ * ```
+ *
+ * @see {@link Coordinator} for the main ECS API
+ */
 
+/**
+ * Maximum number of entities that can exist simultaneously.
+ * @category Configuration
+ */
 export const MAX_ENTITIES = 10000;
+
+/**
+ * Maximum number of component types that can be registered.
+ * @category Configuration
+ */
 export const MAX_COMPONENTS = 32;
 
+/**
+ * Component signature type (bit field indicating which components an entity has).
+ * @category Types
+ */
 export type ComponentSignature = number;
+
+/**
+ * Component type identifier.
+ * @category Types
+ */
 export type ComponentType = number;
 
+/**
+ * Entity identifier (unique number).
+ * @category Types
+ */
 export type Entity = number;
 
-
+/**
+ * Manages entity lifecycle and signatures.
+ *
+ * @remarks
+ * The EntityManager handles:
+ * - Creating new entities (recycling IDs from a pool)
+ * - Destroying entities (returning IDs to the pool)
+ * - Storing and updating component signatures for each entity
+ *
+ * Entities are represented as simple numbers (IDs) and the manager maintains
+ * a signature (bit field) for each entity indicating which components it has.
+ *
+ * @category Managers
+ */
 export class EntityManager {
 
     private _availableEntities: Entity[] = [];
@@ -74,10 +200,33 @@ type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
 
 // Usage
 
+/**
+ * Internal interface for component array lifecycle hooks.
+ * @internal
+ */
 export interface CArray {
     entityDestroyed(entity: Entity): void;
 }
 
+/**
+ * Efficient sparse-set data structure for storing component data.
+ *
+ * @remarks
+ * ComponentArray uses a sparse-set implementation for O(1) insertion, deletion,
+ * and lookup while maintaining dense packing for cache-efficient iteration.
+ *
+ * The sparse-set consists of:
+ * - **Dense array**: Packed component data for iteration
+ * - **Sparse array**: Maps entity ID to dense array index
+ * - **Reverse array**: Maps dense array index back to entity ID
+ *
+ * This structure allows fast component access by entity ID and fast iteration
+ * over all components without gaps.
+ *
+ * @typeParam T - The component data type
+ *
+ * @category Data Structures
+ */
 export class ComponentArray<T> implements CArray {
 
     private denseArray: T[]; // packed array of data
@@ -149,6 +298,21 @@ export class ComponentArray<T> implements CArray {
     }
 }
 
+/**
+ * Manages component registration and component data storage.
+ *
+ * @remarks
+ * The ComponentManager handles:
+ * - Registering new component types and assigning unique type IDs
+ * - Creating ComponentArray storage for each component type
+ * - Adding, removing, and querying component data for entities
+ * - Cleaning up component data when entities are destroyed
+ *
+ * Each component type gets a unique ID (0-31) and its own ComponentArray
+ * for efficient storage and retrieval.
+ *
+ * @category Managers
+ */
 export class ComponentManager {
 
     private _componentNameToTypeMap: Map<string, {componentType: ComponentType, componentArray: CArray}> = new Map();
@@ -208,10 +372,59 @@ export class ComponentManager {
 
 }
 
+/**
+ * System interface for processing entities with specific component combinations.
+ *
+ * @remarks
+ * A System maintains a set of entities that match its component signature.
+ * The ECS automatically updates this set when entities are created, destroyed,
+ * or have their components modified.
+ *
+ * Systems contain only the logic for processing entities - the `entities` set
+ * is automatically managed by the SystemManager.
+ *
+ * @example
+ * ```typescript
+ * const movementSystem: System = {
+ *   entities: new Set()
+ * };
+ *
+ * // System logic (called in game loop)
+ * function updateMovement(deltaTime: number) {
+ *   movementSystem.entities.forEach(entity => {
+ *     const pos = ecs.getComponentFromEntity<Position>('Position', entity);
+ *     const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity);
+ *     if (pos && vel) {
+ *       pos.x += vel.x * deltaTime;
+ *       pos.y += vel.y * deltaTime;
+ *     }
+ *   });
+ * }
+ * ```
+ *
+ * @category Types
+ */
 export interface System {
     entities: Set<Entity>;
 }
 
+/**
+ * Manages system registration and entity-system matching.
+ *
+ * @remarks
+ * The SystemManager handles:
+ * - Registering systems with their component signature requirements
+ * - Maintaining the set of entities that match each system's signature
+ * - Automatically adding/removing entities from systems when signatures change
+ * - Cleaning up system entity sets when entities are destroyed
+ *
+ * When an entity's component signature changes (components added/removed),
+ * the SystemManager checks all registered systems and updates their entity sets.
+ * An entity is added to a system's set if its signature contains all components
+ * required by the system's signature.
+ *
+ * @category Managers
+ */
 export class SystemManager {
     private _systems: Map<string, {system: System, signature: ComponentSignature}> = new Map();
 
@@ -254,6 +467,48 @@ export class SystemManager {
     }
 }
 
+/**
+ * Main ECS coordinator that manages entities, components, and systems.
+ *
+ * @remarks
+ * The Coordinator is the central API for working with the ECS. It provides a unified
+ * interface for:
+ * - Creating and destroying entities
+ * - Registering and managing components
+ * - Registering and configuring systems
+ * - Querying component data
+ *
+ * The Coordinator automatically keeps entity signatures up-to-date and notifies
+ * systems when entities match their component requirements.
+ *
+ * @example
+ * Complete ECS workflow
+ * ```typescript
+ * const ecs = new Coordinator();
+ *
+ * // Setup
+ * ecs.registerComponent<Position>('Position');
+ * ecs.registerComponent<Velocity>('Velocity');
+ *
+ * // Create entity
+ * const entity = ecs.createEntity();
+ * ecs.addComponentToEntity('Position', entity, { x: 0, y: 0 });
+ * ecs.addComponentToEntity('Velocity', entity, { x: 1, y: 0 });
+ *
+ * // Update
+ * const pos = ecs.getComponentFromEntity<Position>('Position', entity);
+ * const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity);
+ * if (pos && vel) {
+ *   pos.x += vel.x;
+ *   pos.y += vel.y;
+ * }
+ *
+ * // Cleanup
+ * ecs.destroyEntity(entity);
+ * ```
+ *
+ * @category Core
+ */
 export class Coordinator {
     private _entityManager: EntityManager;
     private _componentManager: ComponentManager;

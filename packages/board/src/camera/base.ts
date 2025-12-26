@@ -8,15 +8,42 @@ import { BoardCamera } from './interface';
 import { decomposeCameraMatrix, decomposeTRS, TransformationMatrix } from './utils/matrix';
 
 /**
- * 
- * @description This is the base class for the camera. It is used to create a camera that can be used to view a board.
- * 
- * If there's only one class that you want to use in this library, it is this one. The is the back bone of the board camera system.
- * 
- * With the {@link CameraRig} class, you can create a camera system that can be used to achieve the infinite canvas effect.
- * 
- * This class is not observable (you can not register a callback for camera state changes). If you need to observe the camera state, use the {@link DefaultBoardCamera} class instead.
+ * Base camera implementation providing core functionality for an infinite canvas system.
+ * This is the fundamental building block for camera management in the board package.
+ *
+ * @remarks
+ * BaseCamera is non-observable and does not emit events when state changes.
+ * For event-driven camera updates, use {@link DefaultBoardCamera} instead.
+ *
+ * The camera supports:
+ * - Position, rotation, and zoom transformations
+ * - Configurable boundaries for position, zoom, and rotation
+ * - Coordinate conversion between viewport and world space
+ * - Transformation matrix caching for performance
+ * - High-DPI display support via devicePixelRatio
+ *
+ * @example
+ * ```typescript
+ * // Create a camera for a 1920x1080 viewport
+ * const camera = new BaseCamera(1920, 1080, { x: 0, y: 0 }, 0, 1.0);
+ *
+ * // Set boundaries to constrain camera movement
+ * camera.setHorizontalBoundaries(-5000, 5000);
+ * camera.setVerticalBoundaries(-5000, 5000);
+ *
+ * // Update camera state
+ * camera.setPosition({ x: 100, y: 200 });
+ * camera.setZoomLevel(2.0);
+ * camera.setRotation(Math.PI / 6);
+ *
+ * // Get transformation matrix for rendering
+ * const transform = camera.getTransform(window.devicePixelRatio, true);
+ * ctx.setTransform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+ * ```
+ *
  * @category Camera
+ * @see {@link DefaultBoardCamera} for observable camera with event support
+ * @see {@link CameraRig} for high-level camera control with input handling
  */
 export default class BaseCamera implements BoardCamera {
 
@@ -34,14 +61,41 @@ export default class BaseCamera implements BoardCamera {
     private _rotationBoundaries?: RotationLimits;
 
     /**
-     * @param position The position of the camera in the world coordinate system
-     * @param rotation The rotation of the camera in the world coordinate system
-     * @param zoomLevel The zoom level of the camera
-     * @param viewPortWidth The width of the viewport. (The width of the canvas in css pixels)
-     * @param viewPortHeight The height of the viewport. (The height of the canvas in css pixels)
-     * @param boundaries The boundaries of the camera in the world coordinate system
-     * @param zoomLevelBoundaries The boundaries of the zoom level of the camera
-     * @param rotationBoundaries The boundaries of the rotation of the camera
+     * Creates a new BaseCamera instance with specified viewport size and optional constraints.
+     *
+     * @param viewPortWidth - Width of the viewport in CSS pixels (default: 1000)
+     * @param viewPortHeight - Height of the viewport in CSS pixels (default: 1000)
+     * @param position - Initial camera position in world coordinates (default: {x: 0, y: 0})
+     * @param rotation - Initial rotation in radians (default: 0)
+     * @param zoomLevel - Initial zoom level, where 1.0 = 100% (default: 1.0)
+     * @param boundaries - Position constraints in world space (default: ±10000 on both axes)
+     * @param zoomLevelBoundaries - Zoom constraints (default: 0.1 to 10)
+     * @param rotationBoundaries - Optional rotation constraints (default: undefined, unrestricted)
+     *
+     * @example
+     * ```typescript
+     * // Basic camera with defaults
+     * const camera = new BaseCamera();
+     *
+     * // Camera with custom viewport and position
+     * const camera2 = new BaseCamera(
+     *   1920, 1080,
+     *   { x: 500, y: 300 },
+     *   0,
+     *   1.5
+     * );
+     *
+     * // Camera with all constraints
+     * const camera3 = new BaseCamera(
+     *   1920, 1080,
+     *   { x: 0, y: 0 },
+     *   0,
+     *   1.0,
+     *   { min: { x: -2000, y: -2000 }, max: { x: 2000, y: 2000 } },
+     *   { min: 0.5, max: 5 },
+     *   { start: 0, end: Math.PI / 2 }
+     * );
+     * ```
      */
     constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits | undefined = undefined){
         this._position = position;
@@ -55,61 +109,90 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @description The translation boundaries of the camera in the world coordinate system.
-     * 
-     * @category Camera
+     * Gets the current position boundaries that constrain camera movement in world coordinates.
+     *
+     * @returns The boundaries object or undefined if no boundaries are set
      */
     get boundaries(): Boundaries | undefined{
         return this._boundaries;
     }
 
+    /**
+     * Sets position boundaries to constrain camera movement in world coordinates.
+     *
+     * @param boundaries - Boundary constraints or undefined to remove all constraints
+     */
     set boundaries(boundaries: Boundaries | undefined){
         this._boundaries = boundaries;
     }
 
     /**
-     * @description The width of the viewport. (The width of the canvas in css pixels)
-     * 
-     * @category Camera
+     * Gets the viewport width in CSS pixels.
+     *
+     * @returns Current viewport width
      */
     get viewPortWidth(): number{
         return this._viewPortWidth;
     }
 
+    /**
+     * Sets the viewport width in CSS pixels.
+     * Updates invalidate the cached transformation matrix.
+     *
+     * @param width - New viewport width in CSS pixels
+     */
     set viewPortWidth(width: number){
         this._viewPortWidth = width;
     }
 
     /**
-     * @description The height of the viewport. (The height of the canvas in css pixels)
-     * 
-     * @category Camera
+     * Gets the viewport height in CSS pixels.
+     *
+     * @returns Current viewport height
      */
     get viewPortHeight(): number{
         return this._viewPortHeight;
     }
 
+    /**
+     * Sets the viewport height in CSS pixels.
+     * Updates invalidate the cached transformation matrix.
+     *
+     * @param height - New viewport height in CSS pixels
+     */
     set viewPortHeight(height: number){
         this._viewPortHeight = height;
     }
 
     /**
-     * @description The position of the camera in the world coordinate system.
-     * 
-     * @category Camera
+     * Gets the current camera position in world coordinates.
+     *
+     * @returns A copy of the current position (center of viewport in world space)
      */
     get position(): Point{
         return {...this._position};
     }
 
     /**
-     * @description This function is used to set the position of the camera.
-     * @param destination The destination point of the camera.
-     * @returns Whether the position is set successfully.
-     * 
-     * @description This function has a guard that checks if the destination point is within the boundaries of the camera.
-     * If the destination point is not within the boundaries, the function will return false and the position will not be updated.
-     * If the destination point is within the boundaries, the function will return true and the position will be updated.
+     * Sets the camera position with boundary validation and floating-point jitter prevention.
+     *
+     * @param destination - Target position in world coordinates
+     * @returns True if position was updated, false if rejected by boundaries or negligible change
+     *
+     * @remarks
+     * Position updates are rejected if:
+     * - The destination is outside the configured boundaries
+     * - The change magnitude is less than 10E-10
+     * - The change magnitude is less than 1/zoomLevel (prevents sub-pixel jitter)
+     *
+     * @example
+     * ```typescript
+     * camera.setHorizontalBoundaries(-1000, 1000);
+     * camera.setVerticalBoundaries(-1000, 1000);
+     *
+     * camera.setPosition({ x: 500, y: 500 }); // returns true
+     * camera.setPosition({ x: 2000, y: 0 }); // returns false (out of bounds)
+     * ```
      */
     setPosition(destination: Point){
         if(!withinBoundaries(destination, this._boundaries)){
@@ -124,27 +207,30 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @description The zoom level of the camera.
-     * 
-     * @category Camera
+     * Gets the current zoom level.
+     *
+     * @returns Current zoom level (1.0 = 100%, 2.0 = 200%, etc.)
      */
     get zoomLevel(): number{
         return this._zoomLevel;
     }
 
     /**
-     * @description The boundaries of the zoom level of the camera.
-     * 
-     * @category Camera
+     * Gets the current zoom level constraints.
+     *
+     * @returns Zoom boundaries object or undefined if unconstrained
      */
     get zoomBoundaries(): ZoomLevelLimits | undefined{
         return this._zoomBoundaries;
     }
 
     /**
-     * @description The boundaries of the zoom level of the camera.
-     * 
-     * @category Camera
+     * Sets zoom level constraints with automatic min/max swapping if needed.
+     *
+     * @param zoomBoundaries - Zoom constraints or undefined to remove constraints
+     *
+     * @remarks
+     * If min > max, the values are automatically swapped.
      */
     set zoomBoundaries(zoomBoundaries: ZoomLevelLimits | undefined){
         const newZoomBoundaries = {...zoomBoundaries};
@@ -156,6 +242,17 @@ export default class BaseCamera implements BoardCamera {
         this._zoomBoundaries = newZoomBoundaries;
     }
 
+    /**
+     * Sets the maximum allowed zoom level.
+     *
+     * @param maxZoomLevel - New maximum zoom level
+     * @returns True if successfully set, false if conflicts with existing min or current zoom
+     *
+     * @remarks
+     * Returns false if:
+     * - The new max is less than the current minimum boundary
+     * - The current zoom level exceeds the new maximum
+     */
     setMaxZoomLevel(maxZoomLevel: number){
         if(this._zoomBoundaries == undefined){
             this._zoomBoundaries = {min: undefined, max: undefined};
@@ -168,6 +265,16 @@ export default class BaseCamera implements BoardCamera {
         return true
     }
 
+    /**
+     * Sets the minimum allowed zoom level.
+     *
+     * @param minZoomLevel - New minimum zoom level
+     * @returns True if successfully set, false if conflicts with existing max
+     *
+     * @remarks
+     * If the current zoom level is below the new minimum, the camera automatically
+     * zooms in to match the minimum. Returns false if new min exceeds existing max boundary.
+     */
     setMinZoomLevel(minZoomLevel: number){
         if(this._zoomBoundaries == undefined){
             this._zoomBoundaries = {min: undefined, max: undefined};
@@ -184,13 +291,22 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @description This function is used to set the zoom level of the camera.
-     * @param zoomLevel The zoom level of the camera.
-     * @returns Whether the zoom level is set successfully.
-     * 
-     * @description This function has a guard that checks if the zoom level is within the boundaries of the camera.
-     * If the zoom level is not within the boundaries, the function will return false and the zoom level will not be updated.
-     * If the zoom level is within the boundaries, the function will return true and the zoom level will be updated.
+     * Sets the camera zoom level with boundary validation.
+     *
+     * @param zoomLevel - Target zoom level (1.0 = 100%, 2.0 = 200%, etc.)
+     * @returns True if zoom was updated, false if outside boundaries or already at limit
+     *
+     * @remarks
+     * Returns false if:
+     * - Zoom level is outside configured boundaries
+     * - Already at maximum and trying to zoom beyond it
+     * - Already at minimum and trying to zoom below it
+     *
+     * @example
+     * ```typescript
+     * camera.setZoomLevel(2.0); // 200% zoom
+     * camera.setZoomLevel(0.5); // 50% zoom
+     * ```
      */
     setZoomLevel(zoomLevel: number){
         if(!zoomLevelWithinLimits(zoomLevel, this._zoomBoundaries)){
@@ -206,14 +322,32 @@ export default class BaseCamera implements BoardCamera {
         return true;
     }
 
+    /**
+     * Gets the current camera rotation in radians.
+     *
+     * @returns Current rotation angle (0 to 2π)
+     */
     get rotation(): number{
         return this._rotation;
     }
 
+    /**
+     * Gets the current rotation constraints.
+     *
+     * @returns Rotation boundaries or undefined if unconstrained
+     */
     get rotationBoundaries(): RotationLimits | undefined{
         return this._rotationBoundaries;
     }
 
+    /**
+     * Sets rotation constraints with automatic start/end swapping if needed.
+     *
+     * @param rotationBoundaries - Rotation limits or undefined to remove constraints
+     *
+     * @remarks
+     * If start > end, the values are automatically swapped.
+     */
     set rotationBoundaries(rotationBoundaries: RotationLimits | undefined){
         if(rotationBoundaries !== undefined && rotationBoundaries.start !== undefined && rotationBoundaries.end !== undefined && rotationBoundaries.start > rotationBoundaries.end){
             let temp = rotationBoundaries.end;
@@ -224,17 +358,35 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * TODO add the option to make the camera position to be at the top left corner of the canvas; or better yet any point in the viewport (within the viewport boundaries)
-     * @description The order of the transformation is as follows:
-     * 1. Scale (scale the context using the device pixel ratio)
-     * 2. Translation (move the origin of the context to the center of the canvas)
-     * 3. Rotation (rotate the context negatively the rotation of the camera)
-     * 4. Zoom (scale the context using the zoom level of the camera)
-     * 5. Translation (move the origin of the context to the position of the camera in the context coordinate system)
-     * 
-     * @param devicePixelRatio The device pixel ratio of the canvas
-     * @param alignCoorindate Whether to align the coordinate system to the camera's position
-     * @returns The transformation matrix
+     * Computes the complete transformation matrix from world space to canvas pixel space.
+     * Includes caching for performance optimization.
+     *
+     * @param devicePixelRatio - Device pixel ratio (typically window.devicePixelRatio)
+     * @param alignCoorindate - If true, uses standard y-up coordinate system. If false, inverts y-axis
+     * @returns Transformation matrix object {a, b, c, d, e, f} with optional cached flag
+     *
+     * @remarks
+     * Transformation order applied:
+     * 1. Scale by devicePixelRatio
+     * 2. Translate to viewport center
+     * 3. Rotate (negated if alignCoorindate is true)
+     * 4. Scale by zoom level
+     * 5. Translate by camera position
+     *
+     * The result is cached based on all parameters. Subsequent calls with identical parameters
+     * return the cached matrix with `cached: true` flag.
+     *
+     * @example
+     * ```typescript
+     * const ctx = canvas.getContext('2d');
+     * const transform = camera.getTransform(window.devicePixelRatio, true);
+     * ctx.setTransform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+     *
+     * // Now drawing at world coordinates (100, 200) appears correctly on canvas
+     * ctx.fillRect(100, 200, 50, 50);
+     * ```
+     *
+     * @see {@link getTRS} for decomposed transformation components
      */
     getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
         if(this.currentCachedTransform !== undefined
@@ -273,6 +425,17 @@ export default class BaseCamera implements BoardCamera {
         return {a, b, c, d, e, f, cached: false};
     }
 
+    /**
+     * Decomposes the transformation matrix into Translation, Rotation, and Scale components.
+     *
+     * @param devicePixelRatio - Device pixel ratio for high-DPI displays
+     * @param alignCoorindate - If true, uses standard y-up coordinate system. If false, inverts y-axis
+     * @returns Object containing separate scale, rotation, and translation values
+     *
+     * @remarks
+     * This is useful when you need individual transformation components rather than
+     * the combined matrix. Internally calls {@link getTransform} and decomposes the result.
+     */
     getTRS(devicePixelRatio: number, alignCoorindate: boolean){
         const transform = this.getTransform(devicePixelRatio, alignCoorindate);
         const decompositionRes = decomposeTRS(transform);
@@ -280,14 +443,23 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @description This function is used to set the camera using a transformation matrix.
-     * The transformation matrix is the same as the one returned by the {@link getTransform} function. (by performing the transformations in the same order)
-     * The transformation matrix would be decomposed into SCALE(devicePixelRatio), TRANSLATION(center of the canvas), ROTATION(-rotation), SCALE(zoom level), and TRANSLATION(position).
-     * The position, zoom level, and rotation are still bounded by the boundaries of the camera.
-     * 
-     * @param transformationMatrix The transformation matrix.
-     * 
-     * @category Camera
+     * Sets camera state by decomposing a transformation matrix.
+     * Inverse operation of {@link getTransform}.
+     *
+     * @param transformationMatrix - 2D transformation matrix to decompose
+     *
+     * @remarks
+     * The matrix is decomposed assuming the same transformation order as {@link getTransform}:
+     * Scale(devicePixelRatio) → Translation(viewport center) → Rotation → Zoom → Translation(position)
+     *
+     * Extracted position, zoom, and rotation values are still validated against boundaries.
+     *
+     * @example
+     * ```typescript
+     * // Apply a transformation matrix from an external source
+     * const matrix = { a: 2, b: 0, c: 0, d: 2, e: 100, f: 100 };
+     * camera.setUsingTransformationMatrix(matrix);
+     * ```
      */
     setUsingTransformationMatrix(transformationMatrix: TransformationMatrix){
         const decomposed = decomposeCameraMatrix(transformationMatrix, this._viewPortWidth, this._viewPortHeight, this._zoomLevel);
@@ -298,6 +470,24 @@ export default class BaseCamera implements BoardCamera {
         this.setZoomLevel(decomposed.zoom);
     }
 
+    /**
+     * Sets the camera rotation with boundary validation and normalization.
+     *
+     * @param rotation - Target rotation in radians
+     * @returns True if rotation was updated, false if outside boundaries or already at limit
+     *
+     * @remarks
+     * Rotation is automatically normalized to 0-2π range. Returns false if:
+     * - Rotation is outside configured boundaries
+     * - Already at maximum boundary and trying to rotate beyond it
+     * - Already at minimum boundary and trying to rotate below it
+     *
+     * @example
+     * ```typescript
+     * camera.setRotation(Math.PI / 4); // 45 degrees
+     * camera.setRotation(Math.PI); // 180 degrees
+     * ```
+     */
     setRotation(rotation: number){
         if(!rotationWithinLimits(rotation, this._rotationBoundaries)){
             return false;
@@ -314,46 +504,75 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * @description The origin of the camera in the window coordinate system.
-     * @deprecated
-     * 
-     * @category Camera
+     * Gets the camera origin in window coordinates.
+     *
+     * @deprecated This method is deprecated and will be removed in a future version.
+     * Currently just returns the input unchanged.
+     *
+     * @param centerInWindow - Center point in window coordinates
+     * @returns The same point (camera origin equals window center)
      */
     getCameraOriginInWindow(centerInWindow: Point): Point{
         return centerInWindow;
     }
 
     /**
-     * @description Converts a point from the viewport coordinate system to the world coordinate system.
-     * 
-     * @param point The point in the viewport coordinate system.
-     * @returns The point in the world coordinate system.
-     * 
-     * @category Camera
+     * Converts a point from viewport coordinates to world coordinates.
+     *
+     * @param point - Point in viewport space (relative to viewport center, in CSS pixels)
+     * @returns Corresponding point in world coordinates
+     *
+     * @remarks
+     * This accounts for camera position, zoom, and rotation. Useful for converting
+     * mouse/touch input to world space.
+     *
+     * @example
+     * ```typescript
+     * // Convert mouse click to world position
+     * const rect = canvas.getBoundingClientRect();
+     * const viewportPoint = {
+     *   x: event.clientX - rect.left - rect.width / 2,
+     *   y: event.clientY - rect.top - rect.height / 2
+     * };
+     * const worldPoint = camera.convertFromViewPort2WorldSpace(viewportPoint);
+     * ```
      */
     convertFromViewPort2WorldSpace(point: Point): Point{
         return convert2WorldSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
 
     /**
-     * @description Converts a point from the world coordinate system to the viewport coordinate system.
-     * 
-     * @param point The point in the world coordinate system.
-     * @returns The point in the viewport coordinate system.
-     * 
-     * @category Camera
+     * Converts a point from world coordinates to viewport coordinates.
+     *
+     * @param point - Point in world coordinates
+     * @returns Corresponding point in viewport space (relative to viewport center, in CSS pixels)
+     *
+     * @remarks
+     * This accounts for camera position, zoom, and rotation. Useful for positioning
+     * UI elements at world object locations.
+     *
+     * @example
+     * ```typescript
+     * // Position a DOM element at a world object's location
+     * const viewportPos = camera.convertFromWorld2ViewPort(objectWorldPos);
+     * element.style.left = `${viewportPos.x + canvas.width / 2}px`;
+     * element.style.top = `${viewportPos.y + canvas.height / 2}px`;
+     * ```
      */
     convertFromWorld2ViewPort(point: Point): Point{
         return convert2ViewPortSpaceAnchorAtCenter(point, this._position, this._zoomLevel, this._rotation);
     }
 
     /**
-     * @description Inverts a point from the world coordinate system to the viewport coordinate system.
-     * 
-     * @param point The point in the world coordinate system.
-     * @returns The point in the viewport coordinate system.
-     * 
-     * @category Camera
+     * Converts a point from world coordinates to viewport coordinates.
+     * Alternative implementation of {@link convertFromWorld2ViewPort}.
+     *
+     * @param point - Point in world coordinates
+     * @returns Corresponding point in viewport space (relative to viewport center, in CSS pixels)
+     *
+     * @remarks
+     * This method provides an alternative calculation approach. In most cases,
+     * prefer using {@link convertFromWorld2ViewPort} for consistency.
      */
     invertFromWorldSpace2ViewPort(point: Point): Point{
         let cameraFrameCenter = {x: this.viewPortWidth / 2, y: this._viewPortHeight / 2};
@@ -363,6 +582,22 @@ export default class BaseCamera implements BoardCamera {
         return PointCal.addVector(cameraFrameCenter, delta2Point);
     }
 
+    /**
+     * Sets horizontal (x-axis) position boundaries for camera movement.
+     *
+     * @param min - Minimum x coordinate in world space
+     * @param max - Maximum x coordinate in world space
+     *
+     * @remarks
+     * If min > max, the values are automatically swapped. The current camera position
+     * is not automatically clamped when boundaries are set.
+     *
+     * @example
+     * ```typescript
+     * camera.setHorizontalBoundaries(-1000, 1000);
+     * // Camera can now only move between x: -1000 and x: 1000
+     * ```
+     */
     setHorizontalBoundaries(min: number, max: number){
         if (min > max){
             let temp = max;
@@ -386,6 +621,22 @@ export default class BaseCamera implements BoardCamera {
         // }
     }
 
+    /**
+     * Sets vertical (y-axis) position boundaries for camera movement.
+     *
+     * @param min - Minimum y coordinate in world space
+     * @param max - Maximum y coordinate in world space
+     *
+     * @remarks
+     * If min > max, the values are automatically swapped. The current camera position
+     * is not automatically clamped when boundaries are set.
+     *
+     * @example
+     * ```typescript
+     * camera.setVerticalBoundaries(-500, 500);
+     * // Camera can now only move between y: -500 and y: 500
+     * ```
+     */
     setVerticalBoundaries(min: number, max: number){
         if (min > max){
             let temp = max;
@@ -405,6 +656,25 @@ export default class BaseCamera implements BoardCamera {
         this._boundaries.max.y = max;
     }
 
+    /**
+     * Calculates the four corners of the viewport in world space, accounting for rotation.
+     *
+     * @param alignCoordinate - If true, uses standard y-up coordinate system. If false, inverts y-axis (default: true)
+     * @returns Object containing the four corner points organized as top/bottom and left/right
+     *
+     * @remarks
+     * Returns the actual rotated viewport corners. This is more precise than {@link viewPortAABB}
+     * which returns the axis-aligned bounding box. Use this when you need the exact viewport bounds.
+     *
+     * @example
+     * ```typescript
+     * const corners = camera.viewPortInWorldSpace();
+     * console.log(corners.top.left);    // Top-left corner in world coords
+     * console.log(corners.top.right);   // Top-right corner
+     * console.log(corners.bottom.left); // Bottom-left corner
+     * console.log(corners.bottom.right);// Bottom-right corner
+     * ```
+     */
     viewPortInWorldSpace(alignCoordinate: boolean = true): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}}{
         const topLeftCorner = convert2WorldSpaceAnchorAtCenter({x: -this._viewPortWidth / 2, y: alignCoordinate ? -this._viewPortHeight / 2 : this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
         const topRightCorner = convert2WorldSpaceAnchorAtCenter({x: this._viewPortWidth / 2, y: alignCoordinate ? -this._viewPortHeight / 2 : this._viewPortHeight / 2}, this._position, this._zoomLevel, this._rotation);
@@ -417,6 +687,31 @@ export default class BaseCamera implements BoardCamera {
         }
     }
 
+    /**
+     * Calculates the axis-aligned bounding box (AABB) of the viewport in world space.
+     *
+     * @param alignCoordinate - If true, uses standard y-up coordinate system. If false, inverts y-axis
+     * @returns Object with min and max points defining the AABB
+     *
+     * @remarks
+     * This returns the smallest axis-aligned rectangle that contains the entire viewport.
+     * When the camera is rotated, this AABB will be larger than the actual viewport.
+     * For exact viewport bounds, use {@link viewPortInWorldSpace}.
+     *
+     * Useful for:
+     * - Frustum culling (checking if objects are visible)
+     * - Broad-phase collision detection
+     * - Determining which tiles/chunks to load
+     *
+     * @example
+     * ```typescript
+     * const aabb = camera.viewPortAABB();
+     * const isVisible = (
+     *   object.x >= aabb.min.x && object.x <= aabb.max.x &&
+     *   object.y >= aabb.min.y && object.y <= aabb.max.y
+     * );
+     * ```
+     */
     viewPortAABB(alignCoordinate?: boolean): {min: Point, max: Point}{
         const {top: {left: topLeft, right: topRight}, bottom: {left: bottomLeft, right: bottomRight}} = this.viewPortInWorldSpace(alignCoordinate);
 

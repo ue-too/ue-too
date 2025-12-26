@@ -1,16 +1,19 @@
 # being
 
-This is a library that helps with building finite state machines. 
+[![npm version](https://img.shields.io/npm/v/@ue-too/being.svg)](https://www.npmjs.com/package/@ue-too/being)
+[![license](https://img.shields.io/npm/l/@ue-too/being.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+
+This is a library that helps with building finite state machines.
 
 > Disclaimer: I am not an expert on finite state machines; this is just what I use and it works for me, and the features are tailored to what I need. You would probably be better off using a library like [xstate](https://stately.ai/docs).
 
 If you still want to try it out, here is an example of how to use it:
 
-Let's say we want to build a state machine for a vending machine. 
+Let's say we want to build a state machine for a vending machine.
 
 To make it simple, the vending machine only accepts dollar bills and sells 3 types of items at $1, $2, and $3.
 
-The items are: 
+The items are:
 - Coke (1 dollar)
 - Red Bull (2 dollars)
 - Water (3 dollars)
@@ -46,7 +49,7 @@ const VENDING_MACHINE_STATES = ["IDLE", "ONE_DOLLAR_INSERTED", "TWO_DOLLARS_INSE
 export type VendingMachineStates = CreateStateType<typeof VENDING_MACHINE_STATES>;
 
 ```
-Next, we should define all the possible events and their payload. 
+Next, we should define all the possible events and their payload.
 
 ```ts
 type VendingMachineEvents = {
@@ -60,7 +63,7 @@ type VendingMachineEvents = {
 
 Sometimes we need variables to keep track of certain attributes that can persists across different states; that's where the context comes along.
 
-For this example we don't need keep tabs on any attribute, so we can just use the `BaseContext` as our interface of context. 
+For this example we don't need keep tabs on any attribute, so we can just use the `BaseContext` as our interface of context.
 
 The interface `State` and `StateMachine` only accepts context extending or implements the `BaseContext` to ensure that context has a `setup` and `cleanup` method.
 
@@ -73,9 +76,9 @@ const context: BaseContext = {
 }
 ```
 
-Next, we can start implementing the different states of the state machine. 
+Next, we can start implementing the different states of the state machine.
 
-To do that we can use the `TemplateState` as a starting point. 
+To do that we can use the `TemplateState` as a starting point.
 
 `TemplateState` is an abstract class that covers most of the boilerplate code. You just need to define the reaction corresponding to the events.
 
@@ -88,7 +91,7 @@ It's an object with the key being the event name and the value being the reactio
 The `EventReactions` looks like this:
 ```ts
 export type EventReactions<EventPayloadMapping, Context extends BaseContext, States extends string> = {
-    [K in keyof Partial<EventPayloadMapping>]: { 
+    [K in keyof Partial<EventPayloadMapping>]: {
         action: (context: Context, event: EventPayloadMapping[K], stateMachine: StateMachine<EventPayloadMapping, Context, States>) => void;
         defaultTargetState?: States;
     };

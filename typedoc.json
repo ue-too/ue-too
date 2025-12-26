@@ -1,7 +1,6 @@
 {
+    "$schema": "https://typedoc.org/schema.json",
     "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
-    "entryPoints": ["packages/board/src/index.ts"],
-    "out": "docs/board",
     "navigation": {
         "includeCategories": true
     }

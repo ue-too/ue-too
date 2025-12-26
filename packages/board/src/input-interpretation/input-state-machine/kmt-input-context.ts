@@ -2,6 +2,17 @@ import { Point } from "@ue-too/math";
 import { BaseContext, NO_OP } from "@ue-too/being";
 import { CanvasPositionDimensionPublisher, getTrueRect, Observable, Observer, SubscriptionOptions, SvgPositionDimensionPublisher, SynchronousObservable } from "../../utils";
 
+/**
+ * Cursor styles used to provide visual feedback for different input states.
+ *
+ * @remarks
+ * These cursor styles indicate the current interaction mode to users:
+ * - **GRAB**: Indicates the canvas is ready to be panned (spacebar pressed, no drag yet)
+ * - **GRABBING**: Indicates active panning is in progress
+ * - **DEFAULT**: Normal cursor state when no special interaction is active
+ *
+ * @category Input State Machine
+ */
 export enum CursorStyle {
     GRAB = "grab",
     DEFAULT = "default",
@@ -9,26 +20,67 @@ export enum CursorStyle {
 }
 
 /**
- * @description A proxy for the canvas so that client code that needs to access 
- * the canvas dimensions and position does not need to access the DOM directly.
+ * Canvas dimension and position information.
+ *
+ * @property width - The canvas width in CSS pixels
+ * @property height - The canvas height in CSS pixels
+ * @property position - The top-left position of the canvas in window coordinates
+ *
+ * @category Input State Machine
  */
-export interface Canvas {
-    width: number;
-    height: number;
-    position: Point;
-    setCursor: (style: CursorStyle) => void;
-    dimensions: CanvasDimensions;
-    detached: boolean;
-    tearDown: () => void;
-}
-
 export type CanvasDimensions = {width: number, height: number, position: Point};
 
 /**
- * @description A dummy implementation of the CanvasOperator interface. 
- * This is specifically for the case where a input state machine that is for the relay of the input events to the web worker.
- * The input state machine needs a canvas operator in its context, but this context does not have any functionality.
- * @see DummyKmtInputContext
+ * Abstraction interface for canvas element access and manipulation.
+ *
+ * @remarks
+ * This interface provides a decoupled way to access canvas properties without direct DOM access.
+ * Multiple implementations exist to support different use cases:
+ * - **CanvasProxy**: Full implementation for HTML canvas elements with dimension tracking
+ * - **SvgProxy**: Implementation for SVG elements
+ * - **DummyCanvas**: No-op implementation for web worker contexts
+ * - **WorkerRelayCanvas**: Relays canvas dimension updates to web workers
+ * - **CanvasCacheInWebWorker**: Caches canvas dimensions within a web worker
+ *
+ * The abstraction enables:
+ * - Coordinate system transformations (window → canvas → viewport)
+ * - Canvas dimension tracking without repeated DOM queries
+ * - Cursor style management
+ * - Support for both canvas and SVG rendering contexts
+ *
+ * @category Input State Machine
+ */
+export interface Canvas {
+    /** The canvas width in CSS pixels */
+    width: number;
+    /** The canvas height in CSS pixels */
+    height: number;
+    /** The top-left position of the canvas in window coordinates */
+    position: Point;
+    /** Sets the CSS cursor style for visual feedback */
+    setCursor: (style: CursorStyle) => void;
+    /** Combined dimensions and position information */
+    dimensions: CanvasDimensions;
+    /** Whether the canvas is currently detached from the DOM */
+    detached: boolean;
+    /** Cleanup method to dispose of resources and event listeners */
+    tearDown: () => void;
+}
+
+/**
+ * No-op implementation of Canvas interface for web worker relay contexts.
+ *
+ * @remarks
+ * This class is used when an input state machine is configured to relay events to a web worker
+ * rather than perform actual canvas operations. The state machine requires a Canvas in its context,
+ * but in the relay scenario, no actual canvas operations are needed - events are simply forwarded
+ * to the worker thread.
+ *
+ * All properties return default/empty values and all methods are no-ops.
+ *
+ * @category Input State Machine
+ *
+ * @see {@link DummyKmtInputContext}
  */
 export class DummyCanvas implements Canvas {
     width: number = 0;
@@ -431,28 +483,67 @@ export class WorkerRelayCanvas implements Canvas {
 }
 
 /**
- * @description The context for the keyboard mouse and trackpad input state machine.
- * Simplified for orchestrator pattern - no longer directly notifies on input events.
+ * Context interface for the Keyboard/Mouse/Trackpad (KMT) input state machine.
+ *
+ * @remarks
+ * This context provides the state and behavior needed by the KMT state machine to:
+ * 1. Track cursor positions for calculating pan deltas
+ * 2. Distinguish between mouse and trackpad input modalities
+ * 3. Access canvas dimensions for coordinate transformations
+ * 4. Manage coordinate system alignment (inverted Y-axis handling)
+ *
+ * **Input Modality Detection**:
+ * The context uses a scoring system (`kmtTrackpadTrackScore`) to differentiate between
+ * mouse and trackpad input, which have different zoom behaviors:
+ * - Mouse: Ctrl+Scroll = zoom, Scroll = pan
+ * - Trackpad: Scroll = zoom (no Ctrl needed), Two-finger gesture = pan
+ *
+ * **Coordinate System**:
+ * The `alignCoordinateSystem` flag determines Y-axis orientation:
+ * - `true`: Standard screen coordinates (Y increases downward)
+ * - `false`: Inverted coordinates (Y increases upward)
+ *
+ * This interface extends BaseContext from the @ue-too/being state machine library,
+ * inheriting setup() and cleanup() lifecycle methods.
  *
  * @category Input State Machine
  */
 export interface KmtInputContext extends BaseContext {
+    /** Whether to use standard screen coordinate system (vs inverted Y-axis) */
     alignCoordinateSystem: boolean;
+    /** Canvas accessor for dimensions and cursor control */
     canvas: Canvas;
+    /** Sets the initial cursor position when starting a pan gesture */
     setInitialCursorPosition: (position: Point) => void;
+    /** Cancels the current action and resets cursor position */
     cancelCurrentAction: () => void;
+    /** The cursor position when a pan gesture started */
     initialCursorPosition: Point;
+    /** Score tracking input modality: >0 for mouse, <0 for trackpad, 0 for undetermined */
     kmtTrackpadTrackScore: number;
+    /** Decreases the score toward trackpad */
     subtractKmtTrackpadTrackScore: () => void;
+    /** Increases the score toward mouse */
     addKmtTrackpadTrackScore: () => void;
+    /** Sets the determined input modality */
     setMode: (mode: 'kmt' | 'trackpad' | 'TBD') => void;
+    /** The current input modality: 'kmt' (mouse), 'trackpad', or 'TBD' (to be determined) */
     mode: 'kmt' | 'trackpad' | 'TBD';
 }
 
 /**
- * @description A dummy implementation of the KmtInputContext interface.
- * This is specifically for the case where a input state machine that is for the relay of the input events to the web worker.
- * The input state machine needs a context, but this context does not have any functionality.
+ * No-op implementation of KmtInputContext for web worker relay scenarios.
+ *
+ * @remarks
+ * Used when the input state machine is configured to relay events to a web worker
+ * rather than process them locally. The state machine requires a context, but in
+ * the relay scenario, no actual state tracking is needed - events are simply forwarded.
+ *
+ * All methods are no-ops and all properties return default values.
+ *
+ * @category Input State Machine
+ *
+ * @see {@link DummyCanvas}
  */
 export class DummyKmtInputContext implements KmtInputContext {
 
@@ -499,11 +590,40 @@ export class DummyKmtInputContext implements KmtInputContext {
 }
 
 /**
- * @description The observable input tracker.
- * This is used as the context for the keyboard mouse and trackpad input state machine.
- * Simplified for orchestrator pattern - no longer publishes input events directly.
+ * Production implementation of KmtInputContext that tracks input state for the state machine.
+ *
+ * @remarks
+ * This class provides the concrete implementation of the KMT input context, maintaining
+ * all state required by the state machine to recognize and track gestures:
+ *
+ * **State Tracking**:
+ * - Initial cursor position for calculating pan deltas
+ * - Input modality score to distinguish mouse vs trackpad
+ * - Determined input mode (kmt/trackpad/TBD)
+ * - Coordinate system alignment preference
+ *
+ * **Input Modality Detection**:
+ * The `kmtTrackpadTrackScore` accumulates evidence about the input device:
+ * - Positive values indicate mouse behavior (middle-click, no horizontal scroll)
+ * - Negative values indicate trackpad behavior (horizontal scroll, two-finger gestures)
+ * - Score is used to determine zoom behavior (Ctrl+Scroll for mouse vs Scroll for trackpad)
+ *
+ * **Design Pattern**:
+ * This class follows the Context pattern from the @ue-too/being state machine library,
+ * providing stateful data and operations that states can access and modify during transitions.
  *
  * @category Input State Machine
+ *
+ * @example
+ * ```typescript
+ * const canvasProxy = new CanvasProxy(canvasElement);
+ * const context = new ObservableInputTracker(canvasProxy);
+ * const stateMachine = createKmtInputStateMachine(context);
+ *
+ * // Context tracks state as the state machine processes events
+ * stateMachine.happens("leftPointerDown", {x: 100, y: 200});
+ * console.log(context.initialCursorPosition); // {x: 100, y: 200}
+ * ```
  */
 export class ObservableInputTracker implements KmtInputContext {
 

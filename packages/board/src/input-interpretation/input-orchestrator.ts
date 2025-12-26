@@ -6,26 +6,82 @@ import {CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOut
 import {CameraRig} from "../camera/camera-rig";
 
 /**
- * @description Union type of all output events from state machines.
+ * Union type of all output events from state machines.
+ *
+ * @remarks
+ * This type represents the unified output from both KMT (Keyboard/Mouse/Trackpad) and Touch state machines.
+ * By unifying these outputs, the orchestrator can handle events from different input modalities uniformly.
+ *
+ * @category Input Interpretation
  */
 export type OutputEvent = KmtOutputEvent | TouchOutputEvent;
 
 /**
- * @description The input orchestrator processes outputs from state machines and routes them to camera/publisher.
- * It receives outputs from both KMT and Touch state machines and routes them to the camera mux and camera rig.
- * The orchestrator asks CameraMux for permission (via outputs), and if allowed, executes on CameraRig.
- * This decouples state machines from camera control, making each component unaware of its neighbors.
- * The orchestrator is the single point of control for camera operations.
+ * Central orchestrator that coordinates input interpretation and camera control for the infinite canvas.
  *
- * Since both KMT and Touch output the same event types (pan, zoom), a single orchestrator can handle both.
+ * @remarks
+ * The InputOrchestrator serves as the mediator between input state machines and camera control systems.
+ * It implements a permission-based architecture where:
  *
- * @category Input Orchestrator
+ * 1. **Event Flow**: State machines produce high-level gesture events (pan, zoom, rotate)
+ * 2. **Permission Check**: Events are sent to CameraMux for permission validation
+ * 3. **Execution**: If allowed, gestures are executed on CameraRig
+ * 4. **Broadcasting**: Raw events are simultaneously broadcast to observers via UserInputPublisher
+ *
+ * **Architecture Pattern**:
+ * ```
+ * State Machines → Orchestrator → CameraMux (permission) → CameraRig (execution)
+ *                       ↓
+ *                 UserInputPublisher (observers)
+ * ```
+ *
+ * This design decouples state machines from camera control, allowing state machines to focus solely
+ * on gesture recognition while the orchestrator handles the complexities of camera coordination,
+ * permission management, and event distribution.
+ *
+ * **Key Benefits**:
+ * - Single point of control for all camera operations
+ * - State machines remain unaware of camera implementation
+ * - Parallel path for observers to react to raw input events
+ * - Consistent handling of KMT and Touch input modalities
+ *
+ * @category Input Interpretation
+ *
+ * @example
+ * ```typescript
+ * // Create the orchestrator
+ * const cameraMux = new CameraMux();
+ * const cameraRig = new CameraRig(camera, viewport);
+ * const publisher = new RawUserInputPublisher();
+ * const orchestrator = new InputOrchestrator(cameraMux, cameraRig, publisher);
+ *
+ * // State machines send their output to the orchestrator
+ * const kmtStateMachine = createKmtInputStateMachine(kmtContext);
+ * const result = kmtStateMachine.happens("leftPointerMove", {x: 100, y: 200});
+ * orchestrator.processInputEventOutput(result.output);
+ *
+ * // Observers can subscribe to raw input events
+ * publisher.on("pan", (event) => {
+ *   console.log("Pan gesture detected:", event.diff);
+ * });
+ * ```
  */
 export class InputOrchestrator {
     private _cameraMux: CameraMux;
     private _cameraRig: CameraRig;
     private _publisher?: UserInputPublisher;
 
+    /**
+     * Creates a new InputOrchestrator instance.
+     *
+     * @param cameraMux - The camera multiplexer that validates and controls camera operation permissions
+     * @param cameraRig - The camera rig that executes camera transformations
+     * @param publisher - Optional publisher for broadcasting raw input events to observers
+     *
+     * @remarks
+     * The publisher parameter is optional to support scenarios where event broadcasting is not needed.
+     * When provided, all input events are broadcast in parallel to camera control execution.
+     */
     constructor(cameraMux: CameraMux, cameraRig: CameraRig, publisher?: UserInputPublisher) {
         this._cameraMux = cameraMux;
         this._cameraRig = cameraRig;
@@ -33,8 +89,25 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Processes output events from state machines and routes them to the camera and publisher.
-     * Called by parsers after state machine returns output.
+     * Processes output events from state machines and routes them to camera control and observers.
+     *
+     * @param output - The output from a state machine, can be a single event, array of events, or any value
+     *
+     * @remarks
+     * This method serves as the main entry point for state machine outputs. It:
+     * 1. Validates whether the output is a valid OutputEvent
+     * 2. Handles both single events and arrays of events
+     * 3. Routes each valid event through the camera control pipeline
+     * 4. Broadcasts events to observers via the publisher
+     *
+     * Called by event parsers after the state machine processes an input and produces output.
+     * The method uses type guards to ensure type safety when handling dynamic output types.
+     *
+     * @example
+     * ```typescript
+     * const result = stateMachine.happens("scroll", {deltaX: 0, deltaY: 10, x: 100, y: 200});
+     * orchestrator.processInputEventOutput(result.output);
+     * ```
      */
     public processInputEventOutput(output: any): void {
         // Handle different output types
@@ -51,15 +124,43 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Type guard to check if an output is an OutputEvent.
+     * Type guard to check if an output value is a valid OutputEvent.
+     *
+     * @param output - The value to check
+     * @returns True if the output is a valid OutputEvent with a type property
+     *
+     * @remarks
+     * This type guard ensures type safety when processing state machine outputs.
+     * It checks for the presence of a 'type' property which is common to all OutputEvent variants.
      */
     private isOutputEvent(output: any): output is OutputEvent {
         return output && typeof output === 'object' && 'type' in output;
     }
 
     /**
-     * @description Handles output events from state machines.
-     * Publishes to observers (parallel path) and asks CameraMux for permission.
+     * Handles individual output events from state machines by routing to camera control and observers.
+     *
+     * @param event - The output event from a state machine (pan, zoom, rotate, cursor, or none)
+     *
+     * @remarks
+     * This method implements a dual-path architecture:
+     *
+     * **Parallel Path 1 - Observer Notification**:
+     * - Immediately broadcasts the event to all subscribers via UserInputPublisher
+     * - This allows external systems to react to user input in real-time
+     * - Independent of camera permission/execution
+     *
+     * **Parallel Path 2 - Camera Control**:
+     * - Requests permission from CameraMux for the operation
+     * - CameraMux may modify the event (e.g., clamp values, deny operation)
+     * - If permitted, executes the transformation on CameraRig
+     *
+     * Event types:
+     * - **pan**: Translates the camera viewport
+     * - **zoom**: Scales the camera around an anchor point
+     * - **rotate**: Rotates the camera view
+     * - **cursor**: Changes cursor appearance (handled by state machine)
+     * - **none**: No operation needed
      */
     private handleStateMachineOutput(event: OutputEvent): void {
         switch (event.type) {
@@ -95,8 +196,14 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Processes pan output from CameraMux.
-     * Executes on CameraRig if CameraMux allows passthrough.
+     * Processes pan output from CameraMux and executes the pan operation if permitted.
+     *
+     * @param output - The pan output from CameraMux containing permission and potentially modified delta
+     *
+     * @remarks
+     * CameraMux may deny the operation (allowPassThrough = false) or modify the delta value
+     * to enforce constraints like viewport bounds or animation states.
+     * Only when permission is granted does the pan execute on CameraRig.
      */
     private processPanMuxOutput(output: CameraMuxPanOutput): void {
         if (output.allowPassThrough) {
@@ -105,8 +212,14 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Processes zoom output from CameraMux.
-     * Executes on CameraRig if CameraMux allows passthrough.
+     * Processes zoom output from CameraMux and executes the zoom operation if permitted.
+     *
+     * @param output - The zoom output from CameraMux containing permission and potentially modified parameters
+     *
+     * @remarks
+     * CameraMux may deny the operation or modify zoom parameters to enforce constraints
+     * like minimum/maximum zoom levels or animation states. The anchor point determines
+     * the center of the zoom transformation in viewport coordinates.
      */
     private processZoomMuxOutput(output: CameraMuxZoomOutput): void {
         if (output.allowPassThrough) {
@@ -115,8 +228,13 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Processes rotation output from CameraMux.
-     * Executes on CameraRig if CameraMux allows passthrough.
+     * Processes rotation output from CameraMux and executes the rotation operation if permitted.
+     *
+     * @param output - The rotation output from CameraMux containing permission and potentially modified delta
+     *
+     * @remarks
+     * CameraMux may deny the operation or modify the rotation delta to enforce constraints
+     * like rotation limits or animation states.
      */
     private processRotateMuxOutput(output: CameraMuxRotationOutput): void {
         if (output.allowPassThrough) {
@@ -125,19 +243,34 @@ export class InputOrchestrator {
     }
 
     /**
-     * @description Gets the underlying publisher (for direct access if needed).
+     * Gets the UserInputPublisher for direct access to event subscription.
+     *
+     * @returns The publisher instance, or undefined if not configured
+     *
+     * @remarks
+     * Allows external code to subscribe to raw input events without going through the orchestrator.
      */
     get publisher(): UserInputPublisher | undefined {
         return this._publisher;
     }
 
     /**
-     * @description Gets the underlying camera mux (for direct access if needed).
+     * Gets the CameraMux instance for direct access to permission control.
+     *
+     * @returns The camera multiplexer instance
      */
     get cameraMux(): CameraMux {
         return this._cameraMux;
     }
 
+    /**
+     * Sets a new CameraMux instance.
+     *
+     * @param cameraMux - The new camera multiplexer to use for permission control
+     *
+     * @remarks
+     * Allows dynamic reconfiguration of camera permission logic at runtime.
+     */
     set cameraMux(cameraMux: CameraMux){
         this._cameraMux = cameraMux;
     }

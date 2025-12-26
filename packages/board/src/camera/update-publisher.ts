@@ -2,146 +2,197 @@ import { Point } from "@ue-too/math";
 import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../utils/observable";
 
 /**
- * @description The payload for the pan event.
- * 
+ * Payload for camera pan (position change) events.
+ *
+ * @property diff - The displacement vector from previous to new position
+ *
  * @category Camera
  */
 export type CameraPanEventPayload = {
+    /** Movement delta in world coordinates */
     diff: Point;
 }
 
 /**
- * @description The payload for the zoom event.
- * 
+ * Payload for camera zoom (scale change) events.
+ *
+ * @property deltaZoomAmount - Change in zoom level (positive = zoom in, negative = zoom out)
+ *
  * @category Camera
  */
 export type CameraZoomEventPayload = {
+    /** Change in zoom level from previous value */
     deltaZoomAmount: number;
 }
 
 /**
- * @description The payload for the rotate event.
- * 
+ * Payload for camera rotation events.
+ *
+ * @property deltaRotation - Change in rotation angle in radians
+ *
  * @category Camera
  */
 export type CameraRotateEventPayload = {
+    /** Change in rotation from previous value, in radians */
     deltaRotation: number;
 }
 
 /**
- * @description The mapping of the camera events.
- * This is primarily used for type inference.
- * 
+ * Mapping of camera event names to their payload types.
+ * Used for type-safe event subscription.
+ *
  * @category Camera
  */
 export type CameraEventMap = {
+    /** Position change event */
     "pan": CameraPanEventPayload,
+    /** Zoom level change event */
     "zoom": CameraZoomEventPayload,
+    /** Rotation change event */
     "rotate": CameraRotateEventPayload,
+    /** Any camera change event (union of pan, zoom, rotate) */
     "all": AllCameraEventPayload,
 }
 
 /**
- * @description The type of the camera rotate event.
- * The type is for discriminating the event type when the all event is triggered.
- * 
+ * Rotation event with discriminated type field for 'all' event handling.
+ * Includes type discriminator and rotation payload.
+ *
  * @category Camera
  */
 export type CameraRotateEvent = {
+    /** Event type discriminator */
     type: "rotate",
 } & CameraRotateEventPayload;
 
 /**
- * @description The type of the camera pan event.
- * The type is for discriminating the event type when the all event is triggered.
- * 
+ * Pan event with discriminated type field for 'all' event handling.
+ * Includes type discriminator and pan payload.
+ *
  * @category Camera
  */
 export type CameraPanEvent = {
+    /** Event type discriminator */
     type: "pan",
 } & CameraPanEventPayload;
 
 /**
- * @description The type of the camera zoom event.
- * The type is for discriminating the event type when the all event is triggered.
- * 
+ * Zoom event with discriminated type field for 'all' event handling.
+ * Includes type discriminator and zoom payload.
+ *
  * @category Camera
  */
 export type CameraZoomEvent = {
+    /** Event type discriminator */
     type: "zoom",
 } & CameraZoomEventPayload;
 
 /**
- * @description The type of the camera state.
- * 
+ * Snapshot of camera state at the time an event occurs.
+ * Passed to all event callbacks alongside the event payload.
+ *
  * @category Camera
  */
 export type CameraState = {
+    /** Camera position in world coordinates */
     position: Point;
+    /** Current zoom level */
     zoomLevel: number;
+    /** Current rotation in radians */
     rotation: number;
 }
 
 /**
- * @description The payload type of the "all" camera event payload.
- * 
+ * Union type of all camera event payloads with type discriminators.
+ * Used for the 'all' event which fires for any camera change.
+ *
  * @category Camera
  */
 export type AllCameraEventPayload = CameraRotateEvent | CameraPanEvent | CameraZoomEvent;
 
 /**
- * @description The callback function type for the camera event.
- * 
+ * Generic callback function type for camera events.
+ *
+ * @typeParam K - The event type key from CameraEventMap
+ * @param event - The event payload specific to this event type
+ * @param cameraState - Current camera state snapshot at the time of the event
+ *
  * @category Camera
  */
 export type Callback<K extends keyof CameraEventMap> = (event: CameraEventMap[K], cameraState: CameraState)=>void;
 
 /**
- * @description The callback function type for the "all" camera event.
- * 
+ * Callback function type specifically for the 'all' camera event.
+ * Receives a discriminated union of all camera events.
+ *
  * @category Camera
  */
 export type ConslidateCallback = (payload: AllCameraEventPayload, cameraState: CameraState) => void;
 
 /**
- * @description The type of the unsubscribe function.
- * 
+ * Function returned by event subscriptions that unsubscribes the callback when called.
+ *
  * @category Camera
  */
 export type UnSubscribe = () => void;
 
 /**
- * @description The observer type for the pan event.
- * 
+ * Callback type for pan (position change) events.
+ *
  * @category Camera
  */
 export type PanObserver = Callback<"pan">;
 
 /**
- * @description The observer type for the zoom event.
- * 
+ * Callback type for zoom (scale change) events.
+ *
  * @category Camera
  */
 export type ZoomObserver = Callback<"zoom">;
 
 /**
- * @description The observer type for the rotate event.
- * 
+ * Callback type for rotation events.
+ *
  * @category Camera
  */
 export type RotateObserver = Callback<"rotate">;
 
 /**
- * @description The observer type for the "all" camera event.
- * 
+ * Callback type for the 'all' event that fires on any camera change.
+ *
  * @category Camera
  */
 export type AllObserver = Callback<"all">;
 
 /**
- * @description The camera update publisher.
- * 
+ * Event publisher for camera state changes using the Observable pattern.
+ * Manages subscriptions and notifications for pan, zoom, and rotate events.
+ *
+ * @remarks
+ * This class is used internally by {@link DefaultBoardCamera} to implement the event system.
+ * You typically don't instantiate this directly unless building custom camera implementations.
+ *
+ * Each specific event (pan, zoom, rotate) also triggers the 'all' event, allowing
+ * listeners to subscribe to any camera change with a single handler.
+ *
+ * @example
+ * ```typescript
+ * const publisher = new CameraUpdatePublisher();
+ *
+ * // Subscribe to pan events
+ * publisher.on('pan', (event, state) => {
+ *   console.log('Camera panned:', event.diff);
+ * });
+ *
+ * // Notify subscribers of a pan event
+ * publisher.notifyPan(
+ *   { diff: { x: 10, y: 20 } },
+ *   { position: { x: 100, y: 200 }, zoomLevel: 1, rotation: 0 }
+ * );
+ * ```
+ *
  * @category Camera
+ * @see {@link DefaultBoardCamera} for the primary consumer of this class
  */
 export class CameraUpdatePublisher {
 
@@ -150,6 +201,9 @@ export class CameraUpdatePublisher {
     private rotate: Observable<Parameters<Callback<"rotate">>>;
     private all: Observable<Parameters<Callback<"all">>>;
 
+    /**
+     * Creates a new camera event publisher with async observables for each event type.
+     */
     constructor() {
         this.pan = new AsyncObservable<Parameters<Callback<"pan">>>();
         this.zoom = new AsyncObservable<Parameters<Callback<"zoom">>>();
@@ -158,10 +212,11 @@ export class CameraUpdatePublisher {
     }
 
     /**
-     * @description Notify the pan event.
-     * Will also notify the "all" event.
-     * 
-     * @category Camera
+     * Notifies all pan event subscribers.
+     * Also triggers the 'all' event with type discrimination.
+     *
+     * @param event - Pan event payload containing position delta
+     * @param cameraState - Current camera state snapshot
      */
     notifyPan(event: CameraEventMap["pan"], cameraState: CameraState): void {
         this.pan.notify(event, cameraState);
@@ -169,10 +224,11 @@ export class CameraUpdatePublisher {
     }
 
     /**
-     * @description Notify the zoom event.
-     * Will also notify the "all" event.
-     * 
-     * @category Camera
+     * Notifies all zoom event subscribers.
+     * Also triggers the 'all' event with type discrimination.
+     *
+     * @param event - Zoom event payload containing zoom delta
+     * @param cameraState - Current camera state snapshot
      */
     notifyZoom(event: CameraEventMap["zoom"], cameraState: CameraState): void {
         this.zoom.notify(event, cameraState);
@@ -180,10 +236,11 @@ export class CameraUpdatePublisher {
     }
 
     /**
-     * @description Notify the rotate event.
-     * Will also notify the "all" event.
-     * 
-     * @category Camera
+     * Notifies all rotation event subscribers.
+     * Also triggers the 'all' event with type discrimination.
+     *
+     * @param event - Rotation event payload containing rotation delta
+     * @param cameraState - Current camera state snapshot
      */
     notifyRotate(event: CameraEventMap["rotate"], cameraState: CameraState): void {
         this.rotate.notify(event, cameraState);
@@ -191,19 +248,52 @@ export class CameraUpdatePublisher {
     }
     
     /**
-     * @description Subscribe to the camera event.
-     * You can also pass in the abort controller signal within the options to cancel the subscription. Like this:
-     * ```ts
+     * Subscribes to camera events with type-safe callbacks and optional AbortController support.
+     *
+     * @typeParam K - The event type key from CameraEventMap
+     * @param eventName - Event type to subscribe to ('pan', 'zoom', 'rotate', or 'all')
+     * @param callback - Function called when the event occurs
+     * @param options - Optional subscription options including AbortController signal
+     * @returns Function that unsubscribes this callback when called
+     *
+     * @throws Error if an invalid event name is provided
+     *
+     * @remarks
+     * Use the AbortController pattern for managing multiple subscriptions:
+     *
+     * @example
+     * ```typescript
+     * // Basic subscription
+     * const unsubscribe = publisher.on('pan', (event, state) => {
+     *   console.log(`Panned by (${event.diff.x}, ${event.diff.y})`);
+     * });
+     *
+     * // Later: unsubscribe
+     * unsubscribe();
+     *
+     * // Using AbortController for batch management
      * const controller = new AbortController();
-     * const unSubscribe = on("pan", (event, cameraState)=>{}, {signal: controller.signal});
-     * 
-     * // later in other place where you want to unsubscribe
+     * publisher.on('pan', handlePan, { signal: controller.signal });
+     * publisher.on('zoom', handleZoom, { signal: controller.signal });
+     *
+     * // Unsubscribe all at once
      * controller.abort();
      *
+     * // Subscribe to all events with type discrimination
+     * publisher.on('all', (event, state) => {
+     *   switch (event.type) {
+     *     case 'pan':
+     *       console.log('Pan:', event.diff);
+     *       break;
+     *     case 'zoom':
+     *       console.log('Zoom:', event.deltaZoomAmount);
+     *       break;
+     *     case 'rotate':
+     *       console.log('Rotate:', event.deltaRotation);
+     *       break;
+     *   }
+     * });
      * ```
-     * This means you can cancel multiple subscriptions by aborting the same controller. Just like regular event listeners.
-     * 
-     * @category Camera
      */
     on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
         switch (eventName){

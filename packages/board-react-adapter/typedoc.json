@@ -1,0 +1,17 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "extends": "../../typedoc.json",
+    "entryPoints": ["src/index.ts"],
+    "out": "../../docs/board-react-adapter",
+    "name": "@ue-too/board-react-adapter",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "categorizeByGroup": true,
+    "categoryOrder": [
+        "Components",
+        "Hooks",
+        "*"
+    ],
+    "sort": ["kind", "static-first", "alphabetical"]
+}
+

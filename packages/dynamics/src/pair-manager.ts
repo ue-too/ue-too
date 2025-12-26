@@ -1,6 +1,15 @@
 import { RigidBody } from "./rigidbody";
 import { Point } from "@ue-too/math";
 
+/**
+ * Represents a collision pair between two bodies.
+ *
+ * @remarks
+ * Tracks collision information across multiple frames, enabling
+ * detection of collision start, update, and end events.
+ *
+ * @category Collision
+ */
 export interface CollisionPair {
     bodyA: RigidBody;
     bodyB: RigidBody;
@@ -19,6 +28,33 @@ export interface PairEvents {
     removed: CollisionPair[];
 }
 
+/**
+ * Manages collision pairs across frames.
+ *
+ * @remarks
+ * Tracks which bodies are colliding and for how long, enabling
+ * collision lifecycle events (start, update, end). This is useful for
+ * game logic like damage on collision start or triggers.
+ *
+ * Automatically cleans up old inactive pairs to prevent memory leaks.
+ *
+ * @example
+ * Using collision events
+ * ```typescript
+ * const pairManager = world.getPairManager();
+ *
+ * world.step(dt);
+ *
+ * const events = pairManager.getActivePairs();
+ * events.forEach(pair => {
+ *   if (pair.frameCreated === world.currentFrame) {
+ *     console.log('Collision started!');
+ *   }
+ * });
+ * ```
+ *
+ * @category Collision
+ */
 export class PairManager {
     private pairs = new Map<string, CollisionPair>();
     private frameNumber = 0;

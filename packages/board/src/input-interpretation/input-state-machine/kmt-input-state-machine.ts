@@ -4,29 +4,49 @@ import { CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-
 import { convertFromWindow2ViewPortWithCanvasOperator } from "../../utils/coorindate-conversion";
 
 const KMT_INPUT_STATES = ["IDLE", "READY_TO_PAN_VIA_SPACEBAR", "READY_TO_PAN_VIA_SCROLL_WHEEL", "PAN", "INITIAL_PAN", "PAN_VIA_SCROLL_WHEEL", "DISABLED"] as const;
+
 /**
- * @description The possible states of the keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
+ * Possible states of the Keyboard/Mouse/Trackpad input state machine.
+ *
+ * @remarks
+ * State transitions:
+ * - **IDLE**: Default state, waiting for user input
+ * - **READY_TO_PAN_VIA_SPACEBAR**: Spacebar pressed, ready to pan with left-click drag
+ * - **INITIAL_PAN**: First frame of pan via spacebar (detects accidental clicks)
+ * - **PAN**: Active panning via spacebar + left-click drag
+ * - **READY_TO_PAN_VIA_SCROLL_WHEEL**: Middle mouse button pressed, ready to pan
+ * - **PAN_VIA_SCROLL_WHEEL**: Active panning via middle-click drag
+ * - **DISABLED**: Input temporarily disabled (e.g., during UI interactions)
+ *
+ * @category Input State Machine - KMT
  */
 export type KmtInputStates = CreateStateType<typeof KMT_INPUT_STATES>;
 
 /**
- * @description The payload for the pointer event.
- * 
- * @category Input State Machine
+ * Payload for pointer events (mouse button press/release/move).
+ *
+ * @property x - X coordinate in window space
+ * @property y - Y coordinate in window space
+ *
+ * @category Input State Machine - KMT
  */
 export type PointerEventPayload = {
     x: number;
     y: number;
 }
 
+/**
+ * @internal
+ */
 type EmptyPayload = {};
 
 /**
- * @description The payload for the scroll event.
- * 
- * @category Input State Machine
+ * Payload for scroll wheel events.
+ *
+ * @property deltaX - Horizontal scroll delta
+ * @property deltaY - Vertical scroll delta
+ *
+ * @category Input State Machine - KMT
  */
 export type ScrollEventPayload = {
     deltaX: number;
@@ -34,9 +54,14 @@ export type ScrollEventPayload = {
 }
 
 /**
- * @description The payload for the scroll with ctrl event.
- * 
- * @category Input State Machine
+ * Payload for scroll events combined with ctrl key (zoom gesture).
+ *
+ * @property deltaX - Horizontal scroll delta
+ * @property deltaY - Vertical scroll delta
+ * @property x - Cursor X coordinate in window space (zoom anchor point)
+ * @property y - Cursor Y coordinate in window space (zoom anchor point)
+ *
+ * @category Input State Machine - KMT
  */
 export type ScrollWithCtrlEventPayload = {
     deltaX: number;
@@ -46,9 +71,21 @@ export type ScrollWithCtrlEventPayload = {
 }
 
 /**
- * @description The payload mapping for the events of the keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
+ * Event mapping for the KMT input state machine.
+ *
+ * @remarks
+ * Maps event names to their payload types. Used by the state machine framework
+ * to provide type-safe event handling.
+ *
+ * Key events:
+ * - **leftPointerDown/Up/Move**: Left mouse button interactions
+ * - **middlePointerDown/Up/Move**: Middle mouse button interactions (pan)
+ * - **spacebarDown/Up**: Spacebar for pan mode
+ * - **scroll**: Regular scroll (pan or zoom depending on device)
+ * - **scrollWithCtrl**: Ctrl + scroll (always zoom)
+ * - **disable/enable**: Temporarily disable/enable input processing
+ *
+ * @category Input State Machine - KMT
  */
 export type KmtInputEventMapping = {
     leftPointerDown: PointerEventPayload;
@@ -68,11 +105,17 @@ export type KmtInputEventMapping = {
     pointerMove: PointerEventPayload;
 }
 
+/**
+ * @internal
+ */
 type PanEventOutput = {
     type: "pan";
     delta: Point;
 };
 
+/**
+ * @internal
+ */
 type ZoomEventOutput = {
     type: "zoom";
     delta: number;
@@ -80,10 +123,24 @@ type ZoomEventOutput = {
 };
 
 /**
- * @description Output events from the state machine to the orchestrator.
- * These events represent the actions that should be taken in response to user input.
+ * Output events produced by the KMT state machine for the orchestrator.
  *
- * @category Input State Machine
+ * @remarks
+ * These high-level gesture events are the result of recognizing patterns in raw DOM events.
+ * The orchestrator receives these events and coordinates camera control and observer notification.
+ *
+ * **Event Types**:
+ * - **pan**: Camera translation with delta in viewport coordinates
+ * - **zoom**: Camera scale change with anchor point in viewport coordinates
+ * - **rotate**: Camera rotation change (currently unused in KMT)
+ * - **cursor**: Cursor style change request (handled by state uponEnter/beforeExit)
+ * - **none**: No action required
+ *
+ * **Coordinate Spaces**:
+ * - Pan delta is in viewport pixels
+ * - Zoom anchor point is in viewport coordinates (origin at viewport center)
+ *
+ * @category Input State Machine - KMT
  */
 export type KmtOutputEvent =
     | { type: "pan", delta: Point }
@@ -92,6 +149,16 @@ export type KmtOutputEvent =
     | { type: "cursor", style: CursorStyle }
     | { type: "none" };
 
+/**
+ * Mapping of events to their output types.
+ *
+ * @remarks
+ * Defines which events produce outputs. Not all events produce outputs - some only
+ * cause state transitions. This mapping is used by the state machine framework for
+ * type-safe output handling.
+ *
+ * @category Input State Machine - KMT
+ */
 export type KmtInputEventOutputMapping = {
     spacebarDown: number;
     middlePointerMove: KmtOutputEvent;
@@ -100,18 +167,34 @@ export type KmtInputEventOutputMapping = {
     leftPointerMove: KmtOutputEvent;
 }
 
-
 /**
- * @description The possible target states of the idle state.
- * 
- * @category Input State Machine
+ * @internal
  */
 export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "DISABLED";
 
 /**
- * @description The idle state of the keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
+ * IDLE state - default state waiting for user input.
+ *
+ * @remarks
+ * This is the default state of the KMT input state machine. It handles scroll events
+ * for panning and zooming, and transitions to pan-ready states when the user presses
+ * spacebar or middle-click.
+ *
+ * **Responsibilities**:
+ * - Process scroll events (pan or zoom depending on device and modifiers)
+ * - Detect spacebar press to enter pan mode
+ * - Detect middle-click to enter pan mode
+ * - Distinguish between mouse and trackpad input modalities
+ *
+ * **Scroll Behavior**:
+ * - Ctrl + Scroll: Always zoom (both mouse and trackpad)
+ * - Scroll (no Ctrl): Pan (trackpad) or Zoom (mouse, determined by modality detection)
+ *
+ * **Input Modality Detection**:
+ * The state tracks horizontal scroll deltas to distinguish trackpads (which produce deltaX)
+ * from mice (which typically only produce deltaY). This affects zoom behavior.
+ *
+ * @category Input State Machine - KMT
  */
 export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
 
@@ -476,12 +559,58 @@ export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputC
     
 }
 
+/**
+ * Type alias for the KMT input state machine.
+ *
+ * @category Input State Machine - KMT
+ */
 export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>;
 
 /**
- * @description Creates the keyboard mouse and trackpad input state machine.
- * 
- * @category Input State Machine
+ * Creates a new KMT (Keyboard/Mouse/Trackpad) input state machine.
+ *
+ * @param context - The context providing state and canvas access for the state machine
+ * @returns A configured state machine ready to process KMT input events
+ *
+ * @remarks
+ * This factory function creates a fully configured state machine with all KMT gesture
+ * recognition states. The state machine processes raw input events and produces
+ * high-level gesture outputs (pan, zoom, rotate).
+ *
+ * **State Flow**:
+ * ```
+ * IDLE → (spacebar) → READY_TO_PAN_VIA_SPACEBAR → (click) → INITIAL_PAN → PAN
+ * IDLE → (middle-click) → READY_TO_PAN_VIA_SCROLL_WHEEL → PAN_VIA_SCROLL_WHEEL
+ * IDLE → (scroll) → [produces pan or zoom output, stays in IDLE]
+ * ```
+ *
+ * **Gesture Recognition**:
+ * - **Pan via spacebar**: Spacebar + left-click drag
+ * - **Pan via middle-click**: Middle-click drag
+ * - **Zoom**: Ctrl + scroll (mouse) or scroll (trackpad, auto-detected)
+ * - **Pan via scroll**: Scroll (trackpad) or scroll without Ctrl (varies by device)
+ *
+ * @category Input State Machine - KMT
+ *
+ * @example
+ * ```typescript
+ * const canvasProxy = new CanvasProxy(canvasElement);
+ * const context = new ObservableInputTracker(canvasProxy);
+ * const stateMachine = createKmtInputStateMachine(context);
+ *
+ * // Process an event
+ * const result = stateMachine.happens("scroll", {
+ *   deltaX: 0,
+ *   deltaY: 10,
+ *   x: 500,
+ *   y: 300
+ * });
+ *
+ * // Check for output
+ * if (result.output) {
+ *   console.log("Gesture recognized:", result.output.type);
+ * }
+ * ```
  */
 export function createKmtInputStateMachine(context: KmtInputContext): KmtInputStateMachine {
     const states = {

@@ -80,6 +80,52 @@ type AdvanceAtTWithLengthOutofCurveRes = AdvanceAtWithLengthBeforeCurveRes | Adv
 
 type AdvanceAtTWithLengthRes = AdvanceAtTWithLengthWithinCurveRes | AdvanceAtTWithLengthOutofCurveRes;
 
+/**
+ * Bezier curve class supporting quadratic (3 points) and cubic (4 points) curves.
+ *
+ * @remarks
+ * BCurve provides a comprehensive implementation of Bezier curves with:
+ * - Curve evaluation at any parameter t (0 to 1)
+ * - Arc-length calculation with caching for performance
+ * - Curve splitting and subdivision
+ * - Geometric queries (projection, intersection, extrema)
+ * - Advanced operations (offset, arc fitting, curvature)
+ *
+ * ## Performance Optimizations
+ * - Optimized formulas for quadratic and cubic curves
+ * - Arc-length caching to avoid recomputation
+ * - Lazy computation of lookup tables (LUT)
+ * - Gauss-Legendre quadrature for arc-length calculation
+ *
+ * ## Coordinate System
+ * - Parameter t ranges from 0 (start) to 1 (end)
+ * - Points use {x, y} coordinates
+ * - Supports 2D curves (z-coordinate optional but not used)
+ *
+ * @example
+ * Create and evaluate a cubic Bezier curve
+ * ```typescript
+ * const curve = new BCurve([
+ *   { x: 0, y: 0 },     // Start point
+ *   { x: 33, y: 100 },  // Control point 1
+ *   { x: 66, y: 100 },  // Control point 2
+ *   { x: 100, y: 0 }    // End point
+ * ]);
+ *
+ * // Evaluate at different positions
+ * const start = curve.get(0);    // { x: 0, y: 0 }
+ * const mid = curve.get(0.5);    // Midpoint
+ * const end = curve.get(1);      // { x: 100, y: 0 }
+ *
+ * // Get curve length
+ * console.log('Length:', curve.fullLength);
+ *
+ * // Get derivative (tangent vector)
+ * const tangent = curve.derivative(0.5);
+ * ```
+ *
+ * @category Core
+ */
 export class BCurve{
 
     private controlPoints: Point[];
@@ -950,6 +996,10 @@ export class BCurve{
     }
 }
 
+/**
+ * Reduces a Bezier curve into simpler segments.
+ * @category Utilities
+ */
 export function reduce(curve: BCurve) {
     let i: number,
       t1 = 0,
@@ -1022,6 +1072,10 @@ function raiseCurveOrder(curve: BCurve): BCurve {
     return new BCurve(np);
 }
 
+/**
+ * Creates offset curves at a specified distance from the original curve.
+ * @category Utilities
+ */
 // Function overloads for different return types
 export function offset(curve: BCurve, t: number): BCurve[];
 export function offset(curve: BCurve, t: number, d: number): {c: Point, n: Point, x: number, y: number};
@@ -1066,6 +1120,10 @@ export function offset(curve: BCurve, t: number, d?: number | undefined) {
     });
 }
 
+/**
+ * Alternative offset implementation using LUT-based approach.
+ * @category Utilities
+ */
 export function offset2(curve: BCurve, d: number): Point[]{
     const lut = curve.getLUTWithTVal(100);
 
@@ -1228,18 +1286,30 @@ function map(v: number, ds: number, de: number, ts: number, te: number): number 
     return ts + d2 * r;      // mapped value in target range
 }
 
+/**
+ * Error thrown when t-value is out of valid range [0, 1].
+ * @category Types
+ */
 export class TValOutofBoundError extends Error{
     constructor(message: string){
         super(message);
     }
 }
 
+/**
+ * 2D/3D point type.
+ * @category Types
+ */
 export type Point = {
     x: number;
     y: number;
     z?: number;
 }
 
+/**
+ * Tests if two axis-aligned bounding boxes intersect.
+ * @category Utilities
+ */
 export function AABBIntersects(AABB1: {min: Point, max: Point}, AABB2: {min: Point, max: Point}): boolean{
     if ((AABB1.min.x <= AABB2.max.x && AABB2.min.x <= AABB1.max.x) && (AABB1.min.y <= AABB2.max.y && AABB2.min.y <= AABB1.max.y)){
         return true;
@@ -1247,6 +1317,10 @@ export function AABBIntersects(AABB1: {min: Point, max: Point}, AABB2: {min: Poi
     return false;
 }
 
+/**
+ * Checks if two numbers are approximately equal within a precision threshold.
+ * @category Utilities
+ */
 export function approximately (a: number, b: number, precision?: number) {
     const epsilon = 0.000001
     return Math.abs(a - b) <= (precision || epsilon);
@@ -1331,6 +1405,10 @@ export function getCubicRoots(pa: number, pb: number, pc: number, pd: number) {
     return [root1].filter(accept);
 }
 
+/**
+ * Finds all intersection points between two Bezier curves.
+ * @category Utilities
+ */
 export function getIntersectionsBetweenCurves(curve: BCurve, curve2: BCurve, deduplicationTolerance: number = 0.01): {selfT: number, otherT: number}[]{
     const threshold = 0.5;
     let pairs: {curve1: {curve: BCurve, startTVal: number, endTVal: number}, curve2: {curve: BCurve, startTVal: number, endTVal: number}}[] = [{curve1: {curve: curve, startTVal: 0, endTVal: 1}, curve2: {curve: curve2, startTVal: 0, endTVal: 1}}];
@@ -1452,6 +1530,10 @@ export function getIntersectionsBetweenCurves(curve: BCurve, curve2: BCurve, ded
     return tVals;
 }
 
+/**
+ * Solves cubic equations.
+ * @category Utilities
+ */
 export function solveCubic(a: number, b: number, c: number, d: number) {
     if (Math.abs(a) < 1e-8) { // Quadratic case, ax^2+bx+c=0
         a = b; b = c; c = d;
@@ -1510,6 +1592,10 @@ export function cuberoot(x: number) {
     return x < 0 ? -y : y;
 }
 
+/**
+ * Computes point on curve using De Casteljau's algorithm.
+ * @category Utilities
+ */
 export function computeWithControlPoints(tVal: number, controlPoints: Point[]): Point{
     let points = [...controlPoints];
     while (points.length > 1) {

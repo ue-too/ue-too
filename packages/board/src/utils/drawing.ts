@@ -1,6 +1,45 @@
 import { Point, PointCal } from "@ue-too/math";
 import { calculateOrderOfMagnitude } from "./ruler";
 
+/**
+ * Draws an arrow from start to end point with an arrowhead.
+ *
+ * @param context - The canvas 2D rendering context
+ * @param cameraZoomLevel - Current camera zoom level for scale-independent sizing
+ * @param startPoint - Arrow tail position in world coordinates
+ * @param endPoint - Arrow head position in world coordinates
+ * @param width - Line width in world units (default: 1)
+ * @param arrowRatio - Ratio of arrowhead size to total length (default: 0.3, unused in implementation)
+ *
+ * @remarks
+ * The arrow consists of a line segment and a triangular arrowhead. The arrowhead
+ * size is adaptive:
+ * - Maximum 10 pixels in viewport space
+ * - Minimum half the arrow length
+ *
+ * This ensures arrows look good at all zoom levels and lengths.
+ *
+ * The arrowhead is constructed perpendicular to the arrow direction, creating
+ * a filled triangle at the end point.
+ *
+ * @example
+ * ```typescript
+ * const ctx = canvas.getContext('2d');
+ * const zoom = 1.5;
+ *
+ * // Draw a simple arrow
+ * ctx.fillStyle = 'blue';
+ * ctx.strokeStyle = 'blue';
+ * drawArrow(ctx, zoom, { x: 0, y: 0 }, { x: 100, y: 50 });
+ *
+ * // Draw a thicker arrow
+ * ctx.fillStyle = 'red';
+ * ctx.strokeStyle = 'red';
+ * drawArrow(ctx, zoom, { x: 0, y: 0 }, { x: 100, y: -50 }, 3);
+ * ```
+ *
+ * @category Drawing Utilities
+ */
 export function drawArrow(context: CanvasRenderingContext2D, cameraZoomLevel: number, startPoint: Point, endPoint: Point, width: number = 1, arrowRatio: number = 0.3) {
     const length = PointCal.distanceBetweenPoints(startPoint, endPoint);
     const arrowHeight = 10 < length * cameraZoomLevel * 0.5 ? 10 / cameraZoomLevel : length * 0.5;
@@ -22,26 +61,97 @@ export function drawArrow(context: CanvasRenderingContext2D, cameraZoomLevel: nu
     context.fill();
 }
 
+/**
+ * Length of major tick marks in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const MAJOR_TICK_LENGTH = 30;
+
+/**
+ * Length of minor tick marks in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const MINOR_TICK_LENGTH = MAJOR_TICK_LENGTH * 0.3;
+
+/**
+ * Length of half-step tick marks in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const HALF_TICK_LENGTH = MAJOR_TICK_LENGTH * 0.5;
+
+/**
+ * Offset for major tick labels in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const TEXT_MAJOR_TICK_OFFSET = 10;
+
+/**
+ * Offset for half-step tick labels in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const TEXT_HALF_TICK_OFFSET = 2.5;
+
+/**
+ * Font size for major tick labels in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const TEXT_MAJOR_TICK_FONT_SIZE = 20;
+
+/**
+ * Font size for half-step tick labels in pixels (viewport space).
+ * @category Drawing Utilities
+ */
 export const TEXT_HALF_TICK_FONT_SIZE = 10;
 
 /**
- * @description Draws a ruler on the canvas.
- * argument points are in world space
- * 
- * @category Utils
- * 
+ * Draws calibrated rulers along the edges of the viewport.
+ *
+ * @param context - The canvas 2D rendering context
+ * @param topLeftCorner - Top-left corner of viewport in world coordinates
+ * @param topRightCorner - Top-right corner of viewport in world coordinates
+ * @param bottomLeftCorner - Bottom-left corner of viewport in world coordinates
+ * @param alignCoordinateSystem - Whether coordinates align with canvas (y-down) or are mathematical (y-up)
+ * @param cameraZoomLevel - Current camera zoom level
+ *
+ * @remarks
+ * This function draws rulers with three levels of tick marks:
+ * - Major ticks: At powers of 10 (1, 10, 100, etc.) with large labels
+ * - Half ticks: At half-steps (5, 50, 500, etc.) with small labels
+ * - Minor ticks: At 1/10 steps with no labels
+ *
+ * The ruler automatically adapts to the zoom level by calculating appropriate
+ * tick spacing using {@link calculateOrderOfMagnitude} and {@link calculateTickValues}.
+ *
+ * Rulers are drawn along:
+ * - Top edge (horizontal ruler, red)
+ * - Left edge (vertical ruler, green)
+ *
+ * Tick positions are calibrated to align with round numbers in world space,
+ * making it easy to read coordinates at any zoom level.
+ *
+ * @example
+ * ```typescript
+ * const ctx = canvas.getContext('2d');
+ * const zoom = 2.0;
+ *
+ * // Viewport corners in world space
+ * const topLeft = { x: -100, y: 100 };
+ * const topRight = { x: 100, y: 100 };
+ * const bottomLeft = { x: -100, y: -100 };
+ *
+ * drawRuler(ctx, topLeft, topRight, bottomLeft, false, zoom);
+ * // Draws rulers with ticks at -100, -50, 0, 50, 100
+ * ```
+ *
+ * @category Drawing Utilities
+ * @see {@link calculateTickValues} for tick calculation logic
+ * @see {@link calculateOrderOfMagnitude} for order of magnitude calculation
  */
 export function drawRuler(
-    context: CanvasRenderingContext2D, 
-    topLeftCorner: Point, 
-    topRightCorner: Point, 
-    bottomLeftCorner: Point, 
+    context: CanvasRenderingContext2D,
+    topLeftCorner: Point,
+    topRightCorner: Point,
+    bottomLeftCorner: Point,
     alignCoordinateSystem: boolean,
     cameraZoomLevel: number,
 ): void{
@@ -202,6 +312,50 @@ function drawXAxisTick(
     context.restore();
 }
 
+/**
+ * Calculates tick mark positions and spacing for a ruler.
+ *
+ * @param minValue - Minimum value on the ruler axis
+ * @param maxValue - Maximum value on the ruler axis
+ * @param orderOfMagnitude - Optional pre-calculated order of magnitude (for consistency across axes)
+ * @returns Object containing tick positions and spacing for major, half, and minor ticks
+ *
+ * @remarks
+ * This function determines where to place tick marks on a ruler to show round
+ * numbers at appropriate intervals. It calculates three levels of ticks:
+ *
+ * 1. Major ticks: At powers of 10 (step = 10^n)
+ * 2. Half ticks: At half the major step (step = 5×10^(n-1))
+ * 3. Minor ticks: At 1/10 the major step (step = 10^(n-1))
+ *
+ * The calibration multiplier handles cases where the order of magnitude is very
+ * small (< 1), ensuring tick positions are calculated correctly for zoomed-in views.
+ *
+ * For consistency between x and y axes, you can provide a pre-calculated
+ * orderOfMagnitude. Otherwise, it's calculated from the range width.
+ *
+ * @example
+ * ```typescript
+ * // Ruler showing -100 to 100
+ * const ticks = calculateTickValues(-100, 100);
+ * // Result:
+ * // majorTickStep: 100
+ * // minMajorTickValue: -100, maxMajorTickValue: 100
+ * // halfTickStep: 50
+ * // minorTickStep: 10
+ * // calibrationMultiplier: 1
+ *
+ * // Zoomed in view: 0.001 to 0.01
+ * const zoomedTicks = calculateTickValues(0.001, 0.01);
+ * // Result:
+ * // majorTickStep: 10 (calibrated)
+ * // calibrationMultiplier: 0.001 (multiply tick values by this)
+ * ```
+ *
+ * @category Drawing Utilities
+ * @see {@link calculateOrderOfMagnitude} for order calculation
+ * @see {@link drawRuler} for usage in ruler drawing
+ */
 export function calculateTickValues(minValue: number, maxValue: number, orderOfMagnitude?: number){
     const trueMinValue = Math.min(minValue, maxValue);
     const trueMaxValue = Math.max(minValue, maxValue);
