@@ -3,7 +3,7 @@
 High-performance Entity Component System (ECS) architecture for TypeScript.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/ecs.svg)](https://www.npmjs.com/package/@ue-too/ecs)
-[![license](https://img.shields.io/npm/l/@ue-too/ecs.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/@ue-too/ecs.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
 
 > **Experimental**: This package is an experimental implementation based on [Austin Morlan's ECS tutorial](https://austinmorlan.com/posts/entity_component_system/). Please **DO NOT** use this in production.
 

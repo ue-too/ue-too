@@ -1,5 +1,8 @@
 # being
 
+[![npm version](https://img.shields.io/npm/v/@ue-too/being.svg)](https://www.npmjs.com/package/@ue-too/being)
+[![license](https://img.shields.io/npm/l/@ue-too/being.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
+
 This is a library that helps with building finite state machines.
 
 > Disclaimer: I am not an expert on finite state machines; this is just what I use and it works for me, and the features are tailored to what I need. You would probably be better off using a library like [xstate](https://stately.ai/docs).

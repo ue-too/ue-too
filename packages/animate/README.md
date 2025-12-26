@@ -3,7 +3,7 @@
 Keyframe-based animation library for TypeScript canvas applications.
 
 [![npm version](https://img.shields.io/npm/v/@ue-too/animate.svg)](https://www.npmjs.com/package/@ue-too/animate)
-[![license](https://img.shields.io/npm/l/@ue-too/animate.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/@ue-too/animate.svg)](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt)
 
 ## Overview
 
