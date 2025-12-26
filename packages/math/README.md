@@ -208,8 +208,8 @@ const currentPos = PointCal.linearInterpolation(start, end, progress);
 ## API Reference
 
 For complete API documentation with detailed examples, see:
-- [Full TypeDoc Documentation](../../docs/math) (generated from source)
-- [Source Code](./src/index.ts) with inline JSDoc comments
+- [Full TypeDoc Documentation](/math/) (generated from source)
+- [Source Code](https://github.com/ue-too/ue-too/blob/main/packages/math/src/index.ts) with inline JSDoc comments
 
 ## TypeScript Support
 
@@ -245,13 +245,13 @@ const unit = PointCal.divideVectorByScalar(vector, mag);
 
 ## Related Packages
 
-- [`@ue-too/board`](../board) - Canvas viewport management with pan, zoom, rotate
-- [`@ue-too/animate`](../animate) - Animation system using these math utilities
-- [`@ue-too/dynamics`](../dynamics) - Physics engine built on these operations
+- `@ue-too/board` - Canvas viewport management with pan, zoom, rotate
+- `@ue-too/animate` - Animation system using these math utilities
+- `@ue-too/dynamics` - Physics engine built on these operations
 
 ## License
 
-MIT License - see [LICENSE.txt](../../LICENSE.txt) for details.
+MIT License - see [LICENSE.txt](https://github.com/ue-too/ue-too/blob/main/LICENSE.txt) for details.
 
 ## Contributing
 

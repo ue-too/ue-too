@@ -6,7 +6,6 @@
     "name": "@ue-too/dynamics",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Core",
         "Collision",

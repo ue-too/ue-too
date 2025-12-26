@@ -404,7 +404,7 @@ if (isVisible) {
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/curve).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/curve/).
 
 ## TypeScript Support
 
@@ -453,10 +453,10 @@ This library follows these principles:
 
 ## Related Packages
 
-- **[@ue-too/math](../math)**: Vector operations for point manipulation
-- **[@ue-too/animate](../animate)**: Animate objects along curves
-- **[@ue-too/border](../border)**: Border rendering that can use curves
-- **[@ue-too/board](../board)**: Canvas board for rendering curves
+- **[@ue-too/math](/math/)**: Vector operations for point manipulation
+- **[@ue-too/animate](/animate/)**: Animate objects along curves
+- **[@ue-too/border](/border/)**: Border rendering that can use curves
+- **[@ue-too/board](/board/)**: Canvas board for rendering curves
 
 ## Further Reading
 

@@ -6,7 +6,6 @@
     "name": "@ue-too/board-react-adapter",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Components",
         "Hooks",

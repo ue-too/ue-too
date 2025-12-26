@@ -417,7 +417,7 @@ cities.forEach(city => {
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/border).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/border/).
 
 ## TypeScript Support
 
@@ -466,9 +466,9 @@ This library follows these principles:
 
 ## Related Packages
 
-- **[@ue-too/math](../math)**: Vector operations for point calculations
-- **[@ue-too/curve](../curve)**: Bezier curves for drawing map features
-- **[@ue-too/board](../board)**: Canvas board for rendering maps
+- **[@ue-too/math](/math/)**: Vector operations for point calculations
+- **[@ue-too/curve](/curve/)**: Bezier curves for drawing map features
+- **[@ue-too/board](/board/)**: Canvas board for rendering maps
 
 ## Further Reading
 

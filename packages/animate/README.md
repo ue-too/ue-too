@@ -429,7 +429,7 @@ const keyframe = {
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/animate).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/animate/).
 
 ## TypeScript Support
 
@@ -480,9 +480,9 @@ This animation library follows these principles:
 
 ## Related Packages
 
-- **[@ue-too/math](../math)**: Vector operations for point animations
-- **[@ue-too/curve](../curve)**: Bezier curves that can be animated
-- **[@ue-too/board](../board)**: Canvas board that can use animations for transitions
+- **[@ue-too/math](/math/)**: Vector operations for point animations
+- **[@ue-too/curve](/curve/)**: Bezier curves that can be animated
+- **[@ue-too/board](/board/)**: Canvas board that can use animations for transitions
 
 ## License
 

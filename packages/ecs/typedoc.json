@@ -6,7 +6,6 @@
     "name": "@ue-too/ecs",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Core",
         "Managers",

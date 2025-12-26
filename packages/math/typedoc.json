@@ -6,7 +6,6 @@
     "name": "@ue-too/math",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Vector Arithmetic",
         "Vector Operations",

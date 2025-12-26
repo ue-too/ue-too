@@ -426,7 +426,7 @@ world.setSpatialIndexType('dynamictree');
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/dynamics).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/dynamics/).
 
 ## TypeScript Support
 
@@ -522,9 +522,9 @@ world.debugDraw = (ctx: CanvasRenderingContext2D) => {
 
 ## Related Packages
 
-- **[@ue-too/math](../math)**: Vector operations used throughout the physics engine
-- **[@ue-too/ecs](../ecs)**: Entity Component System that can integrate with physics
-- **[@ue-too/board](../board)**: Canvas board for rendering physics simulations
+- **[@ue-too/math](/math/)**: Vector operations used throughout the physics engine
+- **[@ue-too/ecs](/ecs/)**: Entity Component System that can integrate with physics
+- **[@ue-too/board](/board/)**: Canvas board for rendering physics simulations
 
 ## Further Reading
 

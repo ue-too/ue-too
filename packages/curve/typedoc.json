@@ -6,7 +6,6 @@
     "name": "@ue-too/curve",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Core",
         "Utilities",

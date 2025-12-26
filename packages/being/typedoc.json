@@ -6,7 +6,6 @@
     "name": "@ue-too/being",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Core",
         "Types",

@@ -6,7 +6,6 @@
     "name": "@ue-too/border",
     "readme": "./README.md",
     "includeVersion": true,
-    "categorizeByGroup": true,
     "categoryOrder": [
         "Types",
         "Great Circle",

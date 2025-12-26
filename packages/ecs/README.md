@@ -291,7 +291,7 @@ const entityManager = new EntityManager(5000); // Custom max entities
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/ecs).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/ecs/).
 
 ## TypeScript Support
 
@@ -345,9 +345,9 @@ This ECS implementation follows these principles:
 
 ## Related Packages
 
-- **[@ue-too/being](../being)**: State machine library for entity AI and behavior
-- **[@ue-too/math](../math)**: Vector and transformation utilities for component data
-- **[@ue-too/board](../board)**: Canvas rendering system that can integrate with ECS
+- **[@ue-too/being](/being/)**: State machine library for entity AI and behavior
+- **[@ue-too/math](/math/)**: Vector and transformation utilities for component data
+- **[@ue-too/board](/board/)**: Canvas rendering system that can integrate with ECS
 
 ## Further Reading
 

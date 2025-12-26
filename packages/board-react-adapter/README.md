@@ -432,7 +432,7 @@ function CustomBoard() {
 
 ## API Reference
 
-For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](../../docs/board-react-adapter).
+For complete API documentation with detailed type information, see the [TypeDoc-generated documentation](/board-react-adapter/).
 
 ## TypeScript Support
 
@@ -483,9 +483,9 @@ This adapter follows these principles:
 
 ## Related Packages
 
-- **[@ue-too/board](../board)**: The core infinite canvas library
-- **[@ue-too/math](../math)**: Vector operations for point calculations
-- **[@ue-too/animate](../animate)**: Animation system for canvas objects
+- **[@ue-too/board](/board/)**: The core infinite canvas library
+- **[@ue-too/math](/math/)**: Vector operations for point calculations
+- **[@ue-too/animate](/animate/)**: Animation system for canvas objects
 
 ## License
 
