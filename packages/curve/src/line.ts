@@ -27,7 +27,7 @@ import { PointCal, Point } from "@ue-too/math";
  * }
  * ```
  *
- * @category Geometry
+ * @category Core
  */
 export class Line {
     private startPoint: Point;

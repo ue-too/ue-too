@@ -24,7 +24,7 @@
  * }
  * ```
  *
- * @category State Machine Core
+ * @category Core
  */
 export interface BaseContext {
     setup(): void;
@@ -52,7 +52,7 @@ type IsEmptyObject<T> = T extends {} ? {} extends T ? true : false : false;
  * type TestStates = CreateStateType<typeof TEST_STATES>; // "one" | "two" | "three"
  * ```
  *
- * @category Type Utilities
+ * @category Utilities
  */
 export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiteral[number];
 
@@ -66,7 +66,7 @@ export type CreateStateType<ArrayLiteral extends readonly string[]> = ArrayLiter
  * @typeParam EventPayloadMapping - Mapping of event names to their payload types
  * @typeParam K - The event key
  *
- * @category Type Utilities
+ * @category Utilities
  */
 export type EventArgs<EventPayloadMapping, K> =
   K extends keyof EventPayloadMapping
@@ -82,7 +82,7 @@ export type EventArgs<EventPayloadMapping, K> =
  * Use this when you need to provide a function but don't want it to do anything,
  * such as for default state transition actions that have no side effects.
  *
- * @category State Machine Core
+ * @category Core
  */
 export const NO_OP: NOOP = ()=>{};
 
@@ -93,7 +93,7 @@ export const NO_OP: NOOP = ()=>{};
  * When a state doesn't have a handler defined for a particular event, it returns this type.
  * The state machine will not transition and the event is effectively ignored.
  *
- * @category State Machine Core
+ * @category Core
  */
 export type EventNotHandled = {
     handled: false;
@@ -126,7 +126,7 @@ export type EventNotHandled = {
  * };
  * ```
  *
- * @category State Machine Core
+ * @category Core
  */
 export type EventHandled<States extends string, Output = void> = {
     handled: true;
@@ -147,7 +147,7 @@ export type EventHandled<States extends string, Output = void> = {
  * @typeParam States - Union of all possible state names
  * @typeParam Output - The output type for handled events
  *
- * @category State Machine Core
+ * @category Core
  */
 export type EventResult<States extends string, Output = void> = EventNotHandled | EventHandled<States, Output>;
 
@@ -155,7 +155,7 @@ export type EventResult<States extends string, Output = void> = EventNotHandled 
  * @description A default output mapping that maps all events to void.
  * Used as default when no output mapping is provided.
  * 
- * @category being
+ * @category Types
  */
 export type DefaultOutputMapping<EventPayloadMapping> = {
     [K in keyof EventPayloadMapping]: void;
@@ -176,7 +176,7 @@ export type DefaultOutputMapping<EventPayloadMapping> = {
  * @see {@link TemplateStateMachine}
  * @see {@link KmtInputStateMachine}
  * 
- * @category being
+ * @category Types
  */
 export interface StateMachine<
     EventPayloadMapping, 
@@ -203,7 +203,7 @@ export interface StateMachine<
 /**
  * @description This is the type for the callback that is called when the state changes.
  *
- * @category being
+ * @category Types
  */
 export type StateChangeCallback<States extends string = 'IDLE'> = (currentState: States, nextState: States) => void;
 
@@ -222,7 +222,7 @@ export type StateChangeCallback<States extends string = 'IDLE'> = (currentState:
  *
  * @see {@link TemplateState}
  * 
- * @category being
+ * @category Types
  */
 export interface State<
     EventPayloadMapping, 
@@ -250,7 +250,7 @@ export interface State<
  * 
  * The action function can now return an output value that will be included in the EventHandledResult.
  * 
- * @category being
+ * @category Types
  */
 export type EventReactions<
     EventPayloadMapping, 
@@ -277,7 +277,7 @@ export type EventReactions<
  * Generic parameters:
  * - Context: The context of the state machine. (which can be used by each state to do calculations that would persist across states)
  * 
- * @category being
+ * @category Types
  */
 export type GuardEvaluation<Context extends BaseContext> = (context: Context) => boolean;
 
@@ -288,7 +288,7 @@ export type GuardEvaluation<Context extends BaseContext> = (context: Context) =>
  * K is all the possible keys that can be used to evaluate the guard.
  * K is optional but if it is not provided, typescript won't be able to type guard in the EventGuards type.
  * 
- * @category being
+ * @category Types
  */
 export type Guard<Context extends BaseContext, K extends string = string> = {
     [P in K]: GuardEvaluation<Context>;
@@ -327,7 +327,7 @@ export type Delay<
  * 
  * @see {@link TemplateState['eventGuards']}
  * 
- * @category being
+ * @category Types
  */
 export type GuardMapping<Context extends BaseContext, G, States extends string> = {
     guard: G extends Guard<Context, infer K> ? K : never;
@@ -348,7 +348,7 @@ export type GuardMapping<Context extends BaseContext, G, States extends string> 
  * 
  * @see {@link TemplateState['eventGuards']}
  * 
- * @category being
+ * @category Types
  */
 export type EventGuards<EventPayloadMapping, States extends string, Context extends BaseContext, T extends Guard<Context>> = {
     [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
@@ -671,7 +671,7 @@ export abstract class TemplateState<
  * }
  * ```
  *
- * @category Type Utilities
+ * @category Utilities
  */
 export function createStateGuard<T extends string>(set: readonly T[]) {
     return (s: string): s is T => set.includes(s as T);

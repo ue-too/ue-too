@@ -11,7 +11,7 @@ import { CollisionFilter, DEFAULT_COLLISION_FILTER } from "./collision-filter";
  *
  * Implemented by {@link Circle} and {@link Polygon} classes.
  *
- * @category Core Types
+ * @category Core
  */
 export interface RigidBody {
     /** Center position in world coordinates */

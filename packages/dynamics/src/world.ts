@@ -17,7 +17,7 @@ import { canCollide } from "./collision-filter";
  * - **dynamictree**: Good balance for mixed static/dynamic
  * - **sap**: Best for many dynamic bodies (sweep-and-prune)
  *
- * @category World
+ * @category Core
  */
 export type SpatialIndexType = 'quadtree' | 'dynamictree' | 'sap';
 
@@ -59,7 +59,7 @@ export type SpatialIndexType = 'quadtree' | 'dynamictree' | 'sap';
  * }
  * ```
  *
- * @category World
+ * @category Core
  */
 export class World {
     private rigidBodyList: RigidBody[];

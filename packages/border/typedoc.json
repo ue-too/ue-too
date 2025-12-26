@@ -2,6 +2,18 @@
     "$schema": "https://typedoc.org/schema.json",
     "extends": "../../typedoc.json",
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/border"
+    "out": "../../docs/border",
+    "name": "@ue-too/border",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "categorizeByGroup": true,
+    "categoryOrder": [
+        "Types",
+        "Great Circle",
+        "Rhumb Line",
+        "Projections",
+        "*"
+    ],
+    "sort": ["kind", "static-first", "alphabetical"]
 }
 

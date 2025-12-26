@@ -8,7 +8,7 @@ import { Point } from "@ue-too/math";
  * Tracks collision information across multiple frames, enabling
  * detection of collision start, update, and end events.
  *
- * @category Collision Detection
+ * @category Collision
  */
 export interface CollisionPair {
     bodyA: RigidBody;
@@ -53,7 +53,7 @@ export interface PairEvents {
  * });
  * ```
  *
- * @category Collision Detection
+ * @category Collision
  */
 export class PairManager {
     private pairs = new Map<string, CollisionPair>();

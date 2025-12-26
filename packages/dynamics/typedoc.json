@@ -2,6 +2,19 @@
     "$schema": "https://typedoc.org/schema.json",
     "extends": "../../typedoc.json",
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/dynamics"
+    "out": "../../docs/dynamics",
+    "name": "@ue-too/dynamics",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "categorizeByGroup": true,
+    "categoryOrder": [
+        "Core",
+        "Collision",
+        "Spatial Indexing",
+        "Constraints",
+        "Types",
+        "*"
+    ],
+    "sort": ["kind", "static-first", "alphabetical"]
 }
 

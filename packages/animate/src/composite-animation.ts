@@ -6,7 +6,7 @@ import { AnimatableAttributeHelper, Keyframe } from "./animatable-attribute";
  * @param percentage - Animation progress (0.0 to 1.0)
  * @returns Same as input (linear progression)
  *
- * @category Easing Functions
+ * @category Easing
  */
 export const linear = (percentage: number) => {
     return percentage;
@@ -24,7 +24,7 @@ export const linear = (percentage: number) => {
  * - Parent-child relationships for composition
  * - Event callbacks for start and end
  *
- * @category Animation Core
+ * @category Core
  */
 export interface Animator{
     loops: boolean;
@@ -54,7 +54,7 @@ export interface Animator{
 /**
  * Function type for unsubscribing from animation events.
  *
- * @category Animation Core
+ * @category Core
  */
 export type UnSubscribe = () => void;
 
@@ -65,7 +65,7 @@ export type UnSubscribe = () => void;
  * Implemented by {@link CompositeAnimation} to manage hierarchical animation structures.
  * Handles duration updates and prevents cyclic dependencies.
  *
- * @category Animation Core
+ * @category Core
  */
 export interface AnimatorContainer {
     updateDuration(): void;
@@ -108,7 +108,7 @@ export interface AnimatorContainer {
  * sequence.start();
  * ```
  *
- * @category Animation Core
+ * @category Core
  */
 export class CompositeAnimation implements Animator, AnimatorContainer{
 
@@ -651,7 +651,7 @@ export class CompositeAnimation implements Animator, AnimatorContainer{
  * }
  * ```
  *
- * @category Animation Core
+ * @category Core
  */
 export class Animation<T> implements Animator{
 

@@ -8,7 +8,7 @@ import { Point } from "@ue-too/math";
  * - Latitude: -90 to 90 degrees (negative = south, positive = north)
  * - Longitude: -180 to 180 degrees (negative = west, positive = east)
  *
- * @category Core Types
+ * @category Types
  */
 export type GeoCoord = {
     /** Longitude in degrees (-180 to 180) */

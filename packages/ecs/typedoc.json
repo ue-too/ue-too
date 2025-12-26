@@ -2,6 +2,18 @@
     "$schema": "https://typedoc.org/schema.json",
     "extends": "../../typedoc.json",
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/ecs"
+    "out": "../../docs/ecs",
+    "name": "@ue-too/ecs",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "categorizeByGroup": true,
+    "categoryOrder": [
+        "Core",
+        "Managers",
+        "Data Structures",
+        "Types",
+        "Configuration",
+        "*"
+    ],
+    "sort": ["kind", "static-first", "alphabetical"]
 }
-

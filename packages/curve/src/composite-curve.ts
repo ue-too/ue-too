@@ -1,12 +1,24 @@
 import { Point, PointCal } from "@ue-too/math";
 
+/**
+ * Handle type for Bezier curve control points.
+ * @category Types
+ */
 export type HandleType = "ALIGNED" | "VECTOR" | "FREE";
 
+/**
+ * Handle point with position and type.
+ * @category Types
+ */
 export type HandlePoint = {
     position: Point;
     type: HandleType;
 }
 
+/**
+ * Control point with left and right handles for composite Bezier curves.
+ * @category Core
+ */
 export class ControlPoint {
 
     private position: Point;
@@ -184,6 +196,10 @@ export class ControlPoint {
     }
 }
 
+/**
+ * Composite Bezier curve made of multiple control points with handles.
+ * @category Core
+ */
 export class CompositeBCurve{
 
     private controlPoints: ControlPoint[];

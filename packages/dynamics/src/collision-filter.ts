@@ -13,7 +13,7 @@
  * 2. `(B.category & A.mask) !== 0` - B's category matches A's mask
  * 3. Group rules are satisfied (see group field)
  *
- * @category Core Types
+ * @category Types
  */
 export interface CollisionFilter {
     /**
@@ -62,7 +62,7 @@ export interface CollisionFilter {
  * Uses category 0x0001 and mask 0xFFFF, meaning it belongs to the first
  * category and can collide with all 16 categories.
  *
- * @category Collision Filtering
+ * @category Collision
  */
 export const DEFAULT_COLLISION_FILTER: CollisionFilter = {
     category: 0x0001,
@@ -98,7 +98,7 @@ export const DEFAULT_COLLISION_FILTER: CollisionFilter = {
  * console.log(canCollide(player, enemy)); // true
  * ```
  *
- * @category Collision Filtering
+ * @category Collision
  */
 export function canCollide(filterA: CollisionFilter, filterB: CollisionFilter): boolean {
     // If objects are in the same group
@@ -135,7 +135,7 @@ export function canCollide(filterA: CollisionFilter, filterB: CollisionFilter): 
  * };
  * ```
  *
- * @category Collision Filtering
+ * @category Collision
  */
 export const CollisionCategory = {
     STATIC: 0x0001,      // Walls, floors, static objects

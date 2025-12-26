@@ -28,6 +28,10 @@ export class RectangleBound{
 
 export type QuadTreeObject = SpatialIndexObject;
 
+/**
+ * QuadTree spatial indexing structure for efficient collision detection.
+ * @category Spatial Indexing
+ */
 export class QuadTree<T extends QuadTreeObject> implements SpatialIndex<T> {
     private MAX_OBJECTS = 10; // per node
     private MAX_LEVELS = 5;

@@ -1,9 +1,17 @@
 import { Point } from "@ue-too/math";
 
+/**
+ * Object that can be indexed spatially via AABB.
+ * @category Types
+ */
 export interface SpatialIndexObject {
     AABB: { min: Point, max: Point };
 }
 
+/**
+ * Interface for spatial indexing data structures.
+ * @category Types
+ */
 export interface SpatialIndex<T extends SpatialIndexObject> {
     clear(): void;
     insert(object: T): void;
@@ -95,7 +103,10 @@ interface Endpoint<T> {
     id: number;
 }
 
-// Optimized Sweep and Prune implementation
+/**
+ * Sweep and Prune (SAP) spatial indexing algorithm.
+ * @category Spatial Indexing
+ */
 export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex<T> {
     private xEndpoints: Endpoint<T>[] = [];
     private objects: Map<T, { minEndpoint: Endpoint<T>, maxEndpoint: Endpoint<T> }> = new Map();
@@ -259,6 +270,10 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
     }
 }
 
+/**
+ * Dynamic AABB tree for efficient spatial queries.
+ * @category Spatial Indexing
+ */
 export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T> {
     private root: TreeNode<T> | null = null;
     private nodeCount: number = 0;

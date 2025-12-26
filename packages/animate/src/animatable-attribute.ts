@@ -20,7 +20,7 @@ import { PointCal, Point } from "@ue-too/math";
  * };
  * ```
  *
- * @category Animation Core
+ * @category Types
  */
 export type Keyframe<T> = {
     /** Animation progress from 0.0 (start) to 1.0 (end) */
@@ -54,7 +54,7 @@ export type Keyframe<T> = {
  * };
  * ```
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export interface AnimatableAttributeHelper<T> {
     /**
@@ -75,7 +75,7 @@ export interface AnimatableAttributeHelper<T> {
  * Provides linear interpolation for 2D points with optional easing.
  * Interpolates both x and y components independently.
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export const pointHelperFunctions: AnimatableAttributeHelper<Point> = {
     lerp: (ratio: number, start: Keyframe<Point>, end: Keyframe<Point>): Point => {
@@ -113,7 +113,7 @@ export class PointAnimationHelper implements AnimatableAttributeHelper<Point> {
  * @remarks
  * Provides linear interpolation for numeric values with optional easing.
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export const numberHelperFunctions: AnimatableAttributeHelper<number> = {
     lerp: (ratio: number, start: Keyframe<number>, end: Keyframe<number>): number => {
@@ -151,7 +151,7 @@ export class NumberAnimationHelper implements AnimatableAttributeHelper<number>{
  * Uses step-based interpolation with a 50% threshold. Returns start value until
  * 50% progress, then switches to end value. Useful for discrete property changes.
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export const stringHelperFunctions: AnimatableAttributeHelper<string> = {
     lerp: (ratio: number, start: Keyframe<string>, end: Keyframe<string>): string => {
@@ -184,7 +184,7 @@ export class StringAnimationHelper implements AnimatableAttributeHelper<string>{
  * Uses step-based interpolation with a 50% threshold, similar to strings.
  * Useful for discrete numeric properties like indices or counts.
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export const integerHelperFunctions: AnimatableAttributeHelper<number> = {
     lerp: (ratio: number, start: Keyframe<number>, end: Keyframe<number>): number => {
@@ -216,7 +216,7 @@ export class IntegerAnimationHelper implements AnimatableAttributeHelper<number>
  * @remarks
  * Represents a color with red, green, and blue components (0-255).
  *
- * @category Animation Types
+ * @category Types
  */
 export type RGB = {r: number, g: number, b: number};
 
@@ -226,7 +226,7 @@ export type RGB = {r: number, g: number, b: number};
  * @remarks
  * Provides linear interpolation for RGB colors with component-wise blending.
  *
- * @category Animation Helpers
+ * @category Helpers
  */
 export const rgbHelperFunctions: AnimatableAttributeHelper<RGB> = {
     lerp: (ratio: number, start: Keyframe<RGB>, end: Keyframe<RGB>): RGB => {

@@ -105,23 +105,36 @@ export const MAX_COMPONENTS = 32;
 
 /**
  * Component signature type (bit field indicating which components an entity has).
- * @category Core Types
+ * @category Types
  */
 export type ComponentSignature = number;
 
 /**
  * Component type identifier.
- * @category Core Types
+ * @category Types
  */
 export type ComponentType = number;
 
 /**
  * Entity identifier (unique number).
- * @category Core Types
+ * @category Types
  */
 export type Entity = number;
 
-
+/**
+ * Manages entity lifecycle and signatures.
+ *
+ * @remarks
+ * The EntityManager handles:
+ * - Creating new entities (recycling IDs from a pool)
+ * - Destroying entities (returning IDs to the pool)
+ * - Storing and updating component signatures for each entity
+ *
+ * Entities are represented as simple numbers (IDs) and the manager maintains
+ * a signature (bit field) for each entity indicating which components it has.
+ *
+ * @category Managers
+ */
 export class EntityManager {
 
     private _availableEntities: Entity[] = [];
@@ -187,10 +200,33 @@ type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
 
 // Usage
 
+/**
+ * Internal interface for component array lifecycle hooks.
+ * @internal
+ */
 export interface CArray {
     entityDestroyed(entity: Entity): void;
 }
 
+/**
+ * Efficient sparse-set data structure for storing component data.
+ *
+ * @remarks
+ * ComponentArray uses a sparse-set implementation for O(1) insertion, deletion,
+ * and lookup while maintaining dense packing for cache-efficient iteration.
+ *
+ * The sparse-set consists of:
+ * - **Dense array**: Packed component data for iteration
+ * - **Sparse array**: Maps entity ID to dense array index
+ * - **Reverse array**: Maps dense array index back to entity ID
+ *
+ * This structure allows fast component access by entity ID and fast iteration
+ * over all components without gaps.
+ *
+ * @typeParam T - The component data type
+ *
+ * @category Data Structures
+ */
 export class ComponentArray<T> implements CArray {
 
     private denseArray: T[]; // packed array of data
@@ -262,6 +298,21 @@ export class ComponentArray<T> implements CArray {
     }
 }
 
+/**
+ * Manages component registration and component data storage.
+ *
+ * @remarks
+ * The ComponentManager handles:
+ * - Registering new component types and assigning unique type IDs
+ * - Creating ComponentArray storage for each component type
+ * - Adding, removing, and querying component data for entities
+ * - Cleaning up component data when entities are destroyed
+ *
+ * Each component type gets a unique ID (0-31) and its own ComponentArray
+ * for efficient storage and retrieval.
+ *
+ * @category Managers
+ */
 export class ComponentManager {
 
     private _componentNameToTypeMap: Map<string, {componentType: ComponentType, componentArray: CArray}> = new Map();
@@ -321,10 +372,59 @@ export class ComponentManager {
 
 }
 
+/**
+ * System interface for processing entities with specific component combinations.
+ *
+ * @remarks
+ * A System maintains a set of entities that match its component signature.
+ * The ECS automatically updates this set when entities are created, destroyed,
+ * or have their components modified.
+ *
+ * Systems contain only the logic for processing entities - the `entities` set
+ * is automatically managed by the SystemManager.
+ *
+ * @example
+ * ```typescript
+ * const movementSystem: System = {
+ *   entities: new Set()
+ * };
+ *
+ * // System logic (called in game loop)
+ * function updateMovement(deltaTime: number) {
+ *   movementSystem.entities.forEach(entity => {
+ *     const pos = ecs.getComponentFromEntity<Position>('Position', entity);
+ *     const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity);
+ *     if (pos && vel) {
+ *       pos.x += vel.x * deltaTime;
+ *       pos.y += vel.y * deltaTime;
+ *     }
+ *   });
+ * }
+ * ```
+ *
+ * @category Types
+ */
 export interface System {
     entities: Set<Entity>;
 }
 
+/**
+ * Manages system registration and entity-system matching.
+ *
+ * @remarks
+ * The SystemManager handles:
+ * - Registering systems with their component signature requirements
+ * - Maintaining the set of entities that match each system's signature
+ * - Automatically adding/removing entities from systems when signatures change
+ * - Cleaning up system entity sets when entities are destroyed
+ *
+ * When an entity's component signature changes (components added/removed),
+ * the SystemManager checks all registered systems and updates their entity sets.
+ * An entity is added to a system's set if its signature contains all components
+ * required by the system's signature.
+ *
+ * @category Managers
+ */
 export class SystemManager {
     private _systems: Map<string, {system: System, signature: ComponentSignature}> = new Map();
 
