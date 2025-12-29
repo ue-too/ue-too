@@ -1,10 +1,10 @@
-import { ComponentType, Coordinator, Entity, System } from "@ue-too/ecs";
+import { ComponentType, Coordinator, Entity, System, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
 
 export type OwnershipComponent = {
     owner: Entity | null;
 };
 
-export const OWNERSHIP_COMPONENT = "OwnershipComponent";
+export const OWNERSHIP_COMPONENT: ComponentName = createGlobalComponentName("OwnershipComponent");
 
 export function setOwner(entity: Entity, owner: Entity, coordinator: Coordinator): void {
     const ownershipComponent = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
@@ -33,9 +33,9 @@ export class OwnershipSystem implements System {
         this.entities = new Set<Entity>();
         this.coordinator = coordinator;
         let ownershipComponentType = this.coordinator.getComponentType(OWNERSHIP_COMPONENT);
-        if(ownershipComponentType === undefined){
-            this.coordinator.registerComponent(OWNERSHIP_COMPONENT);
-            ownershipComponentType = this.coordinator.getComponentType(OWNERSHIP_COMPONENT);
+        if(ownershipComponentType == undefined){
+            this.coordinator.registerComponent<OwnershipComponent>(OWNERSHIP_COMPONENT);
+            ownershipComponentType = this.coordinator.getComponentType(OWNERSHIP_COMPONENT)!;
         }
         if(ownershipComponentType == undefined){
             throw new Error('OwnershipComponent cannot be registered');
@@ -64,7 +64,7 @@ export class OwnershipSystem implements System {
         return Array.from(this.entities).filter((entity) => this.getOwnerOf(entity) === owner);
     }
 
-    countEntitiesWithComponentByOwner(componentName: string, owner: Entity): number {
+    countEntitiesWithComponentByOwner(componentName: ComponentName, owner: Entity): number {
         const entities = this.getOwnerEntities(owner);
         let count = 0;
         for(const entity of entities){

@@ -122,6 +122,245 @@ export type ComponentType = number;
 export type Entity = number;
 
 /**
+ * Component name identifier using Symbol for type safety and uniqueness.
+ * Use {@link createComponentName} to create component names, or {@link Symbol.for} for global symbols.
+ * @category Types
+ */
+export type ComponentName = symbol;
+
+/**
+ * Supported field types for runtime-defined component schemas.
+ * @category Types
+ */
+export type ComponentFieldType = 
+    | 'string' 
+    | 'number' 
+    | 'boolean' 
+    | 'object' 
+    | 'array'
+    | 'entity';
+
+/**
+ * Discriminated union for array element types.
+ * Supports both built-in types and custom component types.
+ * @category Types
+ */
+export type ArrayElementType = 
+    | { kind: 'builtin'; type: Exclude<ComponentFieldType, 'array'> }
+    | { kind: 'custom'; typeName: ComponentName };
+
+/**
+ * Base properties shared by all field definitions.
+ * @category Types
+ */
+interface BaseComponentField {
+    /** The name of the field */
+    name: string;
+    /** Whether the field is optional (default: false) */
+    optional?: boolean;
+    /** Default value for the field (used when creating new instances) */
+    defaultValue?: unknown;
+}
+
+/**
+ * Definition for a primitive (non-array) field in a component schema.
+ * @category Types
+ */
+export interface ComponentPrimitiveField extends BaseComponentField {
+    /** Discriminator for the union type */
+    type: Exclude<ComponentFieldType, 'array'>;
+}
+
+/**
+ * Definition for an array field in a component schema.
+ * @category Types
+ */
+export interface ComponentArrayField extends BaseComponentField {
+    /** Discriminator for the union type */
+    type: 'array';
+    /** 
+     * The element type for array fields (required).
+     * Specifies what type each element in the array should be.
+     * Can be a built-in type or a custom component type name.
+     */
+    arrayElementType: ArrayElementType;
+}
+
+/**
+ * Discriminated union for field definitions in a component schema.
+ * Use type guards to distinguish between primitive and array fields.
+ * @category Types
+ */
+export type ComponentFieldDefinition = ComponentPrimitiveField | ComponentArrayField;
+
+/**
+ * Schema definition for a component type that can be defined at runtime.
+ * @category Types
+ */
+export interface ComponentSchema {
+    /** The name of the component type (using Symbol for type safety) */
+    componentName: ComponentName;
+    /** Array of field definitions */
+    fields: ComponentFieldDefinition[];
+}
+
+/**
+ * Helper function to create a component name from a string.
+ * This creates a unique symbol for the component name.
+ * 
+ * @param name - The string name for the component
+ * @returns A unique symbol for the component name
+ * 
+ * @example
+ * ```typescript
+ * const Position = createComponentName('Position');
+ * coordinator.registerComponent<Position>(Position);
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createComponentName(name: string): ComponentName {
+    return Symbol(name);
+}
+
+/**
+ * Helper function to get the string description from a component name symbol.
+ * Useful for debugging and serialization.
+ * 
+ * @param componentName - The component name symbol
+ * @returns The string description of the symbol
+ * 
+ * @category Utilities
+ */
+export function getComponentNameString(componentName: ComponentName): string {
+    return componentName.description || componentName.toString();
+}
+
+/**
+ * Helper function to create a component name using Symbol.for().
+ * This creates a global symbol that can be looked up by string key,
+ * which is useful for serialization and cross-module access.
+ * 
+ * @param key - The string key for the global symbol
+ * @returns A global symbol for the component name
+ * 
+ * @example
+ * ```typescript
+ * const Position = createGlobalComponentName('Position');
+ * coordinator.registerComponent<Position>(Position);
+ * // Can be retrieved later with Symbol.for('Position')
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createGlobalComponentName(key: string): ComponentName {
+    return Symbol.for(key);
+}
+
+/**
+ * Serialized representation of an array element type for JSON storage.
+ * @category Types
+ */
+type SerializedArrayElementType = 
+    | { kind: 'builtin'; type: Exclude<ComponentFieldType, 'array'> }
+    | { kind: 'custom'; typeName: string };
+
+/**
+ * Serialized representation of a component field for JSON storage.
+ * @category Types
+ */
+type SerializedComponentField = 
+    | (Omit<ComponentPrimitiveField, 'type'> & { type: Exclude<ComponentFieldType, 'array'> })
+    | (Omit<ComponentArrayField, 'arrayElementType'> & { arrayElementType: SerializedArrayElementType });
+
+/**
+ * Serialized representation of a component schema for JSON storage.
+ * Component names are stored as strings (using Symbol.for keys for global symbols).
+ * @category Types
+ */
+export interface SerializedComponentSchema {
+    componentName: string;
+    fields: SerializedComponentField[];
+}
+
+/**
+ * Serialize a component schema to a JSON-compatible format.
+ * Note: Only works with global symbols (created via Symbol.for).
+ * 
+ * @param schema - The component schema to serialize
+ * @returns A serializable representation of the schema
+ * @throws Error if component name is not a global symbol
+ * 
+ * @category Utilities
+ */
+export function serializeComponentSchema(schema: ComponentSchema): SerializedComponentSchema {
+    const key = Symbol.keyFor(schema.componentName);
+    if (key === undefined) {
+        throw new Error(`Cannot serialize schema: component name is not a global symbol. Use createGlobalComponentName() or Symbol.for() to create component names.`);
+    }
+    
+    return {
+        componentName: key,
+        fields: schema.fields.map(field => {
+            if (field.type === 'array') {
+                if (field.arrayElementType.kind === 'custom') {
+                    const customKey = Symbol.keyFor(field.arrayElementType.typeName);
+                    if (customKey === undefined) {
+                        throw new Error(`Cannot serialize schema: custom array element type is not a global symbol.`);
+                    }
+                    return {
+                        ...field,
+                        arrayElementType: {
+                            kind: 'custom' as const,
+                            typeName: customKey
+                        }
+                    } as SerializedComponentField;
+                } else {
+                    return {
+                        ...field,
+                        arrayElementType: field.arrayElementType
+                    } as SerializedComponentField;
+                }
+            }
+            return field as SerializedComponentField;
+        })
+    };
+}
+
+/**
+ * Deserialize a component schema from a JSON-compatible format.
+ * 
+ * @param serialized - The serialized schema
+ * @returns The component schema with symbols restored
+ * 
+ * @category Utilities
+ */
+export function deserializeComponentSchema(serialized: SerializedComponentSchema): ComponentSchema {
+    return {
+        componentName: Symbol.for(serialized.componentName),
+        fields: serialized.fields.map(field => {
+            if (field.type === 'array') {
+                if (field.arrayElementType.kind === 'custom') {
+                    return {
+                        ...field,
+                        arrayElementType: {
+                            kind: 'custom' as const,
+                            typeName: Symbol.for(field.arrayElementType.typeName)
+                        }
+                    } as ComponentArrayField;
+                } else {
+                    return {
+                        ...field,
+                        arrayElementType: field.arrayElementType
+                    } as ComponentArrayField;
+                }
+            }
+            return field as ComponentPrimitiveField;
+        })
+    };
+}
+
+/**
  * Manages entity lifecycle and signatures.
  *
  * @remarks
@@ -315,23 +554,45 @@ export class ComponentArray<T> implements CArray {
  */
 export class ComponentManager {
 
-    private _componentNameToTypeMap: Map<string, {componentType: ComponentType, componentArray: CArray}> = new Map();
+    private _componentNameToTypeMap: Map<ComponentName, {componentType: ComponentType, componentArray: CArray}> = new Map();
     private _nextAvailableComponentType: ComponentType = 0;
+    private _schemas: Map<ComponentName, ComponentSchema> = new Map();
+
+    getRegisteredComponentNames(): ComponentName[] {
+        return Array.from(this._componentNameToTypeMap.keys());
+    }
+
+    /**
+     * Get the schema for a component type, if it was registered with a schema.
+     * @param componentName - The name of the component type
+     * @returns The component schema or null if not found
+     */
+    getComponentSchema(componentName: ComponentName): ComponentSchema | null {
+        return this._schemas.get(componentName) ?? null;
+    }
+
+    /**
+     * Get all registered component schemas.
+     * @returns Array of all component schemas
+     */
+    getAllComponentSchemas(): ComponentSchema[] {
+        return Array.from(this._schemas.values());
+    }
     
-    registerComponent<T>(componentName: string){
+    registerComponent<T>(componentName: ComponentName){
         if(this._componentNameToTypeMap.has(componentName)) {
-            console.warn(`Component ${componentName} already registered; registering with the given new type`);
+            console.warn(`Component ${getComponentNameString(componentName)} already registered; registering with the given new type`);
         }
         const componentType = this._nextAvailableComponentType;
         this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
         this._nextAvailableComponentType++;
     }
 
-    getComponentType(componentName: string): ComponentType | null {
+    getComponentType(componentName: ComponentName): ComponentType | null {
         return this._componentNameToTypeMap.get(componentName)?.componentType ?? null;
     }
 
-    addComponentToEntity<T>(componentName: string, entity: Entity, component: T){
+    addComponentToEntity<T>(componentName: ComponentName, entity: Entity, component: T){
         const componentArray = this._getComponentArray<T>(componentName);
         if(componentArray === null) {
             return;
@@ -339,7 +600,7 @@ export class ComponentManager {
         componentArray.insertData(entity, component);
     }
 
-    removeComponentFromEntity<T>(componentName: string, entity: Entity){
+    removeComponentFromEntity<T>(componentName: ComponentName, entity: Entity){
         const componentArray = this._getComponentArray<T>(componentName);
         if(componentArray === null) {
             return;
@@ -347,7 +608,7 @@ export class ComponentManager {
         componentArray.removeData(entity);
     }
 
-    getComponentFromEntity<T>(componentName: string, entity: Entity): T | null {
+    getComponentFromEntity<T>(componentName: ComponentName, entity: Entity): T | null {
         const componentArray = this._getComponentArray<T>(componentName);
         if(componentArray === null) {
             return null;
@@ -361,13 +622,229 @@ export class ComponentManager {
         }
     }
 
-    private _getComponentArray<T>(componentName: string): ComponentArray<T> | null {
+    private _getComponentArray<T>(componentName: ComponentName): ComponentArray<T> | null {
         const component = this._componentNameToTypeMap.get(componentName);
         if(component === undefined) {
-            console.warn(`Component ${componentName} not registered`);
+            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
             return null;
         }
         return component.componentArray as ComponentArray<T>;
+    }
+
+    /**
+     * Register a component with a runtime-defined schema.
+     * This allows components to be defined dynamically (e.g., through a GUI).
+     * 
+     * @param schema - The component schema definition
+     * @throws Error if schema validation fails
+     */
+    registerComponentWithSchema(schema: ComponentSchema): void {
+        // Validate schema
+        if (!schema.componentName) {
+            throw new Error('Component schema must have a componentName');
+        }
+        if (!schema.fields || schema.fields.length === 0) {
+            throw new Error('Component schema must have at least one field');
+        }
+
+        // Check for duplicate field names and validate array types
+        const fieldNames = new Set<string>();
+        for (const field of schema.fields) {
+            if (fieldNames.has(field.name)) {
+                throw new Error(`Duplicate field name "${field.name}" in schema for component "${getComponentNameString(schema.componentName)}"`);
+            }
+            fieldNames.add(field.name);
+
+            // Validate array fields - TypeScript ensures arrayElementType is required for array fields
+            if (field.type === 'array') {
+                // Custom types are validated when they're registered
+                // No need to check for empty string since we're using symbols
+            }
+        }
+
+        // Register the component type (if not already registered)
+        if (!this._componentNameToTypeMap.has(schema.componentName)) {
+            const componentType = this._nextAvailableComponentType;
+            this._componentNameToTypeMap.set(schema.componentName, {
+                componentType,
+                componentArray: new ComponentArray<Record<string, unknown>>(MAX_ENTITIES)
+            });
+            this._nextAvailableComponentType++;
+        }
+
+        // Store the schema
+        this._schemas.set(schema.componentName, schema);
+    }
+
+    /**
+     * Create a component instance from a schema with default values.
+     * 
+     * @param componentName - The name of the component type
+     * @param overrides - Optional values to override defaults
+     * @returns A component instance with all fields initialized
+     * @throws Error if component is not registered with a schema
+     */
+    createComponentFromSchema(componentName: ComponentName, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+        const schema = this._schemas.get(componentName);
+        if (!schema) {
+            throw new Error(`Component "${getComponentNameString(componentName)}" is not registered with a schema`);
+        }
+
+        const component: Record<string, unknown> = {};
+        
+        for (const field of schema.fields) {
+            if (overrides.hasOwnProperty(field.name)) {
+                component[field.name] = overrides[field.name];
+            } else if (field.defaultValue !== undefined) {
+                component[field.name] = field.defaultValue;
+            } else if (!field.optional) {
+                // Required field with no default - use type-appropriate default
+                if (field.type === 'array') {
+                    component[field.name] = this._getDefaultValueForType(field.type, field.arrayElementType);
+                } else {
+                    component[field.name] = this._getDefaultValueForType(field.type);
+                }
+            }
+            // Optional fields without defaults are omitted
+        }
+
+        return component;
+    }
+
+    /**
+     * Validate component data against its schema.
+     * 
+     * @param componentName - The name of the component type
+     * @param data - The component data to validate
+     * @returns true if valid, false otherwise
+     */
+    validateComponentData(componentName: ComponentName, data: unknown): boolean {
+        const schema = this._schemas.get(componentName);
+        if (!schema) {
+            // No schema means no validation required
+            return true;
+        }
+
+        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+            return false;
+        }
+
+        const dataObj = data as Record<string, unknown>;
+
+        // Check all required fields are present
+        for (const field of schema.fields) {
+            if (!field.optional && !dataObj.hasOwnProperty(field.name)) {
+                return false;
+            }
+
+            // If field is present, validate its type
+            if (dataObj.hasOwnProperty(field.name)) {
+                if (field.type === 'array') {
+                    if (!this._validateFieldType(field.type, dataObj[field.name], field.arrayElementType)) {
+                        return false;
+                    }
+                } else {
+                    if (!this._validateFieldType(field.type, dataObj[field.name])) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // Check for extra fields not in schema (optional - could be configurable)
+        // For now, we allow extra fields
+
+        return true;
+    }
+
+    /**
+     * Get default value for a field type.
+     */
+    private _getDefaultValueForType(type: ComponentFieldType, arrayElementType?: ArrayElementType): unknown {
+        switch (type) {
+            case 'string':
+                return '';
+            case 'number':
+                return 0;
+            case 'boolean':
+                return false;
+            case 'object':
+                return {};
+            case 'array':
+                return []; // Empty array - element type validation happens at runtime
+            case 'entity':
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Validate that a value matches the expected field type.
+     * 
+     * @param type - The field type
+     * @param value - The value to validate
+     * @param arrayElementType - The element type for array fields
+     * @returns true if the value matches the expected type
+     */
+    private _validateFieldType(type: ComponentFieldType, value: unknown, arrayElementType?: ArrayElementType): boolean {
+        switch (type) {
+            case 'string':
+                return typeof value === 'string';
+            case 'number':
+                return typeof value === 'number';
+            case 'boolean':
+                return typeof value === 'boolean';
+            case 'object':
+                return typeof value === 'object' && value !== null && !Array.isArray(value);
+            case 'array':
+                if (!Array.isArray(value)) {
+                    return false;
+                }
+                // If arrayElementType is specified, validate each element
+                if (arrayElementType) {
+                    if (arrayElementType.kind === 'builtin') {
+                        return (value as unknown[]).every(element => 
+                            this._validateFieldType(arrayElementType.type, element)
+                        );
+                    } else {
+                        // Custom type: validate against the referenced component schema
+                        const customSchema = this._schemas.get(arrayElementType.typeName);
+                        if (!customSchema) {
+                            // Custom type not found - could be strict or lenient
+                            // For now, we'll validate that it's an object
+                            return (value as unknown[]).every(element => 
+                                typeof element === 'object' && element !== null && !Array.isArray(element)
+                            );
+                        }
+                        // Validate each element against the custom schema
+                        return (value as unknown[]).every(element => 
+                            this.validateComponentData(arrayElementType.typeName, element)
+                        );
+                    }
+                }
+                return true;
+            case 'entity':
+                return typeof value === 'number' || value === null;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Add a component to an entity with schema validation.
+     * 
+     * @param componentName - The name of the component type
+     * @param entity - The entity to add the component to
+     * @param component - The component data
+     * @param validate - Whether to validate against schema (default: true)
+     * @throws Error if validation fails
+     */
+    addComponentToEntityWithSchema(componentName: ComponentName, entity: Entity, component: Record<string, unknown>, validate: boolean = true): void {
+        if (validate && !this.validateComponentData(componentName, component)) {
+            throw new Error(`Component data for "${getComponentNameString(componentName)}" does not match its schema`);
+        }
+        this.addComponentToEntity<Record<string, unknown>>(componentName, entity, component);
     }
 
 }
@@ -530,11 +1007,11 @@ export class Coordinator {
         this._systemManager.entityDestroyed(entity);
     }
 
-    registerComponent<T>(componentName: string): void {
+    registerComponent<T>(componentName: ComponentName): void {
         this._componentManager.registerComponent<T>(componentName);
     }
 
-    addComponentToEntity<T>(componentName: string, entity: Entity, component: T): void {
+    addComponentToEntity<T>(componentName: ComponentName, entity: Entity, component: T): void {
         this._componentManager.addComponentToEntity<T>(componentName, entity, component);
         let signature = this._entityManager.getSignature(entity);
         if(signature === null) {
@@ -542,7 +1019,7 @@ export class Coordinator {
         }
         const componentType = this._componentManager.getComponentType(componentName);
         if(componentType === null) {
-            console.warn(`Component ${componentName} not registered`);
+            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
             return;
         }
         signature |= 1 << componentType;
@@ -550,7 +1027,7 @@ export class Coordinator {
         this._systemManager.entitySignatureChanged(entity, signature);
     }
 
-    removeComponentFromEntity<T>(componentName: string, entity: Entity): void {
+    removeComponentFromEntity<T>(componentName: ComponentName, entity: Entity): void {
         this._componentManager.removeComponentFromEntity<T>(componentName, entity);
         let signature = this._entityManager.getSignature(entity);
         if(signature === null) {
@@ -565,11 +1042,11 @@ export class Coordinator {
         this._systemManager.entitySignatureChanged(entity, signature);
     }
 
-    getComponentFromEntity<T>(componentName: string, entity: Entity): T | null {
+    getComponentFromEntity<T>(componentName: ComponentName, entity: Entity): T | null {
         return this._componentManager.getComponentFromEntity<T>(componentName, entity);
     }
 
-    getComponentType(componentName: string): ComponentType | null {
+    getComponentType(componentName: ComponentName): ComponentType | null {
         return this._componentManager.getComponentType(componentName) ?? null;
     }
 
@@ -579,5 +1056,116 @@ export class Coordinator {
 
     setSystemSignature(systemName: string, signature: ComponentSignature): void {
         this._systemManager.setSignature(systemName, signature);
+    }
+
+    /**
+     * Register a component with a runtime-defined schema.
+     * This allows components to be defined dynamically (e.g., through a GUI).
+     * 
+     * @param schema - The component schema definition
+     * @throws Error if schema validation fails
+     * 
+     * @example
+     * ```typescript
+     * const coordinator = new Coordinator();
+     * 
+     * // Define a component schema at runtime
+     * coordinator.registerComponentWithSchema({
+     *   componentName: 'PlayerStats',
+     *   fields: [
+     *     { name: 'health', type: 'number', defaultValue: 100 },
+     *     { name: 'name', type: 'string', defaultValue: 'Player' },
+     *     { name: 'isAlive', type: 'boolean', defaultValue: true },
+     *     { name: 'inventory', type: 'array', defaultValue: [] }
+     *   ]
+     * });
+     * 
+     * // Create an entity with the component
+     * const entity = coordinator.createEntity();
+     * const component = coordinator.createComponentFromSchema('PlayerStats', { health: 150 });
+     * coordinator.addComponentToEntityWithSchema('PlayerStats', entity, component);
+     * ```
+     */
+    registerComponentWithSchema(schema: ComponentSchema): void {
+        this._componentManager.registerComponentWithSchema(schema);
+    }
+
+    /**
+     * Get the schema for a component type, if it was registered with a schema.
+     * 
+     * @param componentName - The name of the component type
+     * @returns The component schema or null if not found
+     */
+    getComponentSchema(componentName: ComponentName): ComponentSchema | null {
+        return this._componentManager.getComponentSchema(componentName);
+    }
+
+    /**
+     * Get all registered component schemas.
+     * 
+     * @returns Array of all component schemas
+     */
+    getAllComponentSchemas(): ComponentSchema[] {
+        return this._componentManager.getAllComponentSchemas();
+    }
+
+    /**
+     * Create a component instance from a schema with default values.
+     * 
+     * @param componentName - The name of the component type
+     * @param overrides - Optional values to override defaults
+     * @returns A component instance with all fields initialized
+     * @throws Error if component is not registered with a schema
+     * 
+     * @example
+     * ```typescript
+     * // Create component with all defaults
+     * const component1 = coordinator.createComponentFromSchema('PlayerStats');
+     * 
+     * // Create component with some overrides
+     * const component2 = coordinator.createComponentFromSchema('PlayerStats', {
+     *   health: 200,
+     *   name: 'SuperPlayer'
+     * });
+     * ```
+     */
+    createComponentFromSchema(componentName: ComponentName, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+        return this._componentManager.createComponentFromSchema(componentName, overrides);
+    }
+
+    /**
+     * Validate component data against its schema.
+     * 
+     * @param componentName - The name of the component type
+     * @param data - The component data to validate
+     * @returns true if valid, false otherwise
+     */
+    validateComponentData(componentName: ComponentName, data: unknown): boolean {
+        return this._componentManager.validateComponentData(componentName, data);
+    }
+
+    /**
+     * Add a component to an entity with schema validation.
+     * 
+     * @param componentName - The name of the component type
+     * @param entity - The entity to add the component to
+     * @param component - The component data
+     * @param validate - Whether to validate against schema (default: true)
+     * @throws Error if validation fails
+     */
+    addComponentToEntityWithSchema(componentName: ComponentName, entity: Entity, component: Record<string, unknown>, validate: boolean = true): void {
+        this._componentManager.addComponentToEntityWithSchema(componentName, entity, component, validate);
+        let signature = this._entityManager.getSignature(entity);
+        if(signature === null) {
+            signature = 0;
+        }
+        const componentType = this._componentManager.getComponentType(componentName);
+        if(componentType === null) {
+            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
+            return;
+        }
+        signature |= 1 << componentType;
+        this._entityManager.setSignature(entity, signature);
+        this._systemManager.entitySignatureChanged(entity, signature);
     }
 }

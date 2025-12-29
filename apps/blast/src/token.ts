@@ -1,12 +1,12 @@
-import { Coordinator, Entity, System, ComponentType } from "@ue-too/ecs";
+import { Coordinator, Entity, System, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
 import { shuffle } from "./utils";
 
 export interface Token {
     entityId: number;
 }
 
-export const LOCATION_COMPONENT = "LocationComponent";
-export const DECK_COMPONENT = "DeckComponent";
+export const LOCATION_COMPONENT: ComponentName = createGlobalComponentName("LocationComponent");
+export const DECK_COMPONENT: ComponentName = createGlobalComponentName("DeckComponent");
 
 export type LocationComponent = {
     location: number;

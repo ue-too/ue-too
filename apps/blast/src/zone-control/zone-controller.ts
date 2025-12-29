@@ -1,6 +1,6 @@
-import { System, Coordinator, Entity, ComponentType } from "@ue-too/ecs";
+import { System, Coordinator, Entity, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
 
-export const ZONE_COMPONENT = "ZoneComponent";
+export const ZONE_COMPONENT: ComponentName = createGlobalComponentName("ZoneComponent");
 
 export type ZoneComponent = {
     zone: string;

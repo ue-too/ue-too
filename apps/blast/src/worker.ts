@@ -1,12 +1,13 @@
-import { Coordinator } from "@ue-too/ecs";
+import { Coordinator, createGlobalComponentName } from "@ue-too/ecs";
 import { StackableTokenSystem, LOCATION_COMPONENT } from "./token";
 
 const coordinator = new Coordinator();
 const deckSystem = new StackableTokenSystem(coordinator);
 
-coordinator.registerComponent<{value: number}>('test');
+const TEST_COMPONENT = createGlobalComponentName('test');
+coordinator.registerComponent<{value: number}>(TEST_COMPONENT);
 
-console.log(coordinator.getComponentType('test'));
+console.log(coordinator.getComponentType(TEST_COMPONENT));
 
 console.log(coordinator);
 
