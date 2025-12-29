@@ -119,6 +119,16 @@
         "@ue-too/math": "workspace:*",
       },
     },
+    "apps/board-vue": {
+      "name": "@ue-too/board-vue",
+      "version": "0.5.0",
+      "dependencies": {
+        "@ue-too/board": "workspace:*",
+        "@ue-too/board-vue-adapter": "workspace:*",
+        "@ue-too/math": "workspace:*",
+        "vue": "^3.5.25",
+      },
+    },
     "apps/examples": {
       "name": "@ue-too/examples",
       "version": "0.5.0",
@@ -138,18 +148,18 @@
     },
     "packages/animate": {
       "name": "@ue-too/animate",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/being": {
       "name": "@ue-too/being",
-      "version": "0.9.0",
+      "version": "0.12.0",
     },
     "packages/board": {
       "name": "@ue-too/board",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -157,7 +167,7 @@
     },
     "packages/board-react-adapter": {
       "name": "@ue-too/board-react-adapter",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -171,16 +181,29 @@
         "react-dom": "^19.0.1",
       },
     },
+    "packages/board-vue-adapter": {
+      "name": "@ue-too/board-vue-adapter",
+      "version": "0.12.0",
+      "dependencies": {
+        "@ue-too/board": "workspace:*",
+      },
+      "devDependencies": {
+        "vue": "^3.5.25",
+      },
+      "peerDependencies": {
+        "vue": "^3.5.25",
+      },
+    },
     "packages/border": {
       "name": "@ue-too/border",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/curve": {
       "name": "@ue-too/curve",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
@@ -192,7 +215,7 @@
     },
     "packages/dynamics": {
       "name": "@ue-too/dynamics",
-      "version": "0.9.0",
+      "version": "0.12.0",
       "dependencies": {
         "@ue-too/ecs": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -200,11 +223,11 @@
     },
     "packages/ecs": {
       "name": "@ue-too/ecs",
-      "version": "0.9.0",
+      "version": "0.12.0",
     },
     "packages/math": {
       "name": "@ue-too/math",
-      "version": "0.9.0",
+      "version": "0.12.0",
     },
   },
   "packages": {
@@ -1071,6 +1094,10 @@
     "@ue-too/board-react": ["@ue-too/board-react@workspace:apps/board-react"],
 
     "@ue-too/board-react-adapter": ["@ue-too/board-react-adapter@workspace:packages/board-react-adapter"],
+
+    "@ue-too/board-vue": ["@ue-too/board-vue@workspace:apps/board-vue"],
+
+    "@ue-too/board-vue-adapter": ["@ue-too/board-vue-adapter@workspace:packages/board-vue-adapter"],
 
     "@ue-too/border": ["@ue-too/border@workspace:packages/border"],
 

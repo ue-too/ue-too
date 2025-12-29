@@ -1,0 +1,52 @@
+{
+  "name": "board-vue-adapter",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/board-vue-adapter/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "cwd": "packages/board-vue-adapter"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "cwd": "packages/board-vue-adapter"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/board-vue-adapter"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "packages/board-vue-adapter"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../../scripts/publish-package.mjs",
+        "cwd": "packages/board-vue-adapter/dist"
+      }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf ../../docs/board-vue-adapter && bun run typedoc --options typedoc.json --skipErrorChecking",
+        "cwd": "packages/board-vue-adapter"
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": []
+}

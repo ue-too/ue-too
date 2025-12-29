@@ -1,0 +1,16 @@
+{
+  "name": "@ue-too/board-vue",
+  "type": "module",
+  "version": "0.5.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ue-too/board": "workspace:*",
+    "@ue-too/board-vue-adapter": "workspace:*",
+    "@ue-too/math": "workspace:*",
+    "vue": "^3.5.25"
+  }
+}
