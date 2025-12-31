@@ -409,6 +409,20 @@ export default class Board {
         this._reversedContext = reverseYAxis(this._context);
     }
 
+    disableEventListeners(){
+        this._kmtParser.tearDown();
+        this._touchParser.tearDown();
+    }
+
+    enableEventListeners(){
+        this._kmtParser.setUp();
+        this._touchParser.setUp();
+    }
+
+    get inputOrchestrator(): InputOrchestrator{
+        return this._inputOrchestrator;
+    }
+
     /**
      * @group LifeCycle
      * @description This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer. 
@@ -757,5 +771,13 @@ export default class Board {
 
     setInputMode(mode: 'kmt' | 'trackpad'): void {
         this._observableInputTracker.setMode(mode);
+    }
+
+    onCanvasDimensionChange(callback: (dimensions: CanvasDimensions) => void) {
+        return this._canvasProxy.subscribe(callback);
+    }
+
+    get canvasDimensions(): CanvasDimensions {
+        return this._canvasProxy.dimensions;
     }
 }

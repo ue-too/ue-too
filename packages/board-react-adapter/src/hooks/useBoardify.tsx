@@ -1,6 +1,6 @@
-import {Board as Boardify} from "@ue-too/board";
-import {createContext, useContext, useEffect, useMemo, useRef, useSyncExternalStore} from "react";
-import { CameraMux, CameraState } from "@ue-too/board/camera";
+import {Board as Boardify, KmtInputStateMachine, OutputEvent} from "@ue-too/board";
+import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore} from "react";
+import { CameraMux, CameraState  } from "@ue-too/board/camera";
 import { Point } from "@ue-too/math";
 
 /**
@@ -181,11 +181,23 @@ export function useCameraInput(){
         const cameraRig = board.getCameraRig();
 
         return {
+            panByViewPort: (delta: Point) => {
+                cameraRig.panByViewPort(delta);
+            },
+            panByWorld: (delta: Point) => {
+                cameraRig.panByWorld(delta);
+            },
             panToWorld: (worldPosition: Point) => {
                 cameraRig.panToWorld(worldPosition);
             },
             panToViewPort: (viewPortPosition: Point) => {
                 cameraRig.panToViewPort(viewPortPosition);
+            },
+            zoomToAtViewPort: (zoomLevel: number, at: Point) => {
+                cameraRig.zoomToAt(zoomLevel, at);
+            },
+            zoomToAtWorld: (zoomLevel: number, at: Point) => {
+                cameraRig.zoomToAtWorld(zoomLevel, at);
             },
             zoomTo: (zoomLevel: number) => {
                 cameraRig.zoomTo(zoomLevel);
@@ -313,8 +325,30 @@ export function useCustomCameraMux(cameraMux: CameraMux) {
 
     useEffect(()=>{
         board.cameraMux = cameraMux;
-    }, [cameraMux]);
+    }, [cameraMux, board]);
 }
+
+export function useCustomInputHandling(){
+    const board = useBoard();
+
+    const processInputEvent = useCallback((input: OutputEvent) => {
+        board.inputOrchestrator.processInputEvent(input);
+    }, [board]);
+
+    useEffect(()=>{
+        board.disableEventListeners();
+
+        return () => {
+            board.enableEventListeners();
+        };
+    }, [board])
+
+    return {
+        processInputEvent
+    };
+}
+
+
 
 /**
  * React context for sharing a Board instance across components.
@@ -423,4 +457,20 @@ export function useBoard() {
 export function useBoardCamera() {
     const board = useBoard();
     return board.camera;
+}
+
+export function useCanvasDimension() {
+    const board = useBoard();
+
+    return useSyncExternalStore((cb) => board.onCanvasDimensionChange(cb), ()=> {
+
+        return board.canvasDimensions
+    });
+}
+
+export function useCoordinateConversion() {
+    const board = useBoard();
+    return useCallback((pointInWindow: Point)=>{
+        return board.convertWindowPoint2WorldCoord(pointInWindow);
+    }, [board]);
 }

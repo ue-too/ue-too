@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import NxWelcome from './NxWelcome.vue';
+import { Board, provideBoard, useBoard } from "@ue-too/board-vue-adapter"
+import ALayer from "./ALayer.vue";
+import Test from "./Test.vue";
+provideBoard();
+
 </script>
 
+
 <template>
-  <NxWelcome title="board-vue" />
+  <Test />
+  <ALayer />
 </template>

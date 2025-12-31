@@ -10,6 +10,7 @@
   "dependencies": {
     "@ue-too/board": "workspace:*",
     "@ue-too/board-react-adapter": "workspace:*",
-    "@ue-too/math": "workspace:*"
+    "@ue-too/math": "workspace:*",
+    "pixi.js": "^8.14.3"
   }
 }

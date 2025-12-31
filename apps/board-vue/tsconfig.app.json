@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "types": ["vite/client"],
-    "moduleResolution": "bundler"
   },
   "exclude": [
     "src/**/*.spec.ts",

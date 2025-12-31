@@ -1,9 +1,11 @@
-import {useRef, useCallback, useSyncExternalStore, useMemo} from "react";
+import {useRef, useCallback, useSyncExternalStore, useMemo, useState} from "react";
 import {useAnimationFrame, useAnimationFrameWithBoard} from "../hooks/useAnimationFrame";
-import {BoardProvider, useBoard, useBoardCameraState, useBoardify, useCustomCameraMux} from "../hooks/useBoardify";
-import { Point } from "@ue-too/math";
+import {BoardProvider, useBoard, useBoardCameraState, useBoardify, useCustomCameraMux, useCustomInputHandling} from "../hooks/useBoardify";
+import { Point, PointCal } from "@ue-too/math";
 import type { CameraMux } from "@ue-too/board/camera";
-
+import { useCanvasProxyWithRef } from "../hooks/useCanvasProxy";
+import { useEffect } from "react";
+import { OutputEvent } from "@ue-too/board";
 /**
  * Props for the Board component.
  *
@@ -33,11 +35,19 @@ export type BoardProps = {
  */
 function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
 
-    console.log('Board rendered');
-
     const board = useBoard();
 
+    useEffect(() => {
+        board.fullScreen = fullScreen ?? false;
+    }, [fullScreen]);
+
+    console.log('board');
+
     useAnimationFrameWithBoard(animationCallbackProp);
+
+    // const {processInputEvent} = useCustomInputHandling();
+
+    // const keyboardMouseInput = useMemo(() => {console.log("new KeyboardMouseInput"); return new KeyboardMouseInput(processInputEvent)}, [processInputEvent]);
 
     return (
         <canvas
@@ -49,16 +59,11 @@ function Board({width, height, fullScreen, animationCallback: animationCallbackP
                     return;
                 }
 
-                console.log('Board attached');
                 board.attach(ref);
             }}
-            onPointerDown={(e)=>{
-                const worldPosition = board.convertWindowPoint2WorldCoord({
-                    x: e.clientX,
-                    y: e.clientY,
-                });
-                console.log('worldPosition', worldPosition);
-            }}
+            // onPointerDown={(e: React.PointerEvent<HTMLCanvasElement>) => keyboardMouseInput.pointerdownHandler(e.nativeEvent)}
+            // onPointerMove={(e: React.PointerEvent<HTMLCanvasElement>) => keyboardMouseInput.pointermoveHandler(e.nativeEvent)}
+            // onPointerUp={(e: React.PointerEvent<HTMLCanvasElement>) => keyboardMouseInput.pointerupHandler(e.nativeEvent)}
         />
     );
 }
@@ -167,4 +172,53 @@ export default function BoardWrapperWithChildren({width, height, fullScreen, ani
             {children}
         </BoardProvider>
     );
+}
+
+class KeyboardMouseInput{
+
+    private isPanning: boolean;
+    private panStartPoint: Point;
+    private processInputEvent: (input: OutputEvent) => void;
+
+    constructor(processInputEvent: (input: OutputEvent) => void){
+        this.isPanning = false;
+        this.panStartPoint = {x: 0, y: 0};
+        this.processInputEvent = processInputEvent;
+        this.bindFunctions();
+    }
+
+    bindFunctions(): void {
+        this.pointerdownHandler = this.pointerdownHandler.bind(this);
+        this.pointermoveHandler = this.pointermoveHandler.bind(this);
+        this.pointerupHandler = this.pointerupHandler.bind(this);
+    }
+
+    pointerdownHandler(event: PointerEvent): void {
+        if(event.pointerType !== "mouse"){
+            return;
+        }
+        this.isPanning = true;
+        this.panStartPoint = {x: event.clientX, y: event.clientY};
+    }
+
+    pointermoveHandler(event: PointerEvent): void {
+        if(!this.isPanning){
+            return;
+        }
+        const curPosition = {x: event.clientX, y: event.clientY};
+        const diff = PointCal.subVector(this.panStartPoint, curPosition);
+        this.processInputEvent({
+            type: 'pan',
+            delta: diff,
+        });
+        this.panStartPoint = curPosition;
+    }
+
+    pointerupHandler(event: PointerEvent): void {
+        if(event.pointerType !== "mouse"){
+            return;
+        }
+        this.isPanning = false;
+    }
+
 }
