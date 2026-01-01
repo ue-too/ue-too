@@ -57,7 +57,7 @@ function BoardCanvas() {
 
   return (
     <div style={{width: '100%'}}>
-      <canvas style={{ width: '100%'}} ref={
+      <canvas style={{ width: '100%', aspectRatio: '1/1'}} ref={
         (ref) => {
           if(ref == null){
             board.tearDown();

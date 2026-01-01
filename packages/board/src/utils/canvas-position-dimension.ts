@@ -421,41 +421,41 @@ export class CanvasPositionDimensionPublisher {
         for(let mutation of mutationsList){
             if(mutation.type === "attributes"){
                 if(mutation.attributeName === "width"){
-                    const canvas = mutation.target as HTMLCanvasElement;
-                    canvas.style.width = canvas.width / window.devicePixelRatio + "px";
-                    const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
-                    if (rectChanged(this.lastRect, trueRect)) {
-                        this.publishPositionUpdate(trueRect);
-                        this.lastRect = trueRect;
-                    }
+                    // const canvas = mutation.target as HTMLCanvasElement;
+                    // canvas.style.width = canvas.width / window.devicePixelRatio + "px";
+                    // const newRect = canvas.getBoundingClientRect();
+                    // const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    // if (rectChanged(this.lastRect, trueRect)) {
+                    //     this.publishPositionUpdate(trueRect);
+                    //     this.lastRect = trueRect;
+                    // }
                 } else if(mutation.attributeName === "height"){
-                    const canvas = mutation.target as HTMLCanvasElement;
-                    canvas.style.height = canvas.height / window.devicePixelRatio + "px";
-                    const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
-                    if (rectChanged(this.lastRect, trueRect)) {
-                        this.publishPositionUpdate(trueRect);
-                        this.lastRect = trueRect;
-                    }
+                    // const canvas = mutation.target as HTMLCanvasElement;
+                    // canvas.style.height = canvas.height / window.devicePixelRatio + "px";
+                    // const newRect = canvas.getBoundingClientRect();
+                    // const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    // if (rectChanged(this.lastRect, trueRect)) {
+                    //     this.publishPositionUpdate(trueRect);
+                    //     this.lastRect = trueRect;
+                    // }
                 } else if (mutation.attributeName === "style"){
-                    const canvas = mutation.target as HTMLCanvasElement;
-                    const styleWidth = parseFloat(canvas.style.width);
-                    const styleHeight = parseFloat(canvas.style.height);
-                    const newWidth = styleWidth * window.devicePixelRatio;
-                    const newHeight = styleHeight * window.devicePixelRatio;
-                    if(newWidth != canvas.width){
-                        canvas.width = newWidth;
-                    }
-                    if(newHeight != canvas.height){
-                        canvas.height = newHeight;
-                    }
-                    const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
-                    if (rectChanged(this.lastRect, trueRect)) {
-                        this.publishPositionUpdate(trueRect);
-                        this.lastRect = trueRect;
-                    }
+                    // const canvas = mutation.target as HTMLCanvasElement;
+                    // const styleWidth = parseFloat(canvas.style.width);
+                    // const styleHeight = parseFloat(canvas.style.height);
+                    // const newWidth = styleWidth * window.devicePixelRatio;
+                    // const newHeight = styleHeight * window.devicePixelRatio;
+                    // if(newWidth != canvas.width){
+                    //     canvas.width = newWidth;
+                    // }
+                    // if(newHeight != canvas.height){
+                    //     canvas.height = newHeight;
+                    // }
+                    // const newRect = canvas.getBoundingClientRect();
+                    // const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    // if (rectChanged(this.lastRect, trueRect)) {
+                    //     this.publishPositionUpdate(trueRect);
+                    //     this.lastRect = trueRect;
+                    // }
                 }
             }
         }

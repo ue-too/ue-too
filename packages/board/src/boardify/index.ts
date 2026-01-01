@@ -186,6 +186,9 @@ export default class Board {
     private _touchInputTracker: TouchInputTracker;
     private _inputOrchestrator: InputOrchestrator;
 
+    private _cachedCanvasWidth: number = 0;
+    private _cachedCanvasHeight: number = 0;
+
     private lastUpdateTime: number = 0;
 
     /**
@@ -582,7 +585,17 @@ export default class Board {
         if(this._fullScreen && (this._canvasProxy.width != window.innerWidth || this._canvasProxy.height != window.innerHeight)){
             this._canvasProxy.setWidth(window.innerWidth);
             this._canvasProxy.setHeight(window.innerHeight);
+        } else {
+            if(this._cachedCanvasWidth !== this._canvasProxy.width){
+                this._cachedCanvasWidth = this._canvasProxy.width;
+                this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
+            }
+            if(this._cachedCanvasHeight !== this._canvasProxy.height){
+                this._cachedCanvasHeight = this._canvasProxy.height;
+                this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
+            }
         }
+
 
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
         this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
