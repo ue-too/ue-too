@@ -70,10 +70,10 @@ git clone https://github.com/ue-too/ue-too.git
 cd ue-too
 
 # Install dependencies
-pnpm install
+bun install
 
 # Start the development server
-pnpm dev:examples
+bun dev:examples
 ```
 
 Then, visit `http://localhost:5173` to explore all examples.
@@ -81,24 +81,23 @@ Then, visit `http://localhost:5173` to explore all examples.
 ## Development
 
 ### Prerequisites
-- Node.js 22.19.0
-- pnpm 10.17.0
+- Bun 1.3.4
 
 ### Setup
 ```bash
 # Clone and install
 git clone https://github.com/ue-too/ue-too.git
 cd ue-too
-pnpm install
+bun install
 
 # Run tests
-pnpm test
+bun test
 
 # Build all packages
-pnpm build
+bun build
 
 # Start development server
-pnpm dev:examples
+bun dev:examples
 ```
 
 Refer to the read me of each libary and application for more detail.
@@ -108,6 +107,8 @@ Refer to the read me of each libary and application for more detail.
 ue-too/
 ├── packages/           # Individual packages
 │   ├── board/         # Canvas viewport management
+│   ├── board-react/   # React integration for the board package
+│   ├── board-vue/     # Vue integration for the board package
 │   ├── math/          # Mathematical utilities
 │   ├── animate/       # Animation system
 │   ├── dynamics/      # Physics engine
@@ -117,7 +118,10 @@ ue-too/
 │   └── ecs/           # ECS architecture
 ├── apps/              # Example applications
 │   ├── examples/      # Interactive examples
-│   └── b-curve-exp/   # Bézier curve experiment (WIP)
+│   ├── board-react/   # React integration for the board package
+│   ├── board-vue/     # Vue integration for the board package
+│   ├── banana/        # A simulation of a railway system using bezier curves.
+│   └── blast/         # A tabletop game prototype maker.
 └── scripts/           # Build and deployment scripts
 ```
 
