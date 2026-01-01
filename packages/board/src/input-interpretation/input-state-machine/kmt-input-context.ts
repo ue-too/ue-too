@@ -218,6 +218,12 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         }
     }
 
+    setCanvasWidth(width: number){
+        if(this._canvas){
+            this._canvas.width = width * window.devicePixelRatio;
+        }
+    }
+
     /**
      * set the height of the canvas
      * the height is synonymous with the canvas style height not the canvas height
@@ -226,6 +232,12 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         if(this._canvas){
             this._canvas.height = height * window.devicePixelRatio;
             this._canvas.style.height = height + "px";
+        }
+    }
+
+    setCanvasHeight(height: number){
+        if(this._canvas){
+            this._canvas.height = height * window.devicePixelRatio;
         }
     }
 
@@ -258,8 +270,8 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
         const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
         this._canvas.width = trueRect.width * window.devicePixelRatio;
         this._canvas.height = trueRect.height * window.devicePixelRatio;
-        this._canvas.style.width = trueRect.width + "px";
-        this._canvas.style.height = trueRect.height + "px";
+        const aspectRatio = trueRect.width / trueRect.height;
+        this._canvas.style.aspectRatio = aspectRatio.toString();
         this._width = trueRect.width;
         this._height = trueRect.height;
         this._position = {x: trueRect.left, y: trueRect.top};

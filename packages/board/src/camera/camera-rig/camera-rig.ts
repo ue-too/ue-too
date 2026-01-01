@@ -624,7 +624,7 @@ export class DefaultCameraRig implements CameraRig {
      * When true, pan boundaries ensure the entire viewport stays within configured limits.
      * When false, only the camera center point is constrained.
      *
-     * This is a convenience setter for {@link CameraRigConfig.limitEntireViewPort}.
+     * This is a convenience setter for {@link CameraRigConfig}.limitEntireViewPort.
      */
     set limitEntireViewPort(limit: boolean){
         this._config.limitEntireViewPort = limit;

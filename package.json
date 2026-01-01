@@ -23,6 +23,7 @@
     "dev:examples": "nx dev examples",
     "scaffold:react": "node scripts/scaffold-react.mjs",
     "scaffold:vue": "node scripts/scaffold-vue.mjs",
+    "scaffold:package": "bun scripts/scaffold-package.mjs",
     "docs:build": "nx run-many --target=docs:build --projects=packages/* --parallel=true"
   },
   "repository": {
@@ -99,5 +100,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
- ]
+  ]
 }

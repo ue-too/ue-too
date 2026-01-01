@@ -1,0 +1,16 @@
+{
+  "name": "board-vue",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/board-vue/src",
+  "// targets": "to see all targets run: nx show project board-vue --web",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/board-vue"
+      }
+    }
+  }
+}

@@ -13,3 +13,4 @@
 
 export * from "./useAnimationFrame";
 export * from "./useBoardify";
+export * from "./useCanvasProxy";

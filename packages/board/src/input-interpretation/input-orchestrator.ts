@@ -123,6 +123,10 @@ export class InputOrchestrator {
         }
     }
 
+    public processInputEvent(input: OutputEvent): void {
+        this.handleStateMachineOutput(input);
+    }
+
     /**
      * Type guard to check if an output value is a valid OutputEvent.
      *

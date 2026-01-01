@@ -13,9 +13,7 @@ const camera = new DefaultBoardCamera(width, height);
 const cameraRig = createDefaultCameraRig(camera);
 const cameraMux = createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig);
 
-const edgeAutoCameraInput = new EdgeAutoCameraInput(cameraMux);
-
-const observableInputTracker = new ObservableInputTracker(new SvgProxy(svg), edgeAutoCameraInput);
+const observableInputTracker = new ObservableInputTracker(new SvgProxy(svg));
 
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
 
