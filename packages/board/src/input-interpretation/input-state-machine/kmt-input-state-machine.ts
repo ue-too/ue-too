@@ -237,8 +237,9 @@ export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputCo
     }
 
     scrollHandler = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
-        if(payload.deltaX !== 0){
-            // probably from a trackpad
+        if(payload.deltaX === 0 && payload.deltaY !== 0){
+            context.addKmtTrackpadTrackScore();
+        } else if (payload.deltaX !== 0 && payload.deltaY !== 0){
             context.subtractKmtTrackpadTrackScore();
         }
         if(context.mode === "kmt"){
