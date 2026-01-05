@@ -146,6 +146,17 @@ export class CanvasCacheInWebWorker implements Canvas {
     }
 }
 
+/**
+ * A proxy for the canvas element to prevent constant invoking of the getBoundingClientRect method.
+ * @remarks This is mainly used as a proxy to the canvas to prevent invoking the getBoundingClientRect method on the canvas every time a pointer event is triggered or a coordinate conversion is needed. Also to autoscale the canvas buffer depending on the device pixel ratio. It's important to note that in normal circumstances, you would not need to set the size of the canvas manually; you should use the css style width and height to set the size of the canvas.
+ * @category Input State Machine
+ * @see {@link Canvas} for the interface that this class implements
+ * @see {@link Observable} for the observable that this class emits
+ * @see {@link Observer} for the observer that can subscribe to the observable
+ * @see {@link SubscriptionOptions} for the options that can be passed to the subscribe method
+ * @see {@link SynchronousObservable} for the synchronous observable that this class emits
+ * @see {@link CanvasPositionDimensionPublisher} for the publisher that is used to publish the canvas dimensions
+ */
 export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
 
     private _width: number = 0;

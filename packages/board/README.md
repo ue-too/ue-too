@@ -229,20 +229,9 @@ flowchart TB
 ```
 
 **Key concepts:**
-- **Event Parsers**: Register listeners on canvas (works with vanilla, pixi.js, fabric.js, konva)
+- **Event Parsers**: Register listeners on canvas (should work with vanilla out of the box, pixi.js, fabric.js, konva with some modifications)
 - **Input State Machine**: Interprets raw events into camera intents (pan/zoom/rotate)
-- **Input Orchestrator**: Routes outputs in parallel — always publishes raw input, and asks CameraMux for permission
+- **Input Orchestrator**: Routes outputs in parallel — always publishes raw input, and asks CameraMux for permission to pass through the input to the camera rig.
 - **Camera Mux**: Controls input priority (e.g., user input can cancel animations). Returns `{allowPassThrough: true/false}`
 - **Camera Rig**: Applies movement restrictions and clamping before updating camera
 - **Observable Camera**: Final camera state with change observers
-
-## TODO
-- [x] Add a canvas position dimension publisher that can be used to get the position and dimension of the canvas.
-- [ ] Add a `boardify-pixi` package that contains utility functions for the board to work with pixi.js.
-- [ ] Add a `boardify-fabric` package that contains utility functions for the board to work with fabric.js.
-- [ ] Add a `boardify-konva` package that contains utility functions for the board to work with konva.js.
-- [ ] Add an example of the board being used with react.
-- [ ] Add an example of the board being used with svelte. (I'm learning svelte right now so I can make a example for that)
-- [ ] Add an example of the board being used with vue. (Currently I don't have any plans on learning vue so probably not going to make one very soon)
-- [ ] A documentation site. There is a lot of util stuff that I don't think will fit in here in the readme. So stay tuned! (I am experimenting with docusaurus right now so it might be a docusaurus site)
-
