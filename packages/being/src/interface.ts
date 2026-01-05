@@ -443,7 +443,7 @@ export class TemplateStateMachine<
     protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
     protected _initialState: States;
 
-    constructor(states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>, initialState: States, context: Context){
+    constructor(states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>, initialState: States, context: Context, autoStart: boolean = true){
         this._states = states;
         this._currentState = "INITIAL";
         this._initialState = initialState;
@@ -451,7 +451,9 @@ export class TemplateStateMachine<
         this._statesArray = Object.keys(states) as States[];
         this._stateChangeCallbacks = [];
         this._happensCallbacks = [];
-        this.start();
+        if(autoStart){
+            this.start();
+        }
     }
 
     reset(): void {
