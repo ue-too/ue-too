@@ -198,6 +198,9 @@ export interface StateMachine<
     onStateChange(callback: StateChangeCallback<States>): void;
     possibleStates: States[];
     onHappens(callback: (args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void): void;
+    reset(): void;
+    start(): void;
+    wrapup(): void;
 }
 
 /**
@@ -230,8 +233,8 @@ export interface State<
     States extends string = 'IDLE',
     EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > { 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States): void;
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States): void;
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States | "INITIAL"): void;
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States | "TERMINAL"): void;
     handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
     eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     guards: Guard<Context>;
@@ -431,25 +434,54 @@ export class TemplateStateMachine<
     EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > implements StateMachine<EventPayloadMapping, Context, States, EventOutputMapping> {
 
-    protected _currentState: States;
+    protected _currentState: States | "INITIAL" | "TERMINAL";
     protected _states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>;
     protected _context: Context;
     protected _statesArray: States[];
     protected _stateChangeCallbacks: StateChangeCallback<States>[];
     protected _happensCallbacks: ((args: EventArgs<EventPayloadMapping, keyof EventPayloadMapping | string>, context: Context) => void)[];
     protected _timeouts: ReturnType<typeof setTimeout> | undefined = undefined;
+    protected _initialState: States;
 
     constructor(states: Record<States, State<EventPayloadMapping, Context, States, EventOutputMapping>>, initialState: States, context: Context){
         this._states = states;
-        this._currentState = initialState;
+        this._currentState = "INITIAL";
+        this._initialState = initialState;
         this._context = context;
         this._statesArray = Object.keys(states) as States[];
         this._stateChangeCallbacks = [];
         this._happensCallbacks = [];
-        this._states[initialState].uponEnter(context, this, initialState);
+        this.start();
     }
 
-    switchTo(state: States): void {
+    reset(): void {
+        this.wrapup();
+        this.switchTo("INITIAL");
+        this.start();
+    }
+
+    start(): void {
+        if(this.currentState !== "INITIAL"){
+            return;
+        }
+        this._context.setup();
+        this.switchTo(this._initialState);
+        this._states[this._initialState].uponEnter(this._context, this, this._initialState);
+    }
+
+    wrapup(): void {
+        if(this._currentState === "TERMINAL") {
+            return;
+        }
+        const originalState = this._currentState;
+        if(originalState !== "INITIAL") {
+            this._states[originalState].beforeExit(this._context, this, "TERMINAL");
+        }
+        this._context.cleanup();
+        this.switchTo("TERMINAL");
+    }
+
+    switchTo(state: States | "INITIAL" | "TERMINAL"): void {
         this._currentState = state;
     }
     
@@ -460,14 +492,19 @@ export class TemplateStateMachine<
         if(this._timeouts){
             clearTimeout(this._timeouts);
         }
+        if(this._currentState === "INITIAL" || this._currentState === "TERMINAL"){
+            return { handled: false };
+        }
         this._happensCallbacks.forEach(callback => callback(args, this._context));
         const result = this._states[this._currentState].handles(args, this._context, this);
-        if(result.handled && result.nextState !== undefined && result.nextState !== this._currentState){ // TODO: whether or not to transition to the same state (currently no) (uponEnter and beforeExit will still be called if the state is the same)
+        if(result.handled && result.nextState !== undefined && result.nextState !== this._currentState){ // TODO: whether or not to transition to the same state (currently no, uponEnter and beforeExit will not be called if the state is the same)
             const originalState = this._currentState;
             this._states[this._currentState].beforeExit(this._context, this, result.nextState);
             this.switchTo(result.nextState);
             this._states[this._currentState].uponEnter(this._context, this, originalState);
-            this._stateChangeCallbacks.forEach(callback => callback(originalState, this._currentState));
+            for(const callback of this._stateChangeCallbacks){
+                callback(originalState, this._currentState);
+            }
         }
         return result;
     }
@@ -480,7 +517,7 @@ export class TemplateStateMachine<
         this._happensCallbacks.push(callback);
     }
 
-    get currentState(): States {
+    get currentState(): States | "INITIAL" | "TERMINAL" {
         return this._currentState;
     }
 
@@ -604,11 +641,11 @@ export abstract class TemplateState<
         return this._delay;
     }
 
-    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States): void {
+    uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States | "INITIAL"): void {
         // console.log("enter");
     }
 
-    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States): void {
+    beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States | "TERMINAL"): void {
         // console.log('leave');
     }
 

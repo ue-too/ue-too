@@ -1,0 +1,58 @@
+# ue-too Project Rules for Cursor
+
+## CRITICAL: Package Manager
+**This project uses Bun, NOT npm/pnpm.**
+- Always use `bun` commands: `bun install`, `bun run <script>`, `bun add <package>`
+- Never suggest `npm` or `pnpm` commands
+- When running tests or scripts, use `bun run test` not `npm test`
+- Package installation: `bun add <package>` not `npm install`
+
+## Project Structure
+Monorepo with independent packages:
+- `packages/` - Publishable npm packages (@ue-too/*)
+- `apps/` - Example applications
+- Foundational packages: `math`, `being`, `ecs` (zero internal deps)
+- Mid-level: `board`, `animate`, `curve`, `border` (depend on foundational)
+- Integration: `board-react-adapter`, `board-vue-adapter` (depend on mid-level)
+
+## TypeScript Standards
+- **Strict mode required** - All packages use `strict: true`
+- No `any` types in public interfaces (use `unknown` with guards)
+- All exports require JSDoc comments with @param, @returns, @example
+- TypeScript errors are BLOCKING
+
+## Testing
+- Use Jest for testing
+- Tests required for public APIs and critical paths
+- Test file location: `test/*.test.ts` or `test/*.spec.ts`
+- Run tests: `bun run test` (package-level) or `bun test` (root)
+
+## Code Style
+- 2-space indentation
+- Follow conventional commits: `feat(package): description`
+- JSDoc required for all exports
+- Use @group tags to organize API documentation
+
+## Commands Reference
+- Install: `bun install`
+- Test: `bun test` or `bun run test` (in package)
+- Build: `bun run build`
+- Add package: `bun add <package-name>`
+
+## Package Development
+- Each package must be independently publishable
+- Minimize workspace dependencies
+- Document all cross-package dependencies in README
+- Include TypeDoc configuration (`typedoc.json`)
+
+## Performance
+- Target 60 FPS for canvas operations (16.67ms frame budget)
+- Benchmark critical paths (math ops, collisions, physics)
+- Keep packages under 50KB minified+gzipped when practical
+
+## Important Notes
+- Node version: 22.19.0
+- Bun is required for development
+- Packages remain compatible with npm/pnpm for end users
+- All packages published as `@ue-too/<package-name>`
+
