@@ -644,6 +644,7 @@ export class ObservableInputTracker implements KmtInputContext {
     private _initialCursorPosition: Point;
     private _kmtTrackpadTrackScore: number; // > 0 for kmt; < 0 for trackpad; 0 for TBD;
     private _mode: 'kmt' | 'trackpad' | 'TBD';
+    private _deciding: boolean = true;
 
     constructor(canvasOperator: Canvas){
         this._alignCoordinateSystem = true;
@@ -658,7 +659,13 @@ export class ObservableInputTracker implements KmtInputContext {
     }
 
     setMode(mode: 'kmt' | 'trackpad' | 'TBD'): void {
+        this._deciding = false;
         this._mode = mode;
+    }
+
+    enableInputModeDetection(): void {
+        this._deciding = true;
+        this._kmtTrackpadTrackScore = 0;
     }
 
     get kmtTrackpadTrackScore(): number {
@@ -666,11 +673,25 @@ export class ObservableInputTracker implements KmtInputContext {
     }
 
     subtractKmtTrackpadTrackScore(): void {
+        if(!this._deciding){
+            return;
+        }
         this._kmtTrackpadTrackScore--;
+        if(this._kmtTrackpadTrackScore < -5){
+            this._kmtTrackpadTrackScore = 0;
+            this._mode = 'trackpad';
+        }
     }
 
     addKmtTrackpadTrackScore(): void {
+        if(!this._deciding){
+            return;
+        }
         this._kmtTrackpadTrackScore++;
+        if(this._kmtTrackpadTrackScore > 5){
+            this._kmtTrackpadTrackScore = 0;
+            this._mode = 'kmt';
+        }
     }
 
     get alignCoordinateSystem(): boolean {
