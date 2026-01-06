@@ -328,6 +328,28 @@ export function useCustomCameraMux(cameraMux: CameraMux) {
     }, [cameraMux, board]);
 }
 
+/**
+ * The custom input handling logic is before everything else. To use this hook, you would need to handle the event from the canvas and pass down the result to the `processInputEvent` function. 
+ * @returns Object containing the `processInputEvent` function
+ * @example
+ * ```typescript
+ * const { processInputEvent } = useCustomInputHandling();
+ * 
+ * const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+ *   // custom logic to determine the user input
+ * 
+ *   // if the user input is valid, pass it to the `processInputEvent` function
+ *   // e.g. pass the pan event down the input handling system
+ *   processInputEvent({
+ *     type: "pan",
+ *     delta: {
+ *       x: 10,
+ *       y: 10,
+ *     },
+ *   });
+ * }
+ * ```
+ */
 export function useCustomInputHandling(){
     const board = useBoard();
 
@@ -463,7 +485,6 @@ export function useCanvasDimension() {
     const board = useBoard();
 
     return useSyncExternalStore((cb) => board.onCanvasDimensionChange(cb), ()=> {
-
         return board.canvasDimensions
     });
 }
@@ -474,3 +495,4 @@ export function useCoordinateConversion() {
         return board.convertWindowPoint2WorldCoord(pointInWindow);
     }, [board]);
 }
+

@@ -1,6 +1,6 @@
 import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, EventArgs, EventResult, CreateStateType } from "@ue-too/being";
 import type { Point } from "@ue-too/math";
-import { CursorStyle, DummyKmtInputContext, KmtInputContext } from "./kmt-input-context";
+import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext, ObservableInputTracker } from "./kmt-input-context";
 import { convertFromWindow2ViewPortWithCanvasOperator } from "../../utils/coorindate-conversion";
 
 const KMT_INPUT_STATES = ["IDLE", "READY_TO_PAN_VIA_SPACEBAR", "READY_TO_PAN_VIA_SCROLL_WHEEL", "PAN", "INITIAL_PAN", "PAN_VIA_SCROLL_WHEEL", "DISABLED"] as const;
@@ -624,6 +624,12 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         DISABLED: new DisabledState(),
     }
     return new TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>(states, "IDLE", context);
+}
+
+export function createKmtInputStateMachineWithCanvas(canvas: Canvas): KmtInputStateMachine {
+    const context = new ObservableInputTracker(canvas);
+
+    return createKmtInputStateMachine(context);
 }
 
 export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {

@@ -226,7 +226,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
         ...args: EventArgs<KmtInputEventMapping, K>
     ): void {
         const result = this._stateMachine.happens(...args);
-        if (result.handled && result.output) {
+        if (result.handled && result.output !== undefined) {
             this._orchestrator.processInputEventOutput(result.output);
         }
     }

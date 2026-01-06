@@ -1,5 +1,5 @@
 import { StaticCanvas, FabricText, TMat2D, Rect } from 'fabric'
-import { createKmtInputStateMachine, createDefaultCameraRig, DefaultBoardCamera, ObservableInputTracker, RawUserInputPublisher, createCameraMuxWithAnimationAndLockWithCameraRig, VanillaKMTEventParser, CanvasProxy, InputOrchestrator, EdgeAutoCameraInput } from "@ue-too/board";
+import { createKmtInputStateMachine, createDefaultCameraRig, DefaultBoardCamera, ObservableInputTracker, RawUserInputPublisher, createCameraMuxWithAnimationAndLock, VanillaKMTEventParser, CanvasProxy, InputOrchestrator, EdgeAutoCameraInput } from "@ue-too/board";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
 const fabricCanvas = new StaticCanvas(canvas);
@@ -27,8 +27,8 @@ const height = parseInt(canvas.style.height);
 const camera = new DefaultBoardCamera(width, height, {x: 0, y: 0}, 0, 2);
 const canvasProxy = new CanvasProxy(canvas);
 const cameraRig = createDefaultCameraRig(camera);
-const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig), cameraRig, new RawUserInputPublisher());
-const observableInputTracker = new ObservableInputTracker(canvasProxy, new EdgeAutoCameraInput(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig)));
+const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());
+const observableInputTracker = new ObservableInputTracker(canvasProxy);
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
 const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, canvas);
 kmtParser.setUp();

@@ -3,7 +3,7 @@ import { Application, Assets, Graphics, Matrix, Sprite, PixiTouch } from 'pixi.j
 import { VanillaKMTEventParser } from '@ue-too/board';
 import { RawUserInputPublisher } from '@ue-too/board';
 import { CanvasProxy, createKmtInputStateMachine, ObservableInputTracker } from '@ue-too/board';
-import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/board';
+import { createCameraMuxWithAnimationAndLock } from '@ue-too/board';
 
 // Asynchronous IIFE
 (async () =>
@@ -18,8 +18,8 @@ import { createCameraMuxWithAnimationAndLockWithCameraRig } from '@ue-too/board'
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
     const canvasProxy = new CanvasProxy(app.canvas);
     const cameraRig = createDefaultCameraRig(camera);
-    const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig), cameraRig, new RawUserInputPublisher());
-    const observableInputTracker = new ObservableInputTracker(canvasProxy, new EdgeAutoCameraInput(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig)));
+    const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());
+    const observableInputTracker = new ObservableInputTracker(canvasProxy);
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     console.log('kmt input state machine', kmtInputStateMachine);
     const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, app.canvas);
