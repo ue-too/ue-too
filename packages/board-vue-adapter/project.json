@@ -7,7 +7,7 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "command": "rm -rf dist && vite build && bun x vue-tsc --declaration --emitDeclarationOnly --skipLibCheck",
         "cwd": "packages/board-vue-adapter"
       }
     },

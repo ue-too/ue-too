@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ue-too/board": "workspace:*",
-    "@ue-too/board-vue-adapter": "workspace:*",
+    "@ue-too/board-vue-adapter": "0.12.3",
     "@ue-too/math": "workspace:*",
     "vue": "^3.5.25"
   }

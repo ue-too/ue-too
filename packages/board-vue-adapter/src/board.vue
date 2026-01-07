@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { useAnimationFrameWithBoard, useBoard } from "./useBoard";
+import { Board } from "@ue-too/board";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
-const board = useBoard();
+const board = new Board();
 
 onMounted(() => {
   if (canvas.value) {

@@ -8,3 +8,4 @@ export {};
 
 export { default as Board } from './board.vue';
 export * from './useBoard';
+export { default as Test } from './Test.vue';
