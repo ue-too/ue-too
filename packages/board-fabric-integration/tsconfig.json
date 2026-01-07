@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/board-fabric-integration.tsbuildinfo",
+    "declaration": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "composite": true,
+    "strict": true,
+    "types": []
+  },
+  "include": [
+    "src/**/*"
+  ]
+}

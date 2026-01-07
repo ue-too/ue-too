@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/board-fabric-integration.tsbuildinfo",
+    "declaration": true
+  },
+  "include": [
+    "test/**/*"
+  ]
+}
