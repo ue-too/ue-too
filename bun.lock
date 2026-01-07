@@ -125,7 +125,7 @@
       "version": "0.5.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
-        "@ue-too/board-vue-adapter": "0.12.3",
+        "@ue-too/board-vue-adapter": "workspace:*",
         "@ue-too/math": "workspace:*",
         "vue": "^3.5.25",
       },
@@ -2839,8 +2839,6 @@
     "@types/minimatch/minimatch": ["minimatch@10.1.1", "", { "dependencies": { "@isaacs/brace-expansion": "5.0.0" } }, "sha512-enIvLvRAFZYXJzkCYG5RKmPfrFArdLv+R+lbQ53BmIMLIry74bjKzX6iHAm8WYamJkhSSEabrWN5D97XnKObjQ=="],
 
     "@ue-too/board-react/pixi.js": ["pixi.js@8.14.3", "", { "dependencies": { "@pixi/colord": "^2.9.6", "@types/css-font-loading-module": "^0.0.12", "@types/earcut": "^3.0.0", "@webgpu/types": "^0.1.40", "@xmldom/xmldom": "^0.8.10", "earcut": "^3.0.2", "eventemitter3": "^5.0.1", "gifuct-js": "^2.1.2", "ismobilejs": "^1.1.1", "parse-svg-path": "^0.1.2", "tiny-lru": "^11.4.5" } }, "sha512-6xGYARV8D9E/fO1c2NmYn+k2dQ5oZldVm5tNlLQJ8obTlOQXdL5QpMc217qTpRyHVDFaw5eoFCLF1gr6p5ZcjQ=="],
-
-    "@ue-too/board-vue/@ue-too/board-vue-adapter": ["@ue-too/board-vue-adapter@0.12.3", "", { "dependencies": { "@ue-too/board": "^0.12.0" }, "peerDependencies": { "vue": "^3.5.25" } }, "sha512-FIVVMDxmUw8hDqq8TBB2lOX3JwhO4KDUTU8CGI2lMaNUiE/cLWkn6qBMj+M3yTEc4lUrh4xQI8oOr9/dztbC8Q=="],
 
     "@unrs/resolver-binding-wasm32-wasi/@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@0.2.12", "", { "dependencies": { "@emnapi/core": "1.7.1", "@emnapi/runtime": "1.7.1", "@tybys/wasm-util": "0.10.1" } }, "sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ=="],
 
