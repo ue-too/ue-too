@@ -25,7 +25,6 @@ const stage = new Konva.Stage({
     height: 600,
 });
 
-
 function update(){
     const { scale, rotation, translation } = camera.getTRS(1, true);
     stage.x(translation.x);

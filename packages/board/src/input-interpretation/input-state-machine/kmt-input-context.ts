@@ -230,6 +230,10 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     setCanvasWidth(width: number){
+        if(this._canvas && this._canvas.style.width === '' && this._canvas.style.height === ''){
+            const aspectRatio = this._width / this._height;
+            this._canvas.style.aspectRatio = aspectRatio.toString();
+        }
         if(this._canvas && this._canvas.style.width !== ''){
             this._canvas.width = width * window.devicePixelRatio;
         } else {
@@ -249,6 +253,10 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     setCanvasHeight(height: number){
+        if(this._canvas && this._canvas.style.width === '' && this._canvas.style.height === ''){
+            const aspectRatio = this._width / this._height;
+            this._canvas.style.aspectRatio = aspectRatio.toString();
+        }
         if(this._canvas && this._canvas.style.height !== ''){
             this._canvas.height = height * window.devicePixelRatio;
         } else {

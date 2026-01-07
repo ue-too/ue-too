@@ -27,3 +27,8 @@ const toggleCamera = document.querySelector("#toggle-camera") as HTMLButtonEleme
 toggleCamera.addEventListener("click", ()=>{
     board.attach(canvas);
 });
+
+const detachCanvas = document.querySelector("#detach-canvas") as HTMLButtonElement;
+detachCanvas.addEventListener("click", ()=>{
+    board.tearDown();
+});

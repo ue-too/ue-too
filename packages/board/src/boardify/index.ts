@@ -188,6 +188,7 @@ export default class Board {
 
     private _cachedCanvasWidth: number = 0;
     private _cachedCanvasHeight: number = 0;
+    private _cachedCanvasPixelRatio: number = 1;
 
     private lastUpdateTime: number = 0;
 
@@ -580,6 +581,12 @@ export default class Board {
 
         this._context.reset();
         this._context.clearRect(0, 0, this._canvasProxy.width * window.devicePixelRatio, this._canvasProxy.height * window.devicePixelRatio);
+
+        if(this._cachedCanvasPixelRatio !== window.devicePixelRatio){
+            this._cachedCanvasPixelRatio = window.devicePixelRatio;
+            this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
+            this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
+        }
 
         if(this._cachedCanvasHeight !== this._canvasProxy.height){
             this._cachedCanvasHeight = this._canvasProxy.height;
