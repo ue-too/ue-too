@@ -165,8 +165,8 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * Forces state change to begin animation or transition sequence.
      * Called when starting programmatic camera movements.
      */
-    initateTransition(): void{
-        this.happens("initateTransition");
+    initateTransition() {
+        return this.happens("initateTransition");
     }
 }
 
@@ -311,6 +311,6 @@ export function createDefaultPanControlStates(): Record<PanControlStates, State<
  *
  * @category Input Flow Control
  */
-export function createDefaultPanControlStateMachine(context: BaseContext): PanControlStateMachine {
+export function createDefaultPanControlStateMachine(context: BaseContext = {setup: NO_OP, cleanup: NO_OP}): PanControlStateMachine {
     return new PanControlStateMachine(createDefaultPanControlStates(), "ACCEPTING_USER_INPUT", context);
 }

@@ -53,6 +53,8 @@ export default class BaseCamera implements BoardCamera {
 
     private currentCachedTransform: {transform: {a: number, b: number, c: number, d: number, e: number, f: number}, position: Point, rotation: number, zoomLevel: number, alignCoorindate: boolean, devicePixelRatio: number, viewPortWidth: number, viewPortHeight: number} | undefined;
 
+    private currentCachedTRS: {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}, transformMatrix: TransformationMatrix} | undefined;
+
     private _viewPortWidth: number;
     private _viewPortHeight: number;
 
@@ -388,7 +390,7 @@ export default class BaseCamera implements BoardCamera {
      *
      * @see {@link getTRS} for decomposed transformation components
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean) {
+    getTransform(devicePixelRatio: number = 1, alignCoorindate: boolean = true) {
         if(this.currentCachedTransform !== undefined
             && this.currentCachedTransform.devicePixelRatio === devicePixelRatio
             && this.currentCachedTransform.alignCoorindate === alignCoorindate
@@ -436,10 +438,29 @@ export default class BaseCamera implements BoardCamera {
      * This is useful when you need individual transformation components rather than
      * the combined matrix. Internally calls {@link getTransform} and decomposes the result.
      */
-    getTRS(devicePixelRatio: number, alignCoorindate: boolean){
+    getTRS(devicePixelRatio: number = 1, alignCoorindate: boolean = true){
         const transform = this.getTransform(devicePixelRatio, alignCoorindate);
+        if(this.currentCachedTRS !== undefined && this.currentCachedTRS.transformMatrix.a === transform.a && this.currentCachedTRS.transformMatrix.b === transform.b && this.currentCachedTRS.transformMatrix.c === transform.c && this.currentCachedTRS.transformMatrix.d === transform.d && this.currentCachedTRS.transformMatrix.e === transform.e && this.currentCachedTRS.transformMatrix.f === transform.f){
+            return {
+                scale: this.currentCachedTRS.scale,
+                rotation: this.currentCachedTRS.rotation,
+                translation: this.currentCachedTRS.translation,
+                cached: true
+            }
+        }
         const decompositionRes = decomposeTRS(transform);
-        return decompositionRes;
+        this.currentCachedTRS = {
+            scale: decompositionRes.scale,
+            rotation: decompositionRes.rotation,
+            translation: decompositionRes.translation,
+            transformMatrix: transform
+        };
+        return {
+            scale: decompositionRes.scale,
+            rotation: decompositionRes.rotation,
+            translation: decompositionRes.translation,
+            cached: false
+        };
     }
 
     /**
@@ -461,8 +482,8 @@ export default class BaseCamera implements BoardCamera {
      * camera.setUsingTransformationMatrix(matrix);
      * ```
      */
-    setUsingTransformationMatrix(transformationMatrix: TransformationMatrix){
-        const decomposed = decomposeCameraMatrix(transformationMatrix, this._viewPortWidth, this._viewPortHeight, this._zoomLevel);
+    setUsingTransformationMatrix(transformationMatrix: TransformationMatrix, devicePixelRatio: number = 1){
+        const decomposed = decomposeCameraMatrix(transformationMatrix, devicePixelRatio, this._viewPortWidth, this._viewPortHeight);
 
         // TODO clamp the attributes?
         this.setPosition(decomposed.position);

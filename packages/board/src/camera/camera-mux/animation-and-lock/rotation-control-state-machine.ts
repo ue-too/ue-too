@@ -310,6 +310,6 @@ export function createDefaultRotateControlStates(): Record<RotateControlStates, 
  *
  * @category Input Flow Control
  */
-export function createDefaultRotateControlStateMachine(context: BaseContext): RotateControlStateMachine {
+export function createDefaultRotateControlStateMachine(context: BaseContext = {setup: NO_OP, cleanup: NO_OP}): RotateControlStateMachine {
     return new RotateControlStateMachine(createDefaultRotateControlStates(), "ACCEPTING_USER_INPUT", context);
 }

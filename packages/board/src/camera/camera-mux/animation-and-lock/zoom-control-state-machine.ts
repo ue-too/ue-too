@@ -389,6 +389,6 @@ export function createDefaultZoomControlStates(): Record<ZoomControlStates, Stat
  *
  * @category Input Flow Control
  */
-export function createDefaultZoomControlStateMachine(context: BaseContext): ZoomControlStateMachine {
+export function createDefaultZoomControlStateMachine(context: BaseContext = {setup: NO_OP, cleanup: NO_OP}): ZoomControlStateMachine {
     return new ZoomControlStateMachine(createDefaultZoomControlStates(), "ACCEPTING_USER_INPUT", context);
 }

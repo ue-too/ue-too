@@ -100,12 +100,18 @@ export type EventNotHandled = {
 }
 
 /**
+ * Helper type that conditionally includes the output property.
+ * @internal
+ */
+type WithOutput<Output> = Output extends void ? {} : { output?: Output };
+
+/**
  * Result type when an event is successfully handled by a state.
  *
  * @remarks
  * This type represents a successful event handling result. It can optionally include:
  * - `nextState`: The state to transition to (if different from current)
- * - `output`: A return value from the event handler
+ * - `output`: A return value from the event handler (only present when Output is not void)
  *
  * @typeParam States - Union of all possible state names in the state machine
  * @typeParam Output - The output type for this event (defaults to void)
@@ -116,6 +122,7 @@ export type EventNotHandled = {
  * const result: EventHandled<"IDLE" | "ACTIVE"> = {
  *   handled: true,
  *   nextState: "ACTIVE"
+ *   // output property does not exist when Output is void
  * };
  *
  * // With output value
@@ -131,8 +138,7 @@ export type EventNotHandled = {
 export type EventHandled<States extends string, Output = void> = {
     handled: true;
     nextState?: States;
-    output?: Output;
-}
+} & WithOutput<Output>;
 
 /**
  * Discriminated union representing the result of event handling.
@@ -659,6 +665,11 @@ export abstract class TemplateState<
             const output = this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
             const targetState = this.eventReactions[eventKey].defaultTargetState;
             const guardsToEvaluate = this._eventGuards[eventKey];
+            const baseResult = { handled: true as const, nextState: targetState };
+            const resultWithOutput = output !== undefined 
+                ? { ...baseResult, output } 
+                : baseResult;
+            
             if(guardsToEvaluate){
                 const target = guardsToEvaluate.find((guard)=>{
                     if(this.guards[guard.guard]){
@@ -666,11 +677,12 @@ export abstract class TemplateState<
                     }
                     return false;
                 });
-                return target 
-                    ? {handled: true, nextState: target.target, output: output as any} 
-                    : {handled: true, nextState: targetState, output: output as any};
+                const finalResult = target 
+                    ? { ...resultWithOutput, nextState: target.target }
+                    : resultWithOutput;
+                return finalResult as EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
             }
-            return {handled: true, nextState: targetState, output: output as any};
+            return resultWithOutput as EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
         }
         return {handled: false};
     }

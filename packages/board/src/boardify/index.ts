@@ -11,7 +11,7 @@ import { CameraEventMap, CameraState, UnSubscribe } from '../camera/update-publi
 import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from '../utils';
 import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from '../input-interpretation/raw-input-publisher';
 
-import { CameraMux, createCameraMuxWithAnimationAndLockWithCameraRig } from '../camera/camera-mux';
+import { CameraMux, createCameraMuxWithAnimationAndLock } from '../camera/camera-mux';
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
 import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
 import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
@@ -294,7 +294,7 @@ export default class Board {
             clampZoom: true,
         }, camera);
 
-        this._cameraMux = createCameraMuxWithAnimationAndLockWithCameraRig(this.cameraRig);
+        this._cameraMux = createCameraMuxWithAnimationAndLock();
         this.boardInputPublisher = new RawUserInputPublisher();
 
         // this._edgeAutoCameraInput = new EdgeAutoCameraInput(this._cameraMux);

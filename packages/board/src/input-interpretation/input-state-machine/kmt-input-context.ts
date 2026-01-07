@@ -526,7 +526,7 @@ export class WorkerRelayCanvas implements Canvas {
  * - `true`: Standard screen coordinates (Y increases downward)
  * - `false`: Inverted coordinates (Y increases upward)
  *
- * This interface extends BaseContext from the @ue-too/being state machine library,
+ * This interface extends BaseContext from the \@ue-too/being state machine library,
  * inheriting setup() and cleanup() lifecycle methods.
  *
  * @category Input State Machine

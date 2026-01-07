@@ -124,7 +124,7 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
     }
 
     /**
-     * Processes user pan input (implements {@link CameraMux.notifyPanInput}).
+     * Processes user pan input (implements {@link CameraMux}).
      *
      * @param delta - Pan delta in viewport coordinates
      * @returns Output indicating whether pan is allowed
@@ -157,7 +157,7 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
     }
 
     /**
-     * Processes user zoom input (implements {@link CameraMux.notifyZoomInput}).
+     * Processes user zoom input (implements {@link CameraMux}).
      *
      * @param delta - Zoom delta (change in zoom level)
      * @param at - Anchor point in viewport coordinates
@@ -248,7 +248,7 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
     }
 
     /**
-     * Processes user rotation input (implements {@link CameraMux.notifyRotationInput}).
+     * Processes user rotation input (implements {@link CameraMux}).
      *
      * @param delta - Rotation delta in radians
      * @returns Output indicating whether rotation is allowed
@@ -392,62 +392,9 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
  * @see {@link CameraMuxWithAnimationAndLock} for the implementation
  * @see {@link createCameraMuxWithAnimationAndLockWithCameraRig} for custom rig version
  */
-export function createCameraMuxWithAnimationAndLock(camera: ObservableBoardCamera): CameraMux {
-    const context = createDefaultCameraRig(camera);
-    const panStateMachine = createDefaultPanControlStateMachine(context);
-    const zoomStateMachine = createDefaultZoomControlStateMachine(context);
-    const rotateStateMachine = createDefaultRotateControlStateMachine(context);
-    return new CameraMuxWithAnimationAndLock(panStateMachine, zoomStateMachine, rotateStateMachine);
-}
-
-/**
- * Creates a camera mux with animation and locking capabilities from a camera rig.
- *
- * @param cameraRig - Pre-configured camera rig to use
- * @returns Configured camera mux with animation support
- *
- * @remarks
- * Similar to {@link createCameraMuxWithAnimationAndLock} but accepts an existing
- * camera rig instead of creating a default one. Use this when you need:
- * - Custom camera rig configuration
- * - Specific pan/zoom/rotation constraints
- * - Non-default handler pipelines
- * - To share a camera rig between multiple systems
- *
- * **Advantages over camera-only variant:**
- * - Full control over camera rig settings
- * - Ability to configure boundaries, restrictions, clamping
- * - Use custom handler functions
- * - Reuse existing rig instance
- *
- * @example
- * ```typescript
- * // Create custom camera rig with specific config
- * const camera = new DefaultBoardCamera(1920, 1080);
- * const rig = new DefaultCameraRig({
- *   limitEntireViewPort: true,
- *   clampTranslation: true,
- *   boundaries: {
- *     min: { x: 0, y: 0 },
- *     max: { x: 2000, y: 1000 }
- *   }
- * }, camera);
- *
- * // Create mux with custom rig
- * const mux = createCameraMuxWithAnimationAndLockWithCameraRig(rig);
- *
- * // Animations respect rig's boundaries and constraints
- * mux.notifyPanToAnimationInput({ x: 3000, y: 1500 });
- * // Camera will be clamped to boundaries during animation
- * ```
- *
- * @category Input Flow Control
- * @see {@link CameraMuxWithAnimationAndLock} for the implementation
- * @see {@link createCameraMuxWithAnimationAndLock} for simpler camera-only version
- */
-export function createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig: CameraRig): CameraMux {
-    const panStateMachine = createDefaultPanControlStateMachine(cameraRig);
-    const zoomStateMachine = createDefaultZoomControlStateMachine(cameraRig);
-    const rotateStateMachine = createDefaultRotateControlStateMachine(cameraRig);
+export function createCameraMuxWithAnimationAndLock(): CameraMux {
+    const panStateMachine = createDefaultPanControlStateMachine();
+    const zoomStateMachine = createDefaultZoomControlStateMachine();
+    const rotateStateMachine = createDefaultRotateControlStateMachine();
     return new CameraMuxWithAnimationAndLock(panStateMachine, zoomStateMachine, rotateStateMachine);
 }

@@ -281,7 +281,7 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * @param alignCoorindate Whether to align the coordinate system to the camera's position
      * @returns The transformation matrix
      */
-    getTransform(devicePixelRatio: number, alignCoorindate: boolean = true): TransformationMatrix {
+    getTransform(devicePixelRatio: number = 1, alignCoorindate: boolean = true): TransformationMatrix {
         return this._baseCamera.getTransform(devicePixelRatio, alignCoorindate);
     }
 
@@ -455,8 +455,12 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         return this._observer.on(eventName, callback, options);
     }
 
-    getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}} {
+    getTRS(devicePixelRatio: number = 1, alignCoordinateSystem: boolean = true): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}, cached: boolean} {
         return this._baseCamera.getTRS(devicePixelRatio, alignCoordinateSystem);
+    }
+
+    setUsingTransformationMatrix(transformationMatrix: TransformationMatrix, devicePixelRatio: number = 1){
+        this._baseCamera.setUsingTransformationMatrix(transformationMatrix, devicePixelRatio);
     }
 
     viewPortInWorldSpace(alignCoordinate: boolean = true): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}}{

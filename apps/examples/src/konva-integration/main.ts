@@ -1,6 +1,6 @@
 import Konva from "konva";
 import { DefaultBoardCamera, InputOrchestrator, EdgeAutoCameraInput, createDefaultCameraRig } from "@ue-too/board";
-import { createCameraMuxWithAnimationAndLockWithCameraRig } from "@ue-too/board";
+import { createCameraMuxWithAnimationAndLock } from "@ue-too/board";
 import { CanvasProxy, ObservableInputTracker } from "@ue-too/board";
 import { createKmtInputStateMachine } from "@ue-too/board";
 import { VanillaKMTEventParser } from "@ue-too/board";
@@ -11,8 +11,8 @@ const camera = new DefaultBoardCamera(800, 600);
 
 const canvasProxy = new CanvasProxy(canvas);
 const cameraRig = createDefaultCameraRig(camera);
-const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig), cameraRig, new RawUserInputPublisher());
-const observableInputTracker = new ObservableInputTracker(canvasProxy, new EdgeAutoCameraInput(createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig)));
+const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());
+const observableInputTracker = new ObservableInputTracker(canvasProxy);
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
 const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, canvas);
 
@@ -27,7 +27,7 @@ const stage = new Konva.Stage({
 
 
 function update(){
-    const {scale, rotation, translation} = camera.getTRS(1, true);
+    const { scale, rotation, translation } = camera.getTRS(1, true);
     stage.x(translation.x);
     stage.y(translation.y);
     stage.scale({x: scale.x, y: scale.y});
