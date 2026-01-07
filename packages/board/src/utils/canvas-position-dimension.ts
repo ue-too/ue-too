@@ -356,8 +356,12 @@ export class CanvasPositionDimensionPublisher {
         });
         const boundingRect = canvas.getBoundingClientRect();
         const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        if(canvas.style.width === '' && canvas.style.height === ''){
+            const aspectRatio = trueRect.width / trueRect.height;
+            canvas.style.aspectRatio = aspectRatio.toString();
+        }
+        this.publishPositionUpdate(trueRect);
         this.lastRect = trueRect;
-
         this.scrollHandler = (() => {
             if(this.lastRect === undefined){
                 return;
