@@ -1,4 +1,4 @@
-import { Board, DefaultBoardCamera, DummyCanvas, EdgeAutoCameraInput, InputOrchestrator, ObservableInputTracker, SvgPositionDimensionPublisher, SvgProxy, VanillaKMTEventParser, createCameraMuxWithAnimationAndLockWithCameraRig, createDefaultCameraRig, createKmtInputStateMachine } from "@ue-too/board";
+import { DefaultBoardCamera, InputOrchestrator, ObservableInputTracker, SvgPositionDimensionPublisher, SvgProxy, VanillaKMTEventParser, createCameraMuxWithAnimationAndLock, createDefaultCameraRig, createKmtInputStateMachine } from "@ue-too/board";
 import { PointCal } from "@ue-too/math";
 
 const svg = document.querySelector("#graph") as SVGSVGElement;
@@ -11,7 +11,7 @@ svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
 const camera = new DefaultBoardCamera(width, height);
 const cameraRig = createDefaultCameraRig(camera);
-const cameraMux = createCameraMuxWithAnimationAndLockWithCameraRig(cameraRig);
+const cameraMux = createCameraMuxWithAnimationAndLock();
 
 const observableInputTracker = new ObservableInputTracker(new SvgProxy(svg));
 
@@ -33,12 +33,11 @@ svgPositionDimensionPublisher.onPositionUpdate((rect)=>{
 
 const cameraGroup = document.querySelector("#camera") as SVGGElement;
 
-camera.on("all", (_, cameraState)=>{
-
-    // console.log(cameraState);
+function step(timestamp: number){
     const {scale, rotation, translation} = camera.getTRS(1, true);
     cameraGroup.setAttribute("transform", `translate(${translation.x}, ${translation.y}) scale(${scale.x}, ${scale.y}) rotate(${rotation * 180 / Math.PI})`);
-});
+    requestAnimationFrame(step);
+}
 
 
 const toggleCamera = document.querySelector("#toggle-camera") as HTMLButtonElement;
@@ -57,4 +56,4 @@ svg.addEventListener('pointerdown', (e)=>{
     console.log('worldPosition', worldPosition);
 });
 
-
+requestAnimationFrame(step);

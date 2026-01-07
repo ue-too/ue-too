@@ -166,6 +166,10 @@
         "@ue-too/math": "workspace:*",
       },
     },
+    "packages/board-integration": {
+      "name": "@ue-too/board-integration",
+      "version": "0.12.0",
+    },
     "packages/board-react-adapter": {
       "name": "@ue-too/board-react-adapter",
       "version": "0.12.0",
@@ -1091,6 +1095,8 @@
     "@ue-too/blast": ["@ue-too/blast@workspace:apps/blast"],
 
     "@ue-too/board": ["@ue-too/board@workspace:packages/board"],
+
+    "@ue-too/board-integration": ["@ue-too/board-integration@workspace:packages/board-integration"],
 
     "@ue-too/board-react": ["@ue-too/board-react@workspace:apps/board-react"],
 
