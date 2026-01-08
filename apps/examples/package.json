@@ -22,8 +22,9 @@
     "@ue-too/dynamics": "workspace:*",
     "@ue-too/ecs": "workspace:*",
     "@ue-too/math": "workspace:*",
+    "@ue-too/board-konva-integration": "workspace:*",
     "fabric": "6.7.0",
-    "konva": "9.3.20",
+    "konva": "10.0.12",
     "pixi.js": "8.8.0"
   },
   "scripts": {
