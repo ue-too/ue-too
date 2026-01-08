@@ -24,6 +24,7 @@
     "@ue-too/math": "workspace:*",
     "@ue-too/board-konva-integration": "workspace:*",
     "@ue-too/board-fabric-integration": "workspace:*",
+    "@ue-too/board-pixi-integration": "workspace:*",
     "fabric": "7.1.0",
     "konva": "10.0.12",
     "pixi.js": "8.8.0"

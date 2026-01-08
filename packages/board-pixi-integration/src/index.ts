@@ -3,5 +3,4 @@
  * Board integration package for uē-tôo.
  */
 
-// Export your package's public API here
-export {};
+export { PixiInputParser } from "./pixi-input-event-parser";

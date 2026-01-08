@@ -688,7 +688,7 @@ export class ObservableInputTracker implements KmtInputContext {
         this._kmtTrackpadTrackScore--;
         if(this._kmtTrackpadTrackScore < -5){
             this._kmtTrackpadTrackScore = 0;
-            this._mode = 'trackpad';
+            // this._mode = 'trackpad';
         }
     }
 
@@ -699,7 +699,7 @@ export class ObservableInputTracker implements KmtInputContext {
         this._kmtTrackpadTrackScore++;
         if(this._kmtTrackpadTrackScore > 5){
             this._kmtTrackpadTrackScore = 0;
-            this._mode = 'kmt';
+            // this._mode = 'kmt';
         }
     }
 

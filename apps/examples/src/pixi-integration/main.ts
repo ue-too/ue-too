@@ -4,6 +4,7 @@ import { VanillaKMTEventParser } from '@ue-too/board';
 import { RawUserInputPublisher } from '@ue-too/board';
 import { CanvasProxy, createKmtInputStateMachine, ObservableInputTracker } from '@ue-too/board';
 import { createCameraMuxWithAnimationAndLock } from '@ue-too/board';
+import { PixiInputParser } from '@ue-too/board-pixi-integration';
 
 // Asynchronous IIFE
 (async () =>
@@ -24,6 +25,9 @@ import { createCameraMuxWithAnimationAndLock } from '@ue-too/board';
     console.log('kmt input state machine', kmtInputStateMachine);
     const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, app.canvas);
     kmtParser.setUp();
+
+    const pixiInputParser = new PixiInputParser(app, kmtInputStateMachine, inputOrchestrator);
+    // pixiInputParser.setUp();
 
     // Load the bunny texture.
     const texture = await Assets.load('https://pixijs.com/assets/bunny.png');
