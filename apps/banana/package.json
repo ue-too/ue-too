@@ -23,9 +23,6 @@
     "@ue-too/ecs": "workspace:*",
     "@ue-too/math": "workspace:*",
     "bezier-js": "^6.1.4",
-    "fabric": "6.7.0",
-    "konva": "9.3.20",
-    "pixi.js": "8.8.0",
     "stats.js": "^0.17.0"
   },
   "scripts": {
