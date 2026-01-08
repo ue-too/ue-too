@@ -4,4 +4,4 @@
  */
 
 // Export your package's public API here
-export {};
+export { FabricInputEventParser } from "./fabric-input-event-parser";

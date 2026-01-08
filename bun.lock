@@ -134,6 +134,7 @@
         "@ue-too/animate": "workspace:*",
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
+        "@ue-too/board-fabric-integration": "workspace:*",
         "@ue-too/board-konva-integration": "workspace:*",
         "@ue-too/border": "workspace:*",
         "@ue-too/curve": "workspace:*",
