@@ -24,10 +24,11 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     console.log('kmt input state machine', kmtInputStateMachine);
     const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, app.canvas);
-    kmtParser.setUp();
+    // kmtParser.setUp();
 
-    const pixiInputParser = new PixiInputParser(app, kmtInputStateMachine, inputOrchestrator);
-    // pixiInputParser.setUp();
+    const pixiInputParser = new PixiInputParser(app, kmtInputStateMachine, inputOrchestrator, camera);
+    pixiInputParser.setUp();
+    pixiInputParser.showHitAreaDebug();
 
     // Load the bunny texture.
     const texture = await Assets.load('https://pixijs.com/assets/bunny.png');
