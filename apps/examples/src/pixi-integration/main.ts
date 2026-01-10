@@ -55,6 +55,7 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     // Add an animation loop callback to the application's ticker.
     app.ticker.add((time) =>
     {
+        pixiInputParser.updateHitArea();
         const transform = camera.getTransform(1, true);
         app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
     });
