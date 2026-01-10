@@ -85,7 +85,7 @@ export interface TouchEventParser {
  */
 export class VanillaTouchEventParser implements TouchEventParser {
 
-    private _canvas?: HTMLCanvasElement;
+    private _canvas?: HTMLCanvasElement | SVGSVGElement;
     private _disabled: boolean;
     private _panDisabled: boolean = false;
     private _zoomDisabled: boolean = false;
@@ -96,7 +96,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private _abortController: AbortController;
 
-    constructor(touchInputStateMachine: TouchInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement){
+    constructor(touchInputStateMachine: TouchInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement | SVGSVGElement){
         this._canvas = canvas;
         this._disabled = false;
         this._stateMachine = touchInputStateMachine;
@@ -140,10 +140,10 @@ export class VanillaTouchEventParser implements TouchEventParser {
         if(this._abortController.signal.aborted){
             this._abortController = new AbortController();
         }
-        this._canvas.addEventListener('touchstart', this.touchstartHandler, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchend', this.touchendHandler, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchcancel', this.touchcancelHandler, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchmove', this.touchmoveHandler, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchstart', this.touchstartHandler as EventListener, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchend', this.touchendHandler as EventListener, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchcancel', this.touchcancelHandler as EventListener, {signal: this._abortController.signal});
+        this._canvas.addEventListener('touchmove', this.touchmoveHandler as EventListener, {signal: this._abortController.signal});
     }
 
     tearDown(): void {

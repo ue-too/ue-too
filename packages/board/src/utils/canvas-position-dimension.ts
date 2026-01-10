@@ -270,6 +270,8 @@ export class CanvasPositionDimensionPublisher {
     private resizeHandler?: (() => void);
     private _observers: SynchronousObservable<[DOMRect]>;
 
+    private _abortController: AbortController;
+    private _pixelRatioAbortController: AbortController;
     /**
      * Creates a new Canvas position/dimension publisher.
      *
@@ -280,6 +282,8 @@ export class CanvasPositionDimensionPublisher {
      * The canvas dimensions are automatically adjusted for devicePixelRatio.
      */
     constructor(canvas?: HTMLCanvasElement) {
+        this._abortController = new AbortController();
+        this._pixelRatioAbortController = new AbortController();
         this._observers = new SynchronousObservable<[DOMRect]>();
 
         this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
@@ -328,12 +332,8 @@ export class CanvasPositionDimensionPublisher {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();
         this.mutationObserver.disconnect();
-        if(this.scrollHandler){
-            window.removeEventListener('scroll', this.scrollHandler);
-        }
-        if(this.resizeHandler){
-            window.removeEventListener('resize', this.resizeHandler);
-        }
+        this._abortController.abort();
+        this._pixelRatioAbortController.abort();
     }
 
     /**
@@ -348,6 +348,10 @@ export class CanvasPositionDimensionPublisher {
      */
     attach(canvas: HTMLCanvasElement) {
         this.dispose();
+        this._abortController.abort();
+        this._abortController = new AbortController();
+        this._pixelRatioAbortController.abort();
+        this._pixelRatioAbortController = new AbortController();
         this.resizeObserver.observe(canvas);
         this.intersectionObserver.observe(canvas);
         this.mutationObserver.observe(canvas, {
@@ -356,8 +360,8 @@ export class CanvasPositionDimensionPublisher {
         });
         const boundingRect = canvas.getBoundingClientRect();
         const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        this.publishPositionUpdate(trueRect);
         this.lastRect = trueRect;
-
         this.scrollHandler = (() => {
             if(this.lastRect === undefined){
                 return;
@@ -380,8 +384,23 @@ export class CanvasPositionDimensionPublisher {
                 this.lastRect = trueRect;
             }
         }).bind(this);
-        window.addEventListener("scroll", this.scrollHandler, { passive: true });
-        window.addEventListener("resize", this.resizeHandler, { passive: true });
+        window.addEventListener("scroll", this.scrollHandler, { passive: true, signal: this._abortController.signal });
+        window.addEventListener("resize", this.resizeHandler, { passive: true, signal: this._abortController.signal });
+        
+        const updatePixelRatio = (() => {
+            this._pixelRatioAbortController.abort();
+            this._pixelRatioAbortController = new AbortController();
+            console.log('updatePixelRatio', window.devicePixelRatio);
+
+            const newRect = canvas.getBoundingClientRect();
+            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            this.publishPositionUpdate(trueRect);
+
+            const mqString = `(resolution: ${window.devicePixelRatio}dppx)`;
+            const media = matchMedia(mqString);
+            media.addEventListener("change", updatePixelRatio, { signal: this._pixelRatioAbortController.signal });
+        }).bind(this);
+        updatePixelRatio();
     }
 
     private publishPositionUpdate(rect: DOMRect) {

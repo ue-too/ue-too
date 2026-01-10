@@ -230,8 +230,14 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     setCanvasWidth(width: number){
-        if(this._canvas){
+        if(this._canvas && this._canvas.style.width === '' && this._canvas.style.height === ''){
+            const aspectRatio = this._width / this._height;
+            this._canvas.style.aspectRatio = aspectRatio.toString();
+        }
+        if(this._canvas && this._canvas.style.width !== ''){
             this._canvas.width = width * window.devicePixelRatio;
+        } else {
+            this.setWidth(width);
         }
     }
 
@@ -247,8 +253,14 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     setCanvasHeight(height: number){
-        if(this._canvas){
+        if(this._canvas && this._canvas.style.width === '' && this._canvas.style.height === ''){
+            const aspectRatio = this._width / this._height;
+            this._canvas.style.aspectRatio = aspectRatio.toString();
+        }
+        if(this._canvas && this._canvas.style.height !== ''){
             this._canvas.height = height * window.devicePixelRatio;
+        } else {
+            this.setHeight(height);
         }
     }
 
@@ -275,22 +287,8 @@ export class CanvasProxy implements Canvas, Observable<[CanvasDimensions]> {
     }
 
     attach(canvas: HTMLCanvasElement){
-        this._canvasPositionDimensionPublisher.attach(canvas);
         this._canvas = canvas;
-        const boundingRect = canvas.getBoundingClientRect();
-        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
-        this._canvas.width = trueRect.width * window.devicePixelRatio;
-        this._canvas.height = trueRect.height * window.devicePixelRatio;
-        const aspectRatio = trueRect.width / trueRect.height;
-        this._canvas.style.aspectRatio = aspectRatio.toString();
-        this._width = trueRect.width;
-        this._height = trueRect.height;
-        this._position = {x: trueRect.left, y: trueRect.top};
-        this._internalSizeUpdateObservable.notify({
-            width: this._width,
-            height: this._height,
-            position: this._position
-        });
+        this._canvasPositionDimensionPublisher.attach(canvas);
     }
 
     logCanvasTrueSize(){
@@ -690,7 +688,7 @@ export class ObservableInputTracker implements KmtInputContext {
         this._kmtTrackpadTrackScore--;
         if(this._kmtTrackpadTrackScore < -5){
             this._kmtTrackpadTrackScore = 0;
-            this._mode = 'trackpad';
+            // this._mode = 'trackpad';
         }
     }
 
@@ -701,7 +699,7 @@ export class ObservableInputTracker implements KmtInputContext {
         this._kmtTrackpadTrackScore++;
         if(this._kmtTrackpadTrackScore > 5){
             this._kmtTrackpadTrackScore = 0;
-            this._mode = 'kmt';
+            // this._mode = 'kmt';
         }
     }
 

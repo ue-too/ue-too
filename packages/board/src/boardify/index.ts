@@ -188,6 +188,7 @@ export default class Board {
 
     private _cachedCanvasWidth: number = 0;
     private _cachedCanvasHeight: number = 0;
+    private _cachedCanvasPixelRatio: number = 1;
 
     private lastUpdateTime: number = 0;
 
@@ -316,7 +317,6 @@ export default class Board {
         if(canvas != undefined){
             console.log('canvas exists on creation of board');
             this.attach(canvas, debug);
-            this.syncViewPortDimensions({width: canvas.width, height: canvas.height});
         }
     }
 
@@ -582,18 +582,19 @@ export default class Board {
         this._context.reset();
         this._context.clearRect(0, 0, this._canvasProxy.width * window.devicePixelRatio, this._canvasProxy.height * window.devicePixelRatio);
 
-        if(this._fullScreen && (this._canvasProxy.width != window.innerWidth || this._canvasProxy.height != window.innerHeight)){
-            this._canvasProxy.setWidth(window.innerWidth);
-            this._canvasProxy.setHeight(window.innerHeight);
-        } else {
-            if(this._cachedCanvasWidth !== this._canvasProxy.width){
-                this._cachedCanvasWidth = this._canvasProxy.width;
-                this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
-            }
-            if(this._cachedCanvasHeight !== this._canvasProxy.height){
-                this._cachedCanvasHeight = this._canvasProxy.height;
-                this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
-            }
+        if(this._cachedCanvasPixelRatio !== window.devicePixelRatio){
+            this._cachedCanvasPixelRatio = window.devicePixelRatio;
+            this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
+            this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
+        }
+
+        if(this._cachedCanvasHeight !== this._canvasProxy.height){
+            this._cachedCanvasHeight = this._canvasProxy.height;
+            this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
+        }
+        if(this._cachedCanvasWidth !== this._canvasProxy.width){
+            this._cachedCanvasWidth = this._canvasProxy.width;
+            this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
         }
 
 

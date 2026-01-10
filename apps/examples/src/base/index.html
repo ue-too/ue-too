@@ -8,7 +8,12 @@
   </head>
   <body style="overflow: hidden;">
     <div style="display: flex; justify-content: center; flex-direction: column; align-items: center; height: 100vh;">
-      <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas>
+      <div style="display: flex; justify-content: center; flex-direction: row; align-items: center; height: 100vh; width: 50%">
+        <div>test</div>
+        <canvas id="graph" style="border: 1px solid black; background-color: white; width: 50%; height: 50%;"></canvas>
+      </div>
+      <button id="toggle-camera">Attach canvas</button>
+      <button id="detach-canvas">Detach canvas</button>
     </div>
     <script type="module" src="/base/main.ts"></script>
   </body>

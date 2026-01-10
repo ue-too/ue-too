@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "extends": "../../typedoc.json",
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "out": "../../docs/board-fabric-integration",
+  "name": "@ue-too/board-fabric-integration",
+  "readme": "./README.md",
+  "includeVersion": true,
+  "categoryOrder": [
+    "Core",
+    "Helpers",
+    "Types",
+    "*"
+  ],
+  "sort": [
+    "static-first",
+    "alphabetical"
+  ]
+}

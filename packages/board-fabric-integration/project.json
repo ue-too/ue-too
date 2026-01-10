@@ -1,0 +1,52 @@
+{
+  "name": "board-fabric-integration",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/board-fabric-integration/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "cwd": "packages/board-fabric-integration"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "cwd": "packages/board-fabric-integration"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/board-fabric-integration"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "packages/board-fabric-integration"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../../scripts/publish-package.mjs",
+        "cwd": "packages/board-fabric-integration/dist"
+      }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf ../../docs/board-fabric-integration && bun run typedoc --options typedoc.json --skipErrorChecking",
+        "cwd": "packages/board-fabric-integration"
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": []
+}

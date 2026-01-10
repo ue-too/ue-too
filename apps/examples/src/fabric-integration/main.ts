@@ -1,11 +1,12 @@
-import { StaticCanvas, FabricText, TMat2D, Rect } from 'fabric'
+import { Canvas, FabricText, TMat2D, Rect } from 'fabric'
 import { createKmtInputStateMachine, createDefaultCameraRig, DefaultBoardCamera, ObservableInputTracker, RawUserInputPublisher, createCameraMuxWithAnimationAndLock, VanillaKMTEventParser, CanvasProxy, InputOrchestrator, EdgeAutoCameraInput } from "@ue-too/board";
+import { FabricInputEventParser } from "@ue-too/board-fabric-integration";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
-const fabricCanvas = new StaticCanvas(canvas);
+const fabricCanvas = new Canvas('graph', {selection: false});
 const helloWorld = new FabricText('Hello world!', {
     left: 0,
-    top: 0
+    top: 0,
 });
 fabricCanvas.add(helloWorld);
 
@@ -31,8 +32,14 @@ const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndL
 const observableInputTracker = new ObservableInputTracker(canvasProxy);
 const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
 const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, canvas);
-kmtParser.setUp();
+// kmtParser.setUp();
 
+fabricCanvas.on("mouse:wheel", (event) => {
+    console.log("mouse:down", event);
+});
+
+const fabricInputEventParser = new FabricInputEventParser(fabricCanvas, kmtInputStateMachine, inputOrchestrator);
+fabricInputEventParser.setUp();
 function step(){
     const transform = camera.getTransform(1, true);
     const matrix: TMat2D = [transform.a, transform.b, transform.c, transform.d, transform.e, transform.f];
@@ -40,5 +47,20 @@ function step(){
     fabricCanvas.setViewportTransform(matrix);
     requestAnimationFrame(step);
 }
+console.log(fabricCanvas.getObjects());
 
 requestAnimationFrame(step);
+
+const buttonToggleMovementMode = document.getElementById("button-toggle-movement-mode") as HTMLButtonElement;
+
+buttonToggleMovementMode.addEventListener("click", () => {
+    if(fabricInputEventParser.disabled){
+        fabricInputEventParser.enable();
+        fabricCanvas.selection = false;
+        buttonToggleMovementMode.textContent = "Disable Movement Mode";
+    } else {
+        fabricInputEventParser.disable();
+        fabricCanvas.selection = true;
+        buttonToggleMovementMode.textContent = "Enable Movement Mode";
+    }
+});

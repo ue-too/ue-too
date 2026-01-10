@@ -41,8 +41,6 @@ function Board({width, height, fullScreen, animationCallback: animationCallbackP
         board.fullScreen = fullScreen ?? false;
     }, [fullScreen]);
 
-    console.log('board');
-
     useAnimationFrameWithBoard(animationCallbackProp);
 
     // const {processInputEvent} = useCustomInputHandling();
