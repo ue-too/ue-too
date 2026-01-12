@@ -14,6 +14,7 @@
   "types": "./src/index.ts",
   "module": "./src/index.ts",
   "dependencies": {
+    "@ue-too/being": "workspace:*",
     "@ue-too/ecs": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

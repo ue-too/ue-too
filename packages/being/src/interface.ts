@@ -242,7 +242,7 @@ export interface State<
     uponEnter(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, from: States | "INITIAL"): void;
     beforeExit(context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>, to: States | "TERMINAL"): void;
     handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>;
-    eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
+    // eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     guards: Guard<Context>;
     eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
     delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined;
@@ -632,10 +632,14 @@ export abstract class TemplateState<
     EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > implements State<EventPayloadMapping, Context, States, EventOutputMapping> {
 
-    public abstract eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
+    protected abstract eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     protected _guards: Guard<Context> = {} as Guard<Context>;
     protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {} as Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
     protected _delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined = undefined;
+
+    get handlingEvents(): (keyof EventPayloadMapping)[] {
+        return Object.keys(this.eventReactions) as (keyof EventPayloadMapping)[];
+    }
 
     get guards(): Guard<Context> {
         return this._guards;
