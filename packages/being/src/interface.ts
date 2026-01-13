@@ -632,7 +632,7 @@ export abstract class TemplateState<
     EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > implements State<EventPayloadMapping, Context, States, EventOutputMapping> {
 
-    protected abstract eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
+    protected eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping> = {} as EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     protected _guards: Guard<Context> = {} as Guard<Context>;
     protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {} as Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
     protected _delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined = undefined;

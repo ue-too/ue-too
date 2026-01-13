@@ -111,3 +111,5 @@
 
 export * from "./interface";
 export * from "./schema-factory";
+// Hierarchical state machine POC - experimental
+export * from "./hierarchical";
