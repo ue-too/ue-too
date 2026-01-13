@@ -192,6 +192,8 @@ export default class Board {
 
     private lastUpdateTime: number = 0;
 
+    private _canvasElement: HTMLCanvasElement | undefined;
+
     /**
      * Creates a new Board instance with an optional canvas element.
      *
@@ -395,6 +397,7 @@ export default class Board {
      * @see {@link context} for accessing the rendering context
      */
     attach(canvas: HTMLCanvasElement, debug: boolean = false){
+        this._canvasElement = canvas;
         const newContext = canvas.getContext('2d', {willReadFrequently: debug});
         if(newContext == null){
             console.error("new canvas context is null");
@@ -514,6 +517,10 @@ export default class Board {
      */
     set kmtParser(parser: KMTEventParser){
         this._kmtParser.tearDown();
+        parser.tearDown();
+        if(this._canvasElement != undefined){
+            parser.attach(this._canvasElement);
+        }
         parser.setUp();
         this._kmtParser = parser;
     }
@@ -528,6 +535,10 @@ export default class Board {
      */
     set touchParser(parser: TouchEventParser){
         this._touchParser.tearDown();
+        parser.tearDown();
+        if(this._canvasElement != undefined){
+            parser.attach(this._canvasElement);
+        }
         parser.setUp();
         this._touchParser = parser;
     }

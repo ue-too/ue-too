@@ -15,22 +15,16 @@ import { EventArgs } from "@ue-too/being";
 export interface TouchEventParser {
     /** Whether all touch input is disabled */
     disabled: boolean;
-    /** Whether pan gestures are disabled */
-    panDisabled: boolean;
-    /** Whether zoom gestures are disabled */
-    zoomDisabled: boolean;
-    /** Whether rotation gestures are disabled (currently unused) */
-    rotateDisabled: boolean;
     /** Initializes event listeners */
     setUp(): void;
     /** Removes event listeners and cleans up */
     tearDown(): void;
     /** Attaches to a new canvas element */
     attach(canvas: HTMLCanvasElement): void;
-    /** The state machine that processes parsed events */
-    stateMachine: TouchInputStateMachine;
-    /** The orchestrator that handles state machine outputs */
-    orchestrator: InputOrchestrator;
+    /** Disables the parser; the event listeners are still attached just not processing any events*/
+    disable(): void;
+    /** Enables the parser */
+    enable(): void;
 }
 
 /**
@@ -106,16 +100,8 @@ export class VanillaTouchEventParser implements TouchEventParser {
         this.bindListeners();
     }
 
-    get stateMachine(): TouchInputStateMachine {
-        return this._stateMachine;
-    }
-
     get orchestrator(): InputOrchestrator {
         return this._orchestrator;
-    }
-
-    get touchStateMachine(): TouchInputStateMachine {
-        return this._stateMachine;
     }
 
     bindListeners(): void{
@@ -156,28 +142,12 @@ export class VanillaTouchEventParser implements TouchEventParser {
         return this._disabled;
     }
 
-    get panDisabled(): boolean {
-        return this._panDisabled;
+    disable(): void {
+        this._disabled = true;
     }
 
-    set panDisabled(panDisabled: boolean){
-        this._panDisabled = panDisabled;
-    }
-
-    get zoomDisabled(): boolean {
-        return this._zoomDisabled;
-    }
-
-    set zoomDisabled(zoomDisabled: boolean){
-        this._zoomDisabled = zoomDisabled;
-    }
-
-    get rotateDisabled(): boolean {
-        return this._rotateDisabled;
-    }
-
-    set rotateDisabled(rotateDisabled: boolean){
-        this._rotateDisabled = rotateDisabled;
+    enable(): void {
+        this._disabled = false;
     }
 
     private processEvent<K extends keyof TouchEventMapping>(

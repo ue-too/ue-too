@@ -1,4 +1,4 @@
-import {Board as Boardify, KmtInputStateMachine, OutputEvent} from "@ue-too/board";
+import {Board as Boardify, KMTEventParser, KmtInputStateMachine, OutputEvent, TouchEventParser} from "@ue-too/board";
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore} from "react";
 import { CameraMux, CameraState  } from "@ue-too/board/camera";
 import { Point } from "@ue-too/math";
@@ -9,61 +9,6 @@ import { Point } from "@ue-too/math";
  */
 type StateToEventKey<K extends keyof CameraState> =
     K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
-
-/**
- * Hook to create and manage a Board instance.
- *
- * @remarks
- * This hook creates a stable Board instance that persists across re-renders.
- * The board is created once and stored in a ref, making it suitable for use
- * in React components without recreating the board on every render.
- *
- * **Important**: This hook creates an independent board instance. If you need
- * to share a board across multiple components, use {@link BoardProvider} and
- * {@link useBoard} instead.
- *
- * @param fullScreen - Whether the board should be in fullscreen mode (resizes with window)
- * @returns Object containing the board instance and a subscribe function
- *
- * @example
- * ```tsx
- * function MyComponent() {
- *   const { board, subscribe } = useBoardify(true);
- *
- *   useEffect(() => {
- *     // Subscribe to camera pan events
- *     const unsubscribe = subscribe(() => {
- *       console.log('Camera panned');
- *     });
- *     return unsubscribe;
- *   }, [subscribe]);
- *
- *   return <canvas ref={(ref) => ref && board.attach(ref)} />;
- * }
- * ```
- *
- * @category Hooks
- */
-export function useBoardify(fullScreen: boolean = false) {
-
-    const boardRef = useRef<Boardify>(new Boardify());
-
-    useEffect(() => {
-        boardRef.current.fullScreen = fullScreen;
-    }, [fullScreen]);
-
-    return {
-        board: boardRef.current,
-        subscribe: (callback: () => void) => {
-            if (boardRef.current == null) {
-                return () => {};
-            }
-            return boardRef.current.on("pan", (_event, _data) => {
-                callback();
-            });
-        }
-    }
-}
 
 /**
  * Hook to subscribe to a specific camera state property with automatic re-rendering.
@@ -496,3 +441,19 @@ export function useCoordinateConversion() {
     }, [board]);
 }
 
+
+export function useCustomKMTEventParser(eventParser: KMTEventParser) {
+    const board = useBoard();
+
+    useEffect(()=>{
+        board.kmtParser = eventParser;
+    }, [eventParser, board]);
+}
+
+export function useCustomTouchEventParser(eventParser: TouchEventParser) {
+    const board = useBoard();
+
+    useEffect(()=>{
+        board.touchParser = eventParser;
+    }, [eventParser, board]);
+}
