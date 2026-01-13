@@ -34,8 +34,11 @@ type TimerEvents = {
   tick: { delta: number };
 };
 
-// Define the schema with typed events
-const timerSchema: StateMachineSchema<TimerContext, TimerEvents> = {
+// Define state names as a type for better type inference
+type TimerStates = "IDLE" | "RUNNING" | "PAUSED";
+
+// Define the schema with typed events and states
+const timerSchema: StateMachineSchema<TimerContext, TimerEvents, TimerStates> = {
   states: ["IDLE", "RUNNING", "PAUSED"],
   events: {
     start: {},
@@ -139,7 +142,7 @@ const timerContext: TimerContext = {
 };
 
 // Create state machine from schema
-const timer = createStateMachineFromSchema<TimerContext, TimerEvents>(timerSchema, timerContext);
+const timer = createStateMachineFromSchema(timerSchema, timerContext);
 
 // Test the state machine
 console.log("=== Timer State Machine Demo ===\n");
@@ -183,7 +186,10 @@ type VendingEvents = {
   cancel: {};
 };
 
-const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
+// Define state names as a type for better type inference
+type VendingStates = "IDLE" | "ONE_DOLLAR" | "TWO_DOLLARS" | "THREE_DOLLARS";
+
+const vendingSchema: StateMachineSchema<VendingContext, VendingEvents, VendingStates> = {
   states: ["IDLE", "ONE_DOLLAR", "TWO_DOLLARS", "THREE_DOLLARS"],
   events: {
     insertBill: {},
@@ -201,7 +207,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "insertBill",
           targetState: "ONE_DOLLAR",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             ctx.balance = 1;
             console.log("Inserted $1. Balance: $1");
           }),
@@ -215,7 +221,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "insertBill",
           targetState: "TWO_DOLLARS",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             ctx.balance = 2;
             console.log("Inserted $1. Balance: $2");
           }),
@@ -224,7 +230,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectCoke",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Coke. Thank you!");
             ctx.balance = 0;
           }),
@@ -240,7 +246,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "cancel",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Cancelled. Refunding $1");
             ctx.balance = 0;
           }),
@@ -254,7 +260,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "insertBill",
           targetState: "THREE_DOLLARS",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             ctx.balance = 3;
             console.log("Inserted $1. Balance: $3");
           }),
@@ -263,7 +269,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectCoke",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Coke. Change: $1");
             ctx.balance = 0;
           }),
@@ -272,7 +278,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectRedBull",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Red Bull. Thank you!");
             ctx.balance = 0;
           }),
@@ -288,7 +294,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "cancel",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Cancelled. Refunding $2");
             ctx.balance = 0;
           }),
@@ -302,7 +308,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectCoke",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Coke. Change: $2");
             ctx.balance = 0;
           }),
@@ -311,7 +317,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectRedBull",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Red Bull. Change: $1");
             ctx.balance = 0;
           }),
@@ -320,7 +326,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "selectWater",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Dispensing Water. Thank you!");
             ctx.balance = 0;
           }),
@@ -329,7 +335,7 @@ const vendingSchema: StateMachineSchema<VendingContext, VendingEvents> = {
           event: "cancel",
           targetState: "IDLE",
           action: ((context) => {
-            const ctx = context as VendingContext;
+            const ctx = context;
             console.log("Cancelled. Refunding $3");
             ctx.balance = 0;
           }),
@@ -351,7 +357,7 @@ const vendingContext: VendingContext = {
   cleanup() {},
 };
 
-const vendingMachine = createStateMachineFromSchema<VendingContext, VendingEvents>(vendingSchema, vendingContext);
+const vendingMachine = createStateMachineFromSchema(vendingSchema, vendingContext);
 
 console.log("\n=== Vending Machine Demo ===\n");
 
@@ -387,7 +393,10 @@ type PaymentEvents = {
   confirm: {};
 };
 
-const paymentSchema: StateMachineSchema<PaymentContext, PaymentEvents> = {
+// Define state names as a type for better type inference
+type PaymentStates = "SELECTING" | "PAYING" | "CONFIRMED";
+
+const paymentSchema: StateMachineSchema<PaymentContext, PaymentEvents, PaymentStates> = {
   states: ["SELECTING", "PAYING", "CONFIRMED"],
   events: {
     selectItem: { price: 0 },
@@ -536,6 +545,9 @@ type CalculatorEvents = {
   reset: {};
 };
 
+// Define state names as a type for better type inference
+type CalculatorStates = "READY" | "CALCULATING";
+
 // Define output types for events that return values
 type CalculatorOutputs = {
   getResult: number; // getResult event returns a number
@@ -543,7 +555,7 @@ type CalculatorOutputs = {
   multiply: number; // multiply event returns the new total
 };
 
-const calculatorSchema: StateMachineSchema<CalculatorContext, CalculatorEvents, CalculatorOutputs> = {
+const calculatorSchema: StateMachineSchema<CalculatorContext, CalculatorEvents, CalculatorStates, CalculatorOutputs> = {
   states: ["READY", "CALCULATING"],
   events: {
     add: { amount: 0 },
@@ -608,7 +620,7 @@ const calculatorContext: CalculatorContext = {
   cleanup() {},
 };
 
-const calculator = createStateMachineFromSchema<CalculatorContext, CalculatorEvents, CalculatorOutputs>(
+const calculator = createStateMachineFromSchema(
   calculatorSchema,
   calculatorContext
 );

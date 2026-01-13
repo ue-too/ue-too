@@ -60,18 +60,20 @@ export type GuardFunction<Context extends BaseContext = BaseContext> = (
  * @typeParam Context - The context type
  * @typeParam EventPayloadMapping - Mapping of event names to their payload types
  * @typeParam EventName - The specific event name for this transition
+ * @typeParam StateNames - Union type of all valid state names
  * @typeParam EventOutputMapping - Optional mapping of events to their output types
  */
 export interface TransitionDefinition<
   Context extends BaseContext = BaseContext,
   EventPayloadMapping = any,
   EventName extends keyof EventPayloadMapping = keyof EventPayloadMapping,
+  StateNames extends string = string,
   EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > {
   /** The event that triggers this transition */
   event: EventName;
   /** The target state after this transition */
-  targetState: string;
+  targetState: StateNames;
   /** Optional action to execute when this transition occurs. Can return a value that will be included in the event result. */
   action?: ActionFunction<Context, EventPayloadMapping, EventName, EventOutputMapping>;
   /** 
@@ -84,7 +86,7 @@ export interface TransitionDefinition<
     /** Guard function to evaluate, or name of a guard defined in the state's guards section */
     guard: GuardFunction<Context> | string;
     /** Target state if this guard evaluates to true */
-    targetState: string;
+    targetState: StateNames;
   }>;
 }
 
@@ -94,14 +96,16 @@ export interface TransitionDefinition<
  * 
  * @typeParam Context - The context type
  * @typeParam EventPayloadMapping - Mapping of event names to their payload types
+ * @typeParam StateNames - Union type of all valid state names
  * @typeParam EventOutputMapping - Optional mapping of events to their output types
  */
 export type TransitionDefinitionUnion<
   Context extends BaseContext = BaseContext,
   EventPayloadMapping = any,
+  StateNames extends string = string,
   EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > = {
-  [K in keyof EventPayloadMapping]: TransitionDefinition<Context, EventPayloadMapping, K, EventOutputMapping>
+  [K in keyof EventPayloadMapping]: TransitionDefinition<Context, EventPayloadMapping, K, StateNames, EventOutputMapping>
 }[keyof EventPayloadMapping];
 
 /**
@@ -109,6 +113,7 @@ export type TransitionDefinitionUnion<
  * 
  * @typeParam Context - The context type
  * @typeParam EventPayloadMapping - Mapping of event names to their payload types
+ * @typeParam StateNames - Union type of all valid state names
  * @typeParam EventOutputMapping - Optional mapping of events to their output types
  * 
  * @example
@@ -135,12 +140,13 @@ export type TransitionDefinitionUnion<
 export interface StateDefinition<
   Context extends BaseContext = BaseContext,
   EventPayloadMapping = any,
+  StateNames extends string = string,
   EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > {
   /** Name of this state */
-  name: string;
+  name: StateNames;
   /** Transitions available from this state */
-  transitions: TransitionDefinitionUnion<Context, EventPayloadMapping, EventOutputMapping>[];
+  transitions: TransitionDefinitionUnion<Context, EventPayloadMapping, StateNames, EventOutputMapping>[];
   /** 
    * Optional mapping of guard names to guard functions.
    * Guards defined here can be reused across multiple transitions within this state
@@ -151,9 +157,76 @@ export interface StateDefinition<
    */
   guards?: Record<string, GuardFunction<Context>>;
   /** Optional callback when entering this state */
-  onEnter?: (context: Context, fromState: string) => void;
+  onEnter?: (context: Context, fromState: StateNames) => void;
   /** Optional callback when exiting this state */
-  onExit?: (context: Context, toState: string) => void;
+  onExit?: (context: Context, toState: StateNames) => void;
+}
+
+/**
+ * Helper type to extract state names from a states array.
+ * If the array is a readonly tuple of string literals, it extracts the union type.
+ * Otherwise, it falls back to string.
+ * 
+ * @typeParam StatesArray - The states array type
+ */
+export type ExtractStateNames<StatesArray> = 
+  StatesArray extends readonly (infer S)[]
+    ? S extends string
+      ? S
+      : string
+    : StatesArray extends (infer S)[]
+    ? S extends string
+      ? S
+      : string
+    : string;
+
+/**
+ * Helper type to infer StateNames from a StateMachineSchema.
+ * Extracts the state names from the schema's states array.
+ */
+type InferStateNamesFromSchema<Schema> = 
+  Schema extends StateMachineSchema<any, any, infer SN, any>
+    ? SN
+    : Schema extends { states: infer S }
+    ? ExtractStateNames<S>
+    : string;
+
+/**
+ * Helper function to create a typed state machine schema with inferred state names.
+ * Use this when you have a const states array and want TypeScript to infer the state names.
+ * 
+ * @example
+ * ```typescript
+ * const states = ["IDLE", "RUNNING", "PAUSED"] as const;
+ * const schema = createStateMachineSchemaWithInferredStates<TimerContext, TimerEvents>({
+ *   states,
+ *   events: { start: {}, stop: {} },
+ *   initialState: "IDLE",
+ *   stateDefinitions: [
+ *     {
+ *       name: "IDLE", // TypeScript knows this must be one of the states
+ *       transitions: [
+ *         {
+ *           event: "start",
+ *           targetState: "RUNNING", // TypeScript knows this must be one of the states
+ *         }
+ *       ]
+ *     }
+ *   ]
+ * });
+ * ```
+ */
+export function createStateMachineSchemaWithInferredStates<
+  Context extends BaseContext,
+  EventPayloadMapping,
+  States extends readonly string[],
+  EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+>(
+  schema: Omit<StateMachineSchema<Context, EventPayloadMapping, ExtractStateNames<States>, EventOutputMapping>, 'states'> & {
+    states: States;
+  }
+): StateMachineSchema<Context, EventPayloadMapping, ExtractStateNames<States>, EventOutputMapping> {
+  return schema as unknown as StateMachineSchema<Context, EventPayloadMapping, ExtractStateNames<States>, EventOutputMapping>;
 }
 
 /**
@@ -161,21 +234,23 @@ export interface StateDefinition<
  * 
  * @typeParam Context - The context type
  * @typeParam EventPayloadMapping - Mapping of event names to their payload types
+ * @typeParam StateNames - Union type of all valid state names (inferred from states array)
  * @typeParam EventOutputMapping - Optional mapping of events to their output types
  */
 export interface StateMachineSchema<
   Context extends BaseContext = BaseContext,
   EventPayloadMapping = any,
+  StateNames extends string = string,
   EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > {
   /** Array of all possible state names */
-  states: string[];
+  states: readonly StateNames[] | StateNames[];
   /** Mapping of event names to their payload types */
   events: EventPayloadMapping;
   /** Array of state definitions */
-  stateDefinitions: StateDefinition<Context, EventPayloadMapping, EventOutputMapping>[];
+  stateDefinitions: StateDefinition<Context, EventPayloadMapping, StateNames, EventOutputMapping>[];
   /** Initial state name */
-  initialState: string;
+  initialState: StateNames;
 }
 
 /**
@@ -270,13 +345,18 @@ export interface StateMachineSchema<
  * @category Runtime Factory
  */
 export function createStateMachineFromSchema<
-  Context extends BaseContext = BaseContext,
-  EventPayloadMapping = any,
-  EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
+  Schema extends StateMachineSchema<any, any, any, any>
 >(
-  schema: StateMachineSchema<Context, EventPayloadMapping, EventOutputMapping>,
-  context: Context
-): StateMachine<EventPayloadMapping, Context, any, EventOutputMapping> {
+  schema: Schema,
+  context: Schema extends StateMachineSchema<infer C, any, any, any> ? C : BaseContext
+): Schema extends StateMachineSchema<infer C, infer EPM, any, infer EOM>
+  ? StateMachine<EPM, C, any, EOM>
+  : StateMachine<any, BaseContext, any, any> {
+  // Extract types from schema for internal use
+  type SchemaContext = Schema extends StateMachineSchema<infer C, any, any, any> ? C : BaseContext;
+  type SchemaEventPayloadMapping = Schema extends StateMachineSchema<any, infer EPM, any, any> ? EPM : any;
+  type SchemaEventOutputMapping = Schema extends StateMachineSchema<any, any, any, infer EOM> ? EOM : any;
+
   // Validate schema
   if (!schema.states.includes(schema.initialState)) {
     throw new Error(
@@ -326,12 +406,12 @@ export function createStateMachineFromSchema<
   }
 
   // Create dynamic state classes
-  const stateInstances: Record<string, TemplateState<any, Context, any>> = {};
+  const stateInstances: Record<string, TemplateState<any, SchemaContext, any>> = {};
 
   for (const stateDef of schema.stateDefinitions) {
     // Build event reactions from transitions
     const eventReactions: any = {};
-    const allGuards: Record<string, GuardFunction<Context>> = {};
+    const allGuards: Record<string, GuardFunction<SchemaContext>> = {};
     const eventGuards: any = {};
 
     // First, collect state-level guard definitions
@@ -383,7 +463,7 @@ export function createStateMachineFromSchema<
     }
 
     // Create state instance with all guards and reactions
-    class DynamicState extends TemplateState<any, Context, any> {
+    class DynamicState extends TemplateState<any, SchemaContext, any> {
       eventReactions = eventReactions;
       protected _guards = allGuards as any;
       protected _eventGuards = eventGuards as any;
@@ -413,7 +493,7 @@ export function createStateMachineFromSchema<
   // Ensure all states have instances (create empty states for states without definitions)
   for (const stateName of schema.states) {
     if (!stateInstances[stateName]) {
-      class EmptyState extends TemplateState<any, Context, any> {
+      class EmptyState extends TemplateState<any, SchemaContext, any> {
         eventReactions = {};
       }
       stateInstances[stateName] = new EmptyState();
@@ -421,10 +501,10 @@ export function createStateMachineFromSchema<
   }
 
   // Create and return the state machine
-  return new TemplateStateMachine<EventPayloadMapping, Context, any, EventOutputMapping>(
+  return new TemplateStateMachine<SchemaEventPayloadMapping, SchemaContext, any, SchemaEventOutputMapping>(
     stateInstances as any,
     schema.initialState as any,
     context,
     true
-  ) as StateMachine<EventPayloadMapping, Context, any, EventOutputMapping>;
+  ) as any;
 }
