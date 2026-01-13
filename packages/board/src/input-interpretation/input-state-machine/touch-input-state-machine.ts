@@ -129,10 +129,6 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
         }],
     };
 
-    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
-        return this._eventReactions;
-    }
-
     touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
     }
@@ -163,10 +159,6 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
             defaultTargetState: "IN_PROGRESS",
         },
     };
-
-    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
-        return this._eventReactions;
-    }
 
     touchstart(context: TouchContext, payload: TouchEventPayload): void {
         context.addTouchPoints(payload.points);
@@ -230,10 +222,6 @@ export class InProgressState extends TemplateState<TouchEventMapping, TouchConte
             defaultTargetState: "IDLE",
         },
     };
-
-    get eventReactions(): EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
-        return this._eventReactions;
-    }
 
     touchmove(context: TouchContext, payload: TouchEventPayload): TouchOutputEvent {
         const idents = payload.points.map(p => p.ident);
