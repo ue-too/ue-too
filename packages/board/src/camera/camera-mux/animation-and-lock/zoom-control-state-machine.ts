@@ -136,10 +136,6 @@ export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadM
         initiateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
     };
 
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
-        return this._eventReactions;
-    }
-
     userZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["userZoomByAtInput"]): ZoomControlOutputEvent {
         return { type: "zoomByAt", deltaZoom: payload.deltaZoom, anchorPoint: payload.anchorPoint };
     }
@@ -169,10 +165,6 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         transitionZoomToAtWorldInput: {action: this.transitionZoomToAtWorldInput, defaultTargetState: "TRANSITION"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
-    }
-
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
-        return this._eventReactions;
     }
 
     lockedOnObjectZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {
@@ -228,10 +220,6 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
-    }
-
-    get eventReactions(): EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
-        return this._eventReactions;
     }
 
     lockedOnObjectZoomByAtInput(context: BaseContext, payload: ZoomEventPayloadMapping["lockedOnObjectZoomByAtInput"]): ZoomControlOutputEvent {

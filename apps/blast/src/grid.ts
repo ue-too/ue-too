@@ -1,8 +1,8 @@
-import { System, Coordinator, Entity, ComponentType } from "@ue-too/ecs";
+import { System, Coordinator, Entity, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
 
-export const GRID_COMPONENT = "Grid";
-export const GRID_LOCATION_COMPONENT = "GridLocation";
-export const TEST_FUNCTION_IN_COMPONENT = "TestFunctionInComponent";
+export const GRID_COMPONENT: ComponentName = createGlobalComponentName("Grid");
+export const GRID_LOCATION_COMPONENT: ComponentName = createGlobalComponentName("GridLocation");
+export const TEST_FUNCTION_IN_COMPONENT: ComponentName = createGlobalComponentName("TestFunctionInComponent");
 
 export type GridComponent = {
     cells: Entity[][];

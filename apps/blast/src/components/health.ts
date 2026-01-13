@@ -1,11 +1,11 @@
-import { Coordinator, Entity } from "@ue-too/ecs";
+import { Coordinator, Entity, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
 
 export type HealthComponent = {
     health: number;
     maxHeath: number;
 };
 
-export const HEALTH_COMPONENT = "HealthComponent";
+export const HEALTH_COMPONENT: ComponentName = createGlobalComponentName("HealthComponent");
 
 export function subtractHealth(entity: Entity, amount: number, coordinator: Coordinator): void {
     const healthComponent = coordinator.getComponentFromEntity<HealthComponent>(HEALTH_COMPONENT, entity);
@@ -36,6 +36,6 @@ export type NumberComponent = {
     value: number;
 }
 
-export function registerNumberComponent(componentName: string, coordinator: Coordinator): void {
+export function registerNumberComponent(componentName: ComponentName, coordinator: Coordinator): void {
     coordinator.registerComponent<NumberComponent>(componentName);
 }
