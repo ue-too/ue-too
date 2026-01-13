@@ -21,10 +21,10 @@ export interface KMTEventParser {
     tearDown(): void;
     /** Attaches to a new canvas element */
     attach(canvas: HTMLCanvasElement): void;
-    /** The state machine that processes parsed events */
-    stateMachine: KmtInputStateMachine;
-    /** The orchestrator that handles state machine outputs */
-    orchestrator: InputOrchestrator;
+    /** Disables the parser; the event listeners are still attached just not processing any events*/
+    disable(): void;
+    /** Enables the parser */
+    enable(): void;
 }
 
 /**
@@ -176,16 +176,12 @@ export class VanillaKMTEventParser implements KMTEventParser {
         return this._disabled;
     }
 
-    set disabled(value: boolean){
-        this._disabled = value;
+    disable(): void {
+        this._disabled = true;
     }
 
-    get stateMachine(): KmtInputStateMachine {
-        return this._stateMachine;
-    }
-
-    get orchestrator(): InputOrchestrator {
-        return this._orchestrator;
+    enable(): void {
+        this._disabled = false;
     }
 
     addEventListeners(signal: AbortSignal){

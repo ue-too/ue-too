@@ -1,6 +1,6 @@
 import {useRef, useCallback, useSyncExternalStore, useMemo, useState} from "react";
 import {useAnimationFrame, useAnimationFrameWithBoard} from "../hooks/useAnimationFrame";
-import {BoardProvider, useBoard, useBoardCameraState, useBoardify, useCustomCameraMux, useCustomInputHandling} from "../hooks/useBoardify";
+import {BoardProvider, useBoard, useBoardCameraState, useCustomCameraMux, useCustomInputHandling} from "../hooks/useBoardify";
 import { Point, PointCal } from "@ue-too/math";
 import type { CameraMux } from "@ue-too/board/camera";
 import { useCanvasProxyWithRef } from "../hooks/useCanvasProxy";
@@ -36,10 +36,6 @@ export type BoardProps = {
 function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
 
     const board = useBoard();
-
-    useEffect(() => {
-        board.fullScreen = fullScreen ?? false;
-    }, [fullScreen]);
 
     useAnimationFrameWithBoard(animationCallbackProp);
 
