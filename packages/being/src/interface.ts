@@ -632,13 +632,13 @@ export abstract class TemplateState<
     EventOutputMapping extends Partial<Record<keyof EventPayloadMapping, unknown>> = DefaultOutputMapping<EventPayloadMapping>
 > implements State<EventPayloadMapping, Context, States, EventOutputMapping> {
 
-    protected eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping> = {} as EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
+    protected _eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping> = {} as EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
     protected _guards: Guard<Context> = {} as Guard<Context>;
     protected _eventGuards: Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>> = {} as Partial<EventGuards<EventPayloadMapping, States, Context, Guard<Context>>>;
     protected _delay: Delay<Context, EventPayloadMapping, States, EventOutputMapping> | undefined = undefined;
 
     get handlingEvents(): (keyof EventPayloadMapping)[] {
-        return Object.keys(this.eventReactions) as (keyof EventPayloadMapping)[];
+        return Object.keys(this._eventReactions) as (keyof EventPayloadMapping)[];
     }
 
     get guards(): Guard<Context> {
@@ -664,10 +664,10 @@ export abstract class TemplateState<
     handles<K extends (keyof EventPayloadMapping | string)>(args: EventArgs<EventPayloadMapping, K>, context: Context, stateMachine: StateMachine<EventPayloadMapping, Context, States, EventOutputMapping>): EventResult<States, K extends keyof EventOutputMapping ? EventOutputMapping[K] : void>{
         const eventKey = args[0] as keyof EventPayloadMapping;
         const eventPayload = args[1] as EventPayloadMapping[keyof EventPayloadMapping];
-        if (this.eventReactions[eventKey]) {
+        if (this._eventReactions[eventKey]) {
             // Capture the output from the action
-            const output = this.eventReactions[eventKey].action(context, eventPayload, stateMachine);
-            const targetState = this.eventReactions[eventKey].defaultTargetState;
+            const output = this._eventReactions[eventKey].action(context, eventPayload, stateMachine);
+            const targetState = this._eventReactions[eventKey].defaultTargetState;
             const guardsToEvaluate = this._eventGuards[eventKey];
             const baseResult = { handled: true as const, nextState: targetState };
             const resultWithOutput = output !== undefined 
@@ -676,8 +676,8 @@ export abstract class TemplateState<
             
             if(guardsToEvaluate){
                 const target = guardsToEvaluate.find((guard)=>{
-                    if(this.guards[guard.guard]){
-                        return this.guards[guard.guard](context);
+                    if(this._guards[guard.guard]){
+                        return this._guards[guard.guard](context);
                     }
                     return false;
                 });

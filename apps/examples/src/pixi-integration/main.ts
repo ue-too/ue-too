@@ -13,7 +13,7 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     const app = new Application();
 
     // Intialize the application.
-    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: document.querySelector("#graph") as HTMLCanvasElement, antialias: true });
+    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: document.querySelector("#graph") as HTMLCanvasElement, antialias: true, resizeTo: window });
 
     
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);

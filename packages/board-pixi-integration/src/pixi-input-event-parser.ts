@@ -24,6 +24,7 @@ export class PixiInputParser {
         this.bindFunctions();
         this._abortController = new AbortController();
         this._camera = camera;
+        console.log('pixi input parser constructor', this._camera);
     }
 
     bindFunctions(){

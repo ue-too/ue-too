@@ -27,7 +27,7 @@
     "@ue-too/board-pixi-integration": "workspace:*",
     "fabric": "7.1.0",
     "konva": "10.0.12",
-    "pixi.js": "8.8.0"
+    "pixi.js": "8.14.0"
   },
   "scripts": {
     "dev": "vite",
