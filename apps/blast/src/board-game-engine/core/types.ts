@@ -66,6 +66,18 @@ export interface ActionContext {
 
   /** Set component on entity */
   setComponent<T>(name: ComponentName, entity: Entity, data: T): void;
+
+  /** Remove a component from an entity */
+  removeComponent<T>(name: ComponentName, entity: Entity): void;
+
+  /** Get all entities */
+  getAllEntities(): Entity[];
+
+  /** Create a new entity */
+  createEntity(): Entity;
+
+  /** Destroy an entity */
+  destroyEntity(entity: Entity): void;
 }
 
 /**
@@ -420,6 +432,7 @@ export interface GameState {
   getEntitiesInZone(zoneName: string, owner?: Entity): Entity[];
   getAllPlayers(): Entity[];
   getOpponents(playerId: Entity): Entity[];
+  getZone(zoneName: string, owner: Entity | null): Entity | null;
 }
 
 /**

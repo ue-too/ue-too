@@ -157,6 +157,85 @@ A fully interactive interface for the board game engine.
 
 **Access**: Navigate to http://localhost:5174/card-game after running `bunx nx dev blast`
 
+### JSON Schema-Based Game Definitions
+
+A declarative system for defining board games in JSON without writing TypeScript code.
+
+**Components**:
+- `GameDefinitionSchema` - Complete game definition structure
+- `ExpressionResolver` - Resolves dynamic expressions like `$actor`, `$target`, `$component.$target.Card.cost`
+- `ActionFactory` - Creates action definitions from JSON
+- `EffectFactory` - Creates effects from JSON
+- `PreconditionFactory` - Creates preconditions from JSON
+- `GameDefinitionLoader` - Loads JSON and creates playable games
+
+**Expression Language**:
+- `$actor` - The player performing the action
+- `$target` / `$target.0` - Target entity at index
+- `$activePlayer` - Currently active player
+- `$param.<name>` - Action parameter value
+- `$component.$entity.Component.property` - Component property access
+- `$zone.actor.hand` / `$zone.opponent.board` - Zone references
+- `$negate(value)`, `$add(a, b)`, `$multiply(a, b)` - Math operations
+
+**Condition Types**:
+- `isPlayerTurn` - Check if it's the actor's turn
+- `phaseCheck` - Check current phase
+- `resourceCheck` - Check numeric resource with operators
+- `entityInZone` - Check entity location
+- `componentValueCheck` - Check component property
+- `ownerCheck` - Check entity ownership
+- `zoneHasEntities` - Check zone contents
+- `hasComponent` - Check entity has component
+- `and`, `or`, `not` - Logical combinators
+
+**Effect Types**:
+- `moveEntity` - Move entity between zones
+- `modifyResource` - Add/subtract numeric resources
+- `setComponentValue` - Set component properties
+- `createEntity` - Spawn new entities
+- `destroyEntity` - Remove entities
+- `shuffleZone` - Shuffle zone contents
+- `transferMultiple` - Move multiple entities
+- `conditional` - If/else effects
+- `repeat` - Repeat effects
+- `emitEvent` - Emit game events
+- `composite` - Chain effects
+
+**File Locations**:
+- Schema types: `src/board-game-engine/schema/types.ts`
+- Expression resolver: `src/board-game-engine/schema/expression-resolver.ts`
+- Factories: `src/board-game-engine/schema/factories/`
+- JSON Schema: `src/board-game-engine/schema/json-schema/game-definition.schema.json`
+- Example game: `src/games/simple-card-game/simple-card-game.json`
+
+**Tests**: `src/board-game-engine/schema/__tests__/expression-resolver.test.ts` (26 tests)
+
+### Game Definition Builder GUI
+
+A visual tool for creating board game definitions without writing JSON manually.
+
+**Features**:
+- Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Setup
+- Split-panel layout with live JSON preview
+- Load/Save JSON files
+- Load example game (simple-card-game.json)
+- Copy to clipboard
+- Basic validation
+
+**Sections**:
+1. **Metadata** - Game name, version, author, description, player count, complexity, tags
+2. **Components** - Define component types with properties (type, default value)
+3. **Zones** - Define game zones with visibility (public/owner-only/private) and ordering
+4. **Templates** - Create entity templates with component instances and values
+5. **Actions** - Define actions with name, display name, description, target count
+6. **Phases** - Define phases with allowed actions, next phase, auto-advance
+7. **Setup** - Player count, player template, zones, starting entities
+
+**File Location**: `src/components/GameDefinitionBuilder/index.tsx`
+
+**Access**: Navigate to "Game Builder" in the navigation after running `bunx nx dev blast`
+
 ---
 
 ## Architecture Overview
@@ -268,18 +347,21 @@ apps/blast/src/
 │   │   ├── action-definition.ts    # Action templates
 │   │   ├── action-context.ts       # Execution context
 │   │   ├── action-system.ts        # Validation and execution
+│   │   ├── resolvers.ts            # Shared resolver types and utilities
 │   │   ├── preconditions/          # Pre-execution checks
 │   │   │   ├── base.ts             # Base classes
 │   │   │   ├── is-player-turn.ts
 │   │   │   ├── has-component.ts
 │   │   │   ├── phase-check.ts
-│   │   │   └── custom.ts
+│   │   │   ├── custom.ts
+│   │   │   └── generic.ts          # Generic preconditions (ResourceCheck, etc.)
 │   │   └── effects/                # State modifications
 │   │       ├── base.ts
 │   │       ├── emit-event.ts
 │   │       ├── custom.ts
 │   │       ├── composite.ts
-│   │       └── no-op.ts
+│   │       ├── no-op.ts
+│   │       └── generic.ts          # Generic effects (MoveEntity, etc.)
 │   │
 │   ├── event-system/               # Event handling
 │   │   ├── event-pattern.ts        # Event matching
@@ -293,13 +375,33 @@ apps/blast/src/
 │   ├── phase-system/               # Game flow
 │   │   └── phase-manager.ts        # Phase transitions
 │   │
+│   ├── schema/                     # JSON Schema-based definitions
+│   │   ├── types.ts                # Schema type definitions
+│   │   ├── expression-resolver.ts  # Dynamic expression resolution
+│   │   ├── game-definition-loader.ts # Load JSON into playable games
+│   │   ├── factories/              # Convert JSON to TypeScript objects
+│   │   │   ├── action-factory.ts
+│   │   │   ├── effect-factory.ts
+│   │   │   └── precondition-factory.ts
+│   │   ├── json-schema/            # JSON Schema files
+│   │   │   └── game-definition.schema.json
+│   │   └── __tests__/              # Schema tests
+│   │       └── expression-resolver.test.ts
+│   │
 │   ├── game-engine.ts              # Main integration class
 │   └── index.ts                    # Public exports
 │
 ├── games/simple-card-game/         # Example game implementation
 │   ├── components.ts               # Game-specific components
-│   ├── game-definition.ts          # Complete game setup
+│   ├── game-definition.ts          # Complete game setup (TypeScript)
+│   ├── simple-card-game.json       # JSON-based game definition
 │   └── index.ts
+│
+├── components/                     # React components
+│   ├── StateMachineBuilder.tsx     # State machine builder tool
+│   ├── ObjectSchemaBuilder.tsx     # Object schema builder tool
+│   └── GameDefinitionBuilder/      # Game definition builder
+│       └── index.tsx               # Main builder component
 │
 └── pages/
     └── CardGamePage.tsx            # React UI for testing
@@ -805,18 +907,39 @@ const lightningBoltAction = new ActionDefinition({
 **Estimated Effort**: 1 week
 **Priority**: High (code quality)
 
-#### 8. **Advanced Effects Library**
-- [ ] `ModifyResource` - Change mana/health
-- [ ] `MoveEntity` - Move cards between zones
-- [ ] `CreateEntity` - Spawn tokens
-- [ ] `DestroyEntity` - Remove cards from play
-- [ ] `DrawCards` - Draw N cards
-- [ ] `DiscardCards` - Discard from hand
-- [ ] `ShuffleZone` - Randomize deck order
-- [ ] `SearchZone` - Find specific cards
+#### 8. **Generic Effects & Preconditions Library**
 
-**Estimated Effort**: 3-4 days
-**Priority**: Medium (enables complex cards)
+**Generic Effects** (all complete):
+- [x] `MoveEntity` - Move entities between zones with cache updates
+- [x] `ModifyResource` - Add/subtract numeric resources with min/max clamping
+- [x] `SetComponentValue` - Set any component property dynamically
+- [x] `CreateEntity` - Spawn new entities with components
+- [x] `DestroyEntity` - Remove entities or move to discard zone
+- [x] `ShuffleZone` - Fisher-Yates shuffle of zone contents
+- [x] `TransferMultiple` - Move N entities between zones
+- [x] `ConditionalEffect` - If/else effect execution
+- [x] `RepeatEffect` - Repeat effect N times
+
+**Generic Preconditions** (all complete):
+- [x] `ResourceCheck` - Check numeric resource with operators (>=, >, <=, <, ==, !=)
+- [x] `ZoneHasEntities` - Check zone has min/max entities with optional filter
+- [x] `EntityInZone` - Check entity is in expected zone(s)
+- [x] `ComponentValueCheck` - Check component property value or predicate
+- [x] `OwnerCheck` - Check entity ownership with invert option
+- [x] `TargetCount` - Check action has correct number of targets
+- [x] `EntityExists` - Check entity exists with optional required component
+
+**Resolver System** (complete):
+- [x] `EntityResolvers` - Resolve entities (actor, target, fromParam, fixed)
+- [x] `NumberResolvers` - Resolve numbers (fixed, fromParam, fromComponent, negate, add, multiply)
+- [x] `ValueResolver<T>` - Generic value resolution
+
+**Status**: ✅ Complete
+**Files**:
+- `src/board-game-engine/action-system/effects/generic.ts`
+- `src/board-game-engine/action-system/preconditions/generic.ts`
+- `src/board-game-engine/action-system/resolvers.ts`
+**Tests**: `test/generic-effects.test.ts` (19 tests), `test/generic-preconditions.test.ts` (24 tests)
 
 ### Long-Term (3-6 Months)
 
@@ -858,16 +981,44 @@ const lightningBoltAction = new ActionDefinition({
 **Estimated Effort**: 1-2 weeks
 **Priority**: Medium (scalability)
 
-#### 13. **Card Effect Scripting**
-- [ ] Domain-specific language (DSL) for card effects
-- [ ] Visual scripting UI (for non-programmers)
-- [ ] Hot-reload card definitions
-- [ ] Sandboxed effect execution
+#### 13. **Card Effect Scripting** ✅ Partially Complete
 
-**Estimated Effort**: 3-4 weeks
+**Implemented**:
+- [x] Domain-specific language (DSL) for card effects - JSON-based expression language
+- [x] JSON Schema validation for game definitions
+- [x] Expression resolver for `$actor`, `$target`, `$component`, `$zone`, etc.
+- [x] Visual editor for game definitions (Game Definition Builder GUI)
+
+**Remaining**:
+- [ ] Hot-reload card definitions during gameplay
+- [ ] Sandboxed effect execution
+- [ ] More advanced expressions (loops, custom functions)
+
+**File Locations**:
+- Expression language: `src/board-game-engine/schema/expression-resolver.ts`
+- JSON Schema: `src/board-game-engine/schema/json-schema/game-definition.schema.json`
+- GUI Builder: `src/components/GameDefinitionBuilder/index.tsx`
+
+**Status**: Core DSL and GUI implemented, advanced features pending
 **Priority**: Low (advanced feature)
 
-#### 14. **Other Game Types**
+#### 14. **Game Definition Builder Enhancements**
+
+The GUI builder provides basic editing. Future enhancements:
+
+- [ ] Visual condition builder (AND/OR/NOT tree with dropdowns)
+- [ ] Visual effect builder (drag-and-drop effect chain)
+- [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
+- [ ] Live game preview (run game from JSON definition)
+- [ ] Import/export to clipboard
+- [ ] Undo/redo support
+- [ ] Template library (pre-built game templates)
+- [ ] Validation with detailed error messages
+- [ ] Dark mode support
+
+**Priority**: Medium (UX improvement)
+
+#### 15. **Other Game Types**
 The engine is generic enough to support:
 - [ ] **Chess** - Turn-based, deterministic
 - [ ] **Checkers** - Simpler board game
@@ -1481,6 +1632,7 @@ GAME_STATUS_COMPONENT
 ### Built-in Preconditions
 
 ```typescript
+// Basic preconditions
 new IsPlayerTurn()
 new HasComponent(CARD_COMPONENT, 'actor')
 new PhaseCheck('Main')
@@ -1490,15 +1642,55 @@ new NotPrecondition(precond)
 new AlwaysTruePrecondition()
 new AlwaysFalsePrecondition()
 new CustomPrecondition(checkFn, errorMsg)
+
+// Generic preconditions (configurable via resolvers)
+new ResourceCheck({ entity, component, property, operator, value })
+new ZoneHasEntities({ zone, minCount, maxCount, filter })
+new EntityInZone({ entity, expectedZones })
+new ComponentValueCheck({ entity, component, property, expectedValue, predicate })
+new OwnerCheck({ entity, expectedOwner, invert })
+new TargetCount({ count, min, max })
+new EntityExists({ entity, requiredComponent })
 ```
 
 ### Built-in Effects
 
 ```typescript
+// Basic effects
 new EmitEvent('EventType', dataFn)
 new CustomEffect(applyFn)
 new CompositeEffect([effect1, effect2])
 new NoOpEffect()
+
+// Generic effects (configurable via resolvers)
+new MoveEntity({ entity, fromZone, toZone, eventType })
+new ModifyResource({ entity, component, property, amount, min, max })
+new SetComponentValue({ entity, component, property, value })
+new CreateEntity({ components, targetZone, eventType })
+new DestroyEntity({ entity, discardZone, eventType })
+new ShuffleZone({ zone, eventType })
+new TransferMultiple({ fromZone, toZone, count, filter })
+new ConditionalEffect({ condition, ifEffect, elseEffect })
+new RepeatEffect({ effect, count })
+```
+
+### Resolver System
+
+```typescript
+// Entity resolvers - dynamically get entities at runtime
+EntityResolvers.actor           // The acting player
+EntityResolvers.target          // First target
+EntityResolvers.targetAt(1)     // Target at index
+EntityResolvers.fromParam('p')  // From action parameters
+EntityResolvers.fixed(entity)   // Fixed entity
+
+// Number resolvers - dynamically compute values
+NumberResolvers.fixed(5)                          // Fixed value
+NumberResolvers.fromParam('damage')               // From parameters
+NumberResolvers.fromComponent(COMP, entity, 'x') // From component property
+NumberResolvers.negate(resolver)                  // Negate value
+NumberResolvers.add(r1, r2, ...)                  // Sum values
+NumberResolvers.multiply(r1, r2, ...)            // Multiply values
 ```
 
 ### Common Patterns
@@ -1528,6 +1720,123 @@ const gameStatus = state.coordinator.getComponentFromEntity(
 );
 if (gameStatus?.isGameOver) {
   console.log('Winner:', gameStatus.winner);
+}
+```
+
+### JSON Expression Language Quick Reference
+
+```typescript
+// Entity Expressions
+$actor                        // The player performing the action
+$target                       // First target (shorthand for $target.0)
+$target.0                     // Target at index 0
+$target.1                     // Target at index 1
+$activePlayer                 // Currently active player
+$param.cardId                 // Entity from action parameters
+$eachPlayer                   // Current player in setup loop
+
+// Zone Expressions
+$zone.actor.hand              // Actor's hand zone
+$zone.actor.deck              // Actor's deck zone
+$zone.opponent.board          // Opponent's board zone
+$zone.$eachPlayer.deck        // Each player's deck (in setup)
+
+// Component Expressions
+$component.$actor.Resource.mana       // Actor's mana value
+$component.$target.Card.cost          // Target card's cost
+$component.$target.Card.cardType      // Target card's type
+
+// Math Expressions
+$negate($component.$target.Card.cost) // Negative of card cost
+$add(2, 3)                            // 2 + 3 = 5
+$multiply($param.damage, 2)           // Double the damage
+```
+
+### JSON Schema Condition Types
+
+```json
+// Is it the player's turn?
+{ "type": "isPlayerTurn" }
+
+// Check current phase
+{ "type": "phaseCheck", "phases": ["Main", "Combat"] }
+
+// Check numeric resource
+{
+  "type": "resourceCheck",
+  "entity": "$actor",
+  "component": "Resource",
+  "property": "mana",
+  "operator": ">=",
+  "value": "$component.$target.Card.cost"
+}
+
+// Check entity is in zone
+{
+  "type": "entityInZone",
+  "entity": "$target",
+  "zone": "$zone.actor.hand"
+}
+
+// Check component value
+{
+  "type": "componentValueCheck",
+  "entity": "$target",
+  "component": "Card",
+  "property": "cardType",
+  "value": "Creature"
+}
+
+// Logical combinators
+{ "type": "and", "conditions": [...] }
+{ "type": "or", "conditions": [...] }
+{ "type": "not", "condition": {...} }
+```
+
+### JSON Schema Effect Types
+
+```json
+// Move entity between zones
+{
+  "type": "moveEntity",
+  "entity": "$target",
+  "fromZone": "$zone.actor.hand",
+  "toZone": "$zone.actor.board"
+}
+
+// Modify numeric resource
+{
+  "type": "modifyResource",
+  "entity": "$actor",
+  "component": "Resource",
+  "property": "mana",
+  "amount": "$negate($component.$target.Card.cost)"
+}
+
+// Set component value
+{
+  "type": "setComponentValue",
+  "entity": "$target",
+  "component": "CardState",
+  "property": "tapped",
+  "value": true
+}
+
+// Transfer multiple entities
+{
+  "type": "transferMultiple",
+  "fromZone": "$zone.actor.deck",
+  "toZone": "$zone.actor.hand",
+  "count": 3,
+  "selection": "top"
+}
+
+// Conditional effect
+{
+  "type": "conditional",
+  "condition": {...},
+  "then": [...],
+  "else": [...]
 }
 ```
 

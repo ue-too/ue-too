@@ -43,3 +43,6 @@ export {
   CustomEffect,
   EmitEvent,
 } from './action-system/effects';
+
+// Schema (JSON game definitions)
+export * from './schema';

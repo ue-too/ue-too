@@ -28,6 +28,12 @@ export const ZONE_COMPONENT = createGlobalComponentName('Zone');
 export const PLAYER_COMPONENT = createGlobalComponentName('Player');
 
 /**
+ * Component name for deck/zone list components.
+ * Stores cached list of entities in a zone.
+ */
+export const DECK_COMPONENT = createGlobalComponentName('DeckComponent');
+
+/**
  * Component type for the game manager global entity.
  */
 export interface GameManagerComponent extends GameMetadata {
@@ -408,6 +414,28 @@ export class GameState {
       );
       if (playerComp && playerComp.playerNumber === playerNumber) {
         return player;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get a zone entity by name and owner.
+   *
+   * @param zoneName - Name of the zone (e.g., "hand", "deck")
+   * @param owner - Owner entity (null for shared zones)
+   * @returns Zone entity or null if not found
+   */
+  getZone(zoneName: string, owner: Entity | null): Entity | null {
+    const allEntities = this.coordinator.getAllEntities();
+
+    for (const entity of allEntities) {
+      const zoneComp = this.coordinator.getComponentFromEntity<ZoneComponent>(
+        ZONE_COMPONENT,
+        entity
+      );
+      if (zoneComp && zoneComp.name === zoneName && zoneComp.owner === owner) {
+        return entity;
       }
     }
     return null;

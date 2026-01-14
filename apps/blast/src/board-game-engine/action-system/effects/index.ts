@@ -5,3 +5,4 @@
 
 export * from './base';
 export * from './emit-event';
+export * from './generic';

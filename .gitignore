@@ -147,4 +147,4 @@ README-for-docusaurus.md
 
 vite.config.*.timestamp*
 
-docs/
+./docs/

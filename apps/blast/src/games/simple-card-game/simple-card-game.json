@@ -1,0 +1,408 @@
+{
+  "$schema": "../../board-game-engine/schema/json-schema/game-definition.schema.json",
+  "name": "Simple Card Game",
+  "version": "1.0.0",
+  "metadata": {
+    "author": "ue-too",
+    "description": "A simple 2-player card game with creatures, mana, and combat",
+    "minPlayers": 2,
+    "maxPlayers": 2,
+    "complexity": "simple",
+    "tags": ["card-game", "creatures", "mana"]
+  },
+
+  "components": {
+    "Card": {
+      "properties": {
+        "name": { "type": "string" },
+        "cardType": { "type": "string" },
+        "cost": { "type": "number" },
+        "description": { "type": "string" },
+        "power": { "type": "number" },
+        "toughness": { "type": "number" },
+        "effectId": { "type": "string" }
+      }
+    },
+    "Resource": {
+      "properties": {
+        "mana": { "type": "number", "default": 1 },
+        "maxMana": { "type": "number", "default": 10 },
+        "health": { "type": "number", "default": 20 },
+        "maxHealth": { "type": "number", "default": 20 }
+      }
+    },
+    "CardState": {
+      "properties": {
+        "tapped": { "type": "boolean", "default": false },
+        "summoningSickness": { "type": "boolean", "default": false },
+        "attacksThisTurn": { "type": "number", "default": 0 }
+      }
+    },
+    "Owner": {
+      "properties": {
+        "owner": { "type": "entity" }
+      }
+    },
+    "Location": {
+      "properties": {
+        "location": { "type": "entity" },
+        "sortIndex": { "type": "number", "default": 0 }
+      }
+    },
+    "TurnState": {
+      "properties": {
+        "hasDrawnThisTurn": { "type": "boolean", "default": false }
+      }
+    }
+  },
+
+  "zones": {
+    "deck": {
+      "visibility": "owner-only",
+      "ordered": true
+    },
+    "hand": {
+      "visibility": "owner-only",
+      "ordered": true
+    },
+    "board": {
+      "visibility": "public",
+      "ordered": false
+    },
+    "discard": {
+      "visibility": "public",
+      "ordered": true
+    }
+  },
+
+  "entityTemplates": {
+    "Player": {
+      "components": {
+        "Player": {
+          "name": "$param.playerName",
+          "playerNumber": "$param.playerIndex"
+        },
+        "Resource": {
+          "mana": 1,
+          "maxMana": 10,
+          "health": 20,
+          "maxHealth": 20
+        },
+        "TurnState": {
+          "hasDrawnThisTurn": false
+        }
+      }
+    },
+    "GoblinScout": {
+      "components": {
+        "Card": {
+          "name": "Goblin Scout",
+          "cardType": "Creature",
+          "cost": 1,
+          "description": "A quick goblin.",
+          "power": 1,
+          "toughness": 1
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    },
+    "ForestSprite": {
+      "components": {
+        "Card": {
+          "name": "Forest Sprite",
+          "cardType": "Creature",
+          "cost": 1,
+          "description": "A tiny forest dweller.",
+          "power": 1,
+          "toughness": 2
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    },
+    "IronGolem": {
+      "components": {
+        "Card": {
+          "name": "Iron Golem",
+          "cardType": "Creature",
+          "cost": 2,
+          "description": "A sturdy construct.",
+          "power": 2,
+          "toughness": 2
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    },
+    "FireElemental": {
+      "components": {
+        "Card": {
+          "name": "Fire Elemental",
+          "cardType": "Creature",
+          "cost": 3,
+          "description": "Burns with inner flame.",
+          "power": 3,
+          "toughness": 2
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    },
+    "StoneGiant": {
+      "components": {
+        "Card": {
+          "name": "Stone Giant",
+          "cardType": "Creature",
+          "cost": 4,
+          "description": "A massive stone creature.",
+          "power": 4,
+          "toughness": 4
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    },
+    "DragonWhelp": {
+      "components": {
+        "Card": {
+          "name": "Dragon Whelp",
+          "cardType": "Creature",
+          "cost": 5,
+          "description": "A young but fierce dragon.",
+          "power": 5,
+          "toughness": 3
+        },
+        "Owner": {
+          "owner": "$param.owner"
+        }
+      }
+    }
+  },
+
+  "actions": [
+    {
+      "name": "DrawCard",
+      "displayName": "Draw Card",
+      "description": "Draw the top card from your deck",
+      "preconditions": [
+        { "type": "isPlayerTurn" },
+        { "type": "phaseCheck", "phases": ["Main"] },
+        {
+          "type": "componentValueCheck",
+          "entity": "$actor",
+          "component": "TurnState",
+          "property": "hasDrawnThisTurn",
+          "value": false,
+          "errorMessage": "You have already drawn a card this turn"
+        },
+        {
+          "type": "zoneHasEntities",
+          "zone": "$zone.actor.deck",
+          "minCount": 1,
+          "errorMessage": "Your deck is empty"
+        }
+      ],
+      "effects": [
+        {
+          "type": "transferMultiple",
+          "fromZone": "$zone.actor.deck",
+          "toZone": "$zone.actor.hand",
+          "count": 1,
+          "selection": "top",
+          "eventType": "CardDrawn"
+        },
+        {
+          "type": "setComponentValue",
+          "entity": "$actor",
+          "component": "TurnState",
+          "property": "hasDrawnThisTurn",
+          "value": true
+        }
+      ],
+      "targeting": {
+        "count": 0
+      }
+    },
+    {
+      "name": "PlayCard",
+      "displayName": "Play Card",
+      "description": "Play a card from your hand to the board",
+      "preconditions": [
+        { "type": "isPlayerTurn" },
+        { "type": "phaseCheck", "phases": ["Main"] },
+        {
+          "type": "hasComponent",
+          "entity": "$target",
+          "component": "Card",
+          "errorMessage": "Target must be a card"
+        },
+        {
+          "type": "entityInZone",
+          "entity": "$target",
+          "zone": "$zone.actor.hand",
+          "errorMessage": "Card must be in your hand"
+        },
+        {
+          "type": "ownerCheck",
+          "entity": "$target",
+          "expectedOwner": "$actor",
+          "errorMessage": "You must own the card"
+        },
+        {
+          "type": "resourceCheck",
+          "entity": "$actor",
+          "component": "Resource",
+          "property": "mana",
+          "operator": ">=",
+          "value": "$component.$target.Card.cost",
+          "errorMessage": "Not enough mana"
+        }
+      ],
+      "costs": [
+        {
+          "type": "modifyResource",
+          "entity": "$actor",
+          "component": "Resource",
+          "property": "mana",
+          "amount": "$negate($component.$target.Card.cost)"
+        }
+      ],
+      "effects": [
+        {
+          "type": "moveEntity",
+          "entity": "$target",
+          "fromZone": "$zone.actor.hand",
+          "toZone": "$zone.actor.board",
+          "eventType": "CardPlayed"
+        },
+        {
+          "type": "conditional",
+          "condition": {
+            "type": "componentValueCheck",
+            "entity": "$target",
+            "component": "Card",
+            "property": "cardType",
+            "value": "Creature"
+          },
+          "then": [
+            {
+              "type": "setComponentValue",
+              "entity": "$target",
+              "component": "CardState",
+              "values": {
+                "tapped": false,
+                "summoningSickness": true,
+                "attacksThisTurn": 0
+              },
+              "createIfMissing": true
+            }
+          ]
+        }
+      ],
+      "targeting": {
+        "count": 1,
+        "validTargets": {
+          "zone": "hand",
+          "owner": "actor",
+          "hasComponent": ["Card"]
+        }
+      }
+    },
+    {
+      "name": "EndTurn",
+      "displayName": "End Turn",
+      "description": "End your turn and pass to the next player",
+      "preconditions": [
+        { "type": "isPlayerTurn" }
+      ],
+      "effects": [
+        {
+          "type": "emitEvent",
+          "eventType": "TurnEnded",
+          "data": {
+            "playerId": "$actor"
+          }
+        }
+      ],
+      "targeting": {
+        "count": 0
+      }
+    }
+  ],
+
+  "phases": [
+    {
+      "name": "Main",
+      "allowedActions": ["DrawCard", "PlayCard", "AttackCreature", "AttackPlayer", "ActivateAbility", "EndTurn"],
+      "autoAdvance": false,
+      "nextPhase": "Main",
+      "onEnter": [
+        {
+          "type": "modifyResource",
+          "entity": "$activePlayer",
+          "component": "Resource",
+          "property": "mana",
+          "amount": 1,
+          "max": "$component.$activePlayer.Resource.maxMana"
+        }
+      ]
+    }
+  ],
+
+  "rules": [],
+
+  "setup": {
+    "playerCount": {
+      "min": 2,
+      "max": 2
+    },
+    "initialPhase": "Main",
+    "perPlayer": {
+      "template": "Player",
+      "zones": ["deck", "hand", "board", "discard"],
+      "startingEntities": [
+        { "template": "GoblinScout", "zone": "deck", "count": 2 },
+        { "template": "ForestSprite", "zone": "deck", "count": 2 },
+        { "template": "IronGolem", "zone": "deck", "count": 2 },
+        { "template": "FireElemental", "zone": "deck", "count": 2 },
+        { "template": "StoneGiant", "zone": "deck", "count": 1 },
+        { "template": "DragonWhelp", "zone": "deck", "count": 1 }
+      ]
+    },
+    "setupEffects": [
+      {
+        "type": "shuffleZone",
+        "zone": "$zone.$eachPlayer.deck"
+      },
+      {
+        "type": "transferMultiple",
+        "fromZone": "$zone.$eachPlayer.deck",
+        "toZone": "$zone.$eachPlayer.hand",
+        "count": 3,
+        "selection": "top"
+      }
+    ]
+  },
+
+  "winConditions": [
+    {
+      "id": "player-eliminated",
+      "condition": {
+        "type": "resourceCheck",
+        "entity": "$opponent",
+        "component": "Resource",
+        "property": "health",
+        "operator": "<=",
+        "value": 0
+      },
+      "winner": "actor",
+      "message": "Opponent's health reduced to zero!"
+    }
+  ]
+}
