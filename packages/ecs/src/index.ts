@@ -284,6 +284,28 @@ export interface SerializedComponentSchema {
 }
 
 /**
+ * Serialized representation of an entity's component data.
+ * @category Types
+ */
+export interface SerializedEntity {
+    /** The entity ID */
+    entity: Entity;
+    /** Map of component names (as strings) to their serialized data */
+    components: Record<string, unknown>;
+}
+
+/**
+ * Serialized representation of the entire ECS state.
+ * @category Types
+ */
+export interface SerializedECSState {
+    /** Array of all entities with their component data */
+    entities: SerializedEntity[];
+    /** Optional: Array of component schemas (if using schema-based components) */
+    schemas?: SerializedComponentSchema[];
+}
+
+/**
  * Serialize a component schema to a JSON-compatible format.
  * Note: Only works with global symbols (created via Symbol.for).
  * 
@@ -425,6 +447,23 @@ export class EntityManager {
         }
         return this._signatures[entity];
     }
+
+    /**
+     * Get all living entities (entities that are currently active, not in the available pool).
+     * @returns Array of all living entity IDs
+     */
+    getAllLivingEntities(): Entity[] {
+        const livingEntities: Entity[] = [];
+        const availableSet = new Set(this._availableEntities);
+        
+        for (let i = 0; i < this._maxEntities; i++) {
+            if (!availableSet.has(i)) {
+                livingEntities.push(i);
+            }
+        }
+        
+        return livingEntities;
+    }
 }
 
 type Tuple<T, N extends number> = N extends N
@@ -535,6 +574,29 @@ export class ComponentArray<T> implements CArray {
     entityDestroyed(entity: Entity): void {
         this.removeData(entity);
     }
+
+    /**
+     * Get all entities that have this component.
+     * @returns Array of entity IDs that have this component
+     */
+    getAllEntities(): Entity[] {
+        const entities: Entity[] = [];
+        for (let i = 0; i < this._count; i++) {
+            const entity = this.reverse[i];
+            if (entity !== null && entity !== undefined) {
+                entities.push(entity);
+            }
+        }
+        return entities;
+    }
+
+    /**
+     * Get the count of entities with this component.
+     * @returns Number of entities with this component
+     */
+    getCount(): number {
+        return this._count;
+    }
 }
 
 /**
@@ -560,6 +622,19 @@ export class ComponentManager {
 
     getRegisteredComponentNames(): ComponentName[] {
         return Array.from(this._componentNameToTypeMap.keys());
+    }
+
+    /**
+     * Get all entities that have a specific component.
+     * @param componentName - The name of the component type
+     * @returns Array of entity IDs that have this component, or empty array if component not registered
+     */
+    getAllEntitiesWithComponent(componentName: ComponentName): Entity[] {
+        const component = this._componentNameToTypeMap.get(componentName);
+        if (component === undefined) {
+            return [];
+        }
+        return (component.componentArray as ComponentArray<unknown>).getAllEntities();
     }
 
     /**
@@ -1167,5 +1242,216 @@ export class Coordinator {
         signature |= 1 << componentType;
         this._entityManager.setSignature(entity, signature);
         this._systemManager.entitySignatureChanged(entity, signature);
+    }
+
+    /**
+     * Get all living entities in the ECS.
+     * @returns Array of all entity IDs that are currently active
+     * 
+     * @example
+     * ```typescript
+     * const entities = coordinator.getAllEntities();
+     * console.log(`Total entities: ${entities.length}`);
+     * ```
+     */
+    getAllEntities(): Entity[] {
+        return this._entityManager.getAllLivingEntities();
+    }
+
+    /**
+     * Get all components for a specific entity.
+     * @param entity - The entity ID
+     * @returns Map of component names to their data, or null if entity doesn't exist
+     * 
+     * @example
+     * ```typescript
+     * const components = coordinator.getEntityComponents(entity);
+     * if (components) {
+     *   console.log('Entity components:', components);
+     * }
+     * ```
+     */
+    getEntityComponents(entity: Entity): Map<ComponentName, unknown> | null {
+        const signature = this._entityManager.getSignature(entity);
+        if (signature === null || signature === 0) {
+            return null;
+        }
+
+        const components = new Map<ComponentName, unknown>();
+        const componentNames = this._componentManager.getRegisteredComponentNames();
+
+        for (const componentName of componentNames) {
+            const componentType = this._componentManager.getComponentType(componentName);
+            if (componentType === null) {
+                continue;
+            }
+
+            // Check if entity has this component (bit is set in signature)
+            if ((signature & (1 << componentType)) !== 0) {
+                const componentData = this._componentManager.getComponentFromEntity(componentName, entity);
+                if (componentData !== null) {
+                    components.set(componentName, componentData);
+                }
+            }
+        }
+
+        return components;
+    }
+
+    /**
+     * Get the entire state of the ECS: all entities with all their component values.
+     * @returns Object containing all entities and their components
+     * 
+     * @example
+     * ```typescript
+     * const state = coordinator.getFullState();
+     * console.log(`Total entities: ${state.entities.length}`);
+     * state.entities.forEach(entityData => {
+     *   console.log(`Entity ${entityData.entity} has ${Object.keys(entityData.components).length} components`);
+     * });
+     * ```
+     */
+    getFullState(): { entities: Array<{ entity: Entity; components: Map<ComponentName, unknown> }> } {
+        const allEntities = this.getAllEntities();
+        const entities = allEntities.map(entity => ({
+            entity,
+            components: this.getEntityComponents(entity) ?? new Map<ComponentName, unknown>()
+        }));
+
+        return { entities };
+    }
+
+    /**
+     * Serialize the entire ECS state to a JSON-compatible format.
+     * Note: Only works with global symbols (created via Symbol.for or createGlobalComponentName).
+     * 
+     * @returns A serializable representation of the ECS state
+     * @throws Error if any component name is not a global symbol
+     * 
+     * @example
+     * ```typescript
+     * const serialized = coordinator.serialize();
+     * const json = JSON.stringify(serialized);
+     * // Save to file or send over network
+     * ```
+     */
+    serialize(): SerializedECSState {
+        const allEntities = this.getAllEntities();
+        const serializedEntities: SerializedEntity[] = [];
+        const componentNames = this._componentManager.getRegisteredComponentNames();
+
+        for (const entity of allEntities) {
+            const components: Record<string, unknown> = {};
+            let hasComponents = false;
+
+            for (const componentName of componentNames) {
+                const componentData = this._componentManager.getComponentFromEntity(componentName, entity);
+                if (componentData !== null) {
+                    const key = Symbol.keyFor(componentName);
+                    if (key === undefined) {
+                        throw new Error(
+                            `Cannot serialize: component name "${getComponentNameString(componentName)}" is not a global symbol. ` +
+                            `Use createGlobalComponentName() or Symbol.for() to create component names.`
+                        );
+                    }
+                    components[key] = componentData;
+                    hasComponents = true;
+                }
+            }
+
+            // Only include entities that have at least one component
+            if (hasComponents) {
+                serializedEntities.push({
+                    entity,
+                    components
+                });
+            }
+        }
+
+        // Optionally include schemas
+        const schemas = this._componentManager.getAllComponentSchemas();
+        const serializedSchemas = schemas.length > 0
+            ? schemas.map(schema => serializeComponentSchema(schema))
+            : undefined;
+
+        return {
+            entities: serializedEntities,
+            ...(serializedSchemas && { schemas: serializedSchemas })
+        };
+    }
+
+    /**
+     * Deserialize an ECS state from a JSON-compatible format.
+     * This will restore all entities and their components.
+     * 
+     * @param serialized - The serialized ECS state
+     * @param options - Options for deserialization
+     * @param options.clearExisting - Whether to clear existing entities before deserializing (default: false)
+     * @throws Error if component names cannot be resolved or components are not registered
+     * 
+     * @example
+     * ```typescript
+     * const json = fs.readFileSync('state.json', 'utf-8');
+     * const serialized = JSON.parse(json);
+     * coordinator.deserialize(serialized, { clearExisting: true });
+     * ```
+     */
+    deserialize(serialized: SerializedECSState, options: { clearExisting?: boolean } = {}): void {
+        const { clearExisting = false } = options;
+
+        if (clearExisting) {
+            // Destroy all existing entities
+            const existingEntities = this.getAllEntities();
+            for (const entity of existingEntities) {
+                this.destroyEntity(entity);
+            }
+        }
+
+        // Restore entities and components
+        for (const entityData of serialized.entities) {
+            // Create entity (or reuse if not clearing)
+            let entity: Entity;
+            if (clearExisting) {
+                entity = this.createEntity();
+            } else {
+                // Try to use the original entity ID if available
+                // If entity already exists, we'll update it; otherwise create new
+                const existingSignature = this._entityManager.getSignature(entityData.entity);
+                if (existingSignature === null) {
+                    // Entity doesn't exist, we need to create it
+                    // But we can't control the entity ID, so we'll create a new one
+                    entity = this.createEntity();
+                } else {
+                    entity = entityData.entity;
+                }
+            }
+
+            // Add all components
+            for (const [componentNameStr, componentData] of Object.entries(entityData.components)) {
+                const componentName = Symbol.for(componentNameStr);
+                
+                // Check if component is registered
+                const componentType = this._componentManager.getComponentType(componentName);
+                if (componentType === null) {
+                    throw new Error(
+                        `Cannot deserialize: component "${componentNameStr}" is not registered. ` +
+                        `Register it first using registerComponent() or registerComponentWithSchema().`
+                    );
+                }
+
+                // Add component (with schema validation if schema exists)
+                const schema = this._componentManager.getComponentSchema(componentName);
+                if (schema) {
+                    this.addComponentToEntityWithSchema(
+                        componentName,
+                        entity,
+                        componentData as Record<string, unknown>,
+                        true
+                    );
+                } else {
+                    this.addComponentToEntity(componentName, entity, componentData);
+                }
+            }
+        }
     }
 }
