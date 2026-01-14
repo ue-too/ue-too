@@ -101,7 +101,7 @@ export type TouchInputEventOutputMapping = {
  */
 export class IdleState extends TemplateState<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
 
-    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
+    protected _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -145,7 +145,7 @@ export class IdleState extends TemplateState<TouchEventMapping, TouchContext, To
  */
 export class PendingState extends TemplateState<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
 
-    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
+    protected _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
         touchstart: {
             action: this.touchstart,
             defaultTargetState: "IDLE",
@@ -208,7 +208,7 @@ export class PendingState extends TemplateState<TouchEventMapping, TouchContext,
  */
 export class InProgressState extends TemplateState<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> {
 
-    private _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
+    protected _eventReactions: EventReactions<TouchEventMapping, TouchContext, TouchStates, TouchInputEventOutputMapping> = {
         touchmove: {
             action: this.touchmove,
             defaultTargetState: "IN_PROGRESS",

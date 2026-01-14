@@ -11,7 +11,7 @@ type VendingMachineEvents = {
 type VendingMachineStates = "IDLE" | "ONE_DOLLAR_INSERTED" | "TWO_DOLLARS_INSERTED" | "THREE_DOLLARS_INSERTED";
 
 class IdleState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    public eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
+    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
         "insertBills": {
             action: (context, event, stateMachine) => {
                 console.log("inserted bills");
@@ -22,7 +22,7 @@ class IdleState extends TemplateState<VendingMachineEvents, BaseContext, Vending
 }
 
 class OneDollarInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    public eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
+    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
         "insertBills": {
             action: (context, event, stateMachine) => {
                 console.log("inserted bills");
@@ -55,7 +55,7 @@ class OneDollarInsertedState extends TemplateState<VendingMachineEvents, BaseCon
 }
 
 class TwoDollarsInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    public eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
+    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
         "insertBills": {
             action: (context, event, stateMachine) => {
                 console.log("inserted bills");
@@ -89,7 +89,7 @@ class TwoDollarsInsertedState extends TemplateState<VendingMachineEvents, BaseCo
 }
 
 class ThreeDollarsInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    public eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
+    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
         "insertBills": {
             action: (context, event, stateMachine) => {
                 console.log('not taking more bills; returning the inserted bills');

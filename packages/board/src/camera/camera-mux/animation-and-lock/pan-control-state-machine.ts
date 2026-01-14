@@ -181,7 +181,7 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
         super();
     }
 
-    eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
+    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
@@ -218,7 +218,7 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, BaseC
         super();
     }
 
-    eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
+    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
         userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
@@ -264,7 +264,7 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, B
         super();
     }
 
-    eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
+    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
         unlock: {action: NO_OP, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},

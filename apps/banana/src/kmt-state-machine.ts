@@ -67,7 +67,7 @@ class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutS
         super();
     }
 
-    _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
+    protected _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "startLayout": {
             action: NO_OP,
             defaultTargetState: "HOVER_FOR_STARTING_POINT",
@@ -78,10 +78,6 @@ class LayoutIDLEState extends TemplateState<LayoutEvents, LayoutContext, LayoutS
         },
     };
 
-    get eventReactions() {
-        return this._eventReactions;
-    }
-
 }
 
 class LayoutHoverForCurveDeletionState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -89,7 +85,7 @@ class LayoutHoverForCurveDeletionState extends TemplateState<LayoutEvents, Layou
         super();
     }
 
-    _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
+    protected _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointermove": {
             action: (context, event) => {
                 context.hoverForCurveDeletion(event.position);
@@ -109,10 +105,6 @@ class LayoutHoverForCurveDeletionState extends TemplateState<LayoutEvents, Layou
             defaultTargetState: "IDLE",
         },
     };
-
-    get eventReactions() {
-        return this._eventReactions;
-    }
     
 }
 
@@ -122,7 +114,7 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
         super();
     }
     
-    _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
+    protected _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
             action: (context, event) => {
                 context.startCurve();
@@ -175,10 +167,6 @@ class LayoutHoverForStartingPointState extends TemplateState<LayoutEvents, Layou
             },
         }
     };
-
-    get eventReactions() {
-        return this._eventReactions;
-    }
 }
 
 class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutContext, LayoutStates> {
@@ -187,7 +175,7 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
         super();
     }
     
-    _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
+    protected _eventReactions: EventReactions<LayoutEvents, LayoutContext, LayoutStates> = {
         "pointerup": {
             action: (context, event) => {
                 const res = context.endCurve();
@@ -263,10 +251,6 @@ class LayoutHoverForEndingPointState extends TemplateState<LayoutEvents, LayoutC
             }
         ]
     };
-
-    get eventReactions() {
-        return this._eventReactions;
-    }
 }
 
 export function createLayoutStateMachine(context: LayoutContext): StateMachine<LayoutEvents, LayoutContext, LayoutStates> {

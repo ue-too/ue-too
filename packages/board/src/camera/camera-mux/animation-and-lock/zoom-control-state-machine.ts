@@ -130,7 +130,7 @@ export type ZoomControlOutputMapping = {
  */
 export class ZoomAcceptingUserInputState extends TemplateState<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> {
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    protected _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userZoomToAtInput: {action: this.userZoomToAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},
         initiateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
@@ -156,7 +156,7 @@ export class ZoomTransitionState extends TemplateState<ZoomEventPayloadMapping, 
         super();
     }
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    protected _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         transitionZoomByAtInput: {action: this.transitionZoomByAtInput, defaultTargetState: "TRANSITION"},
@@ -215,7 +215,7 @@ export class ZoomLockedOnObjectState extends TemplateState<ZoomEventPayloadMappi
         super();
     }
 
-    private _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
+    protected _eventReactions: EventReactions<ZoomEventPayloadMapping, BaseContext, ZoomControlStates, ZoomControlOutputMapping> = {
         lockedOnObjectZoomByAtInput: {action: this.lockedOnObjectZoomByAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectZoomToAtInput: {action: this.lockedOnObjectZoomToAtInput, defaultTargetState: "LOCKED_ON_OBJECT"},
         userZoomByAtInput: {action: this.userZoomByAtInput, defaultTargetState: "ACCEPTING_USER_INPUT"},

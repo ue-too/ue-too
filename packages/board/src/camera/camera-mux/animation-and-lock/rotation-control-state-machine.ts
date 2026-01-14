@@ -180,7 +180,7 @@ export class RotationAcceptingUserInputState extends TemplateState<RotateEventPa
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
+    protected _eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         userRotateByInput: {action: this.userRotateByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userRotateToInput: {action: this.userRotateToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectRotateByInput: {action: this.lockedOnObjectRotateByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
@@ -217,7 +217,7 @@ export class RotationTransitionState extends TemplateState<RotateEventPayloadMap
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
+    protected _eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         userRotateByInput: {action: this.userRotateByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         userRotateToInput: {action: this.userRotateToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
         transitionRotateByInput: {action: this.transitionRotateByInputHandler, defaultTargetState: "TRANSITION"},
@@ -263,7 +263,7 @@ export class RotationLockedOnObjectState extends TemplateState<RotateEventPayloa
         super();
     }
 
-    eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
+    protected _eventReactions: EventReactions<RotateEventPayloadMapping, BaseContext, RotateControlStates, RotateControlOutputMapping> = {
         unlock: {action: NO_OP, defaultTargetState: "ACCEPTING_USER_INPUT"},
         lockedOnObjectRotateByInput: {action: this.lockedOnObjectRotateByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
         lockedOnObjectRotateToInput: {action: this.lockedOnObjectRotateToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},

@@ -61,7 +61,7 @@ type PlayingChildStates = "BUFFERING" | "STREAMING" | "ERROR";
 // ============================================================================
 
 class BufferingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> {
-  eventReactions = {
+  protected _eventReactions = {
     bufferComplete: {
       action: (context: MediaPlayerContext) => {
         console.log("Buffer complete!");
@@ -76,7 +76,7 @@ class BufferingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext
       },
       defaultTargetState: "ERROR",
     },
-  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
+  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> as EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
 
   uponEnter(context: MediaPlayerContext, stateMachine: any, from: PlayingChildStates | "INITIAL") {
     console.log("  → Entered BUFFERING (child state)");
@@ -85,7 +85,7 @@ class BufferingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext
 }
 
 class StreamingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> {
-  eventReactions = {
+  protected _eventReactions = {
     error: {
       action: (context: MediaPlayerContext, event: MediaPlayerEvents["error"]) => {
         context.errorMessage = event.message;
@@ -93,7 +93,7 @@ class StreamingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext
       },
       defaultTargetState: "ERROR",
     },
-  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
+  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> as EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
 
   uponEnter(context: MediaPlayerContext, stateMachine: any, from: PlayingChildStates | "INITIAL") {
     console.log("  → Entered STREAMING (child state)");
@@ -108,7 +108,7 @@ class StreamingState extends TemplateState<MediaPlayerEvents, MediaPlayerContext
 }
 
 class ErrorState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> {
-  eventReactions = {
+  protected _eventReactions = {
     retry: {
       action: (context: MediaPlayerContext) => {
         console.log("Retrying...");
@@ -116,7 +116,7 @@ class ErrorState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, Pl
       },
       defaultTargetState: "BUFFERING",
     },
-  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
+  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates> as EventReactions<MediaPlayerEvents, MediaPlayerContext, PlayingChildStates>;
 
   uponEnter(context: MediaPlayerContext, stateMachine: any, from: PlayingChildStates | "INITIAL") {
     console.log(`  → Entered ERROR (child state): ${context.errorMessage}`);
@@ -128,7 +128,7 @@ class ErrorState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, Pl
 // ============================================================================
 
 class IdleState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, TopLevelStates> {
-  eventReactions = {
+  protected _eventReactions = {
     play: {
       action: (context: MediaPlayerContext, event: MediaPlayerEvents["play"]) => {
         console.log(`Starting playback: ${event.track}`);
@@ -156,7 +156,7 @@ class PlayingState extends CompositeState<
     this._context = context;
   }
 
-  eventReactions = {
+  protected _eventReactions = {
     pause: {
       action: (context: MediaPlayerContext) => {
         console.log("Pausing playback");
@@ -170,7 +170,7 @@ class PlayingState extends CompositeState<
       },
       defaultTargetState: "IDLE",
     },
-  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, TopLevelStates>;
+  } satisfies EventReactions<MediaPlayerEvents, MediaPlayerContext, TopLevelStates> as EventReactions<MediaPlayerEvents, MediaPlayerContext, TopLevelStates>;
 
   protected getChildStateMachine() {
     // Create child state machine for PLAYING state
@@ -211,7 +211,7 @@ class PlayingState extends CompositeState<
 }
 
 class PausedState extends TemplateState<MediaPlayerEvents, MediaPlayerContext, TopLevelStates> {
-  eventReactions = {
+  protected _eventReactions = {
     play: {
       action: (context: MediaPlayerContext) => {
         console.log("Resuming playback");

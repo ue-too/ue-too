@@ -18,7 +18,7 @@ const testContext: BaseContext = {
 }
 
 class IdleState extends TemplateState<TestEventPayloadMapping, BaseContext, TestStates> { 
-    eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
+    protected _eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
         "EVENT_1": {
             action: ()=>{},
             defaultTargetState: "FIRST"
@@ -31,7 +31,7 @@ class IdleState extends TemplateState<TestEventPayloadMapping, BaseContext, Test
 }
 
 class FirstState extends TemplateState<TestEventPayloadMapping, BaseContext, TestStates> { 
-    eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
+    protected _eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
         "EVENT_2": {
             action: ()=>{},
             defaultTargetState: "SECOND"
@@ -40,7 +40,7 @@ class FirstState extends TemplateState<TestEventPayloadMapping, BaseContext, Tes
 }
 
 class SecondState extends TemplateState<TestEventPayloadMapping, BaseContext, TestStates> { 
-    eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
+    protected _eventReactions: EventReactions<TestEventPayloadMapping, BaseContext, TestStates> = {
         "EVENT_1": {
             action: ()=>{},
             defaultTargetState: "IDLE"
@@ -88,7 +88,7 @@ describe("being", ()=>{
     it("should call the action when event occurs", () => {
         const mockAction = jest.fn();
         const idleState = new IdleState();
-        (idleState.eventReactions["EVENT_1"] as any).action = mockAction;
+        (idleState._eventReactions["EVENT_1"] as any).action = mockAction;
         idleState.beforeExit = jest.fn();
         idleState.uponEnter = jest.fn();
 
@@ -111,7 +111,7 @@ describe("being", ()=>{
     it("should call the beforeExit and uponEnter functions when the state changes with the correct context and source and target states", ()=>{
         const mockAction = jest.fn();
         const idleState = new IdleState();
-        (idleState.eventReactions["EVENT_1"] as any).action = mockAction;
+        (idleState._eventReactions["EVENT_1"] as any).action = mockAction;
         idleState.beforeExit = jest.fn();
         idleState.uponEnter = jest.fn();
 
@@ -324,7 +324,7 @@ describe("being", ()=>{
             const stateChangeCallback = jest.fn();
             const idleState = new IdleState();
             // Remove defaultTargetState so state doesn't change
-            (idleState.eventReactions["EVENT_1"] as any).defaultTargetState = undefined;
+            (idleState._eventReactions["EVENT_1"] as any).defaultTargetState = undefined;
 
             const stateMachine = new TemplateStateMachine({
                 "IDLE": idleState,
@@ -416,7 +416,7 @@ describe("being", ()=>{
         };
 
         class GuardIdleState extends TemplateState<GuardEvents, GuardContext, GuardStates> {
-            eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
+            protected _eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
                 toggle: {
                     action: (context) => {
                         context.count++;
@@ -442,7 +442,7 @@ describe("being", ()=>{
         }
 
         class GuardActiveState extends TemplateState<GuardEvents, GuardContext, GuardStates> {
-            eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
+            protected _eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
                 toggle: {
                     action: () => {},
                     defaultTargetState: "IDLE"
@@ -451,7 +451,7 @@ describe("being", ()=>{
         }
 
         class GuardPausedState extends TemplateState<GuardEvents, GuardContext, GuardStates> {
-            eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {};
+            protected _eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {};
         }
 
         it("should use guard to determine next state", () => {
@@ -498,7 +498,7 @@ describe("being", ()=>{
             };
 
             class GuardIdleStateWithNoMatch extends TemplateState<GuardEvents, GuardContext, GuardStates> {
-                eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
+                protected _eventReactions: EventReactions<GuardEvents, GuardContext, GuardStates> = {
                     toggle: {
                         action: () => {},
                         defaultTargetState: "ACTIVE"
@@ -544,7 +544,7 @@ describe("being", ()=>{
         }
 
         class OutputIdleState extends TemplateState<OutputEvents, OutputContext, OutputStates> {
-            eventReactions: EventReactions<OutputEvents, OutputContext, OutputStates> = {
+            protected _eventReactions: EventReactions<OutputEvents, OutputContext, OutputStates> = {
                 calculate: {
                     action: (context, event) => {
                         return event.value * 2;
@@ -560,7 +560,7 @@ describe("being", ()=>{
         }
 
         class OutputProcessingState extends TemplateState<OutputEvents, OutputContext, OutputStates> {
-            eventReactions: EventReactions<OutputEvents, OutputContext, OutputStates> = {};
+            protected _eventReactions: EventReactions<OutputEvents, OutputContext, OutputStates> = {};
         }
 
         it("should return output from event handler", () => {
@@ -590,7 +590,7 @@ describe("being", ()=>{
             };
 
             const idleState = new OutputIdleState();
-            (idleState.eventReactions["getValue"] as any).action = () => {}; // No return
+            (idleState._eventReactions["getValue"] as any).action = () => {}; // No return
 
             const stateMachine = new TemplateStateMachine({
                 "IDLE": idleState,
@@ -622,7 +622,7 @@ describe("being", ()=>{
             }, "IDLE", testContext);
 
             // Modify EVENT_1 to transition back to IDLE
-            (idleState.eventReactions["EVENT_1"] as any).defaultTargetState = "IDLE";
+            (idleState._eventReactions["EVENT_1"] as any).defaultTargetState = "IDLE";
 
             const beforeExitCallCount = (idleState.beforeExit as jest.Mock).mock.calls.length;
             const uponEnterCallCount = (idleState.uponEnter as jest.Mock).mock.calls.length;
@@ -651,7 +651,7 @@ describe("being", ()=>{
 
         it("should handle events with undefined defaultTargetState (no transition)", () => {
             const idleState = new IdleState();
-            (idleState.eventReactions["EVENT_1"] as any).defaultTargetState = undefined;
+            (idleState._eventReactions["EVENT_1"] as any).defaultTargetState = undefined;
 
             const stateMachine = new TemplateStateMachine({
                 "IDLE": idleState,
