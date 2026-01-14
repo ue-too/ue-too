@@ -10,6 +10,9 @@ import type {
   PropertyType,
 } from '../../board-game-engine/schema/types';
 
+// Import example game definition directly (Vite supports JSON imports)
+import simpleCardGameJson from '../../games/simple-card-game/simple-card-game.json';
+
 // Extended metadata that includes fields from the JSON schema but not in TypeScript types
 interface ExtendedMetadata {
   author?: string;
@@ -276,27 +279,10 @@ export function GameDefinitionBuilder() {
   }, [gameDefinition]);
 
   // Load example (simple-card-game)
-  const loadExample = useCallback(async () => {
-    try {
-      const response = await fetch('/src/games/simple-card-game/simple-card-game.json');
-      if (response.ok) {
-        const json = await response.json();
-        setGameDefinition(json as BuilderGameDefinition);
-        setValidationErrors([]);
-      } else {
-        // Try fetching from a different path
-        const altResponse = await fetch('/games/simple-card-game/simple-card-game.json');
-        if (altResponse.ok) {
-          const json = await altResponse.json();
-          setGameDefinition(json as BuilderGameDefinition);
-          setValidationErrors([]);
-        } else {
-          alert('Could not load example file. Try using "Load JSON" and selecting the file manually.');
-        }
-      }
-    } catch (err) {
-      alert('Failed to load example: ' + (err as Error).message);
-    }
+  const loadExample = useCallback(() => {
+    // Use double assertion since JSON import type doesn't exactly match BuilderGameDefinition
+    setGameDefinition(simpleCardGameJson as unknown as BuilderGameDefinition);
+    setValidationErrors([]);
   }, []);
 
   return (
@@ -358,6 +344,7 @@ export function GameDefinitionBuilder() {
               actions={gameDefinition.actions}
               components={gameDefinition.components}
               zones={gameDefinition.zones}
+              phases={gameDefinition.phases.map(p => p.name)}
               onChange={(actions) => updateDefinition('actions', actions)}
             />
           )}
@@ -876,16 +863,883 @@ function TemplatesSection({ templates, components, onChange }: TemplatesSectionP
 }
 
 // ============================================================================
-// Actions Section (Simplified for initial implementation)
+// Condition Builder
+// ============================================================================
+
+type ConditionType = 'isPlayerTurn' | 'phaseCheck' | 'resourceCheck' | 'entityInZone' |
+  'componentValueCheck' | 'ownerCheck' | 'targetCount' | 'entityExists' |
+  'zoneHasEntities' | 'hasComponent' | 'and' | 'or' | 'not';
+
+const CONDITION_TYPES: { value: ConditionType; label: string; description: string }[] = [
+  { value: 'isPlayerTurn', label: 'Is Player Turn', description: 'Check if it\'s the actor\'s turn' },
+  { value: 'phaseCheck', label: 'Phase Check', description: 'Check current game phase' },
+  { value: 'resourceCheck', label: 'Resource Check', description: 'Check numeric resource value' },
+  { value: 'entityInZone', label: 'Entity In Zone', description: 'Check if entity is in a zone' },
+  { value: 'componentValueCheck', label: 'Component Value', description: 'Check component property value' },
+  { value: 'ownerCheck', label: 'Owner Check', description: 'Check entity ownership' },
+  { value: 'hasComponent', label: 'Has Component', description: 'Check if entity has component' },
+  { value: 'zoneHasEntities', label: 'Zone Has Entities', description: 'Check zone entity count' },
+  { value: 'targetCount', label: 'Target Count', description: 'Check number of targets' },
+  { value: 'entityExists', label: 'Entity Exists', description: 'Check if entity exists' },
+  { value: 'and', label: 'AND', description: 'All conditions must be true' },
+  { value: 'or', label: 'OR', description: 'At least one condition must be true' },
+  { value: 'not', label: 'NOT', description: 'Negate a condition' },
+];
+
+const ENTITY_EXPRESSIONS = ['$actor', '$target', '$target.0', '$target.1', '$activePlayer'];
+const ZONE_EXPRESSIONS = ['$zone.actor.hand', '$zone.actor.deck', '$zone.actor.board', '$zone.actor.discard',
+  '$zone.opponent.hand', '$zone.opponent.deck', '$zone.opponent.board', '$zone.opponent.discard'];
+const OPERATORS: { value: string; label: string }[] = [
+  { value: '>=', label: '>= (greater or equal)' },
+  { value: '>', label: '> (greater than)' },
+  { value: '<=', label: '<= (less or equal)' },
+  { value: '<', label: '< (less than)' },
+  { value: '==', label: '== (equal)' },
+  { value: '!=', label: '!= (not equal)' },
+];
+
+interface ConditionBuilderProps {
+  condition: ConditionDefinition | null;
+  onChange: (condition: ConditionDefinition | null) => void;
+  components: Record<string, ComponentDefinition>;
+  zones: Record<string, ZoneDefinition>;
+  phases: string[];
+  depth?: number;
+}
+
+function ConditionBuilder({ condition, onChange, components, zones, phases, depth = 0 }: ConditionBuilderProps) {
+  const maxDepth = 3;
+
+  const createDefaultCondition = (type: ConditionType): ConditionDefinition => {
+    switch (type) {
+      case 'isPlayerTurn':
+        return { type: 'isPlayerTurn' };
+      case 'phaseCheck':
+        return { type: 'phaseCheck', phases: phases.length > 0 ? [phases[0]] : ['Main'] };
+      case 'resourceCheck':
+        return { type: 'resourceCheck', entity: '$actor', component: 'Resource', property: 'mana', operator: '>=', value: 1 };
+      case 'entityInZone':
+        return { type: 'entityInZone', entity: '$target', zone: '$zone.actor.hand' };
+      case 'componentValueCheck':
+        return { type: 'componentValueCheck', entity: '$target', component: '', property: '', value: '' };
+      case 'ownerCheck':
+        return { type: 'ownerCheck', entity: '$target', expectedOwner: '$actor' };
+      case 'hasComponent':
+        return { type: 'hasComponent', entity: '$target', component: '' };
+      case 'zoneHasEntities':
+        return { type: 'zoneHasEntities', zone: '$zone.actor.deck', minCount: 1 };
+      case 'targetCount':
+        return { type: 'targetCount', exact: 1 };
+      case 'entityExists':
+        return { type: 'entityExists', entity: '$target' };
+      case 'and':
+        return { type: 'and', conditions: [] };
+      case 'or':
+        return { type: 'or', conditions: [] };
+      case 'not':
+        return { type: 'not', condition: { type: 'isPlayerTurn' } };
+      default:
+        return { type: 'isPlayerTurn' };
+    }
+  };
+
+  const updateCondition = (updates: Partial<ConditionDefinition>) => {
+    if (!condition) return;
+    onChange({ ...condition, ...updates } as ConditionDefinition);
+  };
+
+  if (!condition) {
+    return (
+      <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db' }}>
+        <select
+          style={{ ...styles.select, width: 'auto' }}
+          value=""
+          onChange={(e) => {
+            if (e.target.value) {
+              onChange(createDefaultCondition(e.target.value as ConditionType));
+            }
+          }}
+        >
+          <option value="">+ Add Condition...</option>
+          {CONDITION_TYPES.map(ct => (
+            <option key={ct.value} value={ct.value}>{ct.label}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  const conditionStyle = {
+    padding: '12px',
+    background: depth === 0 ? '#f0f9ff' : depth === 1 ? '#fefce8' : '#fdf2f8',
+    borderRadius: '6px',
+    border: '1px solid ' + (depth === 0 ? '#bae6fd' : depth === 1 ? '#fef08a' : '#fbcfe8'),
+    marginBottom: '8px',
+  };
+
+  const renderConditionFields = () => {
+    switch (condition.type) {
+      case 'isPlayerTurn':
+        return <div style={{ fontSize: '0.85em', color: '#666' }}>Checks if it's the actor's turn</div>;
+
+      case 'phaseCheck':
+        return (
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Allowed Phases</label>
+            <input
+              style={styles.input}
+              value={(condition as PhaseCheckCondition).phases?.join(', ') || ''}
+              onChange={(e) => updateCondition({ phases: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+              placeholder="Main, Combat, End"
+            />
+            <div style={{ fontSize: '0.75em', color: '#9ca3af', marginTop: '4px' }}>
+              Available: {phases.join(', ') || 'None defined'}
+            </div>
+          </div>
+        );
+
+      case 'resourceCheck':
+        const rc = condition as ResourceCheckCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={rc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Component</label>
+              <select style={styles.select} value={rc.component} onChange={(e) => updateCondition({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Property</label>
+              <input style={styles.input} value={rc.property} onChange={(e) => updateCondition({ property: e.target.value })} placeholder="mana" />
+            </div>
+            <div>
+              <label style={styles.label}>Operator</label>
+              <select style={styles.select} value={rc.operator} onChange={(e) => updateCondition({ operator: e.target.value as ComparisonOperator })}>
+                {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={styles.label}>Value (number or expression like $component.$target.Card.cost)</label>
+              <input style={styles.input} value={String(rc.value)} onChange={(e) => {
+                const num = parseFloat(e.target.value);
+                updateCondition({ value: isNaN(num) ? e.target.value : num });
+              }} placeholder="5 or $component.$target.Card.cost" />
+            </div>
+          </div>
+        );
+
+      case 'entityInZone':
+        const eiz = condition as EntityInZoneCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={eiz.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Zone</label>
+              <select style={styles.select} value={Array.isArray(eiz.zone) ? eiz.zone[0] : eiz.zone} onChange={(e) => updateCondition({ zone: e.target.value })}>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'componentValueCheck':
+        const cvc = condition as ComponentValueCheckCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={cvc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Component</label>
+              <select style={styles.select} value={cvc.component} onChange={(e) => updateCondition({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Property</label>
+              <input style={styles.input} value={cvc.property} onChange={(e) => updateCondition({ property: e.target.value })} placeholder="cardType" />
+            </div>
+            <div>
+              <label style={styles.label}>Expected Value</label>
+              <input style={styles.input} value={String(cvc.value ?? '')} onChange={(e) => updateCondition({ value: e.target.value })} placeholder="Creature" />
+            </div>
+          </div>
+        );
+
+      case 'ownerCheck':
+        const oc = condition as OwnerCheckCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={oc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Expected Owner</label>
+              <select style={styles.select} value={oc.expectedOwner} onChange={(e) => updateCondition({ expectedOwner: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Invert</label>
+              <select style={styles.select} value={oc.invert ? 'true' : 'false'} onChange={(e) => updateCondition({ invert: e.target.value === 'true' })}>
+                <option value="false">No (must match)</option>
+                <option value="true">Yes (must NOT match)</option>
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'hasComponent':
+        const hc = condition as HasComponentCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={hc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Component</label>
+              <select style={styles.select} value={hc.component} onChange={(e) => updateCondition({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'zoneHasEntities':
+        const zhe = condition as ZoneHasEntitiesCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Zone</label>
+              <select style={styles.select} value={zhe.zone} onChange={(e) => updateCondition({ zone: e.target.value })}>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Min Count</label>
+              <input type="number" style={styles.input} value={zhe.minCount ?? ''} onChange={(e) => updateCondition({ minCount: parseInt(e.target.value) || undefined })} placeholder="1" />
+            </div>
+            <div>
+              <label style={styles.label}>Max Count</label>
+              <input type="number" style={styles.input} value={zhe.maxCount ?? ''} onChange={(e) => updateCondition({ maxCount: parseInt(e.target.value) || undefined })} placeholder="" />
+            </div>
+          </div>
+        );
+
+      case 'targetCount':
+        const tc = condition as TargetCountCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Exact</label>
+              <input type="number" style={styles.input} value={tc.exact ?? ''} onChange={(e) => updateCondition({ exact: parseInt(e.target.value) || undefined })} />
+            </div>
+            <div>
+              <label style={styles.label}>Min</label>
+              <input type="number" style={styles.input} value={tc.min ?? ''} onChange={(e) => updateCondition({ min: parseInt(e.target.value) || undefined })} />
+            </div>
+            <div>
+              <label style={styles.label}>Max</label>
+              <input type="number" style={styles.input} value={tc.max ?? ''} onChange={(e) => updateCondition({ max: parseInt(e.target.value) || undefined })} />
+            </div>
+          </div>
+        );
+
+      case 'entityExists':
+        const ee = condition as EntityExistsCondition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={ee.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Required Component (optional)</label>
+              <select style={styles.select} value={ee.requiredComponent ?? ''} onChange={(e) => updateCondition({ requiredComponent: e.target.value || undefined })}>
+                <option value="">Any</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'and':
+      case 'or':
+        if (depth >= maxDepth) {
+          return <div style={{ color: '#ef4444', fontSize: '0.85em' }}>Max nesting depth reached</div>;
+        }
+        const logical = condition as AndCondition | OrCondition;
+        return (
+          <div>
+            <div style={{ fontSize: '0.85em', color: '#666', marginBottom: '8px' }}>
+              {condition.type === 'and' ? 'All conditions must be true' : 'At least one condition must be true'}
+            </div>
+            {logical.conditions.map((cond, i) => (
+              <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div style={{ flex: 1 }}>
+                  <ConditionBuilder
+                    condition={cond}
+                    onChange={(newCond) => {
+                      const newConditions = [...logical.conditions];
+                      if (newCond) {
+                        newConditions[i] = newCond;
+                      } else {
+                        newConditions.splice(i, 1);
+                      }
+                      updateCondition({ conditions: newConditions });
+                    }}
+                    components={components}
+                    zones={zones}
+                    phases={phases}
+                    depth={depth + 1}
+                  />
+                </div>
+                <button
+                  style={{ ...styles.dangerButton, padding: '4px 8px', fontSize: '0.8em' }}
+                  onClick={() => {
+                    const newConditions = logical.conditions.filter((_, idx) => idx !== i);
+                    updateCondition({ conditions: newConditions });
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button
+              style={{ ...styles.button, fontSize: '0.8em', padding: '6px 12px' }}
+              onClick={() => updateCondition({ conditions: [...logical.conditions, { type: 'isPlayerTurn' }] })}
+            >
+              + Add Condition
+            </button>
+          </div>
+        );
+
+      case 'not':
+        if (depth >= maxDepth) {
+          return <div style={{ color: '#ef4444', fontSize: '0.85em' }}>Max nesting depth reached</div>;
+        }
+        const notCond = condition as NotCondition;
+        return (
+          <div>
+            <div style={{ fontSize: '0.85em', color: '#666', marginBottom: '8px' }}>Negates the following condition</div>
+            <ConditionBuilder
+              condition={notCond.condition}
+              onChange={(newCond) => {
+                if (newCond) {
+                  updateCondition({ condition: newCond });
+                }
+              }}
+              components={components}
+              zones={zones}
+              phases={phases}
+              depth={depth + 1}
+            />
+          </div>
+        );
+
+      default:
+        return <div style={{ color: '#9ca3af' }}>Unknown condition type</div>;
+    }
+  };
+
+  return (
+    <div style={conditionStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <select
+          style={{ ...styles.select, width: 'auto', fontWeight: 600 }}
+          value={condition.type}
+          onChange={(e) => onChange(createDefaultCondition(e.target.value as ConditionType))}
+        >
+          {CONDITION_TYPES.map(ct => (
+            <option key={ct.value} value={ct.value}>{ct.label}</option>
+          ))}
+        </select>
+        <button
+          style={{ ...styles.dangerButton, padding: '4px 8px', fontSize: '0.8em' }}
+          onClick={() => onChange(null)}
+        >
+          Remove
+        </button>
+      </div>
+      {renderConditionFields()}
+      <div style={styles.fieldGroup}>
+        <label style={styles.label}>Error Message (optional)</label>
+        <input
+          style={styles.input}
+          value={condition.errorMessage || ''}
+          onChange={(e) => updateCondition({ errorMessage: e.target.value || undefined })}
+          placeholder="Custom error message when condition fails"
+        />
+      </div>
+    </div>
+  );
+}
+
+// Import condition types for type guards
+import type {
+  ComparisonOperator,
+  PhaseCheckCondition,
+  ResourceCheckCondition,
+  EntityInZoneCondition,
+  ComponentValueCheckCondition,
+  OwnerCheckCondition,
+  HasComponentCondition,
+  ZoneHasEntitiesCondition,
+  TargetCountCondition,
+  EntityExistsCondition,
+  AndCondition,
+  OrCondition,
+  NotCondition,
+  ConditionDefinition,
+  EffectDefinition,
+  MoveEntityEffectDefinition,
+  ModifyResourceEffectDefinition,
+  SetComponentValueEffectDefinition,
+  ShuffleZoneEffectDefinition,
+  TransferMultipleEffectDefinition,
+  EmitEventEffectDefinition,
+  ConditionalEffectDefinition,
+} from '../../board-game-engine/schema/types';
+
+// ============================================================================
+// Effect Builder
+// ============================================================================
+
+type EffectType = 'moveEntity' | 'modifyResource' | 'setComponentValue' | 'shuffleZone' |
+  'transferMultiple' | 'emitEvent' | 'conditional' | 'composite';
+
+const EFFECT_TYPES: { value: EffectType; label: string; description: string }[] = [
+  { value: 'moveEntity', label: 'Move Entity', description: 'Move an entity between zones' },
+  { value: 'modifyResource', label: 'Modify Resource', description: 'Add/subtract numeric resource' },
+  { value: 'setComponentValue', label: 'Set Component Value', description: 'Set a component property' },
+  { value: 'shuffleZone', label: 'Shuffle Zone', description: 'Shuffle entities in a zone' },
+  { value: 'transferMultiple', label: 'Transfer Multiple', description: 'Move multiple entities between zones' },
+  { value: 'emitEvent', label: 'Emit Event', description: 'Emit a game event' },
+  { value: 'conditional', label: 'Conditional', description: 'Execute effects based on condition' },
+];
+
+interface EffectBuilderProps {
+  effect: EffectDefinition | null;
+  onChange: (effect: EffectDefinition | null) => void;
+  components: Record<string, ComponentDefinition>;
+  zones: Record<string, ZoneDefinition>;
+  phases: string[];
+  depth?: number;
+}
+
+function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 }: EffectBuilderProps) {
+  const maxDepth = 2;
+
+  const createDefaultEffect = (type: EffectType): EffectDefinition => {
+    switch (type) {
+      case 'moveEntity':
+        return { type: 'moveEntity', entity: '$target', toZone: '$zone.actor.board' };
+      case 'modifyResource':
+        return { type: 'modifyResource', entity: '$actor', component: 'Resource', property: 'mana', amount: -1 };
+      case 'setComponentValue':
+        return { type: 'setComponentValue', entity: '$target', component: '', property: '', value: '' };
+      case 'shuffleZone':
+        return { type: 'shuffleZone', zone: '$zone.actor.deck' };
+      case 'transferMultiple':
+        return { type: 'transferMultiple', fromZone: '$zone.actor.deck', toZone: '$zone.actor.hand', count: 1, selection: 'top' };
+      case 'emitEvent':
+        return { type: 'emitEvent', eventType: 'CustomEvent', data: {} };
+      case 'conditional':
+        return { type: 'conditional', condition: { type: 'isPlayerTurn' }, then: [] };
+      default:
+        return { type: 'emitEvent', eventType: 'CustomEvent' };
+    }
+  };
+
+  const updateEffect = (updates: Partial<EffectDefinition>) => {
+    if (!effect) return;
+    onChange({ ...effect, ...updates } as EffectDefinition);
+  };
+
+  if (!effect) {
+    return (
+      <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db' }}>
+        <select
+          style={{ ...styles.select, width: 'auto' }}
+          value=""
+          onChange={(e) => {
+            if (e.target.value) {
+              onChange(createDefaultEffect(e.target.value as EffectType));
+            }
+          }}
+        >
+          <option value="">+ Add Effect...</option>
+          {EFFECT_TYPES.map(et => (
+            <option key={et.value} value={et.value}>{et.label}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  const effectStyle = {
+    padding: '12px',
+    background: depth === 0 ? '#f0fdf4' : '#fefce8',
+    borderRadius: '6px',
+    border: '1px solid ' + (depth === 0 ? '#bbf7d0' : '#fef08a'),
+    marginBottom: '8px',
+  };
+
+  const renderEffectFields = () => {
+    switch (effect.type) {
+      case 'moveEntity':
+        const me = effect as MoveEntityEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={me.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>From Zone (optional)</label>
+              <select style={styles.select} value={me.fromZone ?? ''} onChange={(e) => updateEffect({ fromZone: e.target.value || undefined })}>
+                <option value="">Auto-detect</option>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>To Zone</label>
+              <select style={styles.select} value={me.toZone} onChange={(e) => updateEffect({ toZone: e.target.value })}>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'modifyResource':
+        const mr = effect as ModifyResourceEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={mr.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Component</label>
+              <select style={styles.select} value={mr.component} onChange={(e) => updateEffect({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Property</label>
+              <input style={styles.input} value={mr.property} onChange={(e) => updateEffect({ property: e.target.value })} placeholder="mana" />
+            </div>
+            <div>
+              <label style={styles.label}>Amount (use negative for subtract)</label>
+              <input style={styles.input} value={String(mr.amount)} onChange={(e) => {
+                const num = parseFloat(e.target.value);
+                updateEffect({ amount: isNaN(num) ? e.target.value : num });
+              }} placeholder="-3 or $negate($component.$target.Card.cost)" />
+            </div>
+          </div>
+        );
+
+      case 'setComponentValue':
+        const scv = effect as SetComponentValueEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={scv.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
+                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Component</label>
+              <select style={styles.select} value={scv.component} onChange={(e) => updateEffect({ component: e.target.value })}>
+                <option value="">Select...</option>
+                {Object.keys(components).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Property</label>
+              <input style={styles.input} value={scv.property ?? ''} onChange={(e) => updateEffect({ property: e.target.value })} placeholder="tapped" />
+            </div>
+            <div>
+              <label style={styles.label}>Value</label>
+              <input style={styles.input} value={String(scv.value ?? '')} onChange={(e) => {
+                let val: unknown = e.target.value;
+                if (val === 'true') val = true;
+                else if (val === 'false') val = false;
+                else if (!isNaN(parseFloat(e.target.value))) val = parseFloat(e.target.value);
+                updateEffect({ value: val });
+              }} placeholder="true, false, or a value" />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ ...styles.label, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  checked={scv.createIfMissing ?? false}
+                  onChange={(e) => updateEffect({ createIfMissing: e.target.checked })}
+                />
+                Create component if missing
+              </label>
+            </div>
+          </div>
+        );
+
+      case 'shuffleZone':
+        const sz = effect as ShuffleZoneEffectDefinition;
+        return (
+          <div>
+            <label style={styles.label}>Zone</label>
+            <select style={styles.select} value={sz.zone} onChange={(e) => updateEffect({ zone: e.target.value })}>
+              {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+            </select>
+          </div>
+        );
+
+      case 'transferMultiple':
+        const tm = effect as TransferMultipleEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>From Zone</label>
+              <select style={styles.select} value={tm.fromZone} onChange={(e) => updateEffect({ fromZone: e.target.value })}>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>To Zone</label>
+              <select style={styles.select} value={tm.toZone} onChange={(e) => updateEffect({ toZone: e.target.value })}>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Count</label>
+              <input type="number" style={styles.input} value={typeof tm.count === 'number' ? tm.count : ''} onChange={(e) => updateEffect({ count: parseInt(e.target.value) || 1 })} />
+            </div>
+            <div>
+              <label style={styles.label}>Selection</label>
+              <select style={styles.select} value={tm.selection} onChange={(e) => updateEffect({ selection: e.target.value as 'top' | 'bottom' | 'random' })}>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="random">Random</option>
+              </select>
+            </div>
+          </div>
+        );
+
+      case 'emitEvent':
+        const ee = effect as EmitEventEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Event Type</label>
+              <input style={styles.input} value={ee.eventType} onChange={(e) => updateEffect({ eventType: e.target.value })} placeholder="CardPlayed" />
+            </div>
+            <div>
+              <label style={styles.label}>Event Data (JSON)</label>
+              <textarea
+                style={{ ...styles.input, minHeight: '60px', fontFamily: 'monospace' }}
+                value={JSON.stringify(ee.data || {}, null, 2)}
+                onChange={(e) => {
+                  try {
+                    updateEffect({ data: JSON.parse(e.target.value) });
+                  } catch {
+                    // Invalid JSON, ignore
+                  }
+                }}
+                placeholder='{"playerId": "$actor"}'
+              />
+            </div>
+          </div>
+        );
+
+      case 'conditional':
+        if (depth >= maxDepth) {
+          return <div style={{ color: '#ef4444', fontSize: '0.85em' }}>Max nesting depth reached</div>;
+        }
+        const ce = effect as ConditionalEffectDefinition;
+        return (
+          <div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={styles.label}>Condition</label>
+              <ConditionBuilder
+                condition={ce.condition}
+                onChange={(cond) => cond && updateEffect({ condition: cond })}
+                components={components}
+                zones={zones}
+                phases={phases}
+                depth={depth + 1}
+              />
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={styles.label}>Then (effects if condition is true)</label>
+              <EffectListBuilder
+                effects={ce.then}
+                onChange={(effects) => updateEffect({ then: effects })}
+                components={components}
+                zones={zones}
+                phases={phases}
+                depth={depth + 1}
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Else (effects if condition is false)</label>
+              <EffectListBuilder
+                effects={ce.else || []}
+                onChange={(effects) => updateEffect({ else: effects.length > 0 ? effects : undefined })}
+                components={components}
+                zones={zones}
+                phases={phases}
+                depth={depth + 1}
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return <div style={{ color: '#9ca3af' }}>Unknown effect type: {effect.type}</div>;
+    }
+  };
+
+  return (
+    <div style={effectStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <select
+          style={{ ...styles.select, width: 'auto', fontWeight: 600 }}
+          value={effect.type}
+          onChange={(e) => onChange(createDefaultEffect(e.target.value as EffectType))}
+        >
+          {EFFECT_TYPES.map(et => (
+            <option key={et.value} value={et.value}>{et.label}</option>
+          ))}
+        </select>
+        <button
+          style={{ ...styles.dangerButton, padding: '4px 8px', fontSize: '0.8em' }}
+          onClick={() => onChange(null)}
+        >
+          Remove
+        </button>
+      </div>
+      {renderEffectFields()}
+    </div>
+  );
+}
+
+// Helper component for lists of effects
+interface EffectListBuilderProps {
+  effects: EffectDefinition[];
+  onChange: (effects: EffectDefinition[]) => void;
+  components: Record<string, ComponentDefinition>;
+  zones: Record<string, ZoneDefinition>;
+  phases: string[];
+  depth?: number;
+}
+
+function EffectListBuilder({ effects, onChange, components, zones, phases, depth = 0 }: EffectListBuilderProps) {
+  return (
+    <div>
+      {effects.map((effect, i) => (
+        <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '8px' }}>
+          <div style={{ flex: 1 }}>
+            <EffectBuilder
+              effect={effect}
+              onChange={(newEffect) => {
+                const newEffects = [...effects];
+                if (newEffect) {
+                  newEffects[i] = newEffect;
+                } else {
+                  newEffects.splice(i, 1);
+                }
+                onChange(newEffects);
+              }}
+              components={components}
+              zones={zones}
+              phases={phases}
+              depth={depth}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {i > 0 && (
+              <button
+                style={{ ...styles.button, padding: '4px 8px', fontSize: '0.75em' }}
+                onClick={() => {
+                  const newEffects = [...effects];
+                  [newEffects[i - 1], newEffects[i]] = [newEffects[i], newEffects[i - 1]];
+                  onChange(newEffects);
+                }}
+                title="Move up"
+              >
+                ↑
+              </button>
+            )}
+            {i < effects.length - 1 && (
+              <button
+                style={{ ...styles.button, padding: '4px 8px', fontSize: '0.75em' }}
+                onClick={() => {
+                  const newEffects = [...effects];
+                  [newEffects[i], newEffects[i + 1]] = [newEffects[i + 1], newEffects[i]];
+                  onChange(newEffects);
+                }}
+                title="Move down"
+              >
+                ↓
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+      <button
+        style={{ ...styles.button, fontSize: '0.85em' }}
+        onClick={() => onChange([...effects, { type: 'emitEvent', eventType: 'CustomEvent' }])}
+      >
+        + Add Effect
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Actions Section
 // ============================================================================
 interface ActionsSectionProps {
   actions: ActionDefinitionSchema[];
   components: Record<string, ComponentDefinition>;
   zones: Record<string, ZoneDefinition>;
+  phases: string[];
   onChange: (actions: ActionDefinitionSchema[]) => void;
 }
 
-function ActionsSection({ actions, components, zones, onChange }: ActionsSectionProps) {
+function ActionsSection({ actions, components, zones, phases, onChange }: ActionsSectionProps) {
+  const [expandedAction, setExpandedAction] = useState<number | null>(null);
+
   const addAction = () => {
     onChange([...actions, {
       name: `Action${actions.length + 1}`,
@@ -905,6 +1759,8 @@ function ActionsSection({ actions, components, zones, onChange }: ActionsSection
     onChange(actions.map((a, i) => i === index ? { ...a, ...updates } : a));
   };
 
+  const phaseNames = phases.map(p => p);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -921,6 +1777,12 @@ function ActionsSection({ actions, components, zones, onChange }: ActionsSection
               onChange={(e) => updateAction(index, { name: e.target.value })}
               placeholder="ActionName"
             />
+            <button
+              style={{ ...styles.button, padding: '8px 12px' }}
+              onClick={() => setExpandedAction(expandedAction === index ? null : index)}
+            >
+              {expandedAction === index ? 'Collapse' : 'Expand'}
+            </button>
             <button style={styles.dangerButton} onClick={() => removeAction(index)}>Delete</button>
           </div>
 
@@ -949,19 +1811,106 @@ function ActionsSection({ actions, components, zones, onChange }: ActionsSection
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Description</label>
             <textarea
-              style={{ ...styles.input, minHeight: '60px' }}
+              style={{ ...styles.input, minHeight: '40px' }}
               value={action.description || ''}
               onChange={(e) => updateAction(index, { description: e.target.value })}
               placeholder="What this action does"
             />
           </div>
 
-          <div style={{ fontSize: '0.85em', color: '#666', marginTop: '8px' }}>
-            Preconditions: {action.preconditions?.length || 0} | Effects: {action.effects?.length || 0}
-          </div>
-          <div style={{ fontSize: '0.8em', color: '#9ca3af', marginTop: '4px' }}>
-            (Edit preconditions and effects directly in JSON preview for now)
-          </div>
+          {/* Summary when collapsed */}
+          {expandedAction !== index && (
+            <div style={{ fontSize: '0.85em', color: '#666', marginTop: '8px', cursor: 'pointer' }} onClick={() => setExpandedAction(index)}>
+              Preconditions: {action.preconditions?.length || 0} | Effects: {action.effects?.length || 0} | Costs: {action.costs?.length || 0}
+              <span style={{ color: '#667eea', marginLeft: '8px' }}>Click Expand to edit →</span>
+            </div>
+          )}
+
+          {/* Expanded view with builders */}
+          {expandedAction === index && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+              {/* Preconditions */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Preconditions ({action.preconditions?.length || 0})
+                  </label>
+                  <button
+                    style={{ ...styles.button, fontSize: '0.8em', padding: '4px 10px' }}
+                    onClick={() => updateAction(index, {
+                      preconditions: [...(action.preconditions || []), { type: 'isPlayerTurn' }]
+                    })}
+                  >
+                    + Add
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  Conditions that must be true for this action to be valid
+                </div>
+                {(action.preconditions || []).map((precond, pIndex) => (
+                  <ConditionBuilder
+                    key={pIndex}
+                    condition={precond}
+                    onChange={(newCond) => {
+                      const newPreconditions = [...(action.preconditions || [])];
+                      if (newCond) {
+                        newPreconditions[pIndex] = newCond;
+                      } else {
+                        newPreconditions.splice(pIndex, 1);
+                      }
+                      updateAction(index, { preconditions: newPreconditions });
+                    }}
+                    components={components}
+                    zones={zones}
+                    phases={phaseNames}
+                  />
+                ))}
+                {(!action.preconditions || action.preconditions.length === 0) && (
+                  <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db', color: '#9ca3af', fontSize: '0.85em' }}>
+                    No preconditions. Click "+ Add" to add one.
+                  </div>
+                )}
+              </div>
+
+              {/* Costs */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Costs ({action.costs?.length || 0})
+                  </label>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  Effects applied before the main effects (e.g., pay mana). If costs fail, action is cancelled.
+                </div>
+                <EffectListBuilder
+                  effects={action.costs || []}
+                  onChange={(costs) => updateAction(index, { costs })}
+                  components={components}
+                  zones={zones}
+                  phases={phaseNames}
+                />
+              </div>
+
+              {/* Effects */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Effects ({action.effects?.length || 0})
+                  </label>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  What happens when the action is executed
+                </div>
+                <EffectListBuilder
+                  effects={action.effects || []}
+                  onChange={(effects) => updateAction(index, { effects })}
+                  components={components}
+                  zones={zones}
+                  phases={phaseNames}
+                />
+              </div>
+            </div>
+          )}
         </div>
       ))}
 

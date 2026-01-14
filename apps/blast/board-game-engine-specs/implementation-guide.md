@@ -222,15 +222,39 @@ A visual tool for creating board game definitions without writing JSON manually.
 - Load example game (simple-card-game.json)
 - Copy to clipboard
 - Basic validation
+- Visual condition builder for preconditions
+- Visual effect builder for action effects and costs
 
 **Sections**:
 1. **Metadata** - Game name, version, author, description, player count, complexity, tags
 2. **Components** - Define component types with properties (type, default value)
 3. **Zones** - Define game zones with visibility (public/owner-only/private) and ordering
 4. **Templates** - Create entity templates with component instances and values
-5. **Actions** - Define actions with name, display name, description, target count
+5. **Actions** - Define actions with preconditions, costs, and effects using visual builders
 6. **Phases** - Define phases with allowed actions, next phase, auto-advance
 7. **Setup** - Player count, player template, zones, starting entities
+
+**Visual Condition Builder**:
+Supports all 13 condition types with dropdown-based editing:
+- Basic: `isPlayerTurn`, `phaseCheck`, `hasComponent`
+- Resource/Value checks: `resourceCheck`, `componentValueCheck`
+- Entity checks: `entityInZone`, `ownerCheck`, `entityExists`
+- Zone checks: `zoneHasEntities`, `targetCount`
+- Logical combinators: `AND`, `OR`, `NOT` (with nesting up to 3 levels)
+
+Features entity/zone dropdowns (`$actor`, `$target`, `$zone.actor.hand`, etc.), component selection from defined components, operator selection, and expression value support.
+
+**Visual Effect Builder**:
+Supports 7 effect types with visual editing:
+- `moveEntity` - Move entities between zones
+- `modifyResource` - Add/subtract numeric values
+- `setComponentValue` - Set component properties
+- `shuffleZone` - Shuffle zone contents
+- `transferMultiple` - Move multiple entities (top/bottom/random selection)
+- `emitEvent` - Emit game events with JSON data
+- `conditional` - If/then/else with nested conditions and effects
+
+Features reordering with up/down buttons, nested effect support, and expression value support.
 
 **File Location**: `src/components/GameDefinitionBuilder/index.tsx`
 
@@ -1004,17 +1028,22 @@ const lightningBoltAction = new ActionDefinition({
 
 #### 14. **Game Definition Builder Enhancements**
 
-The GUI builder provides basic editing. Future enhancements:
+The GUI builder now includes visual builders for conditions and effects. Remaining enhancements:
 
-- [ ] Visual condition builder (AND/OR/NOT tree with dropdowns)
-- [ ] Visual effect builder (drag-and-drop effect chain)
+- [x] Visual condition builder (AND/OR/NOT tree with dropdowns)
+- [x] Visual effect builder (effect chain with reordering)
 - [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
 - [ ] Live game preview (run game from JSON definition)
-- [ ] Import/export to clipboard
 - [ ] Undo/redo support
 - [ ] Template library (pre-built game templates)
 - [ ] Validation with detailed error messages
 - [ ] Dark mode support
+
+**Implemented**:
+- `ConditionBuilder` component - Supports all 13 condition types with nested AND/OR/NOT
+- `EffectBuilder` component - Supports 7 effect types with conditional nesting
+- `EffectListBuilder` component - Manages lists of effects with reordering
+- Actions section expand/collapse with full precondition, cost, and effect editing
 
 **Priority**: Medium (UX improvement)
 
@@ -1599,6 +1628,7 @@ const declareAttackersAction = new ActionDefinition({
 - **ECS Documentation**: `packages/ecs/README.md`
 - **Original Spec**: `board-game-engine-specs/board-game-rule-engine-specification.md`
 - **This Guide**: `board-game-engine-specs/implementation-guide.md`
+- **Code-Based Development Guide**: `board-game-engine-specs/code-based-game-development.md`
 - **TypeDoc**: Generate with `bunx typedoc` (if configured)
 
 ### Contact
