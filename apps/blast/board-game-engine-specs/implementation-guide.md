@@ -109,28 +109,49 @@ Manages game flow through different phases.
 
 ### Simple Card Game Demo
 
-A minimal 2-player card game demonstrating the engine:
+A 2-player card game demonstrating the full engine capabilities:
 
 **Game Rules**:
-- 2 players, each with mana (0-10) and health (20)
-- Start with 1 mana, gain 1 per turn (up to 10 max)
-- Main phase where players can act
-- End Turn action switches to next player
+- 2 players, each with mana (1-10) and health (20)
+- Each player starts with a 10-card deck and draws 3 cards
+- Gain +1 mana at the start of each turn (up to 10 max)
+- Draw 1 card per turn, play cards by paying mana cost
+- Creatures have summoning sickness (can't attack on first turn)
+- Attack enemy creatures or the opponent directly to win
 
 **Implemented Actions**:
+- `DrawCard` - Draw top card from deck to hand (1 per turn)
+- `PlayCard` - Play card from hand to board (pays mana cost)
+- `AttackCreature` - Attack enemy creature (mutual damage)
+- `AttackPlayer` - Attack opponent directly (reduce health)
+- `ActivateAbility` - Activate card abilities
 - `EndTurn` - Pass to next player, increment turn counter
 
+**Components**:
+- `CardComponent` - Card data (name, type, cost, power, toughness)
+- `ResourceComponent` - Player resources (mana, health)
+- `CardStateComponent` - Card state (tapped, summoning sickness)
+- `TurnStateComponent` - Per-turn state (hasDrawnThisTurn)
+- `OwnerComponent` - Tracks entity ownership
+- `LocationComponent` - Tracks which zone a card is in
+
 **File Location**: `src/games/simple-card-game/`
+**Player Manual**: `docs/simple-card-game-manual.md`
 
 ### React UI
 
-A test interface for the board game engine.
+A fully interactive interface for the board game engine.
 
 **Features**:
 - Display game status (turn, phase, active player)
-- Show both players' stats (health, mana)
-- End Turn button
-- Auto-refresh on state changes
+- Show both players' stats (health, mana, deck size)
+- Card display with cost, power/toughness, and status (tapped, sick)
+- Card selection (click to select cards in hand or on board)
+- Action buttons: Draw Card, Play Selected, Attack Creature, End Turn
+- Attack Player button on opponent panel (when creature selected)
+- Attack mode with target selection for creature combat
+- Visual feedback (green border for selected, rotation for tapped)
+- Engine info panel showing valid actions
 
 **File Location**: `src/pages/CardGamePage.tsx`
 
@@ -715,14 +736,17 @@ const lightningBoltAction = new ActionDefinition({
 ### Short-Term (Next Sprints)
 
 #### 1. **Complete Card Game Actions**
-- [ ] `DrawCard` - Draw from deck to hand
-- [ ] `PlayCard` - Play card from hand to board
-- [ ] `AttackCreature` - Combat between creatures
-- [ ] `AttackPlayer` - Direct damage to player
-- [ ] `ActivateAbility` - Card abilities
+- [x] `DrawCard` - Draw from deck to hand (includes 1 card per turn limit)
+- [x] `PlayCard` - Play card from hand to board (pays mana cost, adds summoning sickness)
+- [x] `AttackCreature` - Combat between creatures (mutual damage, creatures can die)
+- [x] `AttackPlayer` - Direct damage to player (reduces health)
+- [x] `ActivateAbility` - Card abilities (taps card, emits event for rule engine)
 
-**Estimated Effort**: 2-3 days
-**Priority**: High (needed for playable game)
+**Status**: ✅ Complete
+**Files**: `src/games/simple-card-game/actions.ts`, `src/games/simple-card-game/components.ts`
+**Tests**: `test/card-game-actions.test.ts` (25 tests), `test/card-game-integration.test.ts` (28 tests)
+**UI**: `src/pages/CardGamePage.tsx` - Interactive UI with card selection, action buttons
+**Docs**: `docs/simple-card-game-manual.md` - Player manual
 
 #### 2. **Deck Building & Card Library**
 - [ ] Card database (JSON file or database)

@@ -145,6 +145,24 @@ export interface GameStatusComponent {
 }
 
 // ============================================================================
+// Turn State Component
+// ============================================================================
+
+/**
+ * Component name for turn state components.
+ */
+export const TURN_STATE_COMPONENT: ComponentName = createGlobalComponentName('TurnState');
+
+/**
+ * Turn state component - tracks per-turn state for a player.
+ * Attached to player entities.
+ */
+export interface TurnStateComponent {
+  /** Whether the player has drawn a card this turn */
+  hasDrawnThisTurn: boolean;
+}
+
+// ============================================================================
 // Component Registration Helper
 // ============================================================================
 
@@ -180,7 +198,21 @@ export function registerCardGameComponents(coordinator: Coordinator): void {
     coordinator.registerComponent<GameStatusComponent>(GAME_STATUS_COMPONENT);
   }
 
-  // Location and Deck components are registered by StackableTokenSystem
+  // Check and register turn state component
+  if (coordinator.getComponentType(TURN_STATE_COMPONENT) === null) {
+    coordinator.registerComponent<TurnStateComponent>(TURN_STATE_COMPONENT);
+  }
+
+  // Check and register location component
+  if (coordinator.getComponentType(LOCATION_COMP) === null) {
+    coordinator.registerComponent<LocationComponent>(LOCATION_COMP);
+  }
+
+  // Check and register deck component
+  if (coordinator.getComponentType(DECK_COMP) === null) {
+    coordinator.registerComponent<DeckComponent>(DECK_COMP);
+  }
+
   // Player and Zone components are registered by GameState
 }
 
