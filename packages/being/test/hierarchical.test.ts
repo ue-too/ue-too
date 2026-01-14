@@ -51,7 +51,7 @@ const createTestContext = (): TestContext => ({
 // ============================================================================
 
 class LoadingState extends TemplateState<TestEvents, TestContext, ChildStates> {
-  eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
     loadComplete: {
       action: () => {},
       defaultTargetState: "READY",
@@ -69,7 +69,7 @@ class LoadingState extends TemplateState<TestEvents, TestContext, ChildStates> {
 }
 
 class ReadyState extends TemplateState<TestEvents, TestContext, ChildStates> {
-  eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
     childEvent: {
       action: () => {},
     },
@@ -80,7 +80,7 @@ class ReadyState extends TemplateState<TestEvents, TestContext, ChildStates> {
 }
 
 class ErrorState extends TemplateState<TestEvents, TestContext, ChildStates> {
-  eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ChildStates> = {
     retry: {
       action: () => {},
       defaultTargetState: "LOADING",
@@ -96,7 +96,7 @@ class ErrorState extends TemplateState<TestEvents, TestContext, ChildStates> {
 // ============================================================================
 
 class IdleState extends TemplateState<TestEvents, TestContext, ParentStates> {
-  eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
     start: {
       action: () => {},
       defaultTargetState: "ACTIVE",
@@ -113,7 +113,7 @@ class ActiveState extends CompositeState<
   ParentStates,
   ChildStates
 > {
-  eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
     pause: {
       action: () => {},
       defaultTargetState: "PAUSED",
@@ -159,7 +159,7 @@ class ActiveStateWithHistory extends CompositeState<
   ParentStates,
   ChildStates
 > {
-  eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
     pause: {
       action: () => {},
       defaultTargetState: "PAUSED",
@@ -193,7 +193,7 @@ class ActiveStateWithHistory extends CompositeState<
 }
 
 class PausedState extends TemplateState<TestEvents, TestContext, ParentStates> {
-  eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
+  protected _eventReactions: EventReactions<TestEvents, TestContext, ParentStates> = {
     resume: {
       action: () => {},
       defaultTargetState: "ACTIVE",

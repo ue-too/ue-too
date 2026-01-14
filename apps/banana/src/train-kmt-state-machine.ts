@@ -276,7 +276,7 @@ export class TrainPlacementStateMachine extends TemplateStateMachine<TrainPlacem
 
 export class TrainPlacementIDLEState extends TemplateState<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> {
 
-    public eventReactions: EventReactions<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> = {
+    protected _eventReactions: EventReactions<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> = {
         "startPlacement": {
             action: NO_OP,
             defaultTargetState: "HOVER_FOR_PLACEMENT"
@@ -286,7 +286,7 @@ export class TrainPlacementIDLEState extends TemplateState<TrainPlacementEvents,
 
 export class TrainPlacementHoverForPlacementState extends TemplateState<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> {
 
-    public eventReactions: EventReactions<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> = {
+    protected _eventReactions: EventReactions<TrainPlacementEvents, TrainPlacementContext, TrainPlacementStates> = {
         "endPlacement": {
             action: (context) => {
                 context.cancelCurrentTrainPlacement();
