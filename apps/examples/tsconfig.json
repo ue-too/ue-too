@@ -13,10 +13,19 @@
   ],
   "references": [
     {
-      "path": "../../packages/ecs"
+      "path": "../../packages/board-pixi-integration"
     },
     {
-      "path": "../../packages/border"
+      "path": "../../packages/board-fabric-integration"
+    },
+    {
+      "path": "../../packages/board-konva-integration"
+    },
+    {
+      "path": "../../packages/math"
+    },
+    {
+      "path": "../../packages/ecs"
     },
     {
       "path": "../../packages/dynamics"
@@ -25,16 +34,16 @@
       "path": "../../packages/curve"
     },
     {
+      "path": "../../packages/border"
+    },
+    {
+      "path": "../../packages/board"
+    },
+    {
       "path": "../../packages/being"
     },
     {
       "path": "../../packages/animate"
-    },
-    {
-      "path": "../../packages/math"
-    },
-    {
-      "path": "../../packages/board"
     }
   ]
 }

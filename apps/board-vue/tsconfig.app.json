@@ -10,5 +10,21 @@
     "src/**/*.spec.vue",
     "src/**/*.test.vue"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.vue"]
+  "include": [
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "src/**/*.ts",
+    "src/**/*.vue"
+  ],
+  "references": [
+    {
+      "path": "../../packages/math"
+    },
+    {
+      "path": "../../packages/board-vue-adapter"
+    },
+    {
+      "path": "../../packages/board"
+    }
+  ]
 }

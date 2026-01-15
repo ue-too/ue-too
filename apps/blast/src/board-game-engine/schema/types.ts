@@ -76,12 +76,23 @@ export type ZoneVisibility = 'public' | 'private' | 'owner-only';
 
 /**
  * Definition of a zone type.
+ *
+ * @remarks
+ * Zones can be either per-player (each player gets their own instance)
+ * or shared (one instance accessible to all players).
+ * Shared zones have `owner: null` in the ZoneComponent.
  */
 export interface ZoneDefinition {
   visibility?: ZoneVisibility;
   ordered?: boolean;
   maxCapacity?: number;
   description?: string;
+  /**
+   * If true, this zone is shared among all players (e.g., marketplace, common area).
+   * Shared zones have `owner: null` and are referenced via `$zone.shared.zoneName`.
+   * If false or undefined, each player gets their own instance of this zone.
+   */
+  shared?: boolean;
 }
 
 // ============================================================================
@@ -541,6 +552,15 @@ export interface InitialDrawConfig {
 }
 
 /**
+ * Shared zone starting entities configuration.
+ */
+export interface SharedZoneEntityConfig {
+  template: string;
+  zone: string;
+  count?: number;
+}
+
+/**
  * Game setup definition.
  */
 export interface SetupDefinitionSchema {
@@ -549,6 +569,11 @@ export interface SetupDefinitionSchema {
     max?: number;
   };
   perPlayer: PerPlayerSetup;
+  /**
+   * Starting entities for shared zones.
+   * These are created once (not per-player) in zones with shared: true.
+   */
+  sharedZoneEntities?: SharedZoneEntityConfig[];
   globalEntities?: Array<{
     template: string;
     zone?: string;

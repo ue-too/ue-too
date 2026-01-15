@@ -175,7 +175,8 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `$activePlayer` - Currently active player
 - `$param.<name>` - Action parameter value
 - `$component.$entity.Component.property` - Component property access
-- `$zone.actor.hand` / `$zone.opponent.board` - Zone references
+- `$zone.actor.hand` / `$zone.opponent.board` - Zone references (per-player zones)
+- `$zone.shared.marketplace` - Shared zone references (zones with no owner)
 - `$negate(value)`, `$add(a, b)`, `$multiply(a, b)` - Math operations
 
 **Condition Types**:
@@ -228,11 +229,14 @@ A visual tool for creating board game definitions without writing JSON manually.
 **Sections**:
 1. **Metadata** - Game name, version, author, description, player count, complexity, tags
 2. **Components** - Define component types with properties (type, default value)
-3. **Zones** - Define game zones with visibility (public/owner-only/private) and ordering
+3. **Zones** - Define game zones with visibility (public/owner-only/private), ordering, and shared flag
+   - Per-player zones: Each player gets their own instance (hand, deck, board)
+   - Shared zones: One instance accessible to all players (marketplace, common area)
 4. **Templates** - Create entity templates with component instances and values
 5. **Actions** - Define actions with preconditions, costs, and effects using visual builders
 6. **Phases** - Define phases with allowed actions, next phase, auto-advance
-7. **Setup** - Player count, player template, zones, starting entities
+7. **Setup** - Player count, player template, zones, starting entities, shared zone entities
+8. **Play** - Live game preview to test the game definition interactively
 
 **Visual Condition Builder**:
 Supports all 13 condition types with dropdown-based editing:
@@ -532,7 +536,38 @@ try {
 - After each turn (for undo)
 - Before AI simulation (for lookahead)
 
-### 5. Event Cycle Detection
+### 5. Zone Ownership Model
+
+**Per-Player Zones** (default):
+- Each player gets their own instance of the zone
+- Referenced via `$zone.actor.hand`, `$zone.opponent.deck`, etc.
+- Created during game setup for each player
+- Zone entity has `owner` set to the player entity
+
+**Shared Zones** (optional):
+- One instance accessible to all players
+- Mark zone as `shared: true` in zone definition
+- Referenced via `$zone.shared.zoneName`
+- Created during game setup with `owner: null`
+- Examples: marketplace, common draw pile, shared discard
+
+```typescript
+// Zone definition in JSON
+{
+  "zones": {
+    "hand": { "visibility": "owner-only" },           // Per-player
+    "deck": { "visibility": "private" },              // Per-player
+    "marketplace": { "visibility": "public", "shared": true }  // Shared
+  }
+}
+
+// Zone expressions
+"$zone.actor.hand"           // Current player's hand
+"$zone.opponent.board"       // Opponent's board
+"$zone.shared.marketplace"   // Shared marketplace
+```
+
+### 6. Event Cycle Detection
 
 To prevent infinite loops:
 
@@ -1032,8 +1067,9 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 
 - [x] Visual condition builder (AND/OR/NOT tree with dropdowns)
 - [x] Visual effect builder (effect chain with reordering)
+- [x] Live game preview (run game from JSON definition)
+- [x] Shared zones support (zones accessible to all players)
 - [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
-- [ ] Live game preview (run game from JSON definition)
 - [ ] Undo/redo support
 - [ ] Template library (pre-built game templates)
 - [ ] Validation with detailed error messages
@@ -1044,6 +1080,16 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - `EffectBuilder` component - Supports 7 effect types with conditional nesting
 - `EffectListBuilder` component - Manages lists of effects with reordering
 - Actions section expand/collapse with full precondition, cost, and effect editing
+- `GamePreview` component - Live preview with validation and game controls
+- `GenericGameUI` component - Game-agnostic renderer that displays zones, players, and actions
+- `EntityDisplay` component - Generic entity card display with component properties
+- Shared zones support - Zones marked as "shared" are accessible to all players
+
+**File Locations**:
+- `src/components/GameDefinitionBuilder/GamePreview.tsx` - Preview wrapper with validation
+- `src/components/GameDefinitionBuilder/GenericGameUI.tsx` - Game renderer
+- `src/components/GameDefinitionBuilder/EntityDisplay.tsx` - Entity card display
+- `src/components/GameDefinitionBuilder/types.ts` - Shared type definitions
 
 **Priority**: Medium (UX improvement)
 
@@ -1770,6 +1816,7 @@ $zone.actor.hand              // Actor's hand zone
 $zone.actor.deck              // Actor's deck zone
 $zone.opponent.board          // Opponent's board zone
 $zone.$eachPlayer.deck        // Each player's deck (in setup)
+$zone.shared.marketplace      // Shared zone (no owner, accessible to all)
 
 // Component Expressions
 $component.$actor.Resource.mana       // Actor's mana value

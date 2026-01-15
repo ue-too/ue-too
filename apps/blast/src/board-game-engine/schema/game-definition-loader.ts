@@ -264,15 +264,25 @@ export class GameDefinitionLoader {
       players.push(player);
     }
 
-    // Create zones for each player
+    // Create per-player zones (zones without shared: true)
     for (const player of players) {
       for (const zoneName of setup.perPlayer.zones) {
         const zoneDef = json.zones[zoneName];
-        this.createZone(coordinator, zoneName, player, zoneDef?.visibility ?? 'public');
+        // Only create if not a shared zone
+        if (!zoneDef?.shared) {
+          this.createZone(coordinator, zoneName, player, zoneDef?.visibility ?? 'public');
+        }
       }
     }
 
-    // Create starting entities in zones
+    // Create shared zones (zones with shared: true)
+    for (const [zoneName, zoneDef] of Object.entries(json.zones)) {
+      if (zoneDef.shared) {
+        this.createZone(coordinator, zoneName, null, zoneDef.visibility ?? 'public');
+      }
+    }
+
+    // Create per-player starting entities in zones
     if (setup.perPlayer.startingEntities) {
       for (const player of players) {
         for (const entityConfig of setup.perPlayer.startingEntities) {
@@ -289,6 +299,26 @@ export class GameDefinitionLoader {
             if (zone) {
               this.addEntityToZone(coordinator, entity, zone);
             }
+          }
+        }
+      }
+    }
+
+    // Create shared zone starting entities
+    if (setup.sharedZoneEntities) {
+      for (const entityConfig of setup.sharedZoneEntities) {
+        const template = json.entityTemplates[entityConfig.template];
+        const zone = state.getZone(entityConfig.zone, null); // null owner = shared zone
+        const count = entityConfig.count ?? 1;
+
+        for (let i = 0; i < count; i++) {
+          const entity = this.createEntityFromTemplate(coordinator, template, {
+            owner: null, // Shared entities have no specific owner
+          });
+
+          // Add to shared zone
+          if (zone) {
+            this.addEntityToZone(coordinator, entity, zone);
           }
         }
       }

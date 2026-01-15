@@ -126,7 +126,12 @@ export class ExpressionResolver {
   /**
    * Resolve a zone expression to a zone Entity.
    * Format: $zone.owner.zoneName
-   * Owner: actor, opponent, target, $param.xxx, $fixed.xxx
+   * Owner: actor, opponent, target, shared, $param.xxx, $fixed.xxx
+   *
+   * @remarks
+   * - `$zone.actor.hand` - The actor's hand
+   * - `$zone.opponent.board` - The opponent's board
+   * - `$zone.shared.marketplace` - A shared zone (owner = null)
    */
   resolveZone(expr: ZoneExpression | Entity, context: ResolverContext): Entity | null {
     if (typeof expr === 'number') {
@@ -142,6 +147,11 @@ export class ExpressionResolver {
 
     const ownerPart = parts[0];
     const zoneName = parts[1];
+
+    // Special case: shared zones have no owner (owner = null)
+    if (ownerPart === 'shared') {
+      return context.state.getZone(zoneName, null);
+    }
 
     let owner: Entity | null = null;
 

@@ -13,35 +13,17 @@ import type {
 // Import example game definition directly (Vite supports JSON imports)
 import simpleCardGameJson from '../../games/simple-card-game/simple-card-game.json';
 
-// Extended metadata that includes fields from the JSON schema but not in TypeScript types
-interface ExtendedMetadata {
-  author?: string;
-  description?: string;
-  minPlayers?: number;
-  maxPlayers?: number;
-  estimatedDuration?: string;
-  complexity?: 'simple' | 'medium' | 'complex';
-  tags?: string[];
-}
+// Import GamePreview for the Play tab
+import { GamePreview } from './GamePreview';
 
-// Extended game definition that includes all fields for the builder
-interface BuilderGameDefinition {
-  $schema?: string;
-  name: string;
-  version: string;
-  metadata?: ExtendedMetadata;
-  components: Record<string, ComponentDefinition>;
-  zones: Record<string, ZoneDefinition>;
-  entityTemplates: Record<string, EntityTemplateDefinition>;
-  actions: ActionDefinitionSchema[];
-  phases: PhaseDefinitionSchema[];
-  rules?: unknown[];
-  setup: SetupDefinitionSchema;
-  winConditions?: unknown[];
-}
+// Import shared types
+import type { BuilderGameDefinition, ExtendedMetadata } from './types';
+
+// Re-export for other components that might need it
+export type { BuilderGameDefinition } from './types';
 
 // Tab sections
-type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'setup';
+type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'setup' | 'play';
 
 // Default empty game definition
 const createEmptyGameDefinition = (): BuilderGameDefinition => ({
@@ -299,18 +281,29 @@ export function GameDefinitionBuilder() {
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'setup'] as Tab[]).map(tab => (
+        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'setup', 'play'] as Tab[]).map(tab => (
           <button
             key={tab}
-            style={styles.tab(activeTab === tab)}
+            style={{
+              ...styles.tab(activeTab === tab),
+              ...(tab === 'play' ? { backgroundColor: activeTab === tab ? '#10b981' : 'transparent', color: activeTab === tab ? 'white' : '#10b981' } : {}),
+            }}
             onClick={() => setActiveTab(tab)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {tab === 'play' ? '▶ Play' : tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* Split Panel */}
+      {/* Play Tab - Full Width */}
+      {activeTab === 'play' && (
+        <div style={{ ...styles.editorPanel, flex: 1, overflow: 'auto' }}>
+          <GamePreview gameDefinition={gameDefinition} />
+        </div>
+      )}
+
+      {/* Split Panel - For other tabs */}
+      {activeTab !== 'play' && (
       <div style={styles.splitPanel}>
         {/* Editor Panel */}
         <div style={styles.editorPanel}>
@@ -387,6 +380,7 @@ export function GameDefinitionBuilder() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -636,7 +630,7 @@ interface ZonesSectionProps {
 function ZonesSection({ zones, onChange }: ZonesSectionProps) {
   const addZone = () => {
     const name = `zone${Object.keys(zones).length + 1}`;
-    onChange({ ...zones, [name]: { visibility: 'public', ordered: true } });
+    onChange({ ...zones, [name]: { visibility: 'public', ordered: true, shared: false } });
   };
 
   const removeZone = (name: string) => {
@@ -658,6 +652,86 @@ function ZonesSection({ zones, onChange }: ZonesSectionProps) {
     onChange({ ...zones, [name]: { ...zones[name], ...updates } });
   };
 
+  // Separate zones into per-player and shared
+  const perPlayerZones = Object.entries(zones).filter(([_, z]) => !z.shared);
+  const sharedZones = Object.entries(zones).filter(([_, z]) => z.shared);
+
+  const renderZoneCard = (name: string, zone: ZoneDefinition) => (
+    <div key={name} style={{
+      ...styles.card,
+      borderLeft: zone.shared ? '4px solid #10b981' : '4px solid #667eea',
+    }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
+        <input
+          style={{ ...styles.input, flex: 1, fontWeight: 600 }}
+          value={name}
+          onChange={(e) => renameZone(name, e.target.value)}
+          onBlur={(e) => { if (!e.target.value.trim()) e.target.value = name; }}
+        />
+        {zone.shared && (
+          <span style={{
+            fontSize: '10px',
+            padding: '2px 6px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            borderRadius: '4px',
+          }}>
+            Shared
+          </span>
+        )}
+        <button style={styles.dangerButton} onClick={() => removeZone(name)}>Delete</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+        <div>
+          <label style={styles.label}>Ownership</label>
+          <select
+            style={styles.select}
+            value={zone.shared ? 'shared' : 'per-player'}
+            onChange={(e) => updateZone(name, { shared: e.target.value === 'shared' })}
+          >
+            <option value="per-player">Per Player</option>
+            <option value="shared">Shared (all players)</option>
+          </select>
+        </div>
+        <div>
+          <label style={styles.label}>Visibility</label>
+          <select
+            style={styles.select}
+            value={zone.visibility || 'public'}
+            onChange={(e) => updateZone(name, { visibility: e.target.value as 'public' | 'private' | 'owner-only' })}
+          >
+            <option value="public">Public (all can see)</option>
+            <option value="owner-only">Owner Only</option>
+            <option value="private">Private (hidden)</option>
+          </select>
+        </div>
+        <div>
+          <label style={styles.label}>Ordered</label>
+          <select
+            style={styles.select}
+            value={zone.ordered ? 'true' : 'false'}
+            onChange={(e) => updateZone(name, { ordered: e.target.value === 'true' })}
+          >
+            <option value="true">Yes (maintains order)</option>
+            <option value="false">No (unordered)</option>
+          </select>
+        </div>
+      </div>
+
+      {zone.shared && (
+        <div style={{ marginTop: '8px', fontSize: '11px', color: '#666' }}>
+          Reference: <code style={{ backgroundColor: '#f3f4f6', padding: '2px 4px', borderRadius: '3px' }}>$zone.shared.{name}</code>
+        </div>
+      )}
+      {!zone.shared && (
+        <div style={{ marginTop: '8px', fontSize: '11px', color: '#666' }}>
+          Reference: <code style={{ backgroundColor: '#f3f4f6', padding: '2px 4px', borderRadius: '3px' }}>$zone.actor.{name}</code> or <code style={{ backgroundColor: '#f3f4f6', padding: '2px 4px', borderRadius: '3px' }}>$zone.opponent.{name}</code>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -665,45 +739,29 @@ function ZonesSection({ zones, onChange }: ZonesSectionProps) {
         <button style={styles.successButton} onClick={addZone}>+ Add Zone</button>
       </div>
 
-      {Object.entries(zones).map(([name, zone]) => (
-        <div key={name} style={styles.card}>
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-            <input
-              style={{ ...styles.input, flex: 1, fontWeight: 600 }}
-              value={name}
-              onChange={(e) => renameZone(name, e.target.value)}
-              onBlur={(e) => { if (!e.target.value.trim()) e.target.value = name; }}
-            />
-            <button style={styles.dangerButton} onClick={() => removeZone(name)}>Delete</button>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={styles.label}>Visibility</label>
-              <select
-                style={styles.select}
-                value={zone.visibility || 'public'}
-                onChange={(e) => updateZone(name, { visibility: e.target.value as 'public' | 'private' | 'owner-only' })}
-              >
-                <option value="public">Public (all can see)</option>
-                <option value="owner-only">Owner Only</option>
-                <option value="private">Private (hidden)</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>Ordered</label>
-              <select
-                style={styles.select}
-                value={zone.ordered ? 'true' : 'false'}
-                onChange={(e) => updateZone(name, { ordered: e.target.value === 'true' })}
-              >
-                <option value="true">Yes (maintains order)</option>
-                <option value="false">No (unordered)</option>
-              </select>
-            </div>
-          </div>
+      {/* Per-Player Zones */}
+      {perPlayerZones.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ fontSize: '14px', color: '#667eea', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '12px', height: '12px', backgroundColor: '#667eea', borderRadius: '2px' }}></span>
+            Per-Player Zones
+            <span style={{ fontWeight: 'normal', color: '#999' }}>({perPlayerZones.length})</span>
+          </h4>
+          {perPlayerZones.map(([name, zone]) => renderZoneCard(name, zone))}
         </div>
-      ))}
+      )}
+
+      {/* Shared Zones */}
+      {sharedZones.length > 0 && (
+        <div style={{ marginBottom: '20px' }}>
+          <h4 style={{ fontSize: '14px', color: '#10b981', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
+            Shared Zones
+            <span style={{ fontWeight: 'normal', color: '#999' }}>({sharedZones.length})</span>
+          </h4>
+          {sharedZones.map(([name, zone]) => renderZoneCard(name, zone))}
+        </div>
+      )}
 
       {Object.keys(zones).length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
@@ -2060,6 +2118,10 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
     onChange({ ...setup, perPlayer: { ...setup.perPlayer, ...updates } });
   };
 
+  // Separate per-player zones from shared zones
+  const perPlayerZones = Object.entries(zones).filter(([_, z]) => !z.shared);
+  const sharedZones = Object.entries(zones).filter(([_, z]) => z.shared);
+
   const toggleZone = (zoneName: string) => {
     const currentZones = setup.perPlayer.zones || [];
     const newZones = currentZones.includes(zoneName)
@@ -2068,10 +2130,12 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
     updatePerPlayer({ zones: newZones });
   };
 
+  // Per-player starting entities
   const addStartingEntity = () => {
     const entities = setup.perPlayer.startingEntities || [];
+    const firstPerPlayerZone = perPlayerZones[0]?.[0] || '';
     updatePerPlayer({
-      startingEntities: [...entities, { template: Object.keys(templates)[0] || '', zone: Object.keys(zones)[0] || '', count: 1 }],
+      startingEntities: [...entities, { template: Object.keys(templates)[0] || '', zone: firstPerPlayerZone, count: 1 }],
     });
   };
 
@@ -2084,6 +2148,27 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
     const entities = setup.perPlayer.startingEntities || [];
     updatePerPlayer({
       startingEntities: entities.map((e, i) => i === index ? { ...e, ...updates } : e),
+    });
+  };
+
+  // Shared zone starting entities
+  const addSharedZoneEntity = () => {
+    const entities = setup.sharedZoneEntities || [];
+    const firstSharedZone = sharedZones[0]?.[0] || '';
+    updateSetup({
+      sharedZoneEntities: [...entities, { template: Object.keys(templates)[0] || '', zone: firstSharedZone, count: 1 }],
+    });
+  };
+
+  const removeSharedZoneEntity = (index: number) => {
+    const entities = setup.sharedZoneEntities || [];
+    updateSetup({ sharedZoneEntities: entities.filter((_, i) => i !== index) });
+  };
+
+  const updateSharedZoneEntity = (index: number, updates: Partial<{ template: string; zone: string; count: number }>) => {
+    const entities = setup.sharedZoneEntities || [];
+    updateSetup({
+      sharedZoneEntities: entities.map((e, i) => i === index ? { ...e, ...updates } : e),
     });
   };
 
@@ -2138,10 +2223,14 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
         </select>
       </div>
 
+      {/* Per-Player Zones */}
       <div style={styles.fieldGroup}>
-        <label style={styles.label}>Player Zones</label>
+        <label style={styles.label}>
+          Player Zones
+          <span style={{ fontWeight: 'normal', color: '#999', marginLeft: '8px' }}>(each player gets their own)</span>
+        </label>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-          {Object.keys(zones).map((zoneName) => (
+          {perPlayerZones.map(([zoneName]) => (
             <button
               key={zoneName}
               style={{
@@ -2158,16 +2247,20 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
               {zoneName}
             </button>
           ))}
-          {Object.keys(zones).length === 0 && (
-            <span style={{ color: '#9ca3af', fontSize: '0.85em' }}>No zones defined yet</span>
+          {perPlayerZones.length === 0 && (
+            <span style={{ color: '#9ca3af', fontSize: '0.85em' }}>No per-player zones defined</span>
           )}
         </div>
       </div>
 
+      {/* Per-Player Starting Entities */}
       <div style={{ marginTop: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <label style={styles.label}>Starting Entities</label>
-          <button style={{ ...styles.button, fontSize: '0.85em' }} onClick={addStartingEntity}>+ Add</button>
+          <label style={styles.label}>
+            Per-Player Starting Entities
+            <span style={{ fontWeight: 'normal', color: '#999', marginLeft: '8px' }}>(created for each player)</span>
+          </label>
+          <button style={{ ...styles.button, fontSize: '0.85em' }} onClick={addStartingEntity} disabled={perPlayerZones.length === 0}>+ Add</button>
         </div>
         {(setup.perPlayer.startingEntities || []).map((entity, index) => (
           <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
@@ -2185,7 +2278,7 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
               onChange={(e) => updateStartingEntity(index, { zone: e.target.value })}
             >
               <option value="">Zone...</option>
-              {Object.keys(zones).map((z) => <option key={z} value={z}>{z}</option>)}
+              {perPlayerZones.map(([z]) => <option key={z} value={z}>{z}</option>)}
             </select>
             <input
               type="number"
@@ -2198,6 +2291,66 @@ function SetupSection({ setup, templates, zones, phases, onChange }: SetupSectio
           </div>
         ))}
       </div>
+
+      {/* Shared Zones Section */}
+      {sharedZones.length > 0 && (
+        <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '2px solid #10b981' }}>
+          <h4 style={{ fontSize: '14px', color: '#10b981', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ width: '12px', height: '12px', backgroundColor: '#10b981', borderRadius: '2px' }}></span>
+            Shared Zones Setup
+          </h4>
+
+          <div style={{ marginBottom: '12px', fontSize: '13px', color: '#666' }}>
+            Shared zones: {sharedZones.map(([name]) => (
+              <span key={name} style={{ backgroundColor: '#d1fae5', padding: '2px 8px', borderRadius: '4px', marginLeft: '4px' }}>{name}</span>
+            ))}
+          </div>
+
+          {/* Shared Zone Starting Entities */}
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <label style={styles.label}>
+                Shared Zone Starting Entities
+                <span style={{ fontWeight: 'normal', color: '#999', marginLeft: '8px' }}>(created once, shared by all)</span>
+              </label>
+              <button style={{ ...styles.successButton, fontSize: '0.85em' }} onClick={addSharedZoneEntity}>+ Add</button>
+            </div>
+            {(setup.sharedZoneEntities || []).map((entity, index) => (
+              <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                <select
+                  style={{ ...styles.select, flex: 1 }}
+                  value={entity.template}
+                  onChange={(e) => updateSharedZoneEntity(index, { template: e.target.value })}
+                >
+                  <option value="">Template...</option>
+                  {Object.keys(templates).map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <select
+                  style={{ ...styles.select, width: '120px' }}
+                  value={entity.zone}
+                  onChange={(e) => updateSharedZoneEntity(index, { zone: e.target.value })}
+                >
+                  <option value="">Zone...</option>
+                  {sharedZones.map(([z]) => <option key={z} value={z}>{z}</option>)}
+                </select>
+                <input
+                  type="number"
+                  style={{ ...styles.input, width: '60px' }}
+                  value={entity.count || 1}
+                  onChange={(e) => updateSharedZoneEntity(index, { count: parseInt(e.target.value) || 1 })}
+                  min={1}
+                />
+                <button style={{ ...styles.dangerButton, padding: '6px 10px' }} onClick={() => removeSharedZoneEntity(index)}>x</button>
+              </div>
+            ))}
+            {(setup.sharedZoneEntities || []).length === 0 && (
+              <div style={{ color: '#9ca3af', fontSize: '0.85em', padding: '12px', backgroundColor: '#f0fdf4', borderRadius: '4px' }}>
+                No shared zone entities yet. Add entities to populate shared zones like a marketplace or common area.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

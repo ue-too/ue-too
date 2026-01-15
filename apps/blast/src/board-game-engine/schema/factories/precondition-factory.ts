@@ -166,7 +166,10 @@ export class PreconditionFactory {
       entity: (ctx: ActionContext) => this.resolveEntityFromContext(def.entity, ctx),
       componentName,
       property: def.property,
-      value: (ctx: ActionContext) => this.resolveValueFromContext(def.value, ctx),
+      value: (currentValue: unknown, ctx: ActionContext) => {
+        const expectedValue = this.resolveValueFromContext(def.value, ctx);
+        return currentValue === expectedValue;
+      },
       errorMessage: def.errorMessage,
     });
   }

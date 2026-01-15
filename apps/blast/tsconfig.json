@@ -19,6 +19,14 @@
   "include": [
     "src/**/*",
     "src/**/*.json"
+  ],
+  "references": [
+    {
+      "path": "../../packages/ecs"
+    },
+    {
+      "path": "../../packages/being"
+    }
   ]
 }
 
