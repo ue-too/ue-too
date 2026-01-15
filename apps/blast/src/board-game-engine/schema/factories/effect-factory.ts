@@ -20,6 +20,7 @@ import type {
   RepeatEffectDefinition,
   EmitEventEffectDefinition,
   CompositeEffectDefinition,
+  CheckTicTacToeWinEffectDefinition,
   ResolverContext,
 } from '../types';
 import { ExpressionResolver } from '../expression-resolver';
@@ -37,6 +38,7 @@ import {
 import { EmitEvent } from '../../action-system/effects/emit-event';
 import { CompositeEffect, CustomEffect } from '../../action-system/effects';
 import { SwitchActivePlayer } from '../../action-system/effects/switch-active-player';
+import { CheckTicTacToeWin } from '../../action-system/effects/check-tic-tac-toe-win';
 
 /**
  * Factory for creating Effect instances from JSON definitions.
@@ -101,6 +103,11 @@ export class EffectFactory {
 
       case 'switchActivePlayer':
         return new SwitchActivePlayer();
+
+      case 'checkTicTacToeWin': {
+        const checkWinDef = definition as CheckTicTacToeWinEffectDefinition;
+        return new CheckTicTacToeWin();
+      }
 
       default:
         throw new Error(`Unknown effect type: ${(definition as EffectDefinition).type}`);

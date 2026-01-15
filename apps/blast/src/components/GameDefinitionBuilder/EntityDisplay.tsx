@@ -26,6 +26,18 @@ function getEntityDisplayName(
   entityId: Entity,
   componentSchemas: Record<string, ComponentDefinition>
 ): string {
+  // For Marker components, show the value (X or O) prominently
+  const markerComponentName = createGlobalComponentName('Marker');
+  const markerComponent = coordinator.getComponentFromEntity(markerComponentName, entityId);
+  if (markerComponent && typeof markerComponent === 'object') {
+    const marker = markerComponent as Record<string, unknown>;
+    if ('value' in marker && typeof marker.value === 'string' && marker.value) {
+      const playerIndex = marker.playerIndex;
+      const playerLabel = typeof playerIndex === 'number' ? ` (P${playerIndex + 1})` : '';
+      return `${marker.value}${playerLabel}`;
+    }
+  }
+
   // Try common name properties in order of preference
   const nameProperties = ['name', 'cardName', 'displayName', 'title'];
 
@@ -74,7 +86,7 @@ function getDisplayProperties(
   const properties: Array<{ label: string; value: unknown; type: string }> = [];
 
   // Priority properties to show first
-  const priorityProps = ['cost', 'mana', 'health', 'power', 'toughness', 'attack', 'defense'];
+  const priorityProps = ['value', 'cost', 'mana', 'health', 'power', 'toughness', 'attack', 'defense', 'playerIndex'];
 
   for (const [compName, compDef] of Object.entries(componentSchemas)) {
     const componentName = createGlobalComponentName(compName);
@@ -180,11 +192,13 @@ export const EntityDisplay: React.FC<EntityDisplayProps> = ({
       <div
         style={{
           fontWeight: 'bold',
-          fontSize: '12px',
+          fontSize: name === 'X' || name === 'O' ? '32px' : '12px',
           marginBottom: '4px',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
+          textAlign: 'center',
+          color: name === 'X' ? '#f44336' : name === 'O' ? '#2196F3' : '#333',
         }}
       >
         {name}

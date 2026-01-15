@@ -60,7 +60,7 @@ export class WinConditionEvaluator {
           actor: player,
           targets: context?.targets ?? [],
           parameters: context?.parameters ?? {},
-          candidate: context?.candidate ?? null,
+          candidate: context?.candidate,
           eachPlayer: player,
           effectContext: context?.effectContext,
         };

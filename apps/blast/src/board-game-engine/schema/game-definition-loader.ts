@@ -343,11 +343,28 @@ export class GameDefinitionLoader {
         for (let i = 0; i < count; i++) {
           const entity = this.createEntityFromTemplate(coordinator, template, {
             owner: null, // Shared entities have no specific owner
+            index: i, // Pass index for grid positioning
           });
 
           // Add to shared zone
           if (zone) {
             this.addEntityToZone(coordinator, entity, zone);
+          }
+
+          // For tic-tac-toe: set grid positions (row 0-2, col 0-2)
+          // Calculate row and column from index
+          const row = Math.floor(i / 3);
+          const col = i % 3;
+          
+          // Check if entity has GridLocation component and update it
+          const gridLocationComponent = this.getComponentName('GridLocation');
+          const existingGridLoc = coordinator.getComponentFromEntity(gridLocationComponent, entity);
+          if (existingGridLoc) {
+            coordinator.addComponentToEntity(gridLocationComponent, entity, {
+              ...existingGridLoc,
+              row,
+              column: col,
+            });
           }
         }
       }
@@ -360,23 +377,20 @@ export class GameDefinitionLoader {
 
     // Initialize GameStatusComponent on game manager entity
     // Find the game manager entity (it has GAME_MANAGER_COMPONENT)
-    const gameManagerComponentType = coordinator.getComponentType(GAME_MANAGER_COMPONENT);
-    if (gameManagerComponentType) {
-      const allEntities = coordinator.getAllEntities();
-      const gameManagerEntity = allEntities.find((entity) => {
-        return coordinator.getComponentFromEntity(gameManagerComponentType, entity) !== null;
-      });
+    const allEntities = coordinator.getAllEntities();
+    const gameManagerEntity = allEntities.find((entity) => {
+      return coordinator.getComponentFromEntity(GAME_MANAGER_COMPONENT, entity) !== null;
+    });
 
-      if (gameManagerEntity !== undefined) {
-        coordinator.addComponentToEntity<GameStatusComponent>(
-          GAME_STATUS_COMPONENT,
-          gameManagerEntity,
-          {
-            isGameOver: false,
-            winner: null,
-          }
-        );
-      }
+    if (gameManagerEntity !== undefined) {
+      coordinator.addComponentToEntity<GameStatusComponent>(
+        GAME_STATUS_COMPONENT,
+        gameManagerEntity,
+        {
+          isGameOver: false,
+          winner: null,
+        }
+      );
     }
 
     // Execute setup effects

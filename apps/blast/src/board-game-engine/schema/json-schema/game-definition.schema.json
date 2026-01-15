@@ -297,7 +297,8 @@
             "repeat",
             "emitEvent",
             "composite",
-            "switchActivePlayer"
+            "switchActivePlayer",
+            "checkTicTacToeWin"
           ]
         }
       },
@@ -350,6 +351,18 @@
               "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } }
             },
             "required": ["effects"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "switchActivePlayer" } } },
+          "then": {
+            "properties": {}
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "checkTicTacToeWin" } } },
+          "then": {
+            "properties": {}
           }
         }
       ]

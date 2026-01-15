@@ -152,7 +152,9 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
   const currentPhase = engine.getCurrentPhase();
   const turnNumber = engine.getTurnNumber();
   const isGameOver = engine.isGameOver();
-  const winner = isGameOver ? engine.getWinner() : null;
+  const winnerEntity = isGameOver ? engine.getWinner() : null;
+  // Find winner player info for display
+  const winner = winnerEntity ? players.find(p => p.entity === winnerEntity) : null;
 
   // Execute an action
   const executeAction = (action: { type: string; targetIds: Entity[] }) => {
@@ -290,6 +292,7 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
   const renderPlayerStats = (player: PlayerInfo) => {
     const props = player.properties;
     const isActive = player.entity === currentPlayer;
+    const isWinner = isGameOver && winner && winner.entity === player.entity;
 
     return (
       <div
@@ -297,9 +300,10 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
         style={{
           flex: 1,
           padding: '12px',
-          backgroundColor: isActive ? '#e8f5e9' : '#f5f5f5',
+          backgroundColor: isWinner ? '#fff3cd' : isActive ? '#e8f5e9' : '#f5f5f5',
           borderRadius: '8px',
-          border: isActive ? '2px solid #4CAF50' : '1px solid #ddd',
+          border: isWinner ? '3px solid #ffc107' : isActive ? '2px solid #4CAF50' : '1px solid #ddd',
+          boxShadow: isWinner ? '0 4px 8px rgba(255, 193, 7, 0.3)' : 'none',
         }}
       >
         <div
@@ -310,20 +314,40 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
             marginBottom: '8px',
           }}
         >
-          <span style={{ fontWeight: 'bold' }}>{player.name}</span>
-          {isActive && (
-            <span
-              style={{
-                fontSize: '10px',
-                padding: '2px 6px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                borderRadius: '4px',
-              }}
-            >
-              Active
-            </span>
-          )}
+          <span style={{ fontWeight: 'bold', fontSize: isWinner ? '16px' : '14px' }}>
+            {isWinner && '🏆 '}
+            {player.name}
+            {isWinner && ' 🏆'}
+          </span>
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            {isWinner && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: '#ffc107',
+                  color: '#000',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                }}
+              >
+                Winner!
+              </span>
+            )}
+            {isActive && !isGameOver && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  borderRadius: '4px',
+                }}
+              >
+                Active
+              </span>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
           {typeof props.health === 'number' && (
@@ -440,9 +464,25 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
           </span>
         </div>
         {isGameOver && (
-          <span style={{ color: '#f44336', fontWeight: 'bold' }}>
-            Game Over! {winner ? `Winner: Player ${winner}` : 'Draw'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ color: '#f44336', fontWeight: 'bold', fontSize: '16px' }}>
+              🎉 Game Over! {winner ? `Winner: ${winner.name}` : 'Draw'}
+            </span>
+            {winner && (
+              <span
+                style={{
+                  padding: '4px 12px',
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}
+              >
+                🏆
+              </span>
+            )}
+          </div>
         )}
       </div>
 

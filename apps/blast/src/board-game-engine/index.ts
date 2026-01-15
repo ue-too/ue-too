@@ -7,6 +7,18 @@
 // Core
 export * from './core';
 
+// Grid System
+export { GRID_LOCATION_COMPONENT, type GridLocationComponent } from './core/grid';
+export {
+  getGridType,
+  getSquareNeighbors,
+  getHexNeighbors,
+  getSquareDistance,
+  getHexDistance,
+  hexAxialToCube,
+  hexCubeToAxial,
+} from './core/grid';
+
 // Main engine
 export { GameEngine } from './game-engine';
 export type { GameDefinition } from './game-engine';

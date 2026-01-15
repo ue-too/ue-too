@@ -72,6 +72,11 @@ export interface PlayerComponent {
 }
 
 /**
+ * Re-export grid location component for convenience.
+ */
+export { GRID_LOCATION_COMPONENT, type GridLocationComponent } from './grid';
+
+/**
  * Game status component - tracks whether game is over and who won.
  * Attached to the game manager entity.
  */

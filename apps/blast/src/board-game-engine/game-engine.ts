@@ -385,8 +385,8 @@ export class GameEngine {
       actor: this.state.activePlayer,
       targets: [],
       parameters: {},
-      candidate: null,
-      eachPlayer: null,
+      candidate: undefined,
+      eachPlayer: undefined,
     };
 
     // Evaluate win conditions

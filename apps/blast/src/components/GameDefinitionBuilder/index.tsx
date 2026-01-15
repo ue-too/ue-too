@@ -16,6 +16,7 @@ import type {
 // Import example game definitions directly (Vite supports JSON imports)
 import simpleCardGameJson from '../../games/simple-card-game/simple-card-game.json';
 import ticTacToeJson from '../../games/tic-tac-toe/tic-tac-toe.json';
+import hexGridExampleJson from '../../games/hex-grid-example/hex-grid-example.json';
 
 // Import GamePreview for the Play tab
 import { GamePreview } from './GamePreview';
@@ -268,6 +269,7 @@ export function GameDefinitionBuilder() {
   const exampleGames = [
     { name: 'Simple Card Game', data: simpleCardGameJson },
     { name: 'Tic-Tac-Toe', data: ticTacToeJson },
+    { name: 'Hex Grid Example', data: hexGridExampleJson },
   ];
 
   const [selectedExample, setSelectedExample] = useState<string>('');
@@ -620,11 +622,81 @@ function ComponentsSection({ components, onChange }: ComponentsSectionProps) {
     });
   };
 
+  // Common component templates
+  const addCommonComponent = (name: string, template: ComponentDefinition) => {
+    if (components[name]) {
+      alert(`Component "${name}" already exists`);
+      return;
+    }
+    onChange({ ...components, [name]: template });
+  };
+
+  const commonComponents: Record<string, ComponentDefinition> = {
+    'GridLocation': {
+      description: 'Spatial position on a grid (square or hexagonal)',
+      properties: {
+        grid: { type: 'entity', default: null, description: 'Grid entity (null if not on grid)' },
+        row: { type: 'number', default: null, description: 'Square grid: row coordinate' },
+        column: { type: 'number', default: null, description: 'Square grid: column coordinate' },
+        q: { type: 'number', default: null, description: 'Hexagonal grid: q coordinate' },
+        r: { type: 'number', default: null, description: 'Hexagonal grid: r coordinate' },
+      },
+    },
+    'Location': {
+      description: 'Zone membership and sort order',
+      properties: {
+        location: { type: 'entity', description: 'Zone entity this is in' },
+        sortIndex: { type: 'number', default: 0, description: 'Order within zone' },
+      },
+    },
+    'Resource': {
+      description: 'Player resources (mana, health, etc.)',
+      properties: {
+        mana: { type: 'number', default: 1 },
+        maxMana: { type: 'number', default: 10 },
+        health: { type: 'number', default: 20 },
+        maxHealth: { type: 'number', default: 20 },
+      },
+    },
+    'Card': {
+      description: 'Card data (name, type, cost, etc.)',
+      properties: {
+        name: { type: 'string' },
+        cardType: { type: 'string' },
+        cost: { type: 'number' },
+        description: { type: 'string' },
+        power: { type: 'number' },
+        toughness: { type: 'number' },
+      },
+    },
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <h3 style={styles.sectionTitle}>Component Definitions</h3>
-        <button style={styles.successButton} onClick={addComponent}>+ Add Component</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select
+            style={{ ...styles.select, width: 'auto' }}
+            value=""
+            onChange={(e) => {
+              if (e.target.value && commonComponents[e.target.value]) {
+                addCommonComponent(e.target.value, commonComponents[e.target.value]);
+                e.target.value = '';
+              }
+            }}
+          >
+            <option value="">+ Add Common Component...</option>
+            {Object.entries(commonComponents)
+              .filter(([name]) => !components[name])
+              .map(([name, comp]) => (
+                <option key={name} value={name}>
+                  {name} - {comp.description}
+                </option>
+              ))}
+          </select>
+          <button style={styles.successButton} onClick={addComponent}>+ Add Custom Component</button>
+        </div>
       </div>
 
       {Object.entries(components).map(([name, comp]) => (
@@ -1486,7 +1558,7 @@ import type {
 // ============================================================================
 
 type EffectType = 'moveEntity' | 'modifyResource' | 'setComponentValue' | 'shuffleZone' |
-  'transferMultiple' | 'emitEvent' | 'conditional' | 'composite' | 'createEntity' | 'destroyEntity' | 'switchActivePlayer' | 'repeat';
+  'transferMultiple' | 'emitEvent' | 'conditional' | 'composite' | 'createEntity' | 'destroyEntity' | 'switchActivePlayer' | 'repeat' | 'checkTicTacToeWin';
 
 const EFFECT_TYPES: { value: EffectType; label: string; description: string }[] = [
   { value: 'moveEntity', label: 'Move Entity', description: 'Move an entity between zones' },
@@ -1500,6 +1572,7 @@ const EFFECT_TYPES: { value: EffectType; label: string; description: string }[] 
   { value: 'conditional', label: 'Conditional', description: 'Execute effects based on condition' },
   { value: 'switchActivePlayer', label: 'Switch Active Player', description: 'Switch to next player' },
   { value: 'repeat', label: 'Repeat', description: 'Repeat an effect multiple times' },
+  { value: 'checkTicTacToeWin', label: 'Check Tic-Tac-Toe Win', description: 'Check for tic-tac-toe win condition' },
 ];
 
 interface EffectBuilderProps {
@@ -1535,6 +1608,8 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
         return { type: 'switchActivePlayer' };
       case 'repeat':
         return { type: 'repeat', times: 1, effect: { type: 'emitEvent', eventType: 'CustomEvent' } };
+      case 'checkTicTacToeWin':
+        return { type: 'checkTicTacToeWin' };
       default:
         return { type: 'emitEvent', eventType: 'CustomEvent' };
     }
@@ -1850,6 +1925,13 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
         return (
           <div style={{ color: '#6b7280', fontSize: '0.9em', fontStyle: 'italic' }}>
             Switches to the next player in turn order.
+          </div>
+        );
+
+      case 'checkTicTacToeWin':
+        return (
+          <div style={{ color: '#6b7280', fontSize: '0.9em', fontStyle: 'italic' }}>
+            Checks if a player has won tic-tac-toe (3 markers in a row, column, or diagonal) and sets the hasWon flag on the player's Player component.
           </div>
         );
 

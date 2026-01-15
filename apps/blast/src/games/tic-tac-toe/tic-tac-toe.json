@@ -18,15 +18,23 @@
         "playerIndex": { "type": "number", "default": 0 }
       }
     },
-    "Position": {
+    "GridLocation": {
       "properties": {
-        "row": { "type": "number", "default": 0 },
-        "col": { "type": "number", "default": 0 }
+        "grid": { "type": "entity", "default": null },
+        "row": { "type": "number", "default": null },
+        "column": { "type": "number", "default": null },
+        "q": { "type": "number", "default": null },
+        "r": { "type": "number", "default": null }
       }
     },
     "Cell": {
       "properties": {
         "occupied": { "type": "boolean", "default": false }
+      }
+    },
+    "Player": {
+      "properties": {
+        "hasWon": { "type": "boolean", "default": false }
       }
     }
   },
@@ -43,9 +51,12 @@
   "entityTemplates": {
     "Cell": {
       "components": {
-        "Position": {
+        "GridLocation": {
+          "grid": null,
           "row": 0,
-          "col": 0
+          "column": 0,
+          "q": null,
+          "r": null
         },
         "Cell": {
           "occupied": false
@@ -101,13 +112,17 @@
               "value": "X",
               "playerIndex": 0
             },
-            "Position": {
-              "row": "$component.$target.0.Position.row",
-              "col": "$component.$target.0.Position.col"
+            "GridLocation": {
+              "grid": null,
+              "row": "$component.$target.0.GridLocation.row",
+              "column": "$component.$target.0.GridLocation.column",
+              "q": null,
+              "r": null
             }
           },
           "zone": "board",
-          "storeAs": "newMarker"
+          "storeAs": "newMarker",
+          "eventType": "EntityCreated"
         },
         {
           "type": "conditional",
@@ -131,6 +146,9 @@
           ]
         },
         {
+          "type": "checkTicTacToeWin"
+        },
+        {
           "type": "switchActivePlayer"
         }
       ]
@@ -145,7 +163,22 @@
     }
   ],
 
-  "rules": [],
+  "rules": [
+    {
+      "id": "check-win-after-marker-placed",
+      "trigger": {
+        "eventType": "EntityCreated",
+        "filters": {}
+      },
+      "conditions": [],
+      "effects": [
+        {
+          "type": "checkTicTacToeWin"
+        }
+      ],
+      "priority": 100
+    }
+  ],
 
   "setup": {
     "playerCount": { "min": 2, "max": 2 },
@@ -163,5 +196,20 @@
     ]
   },
 
-  "winConditions": []
+  "winConditions": [
+    {
+      "id": "player-wins",
+      "name": "Player Wins",
+      "description": "A player has three markers in a row, column, or diagonal",
+      "condition": {
+        "type": "componentValueCheck",
+        "entity": "$actor",
+        "component": "Player",
+        "property": "hasWon",
+        "value": true
+      },
+      "winner": "actor",
+      "message": "Three in a row! You win!"
+    }
+  ]
 }

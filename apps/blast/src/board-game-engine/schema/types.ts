@@ -412,6 +412,13 @@ export interface RepeatEffectDefinition extends BaseEffectDefinition {
 }
 
 /**
+ * Check for tic-tac-toe win condition.
+ */
+export interface CheckTicTacToeWinEffectDefinition extends BaseEffectDefinition {
+  type: 'checkTicTacToeWin';
+}
+
+/**
  * Emit an event.
  */
 export interface EmitEventEffectDefinition extends BaseEffectDefinition {
@@ -450,7 +457,8 @@ export type EffectDefinition =
   | RepeatEffectDefinition
   | EmitEventEffectDefinition
   | CompositeEffectDefinition
-  | SwitchActivePlayerEffectDefinition;
+  | SwitchActivePlayerEffectDefinition
+  | CheckTicTacToeWinEffectDefinition;
 
 // ============================================================================
 // Actions
