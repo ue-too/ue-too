@@ -296,7 +296,8 @@
             "conditional",
             "repeat",
             "emitEvent",
-            "composite"
+            "composite",
+            "switchActivePlayer"
           ]
         }
       },

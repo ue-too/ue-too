@@ -311,7 +311,7 @@ export const playCardAction = new ActionDefinition({
   ],
 
   effects: [
-    // Move card from hand to board
+    // Direct effect: Move card from hand to board (immediate state change)
     new CustomEffect((ctx) => {
       const coordinator = ctx.state.coordinator;
       const card = ctx.targets[0];
@@ -322,14 +322,14 @@ export const playCardAction = new ActionDefinition({
         if (zoneComp?.name === 'board' && zoneComp?.owner === ctx.actor) {
           const locationComp = coordinator.getComponentFromEntity(LOCATION_COMPONENT, card);
           if (locationComp) {
-            locationComp.location = entity;
+            locationComp.location = entity;  // State changed immediately
           }
           break;
         }
       }
     }),
 
-    // Emit event for rule engine
+    // Event effect: Emit event for reactive rules (processed after action)
     new EmitEvent('CardPlayed', (ctx) => {
       const cardComp = ctx.state.coordinator.getComponentFromEntity<CardComponent>(CARD_COMPONENT, ctx.targets[0]);
       return {
@@ -376,12 +376,13 @@ export const endTurnAction = new ActionDefinition({
   costs: [],
 
   effects: [
+    // Direct effect: Switch to next player (immediate state change)
     new CustomEffect((ctx) => {
       // Switch to next player
       const players = ctx.state.getAllPlayers();
       const currentIndex = players.indexOf(ctx.state.activePlayer!);
       const nextIndex = (currentIndex + 1) % players.length;
-      ctx.state.setActivePlayer(players[nextIndex]);
+      ctx.state.setActivePlayer(players[nextIndex]);  // State changed immediately
 
       // Increment turn if wrapped around
       if (nextIndex === 0) {
@@ -389,6 +390,7 @@ export const endTurnAction = new ActionDefinition({
       }
     }),
 
+    // Event effect: Emit event for reactive rules (e.g., rules that respond to turn ending)
     new EmitEvent('TurnEnded', (ctx) => ({
       playerId: ctx.actor,
       turnNumber: ctx.state.turnNumber,
@@ -706,7 +708,10 @@ new CustomPrecondition(
 
 ## Effects
 
-Effects modify game state when an action executes.
+Effects modify game state when an action executes. There are two types:
+
+1. **Direct Effects** - Modify state immediately (synchronous)
+2. **Event-Generating Effects** - Create events that trigger rules (reactive)
 
 ### Built-in Effects
 
@@ -718,29 +723,35 @@ import {
   NoOpEffect,
 } from '../../board-game-engine';
 
-// Custom state modification
+// Direct state modification (happens immediately)
 new CustomEffect((ctx) => {
   const resources = ctx.state.coordinator.getComponentFromEntity<ResourceComponent>(
     RESOURCE_COMPONENT,
     ctx.actor
   );
   if (resources) {
-    resources.mana -= 3;
+    resources.mana -= 3;  // State changed immediately
   }
 })
 
-// Emit event for rule engine
+// Emit event for rule engine (triggers reactive rules)
 new EmitEvent('CardPlayed', (ctx) => ({
   playerId: ctx.actor,
   cardId: ctx.targets[0],
 }))
 
-// Combine multiple effects
+// Combine multiple effects (can mix direct and event effects)
 new CompositeEffect([effect1, effect2, effect3])
 
 // Do nothing (placeholder)
 new NoOpEffect()
 ```
+
+**Key Points**:
+- **Direct effects** (like `CustomEffect`) modify state immediately during action execution
+- **Event effects** (like `EmitEvent`) create events that are processed after action execution to trigger rules
+- Actions commonly have **both** - direct effects for immediate changes, and events for reactive logic
+- Not all actions need to emit events - only when you want reactive rules to respond
 
 ### Effect Patterns
 
@@ -834,7 +845,9 @@ const phases: PhaseDefinition[] = [
 
 ## Rules
 
-Rules react to events and execute effects automatically.
+Rules react to **events** (not direct action effects) and execute effects automatically. Rules enable reactive, decoupled game logic.
+
+**Important**: Rules are triggered by events emitted from actions, not by direct state changes. If an action only has direct effects (like `CustomEffect`), no rules will trigger. Use `EmitEvent` in your action effects if you want rules to react.
 
 ```typescript
 import { EventPattern } from '../../board-game-engine';
@@ -1020,20 +1033,42 @@ function getPlayerMana(coordinator: Coordinator, player: Entity): number {
 }
 ```
 
-### 3. Emit Events for Significant Changes
+### 3. Use Events for Reactive Logic
 
-Always emit events so rules can react:
+Emit events when you want rules to react to changes. Direct effects are fine for immediate state changes:
 
 ```typescript
+// Direct effects for immediate state changes
 effects: [
   new CustomEffect((ctx) => {
-    // Modify state...
+    // Modify state immediately (e.g., move card, pay mana)
+    moveCard(ctx);
   }),
-  new EmitEvent('StateChanged', (ctx) => ({
-    // Event data...
+]
+
+// Emit events when you want reactive rules to respond
+effects: [
+  new CustomEffect((ctx) => {
+    // Direct state change
+    moveCard(ctx);
+  }),
+  new EmitEvent('CardPlayed', (ctx) => ({
+    // Event data for rules to react
+    playerId: ctx.actor,
+    cardId: ctx.targets[0],
   })),
 ]
 ```
+
+**When to use events**:
+- When you want rules to react to the action (e.g., "when a card is played, draw a card")
+- When multiple systems need to know about a change
+- For decoupled reactive logic
+
+**When direct effects are enough**:
+- Simple state changes that don't need reactive responses
+- Resource management (paying costs, moving entities)
+- Immediate game state updates
 
 ### 4. Validate Early with Preconditions
 

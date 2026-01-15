@@ -429,6 +429,13 @@ export interface CompositeEffectDefinition extends BaseEffectDefinition {
 }
 
 /**
+ * Switch the active player to the next player.
+ */
+export interface SwitchActivePlayerEffectDefinition extends BaseEffectDefinition {
+  type: 'switchActivePlayer';
+}
+
+/**
  * Union of all effect types.
  */
 export type EffectDefinition =
@@ -442,7 +449,8 @@ export type EffectDefinition =
   | ConditionalEffectDefinition
   | RepeatEffectDefinition
   | EmitEventEffectDefinition
-  | CompositeEffectDefinition;
+  | CompositeEffectDefinition
+  | SwitchActivePlayerEffectDefinition;
 
 // ============================================================================
 // Actions

@@ -17,8 +17,9 @@ import type {
 } from './types';
 import { ActionFactory } from './factories/action-factory';
 import { EffectFactory } from './factories/effect-factory';
+import { RuleFactory } from './factories/rule-factory';
 import { ExpressionResolver } from './expression-resolver';
-import type { ActionDefinition, PhaseDefinition, GameState as IGameState } from '../core/types';
+import type { ActionDefinition, PhaseDefinition, Rule, GameState as IGameState } from '../core/types';
 import { GameState, ZONE_COMPONENT, DECK_COMPONENT, PLAYER_COMPONENT } from '../core/game-state';
 
 /**
@@ -29,6 +30,7 @@ export interface LoadedGameDefinition {
   version: string;
   actions: ActionDefinition[];
   phases: PhaseDefinition[];
+  rules: Rule[];
   createInitialState: () => GameState;
 }
 
@@ -39,6 +41,7 @@ export class GameDefinitionLoader {
   private componentNames: Map<string, ComponentName> = new Map();
   private actionFactory!: ActionFactory;
   private effectFactory!: EffectFactory;
+  private ruleFactory!: RuleFactory;
   private resolver!: ExpressionResolver;
 
   /**
@@ -69,6 +72,7 @@ export class GameDefinitionLoader {
     // Create factories with component name mapping
     this.actionFactory = new ActionFactory(this.componentNames);
     this.effectFactory = new EffectFactory(this.componentNames);
+    this.ruleFactory = new RuleFactory(this.componentNames);
     this.resolver = new ExpressionResolver(this.componentNames);
 
     // Create actions
@@ -76,6 +80,9 @@ export class GameDefinitionLoader {
 
     // Create phases
     const phases = this.createPhases(json.phases);
+
+    // Create rules
+    const rules = json.rules ? this.ruleFactory.createRules(json.rules) : [];
 
     // Create initial state factory
     const createInitialState = () => this.createInitialState(json);
@@ -85,6 +92,7 @@ export class GameDefinitionLoader {
       version: json.version,
       actions,
       phases,
+      rules,
       createInitialState,
     };
   }

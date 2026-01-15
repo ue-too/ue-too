@@ -355,7 +355,37 @@
     }
   ],
 
-  "rules": [],
+  "rules": [
+    {
+      "id": "switchPlayerOnTurnEnded",
+      "trigger": {
+        "eventType": "TurnEnded"
+      },
+      "effects": [
+        {
+          "type": "switchActivePlayer"
+        }
+      ],
+      "priority": 100
+    },
+    {
+      "id": "giveManaOnTurnEnd",
+      "trigger": {
+        "eventType": "TurnEnded"
+      },
+      "effects": [
+        {
+          "type": "modifyResource",
+          "entity": "$param.playerId",
+          "component": "Resource",
+          "property": "mana",
+          "amount": 1,
+          "maxProperty": "maxMana"
+        }
+      ],
+      "priority": 90
+    }
+  ],
 
   "setup": {
     "playerCount": {

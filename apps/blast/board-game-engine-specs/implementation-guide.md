@@ -2,7 +2,8 @@
 
 **Status**: ✅ MVP Complete
 **Date**: January 2026
-**Version**: 1.0.0
+**Version**: 1.0.1
+**Last Updated**: Added JSON rule loading, SwitchActivePlayer effect, event-driven architecture improvements
 
 ---
 
@@ -59,6 +60,12 @@ Handles game events and enables event-driven rules.
 - Infinite loop detection (prevents runaway rule triggers)
 - Event history tracking
 - Priority-based event processing
+
+**Important Note**: 
+- Actions can have **direct effects** that modify state immediately (MoveEntity, ModifyResource, etc.) - these don't go through the event system
+- Actions can **optionally emit events** (via EmitEvent effect) - these go through the event system to trigger rules
+- The event system is for **reactive logic** (rules), not for all action effects
+- In the game builder UI, you can add both direct effects (immediate state changes) and event-emitting effects (for reactive rules)
 
 #### 3. **Rule Engine** (`src/board-game-engine/rule-engine/`)
 Executes game logic in response to events.
@@ -167,6 +174,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `ActionFactory` - Creates action definitions from JSON
 - `EffectFactory` - Creates effects from JSON
 - `PreconditionFactory` - Creates preconditions from JSON
+- `RuleFactory` - Creates rules from JSON (event-driven game logic)
 - `GameDefinitionLoader` - Loads JSON and creates playable games
 
 **Expression Language**:
@@ -202,11 +210,18 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `repeat` - Repeat effects
 - `emitEvent` - Emit game events
 - `composite` - Chain effects
+- `switchActivePlayer` - Switch to the next player in rotation
+
+**Rule System**:
+- Rules can be defined in JSON to respond to events
+- Rules have triggers (event patterns), conditions, and effects
+- Rules execute in priority order when matching events occur
+- Example: `TurnEnded` event triggers a rule that switches the active player
 
 **File Locations**:
 - Schema types: `src/board-game-engine/schema/types.ts`
 - Expression resolver: `src/board-game-engine/schema/expression-resolver.ts`
-- Factories: `src/board-game-engine/schema/factories/`
+- Factories: `src/board-game-engine/schema/factories/` (includes `rule-factory.ts`)
 - JSON Schema: `src/board-game-engine/schema/json-schema/game-definition.schema.json`
 - Example game: `src/games/simple-card-game/simple-card-game.json`
 
@@ -235,8 +250,9 @@ A visual tool for creating board game definitions without writing JSON manually.
 4. **Templates** - Create entity templates with component instances and values
 5. **Actions** - Define actions with preconditions, costs, and effects using visual builders
 6. **Phases** - Define phases with allowed actions, next phase, auto-advance
-7. **Setup** - Player count, player template, zones, starting entities, shared zone entities
-8. **Play** - Live game preview to test the game definition interactively
+7. **Rules** - Define event-driven rules that respond to game events (JSON-based)
+8. **Setup** - Player count, player template, zones, starting entities, shared zone entities
+9. **Play** - Live game preview to test the game definition interactively
 
 **Visual Condition Builder**:
 Supports all 13 condition types with dropdown-based editing:
@@ -249,13 +265,14 @@ Supports all 13 condition types with dropdown-based editing:
 Features entity/zone dropdowns (`$actor`, `$target`, `$zone.actor.hand`, etc.), component selection from defined components, operator selection, and expression value support.
 
 **Visual Effect Builder**:
-Supports 7 effect types with visual editing:
+Supports 8 effect types with visual editing:
 - `moveEntity` - Move entities between zones
 - `modifyResource` - Add/subtract numeric values
 - `setComponentValue` - Set component properties
 - `shuffleZone` - Shuffle zone contents
 - `transferMultiple` - Move multiple entities (top/bottom/random selection)
 - `emitEvent` - Emit game events with JSON data
+- `switchActivePlayer` - Switch to next player in rotation
 - `conditional` - If/then/else with nested conditions and effects
 
 Features reordering with up/down buttons, nested effect support, and expression value support.
@@ -287,14 +304,28 @@ Player Input → Action → Validation (Preconditions) → Execution (Effects)
 ### Data Flow
 
 1. **Player Intent**: User clicks "End Turn" button in React UI
-2. **Action Creation**: UI creates an `Action` object
+2. **Action Creation**: UI creates an `Action` object (with correct `actorId` from valid actions)
 3. **Validation**: `ActionSystem.isActionValid()` checks preconditions
 4. **Execution**: `ActionSystem.executeAction()` applies costs and effects
-5. **Events**: Effects emit events (e.g., "TurnEnded")
-6. **Rules**: `RuleEngine.processEvent()` triggers matching rules
-7. **Cascading**: Rule effects may emit more events (event chain)
-8. **Phase Check**: `PhaseManager` checks if phase should advance
-9. **State Update**: React component re-renders with new state
+   - **Direct Effects**: Effects like `MoveEntity`, `ModifyResource`, `SetComponentValue` directly modify game state immediately
+   - **Event-Generating Effects**: Effects like `EmitEvent` (or effects with `generatesEvent() = true`) create events
+5. **Event Collection**: Events from action effects are collected into an event queue
+6. **Event Processing**: `EventProcessor.processAll()` processes events through the rule engine
+7. **Rules**: `RuleEngine.processEvent()` triggers matching rules (including JSON-defined rules)
+8. **Rule Effects**: Rule effects execute (e.g., `switchActivePlayer` switches to next player)
+   - Rule effects can also directly modify state OR emit more events
+9. **Cascading**: Rule effects may emit more events (event chain with cycle detection)
+10. **Phase Check**: `PhaseManager` checks if phase should advance
+11. **State Update**: React component re-renders with new state
+
+**Key Architecture**: 
+- **Direct Effects**: Actions can directly modify state through effects (MoveEntity, ModifyResource, SetComponentValue, etc.) - these happen immediately during action execution, synchronously
+- **Event-Generating Effects**: Some effects emit events (via `EmitEvent` effect or effects with `generatesEvent() = true`), which are queued and processed after action execution
+- **Hybrid Approach**: Actions commonly have both:
+  - Direct effects for immediate state changes (e.g., move card, pay mana)
+  - Event-emitting effects for reactive logic (e.g., emit "CardPlayed" event)
+- **Event System Role**: Events enable decoupled reactive logic - actions don't need to know all their consequences, rules handle reactive behavior based on events
+- **Rule Effects**: Rules triggered by events can also directly modify state (like `switchActivePlayer`) or emit more events for cascading logic
 
 ### ECS Integration Pattern
 
@@ -410,7 +441,8 @@ apps/blast/src/
 │   │   ├── factories/              # Convert JSON to TypeScript objects
 │   │   │   ├── action-factory.ts
 │   │   │   ├── effect-factory.ts
-│   │   │   └── precondition-factory.ts
+│   │   │   ├── precondition-factory.ts
+│   │   │   └── rule-factory.ts     # Convert JSON rules to Rule objects
 │   │   ├── json-schema/            # JSON Schema files
 │   │   │   └── game-definition.schema.json
 │   │   └── __tests__/              # Schema tests
@@ -476,18 +508,33 @@ apps/blast/src/
 - "I want to attack with this creature"
 - Synchronous, validated before execution
 - Can fail (preconditions not met)
+- **Apply effects directly** - Effects like `MoveEntity`, `ModifyResource`, `SetComponentValue` modify state immediately during execution
+- **May emit events** - Some effects (like `EmitEvent` or effects with `generatesEvent() = true`) generate events for reactive rules
+- **Hybrid approach** - Actions commonly have both direct effects (immediate state changes) and event-emitting effects (for reactive logic)
 
-**Events** = Historical Facts
+**Events** = Historical Facts (Optional)
 - "A card was played"
 - "A creature died"
+- "Turn ended"
 - Immutable, always succeed
-- Generated by effects
+- Generated by effects that explicitly emit events (via `EmitEvent` effect or `generatesEvent() = true`)
+- **Not all actions emit events** - Only when effects are designed to do so
+- Processed by the event system to trigger rules
+- Enables decoupled reactive logic
 
-**Rules** = Reactive Logic
+**Rules** = Reactive Logic (Event-Driven)
 - "When a spell is cast, draw a card"
 - "When a creature dies, deal 1 damage to its owner"
-- Triggered by events
+- "When TurnEnded event occurs, switch to next player"
+- Triggered by events (not by direct action effects)
 - Execute in priority order
+- Can be defined in JSON for event-driven game logic
+- Rule effects can directly modify state OR emit more events
+
+**Example Flow**:
+- Action "PlayCard" has **direct effects**: `MoveEntity` (moves card to board) + `ModifyResource` (pays mana) - these happen immediately
+- Action "PlayCard" also has: `EmitEvent('CardPlayed')` - this creates an event
+- Event "CardPlayed" triggers a rule that draws a card - this is reactive logic
 
 ### 2. Preconditions vs Conditions
 
@@ -1047,18 +1094,23 @@ const lightningBoltAction = new ActionDefinition({
 - [x] JSON Schema validation for game definitions
 - [x] Expression resolver for `$actor`, `$target`, `$component`, `$zone`, etc.
 - [x] Visual editor for game definitions (Game Definition Builder GUI)
+- [x] JSON rule definitions - Rules can be defined in JSON to respond to events
+- [x] RuleFactory - Converts JSON rule definitions to executable Rule objects
+- [x] Event-driven architecture - Actions emit events, rules respond to events
 
 **Remaining**:
 - [ ] Hot-reload card definitions during gameplay
 - [ ] Sandboxed effect execution
 - [ ] More advanced expressions (loops, custom functions)
+- [ ] Visual rule builder in GUI (currently JSON-only)
 
 **File Locations**:
 - Expression language: `src/board-game-engine/schema/expression-resolver.ts`
 - JSON Schema: `src/board-game-engine/schema/json-schema/game-definition.schema.json`
 - GUI Builder: `src/components/GameDefinitionBuilder/index.tsx`
+- Rule Factory: `src/board-game-engine/schema/factories/rule-factory.ts`
 
-**Status**: Core DSL and GUI implemented, advanced features pending
+**Status**: Core DSL, GUI, and rule system implemented, advanced features pending
 **Priority**: Low (advanced feature)
 
 #### 14. **Game Definition Builder Enhancements**
@@ -1069,6 +1121,8 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - [x] Visual effect builder (effect chain with reordering)
 - [x] Live game preview (run game from JSON definition)
 - [x] Shared zones support (zones accessible to all players)
+- [x] JSON rule loading - Rules defined in JSON are now loaded and executed
+- [ ] Visual rule builder (currently rules must be edited in JSON)
 - [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
 - [ ] Undo/redo support
 - [ ] Template library (pre-built game templates)
@@ -1077,13 +1131,14 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 
 **Implemented**:
 - `ConditionBuilder` component - Supports all 13 condition types with nested AND/OR/NOT
-- `EffectBuilder` component - Supports 7 effect types with conditional nesting
+- `EffectBuilder` component - Supports 8 effect types with conditional nesting (including `switchActivePlayer`)
 - `EffectListBuilder` component - Manages lists of effects with reordering
 - Actions section expand/collapse with full precondition, cost, and effect editing
 - `GamePreview` component - Live preview with validation and game controls
 - `GenericGameUI` component - Game-agnostic renderer that displays zones, players, and actions
 - `EntityDisplay` component - Generic entity card display with component properties
 - Shared zones support - Zones marked as "shared" are accessible to all players
+- Rule system integration - Rules from JSON are loaded and processed by the event system
 
 **File Locations**:
 - `src/components/GameDefinitionBuilder/GamePreview.tsx` - Preview wrapper with validation
@@ -1748,6 +1803,7 @@ new ShuffleZone({ zone, eventType })
 new TransferMultiple({ fromZone, toZone, count, filter })
 new ConditionalEffect({ condition, ifEffect, elseEffect })
 new RepeatEffect({ effect, count })
+new SwitchActivePlayer() // Switch to next player in rotation
 ```
 
 ### Resolver System
@@ -1908,12 +1964,36 @@ $multiply($param.damage, 2)           // Double the damage
   "selection": "top"
 }
 
+// Switch active player to next player
+{
+  "type": "switchActivePlayer"
+}
+
 // Conditional effect
 {
   "type": "conditional",
   "condition": {...},
   "then": [...],
   "else": [...]
+}
+```
+
+### JSON Schema Rule Definitions
+
+```json
+// Rule that switches players on TurnEnded event
+{
+  "id": "switchPlayerOnTurnEnded",
+  "trigger": {
+    "eventType": "TurnEnded"
+  },
+  "conditions": [],
+  "effects": [
+    {
+      "type": "switchActivePlayer"
+    }
+  ],
+  "priority": 100
 }
 ```
 

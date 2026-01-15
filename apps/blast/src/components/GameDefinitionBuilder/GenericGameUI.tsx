@@ -150,16 +150,23 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
   // Execute an action
   const executeAction = (action: { type: string; targetIds: Entity[] }) => {
     try {
-      engine.performAction({
-        type: action.type,
-        actorId: currentPlayer ?? 0,
-        targetIds: action.targetIds,
-        parameters: {},
-      });
+      // Find the matching valid action to get the correct actorId
+      const matchingAction = validActions.find(
+        (a) => a.type === action.type && JSON.stringify(a.targetIds) === JSON.stringify(action.targetIds)
+      );
+      
+      if (!matchingAction) {
+        console.error('No matching valid action found:', action);
+        alert(`Action ${action.type} is not currently valid`);
+        return;
+      }
+      
+      engine.performAction(matchingAction);
       setSelectedEntity(null);
       onStateChange();
     } catch (error) {
       console.error('Action failed:', error);
+      alert(`Action failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 

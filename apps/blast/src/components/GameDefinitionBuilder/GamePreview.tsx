@@ -44,11 +44,11 @@ export const GamePreview: React.FC<GamePreviewProps> = ({ gameDefinition }) => {
       // Load the game definition
       const loaded = loader.loadFromJSON(gameDefinition as any);
 
-      // Create GameEngine (add empty rules array since JSON rules not implemented)
+      // Create GameEngine with loaded rules
       const newEngine = new GameEngine({
         name: loaded.name,
         actions: loaded.actions,
-        rules: [], // Rules from JSON not yet supported
+        rules: loaded.rules,
         phases: loaded.phases,
         createInitialState: loaded.createInitialState,
       });

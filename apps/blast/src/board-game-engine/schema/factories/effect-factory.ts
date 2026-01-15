@@ -36,6 +36,7 @@ import {
 } from '../../action-system/effects/generic';
 import { EmitEvent } from '../../action-system/effects/emit-event';
 import { CompositeEffect, CustomEffect } from '../../action-system/effects';
+import { SwitchActivePlayer } from '../../action-system/effects/switch-active-player';
 
 /**
  * Factory for creating Effect instances from JSON definitions.
@@ -97,6 +98,9 @@ export class EffectFactory {
 
       case 'composite':
         return this.createCompositeEffect(definition);
+
+      case 'switchActivePlayer':
+        return new SwitchActivePlayer();
 
       default:
         throw new Error(`Unknown effect type: ${(definition as EffectDefinition).type}`);
