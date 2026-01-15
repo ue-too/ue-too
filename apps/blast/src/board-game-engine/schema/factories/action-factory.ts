@@ -193,7 +193,7 @@ export class ActionFactory {
     if (query.zone) {
       // Get entities from specific zone(s)
       const players = state.getAllPlayers();
-      const owners: Entity[] = [];
+      const owners: (Entity | null)[] = [];
 
       switch (query.owner) {
         case 'actor':
@@ -204,7 +204,9 @@ export class ActionFactory {
           break;
         case 'any':
         default:
+          // For 'any', check both player-owned zones and shared zones
           owners.push(...players);
+          owners.push(null); // null = shared zone
           break;
       }
 

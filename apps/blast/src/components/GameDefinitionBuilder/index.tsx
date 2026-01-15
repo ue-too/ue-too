@@ -13,8 +13,9 @@ import type {
   PropertyType,
 } from '../../board-game-engine/schema/types';
 
-// Import example game definition directly (Vite supports JSON imports)
+// Import example game definitions directly (Vite supports JSON imports)
 import simpleCardGameJson from '../../games/simple-card-game/simple-card-game.json';
+import ticTacToeJson from '../../games/tic-tac-toe/tic-tac-toe.json';
 
 // Import GamePreview for the Play tab
 import { GamePreview } from './GamePreview';
@@ -263,20 +264,59 @@ export function GameDefinitionBuilder() {
     return errors.length === 0;
   }, [gameDefinition]);
 
-  // Load example (simple-card-game)
+  // Example games available
+  const exampleGames = [
+    { name: 'Simple Card Game', data: simpleCardGameJson },
+    { name: 'Tic-Tac-Toe', data: ticTacToeJson },
+  ];
+
+  const [selectedExample, setSelectedExample] = useState<string>('');
+
+  // Load selected example game
   const loadExample = useCallback(() => {
-    // Use double assertion since JSON import type doesn't exactly match BuilderGameDefinition
-    setGameDefinition(simpleCardGameJson as unknown as BuilderGameDefinition);
-    setValidationErrors([]);
-  }, []);
+    if (!selectedExample) return;
+    const example = exampleGames.find(e => e.name === selectedExample);
+    if (example) {
+      // Use double assertion since JSON import type doesn't exactly match BuilderGameDefinition
+      setGameDefinition(example.data as unknown as BuilderGameDefinition);
+      setValidationErrors([]);
+      setSelectedExample(''); // Reset selection
+    }
+  }, [selectedExample]);
 
   return (
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
         <h2 style={{ margin: 0 }}>Game Definition Builder</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button style={styles.button} onClick={loadExample}>Load Example</button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select
+            style={{
+              ...styles.select,
+              minWidth: '200px',
+              padding: '8px 12px',
+            }}
+            value={selectedExample}
+            onChange={(e) => setSelectedExample(e.target.value)}
+          >
+            <option value="">Select example game...</option>
+            {exampleGames.map((game) => (
+              <option key={game.name} value={game.name}>
+                {game.name}
+              </option>
+            ))}
+          </select>
+          <button
+            style={{
+              ...styles.button,
+              opacity: selectedExample ? 1 : 0.5,
+              cursor: selectedExample ? 'pointer' : 'not-allowed',
+            }}
+            onClick={loadExample}
+            disabled={!selectedExample}
+          >
+            Load Example
+          </button>
           <button style={styles.button} onClick={loadFromFile}>Load JSON</button>
           <button style={styles.successButton} onClick={saveToFile}>Save JSON</button>
         </div>
@@ -353,7 +393,7 @@ export function GameDefinitionBuilder() {
           )}
           {activeTab === 'rules' && (
             <RulesSection
-              rules={gameDefinition.rules || []}
+              rules={gameDefinition.rules as RuleDefinitionSchema[] || []}
               components={gameDefinition.components}
               zones={gameDefinition.zones}
               phases={gameDefinition.phases.map(p => p.name)}
@@ -363,7 +403,7 @@ export function GameDefinitionBuilder() {
           )}
           {activeTab === 'winConditions' && (
             <WinConditionsSection
-              winConditions={gameDefinition.winConditions || []}
+              winConditions={gameDefinition.winConditions as WinConditionSchema[] || []}
               components={gameDefinition.components}
               zones={gameDefinition.zones}
               phases={gameDefinition.phases.map(p => p.name)}
@@ -1431,10 +1471,14 @@ import type {
   MoveEntityEffectDefinition,
   ModifyResourceEffectDefinition,
   SetComponentValueEffectDefinition,
+  CreateEntityEffectDefinition,
+  DestroyEntityEffectDefinition,
   ShuffleZoneEffectDefinition,
   TransferMultipleEffectDefinition,
   EmitEventEffectDefinition,
   ConditionalEffectDefinition,
+  RepeatEffectDefinition,
+  SwitchActivePlayerEffectDefinition,
 } from '../../board-game-engine/schema/types';
 
 // ============================================================================
@@ -1442,16 +1486,20 @@ import type {
 // ============================================================================
 
 type EffectType = 'moveEntity' | 'modifyResource' | 'setComponentValue' | 'shuffleZone' |
-  'transferMultiple' | 'emitEvent' | 'conditional' | 'composite';
+  'transferMultiple' | 'emitEvent' | 'conditional' | 'composite' | 'createEntity' | 'destroyEntity' | 'switchActivePlayer' | 'repeat';
 
 const EFFECT_TYPES: { value: EffectType; label: string; description: string }[] = [
   { value: 'moveEntity', label: 'Move Entity', description: 'Move an entity between zones' },
   { value: 'modifyResource', label: 'Modify Resource', description: 'Add/subtract numeric resource' },
   { value: 'setComponentValue', label: 'Set Component Value', description: 'Set a component property' },
+  { value: 'createEntity', label: 'Create Entity', description: 'Create a new entity from template' },
+  { value: 'destroyEntity', label: 'Destroy Entity', description: 'Destroy an entity' },
   { value: 'shuffleZone', label: 'Shuffle Zone', description: 'Shuffle entities in a zone' },
   { value: 'transferMultiple', label: 'Transfer Multiple', description: 'Move multiple entities between zones' },
   { value: 'emitEvent', label: 'Emit Event', description: 'Emit a game event' },
   { value: 'conditional', label: 'Conditional', description: 'Execute effects based on condition' },
+  { value: 'switchActivePlayer', label: 'Switch Active Player', description: 'Switch to next player' },
+  { value: 'repeat', label: 'Repeat', description: 'Repeat an effect multiple times' },
 ];
 
 interface EffectBuilderProps {
@@ -1483,6 +1531,10 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
         return { type: 'emitEvent', eventType: 'CustomEvent', data: {} };
       case 'conditional':
         return { type: 'conditional', condition: { type: 'isPlayerTurn' }, then: [] };
+      case 'switchActivePlayer':
+        return { type: 'switchActivePlayer' };
+      case 'repeat':
+        return { type: 'repeat', times: 1, effect: { type: 'emitEvent', eventType: 'CustomEvent' } };
       default:
         return { type: 'emitEvent', eventType: 'CustomEvent' };
     }
@@ -1625,6 +1677,63 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
           </div>
         );
 
+      case 'createEntity':
+        const createEntity = effect as CreateEntityEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Template (optional)</label>
+              <input style={styles.input} value={createEntity.template ?? ''} onChange={(e) => updateEffect({ template: e.target.value || undefined })} placeholder="Cell" />
+            </div>
+            <div>
+              <label style={styles.label}>Zone</label>
+              <select style={styles.select} value={createEntity.zone ?? ''} onChange={(e) => updateEffect({ zone: e.target.value || undefined })}>
+                <option value="">No zone</option>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Store As (optional)</label>
+              <input style={styles.input} value={createEntity.storeAs ?? ''} onChange={(e) => updateEffect({ storeAs: e.target.value || undefined })} placeholder="$newEntity" />
+            </div>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={styles.label}>Components (JSON)</label>
+              <textarea
+                style={{ ...styles.input, minHeight: '80px', fontFamily: 'monospace' }}
+                value={JSON.stringify(createEntity.components || {}, null, 2)}
+                onChange={(e) => {
+                  try {
+                    updateEffect({ components: JSON.parse(e.target.value) });
+                  } catch {
+                    // Invalid JSON, ignore
+                  }
+                }}
+                placeholder='{"Marker": {"value": "X"}, "Position": {"row": 0, "col": 0}}'
+              />
+            </div>
+          </div>
+        );
+
+      case 'destroyEntity':
+        const de = effect as DestroyEntityEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Entity</label>
+              <select style={styles.select} value={de.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={styles.label}>Discard Zone (optional)</label>
+              <select style={styles.select} value={de.discardZone ?? ''} onChange={(e) => updateEffect({ discardZone: e.target.value || undefined })}>
+                <option value="">No discard zone</option>
+                {ZONE_EXPRESSIONS.map(z => <option key={z} value={z}>{z}</option>)}
+              </select>
+            </div>
+          </div>
+        );
+
       case 'shuffleZone':
         const sz = effect as ShuffleZoneEffectDefinition;
         return (
@@ -1697,13 +1806,13 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
         if (depth >= maxDepth) {
           return <div style={{ color: '#ef4444', fontSize: '0.85em' }}>Max nesting depth reached</div>;
         }
-        const ce = effect as ConditionalEffectDefinition;
+        const condEffect = effect as ConditionalEffectDefinition;
         return (
           <div>
             <div style={{ marginBottom: '12px' }}>
               <label style={styles.label}>Condition</label>
               <ConditionBuilder
-                condition={ce.condition}
+                condition={condEffect.condition}
                 onChange={(cond) => cond && updateEffect({ condition: cond })}
                 components={components}
                 zones={zones}
@@ -1715,7 +1824,7 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
             <div style={{ marginBottom: '12px' }}>
               <label style={styles.label}>Then (effects if condition is true)</label>
               <EffectListBuilder
-                effects={ce.then}
+                effects={condEffect.then}
                 onChange={(effects) => updateEffect({ then: effects })}
                 components={components}
                 zones={zones}
@@ -1726,13 +1835,60 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0,
             <div>
               <label style={styles.label}>Else (effects if condition is false)</label>
               <EffectListBuilder
-                effects={ce.else || []}
+                effects={condEffect.else || []}
                 onChange={(effects) => updateEffect({ else: effects.length > 0 ? effects : undefined })}
                 components={components}
                 zones={zones}
                 phases={phases}
                 depth={depth + 1}
               />
+            </div>
+          </div>
+        );
+
+      case 'switchActivePlayer':
+        return (
+          <div style={{ color: '#6b7280', fontSize: '0.9em', fontStyle: 'italic' }}>
+            Switches to the next player in turn order.
+          </div>
+        );
+
+      case 'repeat':
+        const re = effect as RepeatEffectDefinition;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+            <div>
+              <label style={styles.label}>Times</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={typeof re.times === 'number' ? re.times : ''}
+                onChange={(e) => updateEffect({ times: parseInt(e.target.value) || 1 })}
+                placeholder="1 or $param.count"
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Effect to Repeat</label>
+              {re.effect ? (
+                <EffectBuilder
+                  effect={re.effect}
+                  onChange={(eff) => updateEffect({ effect: eff || undefined })}
+                  components={components}
+                  zones={zones}
+                  phases={phases}
+                  depth={depth + 1}
+                  targetCount={targetCount}
+                />
+              ) : (
+                <div style={{ padding: '8px', background: '#f3f4f6', borderRadius: '4px' }}>
+                  <button
+                    style={{ ...styles.button, padding: '4px 8px', fontSize: '0.85em' }}
+                    onClick={() => updateEffect({ effect: { type: 'emitEvent', eventType: 'CustomEvent' } })}
+                  >
+                    + Add Effect
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -2583,7 +2739,7 @@ function WinConditionsSection({ winConditions, components, zones, phases, onChan
                 </div>
                 <ConditionBuilder
                   condition={winCondition.condition}
-                  onChange={(newCondition) => updateWinCondition(index, { condition: newCondition })}
+                  onChange={(newCondition) => updateWinCondition(index, { condition: newCondition || undefined })}
                   components={components}
                   zones={zones}
                   phases={phases}

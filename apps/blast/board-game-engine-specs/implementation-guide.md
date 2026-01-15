@@ -2,8 +2,8 @@
 
 **Status**: ✅ MVP Complete
 **Date**: January 2026
-**Version**: 1.0.2
-**Last Updated**: Fixed phase advancement infinite loop, phase restriction enforcement, visual rule builder implementation
+**Version**: 1.0.3
+**Last Updated**: Implemented win conditions and game over system with UI builder support
 
 ---
 
@@ -212,6 +212,14 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `composite` - Chain effects
 - `switchActivePlayer` - Switch to the next player in rotation
 
+**Win Conditions**:
+- Win conditions define when the game ends and who wins
+- Evaluated lazily when `isGameOver()` or `getWinner()` is called
+- First matching condition determines the winner
+- Results stored in `GameStatusComponent` on game manager entity
+- Support entity expressions for winner/loser (`$actor`, `$opponent`, `$eachPlayer`, etc.)
+- Can be defined in JSON or created via visual builder UI
+
 **Rule System**:
 - Rules can be defined in JSON to respond to events
 - Rules have triggers (event patterns), conditions, and effects
@@ -232,7 +240,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 A visual tool for creating board game definitions without writing JSON manually.
 
 **Features**:
-- Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Rules, Setup, Play
+- Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Rules, Win Conditions, Setup, Play
 - Split-panel layout with live JSON preview
 - Load/Save JSON files
 - Load example game (simple-card-game.json)
@@ -241,6 +249,7 @@ A visual tool for creating board game definitions without writing JSON manually.
 - Visual condition builder for preconditions
 - Visual effect builder for action effects and costs
 - Visual rule builder for event-driven game logic
+- Visual win condition builder with condition integration
 
 **Sections**:
 1. **Metadata** - Game name, version, author, description, player count, complexity, tags
@@ -443,11 +452,15 @@ apps/blast/src/
 │   │   │   ├── action-factory.ts
 │   │   │   ├── effect-factory.ts
 │   │   │   ├── precondition-factory.ts
-│   │   │   └── rule-factory.ts     # Convert JSON rules to Rule objects
+│   │   │   ├── rule-factory.ts     # Convert JSON rules to Rule objects
+│   │   │   └── win-condition-factory.ts # Convert JSON win conditions
 │   │   ├── json-schema/            # JSON Schema files
 │   │   │   └── game-definition.schema.json
 │   │   └── __tests__/              # Schema tests
 │   │       └── expression-resolver.test.ts
+│   │
+│   ├── win-condition-system/       # Win condition evaluation
+│   │   └── win-condition-evaluator.ts # Evaluates win conditions
 │   │
 │   ├── game-engine.ts              # Main integration class
 │   └── index.ts                    # Public exports
@@ -966,14 +979,26 @@ const lightningBoltAction = new ActionDefinition({
 **Estimated Effort**: 1 week
 **Priority**: High (core gameplay)
 
-#### 3. **Win Conditions & Game Over**
-- [ ] `GameStatusComponent` integration
-- [ ] Check for player health <= 0
-- [ ] Check for deck-out
-- [ ] Victory/defeat UI overlay
+#### 3. **Win Conditions & Game Over** ✅ Complete
+- [x] `GameStatusComponent` integration - Moved to core engine, stored on game manager entity
+- [x] Win condition evaluation system - `WinConditionEvaluator` with lazy evaluation
+- [x] Win condition factory - Converts JSON win conditions to evaluatable objects
+- [x] Game engine integration - `isGameOver()` and `getWinner()` use win conditions
+- [x] UI builder support - Full visual editor for win conditions in game builder
+- [x] Fallback behavior - Still supports health-based game over for games without win conditions
 
-**Estimated Effort**: 1-2 days
-**Priority**: Medium (needed for complete games)
+**Status**: ✅ Complete
+**Files**: 
+- `src/board-game-engine/win-condition-system/win-condition-evaluator.ts`
+- `src/board-game-engine/schema/factories/win-condition-factory.ts`
+- `src/board-game-engine/core/game-state.ts` (GameStatusComponent)
+- `src/components/GameDefinitionBuilder/index.tsx` (WinConditionsSection)
+**Features**:
+- Lazy evaluation: Win conditions checked on-demand when `isGameOver()` or `getWinner()` is called
+- First match wins: Conditions evaluated in order, first match determines winner
+- Expression support: Winner/loser can be entity expressions (`$actor`, `$opponent`, `$eachPlayer`, etc.)
+- Component storage: Results stored in `GameStatusComponent` for persistence
+- Visual builder: Full UI support with condition builder integration
 
 #### 4. **Enhanced UI**
 - [ ] Visual card representations
@@ -1115,7 +1140,7 @@ const lightningBoltAction = new ActionDefinition({
 
 #### 14. **Game Definition Builder Enhancements**
 
-The GUI builder now includes visual builders for conditions and effects. Remaining enhancements:
+The GUI builder now includes visual builders for conditions, effects, rules, and win conditions. Remaining enhancements:
 
 - [x] Visual condition builder (AND/OR/NOT tree with dropdowns)
 - [x] Visual effect builder (effect chain with reordering)
@@ -1123,6 +1148,7 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - [x] Shared zones support (zones accessible to all players)
 - [x] JSON rule loading - Rules defined in JSON are now loaded and executed
 - [x] Visual rule builder - Rules can be created and edited through the UI
+- [x] Win conditions builder - Visual editor for win conditions with condition builder integration
 - [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
 - [ ] Undo/redo support
 - [ ] Template library (pre-built game templates)
@@ -1140,12 +1166,13 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - Shared zones support - Zones marked as "shared" are accessible to all players
 - Rule system integration - Rules from JSON are loaded and processed by the event system
 - `RulesSection` component - Visual rule builder with event trigger, conditions, and effects editing
+- `WinConditionsSection` component - Visual win condition builder with condition builder integration
 
 **File Locations**:
 - `src/components/GameDefinitionBuilder/GamePreview.tsx` - Preview wrapper with validation
 - `src/components/GameDefinitionBuilder/GenericGameUI.tsx` - Game renderer
 - `src/components/GameDefinitionBuilder/EntityDisplay.tsx` - Entity card display
-- `src/components/GameDefinitionBuilder/index.tsx` - Main builder component (includes `RulesSection`)
+- `src/components/GameDefinitionBuilder/index.tsx` - Main builder component (includes `RulesSection` and `WinConditionsSection`)
 - `src/components/GameDefinitionBuilder/types.ts` - Shared type definitions
 
 **Priority**: Medium (UX improvement)
@@ -2020,6 +2047,41 @@ $multiply($param.damage, 2)           // Double the damage
   "priority": 100
 }
 ```
+
+### JSON Schema Win Condition Definitions
+
+```json
+// Win condition: Game ends when a player's health reaches 0
+{
+  "id": "player-defeated",
+  "name": "Player Defeated",
+  "description": "Game ends when a player's health reaches 0 or below",
+  "condition": {
+    "type": "resourceCheck",
+    "entity": "$opponent",
+    "component": "Resource",
+    "property": "health",
+    "operator": "<=",
+    "value": 0
+  },
+  "winner": "actor",
+  "message": "Player defeated!"
+}
+```
+
+**Win Condition Fields**:
+- `id` (required) - Unique identifier
+- `name` (optional) - Human-readable name
+- `description` (optional) - Description of what this win condition checks
+- `condition` (required) - Condition definition (same format as preconditions)
+- `winner` (optional) - Entity expression for winner (`$actor`, `$opponent`, `draw`, or custom expression)
+- `loser` (optional) - Entity expression for loser (if set, winner is the other player)
+
+**Evaluation**:
+- Win conditions are evaluated lazily when `isGameOver()` or `getWinner()` is called
+- Conditions are checked in order - first match wins
+- Results are stored in `GameStatusComponent` for persistence
+- If no win conditions are defined, falls back to health-based game over check
 
 ---
 
