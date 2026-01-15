@@ -957,6 +957,34 @@ const CONDITION_TYPES: { value: ConditionType; label: string; description: strin
 ];
 
 const ENTITY_EXPRESSIONS = ['$actor', '$target', '$target.0', '$target.1', '$activePlayer'];
+
+/**
+ * Get filtered entity expressions based on target count.
+ * If targetCount is undefined, returns all expressions.
+ */
+function getEntityExpressions(targetCount?: number): string[] {
+  if (targetCount === undefined) {
+    return ENTITY_EXPRESSIONS;
+  }
+  
+  // Always include non-target expressions
+  const baseExpressions = ['$actor', '$activePlayer'];
+  
+  // Add target expressions based on count
+  if (targetCount === 0) {
+    return baseExpressions;
+  }
+  
+  // Include $target (shorthand for $target.0) if count >= 1
+  const targetExpressions = ['$target'];
+  
+  // Add specific target indices up to targetCount - 1
+  for (let i = 0; i < targetCount; i++) {
+    targetExpressions.push(`$target.${i}`);
+  }
+  
+  return [...baseExpressions, ...targetExpressions];
+}
 const ZONE_EXPRESSIONS = ['$zone.actor.hand', '$zone.actor.deck', '$zone.actor.board', '$zone.actor.discard',
   '$zone.opponent.hand', '$zone.opponent.deck', '$zone.opponent.board', '$zone.opponent.discard'];
 const OPERATORS: { value: string; label: string }[] = [
@@ -975,9 +1003,10 @@ interface ConditionBuilderProps {
   zones: Record<string, ZoneDefinition>;
   phases: string[];
   depth?: number;
+  targetCount?: number; // Optional: number of targets for the action
 }
 
-function ConditionBuilder({ condition, onChange, components, zones, phases, depth = 0 }: ConditionBuilderProps) {
+function ConditionBuilder({ condition, onChange, components, zones, phases, depth = 0, targetCount }: ConditionBuilderProps) {
   const maxDepth = 3;
 
   const createDefaultCondition = (type: ConditionType): ConditionDefinition => {
@@ -1075,7 +1104,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={rc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1112,7 +1141,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={eiz.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1131,7 +1160,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={cvc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1159,13 +1188,13 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={oc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
               <label style={styles.label}>Expected Owner</label>
               <select style={styles.select} value={oc.expectedOwner} onChange={(e) => updateCondition({ expectedOwner: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1185,7 +1214,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={hc.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1245,7 +1274,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={ee.entity} onChange={(e) => updateCondition({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1287,6 +1316,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
                     zones={zones}
                     phases={phases}
                     depth={depth + 1}
+                    targetCount={targetCount}
                   />
                 </div>
                 <button
@@ -1328,6 +1358,7 @@ function ConditionBuilder({ condition, onChange, components, zones, phases, dept
               zones={zones}
               phases={phases}
               depth={depth + 1}
+              targetCount={targetCount}
             />
           </div>
         );
@@ -1420,9 +1451,10 @@ interface EffectBuilderProps {
   zones: Record<string, ZoneDefinition>;
   phases: string[];
   depth?: number;
+  targetCount?: number; // Optional: number of targets for the action
 }
 
-function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 }: EffectBuilderProps) {
+function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0, targetCount }: EffectBuilderProps) {
   const maxDepth = 2;
 
   const createDefaultEffect = (type: EffectType): EffectDefinition => {
@@ -1489,7 +1521,7 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={me.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1515,7 +1547,7 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={mr.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1546,7 +1578,7 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 
             <div>
               <label style={styles.label}>Entity</label>
               <select style={styles.select} value={scv.entity} onChange={(e) => updateEffect({ entity: e.target.value })}>
-                {ENTITY_EXPRESSIONS.map(e => <option key={e} value={e}>{e}</option>)}
+                {getEntityExpressions(targetCount).map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
             <div>
@@ -1667,6 +1699,7 @@ function EffectBuilder({ effect, onChange, components, zones, phases, depth = 0 
                 zones={zones}
                 phases={phases}
                 depth={depth + 1}
+                targetCount={targetCount}
               />
             </div>
             <div style={{ marginBottom: '12px' }}>
@@ -1731,9 +1764,10 @@ interface EffectListBuilderProps {
   zones: Record<string, ZoneDefinition>;
   phases: string[];
   depth?: number;
+  targetCount?: number; // Optional: number of targets for the action
 }
 
-function EffectListBuilder({ effects, onChange, components, zones, phases, depth = 0 }: EffectListBuilderProps) {
+function EffectListBuilder({ effects, onChange, components, zones, phases, depth = 0, targetCount }: EffectListBuilderProps) {
   return (
     <div>
       {effects.map((effect, i) => (
@@ -1754,6 +1788,7 @@ function EffectListBuilder({ effects, onChange, components, zones, phases, depth
               zones={zones}
               phases={phases}
               depth={depth}
+              targetCount={targetCount}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -1933,6 +1968,7 @@ function ActionsSection({ actions, components, zones, phases, onChange }: Action
                     components={components}
                     zones={zones}
                     phases={phaseNames}
+                    targetCount={typeof action.targeting?.count === 'number' ? action.targeting.count : undefined}
                   />
                 ))}
                 {(!action.preconditions || action.preconditions.length === 0) && (
@@ -1958,6 +1994,7 @@ function ActionsSection({ actions, components, zones, phases, onChange }: Action
                   components={components}
                   zones={zones}
                   phases={phaseNames}
+                  targetCount={typeof action.targeting?.count === 'number' ? action.targeting.count : undefined}
                 />
               </div>
 
@@ -1977,6 +2014,7 @@ function ActionsSection({ actions, components, zones, phases, onChange }: Action
                   components={components}
                   zones={zones}
                   phases={phaseNames}
+                  targetCount={typeof action.targeting?.count === 'number' ? action.targeting.count : undefined}
                 />
               </div>
             </div>
