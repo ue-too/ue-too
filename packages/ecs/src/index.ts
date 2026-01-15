@@ -464,6 +464,19 @@ export class EntityManager {
         
         return livingEntities;
     }
+
+    /**
+     * Check if an entity exists (is currently active, not in the available pool).
+     * @param entity - The entity ID to check
+     * @returns true if the entity exists, false otherwise
+     */
+    entityExists(entity: Entity): boolean {
+        if (entity >= this._maxEntities || entity < 0) {
+            return false;
+        }
+        // An entity exists if it's not in the available pool
+        return !this._availableEntities.includes(entity);
+    }
 }
 
 type Tuple<T, N extends number> = N extends N
@@ -1256,6 +1269,28 @@ export class Coordinator {
      */
     getAllEntities(): Entity[] {
         return this._entityManager.getAllLivingEntities();
+    }
+
+    /**
+     * Check if an entity exists in the coordinator.
+     * @param entity - The entity ID to check
+     * @returns true if the entity exists, false otherwise
+     * 
+     * @example
+     * ```typescript
+     * const entity = coordinator.createEntity();
+     * if (coordinator.entityExists(entity)) {
+     *   console.log('Entity exists');
+     * }
+     * 
+     * coordinator.destroyEntity(entity);
+     * if (!coordinator.entityExists(entity)) {
+     *   console.log('Entity no longer exists');
+     * }
+     * ```
+     */
+    entityExists(entity: Entity): boolean {
+        return this._entityManager.entityExists(entity);
     }
 
     /**

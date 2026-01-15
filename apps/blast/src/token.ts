@@ -43,7 +43,7 @@ export class StackableTokenSystem implements System {
             throw new Error('DeckComponent not registered');
         }
         this._coordinator.registerSystem("deckSystem", this);
-        this._coordinator.setSystemSignature("deckSystem", 1 << locationComponentType);
+        this._coordinator.setSystemSignature("deckSystem", 1 << locationComponentType | 1 << deckComponentType);
     }
 
     shuffle(at: number): void {

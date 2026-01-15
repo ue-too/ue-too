@@ -182,6 +182,13 @@
         "fabric": "7.1.0",
       },
     },
+    "packages/board-game-engine": {
+      "name": "@ue-too/board-game-engine",
+      "version": "0.12.0",
+      "dependencies": {
+        "@ue-too/ecs": "workspace:*",
+      },
+    },
     "packages/board-konva-integration": {
       "name": "@ue-too/board-konva-integration",
       "version": "0.12.0",
@@ -1137,6 +1144,8 @@
     "@ue-too/board": ["@ue-too/board@workspace:packages/board"],
 
     "@ue-too/board-fabric-integration": ["@ue-too/board-fabric-integration@workspace:packages/board-fabric-integration"],
+
+    "@ue-too/board-game-engine": ["@ue-too/board-game-engine@workspace:packages/board-game-engine"],
 
     "@ue-too/board-konva-integration": ["@ue-too/board-konva-integration@workspace:packages/board-konva-integration"],
 

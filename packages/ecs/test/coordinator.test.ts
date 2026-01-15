@@ -74,4 +74,40 @@ describe('Coordinator', () => {
         expect(entities[1]).toBe(entity3);
     });
 
+    it('should correctly check if an entity exists', () => {
+        const coordinator = new Coordinator();
+        
+        // Initially no entities exist
+        expect(coordinator.entityExists(0)).toBe(false);
+        expect(coordinator.entityExists(999)).toBe(false);
+        
+        // Create an entity
+        const entity = coordinator.createEntity();
+        expect(coordinator.entityExists(entity)).toBe(true);
+        
+        // Create another entity
+        const entity2 = coordinator.createEntity();
+        expect(coordinator.entityExists(entity2)).toBe(true);
+        expect(coordinator.entityExists(entity)).toBe(true); // First entity still exists
+        
+        // Destroy an entity
+        coordinator.destroyEntity(entity);
+        expect(coordinator.entityExists(entity)).toBe(false);
+        expect(coordinator.entityExists(entity2)).toBe(true); // Second entity still exists
+        
+        // Destroy the second entity
+        coordinator.destroyEntity(entity2);
+        expect(coordinator.entityExists(entity2)).toBe(false);
+    });
+
+    it('should return false for out-of-range entity IDs', () => {
+        const coordinator = new Coordinator();
+        
+        // Negative entity ID
+        expect(coordinator.entityExists(-1)).toBe(false);
+        
+        // Entity ID beyond max entities
+        expect(coordinator.entityExists(10001)).toBe(false);
+    });
+
 });
