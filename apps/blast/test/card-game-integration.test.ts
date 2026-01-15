@@ -13,7 +13,10 @@ import {
   CARD_STATE_COMPONENT,
   DECK_COMPONENT,
   ZONE_COMPONENT,
+  GAME_STATUS_COMPONENT,
 } from '../src/games/simple-card-game/components';
+import { GAME_MANAGER_COMPONENT } from '../src/board-game-engine/core/game-state';
+import type { GameStatusComponent, GameManagerComponent } from '../src/board-game-engine/core/game-state';
 import type {
   ResourceComponent,
   CardComponent,
@@ -486,6 +489,24 @@ describe('Simple Card Game - Win Conditions', () => {
     resources.health = 0;
 
     expect(engine.isGameOver()).toBe(true);
+    
+    // Verify GameStatusComponent is updated
+    const gameManagerEntity = engine.state.coordinator.getAllEntities().find((entity) => {
+      return engine.state.coordinator.getComponentFromEntity<GameManagerComponent>(
+        GAME_MANAGER_COMPONENT,
+        entity
+      ) !== null;
+    });
+    expect(gameManagerEntity).toBeDefined();
+    
+    if (gameManagerEntity !== undefined) {
+      const gameStatus = engine.state.coordinator.getComponentFromEntity<GameStatusComponent>(
+        GAME_STATUS_COMPONENT,
+        gameManagerEntity
+      );
+      expect(gameStatus).toBeDefined();
+      expect(gameStatus?.isGameOver).toBe(true);
+    }
   });
 
   it('should identify winner when game is over', () => {
@@ -502,6 +523,25 @@ describe('Simple Card Game - Win Conditions', () => {
 
     const winner = engine.getWinner();
     expect(winner).toBe(player1);
+    
+    // Verify GameStatusComponent has winner set
+    const gameManagerEntity = engine.state.coordinator.getAllEntities().find((entity) => {
+      return engine.state.coordinator.getComponentFromEntity<GameManagerComponent>(
+        GAME_MANAGER_COMPONENT,
+        entity
+      ) !== null;
+    });
+    expect(gameManagerEntity).toBeDefined();
+    
+    if (gameManagerEntity !== undefined) {
+      const gameStatus = engine.state.coordinator.getComponentFromEntity<GameStatusComponent>(
+        GAME_STATUS_COMPONENT,
+        gameManagerEntity
+      );
+      expect(gameStatus).toBeDefined();
+      expect(gameStatus?.isGameOver).toBe(true);
+      expect(gameStatus?.winner).toBe(player1);
+    }
   });
 
   it('should not be game over when all players have health', () => {

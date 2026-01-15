@@ -10,14 +10,14 @@ import { createGlobalComponentName, Entity, ComponentName, Coordinator } from '@
 // Re-export existing components from blast app
 export { LOCATION_COMPONENT, DECK_COMPONENT } from '../../token';
 export type { LocationComponent, DeckComponent } from '../../token';
-export { PLAYER_COMPONENT, ZONE_COMPONENT } from '../../board-game-engine/core/game-state';
-export type { PlayerComponent, ZoneComponent } from '../../board-game-engine/core/game-state';
+export { PLAYER_COMPONENT, ZONE_COMPONENT, GAME_STATUS_COMPONENT, GAME_MANAGER_COMPONENT } from '../../board-game-engine/core/game-state';
+export type { PlayerComponent, ZoneComponent, GameStatusComponent, GameManagerComponent } from '../../board-game-engine/core/game-state';
 
 // Import for local use
 import type { LocationComponent, DeckComponent } from '../../token';
-import type { ZoneComponent as ZoneComponentType } from '../../board-game-engine/core/game-state';
+import type { ZoneComponent as ZoneComponentType, GameStatusComponent } from '../../board-game-engine/core/game-state';
 import { LOCATION_COMPONENT as LOCATION_COMP, DECK_COMPONENT as DECK_COMP } from '../../token';
-import { PLAYER_COMPONENT as PLAYER_COMP, ZONE_COMPONENT as ZONE_COMP } from '../../board-game-engine/core/game-state';
+import { PLAYER_COMPONENT as PLAYER_COMP, ZONE_COMPONENT as ZONE_COMP, GAME_STATUS_COMPONENT } from '../../board-game-engine/core/game-state';
 
 // ============================================================================
 // Card Component
@@ -120,29 +120,7 @@ export interface OwnerComponent {
   owner: Entity;
 }
 
-// ============================================================================
-// Game Status Component
-// ============================================================================
-
-/**
- * Component name for game status components.
- */
-export const GAME_STATUS_COMPONENT: ComponentName = createGlobalComponentName('GameStatus');
-
-/**
- * Game status component - tracks whether game is over and who won.
- * Attached to the game manager entity.
- */
-export interface GameStatusComponent {
-  /** Whether the game is over */
-  isGameOver: boolean;
-
-  /** Winner entity (null if no winner yet) */
-  winner: Entity | null;
-
-  /** Reason for game end */
-  endReason?: string;
-}
+// GameStatusComponent is now exported from core/game-state.ts
 
 // ============================================================================
 // Turn State Component

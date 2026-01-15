@@ -315,6 +315,153 @@
       }
     },
     {
+      "name": "AttackCreature",
+      "displayName": "Attack Creature",
+      "description": "Attack an enemy creature with one of your creatures. Targets: [0] Your creature, [1] Enemy creature",
+      "preconditions": [
+        { "type": "isPlayerTurn" },
+        { "type": "phaseCheck", "phases": ["Main"] },
+        {
+          "type": "targetCount",
+          "exact": 2,
+          "errorMessage": "Must select attacker and defender"
+        },
+        {
+          "type": "hasComponent",
+          "entity": "$target.0",
+          "component": "Card",
+          "errorMessage": "Attacker must be a card"
+        },
+        {
+          "type": "componentValueCheck",
+          "entity": "$target.0",
+          "component": "Card",
+          "property": "cardType",
+          "value": "Creature",
+          "errorMessage": "Attacker must be a creature"
+        },
+        {
+          "type": "entityInZone",
+          "entity": "$target.0",
+          "zone": "$zone.actor.board",
+          "errorMessage": "Attacker must be on your board"
+        },
+        {
+          "type": "ownerCheck",
+          "entity": "$target.0",
+          "expectedOwner": "$actor",
+          "errorMessage": "You must own the attacker"
+        },
+        {
+          "type": "hasComponent",
+          "entity": "$target.1",
+          "component": "Card",
+          "errorMessage": "Defender must be a card"
+        },
+        {
+          "type": "componentValueCheck",
+          "entity": "$target.1",
+          "component": "Card",
+          "property": "cardType",
+          "value": "Creature",
+          "errorMessage": "Defender must be a creature"
+        },
+        {
+          "type": "ownerCheck",
+          "entity": "$target.1",
+          "expectedOwner": "$actor",
+          "invert": true,
+          "errorMessage": "Defender must be an enemy creature"
+        }
+      ],
+      "effects": [
+        {
+          "type": "setComponentValue",
+          "entity": "$target.0",
+          "component": "CardState",
+          "property": "tapped",
+          "value": true,
+          "createIfMissing": true
+        },
+        {
+          "type": "setComponentValue",
+          "entity": "$target.0",
+          "component": "CardState",
+          "property": "attacksThisTurn",
+          "value": 1,
+          "createIfMissing": true
+        },
+        {
+          "type": "modifyResource",
+          "entity": "$target.1",
+          "component": "Card",
+          "property": "toughness",
+          "amount": "$negate($component.$target.0.Card.power)",
+          "min": 0
+        },
+        {
+          "type": "modifyResource",
+          "entity": "$target.0",
+          "component": "Card",
+          "property": "toughness",
+          "amount": "$negate($component.$target.1.Card.power)",
+          "min": 0
+        },
+        {
+          "type": "conditional",
+          "condition": {
+            "type": "componentValueCheck",
+            "entity": "$target.1",
+            "component": "Card",
+            "property": "toughness",
+            "operator": "<=",
+            "value": 0
+          },
+          "then": [
+            {
+              "type": "moveEntity",
+              "entity": "$target.1",
+              "toZone": "$zone.opponent.discard"
+            }
+          ]
+        },
+        {
+          "type": "conditional",
+          "condition": {
+            "type": "componentValueCheck",
+            "entity": "$target.0",
+            "component": "Card",
+            "property": "toughness",
+            "operator": "<=",
+            "value": 0
+          },
+          "then": [
+            {
+              "type": "moveEntity",
+              "entity": "$target.0",
+              "toZone": "$zone.actor.discard"
+            }
+          ]
+        },
+        {
+          "type": "emitEvent",
+          "eventType": "CreatureAttacked",
+          "data": {
+            "attackerId": "$target.0",
+            "defenderId": "$target.1"
+          }
+        }
+      ],
+      "targeting": {
+        "count": 2,
+        "validTargets": {
+          "zone": "board",
+          "owner": "any",
+          "hasComponent": ["Card"]
+        }
+      }
+    },
+    {
       "name": "EndTurn",
       "displayName": "End Turn",
       "description": "End your turn and pass to the next player",
@@ -349,7 +496,7 @@
           "component": "Resource",
           "property": "mana",
           "amount": 1,
-          "max": "$component.$activePlayer.Resource.maxMana"
+          "maxProperty": "maxMana"
         }
       ]
     }

@@ -34,6 +34,12 @@ export const PLAYER_COMPONENT = createGlobalComponentName('Player');
 export const DECK_COMPONENT = createGlobalComponentName('DeckComponent');
 
 /**
+ * Component name for game status components.
+ * Tracks whether game is over and who won.
+ */
+export const GAME_STATUS_COMPONENT = createGlobalComponentName('GameStatus');
+
+/**
  * Component type for the game manager global entity.
  */
 export interface GameManagerComponent extends GameMetadata {
@@ -63,6 +69,21 @@ export interface PlayerComponent {
 
   /** Player number (0, 1, 2, etc.) */
   playerNumber: number;
+}
+
+/**
+ * Game status component - tracks whether game is over and who won.
+ * Attached to the game manager entity.
+ */
+export interface GameStatusComponent {
+  /** Whether the game is over */
+  isGameOver: boolean;
+
+  /** Winner entity (null if no winner yet) */
+  winner: Entity | null;
+
+  /** Reason for game end */
+  endReason?: string;
 }
 
 /**

@@ -46,3 +46,10 @@ export {
 
 // Schema (JSON game definitions)
 export * from './schema';
+
+// Win Condition System
+export { WinConditionEvaluator } from './win-condition-system/win-condition-evaluator';
+export { WinConditionFactory } from './schema/factories/win-condition-factory';
+export type { WinCondition } from './schema/factories/win-condition-factory';
+export { GAME_STATUS_COMPONENT } from './core/game-state';
+export type { GameStatusComponent } from './core/game-state';

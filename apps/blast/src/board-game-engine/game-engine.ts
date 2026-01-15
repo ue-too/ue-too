@@ -7,11 +7,17 @@
 
 import type { Entity } from '@ue-too/ecs';
 import type { Action, GameState, Event, ActionDefinition as IActionDefinition, PhaseDefinition, Rule } from './core/types';
+import type { WinCondition } from './schema/factories/win-condition-factory';
 import { ActionSystem } from './action-system/action-system';
 import { RuleEngine } from './rule-engine/rule-engine';
 import { EventProcessor } from './event-system/event-processor';
 import { EventQueue } from './event-system/event-queue';
 import { PhaseManager } from './phase-system/phase-manager';
+import { WinConditionEvaluator } from './win-condition-system/win-condition-evaluator';
+import { ExpressionResolver } from './schema/expression-resolver';
+import { GAME_STATUS_COMPONENT, GAME_MANAGER_COMPONENT } from './core/game-state';
+import type { GameStatusComponent, GameManagerComponent } from './core/game-state';
+import { createGlobalComponentName } from '@ue-too/ecs';
 
 /**
  * Game definition configuration.
@@ -28,6 +34,9 @@ export interface GameDefinition {
 
   /** Phase definitions */
   phases: PhaseDefinition[];
+
+  /** Win conditions */
+  winConditions?: WinCondition[];
 
   /** Function to create initial game state */
   createInitialState: () => GameState;
@@ -58,6 +67,8 @@ export class GameEngine {
   private readonly ruleEngine: RuleEngine;
   private readonly eventProcessor: EventProcessor;
   private readonly phaseManager: PhaseManager;
+  private readonly winConditions: WinCondition[];
+  private readonly winConditionEvaluator: WinConditionEvaluator;
   public readonly gameName: string;
 
   /**
@@ -92,8 +103,18 @@ export class GameEngine {
       this.ruleEngine.addGlobalRule(rule);
     }
 
+    // Store win conditions
+    this.winConditions = gameDefinition.winConditions ?? [];
+
+    // Create win condition evaluator
+    const resolver = new ExpressionResolver();
+    this.winConditionEvaluator = new WinConditionEvaluator(resolver);
+
     // Create initial state
     this.state = gameDefinition.createInitialState();
+
+    // Initialize GameStatusComponent if not present
+    this.ensureGameStatusComponent();
   }
 
   /**
@@ -210,43 +231,250 @@ export class GameEngine {
 
   /**
    * Check if the game is over.
+   * Uses lazy evaluation: checks GameStatusComponent first, then evaluates win conditions if needed.
    *
    * @returns True if game is over
    */
   isGameOver(): boolean {
-    // This is a placeholder - actual implementation depends on game-specific logic
-    // For the simple card game, we'll check if any player has 0 health
+    // Check GameStatusComponent first
+    const gameStatus = this.getGameStatusComponent();
+    if (gameStatus && gameStatus.isGameOver) {
+      return true;
+    }
+
+    // If not set, evaluate win conditions
+    if (this.winConditions.length > 0) {
+      this.checkWinConditions();
+      const updatedStatus = this.getGameStatusComponent();
+      return updatedStatus?.isGameOver ?? false;
+    }
+
+    // Fallback to old behavior if no win conditions defined
+    // Check if any player has health <= 0
     const players = this.state.getAllPlayers();
-    return players.some((player) => {
-      const resources = this.state.coordinator.getComponentFromEntity<any>(
+    const gameOver = players.some((player) => {
+      // Try common resource component names
+      const resourceComponentNames = [
+        createGlobalComponentName('Resource'),
         Symbol.for('Resource'),
-        player
-      );
-      return resources && resources.health <= 0;
+      ];
+      
+      for (const componentName of resourceComponentNames) {
+        try {
+          const resources = this.state.coordinator.getComponentFromEntity<any>(
+            componentName,
+            player
+          );
+          if (resources && typeof resources.health === 'number' && resources.health <= 0) {
+            return true;
+          }
+        } catch {
+          // Component not found, try next
+        }
+      }
+      return false;
     });
+    
+    // Update GameStatusComponent if game is over
+    if (gameOver) {
+      // Ensure component exists
+      this.ensureGameStatusComponent();
+      const gameStatus = this.getGameStatusComponent();
+      if (gameStatus) {
+        gameStatus.isGameOver = true;
+        // Determine winner (player with health > 0)
+        const winner = players.find((player) => {
+          const resourceComponentNames = [
+            createGlobalComponentName('Resource'),
+            Symbol.for('Resource'),
+          ];
+          for (const componentName of resourceComponentNames) {
+            try {
+              const resources = this.state.coordinator.getComponentFromEntity<any>(
+                componentName,
+                player
+              );
+              if (resources && typeof resources.health === 'number' && resources.health > 0) {
+                return true;
+              }
+            } catch {
+              // Component not found, try next
+            }
+          }
+          return false;
+        }) ?? null;
+        gameStatus.winner = winner;
+      }
+    }
+    
+    return gameOver;
   }
 
   /**
    * Get the winner of the game.
+   * Uses lazy evaluation: checks GameStatusComponent first, then evaluates win conditions if needed.
    *
    * @returns Winner entity or null if no winner yet
    */
   getWinner(): Entity | null {
+    // Check GameStatusComponent first
+    const gameStatus = this.getGameStatusComponent();
+    if (gameStatus && gameStatus.isGameOver) {
+      return gameStatus.winner;
+    }
+
+    // If not set, evaluate win conditions
+    if (this.winConditions.length > 0) {
+      this.checkWinConditions();
+      const updatedStatus = this.getGameStatusComponent();
+      return updatedStatus?.winner ?? null;
+    }
+
+    // Fallback to old behavior if no win conditions defined
     const players = this.state.getAllPlayers();
     for (const player of players) {
       const opponents = this.state.getOpponents(player);
       const allOpponentsDefeated = opponents.every((opp) => {
-        const resources = this.state.coordinator.getComponentFromEntity<any>(
+        // Try common resource component names
+        const resourceComponentNames = [
+          createGlobalComponentName('Resource'),
           Symbol.for('Resource'),
-          opp
-        );
-        return resources && resources.health <= 0;
+        ];
+        
+        for (const componentName of resourceComponentNames) {
+          try {
+            const resources = this.state.coordinator.getComponentFromEntity<any>(
+              componentName,
+              opp
+            );
+            if (resources && typeof resources.health === 'number') {
+              return resources.health <= 0;
+            }
+          } catch {
+            // Component not found, try next
+          }
+        }
+        return false;
       });
       if (allOpponentsDefeated) {
+        // Update GameStatusComponent
+        this.ensureGameStatusComponent();
+        const gameStatus = this.getGameStatusComponent();
+        if (gameStatus) {
+          gameStatus.isGameOver = true;
+          gameStatus.winner = player;
+        }
         return player;
       }
     }
     return null;
+  }
+
+  /**
+   * Check win conditions and update GameStatusComponent.
+   * This is called lazily when isGameOver() or getWinner() is called.
+   */
+  private checkWinConditions(): void {
+    if (this.winConditions.length === 0) {
+      return;
+    }
+
+    // Create resolver context for evaluation
+    const context = {
+      state: this.state,
+      actor: this.state.activePlayer,
+      targets: [],
+      parameters: {},
+      candidate: null,
+      eachPlayer: null,
+    };
+
+    // Evaluate win conditions
+    const result = this.winConditionEvaluator.evaluateWinConditions(
+      this.state,
+      this.winConditions,
+      context
+    );
+
+    // Update GameStatusComponent
+    const gameStatus = this.getGameStatusComponent();
+    if (gameStatus) {
+      if (result) {
+        gameStatus.isGameOver = true;
+        gameStatus.winner = result.winner;
+        gameStatus.endReason = result.endReason;
+      } else {
+        // Ensure it's marked as not over if no condition matches
+        gameStatus.isGameOver = false;
+        gameStatus.winner = null;
+      }
+    }
+  }
+
+  /**
+   * Get the GameStatusComponent from the game manager entity.
+   */
+  private getGameStatusComponent(): GameStatusComponent | null {
+    // Find game manager entity
+    const allEntities = this.state.coordinator.getAllEntities();
+
+    const gameManagerEntity = allEntities.find((entity) => {
+      return this.state.coordinator.getComponentFromEntity<GameManagerComponent>(
+        GAME_MANAGER_COMPONENT,
+        entity
+      ) !== null;
+    });
+
+    if (gameManagerEntity === undefined) {
+      return null;
+    }
+
+    // Get GameStatusComponent
+    return this.state.coordinator.getComponentFromEntity<GameStatusComponent>(
+      GAME_STATUS_COMPONENT,
+      gameManagerEntity
+    );
+  }
+
+  /**
+   * Ensure GameStatusComponent exists on the game manager entity.
+   */
+  private ensureGameStatusComponent(): void {
+    const existing = this.getGameStatusComponent();
+    if (existing) {
+      return; // Already exists
+    }
+
+    // Find game manager entity
+    const allEntities = this.state.coordinator.getAllEntities();
+
+    const gameManagerEntity = allEntities.find((entity) => {
+      return this.state.coordinator.getComponentFromEntity<GameManagerComponent>(
+        GAME_MANAGER_COMPONENT,
+        entity
+      ) !== null;
+    });
+
+    if (gameManagerEntity === undefined) {
+      return;
+    }
+
+    // Register component if needed
+    try {
+      this.state.coordinator.registerComponent<GameStatusComponent>(GAME_STATUS_COMPONENT);
+    } catch (e) {
+      // Component already registered, ignore
+    }
+
+    // Add component to game manager entity
+    this.state.coordinator.addComponentToEntity<GameStatusComponent>(
+      GAME_STATUS_COMPONENT,
+      gameManagerEntity,
+      {
+        isGameOver: false,
+        winner: null,
+      }
+    );
   }
 
   /**

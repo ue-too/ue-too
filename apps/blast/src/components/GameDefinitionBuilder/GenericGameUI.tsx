@@ -131,6 +131,13 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
 }) => {
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  
+  // Targeting mode state
+  const [targetingMode, setTargetingMode] = useState<{
+    actionType: string;
+    collectedTargets: Entity[];
+    requiredTargetCount: number;
+  } | null>(null);
 
   const coordinator = engine.state.coordinator;
   // Don't memoize validActions - they need to be recalculated after every state change
@@ -163,6 +170,7 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
       
       engine.performAction(matchingAction);
       setSelectedEntity(null);
+      setTargetingMode(null);
       onStateChange();
     } catch (error) {
       console.error('Action failed:', error);
@@ -170,9 +178,112 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
     }
   };
 
+  // Start targeting mode for an action
+  const startTargeting = (actionType: string, requiredTargetCount: number) => {
+    // If an entity is selected and it can be used as the first target, use it
+    let initialTargets: Entity[] = [];
+    if (selectedEntity) {
+      // Check if selected entity can be used as first target for this action
+      const validActions = engine.getValidActions();
+      const matchingActions = validActions.filter(
+        (a) => a.type === actionType &&
+          a.targetIds.length >= 1 &&
+          a.targetIds[0] === selectedEntity
+      );
+      
+      if (matchingActions.length > 0) {
+        // Selected entity can be used as first target
+        initialTargets = [selectedEntity];
+      }
+    }
+    
+    setTargetingMode({
+      actionType,
+      collectedTargets: initialTargets,
+      requiredTargetCount,
+    });
+    
+    // Clear selection if we used it, otherwise keep it for visual feedback
+    if (initialTargets.length > 0) {
+      setSelectedEntity(null);
+    }
+  };
+
+  // Cancel targeting mode
+  const cancelTargeting = () => {
+    setTargetingMode(null);
+    setSelectedEntity(null);
+  };
+
+  // Handle entity click in targeting mode
+  const handleEntityClickInTargetingMode = (entityId: Entity) => {
+    if (!targetingMode) return;
+
+    const newTargets = [...targetingMode.collectedTargets, entityId];
+    
+    // Check if we have enough targets
+    if (newTargets.length >= targetingMode.requiredTargetCount) {
+      // Try to execute the action
+      const testAction = {
+        type: targetingMode.actionType,
+        targetIds: newTargets,
+      };
+      
+      // Check if this combination is valid
+      const matchingAction = validActions.find(
+        (a) => a.type === testAction.type && JSON.stringify(a.targetIds) === JSON.stringify(testAction.targetIds)
+      );
+      
+      if (matchingAction) {
+        executeAction(matchingAction);
+      } else {
+        alert('Invalid target combination. Please try again.');
+        cancelTargeting();
+      }
+    } else {
+      // Continue collecting targets
+      setTargetingMode({
+        ...targetingMode,
+        collectedTargets: newTargets,
+      });
+      setSelectedEntity(null);
+    }
+  };
+
+  // Get valid entities for current target slot
+  const getValidTargetsForCurrentSlot = (): Entity[] => {
+    if (!targetingMode) return [];
+    
+    // Find all valid actions of this type that start with our collected targets
+    const matchingActions = validActions.filter(
+      (a) => a.type === targetingMode.actionType &&
+        a.targetIds.length >= targetingMode.collectedTargets.length &&
+        targetingMode.collectedTargets.every((target, idx) => a.targetIds[idx] === target)
+    );
+    
+    // Get unique entities that appear at the next target slot
+    const nextSlotIndex = targetingMode.collectedTargets.length;
+    const validEntities = new Set<Entity>();
+    
+    for (const action of matchingActions) {
+      if (action.targetIds.length > nextSlotIndex) {
+        validEntities.add(action.targetIds[nextSlotIndex]);
+      }
+    }
+    
+    return Array.from(validEntities);
+  };
+
   // Find action for selected entity
   const getActionsForEntity = (entityId: Entity) => {
     return validActions.filter((a) => a.targetIds.includes(entityId));
+  };
+
+  // Check if entity is valid for current targeting slot
+  const isValidTargetForCurrentSlot = (entityId: Entity): boolean => {
+    if (!targetingMode) return false;
+    const validTargets = getValidTargetsForCurrentSlot();
+    return validTargets.includes(entityId);
   };
 
   // Render player stats
@@ -276,17 +387,31 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
           ) : zone.entities.length === 0 ? (
             <span style={{ color: '#999', fontSize: '12px' }}>Empty</span>
           ) : (
-            zone.entities.map((entityId) => (
-              <EntityDisplay
-                key={entityId}
-                entityId={entityId}
-                coordinator={coordinator}
-                componentSchemas={gameDefinition.components}
-                isSelected={selectedEntity === entityId}
-                onClick={() => setSelectedEntity(selectedEntity === entityId ? null : entityId)}
-                canSelect={getActionsForEntity(entityId).length > 0}
-              />
-            ))
+            zone.entities.map((entityId) => {
+              const isValidTarget = targetingMode ? isValidTargetForCurrentSlot(entityId) : false;
+              const isHighlighted = targetingMode !== null && isValidTarget;
+              
+              return (
+                <EntityDisplay
+                  key={entityId}
+                  entityId={entityId}
+                  coordinator={coordinator}
+                  componentSchemas={gameDefinition.components}
+                  isSelected={selectedEntity === entityId || (targetingMode !== null && targetingMode.collectedTargets.includes(entityId))}
+                  onClick={() => {
+                    if (targetingMode) {
+                      if (isValidTarget) {
+                        handleEntityClickInTargetingMode(entityId);
+                      }
+                    } else {
+                      setSelectedEntity(selectedEntity === entityId ? null : entityId);
+                    }
+                  }}
+                  canSelect={targetingMode ? isValidTarget : getActionsForEntity(entityId).length > 0}
+                  highlight={isHighlighted || undefined}
+                />
+              );
+            })
           )}
         </div>
       </div>
@@ -394,42 +519,115 @@ export const GenericGameUI: React.FC<GenericGameUIProps> = ({
               ? actions.find((a) => a.targetIds.includes(selectedEntity))
               : actions.find((a) => a.targetIds.length === 0);
 
+            // Determine target count from action definition
+            const actionDef = gameDefinition.actions?.find(a => a.name === actionType);
+            const targetCount = actionDef?.targeting?.count;
+            const requiredTargetCount = typeof targetCount === 'number' ? targetCount : 0;
+            const needsMultipleTargets = requiredTargetCount > 1;
+            
+            // Check if we're in targeting mode for this action
+            const isTargetingThisAction = targetingMode?.actionType === actionType;
+            
+            // Check if selected entity can be used as first target for multi-target actions
+            const canUseSelectedEntityAsFirstTarget = needsMultipleTargets && selectedEntity && 
+              validActions.some(a => 
+                a.type === actionType && 
+                a.targetIds.length >= 1 && 
+                a.targetIds[0] === selectedEntity
+              );
+            
+            // For multi-target actions, enable button if we have a valid first target selected
+            const canStartMultiTarget = needsMultipleTargets && canUseSelectedEntityAsFirstTarget;
+            
             return (
               <button
                 key={actionType}
                 onClick={() => {
-                  if (targetedAction) {
+                  if (isTargetingThisAction) {
+                    // Cancel targeting if clicking the same action button
+                    cancelTargeting();
+                  } else if (targetedAction && !needsMultipleTargets) {
+                    // Execute immediately for 0 or 1 target actions
                     executeAction(targetedAction);
-                  } else if (!hasTarget && actions.length > 0) {
+                  } else if (!hasTarget && actions.length > 0 && !needsMultipleTargets) {
+                    // Execute immediately for 0 target actions
                     executeAction(actions[0]);
+                  } else if (needsMultipleTargets) {
+                    // Start targeting mode for multi-target actions
+                    startTargeting(actionType, requiredTargetCount);
                   }
                 }}
-                disabled={isGameOver || !canExecute}
+                disabled={isGameOver || (targetingMode !== null && !isTargetingThisAction) || (needsMultipleTargets && !canStartMultiTarget && !isTargetingThisAction)}
                 style={{
                   padding: '8px 16px',
                   backgroundColor:
-                    isGameOver || !canExecute
-                      ? '#ccc'
-                      : actionType.toLowerCase().includes('attack')
-                        ? '#f44336'
-                        : actionType.toLowerCase().includes('end')
-                          ? '#ff9800'
-                          : '#667eea',
+                    isTargetingThisAction
+                      ? '#ff9800'
+                      : isGameOver || !canExecute || (needsMultipleTargets && !canStartMultiTarget)
+                        ? '#ccc'
+                        : actionType.toLowerCase().includes('attack')
+                          ? '#f44336'
+                          : actionType.toLowerCase().includes('end')
+                            ? '#ff9800'
+                            : '#667eea',
                   color: 'white',
-                  border: 'none',
+                  border: isTargetingThisAction ? '2px solid #ff6f00' : canStartMultiTarget ? '2px solid #4CAF50' : 'none',
                   borderRadius: '6px',
-                  cursor: isGameOver || !canExecute ? 'not-allowed' : 'pointer',
+                  cursor: isGameOver || (targetingMode !== null && !isTargetingThisAction) || (needsMultipleTargets && !canStartMultiTarget) ? 'not-allowed' : 'pointer',
                   fontSize: '13px',
                   fontWeight: 500,
                 }}
               >
                 {actionType}
-                {hasTarget && selectedEntity && canExecute && ' (on selected)'}
+                {isTargetingThisAction && ` (${targetingMode.collectedTargets.length}/${targetingMode.requiredTargetCount})`}
+                {hasTarget && selectedEntity && canExecute && !needsMultipleTargets && ' (on selected)'}
+                {needsMultipleTargets && canStartMultiTarget && !isTargetingThisAction && ' (ready)'}
               </button>
             );
           })}
         </div>
-        {selectedEntity && (
+        {targetingMode && (
+          <div
+            style={{
+              marginTop: '12px',
+              padding: '12px',
+              backgroundColor: '#fff3cd',
+              borderRadius: '6px',
+              border: '1px solid #ffc107',
+            }}
+          >
+            <div style={{ fontWeight: 600, marginBottom: '4px', color: '#856404' }}>
+              Selecting targets for {targetingMode.actionType}
+            </div>
+            <div style={{ fontSize: '12px', color: '#856404', marginBottom: '8px' }}>
+              Target {targetingMode.collectedTargets.length + 1} of {targetingMode.requiredTargetCount}
+              {targetingMode.collectedTargets.length > 0 && (
+                <span style={{ marginLeft: '8px' }}>
+                  Selected: {targetingMode.collectedTargets.map((id, idx) => (
+                    <span key={id} style={{ marginLeft: '4px' }}>
+                      {idx > 0 && ', '}Target {idx + 1}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={cancelTargeting}
+              style={{
+                padding: '4px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+        {selectedEntity && !targetingMode && (
           <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
             Selected entity: {selectedEntity}
           </div>

@@ -17,6 +17,7 @@ export interface EntityDisplayProps {
   isSelected: boolean;
   onClick: () => void;
   canSelect: boolean;
+  highlight?: boolean;
 }
 
 // Get a friendly display name from a component's properties
@@ -139,6 +140,7 @@ export const EntityDisplay: React.FC<EntityDisplayProps> = ({
   isSelected,
   onClick,
   canSelect,
+  highlight = false,
 }) => {
   const name = getEntityDisplayName(coordinator, entityId, componentSchemas);
   const state = getEntityState(coordinator, entityId, componentSchemas);
@@ -152,14 +154,26 @@ export const EntityDisplay: React.FC<EntityDisplayProps> = ({
         width: '120px',
         padding: '8px',
         margin: '4px',
-        border: isSelected ? '3px solid #4CAF50' : '1px solid #ddd',
+        border: isSelected 
+          ? '3px solid #4CAF50' 
+          : highlight 
+            ? '2px solid #ff9800' 
+            : '1px solid #ddd',
         borderRadius: '8px',
-        backgroundColor: state.tapped ? '#f5f5f5' : 'white',
+        backgroundColor: highlight 
+          ? '#fff3cd' 
+          : state.tapped 
+            ? '#f5f5f5' 
+            : 'white',
         cursor: canSelect ? 'pointer' : 'default',
         opacity: state.sick ? 0.7 : 1,
         transform: state.tapped ? 'rotate(5deg)' : 'none',
         transition: 'all 0.2s ease',
-        boxShadow: isSelected ? '0 2px 8px rgba(76, 175, 80, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+        boxShadow: isSelected 
+          ? '0 2px 8px rgba(76, 175, 80, 0.3)' 
+          : highlight 
+            ? '0 2px 8px rgba(255, 152, 0, 0.4)' 
+            : '0 1px 3px rgba(0,0,0,0.1)',
       }}
     >
       {/* Entity Name */}

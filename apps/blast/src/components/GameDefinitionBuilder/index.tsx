@@ -8,6 +8,7 @@ import type {
   SetupDefinitionSchema,
   RuleDefinitionSchema,
   EventPatternSchema,
+  WinConditionSchema,
   PropertyDefinition,
   PropertyType,
 } from '../../board-game-engine/schema/types';
@@ -25,7 +26,7 @@ import type { BuilderGameDefinition, ExtendedMetadata } from './types';
 export type { BuilderGameDefinition } from './types';
 
 // Tab sections
-type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'rules' | 'setup' | 'play';
+type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'rules' | 'winConditions' | 'setup' | 'play';
 
 // Default empty game definition
 const createEmptyGameDefinition = (): BuilderGameDefinition => ({
@@ -283,7 +284,7 @@ export function GameDefinitionBuilder() {
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'rules', 'setup', 'play'] as Tab[]).map(tab => (
+        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'rules', 'winConditions', 'setup', 'play'] as Tab[]).map(tab => (
           <button
             key={tab}
             style={{
@@ -2437,6 +2438,170 @@ function RulesSection({ rules, components, zones, phases, actions, onChange }: R
       {rules.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
           No rules defined. Rules react to events and execute effects automatically (e.g., switch player on TurnEnded).
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Win Conditions Section
+// ============================================================================
+interface WinConditionsSectionProps {
+  winConditions: WinConditionSchema[];
+  components: Record<string, ComponentDefinition>;
+  zones: Record<string, ZoneDefinition>;
+  phases: string[];
+  onChange: (winConditions: WinConditionSchema[]) => void;
+}
+
+function WinConditionsSection({ winConditions, components, zones, phases, onChange }: WinConditionsSectionProps) {
+  const [expandedCondition, setExpandedCondition] = useState<number | null>(null);
+
+  const addWinCondition = () => {
+    onChange([...winConditions, {
+      id: `winCondition${winConditions.length + 1}`,
+      condition: {
+        type: 'resourceCheck',
+        entity: '$actor',
+        component: 'Resource',
+        property: 'health',
+        operator: '<=',
+        value: 0,
+      },
+    }]);
+  };
+
+  const removeWinCondition = (index: number) => {
+    onChange(winConditions.filter((_, i) => i !== index));
+  };
+
+  const updateWinCondition = (index: number, updates: Partial<WinConditionSchema>) => {
+    onChange(winConditions.map((wc, i) => i === index ? { ...wc, ...updates } : wc));
+  };
+
+  const winnerOptions = [
+    { value: 'actor', label: '$actor (Current player)' },
+    { value: 'opponent', label: '$opponent (Other player)' },
+    { value: 'draw', label: 'draw (No winner)' },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={styles.sectionTitle}>Win Conditions</h3>
+        <button style={styles.successButton} onClick={addWinCondition}>+ Add Win Condition</button>
+      </div>
+
+      <div style={{ fontSize: '0.9em', color: '#666', marginBottom: '16px', padding: '12px', background: '#f0f9ff', borderRadius: '6px' }}>
+        Win conditions are evaluated when <code>isGameOver()</code> or <code>getWinner()</code> is called.
+        The first matching condition determines the winner. Conditions are checked in order.
+      </div>
+
+      {winConditions.map((winCondition, index) => (
+        <div key={index} style={styles.card}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input
+              style={{ ...styles.input, flex: 1, fontWeight: 600 }}
+              value={winCondition.id}
+              onChange={(e) => updateWinCondition(index, { id: e.target.value })}
+              placeholder="winConditionId (required)"
+            />
+            <button
+              style={{ ...styles.button, padding: '8px 12px' }}
+              onClick={() => setExpandedCondition(expandedCondition === index ? null : index)}
+            >
+              {expandedCondition === index ? 'Collapse' : 'Expand'}
+            </button>
+            <button style={styles.dangerButton} onClick={() => removeWinCondition(index)}>Delete</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <label style={styles.label}>Name (optional)</label>
+              <input
+                style={styles.input}
+                value={winCondition.name || ''}
+                onChange={(e) => updateWinCondition(index, { name: e.target.value || undefined })}
+                placeholder="Human readable name"
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Winner</label>
+              <select
+                style={styles.input}
+                value={typeof winCondition.winner === 'string' ? winCondition.winner : ''}
+                onChange={(e) => updateWinCondition(index, { winner: e.target.value || undefined })}
+              >
+                <option value="">Select winner...</option>
+                {winnerOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Description (optional)</label>
+            <textarea
+              style={{ ...styles.input, minHeight: '40px' }}
+              value={winCondition.description || ''}
+              onChange={(e) => updateWinCondition(index, { description: e.target.value || undefined })}
+              placeholder="What this win condition checks"
+            />
+          </div>
+
+          {/* Summary when collapsed */}
+          {expandedCondition !== index && (
+            <div style={{ fontSize: '0.85em', color: '#666', marginTop: '8px', cursor: 'pointer' }} onClick={() => setExpandedCondition(index)}>
+              Condition: {winCondition.condition.type} | Winner: {winCondition.winner || 'none'}
+              <span style={{ color: '#667eea', marginLeft: '8px' }}>Click Expand to edit →</span>
+            </div>
+          )}
+
+          {/* Expanded view */}
+          {expandedCondition === index && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+              {/* Condition */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Condition (required)
+                  </label>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  This condition must be true for the game to end
+                </div>
+                <ConditionBuilder
+                  condition={winCondition.condition}
+                  onChange={(newCondition) => updateWinCondition(index, { condition: newCondition })}
+                  components={components}
+                  zones={zones}
+                  phases={phases}
+                />
+              </div>
+
+              {/* Loser (optional) */}
+              <div style={{ marginTop: '16px' }}>
+                <label style={styles.label}>Loser (optional)</label>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  Entity expression for the losing player. If set, winner will be the other player.
+                </div>
+                <input
+                  style={styles.input}
+                  value={typeof winCondition.loser === 'string' ? winCondition.loser : ''}
+                  onChange={(e) => updateWinCondition(index, { loser: e.target.value || undefined })}
+                  placeholder="$actor, $opponent, or entity expression"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {winConditions.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+          No win conditions defined. Win conditions determine when the game ends and who wins.
         </div>
       )}
     </div>

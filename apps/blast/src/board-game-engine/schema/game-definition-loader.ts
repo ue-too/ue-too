@@ -18,9 +18,12 @@ import type {
 import { ActionFactory } from './factories/action-factory';
 import { EffectFactory } from './factories/effect-factory';
 import { RuleFactory } from './factories/rule-factory';
+import { WinConditionFactory } from './factories/win-condition-factory';
 import { ExpressionResolver } from './expression-resolver';
 import type { ActionDefinition, PhaseDefinition, Rule, GameState as IGameState } from '../core/types';
-import { GameState, ZONE_COMPONENT, DECK_COMPONENT, PLAYER_COMPONENT } from '../core/game-state';
+import { GameState, ZONE_COMPONENT, DECK_COMPONENT, PLAYER_COMPONENT, GAME_STATUS_COMPONENT, GAME_MANAGER_COMPONENT } from '../core/game-state';
+import type { GameStatusComponent } from '../core/game-state';
+import type { WinCondition } from './factories/win-condition-factory';
 
 /**
  * Result of loading a game definition.
@@ -31,6 +34,7 @@ export interface LoadedGameDefinition {
   actions: ActionDefinition[];
   phases: PhaseDefinition[];
   rules: Rule[];
+  winConditions?: WinCondition[];
   createInitialState: () => GameState;
 }
 
@@ -42,6 +46,7 @@ export class GameDefinitionLoader {
   private actionFactory!: ActionFactory;
   private effectFactory!: EffectFactory;
   private ruleFactory!: RuleFactory;
+  private winConditionFactory!: WinConditionFactory;
   private resolver!: ExpressionResolver;
 
   /**
@@ -73,6 +78,7 @@ export class GameDefinitionLoader {
     this.actionFactory = new ActionFactory(this.componentNames);
     this.effectFactory = new EffectFactory(this.componentNames);
     this.ruleFactory = new RuleFactory(this.componentNames);
+    this.winConditionFactory = new WinConditionFactory(this.componentNames);
     this.resolver = new ExpressionResolver(this.componentNames);
 
     // Create actions
@@ -84,6 +90,9 @@ export class GameDefinitionLoader {
     // Create rules
     const rules = json.rules ? this.ruleFactory.createRules(json.rules) : [];
 
+    // Create win conditions
+    const winConditions = json.winConditions ? this.winConditionFactory.createWinConditions(json.winConditions) : undefined;
+
     // Create initial state factory
     const createInitialState = () => this.createInitialState(json);
 
@@ -93,6 +102,7 @@ export class GameDefinitionLoader {
       actions,
       phases,
       rules,
+      winConditions,
       createInitialState,
     };
   }
@@ -252,6 +262,7 @@ export class GameDefinitionLoader {
     coordinator.registerComponent(ZONE_COMPONENT);
     coordinator.registerComponent(DECK_COMPONENT);
     coordinator.registerComponent(PLAYER_COMPONENT);
+    coordinator.registerComponent<GameStatusComponent>(GAME_STATUS_COMPONENT);
 
     // Create game state
     const state = new GameState(coordinator);
@@ -346,6 +357,27 @@ export class GameDefinitionLoader {
     state.setCurrentPhase(setup.initialPhase);
     state.setTurnNumber(1);
     state.setActivePlayer(players[0]);
+
+    // Initialize GameStatusComponent on game manager entity
+    // Find the game manager entity (it has GAME_MANAGER_COMPONENT)
+    const gameManagerComponentType = coordinator.getComponentType(GAME_MANAGER_COMPONENT);
+    if (gameManagerComponentType) {
+      const allEntities = coordinator.getAllEntities();
+      const gameManagerEntity = allEntities.find((entity) => {
+        return coordinator.getComponentFromEntity(gameManagerComponentType, entity) !== null;
+      });
+
+      if (gameManagerEntity !== undefined) {
+        coordinator.addComponentToEntity<GameStatusComponent>(
+          GAME_STATUS_COMPONENT,
+          gameManagerEntity,
+          {
+            isGameOver: false,
+            winner: null,
+          }
+        );
+      }
+    }
 
     // Execute setup effects
     if (setup.setupEffects && setup.setupEffects.length > 0) {
