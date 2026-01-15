@@ -2,8 +2,8 @@
 
 **Status**: ✅ MVP Complete
 **Date**: January 2026
-**Version**: 1.0.1
-**Last Updated**: Added JSON rule loading, SwitchActivePlayer effect, event-driven architecture improvements
+**Version**: 1.0.2
+**Last Updated**: Fixed phase advancement infinite loop, phase restriction enforcement, visual rule builder implementation
 
 ---
 
@@ -1103,7 +1103,6 @@ const lightningBoltAction = new ActionDefinition({
 - [ ] Hot-reload card definitions during gameplay
 - [ ] Sandboxed effect execution
 - [ ] More advanced expressions (loops, custom functions)
-- [ ] Visual rule builder in GUI (currently JSON-only)
 
 **File Locations**:
 - Expression language: `src/board-game-engine/schema/expression-resolver.ts`
@@ -1151,7 +1150,29 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 
 **Priority**: Medium (UX improvement)
 
-#### 15. **Other Game Types**
+#### 15. **Phase System Fixes and Improvements**
+
+**Recent Fixes (v1.0.2)**:
+- [x] Fixed infinite loop in phase advancement - Added cycle detection and maximum limit (10 advances per action) to prevent infinite loops when phases with `autoAdvance: true` form cycles
+- [x] Fixed phase self-reference bug - Improved `nextPhase` handling in `game-definition-loader.ts` to prevent phases from defaulting to themselves, which caused infinite loops
+- [x] Fixed phase restriction enforcement - `allowedActions` in phase definitions now properly restricts which actions can be performed. Actions are automatically filtered based on phase restrictions even without explicit `phaseCheck` preconditions
+
+**Implementation Details**:
+- `GameEngine.performAction()` now includes cycle detection using a `Set` to track visited phases
+- Maximum phase advancement limit of 10 per action execution to prevent runaway loops
+- `ActionSystem` now integrates with `PhaseManager` to enforce phase-based action restrictions
+- Phase restrictions are checked in both `getValidActions()` and `validateAction()` methods
+- Improved error messages when actions are attempted in disallowed phases
+
+**File Locations**:
+- `src/board-game-engine/game-engine.ts` - Phase advancement cycle detection
+- `src/board-game-engine/schema/game-definition-loader.ts` - Phase creation with proper nextPhase handling
+- `src/board-game-engine/action-system/action-system.ts` - Phase restriction enforcement
+
+**Status**: ✅ Complete
+**Priority**: High (prevents game freezing)
+
+#### 16. **Other Game Types**
 The engine is generic enough to support:
 - [ ] **Chess** - Turn-based, deterministic
 - [ ] **Checkers** - Simpler board game

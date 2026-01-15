@@ -74,6 +74,14 @@ export class GameEngine {
     this.eventProcessor = new EventProcessor(this.ruleEngine);
     this.phaseManager = new PhaseManager();
 
+    // Register phases first (needed for action system)
+    for (const phase of gameDefinition.phases) {
+      this.phaseManager.registerPhase(phase);
+    }
+
+    // Connect phase manager to action system for phase-based restrictions
+    this.actionSystem.setPhaseManager(this.phaseManager);
+
     // Register actions
     for (const action of gameDefinition.actions) {
       this.actionSystem.registerAction(action as any);
@@ -82,11 +90,6 @@ export class GameEngine {
     // Register rules
     for (const rule of gameDefinition.rules) {
       this.ruleEngine.addGlobalRule(rule);
-    }
-
-    // Register phases
-    for (const phase of gameDefinition.phases) {
-      this.phaseManager.registerPhase(phase);
     }
 
     // Create initial state

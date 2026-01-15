@@ -8,6 +8,7 @@ import type { Entity } from '@ue-too/ecs';
 import type { Action, GameState, Event } from '../core/types';
 import { ActionDefinition } from './action-definition';
 import { ActionValidationError } from '../core/types';
+import type { PhaseManager } from '../phase-system/phase-manager';
 
 /**
  * Central action system that manages all action definitions.
@@ -28,6 +29,16 @@ import { ActionValidationError } from '../core/types';
  */
 export class ActionSystem {
   private actionDefinitions: Map<string, ActionDefinition> = new Map();
+  private phaseManager: PhaseManager | null = null;
+
+  /**
+   * Set the phase manager for phase-based action restrictions.
+   *
+   * @param phaseManager - Phase manager instance
+   */
+  setPhaseManager(phaseManager: PhaseManager): void {
+    this.phaseManager = phaseManager;
+  }
 
   /**
    * Register an action definition.
@@ -91,11 +102,18 @@ export class ActionSystem {
             parameters,
           };
 
-          // Check if valid
+          // Check if valid (including preconditions)
           const [isValid] = definition.canExecute(state, action);
-          if (isValid) {
-            validActions.push(action);
+          if (!isValid) {
+            continue;
           }
+
+          // Check phase restrictions if phase manager is available
+          if (this.phaseManager && !this.phaseManager.canPerformAction(state, definition.name)) {
+            continue;
+          }
+
+          validActions.push(action);
         }
       }
     }
@@ -116,7 +134,19 @@ export class ActionSystem {
       return [false, `Unknown action type: ${action.type}`];
     }
 
-    return definition.canExecute(state, action);
+    // Check preconditions
+    const [isValid, errorMessage] = definition.canExecute(state, action);
+    if (!isValid) {
+      return [false, errorMessage];
+    }
+
+    // Check phase restrictions if phase manager is available
+    if (this.phaseManager && !this.phaseManager.canPerformAction(state, action.type)) {
+      const currentPhase = state.currentPhase;
+      return [false, `Action '${action.type}' is not allowed in phase '${currentPhase}'`];
+    }
+
+    return [true, null];
   }
 
   /**
