@@ -384,6 +384,23 @@
         }
       ],
       "priority": 90
+    },
+    {
+      "id": "resetTurnStateOnPlayerChange",
+      "trigger": {
+        "eventType": "ActivePlayerChanged"
+      },
+      "effects": [
+        {
+          "type": "setComponentValue",
+          "entity": "$param.newPlayerId",
+          "component": "TurnState",
+          "property": "hasDrawnThisTurn",
+          "value": false,
+          "createIfMissing": true
+        }
+      ],
+      "priority": 100
     }
   ],
 
