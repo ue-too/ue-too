@@ -361,6 +361,15 @@ export function GameDefinitionBuilder() {
               onChange={(rules) => updateDefinition('rules', rules)}
             />
           )}
+          {activeTab === 'winConditions' && (
+            <WinConditionsSection
+              winConditions={gameDefinition.winConditions || []}
+              components={gameDefinition.components}
+              zones={gameDefinition.zones}
+              phases={gameDefinition.phases.map(p => p.name)}
+              onChange={(winConditions) => updateDefinition('winConditions', winConditions)}
+            />
+          )}
           {activeTab === 'setup' && (
             <SetupSection
               setup={gameDefinition.setup}
