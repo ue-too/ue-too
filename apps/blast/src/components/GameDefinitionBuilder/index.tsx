@@ -6,6 +6,8 @@ import type {
   ActionDefinitionSchema,
   PhaseDefinitionSchema,
   SetupDefinitionSchema,
+  RuleDefinitionSchema,
+  EventPatternSchema,
   PropertyDefinition,
   PropertyType,
 } from '../../board-game-engine/schema/types';
@@ -23,7 +25,7 @@ import type { BuilderGameDefinition, ExtendedMetadata } from './types';
 export type { BuilderGameDefinition } from './types';
 
 // Tab sections
-type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'setup' | 'play';
+type Tab = 'metadata' | 'components' | 'zones' | 'templates' | 'actions' | 'phases' | 'rules' | 'setup' | 'play';
 
 // Default empty game definition
 const createEmptyGameDefinition = (): BuilderGameDefinition => ({
@@ -281,7 +283,7 @@ export function GameDefinitionBuilder() {
 
       {/* Tabs */}
       <div style={styles.tabs}>
-        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'setup', 'play'] as Tab[]).map(tab => (
+        {(['metadata', 'components', 'zones', 'templates', 'actions', 'phases', 'rules', 'setup', 'play'] as Tab[]).map(tab => (
           <button
             key={tab}
             style={{
@@ -346,6 +348,16 @@ export function GameDefinitionBuilder() {
               phases={gameDefinition.phases}
               actions={gameDefinition.actions}
               onChange={(phases) => updateDefinition('phases', phases)}
+            />
+          )}
+          {activeTab === 'rules' && (
+            <RulesSection
+              rules={gameDefinition.rules || []}
+              components={gameDefinition.components}
+              zones={gameDefinition.zones}
+              phases={gameDefinition.phases.map(p => p.name)}
+              actions={gameDefinition.actions}
+              onChange={(rules) => updateDefinition('rules', rules)}
             />
           )}
           {activeTab === 'setup' && (
@@ -2092,6 +2104,301 @@ function PhasesSection({ phases, actions, onChange }: PhasesSectionProps) {
       {phases.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
           No phases defined. Phases control game flow (Setup, Main, Combat, End, etc.)
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Rules Section
+// ============================================================================
+interface RulesSectionProps {
+  rules: RuleDefinitionSchema[];
+  components: Record<string, ComponentDefinition>;
+  zones: Record<string, ZoneDefinition>;
+  phases: string[];
+  actions: ActionDefinitionSchema[];
+  onChange: (rules: RuleDefinitionSchema[]) => void;
+}
+
+function RulesSection({ rules, components, zones, phases, actions, onChange }: RulesSectionProps) {
+  const [expandedRule, setExpandedRule] = useState<number | null>(null);
+
+  // Common event types for suggestions
+  const commonEventTypes = [
+    'TurnEnded',
+    'TurnStarted',
+    'CardPlayed',
+    'CardDrawn',
+    'ActivePlayerChanged',
+    'EntityCreated',
+    'EntityDestroyed',
+    'EntityMoved',
+    'PhaseChanged',
+    'ResourceChanged',
+  ];
+
+  const addRule = () => {
+    onChange([...rules, {
+      id: `rule${rules.length + 1}`,
+      trigger: {
+        eventType: 'TurnEnded',
+      },
+      conditions: [],
+      effects: [],
+      priority: 100,
+    }]);
+  };
+
+  const removeRule = (index: number) => {
+    onChange(rules.filter((_, i) => i !== index));
+  };
+
+  const updateRule = (index: number, updates: Partial<RuleDefinitionSchema>) => {
+    onChange(rules.map((r, i) => i === index ? { ...r, ...updates } : r));
+  };
+
+  const updateTrigger = (index: number, updates: Partial<EventPatternSchema>) => {
+    const rule = rules[index];
+    updateRule(index, {
+      trigger: { ...rule.trigger, ...updates },
+    });
+  };
+
+  const addFilter = (index: number) => {
+    const rule = rules[index];
+    const filters = rule.trigger.filters || {};
+    const newKey = `filterKey${Object.keys(filters).length + 1}`;
+    updateTrigger(index, {
+      filters: { ...filters, [newKey]: '' },
+    });
+  };
+
+  const updateFilter = (ruleIndex: number, filterKey: string, newKey: string, value: string) => {
+    const rule = rules[ruleIndex];
+    const filters = { ...(rule.trigger.filters || {}) };
+    if (newKey !== filterKey) {
+      delete filters[filterKey];
+    }
+    filters[newKey] = value;
+    updateTrigger(ruleIndex, { filters });
+  };
+
+  const removeFilter = (ruleIndex: number, filterKey: string) => {
+    const rule = rules[ruleIndex];
+    const filters = { ...(rule.trigger.filters || {}) };
+    delete filters[filterKey];
+    updateTrigger(ruleIndex, { filters: Object.keys(filters).length > 0 ? filters : undefined });
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={styles.sectionTitle}>Rules</h3>
+        <button style={styles.successButton} onClick={addRule}>+ Add Rule</button>
+      </div>
+
+      {rules.map((rule, index) => (
+        <div key={index} style={styles.card}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input
+              style={{ ...styles.input, flex: 1, fontWeight: 600 }}
+              value={rule.id}
+              onChange={(e) => updateRule(index, { id: e.target.value })}
+              placeholder="ruleId"
+            />
+            <button
+              style={{ ...styles.button, padding: '8px 12px' }}
+              onClick={() => setExpandedRule(expandedRule === index ? null : index)}
+            >
+              {expandedRule === index ? 'Collapse' : 'Expand'}
+            </button>
+            <button style={styles.dangerButton} onClick={() => removeRule(index)}>Delete</button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <label style={styles.label}>Name (optional)</label>
+              <input
+                style={styles.input}
+                value={rule.name || ''}
+                onChange={(e) => updateRule(index, { name: e.target.value || undefined })}
+                placeholder="Human readable name"
+              />
+            </div>
+            <div>
+              <label style={styles.label}>Priority</label>
+              <input
+                type="number"
+                style={styles.input}
+                value={rule.priority ?? 100}
+                onChange={(e) => updateRule(index, { priority: parseInt(e.target.value) || 100 })}
+              />
+            </div>
+          </div>
+
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Description (optional)</label>
+            <textarea
+              style={{ ...styles.input, minHeight: '40px' }}
+              value={rule.description || ''}
+              onChange={(e) => updateRule(index, { description: e.target.value || undefined })}
+              placeholder="What this rule does"
+            />
+          </div>
+
+          {/* Summary when collapsed */}
+          {expandedRule !== index && (
+            <div style={{ fontSize: '0.85em', color: '#666', marginTop: '8px', cursor: 'pointer' }} onClick={() => setExpandedRule(index)}>
+              Trigger: {rule.trigger.eventType} | Conditions: {rule.conditions?.length || 0} | Effects: {rule.effects?.length || 0} | Priority: {rule.priority ?? 100}
+              <span style={{ color: '#667eea', marginLeft: '8px' }}>Click Expand to edit →</span>
+            </div>
+          )}
+
+          {/* Expanded view */}
+          {expandedRule === index && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
+              {/* Event Trigger */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Event Trigger
+                  </label>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  The event type that triggers this rule
+                </div>
+                <div style={styles.fieldGroup}>
+                  <label style={styles.label}>Event Type</label>
+                  <input
+                    style={styles.input}
+                    list={`event-types-${index}`}
+                    value={rule.trigger.eventType}
+                    onChange={(e) => updateTrigger(index, { eventType: e.target.value })}
+                    placeholder="TurnEnded"
+                  />
+                  <datalist id={`event-types-${index}`}>
+                    {commonEventTypes.map(et => (
+                      <option key={et} value={et} />
+                    ))}
+                  </datalist>
+                </div>
+
+                {/* Event Filters */}
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={styles.label}>Filters (optional)</label>
+                    <button
+                      style={{ ...styles.button, fontSize: '0.8em', padding: '4px 10px' }}
+                      onClick={() => addFilter(index)}
+                    >
+                      + Add Filter
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                    Additional constraints on event data (e.g., playerId, cardType)
+                  </div>
+                  {rule.trigger.filters && Object.entries(rule.trigger.filters).map(([key, value]) => (
+                    <div key={key} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                      <input
+                        style={{ ...styles.input, flex: 1 }}
+                        value={key}
+                        onChange={(e) => updateFilter(index, key, e.target.value, String(value))}
+                        placeholder="filterKey"
+                      />
+                      <span>:</span>
+                      <input
+                        style={{ ...styles.input, flex: 1 }}
+                        value={String(value)}
+                        onChange={(e) => updateFilter(index, key, key, e.target.value)}
+                        placeholder="filterValue"
+                      />
+                      <button
+                        style={{ ...styles.dangerButton, padding: '6px 10px' }}
+                        onClick={() => removeFilter(index, key)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {(!rule.trigger.filters || Object.keys(rule.trigger.filters).length === 0) && (
+                    <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db', color: '#9ca3af', fontSize: '0.85em' }}>
+                      No filters. Click "+ Add Filter" to add constraints on event data.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Conditions */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Conditions ({rule.conditions?.length || 0})
+                  </label>
+                  <button
+                    style={{ ...styles.button, fontSize: '0.8em', padding: '4px 10px' }}
+                    onClick={() => updateRule(index, {
+                      conditions: [...(rule.conditions || []), { type: 'isPlayerTurn' }]
+                    })}
+                  >
+                    + Add
+                  </button>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  Additional checks that must pass before rule effects execute
+                </div>
+                {(rule.conditions || []).map((condition, cIndex) => (
+                  <ConditionBuilder
+                    key={cIndex}
+                    condition={condition}
+                    onChange={(newCond) => {
+                      const newConditions = [...(rule.conditions || [])];
+                      if (newCond) {
+                        newConditions[cIndex] = newCond;
+                      } else {
+                        newConditions.splice(cIndex, 1);
+                      }
+                      updateRule(index, { conditions: newConditions });
+                    }}
+                    components={components}
+                    zones={zones}
+                    phases={phases}
+                  />
+                ))}
+                {(!rule.conditions || rule.conditions.length === 0) && (
+                  <div style={{ padding: '12px', background: '#f9fafb', borderRadius: '6px', border: '1px dashed #d1d5db', color: '#9ca3af', fontSize: '0.85em' }}>
+                    No conditions. Click "+ Add" to add one.
+                  </div>
+                )}
+              </div>
+
+              {/* Effects */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ ...styles.label, marginBottom: 0, fontSize: '1em' }}>
+                    Effects ({rule.effects?.length || 0})
+                  </label>
+                </div>
+                <div style={{ fontSize: '0.8em', color: '#666', marginBottom: '8px' }}>
+                  What happens when this rule is triggered
+                </div>
+                <EffectListBuilder
+                  effects={rule.effects || []}
+                  onChange={(effects) => updateRule(index, { effects })}
+                  components={components}
+                  zones={zones}
+                  phases={phases}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+
+      {rules.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
+          No rules defined. Rules react to events and execute effects automatically (e.g., switch player on TurnEnded).
         </div>
       )}
     </div>

@@ -132,9 +132,27 @@ export class GameEngine {
       // 3. Process all events through rule engine
       this.eventProcessor.processAll(newState, queue);
 
-      // 4. Auto-advance phase if needed
-      while (this.phaseManager.canAdvancePhase(this.state)) {
+      // 4. Auto-advance phase if needed (with safety limit to prevent infinite loops)
+      const MAX_PHASE_ADVANCES = 10; // Safety limit
+      let advanceCount = 0;
+      const visitedPhases = new Set<string>();
+      
+      while (this.phaseManager.canAdvancePhase(this.state) && advanceCount < MAX_PHASE_ADVANCES) {
+        const currentPhase = this.state.currentPhase;
+        
+        // Detect cycles: if we've visited this phase before in this advancement cycle, stop
+        if (visitedPhases.has(currentPhase)) {
+          console.warn(`Phase advancement cycle detected at phase: ${currentPhase}. Stopping to prevent infinite loop.`);
+          break;
+        }
+        
+        visitedPhases.add(currentPhase);
         this.advancePhase();
+        advanceCount++;
+      }
+      
+      if (advanceCount >= MAX_PHASE_ADVANCES) {
+        console.warn(`Phase advancement limit reached (${MAX_PHASE_ADVANCES}). Stopping to prevent infinite loop.`);
       }
     } catch (error) {
       console.error('Action execution failed:', error);
@@ -148,13 +166,15 @@ export class GameEngine {
   advancePhase(): void {
     this.phaseManager.advancePhase(this.state);
 
-    // Process phase change events
+    // Process phase change events (but don't auto-advance phases again to avoid recursion)
     const queue = new EventQueue();
     const events = this.state.getEventQueue();
     if (events.length > 0) {
       queue.addMultiple(events);
       this.state.clearEventQueue();
       this.eventProcessor.processAll(this.state, queue);
+      // Note: We don't check for phase advancement here to avoid infinite recursion.
+      // Phase advancement is only checked once per action in performAction().
     }
   }
 

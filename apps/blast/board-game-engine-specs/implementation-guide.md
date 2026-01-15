@@ -232,7 +232,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 A visual tool for creating board game definitions without writing JSON manually.
 
 **Features**:
-- Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Setup
+- Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Rules, Setup, Play
 - Split-panel layout with live JSON preview
 - Load/Save JSON files
 - Load example game (simple-card-game.json)
@@ -240,6 +240,7 @@ A visual tool for creating board game definitions without writing JSON manually.
 - Basic validation
 - Visual condition builder for preconditions
 - Visual effect builder for action effects and costs
+- Visual rule builder for event-driven game logic
 
 **Sections**:
 1. **Metadata** - Game name, version, author, description, player count, complexity, tags
@@ -1122,7 +1123,7 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - [x] Live game preview (run game from JSON definition)
 - [x] Shared zones support (zones accessible to all players)
 - [x] JSON rule loading - Rules defined in JSON are now loaded and executed
-- [ ] Visual rule builder (currently rules must be edited in JSON)
+- [x] Visual rule builder - Rules can be created and edited through the UI
 - [ ] Expression autocomplete (suggest `$actor`, `$target`, etc.)
 - [ ] Undo/redo support
 - [ ] Template library (pre-built game templates)
@@ -1139,11 +1140,13 @@ The GUI builder now includes visual builders for conditions and effects. Remaini
 - `EntityDisplay` component - Generic entity card display with component properties
 - Shared zones support - Zones marked as "shared" are accessible to all players
 - Rule system integration - Rules from JSON are loaded and processed by the event system
+- `RulesSection` component - Visual rule builder with event trigger, conditions, and effects editing
 
 **File Locations**:
 - `src/components/GameDefinitionBuilder/GamePreview.tsx` - Preview wrapper with validation
 - `src/components/GameDefinitionBuilder/GenericGameUI.tsx` - Game renderer
 - `src/components/GameDefinitionBuilder/EntityDisplay.tsx` - Entity card display
+- `src/components/GameDefinitionBuilder/index.tsx` - Main builder component (includes `RulesSection`)
 - `src/components/GameDefinitionBuilder/types.ts` - Shared type definitions
 
 **Priority**: Medium (UX improvement)

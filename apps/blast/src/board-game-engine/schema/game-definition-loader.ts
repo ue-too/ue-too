@@ -204,11 +204,21 @@ export class GameDefinitionLoader {
 
   private createPhases(phaseDefs: PhaseDefinitionSchema[]): PhaseDefinition[] {
     return phaseDefs.map((def) => {
+      // Determine nextPhase: use provided value, or default to first phase, or undefined if none
+      let nextPhase: string | undefined;
+      if (typeof def.nextPhase === 'string' && def.nextPhase.trim() !== '') {
+        nextPhase = def.nextPhase;
+      } else if (phaseDefs.length > 0) {
+        // Default to first phase if nextPhase is not specified
+        nextPhase = phaseDefs[0].name;
+      }
+      // If nextPhase is undefined, phase advancement will throw an error (which is safer than infinite loop)
+
       const phase: PhaseDefinition = {
         name: def.name,
         allowedActionTypes: def.allowedActions,
         autoAdvance: def.autoAdvance ?? false,
-        nextPhase: typeof def.nextPhase === 'string' ? def.nextPhase : def.name,
+        nextPhase,
       };
 
       // Add onEnter effects
