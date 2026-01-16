@@ -1,58 +1,53 @@
 import { Coordinator, createGlobalComponentName, createGlobalSystemName, Entity, System } from "@ue-too/ecs";
+import { LOCATION_COMPONENT, LocationComponent, ZONE_COMPONENT, ZoneComponent } from "src/zone-system";
 
 export type OrthoGridComponent = {
+    name: string;
     rows: number;
     columns: number;
-    stackable: boolean;
 };
 
+// each grid cell should also be a zone
 export type OrthoGridLocationComponent = {
     grid: Entity;
     row: number;
     column: number;
-    stackIndex: number;
 };
 
 export const ORTHO_GRID_COMPONENT = createGlobalComponentName("OrthoGridComponent");
 export const ORTHO_GRID_LOCATION_COMPONENT = createGlobalComponentName("OrthoGridLocationComponent");
 export const ORTHO_GRID_SYSTEM = createGlobalSystemName("OrthoGridSystem");
 
-export class OrthoLocationSystem implements System {
-    entities: Set<Entity>;
-    private coordinator: Coordinator;
+export function createOrthoGrid(coordinator: Coordinator, rows: number, columns: number, name: string): Entity {
+    const gridEntity = coordinator.createEntity();
 
-    constructor(coordinator: Coordinator) {
-        this.coordinator = coordinator;
-        this.entities = new Set();
-        this.coordinator.registerComponent<OrthoGridComponent>(ORTHO_GRID_COMPONENT);
-        this.coordinator.registerComponent<OrthoGridLocationComponent>(ORTHO_GRID_LOCATION_COMPONENT);
-        const orthoGridComponentType = this.coordinator.getComponentType(ORTHO_GRID_LOCATION_COMPONENT);
-        if(orthoGridComponentType === null) {
-            throw new Error('OrthoGridLocationComponent not registered');
+    coordinator.registerComponent<OrthoGridComponent>(ORTHO_GRID_COMPONENT);
+    coordinator.registerComponent<OrthoGridLocationComponent>(ORTHO_GRID_LOCATION_COMPONENT);
+    coordinator.registerComponent<ZoneComponent>(ZONE_COMPONENT);
+
+    coordinator.addComponentToEntity(ORTHO_GRID_COMPONENT, gridEntity, {
+        name: name,
+        rows: rows,
+        columns: columns
+    });
+
+    for(let row = 0; row < rows; row++) {
+        for(let column = 0; column < columns; column++) {
+            const gridCellZoneEntity = coordinator.createEntity();
+            coordinator.addComponentToEntity(ZONE_COMPONENT, gridCellZoneEntity, {
+                zone: name + " " + row + " " + column,
+                owner: null,
+                visibility: "public",
+                ordered: true
+            });
+
+            coordinator.addComponentToEntity(ORTHO_GRID_LOCATION_COMPONENT, gridCellZoneEntity, {
+                grid: gridEntity,
+                row: row,
+                column: column
+            });
         }
-        this.coordinator.setSystemSignature(ORTHO_GRID_SYSTEM, 1 << orthoGridComponentType);
     }
 
-    getGrid(gridEntity: Entity): (Entity | null)[][] {
-        const gridComponent = this.coordinator.getComponentFromEntity<OrthoGridComponent>(ORTHO_GRID_COMPONENT, gridEntity);
-        if(!gridComponent) {
-            throw new Error('Grid component not found');
-        }
-        const grid: (Entity | null)[][] = [];
-        for(let i = 0; i < gridComponent.rows; i++) {
-            const row: (Entity | null) [] = [];
-            for(let j = 0; j < gridComponent.columns; j++) {
-                row.push(null);
-            }
-            grid.push(row);
-        }
-        for(const entity of this.entities) {
-            const orthoGridLocationComponent = this.coordinator.getComponentFromEntity<OrthoGridLocationComponent>(ORTHO_GRID_LOCATION_COMPONENT, entity);
-            if(orthoGridLocationComponent?.grid === gridEntity) {
-                grid[orthoGridLocationComponent.row][orthoGridLocationComponent.column] = entity;
-            }
-        }
-        return grid;
-    }
-
+    return gridEntity;
 }

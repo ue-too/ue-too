@@ -74,11 +74,8 @@ describe('MoveEntityToZoneEffect - Ordered Zone', () => {
             expect(newEntityLocation?.sortIndex).toBe(0);
 
             // Verify existing entities were shifted
-            // Note: offsetZoneSortIndex reorganizes all entities first (including the new one we just added),
-            // then offsets them. The new entity (with sortIndex from otherZoneEntity, likely 0) gets reorganized
-            // along with existing entities, then all are offset by 1, then new entity is set back to 0.
-            // This can result in existing entities having indices like 1, 3, 4 (if new entity was in the middle)
-            // or 2, 3, 4 (if new entity was first). The exact values depend on the reorganization order.
+            // addEntityToZone organizes the zone first, then adds the new entity at top,
+            // which shifts all existing entities by 1
             const entity1Location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, existingEntity1);
             const entity2Location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, existingEntity2);
             const entity3Location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, existingEntity3);
@@ -131,7 +128,7 @@ describe('MoveEntityToZoneEffect - Ordered Zone', () => {
             const entitiesInZone = locationSystem.getEntitiesInZone(orderedZoneEntity);
             expect(entitiesInZone).toEqual([entity3, entity2, entity1]);
             
-            // Verify all have valid sequential indices (may not be exactly 0,1,2 due to reorganization)
+            // Verify all have valid sequential indices
             expect(loc1?.sortIndex).toBeGreaterThan(0);
             expect(loc2?.sortIndex).toBeGreaterThan(0);
         });
@@ -368,8 +365,7 @@ describe('MoveEntityToZoneEffect - Ordered Zone', () => {
             expect(newEntityLocation?.sortIndex).toBe(0);
 
             // All entities should be in the zone and ordered correctly
-            // The sort indices may not be exactly 0,1,2,3 due to how offsetZoneSortIndex works,
-            // but the order should be correct (new entity first, then others in some order)
+            // addEntityToZone organizes the zone first, then adds the new entity at top
             expect(entitiesInZone[0]).toBe(newEntity);
             
             // Verify all entities have valid sort indices and are ordered

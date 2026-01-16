@@ -127,4 +127,31 @@ export class LocationSystem implements System {
             locationComponent.sortIndex = i;
         }
     }
+
+    addEntityToZone(zoneEntity: Entity, entity: Entity, direction: 'top' | 'bottom'): void {
+        const zoneComponent = this.coordinator.getComponentFromEntity<ZoneComponent>(ZONE_COMPONENT, zoneEntity);
+        if(!zoneComponent) {
+            return;
+        }
+        const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+        if(!locationComponent) {
+            return;
+        }
+        if(locationComponent.location === zoneEntity) {
+            return;
+        }
+        if(!zoneComponent.ordered) {
+            locationComponent.location = zoneEntity;
+            locationComponent.sortIndex = 0;
+            return;
+        }
+        const lastSortIndex = this.organizeZoneSortIndex(zoneEntity);
+        if(direction === 'top') {
+            this.offsetZoneSortIndex(zoneEntity, 1);
+            locationComponent.sortIndex = 0;
+        } else {
+            locationComponent.sortIndex = lastSortIndex;
+        }
+        locationComponent.location = zoneEntity;
+    }
 }

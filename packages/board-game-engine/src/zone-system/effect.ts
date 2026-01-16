@@ -16,31 +16,11 @@ export class MoveEntityToZoneEffect implements Effect {
     }
 
     apply(): void {
-        const zoneEntityIsZone = this._coordinator.getComponentFromEntity<ZoneComponent>(ZONE_COMPONENT, this._zoneEntity);
-        if(!zoneEntityIsZone) {
-            return;
-        }
-        const entityIsInZone = this._coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, this._entity);
-        if(!entityIsInZone || entityIsInZone.location === this._zoneEntity) {
-            return;
-        }
-        if(!zoneEntityIsZone.ordered) {
-            entityIsInZone.location = this._zoneEntity;
-            entityIsInZone.sortIndex = 0;
-            return;
-        }
         const locationSystem = this._coordinator.getSystem<LocationSystem>(LOCATION_SYSTEM);
         if(!locationSystem) {
             return;
         }
-        const lastSortIndex = locationSystem.organizeZoneSortIndex(this._zoneEntity);
-        entityIsInZone.location = this._zoneEntity;
-        if(this._addToIfZoneOrdered === "top") {
-            locationSystem.offsetZoneSortIndex(this._zoneEntity, 1);
-            entityIsInZone.sortIndex = 0;
-        } else {
-            entityIsInZone.sortIndex = lastSortIndex;
-        }
+        locationSystem.addEntityToZone(this._zoneEntity, this._entity, this._addToIfZoneOrdered);
     }
 }
 

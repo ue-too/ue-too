@@ -1,4 +1,4 @@
-import { Coordinator, Entity, System, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
+import { Coordinator, Entity, System, ComponentType, createGlobalComponentName, ComponentName, SystemName, createGlobalSystemName } from "@ue-too/ecs";
 import { shuffle } from "./utils";
 
 export interface Token {
@@ -6,6 +6,9 @@ export interface Token {
 }
 
 export const LOCATION_COMPONENT: ComponentName = createGlobalComponentName("LocationComponent");
+
+export const LOCATION_SYSTEM: SystemName = createGlobalSystemName("LocationSystem");
+export const DECK_SYSTEM: SystemName = createGlobalSystemName("DeckSystem");
 export const DECK_COMPONENT: ComponentName = createGlobalComponentName("DeckComponent");
 
 export type LocationComponent = {
@@ -42,8 +45,8 @@ export class StackableTokenSystem implements System {
         if(deckComponentType == undefined){
             throw new Error('DeckComponent not registered');
         }
-        this._coordinator.registerSystem("deckSystem", this);
-        this._coordinator.setSystemSignature("deckSystem", 1 << locationComponentType | 1 << deckComponentType);
+        this._coordinator.registerSystem(DECK_SYSTEM, this);
+        this._coordinator.setSystemSignature(DECK_SYSTEM, 1 << locationComponentType | 1 << deckComponentType);
     }
 
     shuffle(at: number): void {

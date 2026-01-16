@@ -112,4 +112,80 @@ describe('Coordinator', () => {
         expect(coordinator.entityExists(10001)).toBe(false);
     });
 
+    it('should only include entities with all required components in system entities', () => {
+        const coordinator = new Coordinator();
+        
+        // Define component types
+        type Position = { x: number; y: number };
+        type Velocity = { x: number; y: number };
+        type Health = { value: number };
+        
+        const Position = createComponentName('Position');
+        const Velocity = createComponentName('Velocity');
+        const Health = createComponentName('Health');
+        
+        // Register components
+        coordinator.registerComponent<Position>(Position);
+        coordinator.registerComponent<Velocity>(Velocity);
+        coordinator.registerComponent<Health>(Health);
+        
+        // Get component types for signature calculation
+        const posType = coordinator.getComponentType(Position)!;
+        const velType = coordinator.getComponentType(Velocity)!;
+        const healthType = coordinator.getComponentType(Health)!;
+        
+        // Create a system that requires Position AND Velocity
+        const movementSystem: System = { entities: new Set<Entity>() };
+        const MOVEMENT_SYSTEM = createSystemName('MovementSystem');
+        coordinator.registerSystem(MOVEMENT_SYSTEM, movementSystem);
+        
+        // Set system signature: requires Position (bit 0) AND Velocity (bit 1)
+        const requiredSignature = (1 << posType) | (1 << velType);
+        coordinator.setSystemSignature(MOVEMENT_SYSTEM, requiredSignature);
+        
+        // Initially, system should have no entities
+        expect(movementSystem.entities.size).toBe(0);
+        
+        // Create entities with different component combinations
+        const entityWithOnlyPosition = coordinator.createEntity();
+        coordinator.addComponentToEntity(Position, entityWithOnlyPosition, { x: 0, y: 0 });
+        
+        const entityWithOnlyVelocity = coordinator.createEntity();
+        coordinator.addComponentToEntity(Velocity, entityWithOnlyVelocity, { x: 1, y: 1 });
+        
+        const entityWithPositionAndVelocity = coordinator.createEntity();
+        coordinator.addComponentToEntity(Position, entityWithPositionAndVelocity, { x: 10, y: 10 });
+        coordinator.addComponentToEntity(Velocity, entityWithPositionAndVelocity, { x: 1, y: 1 });
+        
+        const entityWithAllComponents = coordinator.createEntity();
+        coordinator.addComponentToEntity(Position, entityWithAllComponents, { x: 20, y: 20 });
+        coordinator.addComponentToEntity(Velocity, entityWithAllComponents, { x: 2, y: 2 });
+        coordinator.addComponentToEntity(Health, entityWithAllComponents, { value: 100 });
+        
+        const entityWithNoComponents = coordinator.createEntity();
+        
+        // Verify system only contains entities with BOTH Position AND Velocity
+        expect(movementSystem.entities.size).toBe(2);
+        expect(movementSystem.entities.has(entityWithOnlyPosition)).toBe(false);
+        expect(movementSystem.entities.has(entityWithOnlyVelocity)).toBe(false);
+        expect(movementSystem.entities.has(entityWithPositionAndVelocity)).toBe(true);
+        expect(movementSystem.entities.has(entityWithAllComponents)).toBe(true);
+        expect(movementSystem.entities.has(entityWithNoComponents)).toBe(false);
+        
+        // Test removing a required component removes entity from system
+        coordinator.removeComponentFromEntity(Velocity, entityWithPositionAndVelocity);
+        expect(movementSystem.entities.has(entityWithPositionAndVelocity)).toBe(false);
+        expect(movementSystem.entities.size).toBe(1);
+        
+        // Test adding a required component adds entity to system
+        coordinator.addComponentToEntity(Velocity, entityWithOnlyPosition, { x: 1, y: 1 });
+        expect(movementSystem.entities.has(entityWithOnlyPosition)).toBe(true);
+        expect(movementSystem.entities.size).toBe(2);
+        
+        // Test removing a non-required component doesn't remove entity from system
+        coordinator.removeComponentFromEntity(Health, entityWithAllComponents);
+        expect(movementSystem.entities.has(entityWithAllComponents)).toBe(true);
+        expect(movementSystem.entities.size).toBe(2);
+    });
+
 });
