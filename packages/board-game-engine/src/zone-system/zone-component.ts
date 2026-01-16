@@ -22,7 +22,7 @@ export type ZoneComponent = {
     zone: string;
     owner: Entity | null;
     visibility: 'public' | 'private' | 'owner-only';
-    ordered: boolean;
+    ordered: boolean; // should be true if you want the order to be stable other wise may change; false suitable for obscure zones 
 }
 
 export const ZoneComponentSchema: ComponentSchema = {
@@ -153,5 +153,9 @@ export class LocationSystem implements System {
             locationComponent.sortIndex = lastSortIndex;
         }
         locationComponent.location = zoneEntity;
+    }
+
+    isZoneEmpty(zoneEntity: Entity): boolean {
+        return this.getEntitiesInZone(zoneEntity).length === 0;
     }
 }
