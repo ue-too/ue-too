@@ -1,6 +1,6 @@
 import { Coordinator, Entity } from "@ue-too/ecs";
 import { Effect } from "../action-system/effect";
-import { LOCATION_COMPONENT, LocationComponent, ZONE_COMPONENT, ZoneComponent } from "./zone-component";
+import { LOCATION_COMPONENT, LocationComponent, LocationSystem, ZONE_COMPONENT, ZoneComponent } from "./zone-component";
 
 export class MoveEntityToZoneEffect implements Effect {
     private _coordinator: Coordinator;
@@ -24,5 +24,13 @@ export class MoveEntityToZoneEffect implements Effect {
         }
 
         entityIsInZone.location = this._zoneEntity;
+    }
+}
+
+export class ShuffleZoneEffect implements Effect {
+    constructor(private _locationSystem: LocationSystem, private _zoneEntity: Entity) {}
+
+    apply(): void {
+        this._locationSystem.shuffleZone(this._zoneEntity);
     }
 }

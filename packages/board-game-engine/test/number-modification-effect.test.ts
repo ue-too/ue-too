@@ -1,7 +1,7 @@
 import { Coordinator, Entity, createComponentName, ComponentSchema } from "@ue-too/ecs";
 import { NumberModificationEffect } from "../src/action-system/effect";
 
-describe('NumberDeductionEffect', () => {
+describe('NumberModificationEffect', () => {
     let coordinator: Coordinator;
     let entity: Entity;
     const HEALTH_COMPONENT = createComponentName('HealthComponent');
