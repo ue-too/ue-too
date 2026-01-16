@@ -1,4 +1,4 @@
-import { Coordinator, System, Entity, createComponentName } from "../src";
+import { Coordinator, System, Entity, createComponentName, createSystemName } from "../src";
 
 type MockComponent = {
     name: string;
@@ -46,11 +46,12 @@ describe('Coordinator', () => {
         const coordinator = new Coordinator();
         coordinator.registerComponent<MockComponent>(MOCK_COMPONENT);
         const mockSystem = {entities: new Set<Entity>()};
-        coordinator.registerSystem('MockSystem', mockSystem);
-        coordinator.setSystemSignature('MockSystem', 1);
+        const MOCK_SYSTEM = createSystemName('MockSystem');
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
+        coordinator.setSystemSignature(MOCK_SYSTEM, 1);
         const entity = coordinator.createEntity();
         coordinator.addComponentToEntity(MOCK_COMPONENT, entity, {name: 'John', age: 30});
-        coordinator.setSystemSignature('MockSystem', 1);
+        coordinator.setSystemSignature(MOCK_SYSTEM, 1);
         expect(mockSystem.entities.size).toBe(1);
         expect(mockSystem.entities.has(entity)).toBe(true);
     });
@@ -59,8 +60,9 @@ describe('Coordinator', () => {
         const coordinator = new Coordinator();
         coordinator.registerComponent<MockComponent>(MOCK_COMPONENT);
         const mockSystem = {entities: new Set<Entity>()};
-        coordinator.registerSystem('MockSystem', mockSystem);
-        coordinator.setSystemSignature('MockSystem', 1);
+        const MOCK_SYSTEM = createSystemName('MockSystem');
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
+        coordinator.setSystemSignature(MOCK_SYSTEM, 1);
         const entity = coordinator.createEntity();
         coordinator.createEntity();
         const entity3 = coordinator.createEntity();

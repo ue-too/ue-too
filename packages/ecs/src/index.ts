@@ -69,13 +69,16 @@
  *   entities: new Set()
  * };
  *
- * coordinator.registerSystem('Movement', movementSystem);
+ * const Movement = createSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
  *
  * // Set signature (entities with Position AND Velocity)
- * const posType = coordinator.getComponentType('Position')!;
- * const velType = coordinator.getComponentType('Velocity')!;
+ * const Position = createComponentName('Position');
+ * const Velocity = createComponentName('Velocity');
+ * const posType = coordinator.getComponentType(Position)!;
+ * const velType = coordinator.getComponentType(Velocity)!;
  * const signature = (1 << posType) | (1 << velType);
- * coordinator.setSystemSignature('Movement', signature);
+ * coordinator.setSystemSignature(Movement, signature);
  *
  * // Update loop
  * function update(deltaTime: number) {
@@ -127,6 +130,13 @@ export type Entity = number;
  * @category Types
  */
 export type ComponentName = symbol;
+
+/**
+ * System name identifier using Symbol for type safety and uniqueness.
+ * Use {@link createSystemName} to create system names, or {@link Symbol.for} for global symbols.
+ * @category Types
+ */
+export type SystemName = symbol;
 
 /**
  * Supported field types for runtime-defined component schemas.
@@ -254,6 +264,59 @@ export function getComponentNameString(componentName: ComponentName): string {
  * @category Utilities
  */
 export function createGlobalComponentName(key: string): ComponentName {
+    return Symbol.for(key);
+}
+
+/**
+ * Helper function to create a system name from a string.
+ * This creates a unique symbol for the system name.
+ * 
+ * @param name - The string name for the system
+ * @returns A unique symbol for the system name
+ * 
+ * @example
+ * ```typescript
+ * const Movement = createSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createSystemName(name: string): SystemName {
+    return Symbol(name);
+}
+
+/**
+ * Helper function to get the string description from a system name symbol.
+ * Useful for debugging and serialization.
+ * 
+ * @param systemName - The system name symbol
+ * @returns The string description of the symbol
+ * 
+ * @category Utilities
+ */
+export function getSystemNameString(systemName: SystemName): string {
+    return systemName.description || systemName.toString();
+}
+
+/**
+ * Helper function to create a system name using Symbol.for().
+ * This creates a global symbol that can be looked up by string key,
+ * which is useful for serialization and cross-module access.
+ * 
+ * @param key - The string key for the global symbol
+ * @returns A global symbol for the system name
+ * 
+ * @example
+ * ```typescript
+ * const Movement = createGlobalSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
+ * // Can be retrieved later with Symbol.for('Movement')
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createGlobalSystemName(key: string): SystemName {
     return Symbol.for(key);
 }
 
@@ -954,6 +1017,8 @@ export class ComponentManager {
  *
  * @example
  * ```typescript
+ * const Position = createComponentName('Position');
+ * const Velocity = createComponentName('Velocity');
  * const movementSystem: System = {
  *   entities: new Set()
  * };
@@ -961,8 +1026,8 @@ export class ComponentManager {
  * // System logic (called in game loop)
  * function updateMovement(deltaTime: number) {
  *   movementSystem.entities.forEach(entity => {
- *     const pos = ecs.getComponentFromEntity<Position>('Position', entity);
- *     const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity);
+ *     const pos = ecs.getComponentFromEntity<Position>(Position, entity);
+ *     const vel = ecs.getComponentFromEntity<Velocity>(Velocity, entity);
  *     if (pos && vel) {
  *       pos.x += vel.x * deltaTime;
  *       pos.y += vel.y * deltaTime;
@@ -995,24 +1060,24 @@ export interface System {
  * @category Managers
  */
 export class SystemManager {
-    private _systems: Map<string, {system: System, signature: ComponentSignature}> = new Map();
+    private _systems: Map<SystemName, {system: System, signature: ComponentSignature}> = new Map();
 
-    registerSystem(systemName: string, system: System){
+    registerSystem(systemName: SystemName, system: System){
         if(this._systems.has(systemName)) {
-            console.warn(`System ${systemName} already registered`);
+            console.warn(`System ${getSystemNameString(systemName)} already registered`);
             return;
         }
         this._systems.set(systemName, {system, signature: 0});
     }
 
-    setSignature(systemName: string, signature: ComponentSignature){
+    setSignature(systemName: SystemName, signature: ComponentSignature){
         if(!this._systems.has(systemName)) {
-            console.warn(`System ${systemName} not registered`);
+            console.warn(`System ${getSystemNameString(systemName)} not registered`);
             return;
         }
         const system = this._systems.get(systemName);
         if(system === undefined) {
-            console.warn(`System ${systemName} not registered`);
+            console.warn(`System ${getSystemNameString(systemName)} not registered`);
             return;
         }
         system.signature = signature;
@@ -1033,6 +1098,14 @@ export class SystemManager {
                 system.system.entities.delete(entity);
             }
         }
+    }
+
+    getSystem<T extends System>(systemName: SystemName): T | null {
+        const system = this._systems.get(systemName);
+        if(system === undefined) {
+            return null;
+        }
+        return system.system as T;
     }
 }
 
@@ -1142,12 +1215,16 @@ export class Coordinator {
         return this._componentManager.getComponentType(componentName) ?? null;
     }
 
-    registerSystem(systemName: string, system: System): void {
+    registerSystem(systemName: SystemName, system: System): void {
         this._systemManager.registerSystem(systemName, system);
     }
 
-    setSystemSignature(systemName: string, signature: ComponentSignature): void {
+    setSystemSignature(systemName: SystemName, signature: ComponentSignature): void {
         this._systemManager.setSignature(systemName, signature);
+    }
+
+    getSystem<T extends System>(systemName: SystemName): T | null {
+        return this._systemManager.getSystem<T>(systemName) ?? null;
     }
 
     /**

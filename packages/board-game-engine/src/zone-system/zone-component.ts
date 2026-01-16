@@ -1,7 +1,9 @@
-import { ComponentName, ComponentSchema, Coordinator, createGlobalComponentName, Entity, System, ComponentFieldDefinition, ArrayElementType } from "@ue-too/ecs";
+import { ComponentName, ComponentSchema, Coordinator, createGlobalComponentName, Entity, System, ComponentFieldDefinition, ArrayElementType, SystemName, createGlobalSystemName } from "@ue-too/ecs";
 
 export const ZONE_COMPONENT: ComponentName = createGlobalComponentName("ZoneComponent");
 export const LOCATION_COMPONENT: ComponentName = createGlobalComponentName("LocationComponent");
+
+export const LOCATION_SYSTEM: SystemName = createGlobalSystemName("LocationSystem");
 
 export type LocationComponent = {
     location: Entity;
@@ -57,8 +59,8 @@ export class LocationSystem implements System {
             throw new Error('LocationComponent not registered with coordinator');
         }
 
-        this.coordinator.registerSystem('locationSystem', this);
-        this.coordinator.setSystemSignature('locationSystem', 1 << locationComponentType);
+        this.coordinator.registerSystem(LOCATION_SYSTEM, this);
+        this.coordinator.setSystemSignature(LOCATION_SYSTEM, 1 << locationComponentType);
     }
 
     getEntitiesInZone(zoneEntity: Entity): Entity[] {
@@ -82,6 +84,32 @@ export class LocationSystem implements System {
             });
         }
         return tempArray.map(item => item.entity);
+    }
+
+    offsetZoneSortIndex(zoneEntity: Entity, offset: number): void {
+        this.organizeZoneSortIndex(zoneEntity);
+        const entities = this.getEntitiesInZone(zoneEntity);
+        for(let i = 0; i < entities.length; i++) {
+            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entities[i]);
+            if(!locationComponent) {
+                continue;
+            }
+            locationComponent.sortIndex += offset;
+        }
+    }
+
+    organizeZoneSortIndex(zoneEntity: Entity): number {
+        const entities = this.getEntitiesInZone(zoneEntity);
+        let lastSortIndex = 0;
+        for(let i = 0; i < entities.length; i++) {
+            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entities[i]);
+            if(!locationComponent) {
+                continue;
+            }
+            locationComponent.sortIndex = lastSortIndex;
+            lastSortIndex++;
+        }
+        return lastSortIndex;
     }
 
     shuffleZone(zoneEntity: Entity): void {

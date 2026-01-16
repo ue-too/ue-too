@@ -1,4 +1,4 @@
-import { Coordinator, Entity, ComponentSchema, createComponentName } from "../src";
+import { Coordinator, Entity, ComponentSchema, createComponentName, createSystemName } from "../src";
 
 // Create component name symbols for tests
 const PLAYER_STATS = createComponentName('PlayerStats');
@@ -285,10 +285,11 @@ describe('Coordinator - Runtime Component Schemas', () => {
         
         coordinator.registerComponentWithSchema(schema);
         const mockSystem = { entities: new Set<Entity>() };
-        coordinator.registerSystem('MockSystem', mockSystem);
+        const MOCK_SYSTEM = createSystemName('MockSystem');
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
         
         const componentType = coordinator.getComponentType(PLAYER_STATS)!;
-        coordinator.setSystemSignature('MockSystem', 1 << componentType);
+        coordinator.setSystemSignature(MOCK_SYSTEM, 1 << componentType);
         
         const entity = coordinator.createEntity();
         const component = coordinator.createComponentFromSchema(PLAYER_STATS);

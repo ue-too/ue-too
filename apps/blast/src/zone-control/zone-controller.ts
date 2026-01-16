@@ -1,6 +1,7 @@
-import { System, Coordinator, Entity, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
+import { System, Coordinator, Entity, ComponentType, createGlobalComponentName, ComponentName, createGlobalSystemName, SystemName } from "@ue-too/ecs";
 
 export const ZONE_COMPONENT: ComponentName = createGlobalComponentName("ZoneComponent");
+export const ZONE_SYSTEM: SystemName = createGlobalSystemName("ZoneSystem");
 
 export type ZoneComponent = {
     zone: string;
@@ -24,8 +25,8 @@ export class ZoneController implements System {
         if(componentType === null){
             throw new Error('ZoneComponent not registered');
         }
-        this.coordinator.registerSystem("zoneController", this);
-        this.coordinator.setSystemSignature("zoneController", 1 << componentType);
+        this.coordinator.registerSystem(ZONE_SYSTEM, this);
+        this.coordinator.setSystemSignature(ZONE_SYSTEM, 1 << componentType);
     }
 
     addZone(zone: string): void {

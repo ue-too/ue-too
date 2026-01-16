@@ -317,14 +317,14 @@ stateMachine.onStateChange((currentState, nextState)=>{
             layoutDeleteToggleButton.disabled = false;
             break;
         case "HOVER_FOR_STARTING_POINT":
-            board.cameraMovementOnMouseEdge.toggleOn();
+            // board.cameraMovementOnMouseEdge.toggleOn();
             layoutDeleteToggleButton.textContent = "Start Layout Deletion";
             layoutDeleteToggleButton.disabled = true;
             layoutToggleButton.textContent = "End Layout";
             layoutToggleButton.disabled = false;
             break;
         case "IDLE":
-            board.cameraMovementOnMouseEdge.toggleOff();
+            // board.cameraMovementOnMouseEdge.toggleOff();
             layoutDeleteToggleButton.textContent = "Start Layout Deletion";
             layoutDeleteToggleButton.disabled = false;
             layoutToggleButton.textContent = "Start Layout";
@@ -435,13 +435,13 @@ layoutToggleButton.addEventListener("click", ()=>{
     if(layoutToggleButton.textContent === "Start Layout"){
         stateMachine.happens("startLayout");
         console.log("start layout");
-        board.kmtParser.stateMachine.happens("disable");
+        board.kmtParser.disable();
         layoutToggleButton.textContent = "End Layout";
         trainPlacementToggleButton.textContent = "Start Train Placement";
         trainStateMachine.happens("endPlacement");
     } else {
         stateMachine.happens("endLayout");
-        board.kmtParser.stateMachine.happens("enable");
+        board.kmtParser.enable();
         layoutToggleButton.textContent = "Start Layout";
         trainPlacementToggleButton.disabled = false;
     }
