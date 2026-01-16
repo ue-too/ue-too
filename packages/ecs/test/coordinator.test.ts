@@ -188,4 +188,26 @@ describe('Coordinator', () => {
         expect(movementSystem.entities.size).toBe(2);
     });
 
+    it('should be idempotent when registering the same system twice', () => {
+        const coordinator = new Coordinator();
+        const mockSystem: System = { entities: new Set<Entity>() };
+        const MOCK_SYSTEM = createSystemName('MockSystem');
+        
+        // Register system first time
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
+        const system1 = coordinator.getSystem<System>(MOCK_SYSTEM);
+        expect(system1).toBe(mockSystem);
+        
+        // Create a different system object
+        const mockSystem2: System = { entities: new Set<Entity>() };
+        
+        // Register system again - should be idempotent (do nothing)
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem2);
+        const system2 = coordinator.getSystem<System>(MOCK_SYSTEM);
+        
+        // Should still be the original system, not the new one
+        expect(system2).toBe(mockSystem);
+        expect(system2).not.toBe(mockSystem2);
+    });
+
 });

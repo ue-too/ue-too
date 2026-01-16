@@ -731,8 +731,9 @@ export class ComponentManager {
     }
     
     registerComponent<T>(componentName: ComponentName){
+        // Idempotent: if component is already registered, do nothing
         if(this._componentNameToTypeMap.has(componentName)) {
-            console.warn(`Component ${getComponentNameString(componentName)} already registered; registering with the given new type`);
+            return;
         }
         const componentType = this._nextAvailableComponentType;
         this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
@@ -817,6 +818,11 @@ export class ComponentManager {
             }
         }
 
+        // Idempotent: if component schema is already registered, do nothing
+        if (this._schemas.has(schema.componentName)) {
+            return;
+        }
+        
         // Register the component type (if not already registered)
         if (!this._componentNameToTypeMap.has(schema.componentName)) {
             const componentType = this._nextAvailableComponentType;
@@ -825,9 +831,9 @@ export class ComponentManager {
                 componentArray: new ComponentArray<Record<string, unknown>>(MAX_ENTITIES)
             });
             this._nextAvailableComponentType++;
-            // Store the schema
-            this._schemas.set(schema.componentName, schema);
         }
+        // Store the schema
+        this._schemas.set(schema.componentName, schema);
 
     }
 
@@ -1063,8 +1069,8 @@ export class SystemManager {
     private _systems: Map<SystemName, {system: System, signature: ComponentSignature}> = new Map();
 
     registerSystem(systemName: SystemName, system: System){
+        // Idempotent: if system is already registered, do nothing
         if(this._systems.has(systemName)) {
-            console.warn(`System ${getSystemNameString(systemName)} already registered`);
             return;
         }
         this._systems.set(systemName, {system, signature: 0});

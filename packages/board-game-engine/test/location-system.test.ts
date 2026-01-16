@@ -693,12 +693,13 @@ describe('LocationSystem', () => {
             const location: LocationComponent = { location: zoneEntity, sortIndex: 1 };
             coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
 
-            // Add entity again (should reorganize)
+            // Add entity again - should do nothing if already in zone
             locationSystem.addEntityToZone(zoneEntity, entity, 'top');
 
             const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
             expect(locationAfter?.location).toBe(zoneEntity);
-            expect(locationAfter?.sortIndex).toBe(0);
+            // sortIndex should remain unchanged since entity is already in zone
+            expect(locationAfter?.sortIndex).toBe(1);
 
             const entities = locationSystem.getEntitiesInZone(zoneEntity);
             expect(entities).toHaveLength(1);

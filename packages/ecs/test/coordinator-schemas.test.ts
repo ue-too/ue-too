@@ -38,6 +38,39 @@ describe('Coordinator - Runtime Component Schemas', () => {
         expect(retrievedSchema).toEqual(schema);
     });
 
+    it('should be idempotent when registering the same component schema twice', () => {
+        const coordinator = new Coordinator();
+        const schema: ComponentSchema = {
+            componentName: PLAYER_STATS,
+            fields: [
+                { name: 'health', type: 'number', defaultValue: 100 },
+                { name: 'name', type: 'string', defaultValue: 'Player' },
+                { name: 'isAlive', type: 'boolean', defaultValue: true }
+            ]
+        };
+        
+        // Register schema first time
+        coordinator.registerComponentWithSchema(schema);
+        const firstSchema = coordinator.getComponentSchema(PLAYER_STATS);
+        expect(firstSchema).toEqual(schema);
+        
+        // Create an entity and add component data
+        const entity = coordinator.createEntity();
+        const component = coordinator.createComponentFromSchema(PLAYER_STATS, { health: 150 });
+        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, component);
+        
+        // Register schema again - should be idempotent (do nothing)
+        coordinator.registerComponentWithSchema(schema);
+        const secondSchema = coordinator.getComponentSchema(PLAYER_STATS);
+        
+        // Schema should still be accessible
+        expect(secondSchema).toEqual(schema);
+        
+        // Component data should still be accessible
+        const componentAfterReRegister = coordinator.getComponentFromEntity(PLAYER_STATS, entity);
+        expect(componentAfterReRegister).toEqual({ health: 150, name: 'Player', isAlive: true });
+    });
+
     it('should throw error when registering schema with no fields', () => {
         const coordinator = new Coordinator();
         const schema: ComponentSchema = {
