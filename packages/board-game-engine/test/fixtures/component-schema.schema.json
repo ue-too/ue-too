@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ue-too.dev/schemas/component-schema.schema.json",
+  "title": "Component Schema",
+  "description": "JSON schema for validating component schema definitions used in the ECS system",
+  "type": "object",
+  "required": ["componentName", "fields"],
+  "properties": {
+    "componentName": {
+      "type": "string",
+      "description": "The name of the component type (must be a valid identifier for Symbol.for)",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+      "examples": ["PlayerStatsComponent", "HealthComponent", "LocationComponent"]
+    },
+    "fields": {
+      "type": "array",
+      "description": "Array of field definitions for the component",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/definitions/componentField"
+      }
+    }
+  },
+  "definitions": {
+    "componentField": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/primitiveField"
+        },
+        {
+          "$ref": "#/definitions/arrayField"
+        }
+      ]
+    },
+    "primitiveField": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the field",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "object", "entity"],
+          "description": "The type of the field (primitive types, excluding 'array')"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether the field is optional (default: false)",
+          "default": false
+        },
+        "defaultValue": {
+          "description": "Default value for the field (type should match the field type)",
+          "oneOf": [
+            { "type": "string" },
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "object" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "arrayField": {
+      "type": "object",
+      "required": ["name", "type", "arrayElementType"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the field",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["array"],
+          "description": "Must be 'array' for array fields"
+        },
+        "arrayElementType": {
+          "$ref": "#/definitions/arrayElementType"
+        },
+        "optional": {
+          "type": "boolean",
+          "description": "Whether the field is optional (default: false)",
+          "default": false
+        },
+        "defaultValue": {
+          "type": "array",
+          "description": "Default value for the array field (should be an array)",
+          "items": {}
+        }
+      },
+      "additionalProperties": false
+    },
+    "arrayElementType": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/builtinArrayElementType"
+        },
+        {
+          "$ref": "#/definitions/customArrayElementType"
+        }
+      ]
+    },
+    "builtinArrayElementType": {
+      "type": "object",
+      "required": ["kind", "type"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["builtin"],
+          "description": "Indicates this is a built-in type"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "object", "entity"],
+          "description": "The built-in type for array elements"
+        }
+      },
+      "additionalProperties": false
+    },
+    "customArrayElementType": {
+      "type": "object",
+      "required": ["kind", "typeName"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["custom"],
+          "description": "Indicates this is a custom component type"
+        },
+        "typeName": {
+          "type": "string",
+          "description": "The name of the custom component type (must be a valid identifier for Symbol.for)",
+          "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "componentName": "PlayerStatsComponent",
+      "fields": [
+        {
+          "name": "health",
+          "type": "number",
+          "defaultValue": 100
+        },
+        {
+          "name": "maxHealth",
+          "type": "number",
+          "defaultValue": 100
+        },
+        {
+          "name": "mana",
+          "type": "number",
+          "defaultValue": 50
+        },
+        {
+          "name": "level",
+          "type": "number",
+          "defaultValue": 1
+        },
+        {
+          "name": "experience",
+          "type": "number",
+          "defaultValue": 0
+        }
+      ]
+    },
+    {
+      "componentName": "InventoryComponent",
+      "fields": [
+        {
+          "name": "items",
+          "type": "array",
+          "arrayElementType": {
+            "kind": "builtin",
+            "type": "string"
+          },
+          "defaultValue": []
+        },
+        {
+          "name": "equipment",
+          "type": "array",
+          "arrayElementType": {
+            "kind": "custom",
+            "typeName": "ItemComponent"
+          },
+          "defaultValue": []
+        },
+        {
+          "name": "maxSlots",
+          "type": "number",
+          "defaultValue": 20,
+          "optional": false
+        }
+      ]
+    }
+  ]
+}

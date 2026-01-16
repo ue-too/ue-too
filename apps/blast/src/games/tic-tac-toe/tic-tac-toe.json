@@ -1,0 +1,215 @@
+{
+  "$schema": "../../board-game-engine/schema/json-schema/game-definition.schema.json",
+  "name": "Tic-Tac-Toe",
+  "version": "1.0.0",
+  "metadata": {
+    "author": "ue-too",
+    "description": "Classic 3x3 tic-tac-toe game - simplified version",
+    "minPlayers": 2,
+    "maxPlayers": 2,
+    "complexity": "simple",
+    "tags": ["grid", "strategy", "classic"]
+  },
+
+  "components": {
+    "Marker": {
+      "properties": {
+        "value": { "type": "string", "default": "" },
+        "playerIndex": { "type": "number", "default": 0 }
+      }
+    },
+    "GridLocation": {
+      "properties": {
+        "grid": { "type": "entity", "default": null },
+        "row": { "type": "number", "default": null },
+        "column": { "type": "number", "default": null },
+        "q": { "type": "number", "default": null },
+        "r": { "type": "number", "default": null }
+      }
+    },
+    "Cell": {
+      "properties": {
+        "occupied": { "type": "boolean", "default": false }
+      }
+    },
+    "Player": {
+      "properties": {
+        "hasWon": { "type": "boolean", "default": false }
+      }
+    }
+  },
+
+  "zones": {
+    "board": {
+      "visibility": "public",
+      "ordered": false,
+      "shared": true,
+      "maxCapacity": 18
+    }
+  },
+
+  "entityTemplates": {
+    "Cell": {
+      "components": {
+        "GridLocation": {
+          "grid": null,
+          "row": 0,
+          "column": 0,
+          "q": null,
+          "r": null
+        },
+        "Cell": {
+          "occupied": false
+        }
+      }
+    },
+    "Player": {
+      "components": {}
+    }
+  },
+
+  "actions": [
+    {
+      "id": "PlaceMarker",
+      "name": "PlaceMarker",
+      "displayName": "Place Marker",
+      "description": "Place an X or O marker on an empty cell",
+      "targetCount": 1,
+      "targeting": {
+        "count": 1,
+        "validTargets": {
+          "zone": "board",
+          "owner": "any",
+          "hasComponent": ["Cell"]
+        }
+      },
+      "preconditions": [
+        {
+          "type": "isPlayerTurn"
+        },
+        {
+          "type": "componentValueCheck",
+          "entity": "$target.0",
+          "component": "Cell",
+          "property": "occupied",
+          "value": false,
+          "errorMessage": "Cell is already occupied"
+        }
+      ],
+      "effects": [
+        {
+          "type": "setComponentValue",
+          "entity": "$target.0",
+          "component": "Cell",
+          "values": {
+            "occupied": true
+          }
+        },
+        {
+          "type": "createEntity",
+          "components": {
+            "Marker": {
+              "value": "X",
+              "playerIndex": 0
+            },
+            "GridLocation": {
+              "grid": null,
+              "row": "$component.$target.0.GridLocation.row",
+              "column": "$component.$target.0.GridLocation.column",
+              "q": null,
+              "r": null
+            }
+          },
+          "zone": "board",
+          "storeAs": "newMarker",
+          "eventType": "EntityCreated"
+        },
+        {
+          "type": "conditional",
+          "condition": {
+            "type": "componentValueCheck",
+            "entity": "$actor",
+            "component": "Player",
+            "property": "playerNumber",
+            "value": 2
+          },
+          "then": [
+            {
+              "type": "setComponentValue",
+              "entity": "$newMarker",
+              "component": "Marker",
+              "values": {
+                "value": "O",
+                "playerIndex": 1
+              }
+            }
+          ]
+        },
+        {
+          "type": "checkTicTacToeWin"
+        },
+        {
+          "type": "switchActivePlayer"
+        }
+      ]
+    }
+  ],
+
+  "phases": [
+    {
+      "name": "Play",
+      "allowedActions": ["PlaceMarker"],
+      "autoAdvance": false
+    }
+  ],
+
+  "rules": [
+    {
+      "id": "check-win-after-marker-placed",
+      "trigger": {
+        "eventType": "EntityCreated",
+        "filters": {}
+      },
+      "conditions": [],
+      "effects": [
+        {
+          "type": "checkTicTacToeWin"
+        }
+      ],
+      "priority": 100
+    }
+  ],
+
+  "setup": {
+    "playerCount": { "min": 2, "max": 2 },
+    "initialPhase": "Play",
+    "perPlayer": {
+      "template": "Player",
+      "zones": []
+    },
+    "sharedZoneEntities": [
+      {
+        "template": "Cell",
+        "zone": "board",
+        "count": 9
+      }
+    ]
+  },
+
+  "winConditions": [
+    {
+      "id": "player-wins",
+      "name": "Player Wins",
+      "description": "A player has three markers in a row, column, or diagonal",
+      "condition": {
+        "type": "componentValueCheck",
+        "entity": "$actor",
+        "component": "Player",
+        "property": "hasWon",
+        "value": true
+      },
+      "winner": "actor",
+      "message": "Three in a row! You win!"
+    }
+  ]
+}

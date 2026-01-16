@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { StateMachineBuilder } from './components/StateMachineBuilder';
 import { ObjectSchemaBuilder } from './components/ObjectSchemaBuilder';
+import { GameDefinitionBuilder } from './components/GameDefinitionBuilder';
+import { CardGamePage } from './pages/CardGamePage';
 
-type Page = 'home' | 'state-machine' | 'object-schema';
+type Page = 'home' | 'state-machine' | 'object-schema' | 'game-builder' | 'card-game';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -61,6 +63,34 @@ function App() {
             >
               Object Schema Builder
             </button>
+            <button
+              onClick={() => setCurrentPage('game-builder')}
+              style={{
+                padding: '10px 20px',
+                background: currentPage === 'game-builder' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: currentPage === 'game-builder' ? 600 : 400,
+              }}
+            >
+              Game Builder
+            </button>
+            <button
+              onClick={() => setCurrentPage('card-game')}
+              style={{
+                padding: '10px 20px',
+                background: currentPage === 'card-game' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                color: 'white',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: currentPage === 'card-game' ? 600 : 400,
+              }}
+            >
+              Card Game Demo
+            </button>
           </div>
         </div>
       </nav>
@@ -106,12 +136,48 @@ function App() {
               <h3 style={{ fontSize: '1.5em', marginBottom: '10px' }}>Object Schema Builder</h3>
               <p style={{ color: '#666' }}>Define data schemas with primitives, arrays, and nested structures</p>
             </div>
+            <div
+              onClick={() => setCurrentPage('game-builder')}
+              style={{
+                background: 'white',
+                padding: '30px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <div style={{ fontSize: '3em', marginBottom: '15px' }}>🎲</div>
+              <h3 style={{ fontSize: '1.5em', marginBottom: '10px' }}>Game Definition Builder</h3>
+              <p style={{ color: '#666' }}>Create board game definitions visually without writing JSON</p>
+            </div>
+            <div
+              onClick={() => setCurrentPage('card-game')}
+              style={{
+                background: 'white',
+                padding: '30px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <div style={{ fontSize: '3em', marginBottom: '15px' }}>🎮</div>
+              <h3 style={{ fontSize: '1.5em', marginBottom: '10px' }}>Card Game Demo</h3>
+              <p style={{ color: '#666' }}>Test the board game rule engine with a simple card game</p>
+            </div>
           </div>
         </div>
       )}
 
       {currentPage === 'state-machine' && <StateMachineBuilder />}
       {currentPage === 'object-schema' && <ObjectSchemaBuilder />}
+      {currentPage === 'game-builder' && <GameDefinitionBuilder />}
+      {currentPage === 'card-game' && <CardGamePage />}
     </div>
   );
 }

@@ -30,6 +30,30 @@
       },
       {
         "path": "./packages/ecs"
+      },
+      {
+        "path": "./packages/board-fabric-integration"
+      },
+      {
+        "path": "./packages/board-konva-integration"
+      },
+      {
+        "path": "./packages/board-pixi-integration"
+      },
+      {
+        "path": "./packages/board-react-adapter"
+      },
+      {
+        "path": "./packages/board-vue-adapter"
+      },
+      {
+        "path": "./apps/board-react"
+      },
+      {
+        "path": "./apps/board-vue"
+      },
+      {
+        "path": "./apps/blast"
       }
     ]
   }

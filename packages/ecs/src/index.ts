@@ -69,13 +69,16 @@
  *   entities: new Set()
  * };
  *
- * coordinator.registerSystem('Movement', movementSystem);
+ * const Movement = createSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
  *
  * // Set signature (entities with Position AND Velocity)
- * const posType = coordinator.getComponentType('Position')!;
- * const velType = coordinator.getComponentType('Velocity')!;
+ * const Position = createComponentName('Position');
+ * const Velocity = createComponentName('Velocity');
+ * const posType = coordinator.getComponentType(Position)!;
+ * const velType = coordinator.getComponentType(Velocity)!;
  * const signature = (1 << posType) | (1 << velType);
- * coordinator.setSystemSignature('Movement', signature);
+ * coordinator.setSystemSignature(Movement, signature);
  *
  * // Update loop
  * function update(deltaTime: number) {
@@ -127,6 +130,13 @@ export type Entity = number;
  * @category Types
  */
 export type ComponentName = symbol;
+
+/**
+ * System name identifier using Symbol for type safety and uniqueness.
+ * Use {@link createSystemName} to create system names, or {@link Symbol.for} for global symbols.
+ * @category Types
+ */
+export type SystemName = symbol;
 
 /**
  * Supported field types for runtime-defined component schemas.
@@ -254,6 +264,59 @@ export function getComponentNameString(componentName: ComponentName): string {
  * @category Utilities
  */
 export function createGlobalComponentName(key: string): ComponentName {
+    return Symbol.for(key);
+}
+
+/**
+ * Helper function to create a system name from a string.
+ * This creates a unique symbol for the system name.
+ * 
+ * @param name - The string name for the system
+ * @returns A unique symbol for the system name
+ * 
+ * @example
+ * ```typescript
+ * const Movement = createSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createSystemName(name: string): SystemName {
+    return Symbol(name);
+}
+
+/**
+ * Helper function to get the string description from a system name symbol.
+ * Useful for debugging and serialization.
+ * 
+ * @param systemName - The system name symbol
+ * @returns The string description of the symbol
+ * 
+ * @category Utilities
+ */
+export function getSystemNameString(systemName: SystemName): string {
+    return systemName.description || systemName.toString();
+}
+
+/**
+ * Helper function to create a system name using Symbol.for().
+ * This creates a global symbol that can be looked up by string key,
+ * which is useful for serialization and cross-module access.
+ * 
+ * @param key - The string key for the global symbol
+ * @returns A global symbol for the system name
+ * 
+ * @example
+ * ```typescript
+ * const Movement = createGlobalSystemName('Movement');
+ * coordinator.registerSystem(Movement, movementSystem);
+ * // Can be retrieved later with Symbol.for('Movement')
+ * ```
+ * 
+ * @category Utilities
+ */
+export function createGlobalSystemName(key: string): SystemName {
     return Symbol.for(key);
 }
 
@@ -464,6 +527,19 @@ export class EntityManager {
         
         return livingEntities;
     }
+
+    /**
+     * Check if an entity exists (is currently active, not in the available pool).
+     * @param entity - The entity ID to check
+     * @returns true if the entity exists, false otherwise
+     */
+    entityExists(entity: Entity): boolean {
+        if (entity >= this._maxEntities || entity < 0) {
+            return false;
+        }
+        // An entity exists if it's not in the available pool
+        return !this._availableEntities.includes(entity);
+    }
 }
 
 type Tuple<T, N extends number> = N extends N
@@ -655,8 +731,9 @@ export class ComponentManager {
     }
     
     registerComponent<T>(componentName: ComponentName){
+        // Idempotent: if component is already registered, do nothing
         if(this._componentNameToTypeMap.has(componentName)) {
-            console.warn(`Component ${getComponentNameString(componentName)} already registered; registering with the given new type`);
+            return;
         }
         const componentType = this._nextAvailableComponentType;
         this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
@@ -706,6 +783,10 @@ export class ComponentManager {
         return component.componentArray as ComponentArray<T>;
     }
 
+    componentIsCustomSchema(componentName: ComponentName): boolean {
+        return this._schemas.has(componentName);
+    }
+
     /**
      * Register a component with a runtime-defined schema.
      * This allows components to be defined dynamically (e.g., through a GUI).
@@ -737,6 +818,11 @@ export class ComponentManager {
             }
         }
 
+        // Idempotent: if component schema is already registered, do nothing
+        if (this._schemas.has(schema.componentName)) {
+            return;
+        }
+        
         // Register the component type (if not already registered)
         if (!this._componentNameToTypeMap.has(schema.componentName)) {
             const componentType = this._nextAvailableComponentType;
@@ -746,9 +832,9 @@ export class ComponentManager {
             });
             this._nextAvailableComponentType++;
         }
-
         // Store the schema
         this._schemas.set(schema.componentName, schema);
+
     }
 
     /**
@@ -937,6 +1023,8 @@ export class ComponentManager {
  *
  * @example
  * ```typescript
+ * const Position = createComponentName('Position');
+ * const Velocity = createComponentName('Velocity');
  * const movementSystem: System = {
  *   entities: new Set()
  * };
@@ -944,8 +1032,8 @@ export class ComponentManager {
  * // System logic (called in game loop)
  * function updateMovement(deltaTime: number) {
  *   movementSystem.entities.forEach(entity => {
- *     const pos = ecs.getComponentFromEntity<Position>('Position', entity);
- *     const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity);
+ *     const pos = ecs.getComponentFromEntity<Position>(Position, entity);
+ *     const vel = ecs.getComponentFromEntity<Velocity>(Velocity, entity);
  *     if (pos && vel) {
  *       pos.x += vel.x * deltaTime;
  *       pos.y += vel.y * deltaTime;
@@ -978,24 +1066,24 @@ export interface System {
  * @category Managers
  */
 export class SystemManager {
-    private _systems: Map<string, {system: System, signature: ComponentSignature}> = new Map();
+    private _systems: Map<SystemName, {system: System, signature: ComponentSignature}> = new Map();
 
-    registerSystem(systemName: string, system: System){
+    registerSystem(systemName: SystemName, system: System){
+        // Idempotent: if system is already registered, do nothing
         if(this._systems.has(systemName)) {
-            console.warn(`System ${systemName} already registered`);
             return;
         }
         this._systems.set(systemName, {system, signature: 0});
     }
 
-    setSignature(systemName: string, signature: ComponentSignature){
+    setSignature(systemName: SystemName, signature: ComponentSignature){
         if(!this._systems.has(systemName)) {
-            console.warn(`System ${systemName} not registered`);
+            console.warn(`System ${getSystemNameString(systemName)} not registered`);
             return;
         }
         const system = this._systems.get(systemName);
         if(system === undefined) {
-            console.warn(`System ${systemName} not registered`);
+            console.warn(`System ${getSystemNameString(systemName)} not registered`);
             return;
         }
         system.signature = signature;
@@ -1016,6 +1104,14 @@ export class SystemManager {
                 system.system.entities.delete(entity);
             }
         }
+    }
+
+    getSystem<T extends System>(systemName: SystemName): T | null {
+        const system = this._systems.get(systemName);
+        if(system === undefined) {
+            return null;
+        }
+        return system.system as T;
     }
 }
 
@@ -1125,12 +1221,16 @@ export class Coordinator {
         return this._componentManager.getComponentType(componentName) ?? null;
     }
 
-    registerSystem(systemName: string, system: System): void {
+    registerSystem(systemName: SystemName, system: System): void {
         this._systemManager.registerSystem(systemName, system);
     }
 
-    setSystemSignature(systemName: string, signature: ComponentSignature): void {
+    setSystemSignature(systemName: SystemName, signature: ComponentSignature): void {
         this._systemManager.setSignature(systemName, signature);
+    }
+
+    getSystem<T extends System>(systemName: SystemName): T | null {
+        return this._systemManager.getSystem<T>(systemName) ?? null;
     }
 
     /**
@@ -1173,6 +1273,72 @@ export class Coordinator {
      */
     getComponentSchema(componentName: ComponentName): ComponentSchema | null {
         return this._componentManager.getComponentSchema(componentName);
+    }
+
+    /**
+     * Get the property field names of a component.
+     * 
+     * This method works in two ways:
+     * 1. If the component was registered with a schema, returns field names from the schema
+     * 2. If no schema exists, attempts to extract property names from an actual component instance
+     *    (requires at least one entity to have an instance of the component)
+     * 
+     * @param componentName - The name of the component type
+     * @returns Array of property field names, or empty array if component has no schema and no instances exist
+     * 
+     * @example
+     * ```typescript
+     * const coordinator = new Coordinator();
+     * 
+     * // Method 1: Using schema
+     * coordinator.registerComponentWithSchema({
+     *   componentName: 'PlayerStats',
+     *   fields: [
+     *     { name: 'health', type: 'number', defaultValue: 100 },
+     *     { name: 'name', type: 'string', defaultValue: 'Player' },
+     *     { name: 'isAlive', type: 'boolean', defaultValue: true }
+     *   ]
+     * });
+     * const fieldNames1 = coordinator.getComponentPropertyNames('PlayerStats');
+     * console.log(fieldNames1); // ['health', 'name', 'isAlive']
+     * 
+     * // Method 2: From component instance
+     * type LocationComponent = { location: Entity; sortIndex: number };
+     * coordinator.registerComponent<LocationComponent>('LocationComponent');
+     * const entity = coordinator.createEntity();
+     * coordinator.addComponentToEntity('LocationComponent', entity, { 
+     *   location: otherEntity, 
+     *   sortIndex: 0 
+     * });
+     * const fieldNames2 = coordinator.getComponentPropertyNames('LocationComponent');
+     * console.log(fieldNames2); // ['location', 'sortIndex']
+     * ```
+     */
+    getComponentPropertyNames(componentName: ComponentName): string[] {
+        // First, try to get from schema if available
+        const schema = this.getComponentSchema(componentName);
+        if (schema) {
+            return schema.fields.map(field => field.name);
+        }
+        
+        // If no schema, try to extract from an actual component instance
+        const entitiesWithComponent = this._componentManager.getAllEntitiesWithComponent(componentName);
+        if (entitiesWithComponent.length === 0) {
+            return [];
+        }
+        
+        // Get the first entity's component instance
+        const component = this._componentManager.getComponentFromEntity(componentName, entitiesWithComponent[0]);
+        if (component === null) {
+            return [];
+        }
+        
+        // Extract property names from the component object
+        if (typeof component === 'object' && component !== null && !Array.isArray(component)) {
+            return Object.keys(component);
+        }
+        
+        return [];
     }
 
     /**
@@ -1256,6 +1422,28 @@ export class Coordinator {
      */
     getAllEntities(): Entity[] {
         return this._entityManager.getAllLivingEntities();
+    }
+
+    /**
+     * Check if an entity exists in the coordinator.
+     * @param entity - The entity ID to check
+     * @returns true if the entity exists, false otherwise
+     * 
+     * @example
+     * ```typescript
+     * const entity = coordinator.createEntity();
+     * if (coordinator.entityExists(entity)) {
+     *   console.log('Entity exists');
+     * }
+     * 
+     * coordinator.destroyEntity(entity);
+     * if (!coordinator.entityExists(entity)) {
+     *   console.log('Entity no longer exists');
+     * }
+     * ```
+     */
+    entityExists(entity: Entity): boolean {
+        return this._entityManager.entityExists(entity);
     }
 
     /**

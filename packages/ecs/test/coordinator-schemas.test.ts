@@ -1,4 +1,4 @@
-import { Coordinator, Entity, ComponentSchema, createComponentName } from "../src";
+import { Coordinator, Entity, ComponentSchema, createComponentName, createSystemName } from "../src";
 
 // Create component name symbols for tests
 const PLAYER_STATS = createComponentName('PlayerStats');
@@ -36,6 +36,39 @@ describe('Coordinator - Runtime Component Schemas', () => {
         
         const retrievedSchema = coordinator.getComponentSchema(PLAYER_STATS);
         expect(retrievedSchema).toEqual(schema);
+    });
+
+    it('should be idempotent when registering the same component schema twice', () => {
+        const coordinator = new Coordinator();
+        const schema: ComponentSchema = {
+            componentName: PLAYER_STATS,
+            fields: [
+                { name: 'health', type: 'number', defaultValue: 100 },
+                { name: 'name', type: 'string', defaultValue: 'Player' },
+                { name: 'isAlive', type: 'boolean', defaultValue: true }
+            ]
+        };
+        
+        // Register schema first time
+        coordinator.registerComponentWithSchema(schema);
+        const firstSchema = coordinator.getComponentSchema(PLAYER_STATS);
+        expect(firstSchema).toEqual(schema);
+        
+        // Create an entity and add component data
+        const entity = coordinator.createEntity();
+        const component = coordinator.createComponentFromSchema(PLAYER_STATS, { health: 150 });
+        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, component);
+        
+        // Register schema again - should be idempotent (do nothing)
+        coordinator.registerComponentWithSchema(schema);
+        const secondSchema = coordinator.getComponentSchema(PLAYER_STATS);
+        
+        // Schema should still be accessible
+        expect(secondSchema).toEqual(schema);
+        
+        // Component data should still be accessible
+        const componentAfterReRegister = coordinator.getComponentFromEntity(PLAYER_STATS, entity);
+        expect(componentAfterReRegister).toEqual({ health: 150, name: 'Player', isAlive: true });
     });
 
     it('should throw error when registering schema with no fields', () => {
@@ -285,10 +318,11 @@ describe('Coordinator - Runtime Component Schemas', () => {
         
         coordinator.registerComponentWithSchema(schema);
         const mockSystem = { entities: new Set<Entity>() };
-        coordinator.registerSystem('MockSystem', mockSystem);
+        const MOCK_SYSTEM = createSystemName('MockSystem');
+        coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
         
         const componentType = coordinator.getComponentType(PLAYER_STATS)!;
-        coordinator.setSystemSignature('MockSystem', 1 << componentType);
+        coordinator.setSystemSignature(MOCK_SYSTEM, 1 << componentType);
         
         const entity = coordinator.createEntity();
         const component = coordinator.createComponentFromSchema(PLAYER_STATS);
@@ -316,6 +350,132 @@ describe('Coordinator - Runtime Component Schemas', () => {
         expect(schemas.length).toBe(2);
         expect(schemas).toContainEqual(schema1);
         expect(schemas).toContainEqual(schema2);
+    });
+
+    it('should be able to get component property field names', () => {
+        const coordinator = new Coordinator();
+        
+        const schema: ComponentSchema = {
+            componentName: PLAYER_STATS,
+            fields: [
+                { name: 'health', type: 'number', defaultValue: 100 },
+                { name: 'name', type: 'string', defaultValue: 'Player' },
+                { name: 'isAlive', type: 'boolean', defaultValue: true }
+            ]
+        };
+        
+        coordinator.registerComponentWithSchema(schema);
+        
+        const fieldNames = coordinator.getComponentPropertyNames(PLAYER_STATS);
+        expect(fieldNames).toEqual(['health', 'name', 'isAlive']);
+    });
+
+    it('should return empty array when component has no schema', () => {
+        const coordinator = new Coordinator();
+        const componentName = createComponentName('NonExistentComponent');
+        
+        const fieldNames = coordinator.getComponentPropertyNames(componentName);
+        expect(fieldNames).toEqual([]);
+    });
+
+    it('should return property names for components with array fields', () => {
+        const coordinator = new Coordinator();
+        const schema: ComponentSchema = {
+            componentName: INVENTORY_COMPONENT,
+            fields: [
+                { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } },
+                { name: 'capacity', type: 'number', defaultValue: 10 }
+            ]
+        };
+        
+        coordinator.registerComponentWithSchema(schema);
+        
+        const fieldNames = coordinator.getComponentPropertyNames(INVENTORY_COMPONENT);
+        expect(fieldNames).toEqual(['items', 'capacity']);
+    });
+
+    describe('Extracting property names from component instances', () => {
+        it('should extract property names from a component instance when no schema exists', () => {
+            const coordinator = new Coordinator();
+            type LocationComponent = {
+                location: Entity;
+                sortIndex: number;
+            };
+            
+            const LOCATION = createComponentName('Location');
+            coordinator.registerComponent<LocationComponent>(LOCATION);
+            
+            // Create an entity with the component
+            const entity = coordinator.createEntity();
+            const locationComponent: LocationComponent = {
+                location: coordinator.createEntity(),
+                sortIndex: 0
+            };
+            coordinator.addComponentToEntity(LOCATION, entity, locationComponent);
+            
+            const fieldNames = coordinator.getComponentPropertyNames(LOCATION);
+            expect(fieldNames).toContain('location');
+            expect(fieldNames).toContain('sortIndex');
+            expect(fieldNames.length).toBe(2);
+        });
+
+        it('should return empty array when component has no instances', () => {
+            const coordinator = new Coordinator();
+            type TestComponent = {
+                value: number;
+            };
+            
+            const TEST = createComponentName('Test');
+            coordinator.registerComponent<TestComponent>(TEST);
+            
+            // Don't create any instances
+            const fieldNames = coordinator.getComponentPropertyNames(TEST);
+            expect(fieldNames).toEqual([]);
+        });
+
+        it('should prefer schema over instance extraction', () => {
+            const coordinator = new Coordinator();
+            type TestComponent = {
+                value: number;
+                other: string;
+            };
+            
+            const TEST = createComponentName('Test');
+            
+            // Register with schema (only has 'value')
+            const schema: ComponentSchema = {
+                componentName: TEST,
+                fields: [
+                    { name: 'value', type: 'number', defaultValue: 0 }
+                ]
+            };
+            coordinator.registerComponentWithSchema(schema);
+            
+            // Add instance with extra property
+            const entity = coordinator.createEntity();
+            coordinator.addComponentToEntity(TEST, entity, { value: 5, other: 'test' });
+            
+            // Should return only schema fields, not instance fields
+            const fieldNames = coordinator.getComponentPropertyNames(TEST);
+            expect(fieldNames).toEqual(['value']);
+        });
+
+        it('should handle components with null or undefined values', () => {
+            const coordinator = new Coordinator();
+            type TestComponent = {
+                value: number | null;
+                optional?: string;
+            };
+            
+            const TEST = createComponentName('Test');
+            coordinator.registerComponent<TestComponent>(TEST);
+            
+            const entity = coordinator.createEntity();
+            coordinator.addComponentToEntity(TEST, entity, { value: null });
+            
+            const fieldNames = coordinator.getComponentPropertyNames(TEST);
+            expect(fieldNames).toContain('value');
+        });
     });
 
     describe('Typed Arrays', () => {

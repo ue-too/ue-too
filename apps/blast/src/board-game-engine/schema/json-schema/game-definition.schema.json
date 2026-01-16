@@ -1,0 +1,496 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ue-too.github.io/board-game-engine/game-definition.schema.json",
+  "title": "Board Game Definition",
+  "description": "Schema for defining board games declaratively in JSON format",
+  "type": "object",
+  "required": ["name", "version", "components", "zones", "entityTemplates", "actions", "phases", "setup"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name of the game"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of the game definition",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "components": {
+      "type": "object",
+      "description": "Component type definitions",
+      "additionalProperties": {
+        "$ref": "#/$defs/componentDefinition"
+      }
+    },
+    "zones": {
+      "type": "object",
+      "description": "Zone definitions",
+      "additionalProperties": {
+        "$ref": "#/$defs/zoneDefinition"
+      }
+    },
+    "entityTemplates": {
+      "type": "object",
+      "description": "Entity template definitions",
+      "additionalProperties": {
+        "$ref": "#/$defs/entityTemplate"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "description": "Action definitions",
+      "items": {
+        "$ref": "#/$defs/actionDefinition"
+      }
+    },
+    "phases": {
+      "type": "array",
+      "description": "Phase definitions",
+      "items": {
+        "$ref": "#/$defs/phaseDefinition"
+      }
+    },
+    "rules": {
+      "type": "array",
+      "description": "Event-triggered rule definitions",
+      "items": {
+        "$ref": "#/$defs/ruleDefinition"
+      }
+    },
+    "setup": {
+      "$ref": "#/$defs/setupDefinition"
+    },
+    "winConditions": {
+      "type": "array",
+      "description": "Win/loss condition definitions",
+      "items": {
+        "$ref": "#/$defs/winCondition"
+      }
+    }
+  },
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": { "type": "string" },
+        "description": { "type": "string" },
+        "minPlayers": { "type": "integer", "minimum": 1 },
+        "maxPlayers": { "type": "integer", "minimum": 1 },
+        "estimatedDuration": { "type": "string" },
+        "complexity": { "type": "string", "enum": ["simple", "medium", "complex"] },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "componentDefinition": {
+      "type": "object",
+      "properties": {
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/propertyDefinition"
+          }
+        }
+      }
+    },
+    "propertyDefinition": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "entity", "array", "object"]
+        },
+        "default": {},
+        "description": { "type": "string" }
+      }
+    },
+    "zoneDefinition": {
+      "type": "object",
+      "properties": {
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private", "owner-only"],
+          "default": "public"
+        },
+        "maxSize": { "type": "integer", "minimum": 0 },
+        "ordered": { "type": "boolean", "default": true }
+      }
+    },
+    "entityTemplate": {
+      "type": "object",
+      "required": ["components"],
+      "properties": {
+        "components": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "extends": { "type": "string" }
+      }
+    },
+    "actionDefinition": {
+      "type": "object",
+      "required": ["name", "effects"],
+      "properties": {
+        "name": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "iconUrl": { "type": "string" },
+        "preconditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/condition" }
+        },
+        "costs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "targeting": {
+          "$ref": "#/$defs/targeting"
+        }
+      }
+    },
+    "targeting": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "oneOf": [
+            { "type": "integer", "minimum": 0 },
+            {
+              "type": "object",
+              "properties": {
+                "min": { "type": "integer", "minimum": 0 },
+                "max": { "type": "integer", "minimum": 0 }
+              }
+            }
+          ]
+        },
+        "validTargets": { "$ref": "#/$defs/entityQuery" },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "query": { "$ref": "#/$defs/entityQuery" }
+            }
+          }
+        }
+      }
+    },
+    "entityQuery": {
+      "type": "object",
+      "properties": {
+        "zone": { "type": "string" },
+        "owner": {
+          "type": "string",
+          "enum": ["actor", "opponent", "any"]
+        },
+        "hasComponent": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "filter": { "$ref": "#/$defs/condition" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "isPlayerTurn",
+            "phaseCheck",
+            "resourceCheck",
+            "entityInZone",
+            "componentValueCheck",
+            "ownerCheck",
+            "targetCount",
+            "entityExists",
+            "zoneHasEntities",
+            "hasComponent",
+            "and",
+            "or",
+            "not"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "phaseCheck" } } },
+          "then": {
+            "properties": {
+              "phases": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["phases"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "resourceCheck" } } },
+          "then": {
+            "properties": {
+              "entity": { "$ref": "#/$defs/entityExpression" },
+              "component": { "type": "string" },
+              "property": { "type": "string" },
+              "operator": { "type": "string", "enum": [">=", ">", "<=", "<", "==", "!="] },
+              "value": { "$ref": "#/$defs/numberExpression" }
+            },
+            "required": ["entity", "component", "property", "operator", "value"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "and" } } },
+          "then": {
+            "properties": {
+              "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+            },
+            "required": ["conditions"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "or" } } },
+          "then": {
+            "properties": {
+              "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+            },
+            "required": ["conditions"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "not" } } },
+          "then": {
+            "properties": {
+              "condition": { "$ref": "#/$defs/condition" }
+            },
+            "required": ["condition"]
+          }
+        }
+      ]
+    },
+    "effect": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "moveEntity",
+            "modifyResource",
+            "setComponentValue",
+            "createEntity",
+            "destroyEntity",
+            "shuffleZone",
+            "transferMultiple",
+            "conditional",
+            "repeat",
+            "emitEvent",
+            "composite",
+            "switchActivePlayer",
+            "checkTicTacToeWin"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "moveEntity" } } },
+          "then": {
+            "properties": {
+              "entity": { "$ref": "#/$defs/entityExpression" },
+              "fromZone": { "$ref": "#/$defs/zoneExpression" },
+              "toZone": { "$ref": "#/$defs/zoneExpression" },
+              "eventType": { "type": "string" }
+            },
+            "required": ["entity", "toZone"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "modifyResource" } } },
+          "then": {
+            "properties": {
+              "entity": { "$ref": "#/$defs/entityExpression" },
+              "component": { "type": "string" },
+              "property": { "type": "string" },
+              "amount": { "$ref": "#/$defs/numberExpression" },
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "eventType": { "type": "string" }
+            },
+            "required": ["entity", "component", "property", "amount"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "transferMultiple" } } },
+          "then": {
+            "properties": {
+              "fromZone": { "$ref": "#/$defs/zoneExpression" },
+              "toZone": { "$ref": "#/$defs/zoneExpression" },
+              "count": { "$ref": "#/$defs/numberExpression" },
+              "selection": { "type": "string", "enum": ["top", "bottom", "random"] },
+              "filter": { "$ref": "#/$defs/condition" },
+              "eventType": { "type": "string" }
+            },
+            "required": ["fromZone", "toZone", "count"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "composite" } } },
+          "then": {
+            "properties": {
+              "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } }
+            },
+            "required": ["effects"]
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "switchActivePlayer" } } },
+          "then": {
+            "properties": {}
+          }
+        },
+        {
+          "if": { "properties": { "type": { "const": "checkTicTacToeWin" } } },
+          "then": {
+            "properties": {}
+          }
+        }
+      ]
+    },
+    "phaseDefinition": {
+      "type": "object",
+      "required": ["name", "allowedActions"],
+      "properties": {
+        "name": { "type": "string" },
+        "allowedActions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "autoAdvance": { "type": "boolean", "default": false },
+        "nextPhase": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "object" }
+          ]
+        },
+        "onEnter": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "onExit": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        }
+      }
+    },
+    "ruleDefinition": {
+      "type": "object",
+      "required": ["id", "trigger", "effects"],
+      "properties": {
+        "id": { "type": "string" },
+        "trigger": {
+          "type": "object",
+          "required": ["eventType"],
+          "properties": {
+            "eventType": { "type": "string" },
+            "filters": { "type": "object" }
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/condition" }
+        },
+        "effects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        },
+        "priority": { "type": "integer", "default": 100 }
+      }
+    },
+    "setupDefinition": {
+      "type": "object",
+      "required": ["playerCount", "initialPhase", "perPlayer"],
+      "properties": {
+        "playerCount": {
+          "type": "object",
+          "required": ["min", "max"],
+          "properties": {
+            "min": { "type": "integer", "minimum": 1 },
+            "max": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "initialPhase": { "type": "string" },
+        "perPlayer": {
+          "type": "object",
+          "required": ["template", "zones"],
+          "properties": {
+            "template": { "type": "string" },
+            "zones": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "startingEntities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["template", "zone"],
+                "properties": {
+                  "template": { "type": "string" },
+                  "zone": { "type": "string" },
+                  "count": { "type": "integer", "minimum": 1, "default": 1 }
+                }
+              }
+            }
+          }
+        },
+        "setupEffects": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/effect" }
+        }
+      }
+    },
+    "winCondition": {
+      "type": "object",
+      "required": ["id", "condition"],
+      "properties": {
+        "id": { "type": "string" },
+        "condition": { "$ref": "#/$defs/condition" },
+        "winner": {
+          "type": "string",
+          "enum": ["actor", "opponent", "draw"]
+        },
+        "message": { "type": "string" }
+      }
+    },
+    "entityExpression": {
+      "type": "string",
+      "description": "Expression resolving to an entity: $actor, $target, $target.0, $param.cardId, etc.",
+      "pattern": "^\\$"
+    },
+    "zoneExpression": {
+      "type": "string",
+      "description": "Expression resolving to a zone: $zone.actor.hand, $zone.opponent.board, etc.",
+      "pattern": "^\\$zone\\."
+    },
+    "numberExpression": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "string",
+          "description": "Expression resolving to a number: $param.damage, $component.$target.Card.cost, etc.",
+          "pattern": "^\\$"
+        }
+      ]
+    }
+  }
+}

@@ -1,11 +1,11 @@
-import { ComponentType, Coordinator, Entity, System, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
+import { ComponentType, Coordinator, Entity, System, createGlobalComponentName, ComponentName, createGlobalSystemName, SystemName } from "@ue-too/ecs";
 
 export type OwnershipComponent = {
     owner: Entity | null;
 };
 
 export const OWNERSHIP_COMPONENT: ComponentName = createGlobalComponentName("OwnershipComponent");
-
+export const OWNERSHIP_SYSTEM: SystemName = createGlobalSystemName("OwnershipSystem");
 export function setOwner(entity: Entity, owner: Entity, coordinator: Coordinator): void {
     const ownershipComponent = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
     if(!ownershipComponent) {
@@ -40,8 +40,8 @@ export class OwnershipSystem implements System {
         if(ownershipComponentType == undefined){
             throw new Error('OwnershipComponent cannot be registered');
         }
-        this.coordinator.registerSystem("ownershipSystem", this);
-        this.coordinator.setSystemSignature("ownershipSystem", 1 << ownershipComponentType);
+        this.coordinator.registerSystem(OWNERSHIP_SYSTEM, this);
+        this.coordinator.setSystemSignature(OWNERSHIP_SYSTEM, 1 << ownershipComponentType);
     }
 
     getOwnerShipComponentOf(entity: Entity): OwnershipComponent | null {

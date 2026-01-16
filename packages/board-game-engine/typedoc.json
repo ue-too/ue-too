@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "extends": "../../typedoc.json",
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "out": "../../docs/board-game-engine",
+  "name": "@ue-too/board-game-engine",
+  "readme": "./README.md",
+  "includeVersion": true,
+  "categoryOrder": [
+    "Core",
+    "Helpers",
+    "Types",
+    "*"
+  ],
+  "sort": [
+    "static-first",
+    "alphabetical"
+  ]
+}
