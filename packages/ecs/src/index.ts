@@ -719,6 +719,10 @@ export class ComponentManager {
         return component.componentArray as ComponentArray<T>;
     }
 
+    componentIsCustomSchema(componentName: ComponentName): boolean {
+        return this._schemas.has(componentName);
+    }
+
     /**
      * Register a component with a runtime-defined schema.
      * This allows components to be defined dynamically (e.g., through a GUI).
@@ -758,10 +762,10 @@ export class ComponentManager {
                 componentArray: new ComponentArray<Record<string, unknown>>(MAX_ENTITIES)
             });
             this._nextAvailableComponentType++;
+            // Store the schema
+            this._schemas.set(schema.componentName, schema);
         }
 
-        // Store the schema
-        this._schemas.set(schema.componentName, schema);
     }
 
     /**
@@ -1186,6 +1190,72 @@ export class Coordinator {
      */
     getComponentSchema(componentName: ComponentName): ComponentSchema | null {
         return this._componentManager.getComponentSchema(componentName);
+    }
+
+    /**
+     * Get the property field names of a component.
+     * 
+     * This method works in two ways:
+     * 1. If the component was registered with a schema, returns field names from the schema
+     * 2. If no schema exists, attempts to extract property names from an actual component instance
+     *    (requires at least one entity to have an instance of the component)
+     * 
+     * @param componentName - The name of the component type
+     * @returns Array of property field names, or empty array if component has no schema and no instances exist
+     * 
+     * @example
+     * ```typescript
+     * const coordinator = new Coordinator();
+     * 
+     * // Method 1: Using schema
+     * coordinator.registerComponentWithSchema({
+     *   componentName: 'PlayerStats',
+     *   fields: [
+     *     { name: 'health', type: 'number', defaultValue: 100 },
+     *     { name: 'name', type: 'string', defaultValue: 'Player' },
+     *     { name: 'isAlive', type: 'boolean', defaultValue: true }
+     *   ]
+     * });
+     * const fieldNames1 = coordinator.getComponentPropertyNames('PlayerStats');
+     * console.log(fieldNames1); // ['health', 'name', 'isAlive']
+     * 
+     * // Method 2: From component instance
+     * type LocationComponent = { location: Entity; sortIndex: number };
+     * coordinator.registerComponent<LocationComponent>('LocationComponent');
+     * const entity = coordinator.createEntity();
+     * coordinator.addComponentToEntity('LocationComponent', entity, { 
+     *   location: otherEntity, 
+     *   sortIndex: 0 
+     * });
+     * const fieldNames2 = coordinator.getComponentPropertyNames('LocationComponent');
+     * console.log(fieldNames2); // ['location', 'sortIndex']
+     * ```
+     */
+    getComponentPropertyNames(componentName: ComponentName): string[] {
+        // First, try to get from schema if available
+        const schema = this.getComponentSchema(componentName);
+        if (schema) {
+            return schema.fields.map(field => field.name);
+        }
+        
+        // If no schema, try to extract from an actual component instance
+        const entitiesWithComponent = this._componentManager.getAllEntitiesWithComponent(componentName);
+        if (entitiesWithComponent.length === 0) {
+            return [];
+        }
+        
+        // Get the first entity's component instance
+        const component = this._componentManager.getComponentFromEntity(componentName, entitiesWithComponent[0]);
+        if (component === null) {
+            return [];
+        }
+        
+        // Extract property names from the component object
+        if (typeof component === 'object' && component !== null && !Array.isArray(component)) {
+            return Object.keys(component);
+        }
+        
+        return [];
     }
 
     /**
