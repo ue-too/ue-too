@@ -1,0 +1,30 @@
+{
+  "componentName": "PlayerStatsComponent",
+  "fields": [
+    {
+      "name": "health",
+      "type": "number",
+      "defaultValue": 100
+    },
+    {
+      "name": "maxHealth",
+      "type": "number",
+      "defaultValue": 100
+    },
+    {
+      "name": "mana",
+      "type": "number",
+      "defaultValue": 50
+    },
+    {
+      "name": "level",
+      "type": "number",
+      "defaultValue": 1
+    },
+    {
+      "name": "experience",
+      "type": "number",
+      "defaultValue": 0
+    }
+  ]
+}

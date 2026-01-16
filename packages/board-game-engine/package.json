@@ -29,6 +29,10 @@
   "types": "./src/index.ts",
   "module": "./src/index.ts",
   "dependencies": {
-    "@ue-too/ecs": "workspace:*"
+    "@ue-too/ecs": "workspace:*",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1"
   }
 }

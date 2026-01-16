@@ -1,4 +1,4 @@
-import { ComponentName, Coordinator, createGlobalComponentName, Entity, System } from "@ue-too/ecs";
+import { ComponentName, ComponentSchema, Coordinator, createGlobalComponentName, Entity, System, ComponentFieldDefinition, ArrayElementType } from "@ue-too/ecs";
 
 export const ZONE_COMPONENT: ComponentName = createGlobalComponentName("ZoneComponent");
 export const LOCATION_COMPONENT: ComponentName = createGlobalComponentName("LocationComponent");
@@ -8,12 +8,30 @@ export type LocationComponent = {
     sortIndex: number;
 }
 
+export const LocationComponentSchema: ComponentSchema = {
+    componentName: LOCATION_COMPONENT,
+    fields: [
+        { name: 'location', type: 'entity' },
+        { name: 'sortIndex', type: 'number' }
+    ]
+};
+
 export type ZoneComponent = {
     zone: string;
     owner: Entity | null;
     visibility: 'public' | 'private' | 'owner-only';
     ordered: boolean;
 }
+
+export const ZoneComponentSchema: ComponentSchema = {
+    componentName: ZONE_COMPONENT,
+    fields: [
+        { name: 'zone', type: 'string' },
+        { name: 'owner', type: 'entity' },
+        { name: 'visibility', type: 'string' },
+        { name: 'ordered', type: 'boolean' }
+    ]
+};
 
 export function shuffle(tokens: number[]): number[] {
     const shuffled = [...tokens];
@@ -32,21 +50,14 @@ export class LocationSystem implements System {
         this.coordinator = coordinator;
         this.entities = new Set();
         
-        // Register LocationComponent if not already registered
-        let locationComponentType = this.coordinator.getComponentType(LOCATION_COMPONENT);
-        if (locationComponentType === null || locationComponentType === undefined) {
-            this.coordinator.registerComponent<LocationComponent>(LOCATION_COMPONENT);
-            locationComponentType = this.coordinator.getComponentType(LOCATION_COMPONENT);
+        this.coordinator.registerComponentWithSchema(LocationComponentSchema);
+
+        const locationComponentType = this.coordinator.getComponentType(LOCATION_COMPONENT);
+        if(locationComponentType === null) {
+            throw new Error('LocationComponent not registered with coordinator');
         }
-        
-        if (locationComponentType === null || locationComponentType === undefined) {
-            throw new Error('LocationComponent not registered');
-        }
-        
-        // Register this system with the coordinator
+
         this.coordinator.registerSystem('locationSystem', this);
-        
-        // Set system signature to require LocationComponent
         this.coordinator.setSystemSignature('locationSystem', 1 << locationComponentType);
     }
 
