@@ -61,7 +61,7 @@ Additional examples in the [`devserver`](https://github.com/niuee/board/tree/mai
 
 ## Installation and Usage
 
-### Package Manager
+### Installation
 ```bash
 npm install @ue-too/board
 ```
@@ -69,13 +69,6 @@ npm install @ue-too/board
 ```javascript
 import { Board } from "@ue-too/board";
 ```
-
-### Import from jsdelivr
-```javascript
-import { Board } from "https://cdn.jsdelivr.net/npm/@ue-too/board@latest/index.js";
-```
-
-> Note: IIFE format is no longer supported.
 
 ## Key Features
 - Modularity: Use only the components you need (details in the [Under the Hood](#under-the-hood) section)

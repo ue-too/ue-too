@@ -108,46 +108,51 @@ jobs:
         if: ${{ github.event.inputs.dry-run != 'true' }}
         run: |
           echo "release-branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-      - name: Prepare release files
-        run: |
-          # Create a temporary directory for all renamed files in current directory
-          export RELEASE_FILES_DIR="./release-files-temp"
-          mkdir -p "$RELEASE_FILES_DIR"
-          echo "RELEASE_FILES_DIR=$RELEASE_FILES_DIR" >> $GITHUB_ENV
-          
-          # Process each package's dist files
-          for package_dir in ./packages/*/; do
-            # Skip board-game-engine package
-            if [[ "$package_dir" == *"board-game-engine"* ]]; then
-              echo "Skipping board-game-engine package"
-              continue
-            fi
-            
-            if [ -d "${package_dir}dist" ]; then
-              # Extract package name from package.json (remove trailing slash)
-              package_path="${package_dir%/}"
-              package_name=$(node -p "require('./${package_path}/package.json').name")
-              # Remove @ue-too/ prefix and any special characters for filename
-              clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
-              
-              # Copy and rename only .js and .js.map files to temp folder root
-              for file in "${package_dir}dist"/*; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file")
-                  if [ "$filename" = "index.js" ]; then
-                    # Rename index.js to package-name.js
-                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
-                  elif [ "$filename" = "index.js.map" ]; then
-                    # Rename index.js.map to package-name.js.map
-                    cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
-                  fi
-                fi
-              done
-            fi
-          done
-          
-          echo "Release files prepared in: $RELEASE_FILES_DIR"
-          ls -la "$RELEASE_FILES_DIR"
+      # - name: Prepare release files
+      #   run: |
+      #     # Create a temporary directory for all renamed files in current directory
+      #     export RELEASE_FILES_DIR="./release-files-temp"
+      #     mkdir -p "$RELEASE_FILES_DIR"
+      #     echo "RELEASE_FILES_DIR=$RELEASE_FILES_DIR" >> $GITHUB_ENV
+      #     
+      #     # Process each package's dist files
+      #     for package_dir in ./packages/*/; do
+      #       # Skip board-game-engine package
+      #       if [[ "$package_dir" == *"board-game-engine"* ]]; then
+      #         echo "Skipping board-game-engine package"
+      #         continue
+      #       fi
+      #       
+      #       if [ -d "${package_dir}dist" ]; then
+      #         # Extract package name from package.json (remove trailing slash)
+      #         package_path="${package_dir%/}"
+      #         package_name=$(node -p "require('./${package_path}/package.json').name")
+      #         # Remove @ue-too/ prefix and any special characters for filename
+      #         clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
+      #         
+      #         # Copy and rename only .js and .js.map files to temp folder root
+      #         # Exclude browser bundle files (*.browser.js and *.browser.js.map)
+      #         for file in "${package_dir}dist"/*; do
+      #           if [ -f "$file" ]; then
+      #             filename=$(basename "$file")
+      #             # Skip browser bundle files
+      #             if [[ "$filename" == *".browser.js"* ]] || [[ "$filename" == *".browser.js.map"* ]]; then
+      #               continue
+      #             fi
+      #             if [ "$filename" = "index.js" ]; then
+      #               # Rename index.js to package-name.js
+      #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
+      #             elif [ "$filename" = "index.js.map" ]; then
+      #               # Rename index.js.map to package-name.js.map
+      #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
+      #             fi
+      #           fi
+      #         done
+      #       fi
+      #     done
+      #     
+      #     echo "Release files prepared in: $RELEASE_FILES_DIR"
+      #     ls -la "$RELEASE_FILES_DIR"
       - name: Create release
         if: ${{ github.event.inputs.dry-run != 'true' }}
         env:
@@ -161,11 +166,11 @@ jobs:
               --generate-notes
               
           # Upload all prepared files from the temporary directory
-          cd "$RELEASE_FILES_DIR"
-          find . -type f -exec gh release upload "$tag" {} --repo="$GITHUB_REPOSITORY" \;
-          
+          # cd "$RELEASE_FILES_DIR"
+          # find . -type f -exec gh release upload "$tag" {} --repo="$GITHUB_REPOSITORY" \;
+          # 
           # Clean up temporary directory
-          rm -rf "$RELEASE_FILES_DIR"
+          # rm -rf "$RELEASE_FILES_DIR"
       - name: Build documentation
         run: |
           bun run docs:build
