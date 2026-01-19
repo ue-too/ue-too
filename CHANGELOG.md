@@ -1,3 +1,13 @@
+## 0.14.0 (2026-01-19)
+
+### 🩹 Fixes
+
+- no longer release individual package's bundled javascript ([#318](https://github.com/ue-too/ue-too/pull/318))
+
+### ❤️ Thank You
+
+- niuee @niuee
+
 ## 0.13.0 (2026-01-19)
 
 ### 🚀 Features
