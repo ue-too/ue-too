@@ -8,6 +8,7 @@
     "declaration": true,
     "moduleResolution": "bundler",
     "module": "esnext",
+    "composite": true,
     "strict": true,
     "types": []
   },

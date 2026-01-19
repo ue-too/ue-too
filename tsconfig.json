@@ -54,6 +54,9 @@
       },
       {
         "path": "./apps/blast"
+      },
+      {
+        "path": "./packages/board-game-engine"
       }
     ]
   }

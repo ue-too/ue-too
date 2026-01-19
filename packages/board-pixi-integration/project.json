@@ -9,14 +9,26 @@
       "options": {
         "command": "rm -rf dist && bun run ../../scripts/build.ts",
         "cwd": "packages/board-pixi-integration"
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": ["math", "being", "board"],
+          "target": "build"
+        }
+      ]
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
         "command": "rm -rf dist && bun run ../../scripts/build.ts",
         "cwd": "packages/board-pixi-integration"
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": ["math", "being", "board"],
+          "target": "build"
+        }
+      ]
     },
     "move-package": {
       "executor": "nx:run-commands",

@@ -8,10 +8,21 @@
     "declaration": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "composite": true,
     "strict": true,
     "types": [],
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../board"
+    }
+  ]
 }
   

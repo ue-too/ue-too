@@ -117,6 +117,12 @@ jobs:
           
           # Process each package's dist files
           for package_dir in ./packages/*/; do
+            # Skip board-game-engine package
+            if [[ "$package_dir" == *"board-game-engine"* ]]; then
+              echo "Skipping board-game-engine package"
+              continue
+            fi
+            
             if [ -d "${package_dir}dist" ]; then
               # Extract package name from package.json (remove trailing slash)
               package_path="${package_dir%/}"
