@@ -1,3 +1,29 @@
+## 0.13.0 (2026-01-19)
+
+### 🚀 Features
+
+- add vue integration ([#303](https://github.com/ue-too/ue-too/pull/303))
+- auto detect input mode ([#306](https://github.com/ue-too/ue-too/pull/306))
+- third party framework integration ([#310](https://github.com/ue-too/ue-too/pull/310))
+- board component swappable ([#311](https://github.com/ue-too/ue-too/pull/311))
+- add hierarchical state machine poc ([#312](https://github.com/ue-too/ue-too/pull/312))
+- ecs serializable ([#314](https://github.com/ue-too/ue-too/pull/314))
+- board game engine ([#315](https://github.com/ue-too/ue-too/pull/315))
+
+### 🩹 Fixes
+
+- documentation ([2414e43](https://github.com/ue-too/ue-too/commit/2414e43))
+- update when attribute changes ([#304](https://github.com/ue-too/ue-too/pull/304))
+- vue library bundle ([#309](https://github.com/ue-too/ue-too/pull/309))
+- board-vue dependency update ([3ed998a](https://github.com/ue-too/ue-too/commit/3ed998a))
+- state machine ([#313](https://github.com/ue-too/ue-too/pull/313))
+- update gitignore ([9c8d424](https://github.com/ue-too/ue-too/commit/9c8d424))
+- build workflow ([#316](https://github.com/ue-too/ue-too/pull/316))
+
+### ❤️ Thank You
+
+- niuee @niuee
+
 ## 0.12.0 (2025-12-26)
 
 This was a version bump only, there were no code changes.
