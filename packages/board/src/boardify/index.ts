@@ -151,10 +151,9 @@ import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
  * ```
  *
  * @example
- * Using fullscreen mode
+ * Initialize board without canvas, attach canvas later
  * ```typescript
  * const board = new Board();
- * board.fullScreen = true; // Canvas will resize with window
  *
  * // Attach canvas later
  * const canvasElement = document.createElement('canvas');
@@ -608,9 +607,11 @@ export default class Board {
             this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
         }
 
-
         const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
-        this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
+        const currentTransform = this._context.getTransform();
+        if(currentTransform.a !== transfromMatrix.a || currentTransform.b !== transfromMatrix.b || currentTransform.c !== transfromMatrix.c || currentTransform.d !== transfromMatrix.d || currentTransform.e !== transfromMatrix.e || currentTransform.f !== transfromMatrix.f){
+            this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
+        }
     }
 
     /**

@@ -390,7 +390,6 @@ export class CanvasPositionDimensionPublisher {
         const updatePixelRatio = (() => {
             this._pixelRatioAbortController.abort();
             this._pixelRatioAbortController = new AbortController();
-            console.log('updatePixelRatio', window.devicePixelRatio);
 
             const newRect = canvas.getBoundingClientRect();
             const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
