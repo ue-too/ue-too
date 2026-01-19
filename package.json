@@ -6,7 +6,7 @@
   "scripts": {
     "test": "nx run-many --target=test",
     "dev:banana": "nx dev banana",
-    "build": "nx run-many --target=build:bun --projects=packages/* --parallel=true",
+    "build": "nx run-many --target=build --projects=packages/* --parallel=true",
     "build:packages": "nx run-many --target=build --projects=packages/* --parallel=true",
     "build:apps": "nx run-many --target=build --projects=apps/* --parallel=true",
     "build:affected": "nx affected --target=build --parallel=true",

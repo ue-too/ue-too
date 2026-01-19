@@ -9,14 +9,26 @@
       "options": {
         "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
         "cwd": "packages/board"
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": ["math", "being"],
+          "target": "build"
+        }
+      ]
     },
     "build:bun": {
       "executor": "nx:run-commands",
       "options": {
         "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
         "cwd": "packages/board"
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": ["math", "being"],
+          "target": "build"
+        }
+      ]
     },
     "move-package": {
       "executor": "nx:run-commands",

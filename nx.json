@@ -38,6 +38,7 @@
   ],
   "release": {
     "releaseTagPattern": "v{version}",
+    "projects": ["packages/*", "!board-game-engine"],
     "changelog": {
       "automaticFromRef": true,
       "workspaceChangelog": {

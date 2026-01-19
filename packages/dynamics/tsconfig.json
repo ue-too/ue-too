@@ -8,11 +8,20 @@
     "declaration": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "composite": true,
     "strict": true,
     "types": []
   },
   "include": [
     "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../ecs"
+    },
+    {
+      "path": "../math"
+    }
   ]
 }
   

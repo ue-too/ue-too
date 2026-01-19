@@ -14,5 +14,16 @@
   },
   "include": [
     "src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../being"
+    },
+    {
+      "path": "../board"
+    }
   ]
 }
