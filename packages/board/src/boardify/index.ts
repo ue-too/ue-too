@@ -436,6 +436,9 @@ export default class Board {
         this._kmtParser.tearDown();
         this._touchParser.tearDown();
         this._canvasProxy.tearDown();
+        this._canvasElement = undefined;
+        this._context = undefined;
+        this._reversedContext = undefined;
     }
 
     private bindFunctions(){
