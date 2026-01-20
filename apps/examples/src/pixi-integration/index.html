@@ -5,12 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + TS</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      #graph {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <!-- <canvas id="graph" width="1000" height="1000"></canvas> -->
-    <div style="display: flex; justify-content: center; flex-direction: column; align-items: center; height: 100vh;">
-      <canvas id="graph" width="500" height="650" style="border: 1px solid black; background-color: white;"></canvas>
-    </div>
+    <canvas id="graph"></canvas>
     <script type="module" src="main.ts"></script>
   </body>
 </html>

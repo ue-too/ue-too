@@ -451,13 +451,13 @@ trainPlacementToggleButton.addEventListener("click", ()=>{
     if(trainPlacementToggleButton.textContent === "Start Train Placement"){
         trainStateMachine.happens("startPlacement");
         stateMachine.happens("endLayout");
-        board.kmtParser.disabled = true;
+        board.kmtParser.disable();
         trainPlacementToggleButton.textContent = "End Train Placement";
         layoutToggleButton.disabled = true;
         layoutToggleButton.textContent = "Start Layout";
     } else {
         trainStateMachine.happens("endPlacement");
-        board.kmtParser.disabled = false;
+        board.kmtParser.enable();
         trainPlacementToggleButton.textContent = "Start Train Placement";
         layoutToggleButton.disabled = false;
     }

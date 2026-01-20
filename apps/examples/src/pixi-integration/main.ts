@@ -12,10 +12,11 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     // Create a PixiJS application.
     const app = new Application();
 
-    // Intialize the application.
-    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: document.querySelector("#graph") as HTMLCanvasElement, antialias: true, resizeTo: window });
+    const canvas = document.querySelector("#graph") as HTMLCanvasElement;
 
-    
+    // Intialize the application.
+    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: canvas, antialias: true, resizeTo: window });
+
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
     const canvasProxy = new CanvasProxy(app.canvas);
     const cameraRig = createDefaultCameraRig(camera);
@@ -23,8 +24,15 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     const observableInputTracker = new ObservableInputTracker(canvasProxy);
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     console.log('kmt input state machine', kmtInputStateMachine);
-    const kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, inputOrchestrator, app.canvas);
-    // kmtParser.setUp();
+
+    // Listen for canvas resize events
+    app.renderer.on('resize', (width: number, height: number) => {
+        console.log('Canvas resized to:', width, height);
+        camera.viewPortWidth = width;
+        camera.viewPortHeight = height;
+    });
+    
+    camera.setRotation(Math.PI / 4);
 
     const pixiInputParser = new PixiInputParser(app, kmtInputStateMachine, inputOrchestrator, camera);
     pixiInputParser.setUp();
@@ -40,8 +48,11 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     // Add to stage.
     // console.log(camera.contextTransform);
     const transform = camera.getTransform(1);
-    app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
-
+    if(transform.a === app.stage.localTransform.a && transform.b === app.stage.localTransform.b && transform.c === app.stage.localTransform.c && transform.d === app.stage.localTransform.d && transform.e === app.stage.localTransform.tx && transform.f === app.stage.localTransform.ty){
+    } else {
+        console.log('setting stage transform');
+        app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
+    }
     app.stage.addChild(bunny);
     app.stage.addChild(new Graphics().arc(0, 0, 100, 0, Math.PI * 2).fill({color: 0x000000, alpha: 0.5}));
 
@@ -57,6 +68,10 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     {
         pixiInputParser.updateHitArea();
         const transform = camera.getTransform(1, true);
-        app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
+        if(transform.a === app.stage.localTransform.a && transform.b === app.stage.localTransform.b && transform.c === app.stage.localTransform.c && transform.d === app.stage.localTransform.d && transform.e === app.stage.localTransform.tx && transform.f === app.stage.localTransform.ty){
+        } else {
+            console.log('setting stage transform');
+            app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
+        }
     });
 })();

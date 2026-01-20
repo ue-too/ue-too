@@ -1,4 +1,4 @@
-import { Application, FederatedPointerEvent, Rectangle, Matrix, Graphics } from "pixi.js";
+import { Application, FederatedPointerEvent, Rectangle, Matrix, Graphics, Polygon } from "pixi.js";
 import { BoardCamera, InputOrchestrator, KmtInputEventMapping, KmtInputStateMachine } from "@ue-too/board";
 import { EventArgs } from "@ue-too/being";
 
@@ -64,20 +64,30 @@ export class PixiInputParser {
      * coordinate space. When the stage transforms, the hitArea moves with it, so we
      * need to update it to cover the viewport rectangle transformed into stage local space.
      * 
-     * Uses the stage's toLocal method to convert viewport corners from screen space
-     * to stage local space, then creates a bounding box for the hitArea.
+     * Uses a Polygon instead of Rectangle to support rotated viewports. The four corners
+     * of the viewport are converted from viewport space to world space (which matches
+     * the stage's local space when the stage transform is applied).
      */
     updateHitArea(){
         // Get the viewport rectangle in screen space
         const width = this._app.screen.width;
         const height = this._app.screen.height;
 
+        // Convert the four corners of the viewport from viewport space to world space
+        // These world coordinates are in the stage's local space
         const topLeft = this._camera.convertFromViewPort2WorldSpace({x: -width / 2, y: -height / 2});
         const topRight = this._camera.convertFromViewPort2WorldSpace({x: width / 2, y: -height / 2});
         const bottomLeft = this._camera.convertFromViewPort2WorldSpace({x: -width / 2, y: height / 2});
         const bottomRight = this._camera.convertFromViewPort2WorldSpace({x: width / 2, y: height / 2});
         
-        this._stage.hitArea = new Rectangle(topLeft.x, topLeft.y, bottomRight.x - topLeft.x, bottomRight.y - topLeft.y);
+        // Use Polygon to support rotated viewports (Rectangle is axis-aligned only)
+        // Polygon expects a flat array of [x1, y1, x2, y2, ...]
+        this._stage.hitArea = new Polygon([
+            topLeft.x, topLeft.y,
+            topRight.x, topRight.y,
+            bottomRight.x, bottomRight.y,
+            bottomLeft.x, bottomLeft.y
+        ]);
         
         // Update debug visualization if enabled
         if (this._hitAreaDebugGraphics) {
@@ -102,25 +112,31 @@ export class PixiInputParser {
         
         const hitArea = this._stage.hitArea;
         
-        // Only draw if hitArea is a Rectangle
-        if (!(hitArea instanceof Rectangle)) {
-            return;
-        }
-        
         // Clear previous drawing
         this._hitAreaDebugGraphics.clear();
         
-        // Draw the hitArea rectangle in red with semi-transparent fill
-        this._hitAreaDebugGraphics.rect(hitArea.x, hitArea.y, hitArea.width, hitArea.height);
-        this._hitAreaDebugGraphics.fill({ color: 0xff0000, alpha: 0.2 });
-        this._hitAreaDebugGraphics.stroke({ color: 0xff0000, width: 2 });
+        // Draw Rectangle hitArea
+        if (hitArea instanceof Rectangle) {
+            this._hitAreaDebugGraphics.rect(hitArea.x, hitArea.y, hitArea.width, hitArea.height);
+            this._hitAreaDebugGraphics.fill({ color: 0xff0000, alpha: 0.2 });
+            this._hitAreaDebugGraphics.stroke({ color: 0xff0000, width: 2 });
+        }
+        // Draw Polygon hitArea (supports rotated viewports)
+        else if (hitArea instanceof Polygon) {
+            const points = hitArea.points;
+            if (points.length >= 6) { // At least 3 points (x, y pairs)
+                this._hitAreaDebugGraphics.poly(points);
+                this._hitAreaDebugGraphics.fill({ color: 0xff0000, alpha: 0.2 });
+                this._hitAreaDebugGraphics.stroke({ color: 0xff0000, width: 2 });
+            }
+        }
     }
 
     /**
      * Shows a visual debug overlay of the hitArea.
      * 
      * @remarks
-     * This creates a red rectangle that shows the current hitArea boundaries.
+     * This creates a red polygon/rectangle that shows the current hitArea boundaries.
      * Useful for debugging hit detection issues. The debug graphics are
      * automatically updated when `updateHitArea()` is called.
      */
