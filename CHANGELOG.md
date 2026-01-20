@@ -1,3 +1,13 @@
+## 0.14.1 (2026-01-20)
+
+### 🩹 Fixes
+
+- teardown in board missed the canvas element and its context ([5464b9b](https://github.com/ue-too/ue-too/commit/5464b9b))
+
+### ❤️ Thank You
+
+- niuee
+
 ## 0.14.0 (2026-01-19)
 
 ### 🩹 Fixes
