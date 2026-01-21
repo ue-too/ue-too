@@ -18,7 +18,7 @@ import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./ro
 import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation-handler";
 import { ObservableBoardCamera } from "../interface";
 import { Point } from "@ue-too/math";
-import { convertDeltaInViewPortToWorldSpace } from "../utils";
+import { clampPointEntireViewPort, convertDeltaInViewPortToWorldSpace } from "../utils";
 import type { BaseContext } from "@ue-too/being";
 
 /**
@@ -585,6 +585,12 @@ export class DefaultCameraRig implements CameraRig {
     rotateBy(delta: number): void {
         const transformedDelta = this._rotateBy(delta, this._camera, this._config);
         this._camera.setRotation(this._camera.rotation + transformedDelta);
+        if(!this._config.limitEntireViewPort){
+            return;
+        }
+        const pointAfterRotation = clampPointEntireViewPort(this._camera.position, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation);
+        const transformedDestination = this._panTo(pointAfterRotation, this._camera, this._config);
+        this._camera.setPosition(transformedDestination);
     }
 
     /**
@@ -615,6 +621,12 @@ export class DefaultCameraRig implements CameraRig {
     rotateTo(target: number): void {
         const transformedTarget = this._rotateTo(target, this._camera, this._config);
         this._camera.setRotation(transformedTarget);
+        if(!this._config.limitEntireViewPort){
+            return;
+        }
+        const pointAfterRotation = clampPointEntireViewPort(this._camera.position, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation);
+        const transformedDestination = this._panTo(pointAfterRotation, this._camera, this._config);
+        this._camera.setPosition(transformedDestination);
     }
 
     /**

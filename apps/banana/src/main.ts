@@ -223,7 +223,8 @@ console.log('view port in world space', board.camera.viewPortInWorldSpace());
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 console.log('camera boundaries', board.camera.boundaries);
 
-board.camera.setMinZoomLevel(0.000001);
+board.camera.setMaxZoomLevel(10000);
+
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 
 const curveEngine = new CurveCreationEngine();
@@ -451,13 +452,13 @@ trainPlacementToggleButton.addEventListener("click", ()=>{
     if(trainPlacementToggleButton.textContent === "Start Train Placement"){
         trainStateMachine.happens("startPlacement");
         stateMachine.happens("endLayout");
-        board.kmtParser.disabled = true;
+        board.kmtParser.disable();
         trainPlacementToggleButton.textContent = "End Train Placement";
         layoutToggleButton.disabled = true;
         layoutToggleButton.textContent = "Start Layout";
     } else {
         trainStateMachine.happens("endPlacement");
-        board.kmtParser.disabled = false;
+        board.kmtParser.enable();
         trainPlacementToggleButton.textContent = "Start Train Placement";
         layoutToggleButton.disabled = false;
     }

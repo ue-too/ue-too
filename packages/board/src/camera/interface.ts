@@ -199,15 +199,6 @@ export interface BoardCamera {
     setVerticalBoundaries(min: number, max: number): void;
 
     /**
-     * Gets the camera origin position in window coordinates.
-     *
-     * @deprecated This method is deprecated and will be removed in a future version
-     * @param centerInWindow - Center point in window coordinates
-     * @returns The camera origin point (currently just returns the input)
-     */
-    getCameraOriginInWindow(centerInWindow: Point): Point;
-
-    /**
      * Converts a point from viewport coordinates to world coordinates.
      *
      * @param point - Point in viewport space (pixels from viewport center)

@@ -270,6 +270,8 @@ export class CanvasPositionDimensionPublisher {
     private resizeHandler?: (() => void);
     private _observers: SynchronousObservable<[DOMRect]>;
 
+    private lastDOMMatrix?: DOMMatrix;
+
     private _abortController: AbortController;
     private _pixelRatioAbortController: AbortController;
     /**

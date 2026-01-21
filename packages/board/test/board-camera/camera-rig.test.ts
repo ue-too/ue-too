@@ -75,4 +75,271 @@ describe("camera rig", ()=>{
         expect(cameraRig.camera.rotation).toBe(0);
     });
 
+    describe("rotation with limitEntireViewPort", () => {
+        it("should adjust camera position when rotateBy causes viewport to exceed boundaries", () => {
+            // Setup: Camera near top-left boundary, viewport will exceed when rotated
+            const viewportWidth = 800;
+            const viewportHeight = 600;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 2000, y: 2000 }
+            };
+            
+            // Position camera near top-left boundary
+            // With rotation, the viewport corners will extend beyond boundaries
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 200, y: 200 }, // Near top-left boundary
+                0, // No rotation initially
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: true });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate 45 degrees - this will cause viewport corners to extend beyond boundaries
+            cameraRig.rotateBy(Math.PI / 4);
+            
+            // Camera position should be adjusted to keep viewport within boundaries
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 4);
+            expect(cameraRig.camera.position.x).not.toBe(positionBeforeRotation.x);
+            expect(cameraRig.camera.position.y).not.toBe(positionBeforeRotation.y);
+            
+            // Verify viewport corners are within boundaries after adjustment
+            const viewportCorners = cameraRig.camera.viewPortInWorldSpace();
+            expect(viewportCorners.top.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.top.left.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.top.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.top.right.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.bottom.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.bottom.left.y).toBeLessThanOrEqual(boundaries.max.y);
+            expect(viewportCorners.bottom.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.bottom.right.y).toBeLessThanOrEqual(boundaries.max.y);
+        });
+
+        it("should adjust camera position when rotateTo causes viewport to exceed boundaries", () => {
+            // Setup: Camera near bottom-right boundary, viewport will exceed when rotated
+            const viewportWidth = 800;
+            const viewportHeight = 600;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 2000, y: 2000 }
+            };
+            
+            // Position camera near bottom-right boundary
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 1800, y: 1800 }, // Near bottom-right boundary
+                0, // No rotation initially
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: true });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate to 90 degrees - this will cause viewport corners to extend beyond boundaries
+            cameraRig.rotateTo(Math.PI / 2);
+            
+            // Camera position should be adjusted to keep viewport within boundaries
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 2);
+            expect(cameraRig.camera.position.x).not.toBe(positionBeforeRotation.x);
+            expect(cameraRig.camera.position.y).not.toBe(positionBeforeRotation.y);
+            
+            // Verify viewport corners are within boundaries after adjustment
+            const viewportCorners = cameraRig.camera.viewPortInWorldSpace();
+            expect(viewportCorners.top.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.top.left.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.top.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.top.right.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.bottom.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.bottom.left.y).toBeLessThanOrEqual(boundaries.max.y);
+            expect(viewportCorners.bottom.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.bottom.right.y).toBeLessThanOrEqual(boundaries.max.y);
+        });
+
+        it("should not adjust camera position when rotateBy does not cause viewport to exceed boundaries", () => {
+            // Setup: Camera in center of boundaries, rotation won't cause overflow
+            const viewportWidth = 400;
+            const viewportHeight = 300;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 2000, y: 2000 }
+            };
+            
+            // Position camera in center with plenty of room
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 1000, y: 1000 }, // Center of boundaries
+                0,
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: true });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate 45 degrees - should not cause boundary violation
+            cameraRig.rotateBy(Math.PI / 4);
+            
+            // Camera position should remain the same (no adjustment needed)
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 4);
+            expect(cameraRig.camera.position.x).toBe(positionBeforeRotation.x);
+            expect(cameraRig.camera.position.y).toBe(positionBeforeRotation.y);
+        });
+
+        it("should not adjust camera position when limitEntireViewPort is false for rotateBy", () => {
+            const viewportWidth = 800;
+            const viewportHeight = 600;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 2000, y: 2000 }
+            };
+            
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 200, y: 200 }, // Near boundary
+                0,
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: false });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate - position should not be adjusted when limitEntireViewPort is false
+            cameraRig.rotateBy(Math.PI / 4);
+            
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 4);
+            // Position should remain unchanged even if viewport exceeds boundaries
+            expect(cameraRig.camera.position.x).toBe(positionBeforeRotation.x);
+            expect(cameraRig.camera.position.y).toBe(positionBeforeRotation.y);
+        });
+
+        it("should not adjust camera position when limitEntireViewPort is false for rotateTo", () => {
+            const viewportWidth = 800;
+            const viewportHeight = 600;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 2000, y: 2000 }
+            };
+            
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 200, y: 200 }, // Near boundary
+                0,
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: false });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate - position should not be adjusted when limitEntireViewPort is false
+            cameraRig.rotateTo(Math.PI / 2);
+            
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 2);
+            // Position should remain unchanged even if viewport exceeds boundaries
+            expect(cameraRig.camera.position.x).toBe(positionBeforeRotation.x);
+            expect(cameraRig.camera.position.y).toBe(positionBeforeRotation.y);
+        });
+
+        it("should handle rotation with zoom level affecting viewport size", () => {
+            // Higher zoom means larger viewport in world space, more likely to exceed boundaries
+            const viewportWidth = 400;
+            const viewportHeight = 300;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 1000, y: 1000 }
+            };
+            
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 300, y: 300 },
+                0,
+                2.0, // Higher zoom level
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: true });
+            
+            const positionBeforeRotation = { ...cameraRig.camera.position };
+            
+            // Rotate - with higher zoom, viewport is larger in world space
+            cameraRig.rotateBy(Math.PI / 4);
+            
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 4);
+            
+            // Verify viewport is still within boundaries after adjustment
+            const viewportCorners = cameraRig.camera.viewPortInWorldSpace();
+            expect(viewportCorners.top.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.top.left.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.top.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.top.right.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.bottom.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.bottom.left.y).toBeLessThanOrEqual(boundaries.max.y);
+            expect(viewportCorners.bottom.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.bottom.right.y).toBeLessThanOrEqual(boundaries.max.y);
+        });
+
+        it("should handle multiple rotations with boundary adjustments", () => {
+            const viewportWidth = 600;
+            const viewportHeight = 400;
+            const boundaries = {
+                min: { x: 0, y: 0 },
+                max: { x: 1500, y: 1500 }
+            };
+            
+            const camera = new DefaultBoardCamera(
+                viewportWidth,
+                viewportHeight,
+                { x: 200, y: 200 },
+                0,
+                1.0,
+                boundaries
+            );
+            
+            const cameraRig = createDefaultCameraRig(camera);
+            cameraRig.configure({ limitEntireViewPort: true });
+            
+            // First rotation
+            cameraRig.rotateBy(Math.PI / 4);
+            const positionAfterFirst = { ...cameraRig.camera.position };
+            
+            // Second rotation
+            cameraRig.rotateBy(Math.PI / 4);
+            
+            expect(cameraRig.camera.rotation).toBe(Math.PI / 2);
+            
+            // Verify viewport is still within boundaries after both rotations
+            const viewportCorners = cameraRig.camera.viewPortInWorldSpace();
+            expect(viewportCorners.top.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.top.left.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.top.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.top.right.y).toBeGreaterThanOrEqual(boundaries.min.y);
+            expect(viewportCorners.bottom.left.x).toBeGreaterThanOrEqual(boundaries.min.x);
+            expect(viewportCorners.bottom.left.y).toBeLessThanOrEqual(boundaries.max.y);
+            expect(viewportCorners.bottom.right.x).toBeLessThanOrEqual(boundaries.max.x);
+            expect(viewportCorners.bottom.right.y).toBeLessThanOrEqual(boundaries.max.y);
+        });
+    });
+
 });

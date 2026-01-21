@@ -525,19 +525,6 @@ export default class BaseCamera implements BoardCamera {
     }
 
     /**
-     * Gets the camera origin in window coordinates.
-     *
-     * @deprecated This method is deprecated and will be removed in a future version.
-     * Currently just returns the input unchanged.
-     *
-     * @param centerInWindow - Center point in window coordinates
-     * @returns The same point (camera origin equals window center)
-     */
-    getCameraOriginInWindow(centerInWindow: Point): Point{
-        return centerInWindow;
-    }
-
-    /**
      * Converts a point from viewport coordinates to world coordinates.
      *
      * @param point - Point in viewport space (relative to viewport center, in CSS pixels)

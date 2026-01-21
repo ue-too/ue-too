@@ -835,3 +835,5 @@ export function samePoint(a: Point, b: Point, precision?: number): boolean {
     }
     return false;
 }
+
+export * from './matrix';

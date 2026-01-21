@@ -1,6 +1,7 @@
 import { BoardCamera } from "../interface";
 import { createHandlerChain } from "../../utils/handler-pipeline";
 import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "../utils/rotation";
+import type { Point } from "@ue-too/math";
 
 /**
  * Combined configuration for rotation handler behavior, merging restriction and clamping settings.
@@ -173,6 +174,8 @@ export type RotateByHandlerFunction = (delta: number, camera: BoardCamera, confi
  * @see {@link createDefaultRotateToHandler} for the default implementation
  */
 export type RotateToHandlerFunction = (targetRotation: number, camera: BoardCamera, config: RotationHandlerConfig) => number;
+
+export type RotateToWithAnchorPointHandlerFunction = (targetRotation: number, anchorPoint: Point, camera: BoardCamera, config: RotationHandlerConfig) => number;
 
 /**
  * Handler pipeline step that clamps "rotate by" deltas to prevent angular boundary violations.
