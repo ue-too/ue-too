@@ -9,7 +9,7 @@ import { convertFromViewport2World, convertFromWorld2Viewport } from "../../util
  * if the camera were at the target position.
  *
  * @param targetPosition - Hypothetical camera position in world coordinates
- * @param interestPoint - Point in canvas coordinates (origin at bottom-left)
+ * @param interestPoint - Point in canvas coordinates (origin at top-left corner of the canvas element in browser)
  * @param viewPortWidth - Viewport width in CSS pixels
  * @param viewPortHeight - Viewport height in CSS pixels
  * @param cameraZoomLevel - Zoom level to apply
@@ -29,7 +29,7 @@ import { convertFromViewport2World, convertFromWorld2Viewport } from "../../util
  * // if camera moved to (100, 100)?
  * const worldCorner = convert2WorldSpaceWRT(
  *   { x: 100, y: 100 },  // target camera position
- *   { x: 0, y: 1080 },    // top-left in canvas coords
+ *   { x: 0, y: 0 },    // top-left in canvas coords
  *   1920, 1080,           // viewport size
  *   1.0,                  // zoom
  *   0                     // rotation
