@@ -223,7 +223,8 @@ console.log('view port in world space', board.camera.viewPortInWorldSpace());
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 console.log('camera boundaries', board.camera.boundaries);
 
-board.camera.setMinZoomLevel(0.000001);
+board.camera.setMaxZoomLevel(10000);
+
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 
 const curveEngine = new CurveCreationEngine();
