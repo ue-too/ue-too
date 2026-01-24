@@ -17,12 +17,16 @@
     "@ue-too/animate": "workspace:*",
     "@ue-too/being": "workspace:*",
     "@ue-too/board": "workspace:*",
+    "@ue-too/board-pixi-integration": "workspace:*",
     "@ue-too/border": "workspace:*",
     "@ue-too/curve": "workspace:*",
     "@ue-too/dynamics": "workspace:*",
     "@ue-too/ecs": "workspace:*",
     "@ue-too/math": "workspace:*",
     "bezier-js": "^6.1.4",
+    "pixi.js": "8.14.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "stats.js": "^0.17.0"
   },
   "scripts": {
@@ -33,6 +37,9 @@
   },
   "devDependencies": {
     "@types/bezier-js": "^4.1.3",
-    "@types/stats.js": "^0.17.4"
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@types/stats.js": "^0.17.4",
+    "@vitejs/plugin-react": "^5.1.2"
   }
 }

@@ -1,90 +1,14 @@
-import { Board, convertDeltaToComplyWithRestriction, drawArrow, drawRuler } from "@ue-too/board";
+import { Board, drawArrow, drawRuler } from "@ue-too/board";
 import { BCurve } from "@ue-too/curve";
 import { PointCal } from "@ue-too/math";
-import { createCubicFromTangentsCurvatures, createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
+import { createLayoutStateMachine, CurveCreationEngine, NewJointType } from "./kmt-state-machine";
 import { TrainPlacementEngine, TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import Stats from "stats.js";
 import { mercatorProjection } from "@ue-too/border";
 import "./media";
-import { ELEVATION, trackIsSloped } from "./track";
-import { Bezier, Point } from "bezier-js";
-import { Rectangle } from "./r-tree";
+import { ELEVATION } from "./track";
 import { PreviewCurveCalculator } from "./new-joint";
-
-
-const testCurve = new BCurve([{x: 100, y: 25}, {x: 10, y: 90}, {x: 110, y: 100}, {x: 150, y: 195}]);
-const res = testCurve.splitIn3Curves(0.25, 0.75);
-
-const firstCurve = res[0];
-const secondCurve = res[1];
-const thirdCurve = res[2];
-
-// curve 1 control points [
-//     {
-//       "x": 82.79468411364182,
-//       "y": 281.7059900498813,
-//       "z": 0
-//     },
-//     {
-//       "x": 169.1029913563118,
-//       "y": 199.1776976370353,
-//       "z": 0
-//     },
-//     {
-//       "x": 228.60937554640233,
-//       "y": 82.27781065247305,
-//       "z": 0
-//     }
-//   ]
-//   track.ts:1019 curve 2 control points [
-//     {
-//       "x": -51.31285263434981,
-//       "y": 380.48305072064204,
-//       "z": 0
-//     },
-//     {
-//       "x": 127.40804188978572,
-//       "y": 281.08714225887155,
-//       "z": 0
-//     },
-//     {
-//       "x": 228.60937554640233,
-//       "y": 82.27781065247305,
-//       "z": 0
-//     }
-//   ]
-
-const testCurve1 = new BCurve([
-    {x: 82.79468411364182, y: 281.7059900498813, z: 0},
-    {x: 169.1029913563118, y: 199.1776976370353, z: 0},
-    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
-]);
-const testCurve2 = new BCurve([
-    {x: -51.31285263434981, y: 380.48305072064204, z: 0},
-    {x: 127.40804188978572, y: 281.08714225887155, z: 0},
-    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
-]);
-
-const testCurve1Bezier = new Bezier([
-    {x: 82.79468411364182, y: 281.7059900498813, z: 0},
-    {x: 169.1029913563118, y: 199.1776976370353, z: 0},
-    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
-]);
-const testCurve2Bezier = new Bezier([
-    {x: -51.31285263434981, y: 380.48305072064204, z: 0},
-    {x: 127.40804188978572, y: 281.08714225887155, z: 0},
-    {x: 228.60937554640233, y: 82.27781065247305, z: 0}
-]);
-
-const intersections = testCurve1Bezier.intersects(testCurve2Bezier);
-console.log('intersections', intersections);
-
-const testRes = testCurve1.getCurveIntersections(testCurve2);
-
-const testCoordinate = { longitude: 120.20, latitude: 22.98 };
-
-const testProjection = mercatorProjection(testCoordinate, 120.20);
-console.log('testProjection', testProjection);
+import { Point } from "@ue-too/math";
 
 const elevationText = document.getElementById("elevation") as HTMLParagraphElement;
 
@@ -350,10 +274,6 @@ const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
 const train = trainPlacementEngine.train;
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
-// Cache for track segment offset curves to avoid recalculating every frame
-const trackOffsetCache = new Map<number, BCurve[]>();
-let trackCacheVersion = 0;
-
 canvas.addEventListener("pointerdown", (event) => {
     if(event.button !== 0){
         return;
@@ -488,13 +408,6 @@ function step(timestamp: number){
         return;
     }
     
-    // Clear offset cache when track changes (simple version - clear when number of segments changes)
-    const currentTrackSegmentCount = curveEngine.trackGraph.trackSegments.length;
-    if (trackOffsetCache.size !== currentTrackSegmentCount) {
-        trackOffsetCache.clear();
-        trackCacheVersion++;
-    }
-
     if(curveEngine.previewCurve !== null){
         const cps = curveEngine.previewCurve.curve.getControlPoints();
         board.context.save();
@@ -521,19 +434,6 @@ function step(timestamp: number){
         }
 
         const cps = drawData.curve.getControlPoints();
-
-        // board.context.save();
-        // board.context.beginPath();
-        // board.context.arc(cps[0].x, cps[0].y, 1.067 / 2, 0, 2 * Math.PI);
-        // board.context.fill();
-        // board.context.restore();
-
-        // board.context.save();
-        // board.context.beginPath();
-        // board.context.arc(cps[cps.length - 1].x, cps[cps.length - 1].y, 1.067 / 2, 0, 2 * Math.PI);
-        // board.context.fill();
-        // board.context.restore();
-
 
         board.context.save();
         board.context.strokeStyle = createGradient(board.context, drawData.originalElevation.from, drawData.originalElevation.to, drawData.originalTrackSegment.startJointPosition, drawData.originalTrackSegment.endJointPosition);

@@ -15,7 +15,7 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     const canvas = document.querySelector("#graph") as HTMLCanvasElement;
 
     // Intialize the application.
-    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: canvas, antialias: true, resizeTo: window });
+    await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: canvas, antialias: true });
 
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
     const canvasProxy = new CanvasProxy(app.canvas);
