@@ -1,4 +1,4 @@
-import { CameraRig, DefaultBoardCamera, InputOrchestrator, KmtInputStateMachine, TouchInputTracker, VanillaTouchEventParser, createDefaultCameraRig, createTouchInputStateMachine } from '@ue-too/board';
+import { CameraRig, DefaultBoardCamera, InputOrchestrator, KmtInputStateMachine, TouchEventParser, TouchInputTracker, VanillaTouchEventParser, createDefaultCameraRig, createTouchInputStateMachine } from '@ue-too/board';
 import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
 import { RawUserInputPublisher } from '@ue-too/board';
 import { CanvasProxy, createKmtInputStateMachine, ObservableInputTracker } from '@ue-too/board';
@@ -14,7 +14,8 @@ export type PixiAppComponents = {
     inputOrchestrator: InputOrchestrator;
     observableInputTracker: ObservableInputTracker;
     kmtInputStateMachine: KmtInputStateMachine;
-    parser: KMTEventParser;
+    kmtParser: KMTEventParser;
+    touchParser: TouchEventParser;
     cleanup: () => void;
 }
 
@@ -54,7 +55,7 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
     const imageUrl = new URL('../../assets/bala.png', import.meta.url).href;
     const texture = await Assets.load(imageUrl);
     // Create a new Sprite from an image path.
-    const bunny = new Sprite(texture);
+    const bala = new Sprite(texture);
 
     // Add to stage.
     // console.log(camera.contextTransform);
@@ -63,14 +64,15 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
     } else {
         app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
     }
-    app.stage.addChild(bunny);
+
+    app.stage.addChild(bala);
 
     // Center the sprite's anchor point.
-    bunny.anchor.set(0.5);
+    bala.anchor.set(0.5);
 
     // Move the sprite to the center of the screen.
-    bunny.x = 0;
-    bunny.y = 0;
+    bala.x = 0;
+    bala.y = 0;
 
     // Add an animation loop callback to the application's ticker.
     app.ticker.add((time) =>
@@ -87,7 +89,7 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
         // pixiInputParser.tearDown();
         kmtParser.tearDown();
         canvasProxy.tearDown();
-
+        touchParser.tearDown();
     }
 
     return {
@@ -98,7 +100,8 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
         inputOrchestrator,
         observableInputTracker,
         kmtInputStateMachine,
-        parser: kmtParser,
+        kmtParser,
+        touchParser,
         cleanup,
     };
 }
