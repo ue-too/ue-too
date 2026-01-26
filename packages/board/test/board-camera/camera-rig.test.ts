@@ -88,12 +88,7 @@ describe("camera rig", ()=>{
             // Position camera near top-left boundary
             // With rotation, the viewport corners will extend beyond boundaries
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 200, y: 200 }, // Near top-left boundary
-                0, // No rotation initially
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 200, y: 200 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -132,12 +127,7 @@ describe("camera rig", ()=>{
             
             // Position camera near bottom-right boundary
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 1800, y: 1800 }, // Near bottom-right boundary
-                0, // No rotation initially
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 1800, y: 1800 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -176,12 +166,7 @@ describe("camera rig", ()=>{
             
             // Position camera in center with plenty of room
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 1000, y: 1000 }, // Center of boundaries
-                0,
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 1000, y: 1000 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -207,12 +192,7 @@ describe("camera rig", ()=>{
             };
             
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 200, y: 200 }, // Near boundary
-                0,
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 200, y: 200 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -238,12 +218,7 @@ describe("camera rig", ()=>{
             };
             
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 200, y: 200 }, // Near boundary
-                0,
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 200, y: 200 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -270,12 +245,7 @@ describe("camera rig", ()=>{
             };
             
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 300, y: 300 },
-                0,
-                2.0, // Higher zoom level
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 300, y: 300 }, rotation: 0, zoomLevel: 2, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
@@ -309,12 +279,7 @@ describe("camera rig", ()=>{
             };
             
             const camera = new DefaultBoardCamera(
-                viewportWidth,
-                viewportHeight,
-                { x: 200, y: 200 },
-                0,
-                1.0,
-                boundaries
+                { viewPortWidth: viewportWidth, viewPortHeight: viewportHeight, position: { x: 200, y: 200 }, rotation: 0, zoomLevel: 1, boundaries }
             );
             
             const cameraRig = createDefaultCameraRig(camera);
