@@ -7,7 +7,7 @@ import { RotationLimits } from './utils/rotation';
 import { convert2WorldSpaceAnchorAtCenter, convert2ViewPortSpaceAnchorAtCenter } from './utils/coordinate-conversion';
 import { CameraEventMap, CameraState } from './update-publisher';
 import { ObservableBoardCamera } from './interface';
-import BaseCamera from './base';
+import BaseCamera, { CameraOptions } from './base';
 import { SubscriptionOptions } from '../utils/observable';
 
 /** Default viewport width in CSS pixels */
@@ -24,6 +24,17 @@ export const DEFAULT_BOARD_CAMERA_BOUNDARIES: Boundaries = {min: {x: -10000, y: 
 
 /** Default rotation boundaries (unrestricted) */
 export const DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES: RotationLimits | undefined = undefined;
+
+export const DEFAULT_BOARD_CAMERA_OPTIONS: CameraOptions = {
+    viewPortWidth: DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, 
+    viewPortHeight: DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, 
+    position: {x: 0, y: 0}, 
+    rotation: 0, 
+    zoomLevel: 1, 
+    boundaries: DEFAULT_BOARD_CAMERA_BOUNDARIES, 
+    zoomLevelBoundaries: DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, 
+    rotationBoundaries: DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES
+};
 
 /**
  * Observable camera implementation that extends {@link BaseCamera} with event notification.
@@ -99,8 +110,28 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
      * );
      * ```
      */
-    constructor(viewPortWidth: number = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, viewPortHeight: number = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, zoomLevelBoundaries: ZoomLevelLimits = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, rotationBoundaries: RotationLimits | undefined = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES){
-        this._baseCamera = new BaseCamera(viewPortWidth, viewPortHeight, position, rotation, zoomLevel, boundaries, zoomLevelBoundaries, rotationBoundaries);
+    constructor(options: CameraOptions = DEFAULT_BOARD_CAMERA_OPTIONS){
+        const {
+            viewPortWidth = DEFAULT_BOARD_CAMERA_VIEWPORT_WIDTH, 
+            viewPortHeight = DEFAULT_BOARD_CAMERA_VIEWPORT_HEIGHT, 
+            position = {x: 0, y: 0}, 
+            rotation, 
+            zoomLevel = 1, 
+            boundaries = DEFAULT_BOARD_CAMERA_BOUNDARIES, 
+            zoomLevelBoundaries = DEFAULT_BOARD_CAMERA_ZOOM_BOUNDARIES, 
+            rotationBoundaries = DEFAULT_BOARD_CAMERA_ROTATION_BOUNDARIES
+        } = options;
+
+        this._baseCamera = new BaseCamera({
+            viewPortWidth, 
+            viewPortHeight, 
+            position, 
+            rotation, 
+            zoomLevel, 
+            boundaries, 
+            zoomLevelBoundaries, 
+            rotationBoundaries
+        });
         this._observer = new CameraUpdatePublisher();
     }
 

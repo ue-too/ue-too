@@ -8,7 +8,7 @@ import { RawUserInputPublisher } from "@ue-too/board";
 import { KonvaInputParser } from "@ue-too/board-konva-integration";
 
 const canvas = document.getElementById("graph") as HTMLCanvasElement;
-const camera = new DefaultBoardCamera(800, 600);
+const camera = new DefaultBoardCamera({viewPortWidth: 800, viewPortHeight: 600});
 
 const canvasProxy = new CanvasProxy(canvas);
 const cameraRig = createDefaultCameraRig(camera);

@@ -17,7 +17,7 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
     // Intialize the application.
     await app.init({ background: '#1099bb', resolution: devicePixelRatio, autoDensity: true, canvas: canvas, antialias: true });
 
-    const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 100, y: 100}, 0, 2);
+    const camera = new DefaultBoardCamera({viewPortWidth: app.screen.width, viewPortHeight: app.screen.height, position: {x: 100, y: 100}, rotation: 0, zoomLevel: 2});
     const canvasProxy = new CanvasProxy(app.canvas);
     const cameraRig = createDefaultCameraRig(camera);
     const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());

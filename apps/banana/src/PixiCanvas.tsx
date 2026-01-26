@@ -1,12 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Application, Renderer, Ticker } from 'pixi.js';
+import { FederatedPointerEvent, Point, Ticker } from 'pixi.js';
 import { useAllBoardCameraState, useInitializePixiApp } from './pixi-canvas/usePixiCanvas';
 import { PixiAppComponents } from './pixi-based/init-app';
-import { CameraState, getScrollBar, getScrollBarPosition, translationHeightOf, translationWidthOf } from '@ue-too/board';
-import { Button } from './components/ui/button';
-import { Toggle } from './components/ui/toggle';
-import { twMerge } from 'tailwind-merge';
-import { convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
+import { CameraState, getScrollBar, translationHeightOf, translationWidthOf } from '@ue-too/board';
+import { convertFromCanvas2ViewPort, convertFromViewport2World, convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
+import { PixiGrid } from './knit-grid/grid-pixi';
+import { Grid } from './knit-grid/grid';
 
 type StateToEventKey<K extends keyof CameraState> =
     K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
@@ -20,6 +19,9 @@ type StateToEventKey<K extends keyof CameraState> =
 export const PixiCanvas = (option: { fullScreen: boolean} = { fullScreen: true}): React.ReactNode => {
 
   const {canvasRef} = useInitializePixiApp(option);
+  useGrid();
+
+  useAppPointerDown(useCoordinateConversion());
 
   return (
     <canvas
@@ -115,8 +117,6 @@ export const Wrapper = (option: { fullScreen: boolean} = { fullScreen: true}) =>
           <PositionDisplay />
           <RotationDisplay />
           <ZoomLevelDisplay />
-        </OverlayContainer>
-        <OverlayContainer>
           <ScrollBarDisplay />
         </OverlayContainer>
       </PixiCanvasContext.Provider>
@@ -136,11 +136,13 @@ const scrollBar = useViewportScrollBar();
     const {result} = usePixiCanvas();
 
     const horizontalPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         initialHorizontalPositionRef.current = event.clientX;
         isHorizontalPointerDownRef.current = true;
     }
 
     const horizontalPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         if(result.initialized == false || result.success == false || result.components.app.renderer == null || isHorizontalPointerDownRef.current == false){
             initialHorizontalPositionRef.current = 0;
             return;
@@ -157,16 +159,19 @@ const scrollBar = useViewportScrollBar();
     }, [result]);
 
     const horizontalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         isHorizontalPointerDownRef.current = false;
     };
 
     const verticalPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         initialVerticalPositionRef.current = event.clientY;
         isVerticalPointerDownRef.current = true;
     }
 
 
     const verticalPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         if(result.initialized == false || result.success == false || result.components.app.renderer == null || isVerticalPointerDownRef.current == false){
             initialVerticalPositionRef.current = 0;
             return;
@@ -183,6 +188,7 @@ const scrollBar = useViewportScrollBar();
     }, [result]);
 
     const verticalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
         isVerticalPointerDownRef.current = false;
     };
 
@@ -254,6 +260,48 @@ export const ZoomLevelDisplay = () => {
   return (
     <div>ZoomLevelDisplay {zoomLevel}</div>
   )
+}
+
+const grid = new Grid(10, 10);
+const pixiGrid = new PixiGrid(grid);
+
+export const useGrid = () => {
+    const {result} = usePixiCanvas();
+
+    useEffect(()=>{
+        if(result.initialized == false || result.success == false || result.components.app == null){
+            return;
+        }
+        result.components.app.stage.addChild(pixiGrid);
+        return () => {
+            result.components.app.stage.removeChild(pixiGrid);
+        }
+    }, [result]);
+}
+
+export const useCoordinateConversion = () => {
+
+    const {result} = usePixiCanvas();
+    return useCallback((event: PointerEvent) => {
+        event.preventDefault();
+        const point = {x: event.clientX, y: event.clientY};
+        console.log('point', point);
+        if(result.initialized == false || result.success == false || result.components.camera == null){
+            return {x: 0, y: 0};
+        }
+
+        const canvasPoint = convertFromWindow2Canvas(point, result.components.canvasProxy);
+        const viewportPoint = convertFromCanvas2ViewPort(canvasPoint, {x: result.components.canvasProxy.width / 2, y: result.components.canvasProxy.height / 2}, false); 
+        const worldPoint = convertFromViewport2World(viewportPoint, result.components.camera.position, result.components.camera.zoomLevel, result.components.camera.rotation, false);
+
+        const cell = grid.getCell(worldPoint);
+        if(cell == null){
+            return {row: -1, column: -1, cell: null};
+        }
+        console.log()
+        console.log('cell', cell);
+        return cell;
+    }, [result]);
 }
 
 export const useBoardCameraState = <K extends keyof CameraState>(state: K): CameraState[K] => {
@@ -330,6 +378,20 @@ export const useAppTicker = (callback: (time: Ticker) => void, enabled: boolean 
     }
   }, [result, callback, enabled]);
 }
+
+export const useAppPointerDown = (callback: (event: PointerEvent) => void) => {
+    const {result} = usePixiCanvas();
+
+    useEffect(()=>{
+        if(result.initialized == false || result.success == false || result.components.app == null){
+            return;
+        }
+        result.components.app.canvas.addEventListener('pointerdown', callback);
+        return () => {
+            result.components.app.canvas.removeEventListener('pointerdown', callback);
+        }
+    }, [result, callback]);
+};
 
 export const useViewportScrollBar = () => {
   const {result} = usePixiCanvas();

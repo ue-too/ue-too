@@ -27,7 +27,15 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
     // Intialize the application.
     await app.init({ preference: 'webgpu', resolution: devicePixelRatio, autoDensity: true, canvas: canvasElement, antialias: true, backgroundAlpha: 0, resizeTo: option.fullScreen ? window : undefined});
 
-    const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 0, y: 0}, 0, 1);
+    const camera = new DefaultBoardCamera({
+        viewPortWidth: app.screen.width, 
+        viewPortHeight: app.screen.height, 
+        position: {x: 0, y: 0}, 
+        rotation: 0, 
+        zoomLevel: 1,
+        boundaries: {min: {x: -1000, y: -1000}, max: {x: 1000, y: 1000}},
+    });
+
     const canvasProxy = new CanvasProxy(app.canvas);
     const cameraRig = createDefaultCameraRig(camera);
     const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());
@@ -65,7 +73,7 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
         app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
     }
 
-    app.stage.addChild(bala);
+    // app.stage.addChild(bala);
 
     // Center the sprite's anchor point.
     bala.anchor.set(0.5);
