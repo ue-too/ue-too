@@ -173,7 +173,7 @@ export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
  *
  * @category Camera
  */
-export function boundariesFullyDefined(boundaries: Boundaries | undefined): boolean{
+export function boundariesFullyDefined(boundaries: Boundaries | undefined): boundaries is {min: {x: number, y: number}, max: {x: number, y: number}}{
     if(boundaries == undefined){
         return false;
     }
