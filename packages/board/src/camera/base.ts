@@ -7,6 +7,17 @@ import { PointCal } from '@ue-too/math';
 import { BoardCamera } from './interface';
 import { decomposeCameraMatrix, decomposeTRS, TransformationMatrix } from './utils/matrix';
 
+export type CameraOptions = {
+    viewPortWidth?: number;
+    viewPortHeight?: number;
+    position?: Point;
+    rotation?: number;
+    zoomLevel?: number;
+    boundaries?: Boundaries;
+    zoomLevelBoundaries?: ZoomLevelLimits;
+    rotationBoundaries?: RotationLimits;
+}
+
 /**
  * Base camera implementation providing core functionality for an infinite canvas system.
  * This is the fundamental building block for camera management in the board package.
@@ -99,7 +110,17 @@ export default class BaseCamera implements BoardCamera {
      * );
      * ```
      */
-    constructor(viewPortWidth: number = 1000, viewPortHeight: number = 1000, position: Point = {x: 0, y: 0}, rotation: number = 0, zoomLevel: number = 1, boundaries: Boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, zoomLevelBoundaries: ZoomLevelLimits = {min: 0.1, max: 10}, rotationBoundaries: RotationLimits | undefined = undefined){
+    constructor(options: CameraOptions){
+        const {
+            viewPortWidth = 1000, 
+            viewPortHeight = 1000, 
+            position = {x: 0, y: 0}, 
+            rotation = 0, 
+            zoomLevel = 1, 
+            boundaries = {min: {x: -10000, y: -10000}, max: {x: 10000, y: 10000}}, 
+            zoomLevelBoundaries = {min: 0.1, max: 10}, 
+            rotationBoundaries = undefined
+        } = options;
         this._position = position;
         this._zoomLevel = zoomLevel;
         this._rotation = rotation;

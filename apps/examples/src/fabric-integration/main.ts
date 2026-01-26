@@ -25,7 +25,13 @@ fabricCanvas.add(rectangle);
 
 const width = parseInt(canvas.style.width);
 const height = parseInt(canvas.style.height);
-const camera = new DefaultBoardCamera(width, height, {x: 0, y: 0}, 0, 2);
+const camera = new DefaultBoardCamera({
+    viewPortWidth: width, 
+    viewPortHeight: height, 
+    position: {x: 0, y: 0}, 
+    rotation: 0, 
+    zoomLevel: 2
+});
 const canvasProxy = new CanvasProxy(canvas);
 const cameraRig = createDefaultCameraRig(camera);
 const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());

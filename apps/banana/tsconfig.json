@@ -9,7 +9,11 @@
     "strict": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
-    "types": []
+    "jsx": "react-jsx",
+    "types": [],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "src/**/*",

@@ -9,7 +9,7 @@ svg.setAttribute("width", width.toString());
 svg.setAttribute("height", height.toString());
 svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
 
-const camera = new DefaultBoardCamera(width, height);
+const camera = new DefaultBoardCamera({viewPortWidth: width, viewPortHeight: height});
 const cameraRig = createDefaultCameraRig(camera);
 const cameraMux = createCameraMuxWithAnimationAndLock();
 

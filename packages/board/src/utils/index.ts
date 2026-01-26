@@ -28,3 +28,5 @@ export * from "./canvas-position-dimension";
 export * from "./drawing-utils";
 export * from "./drawing";
 export * from "./zoomlevel-adjustment";
+export * from "./scrollbar";
+export * from "./coordinate-conversions";

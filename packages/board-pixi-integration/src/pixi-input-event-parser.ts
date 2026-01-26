@@ -24,7 +24,6 @@ export class PixiInputParser {
         this.bindFunctions();
         this._abortController = new AbortController();
         this._camera = camera;
-        console.log('pixi input parser constructor', this._camera);
     }
 
     bindFunctions(){
@@ -227,6 +226,7 @@ export class PixiInputParser {
         if(this._disabled){
             return;
         }
+        event.preventDefault();
         if(event.ctrlKey){
             this.processEvent("scrollWithCtrl", {x: event.clientX, y: event.clientY, deltaX: event.deltaX, deltaY: event.deltaY});
         } else {
