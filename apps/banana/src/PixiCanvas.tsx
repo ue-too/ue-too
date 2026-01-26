@@ -1,9 +1,10 @@
-import { createContext, useContext, useRef, useState, useSyncExternalStore } from 'react';
-import { Application, Renderer } from 'pixi.js';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { Application, Renderer, Ticker } from 'pixi.js';
 import { useAllBoardCameraState, useInitializePixiApp } from './pixi-canvas/usePixiCanvas';
 import { PixiAppComponents } from './pixi-based/init-app';
 import { CameraState } from '@ue-too/board';
 import { Button } from './components/ui/button';
+import { Toggle } from './components/ui/toggle';
 
 type StateToEventKey<K extends keyof CameraState> =
     K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
@@ -14,10 +15,9 @@ type StateToEventKey<K extends keyof CameraState> =
  * Integrates PixiJS with React, setting up the canvas, camera, and input handling
  * @returns {JSX.Element} Canvas element for PixiJS rendering
  */
-export const PixiCanvas = (): React.ReactNode => {
+export const PixiCanvas = (option: { fullScreen: boolean} = { fullScreen: true}): React.ReactNode => {
 
-  console.log('PixiCanvas');
-  const {canvasRef} = useInitializePixiApp();
+  const {canvasRef} = useInitializePixiApp(option);
 
   return (
     <canvas
@@ -90,21 +90,22 @@ export const useCanvasSize = () => {
 }
 
 
-export const Wrapper = () => {
+export const Wrapper = (option: { fullScreen: boolean} = { fullScreen: true}) => {
 
   const [result, setResult] = useState<PixiCanvasResult>({initialized: false});
 
   return (
-    <PixiCanvasContext.Provider value={{setResult, result}}>
-      <PixiCanvas />
-      <div style={{position: 'absolute', top: 0, left: 0}}>
-        <Button variant="outline">Button</Button>
-        <TestDiv />
-        <PositionDisplay />
-        <RotationDisplay />
-        <ZoomLevelDisplay />
-      </div>
-    </PixiCanvasContext.Provider>
+    <div style={{position: 'relative'}}>
+      <PixiCanvasContext.Provider value={{setResult, result}}>
+        <PixiCanvas fullScreen={option.fullScreen} />
+        <div style={{position: 'absolute', top: 0, left: 0}}>
+          <TestDiv />
+          <PositionDisplay />
+          <RotationDisplay />
+          <ZoomLevelDisplay />
+        </div>
+      </PixiCanvasContext.Provider>
+    </div>
   )
 };
 
@@ -113,7 +114,9 @@ export const TestDiv = () => {
   const {width, height} = useCanvasSize();
 
   return (
-    <div>Test {width} {height}</div>
+    <>
+      <div>Test {width} {height}</div>
+    </>
   )
 };
 
@@ -197,4 +200,21 @@ export const useBoardCameraState = <K extends keyof CameraState>(state: K): Came
           }
       },
   );
+}
+
+export const useAppTicker = (callback: (time: Ticker) => void, enabled: boolean = true) => {
+
+  const {result} = usePixiCanvas();
+
+  useEffect(()=>{
+    if(result.initialized == false || result.success == false || result.components.app == null || !enabled){
+      return;
+    }
+
+    result.components.app.ticker.add(callback);
+
+    return () => {
+      result.components.app.ticker.remove(callback);
+    }
+  }, [result, callback, enabled]);
 }

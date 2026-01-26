@@ -25,7 +25,7 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
 
 
     // Intialize the application.
-    await app.init({ preference: 'webgpu', resolution: devicePixelRatio, autoDensity: true, canvas: canvasElement, antialias: true, backgroundAlpha: 0, resizeTo: window});
+    await app.init({ preference: 'webgpu', resolution: devicePixelRatio, autoDensity: true, canvas: canvasElement, antialias: true, backgroundAlpha: 0, resizeTo: option.fullScreen ? window : undefined});
 
     const camera = new DefaultBoardCamera(app.screen.width, app.screen.height, {x: 0, y: 0}, 0, 1);
     const canvasProxy = new CanvasProxy(app.canvas);

@@ -3,7 +3,7 @@ import { Application } from 'pixi.js';
 import { initApp, PixiAppComponents } from '../pixi-based/init-app';
 import { usePixiCanvas } from '../PixiCanvas';
 
-export const useInitializePixiApp = () => {
+export const useInitializePixiApp = (option: { fullScreen: boolean} = { fullScreen: true}) => {
 
   const { setResult } = usePixiCanvas();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -32,7 +32,7 @@ export const useInitializePixiApp = () => {
 
         if (!isMounted) return;
 
-        const appComponents = await initApp(canvas);
+        const appComponents = await initApp(canvas, option);
         
         if (!isMounted) {
           appComponents.app.destroy(false);

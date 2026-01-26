@@ -9,7 +9,8 @@ import { Wrapper } from './PixiCanvas';
 const App = (): React.ReactNode => {
   return (
     <div className="app">
-      <Wrapper />
+      <Wrapper fullScreen={false} />
+      <Wrapper fullScreen={false} />
     </div>
   );
 }
