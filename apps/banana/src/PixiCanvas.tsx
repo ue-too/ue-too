@@ -3,6 +3,7 @@ import { Application, Renderer } from 'pixi.js';
 import { useAllBoardCameraState, useInitializePixiApp } from './pixi-canvas/usePixiCanvas';
 import { PixiAppComponents } from './pixi-based/init-app';
 import { CameraState } from '@ue-too/board';
+import { Button } from './components/ui/button';
 
 type StateToEventKey<K extends keyof CameraState> =
     K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
@@ -97,6 +98,7 @@ export const Wrapper = () => {
     <PixiCanvasContext.Provider value={{setResult, result}}>
       <PixiCanvas />
       <div style={{position: 'absolute', top: 0, left: 0}}>
+        <Button variant="outline">Button</Button>
         <TestDiv />
         <PositionDisplay />
         <RotationDisplay />

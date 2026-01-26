@@ -10,7 +10,10 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "jsx": "react-jsx",
-    "types": []
+    "types": [],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "src/**/*",
