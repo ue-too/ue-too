@@ -26,12 +26,14 @@ import {
     PixiCanvasResult,
     usePixiCanvas,
 } from '@/contexts/pixi';
-import { useAllBoardCameraState, useInitializePixiApp } from '@/hooks/pixi';
+import {
+    useAllBoardCameraState,
+    useCanvasPointerDown,
+    useGrid,
+    useInitializePixiApp,
+} from '@/hooks/pixi';
 import { useBoardCameraState } from '@/hooks/pixi/camera';
 import { useCanvasSize, useViewportScrollBar } from '@/hooks/pixi/utils';
-
-import { Grid } from './knit-grid/grid';
-import { PixiGrid } from './knit-grid/grid-pixi';
 
 /**
  * PixiCanvas Component
@@ -265,48 +267,4 @@ export const ZoomLevelDisplay = () => {
     const zoomLevel = useBoardCameraState('zoomLevel');
 
     return <div>ZoomLevelDisplay {zoomLevel}</div>;
-};
-
-const grid = new Grid(10, 10);
-const pixiGrid = new PixiGrid(grid);
-
-export const useGrid = () => {
-    const { result } = usePixiCanvas();
-
-    useEffect(() => {
-        if (
-            result.initialized == false ||
-            result.success == false ||
-            result.components.app == null
-        ) {
-            return;
-        }
-        result.components.app.stage.addChild(pixiGrid);
-        return () => {
-            result.components.app.stage.removeChild(pixiGrid);
-        };
-    }, [result]);
-};
-
-export const useCanvasPointerDown = (
-    callback: (event: PointerEvent) => void
-) => {
-    const { result } = usePixiCanvas();
-
-    useEffect(() => {
-        if (
-            result.initialized == false ||
-            result.success == false ||
-            result.components.app == null
-        ) {
-            return;
-        }
-        result.components.app.canvas.addEventListener('pointerdown', callback);
-        return () => {
-            result.components.app.canvas.removeEventListener(
-                'pointerdown',
-                callback
-            );
-        };
-    }, [result, callback]);
 };
