@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { FederatedPointerEvent, Point, Ticker } from 'pixi.js';
-import { useAllBoardCameraState, useInitializePixiApp } from './pixi-canvas/usePixiCanvas';
-import { PixiAppComponents } from './pixi-based/init-app';
+import { Ticker } from 'pixi.js';
+import { useAllBoardCameraState, useInitializePixiApp } from '@/hooks/pixi';
+import { usePixiCanvas, PixiCanvasResult, PixiCanvasProvider } from '@/contexts/pixi';
 import { CameraState, getScrollBar, translationHeightOf, translationWidthOf } from '@ue-too/board';
 import { convertFromCanvas2ViewPort, convertFromViewport2World, convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
 import { PixiGrid } from './knit-grid/grid-pixi';
@@ -19,6 +19,7 @@ type StateToEventKey<K extends keyof CameraState> =
 export const PixiCanvas = (option: { fullScreen: boolean} = { fullScreen: true}): React.ReactNode => {
 
   const {canvasRef} = useInitializePixiApp(option);
+
   useGrid();
 
   useAppPointerDown(useCoordinateConversion());
@@ -30,38 +31,6 @@ export const PixiCanvas = (option: { fullScreen: boolean} = { fullScreen: true})
     />
   );
 }
-
-type PixiCanvasContextType = {
-  setResult: (result: PixiCanvasResult) => void;
-  result: PixiCanvasResult;
-}
-
-type PixiCanvasUninitializedResult = {
-  initialized: false;
-}
-
-type PixiCanvasInitializeFailedResult = {
-  initialized: true;
-  success: false;
-}
-
-type PixiCanvasInitializeSuccessResult = {
-  initialized: true;
-  success: true;
-  components: PixiAppComponents;
-}
-
-type PixiCanvasResult = PixiCanvasUninitializedResult | PixiCanvasInitializeFailedResult | PixiCanvasInitializeSuccessResult;
-
-const PixiCanvasContext = createContext<PixiCanvasContextType>({setResult: () => {}, result: {initialized: false}});
-
-export const usePixiCanvas = () => {
-  const context = useContext(PixiCanvasContext);
-  if(context == null){
-    throw new Error('PixiCanvasContext not found, make sure you are using PixiCanvasProvider to wrap your component');
-  }
-  return context;
-};
 
 export const useCanvasSize = () => {
   const {result} = usePixiCanvas();
@@ -106,11 +75,9 @@ const OverlayContainer = ({ children }: { children: React.ReactNode }) => {
 
 export const Wrapper = (option: { fullScreen: boolean} = { fullScreen: true}) => {
 
-  const [result, setResult] = useState<PixiCanvasResult>({initialized: false});
-
   return (
     <div style={{position: 'relative'}}>
-      <PixiCanvasContext.Provider value={{setResult, result}}>
+      <PixiCanvasProvider>
         <PixiCanvas fullScreen={option.fullScreen} />
         <OverlayContainer>
           <TestDiv />
@@ -119,7 +86,7 @@ export const Wrapper = (option: { fullScreen: boolean} = { fullScreen: true}) =>
           <ZoomLevelDisplay />
           <ScrollBarDisplay />
         </OverlayContainer>
-      </PixiCanvasContext.Provider>
+      </PixiCanvasProvider>
     </div>
   )
 };

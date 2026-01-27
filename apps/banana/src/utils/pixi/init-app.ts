@@ -23,26 +23,28 @@ export const initApp = async (canvasElement: HTMLCanvasElement, option: { fullSc
     // Create a PixiJS application.
     const app = new Application();
 
-
-    // Intialize the application.
-    await app.init({ preference: 'webgpu', resolution: devicePixelRatio, autoDensity: true, canvas: canvasElement, antialias: true, backgroundAlpha: 0, resizeTo: option.fullScreen ? window : undefined});
-
     const camera = new DefaultBoardCamera({
-        viewPortWidth: app.screen.width, 
-        viewPortHeight: app.screen.height, 
+        viewPortWidth: canvasElement.width, 
+        viewPortHeight: canvasElement.height, 
         position: {x: 0, y: 0}, 
         rotation: 0, 
         zoomLevel: 1,
         boundaries: {min: {x: -1000, y: -1000}, max: {x: 1000, y: 1000}},
     });
 
-    const canvasProxy = new CanvasProxy(app.canvas);
+    const canvasProxy = new CanvasProxy(canvasElement);
     const cameraRig = createDefaultCameraRig(camera);
     const inputOrchestrator = new InputOrchestrator(createCameraMuxWithAnimationAndLock(), cameraRig, new RawUserInputPublisher());
     const observableInputTracker = new ObservableInputTracker(canvasProxy);
     const touchInputTracker = new TouchInputTracker(canvasProxy);
     const kmtInputStateMachine = createKmtInputStateMachine(observableInputTracker);
     const touchInputStateMachine = createTouchInputStateMachine(touchInputTracker);
+
+    // Intialize the application.
+    await app.init({ preference: 'webgpu', resolution: devicePixelRatio, autoDensity: true, canvas: canvasElement, antialias: true, backgroundAlpha: 0, resizeTo: option.fullScreen ? window : undefined});
+
+    camera.viewPortHeight = app.renderer.height;
+    camera.viewPortWidth = app.renderer.width;
 
     // Listen for canvas resize events
     app.renderer.on('resize', (width: number, height: number) => {
