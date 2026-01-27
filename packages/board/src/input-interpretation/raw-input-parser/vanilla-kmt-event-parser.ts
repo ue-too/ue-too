@@ -1,6 +1,10 @@
-import type { EventArgs } from "@ue-too/being";
-import type { KmtInputEventMapping, KmtInputStateMachine } from "../../input-interpretation/input-state-machine";
-import type { InputOrchestrator } from "../input-orchestrator";
+import type { EventArgs } from '@ue-too/being';
+
+import type {
+    KmtInputEventMapping,
+    KmtInputStateMachine,
+} from '../../input-interpretation/input-state-machine';
+import type { InputOrchestrator } from '../input-orchestrator';
 
 /**
  * Interface for KMT (Keyboard/Mouse/Trackpad) event parsers.
@@ -47,7 +51,7 @@ export type MinimumPointerEvent = {
     clientY: number;
     /** Bitmask of currently pressed buttons */
     buttons: number;
-}
+};
 
 /**
  * Minimal wheel event interface for framework interoperability.
@@ -71,7 +75,7 @@ export type MinimumWheelEvent = {
     clientX: number;
     /** Y coordinate in window space */
     clientY: number;
-}
+};
 
 /**
  * Minimal keyboard event interface for framework interoperability.
@@ -99,10 +103,13 @@ export type MinimumKeyboardEvent = {
  * @category Raw Input Parser
  */
 export type EventTargetWithPointerEvents = {
-    addEventListener: (type: string, listener: (event: any) => void, options?: {passive: boolean}) => void;
+    addEventListener: (
+        type: string,
+        listener: (event: any) => void,
+        options?: { passive: boolean }
+    ) => void;
     removeEventListener: (type: string, listener: (event: any) => void) => void;
 };
-
 
 /**
  * DOM event parser for Keyboard/Mouse/Trackpad input.
@@ -154,7 +161,6 @@ export type EventTargetWithPointerEvents = {
  * ```
  */
 export class VanillaKMTEventParser implements KMTEventParser {
-
     private _disabled: boolean = false;
     private _stateMachine: KmtInputStateMachine;
     private _orchestrator: InputOrchestrator;
@@ -162,8 +168,11 @@ export class VanillaKMTEventParser implements KMTEventParser {
     private _abortController: AbortController;
     private _canvas?: HTMLCanvasElement | SVGSVGElement;
 
-
-    constructor(kmtInputStateMachine: KmtInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement | SVGSVGElement){
+    constructor(
+        kmtInputStateMachine: KmtInputStateMachine,
+        orchestrator: InputOrchestrator,
+        canvas?: HTMLCanvasElement | SVGSVGElement
+    ) {
         this._canvas = canvas;
         this.bindFunctions();
         this._abortController = new AbortController();
@@ -184,20 +193,36 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this._disabled = false;
     }
 
-    addEventListeners(signal: AbortSignal){
-        if(this._canvas == undefined){
+    addEventListeners(signal: AbortSignal) {
+        if (this._canvas == undefined) {
             return;
         }
-        this._canvas.addEventListener('pointerdown', this.pointerDownHandler as EventListener, {signal});
-        this._canvas.addEventListener('pointerup', this.pointerUpHandler as EventListener, {signal});
-        this._canvas.addEventListener('pointermove', this.pointerMoveHandler as EventListener, {signal});
-        this._canvas.addEventListener('wheel', this.scrollHandler as EventListener, {signal});
-        window.addEventListener('keydown', this.keypressHandler, {signal});
-        window.addEventListener('keyup', this.keyupHandler, {signal});
+        this._canvas.addEventListener(
+            'pointerdown',
+            this.pointerDownHandler as EventListener,
+            { signal }
+        );
+        this._canvas.addEventListener(
+            'pointerup',
+            this.pointerUpHandler as EventListener,
+            { signal }
+        );
+        this._canvas.addEventListener(
+            'pointermove',
+            this.pointerMoveHandler as EventListener,
+            { signal }
+        );
+        this._canvas.addEventListener(
+            'wheel',
+            this.scrollHandler as EventListener,
+            { signal }
+        );
+        window.addEventListener('keydown', this.keypressHandler, { signal });
+        window.addEventListener('keyup', this.keyupHandler, { signal });
     }
-    
+
     setUp(): void {
-        if(this._abortController.signal.aborted){
+        if (this._abortController.signal.aborted) {
             this._abortController = new AbortController();
         }
         this.addEventListeners(this._abortController.signal);
@@ -222,87 +247,112 @@ export class VanillaKMTEventParser implements KMTEventParser {
         ...args: EventArgs<KmtInputEventMapping, K>
     ): void {
         const result = this._stateMachine.happens(...args);
-        if (result.handled && "output" in result) {
+        if (result.handled && 'output' in result) {
             this._orchestrator.processInputEventOutput(result.output);
         }
     }
 
-    pointerDownHandler(e: PointerEvent){
-        if(this._disabled){
+    pointerDownHandler(e: PointerEvent) {
+        if (this._disabled) {
             return;
         }
-        if(e.button === 0 && e.pointerType === "mouse"){
-            this.processEvent("leftPointerDown", {x: e.clientX, y: e.clientY});
+        if (e.button === 0 && e.pointerType === 'mouse') {
+            this.processEvent('leftPointerDown', {
+                x: e.clientX,
+                y: e.clientY,
+            });
             return;
         }
-        if(e.button === 1 && e.pointerType === "mouse"){
-            this.processEvent("middlePointerDown", {x: e.clientX, y: e.clientY});
-            return;
-        }
-    }
-
-    pointerUpHandler(e: PointerEvent){
-        if(this._disabled){
-            return;
-        }
-        if(e.button === 0 && e.pointerType === "mouse"){
-            this.processEvent("leftPointerUp", {x: e.clientX, y: e.clientY});
-            return;
-        }
-        if(e.button === 1 && e.pointerType === "mouse"){
-            this.processEvent("middlePointerUp", {x: e.clientX, y: e.clientY});
+        if (e.button === 1 && e.pointerType === 'mouse') {
+            this.processEvent('middlePointerDown', {
+                x: e.clientX,
+                y: e.clientY,
+            });
             return;
         }
     }
 
-    pointerMoveHandler(e: PointerEvent){
-        if(this._disabled){
+    pointerUpHandler(e: PointerEvent) {
+        if (this._disabled) {
             return;
         }
-        if((e.buttons === 1) && e.pointerType === "mouse"){
-            this.processEvent("leftPointerMove", {x: e.clientX, y: e.clientY});
+        if (e.button === 0 && e.pointerType === 'mouse') {
+            this.processEvent('leftPointerUp', { x: e.clientX, y: e.clientY });
             return;
         }
-        if((e.buttons  === 4) && e.pointerType === "mouse"){
-            this.processEvent("middlePointerMove", {x: e.clientX, y: e.clientY});
+        if (e.button === 1 && e.pointerType === 'mouse') {
+            this.processEvent('middlePointerUp', {
+                x: e.clientX,
+                y: e.clientY,
+            });
             return;
         }
-        this.processEvent("pointerMove", {x: e.clientX, y: e.clientY});
     }
 
-    scrollHandler(e: WheelEvent){
-        if(this._disabled) return;
+    pointerMoveHandler(e: PointerEvent) {
+        if (this._disabled) {
+            return;
+        }
+        if (e.buttons === 1 && e.pointerType === 'mouse') {
+            this.processEvent('leftPointerMove', {
+                x: e.clientX,
+                y: e.clientY,
+            });
+            return;
+        }
+        if (e.buttons === 4 && e.pointerType === 'mouse') {
+            this.processEvent('middlePointerMove', {
+                x: e.clientX,
+                y: e.clientY,
+            });
+            return;
+        }
+        this.processEvent('pointerMove', { x: e.clientX, y: e.clientY });
+    }
+
+    scrollHandler(e: WheelEvent) {
+        if (this._disabled) return;
         e.preventDefault();
-        if(e.ctrlKey){
-            this.processEvent("scrollWithCtrl", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+        if (e.ctrlKey) {
+            this.processEvent('scrollWithCtrl', {
+                x: e.clientX,
+                y: e.clientY,
+                deltaX: e.deltaX,
+                deltaY: e.deltaY,
+            });
         } else {
-            this.processEvent("scroll", {x: e.clientX, y: e.clientY, deltaX: e.deltaX, deltaY: e.deltaY});
+            this.processEvent('scroll', {
+                x: e.clientX,
+                y: e.clientY,
+                deltaX: e.deltaX,
+                deltaY: e.deltaY,
+            });
         }
     }
 
-    keypressHandler(e: KeyboardEvent){
-        if(e.target !== document.body){
+    keypressHandler(e: KeyboardEvent) {
+        if (e.target !== document.body) {
             return;
         }
-        if(this._keyfirstPressed.has(e.key)){
+        if (this._keyfirstPressed.has(e.key)) {
             return;
         }
         this._keyfirstPressed.set(e.key, true);
-        if(e.key === " "){
-            this.processEvent("spacebarDown");
+        if (e.key === ' ') {
+            this.processEvent('spacebarDown');
         }
     }
 
-    keyupHandler(e: KeyboardEvent){
-        if(this._keyfirstPressed.has(e.key)){
+    keyupHandler(e: KeyboardEvent) {
+        if (this._keyfirstPressed.has(e.key)) {
             this._keyfirstPressed.delete(e.key);
         }
-        if(e.key === " "){
-            this.processEvent("spacebarUp");
+        if (e.key === ' ') {
+            this.processEvent('spacebarUp');
         }
     }
 
-    attach(canvas: HTMLCanvasElement){
+    attach(canvas: HTMLCanvasElement) {
         this.tearDown();
         this._canvas = canvas;
         this.setUp();

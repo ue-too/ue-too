@@ -1,32 +1,28 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist",
-    "declaration": true,
-    "allowImportingTsExtensions": false,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"]
-  },
-  "vueCompilerOptions": {
-    "target": 3,
-    "strictTemplates": true
-  },
-  "include": [
-    "src/**/*",
-    "src/**/*.json"
-  ],
-  "references": [
-    {
-      "path": "../../packages/ecs"
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "baseUrl": ".",
+        "declaration": true,
+        "jsx": "react-jsx",
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "../../dist",
+        "resolveJsonModule": true,
+        "strict": true
     },
-    {
-      "path": "../../packages/being"
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*", "src/**/*.json"],
+    "references": [
+        {
+            "path": "../../packages/ecs"
+        },
+        {
+            "path": "../../packages/being"
+        }
+    ],
+    "vueCompilerOptions": {
+        "strictTemplates": true,
+        "target": 3
     }
-  ]
 }
-

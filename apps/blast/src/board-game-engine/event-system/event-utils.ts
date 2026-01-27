@@ -10,5 +10,5 @@ let eventIdCounter = 0;
  * @returns Unique event ID string
  */
 export function generateEventId(): string {
-  return `event-${Date.now()}-${eventIdCounter++}`;
+    return `event-${Date.now()}-${eventIdCounter++}`;
 }

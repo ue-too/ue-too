@@ -1,28 +1,25 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/board-react-adapter.tsbuildinfo",
-    "declaration": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "composite": true,
-    "strict": true,
-    "types": [],
-    "jsx": "react-jsx"
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../math"
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "tsBuildInfoFile": "dist/board-react-adapter.tsbuildinfo",
+        "types": []
     },
-    {
-      "path": "../board"
-    }
-  ]
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../math"
+        },
+        {
+            "path": "../board"
+        }
+    ]
 }
-  

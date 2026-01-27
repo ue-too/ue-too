@@ -10,7 +10,7 @@
  *
  * @category Camera
  */
-export type ZoomLevelLimits = {min?: number, max?: number};
+export type ZoomLevelLimits = { min?: number; max?: number };
 
 /**
  * Validates that zoom level limits are logically consistent.
@@ -34,11 +34,17 @@ export type ZoomLevelLimits = {min?: number, max?: number};
  *
  * @category Camera
  */
-export function isValidZoomLevelLimits(zoomLevelLimits: ZoomLevelLimits | undefined): boolean{
-    if(zoomLevelLimits === undefined){
+export function isValidZoomLevelLimits(
+    zoomLevelLimits: ZoomLevelLimits | undefined
+): boolean {
+    if (zoomLevelLimits === undefined) {
         return true;
     }
-    if(zoomLevelLimits.min !== undefined && zoomLevelLimits.max !== undefined && zoomLevelLimits.min > zoomLevelLimits.max){
+    if (
+        zoomLevelLimits.min !== undefined &&
+        zoomLevelLimits.max !== undefined &&
+        zoomLevelLimits.min > zoomLevelLimits.max
+    ) {
         return false;
     }
     return true;
@@ -67,14 +73,20 @@ export function isValidZoomLevelLimits(zoomLevelLimits: ZoomLevelLimits | undefi
  *
  * @category Camera
  */
-export function clampZoomLevel(zoomLevel: number, zoomLevelLimits?: ZoomLevelLimits): number{
-    if(zoomLevelWithinLimits(zoomLevel, zoomLevelLimits) || zoomLevelLimits === undefined){
+export function clampZoomLevel(
+    zoomLevel: number,
+    zoomLevelLimits?: ZoomLevelLimits
+): number {
+    if (
+        zoomLevelWithinLimits(zoomLevel, zoomLevelLimits) ||
+        zoomLevelLimits === undefined
+    ) {
         return zoomLevel;
     }
-    if(zoomLevelLimits.max){
+    if (zoomLevelLimits.max) {
         zoomLevel = Math.min(zoomLevelLimits.max, zoomLevel);
     }
-    if(zoomLevelLimits.min){
+    if (zoomLevelLimits.min) {
         zoomLevel = Math.max(zoomLevelLimits.min, zoomLevel);
     }
     return zoomLevel;
@@ -109,14 +121,21 @@ export function clampZoomLevel(zoomLevel: number, zoomLevelLimits?: ZoomLevelLim
  *
  * @category Camera
  */
-export function zoomLevelWithinLimits(zoomLevel: number, zoomLevelLimits?: ZoomLevelLimits): boolean{
-    if(zoomLevelLimits === undefined){
+export function zoomLevelWithinLimits(
+    zoomLevel: number,
+    zoomLevelLimits?: ZoomLevelLimits
+): boolean {
+    if (zoomLevelLimits === undefined) {
         return true;
     }
-    if(zoomLevel <= 0 || (zoomLevelLimits !== undefined &&
-    ((zoomLevelLimits.max !== undefined && zoomLevelLimits.max < zoomLevel) ||
-        (zoomLevelLimits.min !== undefined && zoomLevelLimits.min > zoomLevel)
-    ))){
+    if (
+        zoomLevel <= 0 ||
+        (zoomLevelLimits !== undefined &&
+            ((zoomLevelLimits.max !== undefined &&
+                zoomLevelLimits.max < zoomLevel) ||
+                (zoomLevelLimits.min !== undefined &&
+                    zoomLevelLimits.min > zoomLevel)))
+    ) {
         return false;
     }
     return true;

@@ -11,6 +11,7 @@ A toolkit for interactive HTML canvas applications.
 **This project uses Bun (not npm/pnpm).**
 
 All package management and script execution uses Bun:
+
 - Install dependencies: `bun install`
 - Run scripts: `bun run <script-name>`
 - Add packages: `bun add <package-name>`
@@ -38,6 +39,7 @@ ue-too/
 ## Common Commands
 
 ### Development
+
 - `bun install` - Install all dependencies
 - `bun test` - Run tests across all packages
 - `bun run build` - Build all packages
@@ -46,32 +48,38 @@ ue-too/
 - `bun run dev:examples` - Start example development server
 
 ### Package-Level Commands
+
 Navigate to `packages/<package-name>` and run:
+
 - `bun run test` - Run package tests
 - `bun run docs:build` - Generate TypeDoc documentation (if configured)
 
 ### Publishing
+
 - `bun run bump-version` - Bump package versions (via nx release)
 - `bun run publish-packages` - Publish to npm
 
 ## Development Standards
 
 ### Testing Approach
+
 - **Required**: Tests for public APIs and critical paths
 - **Encouraged**: Tests for internal utilities and edge cases
 - Focus on package boundaries and preventing breaking changes
 - Use Jest for testing
 
 ### Package Independence
+
 - Each package must be independently publishable to npm
-- Workspace dependencies (@ue-too/*) allowed but minimized
+- Workspace dependencies (@ue-too/\*) allowed but minimized
 - Follow layered architecture:
-  - Foundational packages (`math`, `being`, `ecs`) have zero internal deps
-  - Mid-level packages depend on foundational packages
-  - Integration packages depend on mid-level packages
+    - Foundational packages (`math`, `being`, `ecs`) have zero internal deps
+    - Mid-level packages depend on foundational packages
+    - Integration packages depend on mid-level packages
 - Document all cross-package dependencies in README
 
 ### TypeScript Standards
+
 - **Strict mode required** (`strict: true`) in all packages
 - All public APIs must have complete type definitions
 - JSDoc comments required for all exported functions/classes/types
@@ -79,19 +87,21 @@ Navigate to `packages/<package-name>` and run:
 - TypeScript errors are BLOCKING for PRs and builds
 
 ### Documentation Requirements
+
 - **JSDoc/TypeDoc**: All exports require comprehensive JSDoc comments
-  - Include @param and @returns tags
-  - Add @example with realistic usage
-  - Use @remarks for important notes
+    - Include @param and @returns tags
+    - Add @example with realistic usage
+    - Use @remarks for important notes
 - **README per package**: Must include:
-  - Overview and purpose
-  - Installation (both Bun and npm)
-  - Quick start examples
-  - API reference or link to generated docs
-  - Links to related packages
+    - Overview and purpose
+    - Installation (both Bun and npm)
+    - Quick start examples
+    - API reference or link to generated docs
+    - Links to related packages
 - **Automated generation**: Use TypeDoc for API docs
 
 ### Performance Standards
+
 - **60 FPS target**: Canvas operations should maintain 60fps (16.67ms frame budget)
 - **Benchmarking**: Add benchmarks for critical paths (math ops, collisions, physics)
 - Profile performance-sensitive changes with browser DevTools
@@ -100,15 +110,17 @@ Navigate to `packages/<package-name>` and run:
 ## Code Style
 
 ### TypeScript
+
 - Use strict TypeScript configuration
 - 2-space indentation (check `.prettierrc` for specifics)
 - Follow conventional commits format:
-  - `feat(package): description`
-  - `fix(package): description`
-  - `docs(package): description`
-  - `perf(package): description`
+    - `feat(package): description`
+    - `fix(package): description`
+    - `docs(package): description`
+    - `perf(package): description`
 
 ### Documentation
+
 - Write JSDoc that adds value beyond what types show
 - Explain "why" not "what"
 - Document edge cases and performance considerations
@@ -116,7 +128,8 @@ Navigate to `packages/<package-name>` and run:
 - Use @group tags to organize API documentation by category
 
 Example:
-```typescript
+
+````typescript
 /**
  * Calculates the magnitude (length) of a vector.
  *
@@ -134,11 +147,12 @@ Example:
  *
  * @group Vector Operations
  */
-```
+````
 
 ## Git Workflow
 
 ### Branch Naming
+
 - `feat/feature-name` - New features
 - `feat/package-name-feature` - Package-specific features
 - `fix/issue-description` - Bug fixes
@@ -146,13 +160,16 @@ Example:
 - `perf/what-improved` - Performance improvements
 
 ### Pull Requests Must Include
+
 - Tests for new public APIs or bug fixes
 - Updated documentation (README, JSDoc, examples)
 - Passing CI/CD checks (TypeScript, linting, tests)
 - Performance benchmarks for rendering/math optimizations (if applicable)
 
 ### Commit Messages
+
 Follow conventional commits:
+
 ```bash
 feat(math): add vector projection function
 fix(board): resolve camera rotation issue
@@ -163,6 +180,7 @@ perf(dynamics): optimize collision detection
 ## Package Development Guidelines
 
 ### Creating New Packages
+
 1. Package must have clear, documented purpose
 2. Include comprehensive README
 3. Add TypeDoc configuration (`typedoc.json`)
@@ -171,29 +189,35 @@ perf(dynamics): optimize collision detection
 6. Document in root README
 
 ### Publishing Packages
+
 All packages are published to npm as `@ue-too/<package-name>`:
+
 - Packages must build successfully
 - All tests must pass
 - TypeScript must compile without errors
 - Documentation must be complete
 
 ### Dependencies
+
 - **Minimize external dependencies** - Justify heavyweight additions
-- **Workspace dependencies** - Document @ue-too/* dependencies in README
+- **Workspace dependencies** - Document @ue-too/\* dependencies in README
 - **Layered architecture**:
-  - Foundational: `math`, `being`, `ecs` (zero internal deps)
-  - Mid-level: `board`, `animate`, `curve`, `border` (depend on foundational)
-  - Integration: `board-react-adapter` (depends on mid-level)
+    - Foundational: `math`, `being`, `ecs` (zero internal deps)
+    - Mid-level: `board`, `animate`, `curve`, `border` (depend on foundational)
+    - Integration: `board-react-adapter` (depends on mid-level)
 
 ## Testing
 
 ### Philosophy
+
 Pragmatic testing approach:
+
 - **Required**: Public APIs and critical paths
 - **Encouraged**: Internal utilities and edge cases
 - **Focus**: Package boundaries and preventing breaking changes
 
 ### Running Tests
+
 ```bash
 # All packages
 bun test
@@ -209,6 +233,7 @@ nx run-many --target=test
 ## Performance Considerations
 
 ### Canvas Applications
+
 - Maintain 60fps (16.67ms frame budget)
 - Minimize canvas state changes
 - Batch drawing operations
@@ -216,12 +241,14 @@ nx run-many --target=test
 - Implement object pooling for frequently allocated objects
 
 ### Critical Paths Requiring Benchmarks
+
 - Mathematical operations in tight loops (vector math, transformations)
 - Collision detection and spatial queries
 - Physics simulation steps
 - Curve tessellation and path operations
 
 ### Bundle Size
+
 - Keep packages under 50KB minified+gzipped when practical
 - Use ES modules for tree-shaking
 - Document bundle sizes in package READMEs
@@ -230,28 +257,33 @@ nx run-many --target=test
 ## TypeDoc Documentation
 
 ### Configuration
+
 Each package with public APIs should have `typedoc.json`:
+
 ```json
 {
-  "$schema": "https://typedoc.org/schema.json",
-  "extends": "../../typedoc.json",
-  "entryPoints": ["src/index.ts"],
-  "out": "../../docs/<package-name>",
-  "name": "@ue-too/<package-name>",
-  "readme": "./README.md",
-  "includeVersion": true,
-  "categorizeByGroup": true
+    "$schema": "https://typedoc.org/schema.json",
+    "categorizeByGroup": true,
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/<package-name>",
+    "out": "../../docs/<package-name>",
+    "readme": "./README.md"
 }
 ```
 
 ### Generating Documentation
+
 ```bash
 cd packages/<package-name>
 bun run docs:build
 ```
 
 ### Organization
+
 Use @group tags to organize API documentation:
+
 - `@group Vector Arithmetic`
 - `@group Transformations`
 - `@group Geometric Calculations`
@@ -260,11 +292,13 @@ Use @group tags to organize API documentation:
 ## Monorepo Management
 
 This project uses:
+
 - **Nx** - Build orchestration and task running
 - **Bun workspaces** - Package management
 - **pnpm** - Fallback compatibility (check package.json)
 
 ### Building
+
 ```bash
 # Build all packages in parallel
 bun run build

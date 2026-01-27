@@ -12,27 +12,41 @@ tileImage.src = new URL('./tile.png', import.meta.url).href;
 const board = new Board(canvas);
 
 function draw(timestamp: number) {
-  // step the board
-  board.step(timestamp);
+    // step the board
+    board.step(timestamp);
 
-  // Draw the image if it's loaded
-  if (tileImage.complete) {
-    board.context.drawImage(tileImage, 0, 0, 300, 300, 200, 200, 300, 300);
-  }
+    // Draw the image if it's loaded
+    if (tileImage.complete) {
+        board.context.drawImage(tileImage, 0, 0, 300, 300, 200, 200, 300, 300);
+    }
 
-  // draw the axis arrow as reference
-  board.context.save();
-  board.context.strokeStyle = "red";
-  drawArrow(board.context, 1, {x: 0, y: 0}, {x: 0, y: board.camera.boundaries.max.y}, 10, 0.3);
-  board.context.restore();
+    // draw the axis arrow as reference
+    board.context.save();
+    board.context.strokeStyle = 'red';
+    drawArrow(
+        board.context,
+        1,
+        { x: 0, y: 0 },
+        { x: 0, y: board.camera.boundaries.max.y },
+        10,
+        0.3
+    );
+    board.context.restore();
 
-  board.context.save();
-  board.context.strokeStyle = "green";
-  drawArrow(board.context, 1, {x: 0, y: 0}, {x: board.camera.boundaries.max.x, y: 0}, 10, 0.3);
-  board.context.restore();
+    board.context.save();
+    board.context.strokeStyle = 'green';
+    drawArrow(
+        board.context,
+        1,
+        { x: 0, y: 0 },
+        { x: board.camera.boundaries.max.x, y: 0 },
+        10,
+        0.3
+    );
+    board.context.restore();
 
-  // request the next frame
-  requestAnimationFrame(draw);
+    // request the next frame
+    requestAnimationFrame(draw);
 }
 
 requestAnimationFrame(draw);

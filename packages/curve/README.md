@@ -25,11 +25,13 @@ Bezier curve and geometric path library for TypeScript canvas applications.
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/curve
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/curve
 ```
@@ -43,9 +45,9 @@ import { BCurve } from '@ue-too/curve';
 
 // Create a quadratic Bezier curve
 const curve = new BCurve([
-  { x: 0, y: 0 },      // Start point
-  { x: 50, y: 100 },   // Control point
-  { x: 100, y: 0 }     // End point
+    { x: 0, y: 0 }, // Start point
+    { x: 50, y: 100 }, // Control point
+    { x: 100, y: 0 }, // End point
 ]);
 
 // Evaluate at midpoint (t = 0.5)
@@ -72,23 +74,23 @@ Bezier curves are parametric curves defined by control points. This library supp
 ```typescript
 // Linear Bezier (line)
 const line = new BCurve([
-  { x: 0, y: 0 },
-  { x: 100, y: 100 }
+    { x: 0, y: 0 },
+    { x: 100, y: 100 },
 ]);
 
 // Quadratic Bezier
 const quadratic = new BCurve([
-  { x: 0, y: 0 },
-  { x: 50, y: 100 },
-  { x: 100, y: 0 }
+    { x: 0, y: 0 },
+    { x: 50, y: 100 },
+    { x: 100, y: 0 },
 ]);
 
 // Cubic Bezier
 const cubic = new BCurve([
-  { x: 0, y: 0 },
-  { x: 33, y: 100 },
-  { x: 66, y: 100 },
-  { x: 100, y: 0 }
+    { x: 0, y: 0 },
+    { x: 33, y: 100 },
+    { x: 66, y: 100 },
+    { x: 100, y: 0 },
 ]);
 ```
 
@@ -97,9 +99,9 @@ const cubic = new BCurve([
 Bezier curves are evaluated using a parameter `t` from 0.0 (start) to 1.0 (end):
 
 ```typescript
-const start = curve.get(0);    // Start point
-const mid = curve.get(0.5);    // Midpoint
-const end = curve.get(1);      // End point
+const start = curve.get(0); // Start point
+const mid = curve.get(0.5); // Midpoint
+const end = curve.get(1); // End point
 const quarter = curve.get(0.25); // 25% along the curve
 ```
 
@@ -110,38 +112,45 @@ const quarter = curve.get(0.25); // 25% along the curve
 Main Bezier curve class with extensive geometric operations.
 
 **Constructor:**
+
 ```typescript
 const curve = new BCurve(controlPoints: Point[]);
 ```
 
 **Curve Evaluation:**
+
 - `get(t: number): Point` - Get point at parameter t
 - `derivative(t: number): Point` - Get derivative vector at t
 - `normal(t: number): Point` - Get normal vector at t
 - `tangent(t: number): Point` - Get tangent vector at t
 
 **Geometric Properties:**
+
 - `fullLength: number` - Total arc length (cached)
 - `bbox(): {x: {min: number, max: number}, y: {min: number, max: number}}` - Axis-aligned bounding box
 - `extrema(): {x: number[], y: number[]}` - Find extrema (min/max) points
 - `curvature(t: number): number` - Calculate curvature at t
 
 **Curve Manipulation:**
+
 - `splitIntoCurves(t: number): [BCurve, BCurve]` - Split into two curves at t
 - `scale(factor: number, origin?: Point): BCurve` - Scale curve around origin
 - `offset(distance: number): BCurve | BCurve[]` - Create offset (parallel) curve
 
 **Intersection Detection:**
+
 - `getCurveIntersections(other: BCurve): {selfT: number, otherT: number}[]` - Find curve-curve intersections
 - `getLineIntersections(line: Line): number[]` - Find curve-line intersection points
 - `getCircleIntersections(center: Point, radius: number): number[]` - Find curve-circle intersections
 - `getSelfIntersections(): {t1: number, t2: number}[]` - Detect self-intersections
 
 **Point Queries:**
+
 - `project(point: Point): {t: number, point: Point, distance: number}` - Project point onto curve
 - `closestPoint(point: Point): Point` - Find closest point on curve
 
 **Arc-Length Functions:**
+
 - `length(t: number): number` - Arc length from start to parameter t
 - `parameter(length: number): number` - Find parameter t for a given arc length
 
@@ -150,16 +159,19 @@ const curve = new BCurve(controlPoints: Point[]);
 Straight line segment utilities.
 
 **Constructor:**
+
 ```typescript
 const line = new Line(start: Point, end: Point);
 ```
 
 **Properties:**
+
 - `start: Point` - Starting point
 - `end: Point` - Ending point
 - `length: number` - Line length
 
 **Methods:**
+
 - `get(t: number): Point` - Get point at parameter t (0-1)
 - `intersects(other: Line): Point | null` - Find intersection point with another line
 - `project(point: Point): {t: number, point: Point}` - Project point onto line
@@ -170,16 +182,18 @@ const line = new Line(start: Point, end: Point);
 Composite curve made of multiple Bezier segments with control points and tangent handles.
 
 **Constructor:**
+
 ```typescript
 const composite = new CompositeBCurve(controlPoints: ControlPoint[]);
 ```
 
 **Control Point Structure:**
+
 ```typescript
 type ControlPoint = {
-  point: Point;              // Anchor point
-  leftHandle?: Point;        // Left tangent handle
-  rightHandle?: Point;       // Right tangent handle
+    point: Point; // Anchor point
+    leftHandle?: Point; // Left tangent handle
+    rightHandle?: Point; // Right tangent handle
 };
 ```
 
@@ -188,11 +202,13 @@ type ControlPoint = {
 Path composed of sequential line segments.
 
 **Constructor:**
+
 ```typescript
 const path = new Path(points: Point[]);
 ```
 
 **Methods:**
+
 - `get(index: number): Line` - Get line segment at index
 - `length(): number` - Total path length
 - `bbox(): {x: {min, max}, y: {min, max}}` - Bounding box
@@ -205,9 +221,9 @@ const path = new Path(points: Point[]);
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 50, y: 200 },
-  { x: 150, y: 50 },
-  { x: 250, y: 200 }
+    { x: 50, y: 200 },
+    { x: 150, y: 50 },
+    { x: 250, y: 200 },
 ]);
 
 // Draw using canvas API
@@ -215,18 +231,23 @@ ctx.beginPath();
 ctx.moveTo(curve.points[0].x, curve.points[0].y);
 
 if (curve.points.length === 3) {
-  // Quadratic curve
-  ctx.quadraticCurveTo(
-    curve.points[1].x, curve.points[1].y,
-    curve.points[2].x, curve.points[2].y
-  );
+    // Quadratic curve
+    ctx.quadraticCurveTo(
+        curve.points[1].x,
+        curve.points[1].y,
+        curve.points[2].x,
+        curve.points[2].y
+    );
 } else if (curve.points.length === 4) {
-  // Cubic curve
-  ctx.bezierCurveTo(
-    curve.points[1].x, curve.points[1].y,
-    curve.points[2].x, curve.points[2].y,
-    curve.points[3].x, curve.points[3].y
-  );
+    // Cubic curve
+    ctx.bezierCurveTo(
+        curve.points[1].x,
+        curve.points[1].y,
+        curve.points[2].x,
+        curve.points[2].y,
+        curve.points[3].x,
+        curve.points[3].y
+    );
 }
 
 ctx.stroke();
@@ -238,25 +259,25 @@ ctx.stroke();
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 0, y: 100 },
-  { x: 100, y: 0 },
-  { x: 200, y: 100 }
+    { x: 0, y: 100 },
+    { x: 100, y: 0 },
+    { x: 200, y: 100 },
 ]);
 
 let t = 0;
 
 function animate() {
-  t += 0.01;
-  if (t > 1) t = 0;
+    t += 0.01;
+    if (t > 1) t = 0;
 
-  const position = curve.get(t);
-  const tangent = curve.tangent(t);
+    const position = curve.get(t);
+    const tangent = curve.tangent(t);
 
-  // Draw object at position with rotation from tangent
-  const angle = Math.atan2(tangent.y, tangent.x);
-  drawSprite(position.x, position.y, angle);
+    // Draw object at position with rotation from tangent
+    const angle = Math.atan2(tangent.y, tangent.x);
+    drawSprite(position.x, position.y, angle);
 
-  requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 }
 ```
 
@@ -266,9 +287,9 @@ function animate() {
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 0, y: 0 },
-  { x: 100, y: 100 },
-  { x: 200, y: 0 }
+    { x: 0, y: 0 },
+    { x: 100, y: 100 },
+    { x: 200, y: 0 },
 ]);
 
 const totalLength = curve.fullLength;
@@ -277,11 +298,11 @@ const numPoints = Math.floor(totalLength / spacing);
 
 // Place points uniformly along the curve
 for (let i = 0; i <= numPoints; i++) {
-  const arcLength = i * spacing;
-  const t = curve.parameter(arcLength); // Convert arc-length to parameter
-  const point = curve.get(t);
+    const arcLength = i * spacing;
+    const t = curve.parameter(arcLength); // Convert arc-length to parameter
+    const point = curve.get(t);
 
-  drawPoint(point.x, point.y);
+    drawPoint(point.x, point.y);
 }
 ```
 
@@ -291,25 +312,25 @@ for (let i = 0; i <= numPoints; i++) {
 import { BCurve } from '@ue-too/curve';
 
 const curve1 = new BCurve([
-  { x: 0, y: 50 },
-  { x: 100, y: 150 },
-  { x: 200, y: 50 }
+    { x: 0, y: 50 },
+    { x: 100, y: 150 },
+    { x: 200, y: 50 },
 ]);
 
 const curve2 = new BCurve([
-  { x: 0, y: 100 },
-  { x: 100, y: 0 },
-  { x: 200, y: 100 }
+    { x: 0, y: 100 },
+    { x: 100, y: 0 },
+    { x: 200, y: 100 },
 ]);
 
 const intersections = curve1.getCurveIntersections(curve2);
 
 intersections.forEach(({ selfT, otherT }) => {
-  const point1 = curve1.get(selfT);
-  const point2 = curve2.get(otherT);
+    const point1 = curve1.get(selfT);
+    const point2 = curve2.get(otherT);
 
-  console.log('Intersection at:', point1);
-  // point1 and point2 should be very close (within numerical precision)
+    console.log('Intersection at:', point1);
+    // point1 and point2 should be very close (within numerical precision)
 });
 ```
 
@@ -319,9 +340,9 @@ intersections.forEach(({ selfT, otherT }) => {
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 0, y: 0 },
-  { x: 50, y: 100 },
-  { x: 100, y: 0 }
+    { x: 0, y: 0 },
+    { x: 50, y: 100 },
+    { x: 100, y: 0 },
 ]);
 
 const mousePosition = { x: 60, y: 40 };
@@ -333,7 +354,7 @@ console.log('Distance:', distance);
 
 // Snap mouse to curve
 if (distance < 10) {
-  snapToCurve(point);
+    snapToCurve(point);
 }
 ```
 
@@ -343,9 +364,9 @@ if (distance < 10) {
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 0, y: 100 },
-  { x: 100, y: 0 },
-  { x: 200, y: 100 }
+    { x: 0, y: 100 },
+    { x: 100, y: 0 },
+    { x: 200, y: 100 },
 ]);
 
 // Create curve offset by 20 pixels
@@ -353,7 +374,7 @@ const offsetCurves = curve.offset(20);
 
 // Offset may produce multiple curve segments
 offsetCurves.forEach(offsetCurve => {
-  drawCurve(offsetCurve);
+    drawCurve(offsetCurve);
 });
 ```
 
@@ -363,9 +384,9 @@ offsetCurves.forEach(offsetCurve => {
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 0, y: 0 },
-  { x: 50, y: 100 },
-  { x: 100, y: 0 }
+    { x: 0, y: 0 },
+    { x: 50, y: 100 },
+    { x: 100, y: 0 },
 ]);
 
 // Split at 30% along the curve
@@ -382,23 +403,22 @@ drawCurve(rightPart, 'blue');
 import { BCurve } from '@ue-too/curve';
 
 const curve = new BCurve([
-  { x: 10, y: 20 },
-  { x: 150, y: 200 },
-  { x: 300, y: 50 }
+    { x: 10, y: 20 },
+    { x: 150, y: 200 },
+    { x: 300, y: 50 },
 ]);
 
 const bbox = curve.bbox();
 
 // Check if curve is visible in viewport
-const isVisible = (
-  bbox.x.max >= viewport.left &&
-  bbox.x.min <= viewport.right &&
-  bbox.y.max >= viewport.top &&
-  bbox.y.min <= viewport.bottom
-);
+const isVisible =
+    bbox.x.max >= viewport.left &&
+    bbox.x.min <= viewport.right &&
+    bbox.y.max >= viewport.top &&
+    bbox.y.min <= viewport.bottom;
 
 if (isVisible) {
-  drawCurve(curve);
+    drawCurve(curve);
 }
 ```
 
@@ -418,14 +438,14 @@ const point: Point = { x: 10, y: 20 };
 
 // Curves are generic over control point count
 const quadratic: BCurve = new BCurve([
-  { x: 0, y: 0 },
-  { x: 50, y: 100 },
-  { x: 100, y: 0 }
+    { x: 0, y: 0 },
+    { x: 50, y: 100 },
+    { x: 100, y: 0 },
 ]);
 
 // Intersection results are typed
 const intersections: { selfT: number; otherT: number }[] =
-  curve1.getCurveIntersections(curve2);
+    curve1.getCurveIntersections(curve2);
 ```
 
 ## Design Philosophy
@@ -446,6 +466,7 @@ This library follows these principles:
 - **Offset curves**: Computationally expensive, may produce multiple segments
 
 **Performance Tips:**
+
 - Cache `fullLength` results if curves don't change
 - Use bounding box checks before expensive intersection tests
 - Reduce curve complexity with `reduce()` for long curves

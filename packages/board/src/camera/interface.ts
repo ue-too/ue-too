@@ -1,11 +1,11 @@
-import { Point } from "@ue-too/math";
-import { UnSubscribe } from "./update-publisher";
+import { Point } from '@ue-too/math';
 
-import { RotationLimits } from "./utils/rotation";
-import { ZoomLevelLimits } from "./utils/zoom";
-import { Boundaries } from "./utils/position";
-import { CameraEventMap, CameraState } from "./update-publisher";
-import { SubscriptionOptions } from "../utils/observable";
+import { SubscriptionOptions } from '../utils/observable';
+import { UnSubscribe } from './update-publisher';
+import { CameraEventMap, CameraState } from './update-publisher';
+import { Boundaries } from './utils/position';
+import { RotationLimits } from './utils/rotation';
+import { ZoomLevelLimits } from './utils/zoom';
 
 /**
  * Observable camera interface that extends {@link BoardCamera} with event subscription capabilities.
@@ -52,7 +52,11 @@ export interface ObservableBoardCamera extends BoardCamera {
      * controller.abort();
      * ```
      */
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe;
+    on<K extends keyof CameraEventMap>(
+        eventName: K,
+        callback: (event: CameraEventMap[K], cameraState: CameraState) => void,
+        options?: SubscriptionOptions
+    ): UnSubscribe;
 }
 
 /**
@@ -112,7 +116,7 @@ export interface BoardCamera {
      * @remarks
      * Useful for culling and determining which objects are visible in the current viewport.
      */
-    viewPortAABB(alignCoordinate?: boolean): {min: Point, max: Point};
+    viewPortAABB(alignCoordinate?: boolean): { min: Point; max: Point };
 
     /**
      * Calculates the four corners of the viewport in world space, accounting for rotation.
@@ -123,7 +127,10 @@ export interface BoardCamera {
      * @remarks
      * Returns the actual rotated viewport corners, not an AABB. Use this for precise viewport bounds.
      */
-    viewPortInWorldSpace(alignCoordinate?: boolean): {top: {left: Point, right: Point}, bottom: {left: Point, right: Point}};
+    viewPortInWorldSpace(alignCoordinate?: boolean): {
+        top: { left: Point; right: Point };
+        bottom: { left: Point; right: Point };
+    };
 
     /**
      * Sets the camera position in world coordinates.
@@ -234,7 +241,14 @@ export interface BoardCamera {
      * @param alignCoordinateSystem - If true, uses standard coordinate system (y-up). If false, uses inverted y-axis
      * @returns Object containing separate scale, rotation, and translation values
      */
-    getTRS(devicePixelRatio: number, alignCoordinateSystem: boolean): {scale: {x: number, y: number}, rotation: number, translation: {x: number, y: number}};
+    getTRS(
+        devicePixelRatio: number,
+        alignCoordinateSystem: boolean
+    ): {
+        scale: { x: number; y: number };
+        rotation: number;
+        translation: { x: number; y: number };
+    };
 
     /**
      * Calculates the complete transformation matrix for rendering.
@@ -255,5 +269,8 @@ export interface BoardCamera {
      * // Now draw in world coordinates
      * ```
      */
-    getTransform(devicePixelRatio: number, alignCoordinateSystem: boolean): {a: number, b: number, c: number, d: number, e: number, f: number};
+    getTransform(
+        devicePixelRatio: number,
+        alignCoordinateSystem: boolean
+    ): { a: number; b: number; c: number; d: number; e: number; f: number };
 }

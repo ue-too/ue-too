@@ -1,49 +1,47 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist",
-    "declaration": true,
-    "allowImportingTsExtensions": false,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "types": []
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../../packages/board-pixi-integration"
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "declaration": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "../../dist",
+        "types": []
     },
-    {
-      "path": "../../packages/board-fabric-integration"
-    },
-    {
-      "path": "../../packages/board-konva-integration"
-    },
-    {
-      "path": "../../packages/math"
-    },
-    {
-      "path": "../../packages/ecs"
-    },
-    {
-      "path": "../../packages/dynamics"
-    },
-    {
-      "path": "../../packages/curve"
-    },
-    {
-      "path": "../../packages/border"
-    },
-    {
-      "path": "../../packages/board"
-    },
-    {
-      "path": "../../packages/being"
-    },
-    {
-      "path": "../../packages/animate"
-    }
-  ]
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../../packages/board-pixi-integration"
+        },
+        {
+            "path": "../../packages/board-fabric-integration"
+        },
+        {
+            "path": "../../packages/board-konva-integration"
+        },
+        {
+            "path": "../../packages/math"
+        },
+        {
+            "path": "../../packages/ecs"
+        },
+        {
+            "path": "../../packages/dynamics"
+        },
+        {
+            "path": "../../packages/curve"
+        },
+        {
+            "path": "../../packages/border"
+        },
+        {
+            "path": "../../packages/board"
+        },
+        {
+            "path": "../../packages/being"
+        },
+        {
+            "path": "../../packages/animate"
+        }
+    ]
 }

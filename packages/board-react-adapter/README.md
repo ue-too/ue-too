@@ -22,16 +22,19 @@ React adapter for the @ue-too/board infinite canvas library.
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/board-react-adapter react react-dom
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/board-react-adapter react react-dom
 ```
 
 **Peer Dependencies:**
+
 - React >= 19.0.0
 - React-DOM >= 19.0.0
 
@@ -43,20 +46,20 @@ Here's a simple example creating an infinite canvas with React:
 import Board from '@ue-too/board-react-adapter';
 
 function App() {
-  return (
-    <Board
-      width={800}
-      height={600}
-      animationCallback={(timestamp, ctx, camera) => {
-        // Clear canvas
-        ctx.clearRect(0, 0, 800, 600);
+    return (
+        <Board
+            width={800}
+            height={600}
+            animationCallback={(timestamp, ctx, camera) => {
+                // Clear canvas
+                ctx.clearRect(0, 0, 800, 600);
 
-        // Draw a blue square at world origin
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(0, 0, 100, 100);
-      }}
-    />
-  );
+                // Draw a blue square at world origin
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, 100, 100);
+            }}
+        />
+    );
 }
 ```
 
@@ -78,6 +81,7 @@ Main component that renders the canvas and manages the board instance.
 ```
 
 **Props:**
+
 - `width`: Canvas width in pixels
 - `height`: Canvas height in pixels
 - `animationCallback`: Function called on each frame with timestamp, context, and camera
@@ -89,8 +93,8 @@ The component supports children, which will have access to the board via context
 
 ```tsx
 <Board width={800} height={600}>
-  <Controls />
-  <StatusDisplay />
+    <Controls />
+    <StatusDisplay />
 </Board>
 ```
 
@@ -102,20 +106,26 @@ Subscribe to a specific camera state property.
 
 ```tsx
 function useBoardCameraState<K extends keyof CameraState>(
-  key: K
+    key: K
 ): CameraState[K];
 ```
 
 **Example:**
+
 ```tsx
 function CameraPosition() {
-  const position = useBoardCameraState('position');
+    const position = useBoardCameraState('position');
 
-  return <div>Position: ({position.x.toFixed(0)}, {position.y.toFixed(0)})</div>;
+    return (
+        <div>
+            Position: ({position.x.toFixed(0)}, {position.y.toFixed(0)})
+        </div>
+    );
 }
 ```
 
 **Available Keys:**
+
 - `position`: `{ x: number, y: number }` - Camera world position
 - `rotation`: `number` - Camera rotation in radians
 - `zoomLevel`: `number` - Current zoom level
@@ -129,17 +139,20 @@ function useAllBoardCameraState(): CameraState;
 ```
 
 **Example:**
+
 ```tsx
 function CameraInfo() {
-  const camera = useAllBoardCameraState();
+    const camera = useAllBoardCameraState();
 
-  return (
-    <div>
-      <p>Position: ({camera.position.x}, {camera.position.y})</p>
-      <p>Rotation: {camera.rotation}rad</p>
-      <p>Zoom: {camera.zoomLevel}x</p>
-    </div>
-  );
+    return (
+        <div>
+            <p>
+                Position: ({camera.position.x}, {camera.position.y})
+            </p>
+            <p>Rotation: {camera.rotation}rad</p>
+            <p>Zoom: {camera.zoomLevel}x</p>
+        </div>
+    );
 }
 ```
 
@@ -167,27 +180,28 @@ Get camera control functions.
 
 ```tsx
 function useCameraInput(): {
-  panToWorld: (position: Point) => void;
-  panByScreen: (offset: Point) => void;
-  zoomTo: (level: number) => void;
-  zoomIn: () => void;
-  zoomOut: () => void;
-  rotateTo: (angle: number) => void;
+    panToWorld: (position: Point) => void;
+    panByScreen: (offset: Point) => void;
+    zoomTo: (level: number) => void;
+    zoomIn: () => void;
+    zoomOut: () => void;
+    rotateTo: (angle: number) => void;
 };
 ```
 
 **Example:**
+
 ```tsx
 function Controls() {
-  const { panToWorld, zoomTo, rotateTo } = useCameraInput();
+    const { panToWorld, zoomTo, rotateTo } = useCameraInput();
 
-  return (
-    <div>
-      <button onClick={() => panToWorld({ x: 0, y: 0 })}>Center</button>
-      <button onClick={() => zoomTo(1.0)}>Reset Zoom</button>
-      <button onClick={() => rotateTo(0)}>Reset Rotation</button>
-    </div>
-  );
+    return (
+        <div>
+            <button onClick={() => panToWorld({ x: 0, y: 0 })}>Center</button>
+            <button onClick={() => zoomTo(1.0)}>Reset Zoom</button>
+            <button onClick={() => rotateTo(0)}>Reset Rotation</button>
+        </div>
+    );
 }
 ```
 
@@ -196,9 +210,7 @@ function Controls() {
 Set a custom camera multiplexer for advanced camera control.
 
 ```tsx
-function useCustomCameraMux(
-  customMux: CameraMux | undefined
-): void;
+function useCustomCameraMux(customMux: CameraMux | undefined): void;
 ```
 
 #### `useBoardify(width, height, animationCallback)`
@@ -207,12 +219,12 @@ Create a standalone board instance without using the provider pattern.
 
 ```tsx
 function useBoardify(
-  width: number,
-  height: number,
-  animationCallback: AnimationCallback
+    width: number,
+    height: number,
+    animationCallback: AnimationCallback
 ): {
-  canvas: HTMLCanvasElement | null;
-  board: BoardType | null;
+    canvas: HTMLCanvasElement | null;
+    board: BoardType | null;
 };
 ```
 
@@ -223,21 +235,20 @@ function useBoardify(
 Generic animation frame hook.
 
 ```tsx
-function useAnimationFrame(
-  callback: (timestamp: number) => void
-): void;
+function useAnimationFrame(callback: (timestamp: number) => void): void;
 ```
 
 **Example:**
+
 ```tsx
 function AnimatedComponent() {
-  const [rotation, setRotation] = useState(0);
+    const [rotation, setRotation] = useState(0);
 
-  useAnimationFrame((timestamp) => {
-    setRotation(timestamp * 0.001); // Rotate based on time
-  });
+    useAnimationFrame(timestamp => {
+        setRotation(timestamp * 0.001); // Rotate based on time
+    });
 
-  return <div style={{ transform: `rotate(${rotation}rad)` }}>Spinning</div>;
+    return <div style={{ transform: `rotate(${rotation}rad)` }}>Spinning</div>;
 }
 ```
 
@@ -247,7 +258,11 @@ Animation loop integrated with `board.step()`.
 
 ```tsx
 function useAnimationFrameWithBoard(
-  callback: (timestamp: number, ctx: CanvasRenderingContext2D, camera: Camera) => void
+    callback: (
+        timestamp: number,
+        ctx: CanvasRenderingContext2D,
+        camera: Camera
+    ) => void
 ): void;
 ```
 
@@ -256,39 +271,44 @@ function useAnimationFrameWithBoard(
 ### Basic Canvas with Pan and Zoom
 
 ```tsx
-import Board, { useCameraInput, useBoardCameraState } from '@ue-too/board-react-adapter';
+import Board, {
+    useBoardCameraState,
+    useCameraInput,
+} from '@ue-too/board-react-adapter';
 
 function Controls() {
-  const position = useBoardCameraState('position');
-  const zoom = useBoardCameraState('zoomLevel');
-  const { panToWorld, zoomTo } = useCameraInput();
+    const position = useBoardCameraState('position');
+    const zoom = useBoardCameraState('zoomLevel');
+    const { panToWorld, zoomTo } = useCameraInput();
 
-  return (
-    <div style={{ position: 'absolute', top: 10, left: 10 }}>
-      <p>Position: ({position.x.toFixed(0)}, {position.y.toFixed(0)})</p>
-      <p>Zoom: {zoom.toFixed(2)}x</p>
-      <button onClick={() => panToWorld({ x: 0, y: 0 })}>Center</button>
-      <button onClick={() => zoomTo(1.0)}>Reset Zoom</button>
-    </div>
-  );
+    return (
+        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+            <p>
+                Position: ({position.x.toFixed(0)}, {position.y.toFixed(0)})
+            </p>
+            <p>Zoom: {zoom.toFixed(2)}x</p>
+            <button onClick={() => panToWorld({ x: 0, y: 0 })}>Center</button>
+            <button onClick={() => zoomTo(1.0)}>Reset Zoom</button>
+        </div>
+    );
 }
 
 function App() {
-  return (
-    <Board
-      width={800}
-      height={600}
-      animationCallback={(timestamp, ctx) => {
-        ctx.fillStyle = 'lightblue';
-        ctx.fillRect(-200, -200, 400, 400);
+    return (
+        <Board
+            width={800}
+            height={600}
+            animationCallback={(timestamp, ctx) => {
+                ctx.fillStyle = 'lightblue';
+                ctx.fillRect(-200, -200, 400, 400);
 
-        ctx.fillStyle = 'red';
-        ctx.fillRect(-50, -50, 100, 100);
-      }}
-    >
-      <Controls />
-    </Board>
-  );
+                ctx.fillStyle = 'red';
+                ctx.fillRect(-50, -50, 100, 100);
+            }}
+        >
+            <Controls />
+        </Board>
+    );
 }
 ```
 
@@ -299,36 +319,39 @@ import Board, { useBoard } from '@ue-too/board-react-adapter';
 import { useState } from 'react';
 
 function Drawing() {
-  const board = useBoard();
-  const [points, setPoints] = useState<Point[]>([]);
+    const board = useBoard();
+    const [points, setPoints] = useState<Point[]>([]);
 
-  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!board) return;
+    const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!board) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const screenX = e.clientX - rect.left;
-    const screenY = e.clientY - rect.top;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
 
-    const worldPoint = board.camera.screenToWorld({ x: screenX, y: screenY });
-    setPoints([...points, worldPoint]);
-  };
-
-  return (
-    <Board
-      width={800}
-      height={600}
-      onClick={handleClick}
-      animationCallback={(timestamp, ctx) => {
-        // Draw all points
-        ctx.fillStyle = 'red';
-        points.forEach(point => {
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-          ctx.fill();
+        const worldPoint = board.camera.screenToWorld({
+            x: screenX,
+            y: screenY,
         });
-      }}
-    />
-  );
+        setPoints([...points, worldPoint]);
+    };
+
+    return (
+        <Board
+            width={800}
+            height={600}
+            onClick={handleClick}
+            animationCallback={(timestamp, ctx) => {
+                // Draw all points
+                ctx.fillStyle = 'red';
+                points.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }}
+        />
+    );
 }
 ```
 
@@ -339,67 +362,74 @@ import Board, { useAnimationFrameWithBoard } from '@ue-too/board-react-adapter';
 import { useState } from 'react';
 
 function AnimatedScene() {
-  const [time, setTime] = useState(0);
+    const [time, setTime] = useState(0);
 
-  useAnimationFrameWithBoard((timestamp, ctx, camera) => {
-    setTime(timestamp * 0.001);
+    useAnimationFrameWithBoard((timestamp, ctx, camera) => {
+        setTime(timestamp * 0.001);
 
-    // Draw animated circle
-    const x = Math.cos(time) * 100;
-    const y = Math.sin(time) * 100;
+        // Draw animated circle
+        const x = Math.cos(time) * 100;
+        const y = Math.sin(time) * 100;
 
-    ctx.fillStyle = 'green';
-    ctx.beginPath();
-    ctx.arc(x, y, 20, 0, Math.PI * 2);
-    ctx.fill();
-  });
+        ctx.fillStyle = 'green';
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+    });
 
-  return null; // No UI, just updates
+    return null; // No UI, just updates
 }
 
 function App() {
-  return (
-    <Board width={800} height={600}>
-      <AnimatedScene />
-    </Board>
-  );
+    return (
+        <Board width={800} height={600}>
+            <AnimatedScene />
+        </Board>
+    );
 }
 ```
 
 ### Camera Controls with Buttons
 
 ```tsx
-import Board, { useCameraInput, useBoardCameraState } from '@ue-too/board-react-adapter';
+import Board, {
+    useBoardCameraState,
+    useCameraInput,
+} from '@ue-too/board-react-adapter';
 
 function CameraControls() {
-  const { panByScreen, zoomIn, zoomOut, rotateTo } = useCameraInput();
-  const rotation = useBoardCameraState('rotation');
+    const { panByScreen, zoomIn, zoomOut, rotateTo } = useCameraInput();
+    const rotation = useBoardCameraState('rotation');
 
-  return (
-    <div style={{ position: 'absolute', top: 10, right: 10 }}>
-      <button onClick={() => panByScreen({ x: 0, y: -50 })}>↑</button>
-      <br />
-      <button onClick={() => panByScreen({ x: -50, y: 0 })}>←</button>
-      <button onClick={() => panByScreen({ x: 50, y: 0 })}>→</button>
-      <br />
-      <button onClick={() => panByScreen({ x: 0, y: 50 })}>↓</button>
-      <br />
-      <button onClick={zoomIn}>Zoom In</button>
-      <button onClick={zoomOut}>Zoom Out</button>
-      <br />
-      <button onClick={() => rotateTo((rotation + Math.PI / 4) % (Math.PI * 2))}>
-        Rotate 45°
-      </button>
-    </div>
-  );
+    return (
+        <div style={{ position: 'absolute', top: 10, right: 10 }}>
+            <button onClick={() => panByScreen({ x: 0, y: -50 })}>↑</button>
+            <br />
+            <button onClick={() => panByScreen({ x: -50, y: 0 })}>←</button>
+            <button onClick={() => panByScreen({ x: 50, y: 0 })}>→</button>
+            <br />
+            <button onClick={() => panByScreen({ x: 0, y: 50 })}>↓</button>
+            <br />
+            <button onClick={zoomIn}>Zoom In</button>
+            <button onClick={zoomOut}>Zoom Out</button>
+            <br />
+            <button
+                onClick={() =>
+                    rotateTo((rotation + Math.PI / 4) % (Math.PI * 2))
+                }
+            >
+                Rotate 45°
+            </button>
+        </div>
+    );
 }
 
 function App() {
-  return (
-    <Board width={800} height={600}>
-      <CameraControls />
-    </Board>
-  );
+    return (
+        <Board width={800} height={600}>
+            <CameraControls />
+        </Board>
+    );
 }
 ```
 
@@ -410,23 +440,23 @@ import { useBoardify } from '@ue-too/board-react-adapter';
 import { useEffect, useRef } from 'react';
 
 function CustomBoard() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { canvas, board } = useBoardify(
-    800,
-    600,
-    (timestamp, ctx, camera) => {
-      ctx.fillStyle = 'purple';
-      ctx.fillRect(-100, -100, 200, 200);
-    }
-  );
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { canvas, board } = useBoardify(
+        800,
+        600,
+        (timestamp, ctx, camera) => {
+            ctx.fillStyle = 'purple';
+            ctx.fillRect(-100, -100, 200, 200);
+        }
+    );
 
-  useEffect(() => {
-    if (canvas && containerRef.current) {
-      containerRef.current.appendChild(canvas);
-    }
-  }, [canvas]);
+    useEffect(() => {
+        if (canvas && containerRef.current) {
+            containerRef.current.appendChild(canvas);
+        }
+    }, [canvas]);
 
-  return <div ref={containerRef} />;
+    return <div ref={containerRef} />;
 }
 ```
 
@@ -440,10 +470,10 @@ This package is written in TypeScript with complete type definitions:
 
 ```tsx
 import Board, {
-  useBoardCameraState,
-  useCameraInput,
-  type CameraState,
-  type AnimationCallback
+    type AnimationCallback,
+    type CameraState,
+    useBoardCameraState,
+    useCameraInput,
 } from '@ue-too/board-react-adapter';
 
 // State is fully typed
@@ -451,11 +481,12 @@ const position: Point = useBoardCameraState('position');
 const zoom: number = useBoardCameraState('zoomLevel');
 
 // Functions are type-safe
-const { panToWorld }: { panToWorld: (position: Point) => void } = useCameraInput();
+const { panToWorld }: { panToWorld: (position: Point) => void } =
+    useCameraInput();
 
 // Callbacks are typed
 const callback: AnimationCallback = (timestamp, ctx, camera) => {
-  // All parameters are properly typed
+    // All parameters are properly typed
 };
 ```
 
@@ -476,6 +507,7 @@ This adapter follows these principles:
 - **Canvas Updates**: Board automatically handles canvas clearing and transformation
 
 **Performance Tips:**
+
 - Subscribe only to the state you need
 - Use `useMemo` for expensive calculations in render
 - Avoid creating new objects in animation callbacks

@@ -1,5 +1,11 @@
-import { Coordinator, Entity, createComponentName, ComponentSchema } from "@ue-too/ecs";
-import { TypeModificationEffect } from "../src/action-system/effect";
+import {
+    ComponentSchema,
+    Coordinator,
+    Entity,
+    createComponentName,
+} from '@ue-too/ecs';
+
+import { TypeModificationEffect } from '../src/action-system/effect';
 
 describe('TypeModificationEffect', () => {
     let coordinator: Coordinator;
@@ -19,18 +25,33 @@ describe('TypeModificationEffect', () => {
                 componentName: CARD_COMPONENT,
                 fields: [
                     { name: 'type', type: 'string', defaultValue: 'spell' },
-                    { name: 'name', type: 'string', defaultValue: 'Fireball' }
-                ]
+                    { name: 'name', type: 'string', defaultValue: 'Fireball' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell', name: 'Fireball' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell', name: 'Fireball' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('creature');
             expect(updatedComponent?.name).toBe('Fireball');
         });
@@ -39,21 +60,42 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect1 = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect1 = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect1.apply();
 
-            const effect2 = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'artifact');
+            const effect2 = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'artifact'
+            );
             effect2.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('artifact');
         });
 
@@ -61,19 +103,36 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const nonExistentComponent = createComponentName('NonExistentComponent');
-            const effect = new TypeModificationEffect(coordinator, nonExistentComponent, entity, 'type', 'creature');
+            const nonExistentComponent = createComponentName(
+                'NonExistentComponent'
+            );
+            const effect = new TypeModificationEffect(
+                coordinator,
+                nonExistentComponent,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('spell');
         });
 
@@ -81,19 +140,34 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
             const otherEntity = coordinator.createEntity();
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, otherEntity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                otherEntity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, otherEntity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, otherEntity);
             expect(updatedComponent?.type).toBe('spell');
         });
 
@@ -101,18 +175,33 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'nonExistentField', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'nonExistentField',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('spell');
         });
 
@@ -122,22 +211,37 @@ describe('TypeModificationEffect', () => {
                 fields: [
                     { name: 'type', type: 'string', defaultValue: 'item' },
                     { name: 'value', type: 'number', defaultValue: 100 },
-                    { name: 'isActive', type: 'boolean', defaultValue: true }
-                ]
+                    { name: 'isActive', type: 'boolean', defaultValue: true },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(MIXED_COMPONENT, { 
-                type: 'item', 
-                value: 100, 
-                isActive: true 
-            });
-            coordinator.addComponentToEntityWithSchema(MIXED_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                MIXED_COMPONENT,
+                {
+                    type: 'item',
+                    value: 100,
+                    isActive: true,
+                }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                MIXED_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, MIXED_COMPONENT, entity, 'value', 'newValue');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                MIXED_COMPONENT,
+                entity,
+                'value',
+                'newValue'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(MIXED_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(MIXED_COMPONENT, entity);
             expect(updatedComponent?.value).toBe(100);
             expect(updatedComponent?.type).toBe('item');
             expect(updatedComponent?.isActive).toBe(true);
@@ -146,19 +250,32 @@ describe('TypeModificationEffect', () => {
         it('should not modify the value if the field value is undefined', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
-                fields: [
-                    { name: 'type', type: 'string', optional: true }
-                ]
+                fields: [{ name: 'type', type: 'string', optional: true }],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, {});
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                {}
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBeUndefined();
         });
 
@@ -168,22 +285,33 @@ describe('TypeModificationEffect', () => {
                 fields: [
                     { name: 'type', type: 'string', defaultValue: 'weapon' },
                     { name: 'name', type: 'string', defaultValue: 'Sword' },
-                    { name: 'rarity', type: 'string', defaultValue: 'common' }
-                ]
+                    { name: 'rarity', type: 'string', defaultValue: 'common' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(ITEM_COMPONENT, { 
-                type: 'weapon', 
-                name: 'Sword', 
-                rarity: 'common' 
-            });
-            coordinator.addComponentToEntityWithSchema(ITEM_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                ITEM_COMPONENT,
+                {
+                    type: 'weapon',
+                    name: 'Sword',
+                    rarity: 'common',
+                }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                ITEM_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect<"armor" | "weapon" | "artifact" | "spell" | "creature">(coordinator, ITEM_COMPONENT, entity, 'type', 'armor');
+            const effect = new TypeModificationEffect<
+                'armor' | 'weapon' | 'artifact' | 'spell' | 'creature'
+            >(coordinator, ITEM_COMPONENT, entity, 'type', 'armor');
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(ITEM_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(ITEM_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('armor');
             expect(updatedComponent?.name).toBe('Sword');
             expect(updatedComponent?.rarity).toBe('common');
@@ -193,18 +321,33 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', '');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                ''
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('');
         });
 
@@ -212,20 +355,35 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
             effect.apply();
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('creature');
         });
 
@@ -233,19 +391,34 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
             const longTypeValue = 'very-long-type-name-with-many-characters';
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', longTypeValue);
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                longTypeValue
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe(longTypeValue);
         });
 
@@ -254,22 +427,37 @@ describe('TypeModificationEffect', () => {
                 componentName: MIXED_COMPONENT,
                 fields: [
                     { name: 'type', type: 'string', defaultValue: 'item' },
-                    { name: 'value', type: 'number', defaultValue: 100 }
-                ]
+                    { name: 'value', type: 'number', defaultValue: 100 },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(MIXED_COMPONENT, { 
-                type: 'item', 
-                value: 100 
-            });
-            coordinator.addComponentToEntityWithSchema(MIXED_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                MIXED_COMPONENT,
+                {
+                    type: 'item',
+                    value: 100,
+                }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                MIXED_COMPONENT,
+                entity,
+                component
+            );
 
             // Try to modify a number field - should fail because field type is not 'string'
-            const effect = new TypeModificationEffect(coordinator, MIXED_COMPONENT, entity, 'value', 'newValue');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                MIXED_COMPONENT,
+                entity,
+                'value',
+                'newValue'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(MIXED_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(MIXED_COMPONENT, entity);
             expect(updatedComponent?.value).toBe(100);
             expect(updatedComponent?.type).toBe('item');
         });
@@ -279,26 +467,51 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: ITEM_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'weapon' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'weapon' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(ITEM_COMPONENT, { type: 'weapon' });
-            coordinator.addComponentToEntityWithSchema(ITEM_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                ITEM_COMPONENT,
+                { type: 'weapon' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                ITEM_COMPONENT,
+                entity,
+                component
+            );
 
             // Valid value - should work
-            const validEffect = new TypeModificationEffect(coordinator, ITEM_COMPONENT, entity, 'type', 'armor', allowedTypes);
+            const validEffect = new TypeModificationEffect(
+                coordinator,
+                ITEM_COMPONENT,
+                entity,
+                'type',
+                'armor',
+                allowedTypes
+            );
             validEffect.apply();
 
-            let updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(ITEM_COMPONENT, entity);
+            let updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(ITEM_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('armor');
 
             // Invalid value - should not modify
-            const invalidEffect = new TypeModificationEffect(coordinator, ITEM_COMPONENT, entity, 'type', 'spell', allowedTypes);
+            const invalidEffect = new TypeModificationEffect(
+                coordinator,
+                ITEM_COMPONENT,
+                entity,
+                'type',
+                'spell',
+                allowedTypes
+            );
             invalidEffect.apply();
 
-            updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(ITEM_COMPONENT, entity);
+            updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(ITEM_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('armor'); // Should remain unchanged
         });
 
@@ -306,42 +519,84 @@ describe('TypeModificationEffect', () => {
             const schema: ComponentSchema = {
                 componentName: CARD_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'spell' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'spell' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(CARD_COMPONENT, { type: 'spell' });
-            coordinator.addComponentToEntityWithSchema(CARD_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                CARD_COMPONENT,
+                { type: 'spell' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                CARD_COMPONENT,
+                entity,
+                component
+            );
 
             // Should work without allowedValues parameter
-            const effect = new TypeModificationEffect(coordinator, CARD_COMPONENT, entity, 'type', 'creature');
+            const effect = new TypeModificationEffect(
+                coordinator,
+                CARD_COMPONENT,
+                entity,
+                'type',
+                'creature'
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(CARD_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(CARD_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('creature');
         });
 
         it('should validate string literal types with allowed values', () => {
-            type ItemType = 'weapon' | 'armor' | 'artifact' | 'spell' | 'creature';
-            const allowedTypes: readonly ItemType[] = ['weapon', 'armor', 'artifact', 'spell', 'creature'] as const;
-            
+            type ItemType =
+                | 'weapon'
+                | 'armor'
+                | 'artifact'
+                | 'spell'
+                | 'creature';
+            const allowedTypes: readonly ItemType[] = [
+                'weapon',
+                'armor',
+                'artifact',
+                'spell',
+                'creature',
+            ] as const;
+
             const schema: ComponentSchema = {
                 componentName: ITEM_COMPONENT,
                 fields: [
-                    { name: 'type', type: 'string', defaultValue: 'weapon' }
-                ]
+                    { name: 'type', type: 'string', defaultValue: 'weapon' },
+                ],
             };
 
             coordinator.registerComponentWithSchema(schema);
-            const component = coordinator.createComponentFromSchema(ITEM_COMPONENT, { type: 'weapon' });
-            coordinator.addComponentToEntityWithSchema(ITEM_COMPONENT, entity, component);
+            const component = coordinator.createComponentFromSchema(
+                ITEM_COMPONENT,
+                { type: 'weapon' }
+            );
+            coordinator.addComponentToEntityWithSchema(
+                ITEM_COMPONENT,
+                entity,
+                component
+            );
 
             // Valid string literal value
-            const effect = new TypeModificationEffect<ItemType>(coordinator, ITEM_COMPONENT, entity, 'type', 'armor', allowedTypes);
+            const effect = new TypeModificationEffect<ItemType>(
+                coordinator,
+                ITEM_COMPONENT,
+                entity,
+                'type',
+                'armor',
+                allowedTypes
+            );
             effect.apply();
 
-            const updatedComponent = coordinator.getComponentFromEntity<Record<string, unknown>>(ITEM_COMPONENT, entity);
+            const updatedComponent = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(ITEM_COMPONENT, entity);
             expect(updatedComponent?.type).toBe('armor');
         });
     });

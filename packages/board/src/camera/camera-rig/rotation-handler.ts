@@ -1,7 +1,12 @@
-import { BoardCamera } from "../interface";
-import { createHandlerChain } from "../../utils/handler-pipeline";
-import { normalizeAngleZero2TwoPI, angleSpan, clampRotation } from "../utils/rotation";
-import type { Point } from "@ue-too/math";
+import type { Point } from '@ue-too/math';
+
+import { createHandlerChain } from '../../utils/handler-pipeline';
+import { BoardCamera } from '../interface';
+import {
+    angleSpan,
+    clampRotation,
+    normalizeAngleZero2TwoPI,
+} from '../utils/rotation';
 
 /**
  * Combined configuration for rotation handler behavior, merging restriction and clamping settings.
@@ -18,7 +23,8 @@ import type { Point } from "@ue-too/math";
  * @see {@link RotationHandlerRestrictConfig} for rotation locking options
  * @see {@link RotationHandlerClampConfig} for angular boundary options
  */
-export type RotationHandlerConfig = RotationHandlerRestrictConfig & RotationHandlerClampConfig;
+export type RotationHandlerConfig = RotationHandlerRestrictConfig &
+    RotationHandlerClampConfig;
 
 /**
  * Configuration for completely disabling rotation operations.
@@ -51,7 +57,7 @@ export type RotationHandlerRestrictConfig = {
      * Whether to completely prevent rotation operations.
      */
     restrictRotation: boolean;
-}
+};
 
 /**
  * Configuration for rotation angle boundary clamping.
@@ -85,7 +91,7 @@ export type RotationHandlerClampConfig = {
      * Whether to enforce rotation angle boundaries.
      */
     clampRotation: boolean;
-}
+};
 
 /**
  * Handler function type for relative "rotate by" camera operations.
@@ -128,7 +134,11 @@ export type RotationHandlerClampConfig = {
  * @see {@link createHandlerChain} for composing handler pipelines
  * @see {@link createDefaultRotateByHandler} for the default implementation
  */
-export type RotateByHandlerFunction = (delta: number, camera: BoardCamera, config: RotationHandlerConfig) => number;
+export type RotateByHandlerFunction = (
+    delta: number,
+    camera: BoardCamera,
+    config: RotationHandlerConfig
+) => number;
 
 /**
  * Handler function type for absolute "rotate to" camera operations.
@@ -173,9 +183,18 @@ export type RotateByHandlerFunction = (delta: number, camera: BoardCamera, confi
  * @see {@link createHandlerChain} for composing handler pipelines
  * @see {@link createDefaultRotateToHandler} for the default implementation
  */
-export type RotateToHandlerFunction = (targetRotation: number, camera: BoardCamera, config: RotationHandlerConfig) => number;
+export type RotateToHandlerFunction = (
+    targetRotation: number,
+    camera: BoardCamera,
+    config: RotationHandlerConfig
+) => number;
 
-export type RotateToWithAnchorPointHandlerFunction = (targetRotation: number, anchorPoint: Point, camera: BoardCamera, config: RotationHandlerConfig) => number;
+export type RotateToWithAnchorPointHandlerFunction = (
+    targetRotation: number,
+    anchorPoint: Point,
+    camera: BoardCamera,
+    config: RotationHandlerConfig
+) => number;
 
 /**
  * Handler pipeline step that clamps "rotate by" deltas to prevent angular boundary violations.
@@ -220,12 +239,19 @@ export type RotateToWithAnchorPointHandlerFunction = (targetRotation: number, an
  * @see {@link clampRotation} for boundary clamping
  * @see {@link angleSpan} for calculating angular distance
  */
-export function clampRotateByHandler(delta: number, camera: BoardCamera, config: RotationHandlerClampConfig): number {
-    if(!config.clampRotation){
+export function clampRotateByHandler(
+    delta: number,
+    camera: BoardCamera,
+    config: RotationHandlerClampConfig
+): number {
+    if (!config.clampRotation) {
         return delta;
     }
     const targetRotation = normalizeAngleZero2TwoPI(camera.rotation + delta);
-    const clampedRotation = clampRotation(targetRotation, camera.rotationBoundaries);
+    const clampedRotation = clampRotation(
+        targetRotation,
+        camera.rotationBoundaries
+    );
     const diff = angleSpan(camera.rotation, clampedRotation);
     return diff;
 }
@@ -259,8 +285,12 @@ export function clampRotateByHandler(delta: number, camera: BoardCamera, config:
  * @category Camera Rig
  * @see {@link createDefaultRotateByHandler} for default pipeline usage
  */
-export function restrictRotateByHandler(delta: number, camera: BoardCamera, config: RotationHandlerRestrictConfig): number {
-    if(config.restrictRotation){
+export function restrictRotateByHandler(
+    delta: number,
+    camera: BoardCamera,
+    config: RotationHandlerRestrictConfig
+): number {
+    if (config.restrictRotation) {
         return 0;
     }
     return delta;
@@ -303,11 +333,18 @@ export function restrictRotateByHandler(delta: number, camera: BoardCamera, conf
  * @see {@link clampRotation} for clamping implementation
  * @see {@link createDefaultRotateToHandler} for default pipeline usage
  */
-export function clampRotateToHandler(targetRotation: number, camera: BoardCamera, config: RotationHandlerClampConfig): number {
-    if(!config.clampRotation){
+export function clampRotateToHandler(
+    targetRotation: number,
+    camera: BoardCamera,
+    config: RotationHandlerClampConfig
+): number {
+    if (!config.clampRotation) {
         return targetRotation;
     }
-    const clampedRotation = clampRotation(targetRotation, camera.rotationBoundaries);
+    const clampedRotation = clampRotation(
+        targetRotation,
+        camera.rotationBoundaries
+    );
     return clampedRotation;
 }
 
@@ -342,8 +379,12 @@ export function clampRotateToHandler(targetRotation: number, camera: BoardCamera
  * @category Camera Rig
  * @see {@link createDefaultRotateToHandler} for default pipeline usage
  */
-export function restrictRotateToHandler(targetRotation: number, camera: BoardCamera, config: RotationHandlerRestrictConfig): number {
-    if(config.restrictRotation){
+export function restrictRotateToHandler(
+    targetRotation: number,
+    camera: BoardCamera,
+    config: RotationHandlerRestrictConfig
+): number {
+    if (config.restrictRotation) {
         return camera.rotation;
     }
     return targetRotation;
@@ -388,7 +429,7 @@ export function restrictRotateToHandler(targetRotation: number, camera: BoardCam
 export function createDefaultRotateByHandler(): RotateByHandlerFunction {
     return createHandlerChain<number, [BoardCamera, RotationHandlerConfig]>(
         restrictRotateByHandler,
-        clampRotateByHandler,
+        clampRotateByHandler
     );
 }
 
@@ -445,6 +486,6 @@ export function createDefaultRotateByHandler(): RotateByHandlerFunction {
 export function createDefaultRotateToHandler(): RotateToHandlerFunction {
     return createHandlerChain<number, [BoardCamera, RotationHandlerConfig]>(
         restrictRotateToHandler,
-        clampRotateToHandler,
+        clampRotateToHandler
     );
 }

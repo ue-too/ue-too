@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+
 import { useBoard } from './useBoardify';
 
 /**
@@ -99,19 +100,23 @@ export function useAnimationFrame(callback: (timestamp: number) => void) {
  * @category Hooks
  * @see {@link useAnimationFrame} for generic animation frame hook
  */
-export function useAnimationFrameWithBoard(callback?: (timestamp: number, ctx: CanvasRenderingContext2D) => void) {
-
+export function useAnimationFrameWithBoard(
+    callback?: (timestamp: number, ctx: CanvasRenderingContext2D) => void
+) {
     const board = useBoard();
 
-    const animationCallback = useCallback((timestamp: number) => {
-        board.step(timestamp);
-        const ctx = board.context;
-        if (ctx == undefined) {
-            console.warn('Canvas context not available');
-            return;
-        }
-        callback?.(timestamp, ctx);
-    }, [callback, board]);
+    const animationCallback = useCallback(
+        (timestamp: number) => {
+            board.step(timestamp);
+            const ctx = board.context;
+            if (ctx == undefined) {
+                console.warn('Canvas context not available');
+                return;
+            }
+            callback?.(timestamp, ctx);
+        },
+        [callback, board]
+    );
 
     useAnimationFrame(animationCallback);
 }

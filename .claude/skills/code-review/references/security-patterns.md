@@ -7,6 +7,7 @@ Quick reference for common security issues across languages.
 ### 1. Injection Attacks
 
 **SQL Injection**
+
 ```sql
 -- ❌ String concatenation
 query = "SELECT * FROM users WHERE id = " + user_id
@@ -17,6 +18,7 @@ execute(query, [user_id])
 ```
 
 **Command Injection**
+
 ```python
 # ❌ Shell=True with user input
 subprocess.call(f"ping {host}", shell=True)
@@ -26,6 +28,7 @@ subprocess.call(["ping", host])
 ```
 
 **LDAP Injection**
+
 ```java
 // ❌ Unescaped user input
 String filter = "(uid=" + username + ")";
@@ -37,6 +40,7 @@ String filter = "(uid=" + escapeLDAPSearchFilter(username) + ")";
 ### 2. Broken Authentication
 
 **Weak Password Storage**
+
 ```python
 # ❌ Plain text or weak hash
 password_hash = hashlib.md5(password).hexdigest()
@@ -46,21 +50,23 @@ password_hash = bcrypt.hashpw(password, bcrypt.gensalt())
 ```
 
 **Session Fixation**
+
 ```javascript
 // ❌ Reusing session after login
 app.post('/login', (req, res) => {
-  // Same session ID continues
+    // Same session ID continues
 });
 
 // ✅ Regenerate session
 app.post('/login', (req, res) => {
-  req.session.regenerate(() => {
-    req.session.userId = user.id;
-  });
+    req.session.regenerate(() => {
+        req.session.userId = user.id;
+    });
 });
 ```
 
 **Missing Rate Limiting**
+
 ```python
 # ❌ No protection against brute force
 @app.route('/login', methods=['POST'])
@@ -79,6 +85,7 @@ def login():
 ### 3. Sensitive Data Exposure
 
 **Hardcoded Secrets**
+
 ```javascript
 // ❌ Secret in code
 const apiKey = "sk_live_abc123";
@@ -88,6 +95,7 @@ const apiKey = process.env.API_KEY;
 ```
 
 **Logging Sensitive Data**
+
 ```python
 # ❌ Logs password
 logger.info(f"Login attempt: {username}, {password}")
@@ -97,6 +105,7 @@ logger.info(f"Login attempt for user: {username}")
 ```
 
 **Weak Encryption**
+
 ```python
 # ❌ Weak or ECB mode
 cipher = AES.new(key, AES.MODE_ECB)
@@ -120,23 +129,25 @@ doc = etree.parse(xml_input, parser)
 ### 5. Broken Access Control
 
 **Missing Authorization**
+
 ```javascript
 // ❌ No ownership check
 app.delete('/posts/:id', (req, res) => {
-  Post.delete(req.params.id);
+    Post.delete(req.params.id);
 });
 
 // ✅ Verify ownership
 app.delete('/posts/:id', (req, res) => {
-  const post = Post.find(req.params.id);
-  if (post.userId !== req.user.id) {
-    return res.status(403).send('Forbidden');
-  }
-  post.delete();
+    const post = Post.find(req.params.id);
+    if (post.userId !== req.user.id) {
+        return res.status(403).send('Forbidden');
+    }
+    post.delete();
 });
 ```
 
 **Insecure Direct Object Reference (IDOR)**
+
 ```python
 # ❌ Any user can access any record
 @app.route('/user/<user_id>/profile')
@@ -154,6 +165,7 @@ def profile(user_id):
 ### 6. Security Misconfiguration
 
 **Debug Mode in Production**
+
 ```python
 # ❌ Debug enabled
 app.run(debug=True)
@@ -163,6 +175,7 @@ app.run(debug=os.getenv('ENV') == 'development')
 ```
 
 **Default Credentials**
+
 ```javascript
 // ❌ Default admin password
 const adminPassword = "admin123";
@@ -173,6 +186,7 @@ requirePasswordChange(admin);
 ```
 
 **Verbose Error Messages**
+
 ```python
 # ❌ Exposes internal details
 except Exception as e:
@@ -187,6 +201,7 @@ except Exception as e:
 ### 7. Cross-Site Scripting (XSS)
 
 **Reflected XSS**
+
 ```javascript
 // ❌ Unsanitized output
 res.send(`Hello ${req.query.name}`);
@@ -196,6 +211,7 @@ res.send(`Hello ${escapeHtml(req.query.name)}`);
 ```
 
 **Stored XSS**
+
 ```javascript
 // ❌ Dangerous HTML insertion
 element.innerHTML = userComment;
@@ -208,6 +224,7 @@ element.innerHTML = DOMPurify.sanitize(userComment);
 ```
 
 **DOM-based XSS**
+
 ```javascript
 // ❌ Direct DOM manipulation
 document.write(location.hash.substring(1));
@@ -242,6 +259,7 @@ ois.setAcceptedClasses(SafeClass.class);
 ### 9. Using Components with Known Vulnerabilities
 
 **Outdated Dependencies**
+
 ```json
 // ❌ Old version with known CVEs
 {
@@ -259,6 +277,7 @@ ois.setAcceptedClasses(SafeClass.class);
 ```
 
 **Check with tools:**
+
 - npm audit
 - pip-audit
 - OWASP Dependency-Check
@@ -285,14 +304,14 @@ def delete_user(user_id):
 ```javascript
 // ❌ No CSRF token
 app.post('/transfer', (req, res) => {
-  transferMoney(req.body.to, req.body.amount);
+    transferMoney(req.body.to, req.body.amount);
 });
 
 // ✅ CSRF token validation
 app.use(csrf());
 app.post('/transfer', (req, res) => {
-  // Token automatically validated by middleware
-  transferMoney(req.body.to, req.body.amount);
+    // Token automatically validated by middleware
+    transferMoney(req.body.to, req.body.amount);
 });
 ```
 

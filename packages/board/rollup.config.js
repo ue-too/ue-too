@@ -1,17 +1,17 @@
 /**
  * @type {import('rollup').RollupOptions}
  */
-import typescript from '@rollup/plugin-typescript';
 // import nodeResolve from '@rollup/plugin-node-resolve';
 import terser from '@rollup/plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 
 export default {
-	input: 'src/index.ts',
-	output: {
-		file: 'dist/index.js',
-		format: 'esm',
-        sourcemap: true
-	},
+    input: 'src/index.ts',
+    output: {
+        file: 'dist/index.js',
+        format: 'esm',
+        sourcemap: true,
+    },
     plugins: [
         // nodeResolve({
         //     preferBuiltins: false,
@@ -21,9 +21,9 @@ export default {
             outputToFilesystem: true,
             declarationMap: false,
             paths: undefined,
-            allowImportingTsExtensions: false
+            allowImportingTsExtensions: false,
         }),
-        terser()
+        terser(),
     ],
-    external: ['@ue-too/math', '@ue-too/being']
+    external: ['@ue-too/math', '@ue-too/being'],
 };

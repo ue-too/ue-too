@@ -7,11 +7,11 @@ import { Wrapper } from './PixiCanvas';
  * @returns {JSX.Element} The root React component
  */
 const App = (): React.ReactNode => {
-  return (
-    <div className="app">
-      <Wrapper fullScreen={true} />
-    </div>
-  );
-}
+    return (
+        <div className="app">
+            <Wrapper fullScreen={true} />
+        </div>
+    );
+};
 
 export default App;

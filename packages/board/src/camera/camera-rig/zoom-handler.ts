@@ -1,6 +1,6 @@
-import { BoardCamera } from "../interface";
-import { createHandlerChain } from "../../utils/handler-pipeline";
-import { clampZoomLevel } from "../utils/zoom";
+import { createHandlerChain } from '../../utils/handler-pipeline';
+import { BoardCamera } from '../interface';
+import { clampZoomLevel } from '../utils/zoom';
 
 /**
  * Combined configuration for zoom handler behavior, merging restriction and clamping settings.
@@ -17,7 +17,8 @@ import { clampZoomLevel } from "../utils/zoom";
  * @see {@link ZoomHandlerClampConfig} for boundary clamping options
  * @see {@link ZoomHandlerRestrictConfig} for zoom disabling options
  */
-export type ZoomHandlerConfig = ZoomHandlerClampConfig & ZoomHandlerRestrictConfig;
+export type ZoomHandlerConfig = ZoomHandlerClampConfig &
+    ZoomHandlerRestrictConfig;
 
 /**
  * Configuration for zoom level boundary clamping.
@@ -114,7 +115,11 @@ export type ZoomHandlerRestrictConfig = {
  * @see {@link createHandlerChain} for composing handler pipelines
  * @see {@link createDefaultZoomToOnlyHandler} for the default implementation
  */
-export type ZoomToHandlerFunction = (destination: number, camera: BoardCamera, config: ZoomHandlerConfig) => number;
+export type ZoomToHandlerFunction = (
+    destination: number,
+    camera: BoardCamera,
+    config: ZoomHandlerConfig
+) => number;
 
 /**
  * Handler function type for relative "zoom by" camera operations.
@@ -153,7 +158,11 @@ export type ZoomToHandlerFunction = (destination: number, camera: BoardCamera, c
  * @see {@link createHandlerChain} for composing handler pipelines
  * @see {@link createDefaultZoomByOnlyHandler} for the default implementation
  */
-export type ZoomByHandlerFunction = (delta: number, camera: BoardCamera, config: ZoomHandlerConfig) => number;
+export type ZoomByHandlerFunction = (
+    delta: number,
+    camera: BoardCamera,
+    config: ZoomHandlerConfig
+) => number;
 
 /**
  * Handler pipeline step that clamps "zoom to" targets to camera zoom boundaries.
@@ -195,8 +204,12 @@ export type ZoomByHandlerFunction = (delta: number, camera: BoardCamera, config:
  * @see {@link clampZoomLevel} for clamping implementation
  * @see {@link createDefaultZoomToOnlyHandler} for default pipeline usage
  */
-export function clampZoomToHandler(destination: number, camera: BoardCamera, config: ZoomHandlerClampConfig): number {
-    if(!config.clampZoom){
+export function clampZoomToHandler(
+    destination: number,
+    camera: BoardCamera,
+    config: ZoomHandlerClampConfig
+): number {
+    if (!config.clampZoom) {
         return destination;
     }
     return clampZoomLevel(destination, camera.zoomBoundaries);
@@ -245,8 +258,12 @@ export function clampZoomToHandler(destination: number, camera: BoardCamera, con
  * @see {@link clampZoomLevel} for clamping implementation
  * @see {@link createDefaultZoomByOnlyHandler} for default pipeline usage
  */
-export function clampZoomByHandler(delta: number, camera: BoardCamera, config: ZoomHandlerClampConfig): number {
-    if(!config.clampZoom){
+export function clampZoomByHandler(
+    delta: number,
+    camera: BoardCamera,
+    config: ZoomHandlerClampConfig
+): number {
+    if (!config.clampZoom) {
         return delta;
     }
     let targetZoom = camera.zoomLevel + delta;
@@ -294,8 +311,12 @@ export function clampZoomByHandler(delta: number, camera: BoardCamera, config: Z
  * @category Camera Rig
  * @see {@link createDefaultZoomToOnlyHandler} for default pipeline usage
  */
-export function restrictZoomToHandler(destination: number, camera: BoardCamera, config: ZoomHandlerRestrictConfig): number {
-    if(config.restrictZoom){
+export function restrictZoomToHandler(
+    destination: number,
+    camera: BoardCamera,
+    config: ZoomHandlerRestrictConfig
+): number {
+    if (config.restrictZoom) {
         return camera.zoomLevel;
     }
     return destination;
@@ -338,8 +359,12 @@ export function restrictZoomToHandler(destination: number, camera: BoardCamera, 
  * @category Camera Rig
  * @see {@link createDefaultZoomByOnlyHandler} for default pipeline usage
  */
-export function restrictZoomByHandler(delta: number, camera: BoardCamera, config: ZoomHandlerRestrictConfig): number {
-    if(config.restrictZoom){
+export function restrictZoomByHandler(
+    delta: number,
+    camera: BoardCamera,
+    config: ZoomHandlerRestrictConfig
+): number {
+    if (config.restrictZoom) {
         return 0;
     }
     return delta;
@@ -397,7 +422,7 @@ export function restrictZoomByHandler(delta: number, camera: BoardCamera, config
 export function createDefaultZoomToOnlyHandler(): ZoomToHandlerFunction {
     return createHandlerChain<number, [BoardCamera, ZoomHandlerConfig]>(
         clampZoomToHandler,
-        restrictZoomToHandler,
+        restrictZoomToHandler
     );
 }
 
@@ -455,6 +480,6 @@ export function createDefaultZoomToOnlyHandler(): ZoomToHandlerFunction {
 export function createDefaultZoomByOnlyHandler(): ZoomByHandlerFunction {
     return createHandlerChain<number, [BoardCamera, ZoomHandlerConfig]>(
         clampZoomByHandler,
-        restrictZoomByHandler,
+        restrictZoomByHandler
     );
 }

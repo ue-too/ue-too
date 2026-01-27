@@ -1,11 +1,11 @@
-import { Point } from "@ue-too/math";
+import { Point } from '@ue-too/math';
 
 /**
  * Object that can be indexed spatially via AABB.
  * @category Types
  */
 export interface SpatialIndexObject {
-    AABB: { min: Point, max: Point };
+    AABB: { min: Point; max: Point };
 }
 
 /**
@@ -63,7 +63,7 @@ class TreeNode<T extends SpatialIndexObject> {
             const obj = this.object.AABB;
             this.aabb = {
                 min: { x: obj.min.x - margin, y: obj.min.y - margin },
-                max: { x: obj.max.x + margin, y: obj.max.y + margin }
+                max: { x: obj.max.x + margin, y: obj.max.y + margin },
             };
         } else if (this.children[0] && this.children[1]) {
             // Union of children AABBs
@@ -72,19 +72,21 @@ class TreeNode<T extends SpatialIndexObject> {
             this.aabb = {
                 min: {
                     x: Math.min(aabb1.min.x, aabb2.min.x),
-                    y: Math.min(aabb1.min.y, aabb2.min.y)
+                    y: Math.min(aabb1.min.y, aabb2.min.y),
                 },
                 max: {
                     x: Math.max(aabb1.max.x, aabb2.max.x),
-                    y: Math.max(aabb1.max.y, aabb2.max.y)
-                }
+                    y: Math.max(aabb1.max.y, aabb2.max.y),
+                },
             };
         }
     }
 
     getSibling(): TreeNode<T> | null {
         if (!this.parent) return null;
-        return this.parent.children[0] === this ? this.parent.children[1] : this.parent.children[0];
+        return this.parent.children[0] === this
+            ? this.parent.children[1]
+            : this.parent.children[0];
     }
 
     getBalance(): number {
@@ -107,9 +109,14 @@ interface Endpoint<T> {
  * Sweep and Prune (SAP) spatial indexing algorithm.
  * @category Spatial Indexing
  */
-export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex<T> {
+export class SweepAndPrune<
+    T extends SpatialIndexObject,
+> implements SpatialIndex<T> {
     private xEndpoints: Endpoint<T>[] = [];
-    private objects: Map<T, { minEndpoint: Endpoint<T>, maxEndpoint: Endpoint<T> }> = new Map();
+    private objects: Map<
+        T,
+        { minEndpoint: Endpoint<T>; maxEndpoint: Endpoint<T> }
+    > = new Map();
     private nextId: number = 0;
 
     clear(): void {
@@ -120,10 +127,20 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
 
     insert(object: T): void {
         const id = this.nextId++;
-        
-        const minEndpoint: Endpoint<T> = { value: object.AABB.min.x, isMin: true, object, id };
-        const maxEndpoint: Endpoint<T> = { value: object.AABB.max.x, isMin: false, object, id };
-        
+
+        const minEndpoint: Endpoint<T> = {
+            value: object.AABB.min.x,
+            isMin: true,
+            object,
+            id,
+        };
+        const maxEndpoint: Endpoint<T> = {
+            value: object.AABB.max.x,
+            isMin: false,
+            object,
+            id,
+        };
+
         this.objects.set(object, { minEndpoint, maxEndpoint });
 
         // Use binary search + splice for O(n) insertion instead of O(n log n) sort
@@ -169,13 +186,19 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
         // Find all objects that overlap on x-axis using sweep line
         for (const endpoint of this.xEndpoints) {
             if (endpoint.value > queryMax) break;
-            
+
             if (endpoint.isMin && endpoint.object !== queryObject) {
                 // Object starts - check if it overlaps with query on x-axis
-                const objMax = this.objects.get(endpoint.object)?.maxEndpoint.value;
+                const objMax = this.objects.get(endpoint.object)?.maxEndpoint
+                    .value;
                 if (objMax !== undefined && objMax >= queryMin) {
                     // Check y-axis overlap
-                    if (this.aabbIntersects(endpoint.object.AABB, queryObject.AABB)) {
+                    if (
+                        this.aabbIntersects(
+                            endpoint.object.AABB,
+                            queryObject.AABB
+                        )
+                    ) {
                         result.push(endpoint.object);
                     }
                 }
@@ -186,16 +209,21 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
     }
 
     // Efficient method to find all collision pairs - the main strength of sweep-and-prune
-    findAllOverlaps(): Array<{a: T, b: T}> {
-        const pairs: Array<{a: T, b: T}> = [];
+    findAllOverlaps(): Array<{ a: T; b: T }> {
+        const pairs: Array<{ a: T; b: T }> = [];
         const activeObjects = new Set<T>();
-        
+
         for (const endpoint of this.xEndpoints) {
             if (endpoint.isMin) {
                 // Check against all currently active objects
                 for (const activeObj of activeObjects) {
-                    if (this.aabbIntersects(endpoint.object.AABB, activeObj.AABB)) {
-                        pairs.push({a: endpoint.object, b: activeObj});
+                    if (
+                        this.aabbIntersects(
+                            endpoint.object.AABB,
+                            activeObj.AABB
+                        )
+                    ) {
+                        pairs.push({ a: endpoint.object, b: activeObj });
                     }
                 }
                 activeObjects.add(endpoint.object);
@@ -210,19 +238,23 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
         // Binary search for insertion position
         let left = 0;
         let right = this.xEndpoints.length;
-        
+
         while (left < right) {
             const mid = Math.floor((left + right) / 2);
             const midEndpoint = this.xEndpoints[mid];
-            
-            if (midEndpoint.value < endpoint.value || 
-                (midEndpoint.value === endpoint.value && midEndpoint.isMin && !endpoint.isMin)) {
+
+            if (
+                midEndpoint.value < endpoint.value ||
+                (midEndpoint.value === endpoint.value &&
+                    midEndpoint.isMin &&
+                    !endpoint.isMin)
+            ) {
                 left = mid + 1;
             } else {
                 right = mid;
             }
         }
-        
+
         this.xEndpoints.splice(left, 0, endpoint);
     }
 
@@ -233,11 +265,16 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
         }
     }
 
-    private aabbIntersects(aabb1: { min: Point, max: Point }, aabb2: { min: Point, max: Point }): boolean {
-        return !(aabb1.max.x < aabb2.min.x || 
-                 aabb1.min.x > aabb2.max.x || 
-                 aabb1.max.y < aabb2.min.y || 
-                 aabb1.min.y > aabb2.max.y);
+    private aabbIntersects(
+        aabb1: { min: Point; max: Point },
+        aabb2: { min: Point; max: Point }
+    ): boolean {
+        return !(
+            aabb1.max.x < aabb2.min.x ||
+            aabb1.min.x > aabb2.max.x ||
+            aabb1.max.y < aabb2.min.y ||
+            aabb1.min.y > aabb2.max.y
+        );
     }
 
     // Enhanced visualization showing active sweep line and overlaps
@@ -245,27 +282,31 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
         context.strokeStyle = 'orange';
         context.lineWidth = 1;
         context.globalAlpha = 0.3;
-        
+
         // Draw vertical lines at object boundaries
         for (const endpoint of this.xEndpoints) {
             context.beginPath();
             context.moveTo(endpoint.value, -1000);
             context.lineTo(endpoint.value, 1000);
             context.stroke();
-            
+
             // Label min/max endpoints
             context.fillStyle = endpoint.isMin ? 'green' : 'red';
-            context.fillText(endpoint.isMin ? 'min' : 'max', endpoint.value, -950);
+            context.fillText(
+                endpoint.isMin ? 'min' : 'max',
+                endpoint.value,
+                -950
+            );
         }
-        
+
         context.globalAlpha = 1.0;
     }
 
     // Get statistics for performance monitoring
-    getStats(): { endpointCount: number, objectCount: number } {
+    getStats(): { endpointCount: number; objectCount: number } {
         return {
             endpointCount: this.xEndpoints.length,
-            objectCount: this.objects.size
+            objectCount: this.objects.size,
         };
     }
 }
@@ -274,7 +315,9 @@ export class SweepAndPrune<T extends SpatialIndexObject> implements SpatialIndex
  * Dynamic AABB tree for efficient spatial queries.
  * @category Spatial Indexing
  */
-export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T> {
+export class DynamicTree<
+    T extends SpatialIndexObject,
+> implements SpatialIndex<T> {
     private root: TreeNode<T> | null = null;
     private nodeCount: number = 0;
     private margin: number = 0.1; // Fat AABB margin
@@ -299,7 +342,7 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
 
         // Find the best sibling for the new node
         let sibling = this.findBestSibling(node);
-        
+
         // Create new parent
         const oldParent = sibling.parent;
         const newParent = new TreeNode<T>();
@@ -322,10 +365,12 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
         let ancestor = newParent.parent;
         while (ancestor) {
             ancestor.updateAABB(this.margin);
-            ancestor.height = 1 + Math.max(
-                ancestor.children[0] ? ancestor.children[0].height : 0,
-                ancestor.children[1] ? ancestor.children[1].height : 0
-            );
+            ancestor.height =
+                1 +
+                Math.max(
+                    ancestor.children[0] ? ancestor.children[0].height : 0,
+                    ancestor.children[1] ? ancestor.children[1].height : 0
+                );
 
             // Balance the tree
             ancestor = this.balance(ancestor);
@@ -358,7 +403,7 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             } else {
                 const oldArea = this.getArea(child1.aabb);
                 const newArea = this.getArea(aabb1);
-                cost1 = (newArea - oldArea) + inheritanceCost;
+                cost1 = newArea - oldArea + inheritanceCost;
             }
 
             // Cost of descending into child2
@@ -369,7 +414,7 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             } else {
                 const oldArea = this.getArea(child2.aabb);
                 const newArea = this.getArea(aabb2);
-                cost2 = (newArea - oldArea) + inheritanceCost;
+                cost2 = newArea - oldArea + inheritanceCost;
             }
 
             // Descend according to the minimum cost
@@ -429,7 +474,9 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             child2Child2.parent = node;
             node.updateAABB(this.margin);
             child2.updateAABB(this.margin);
-            node.height = 1 + Math.max(node.children[0]!.height, node.children[1]!.height);
+            node.height =
+                1 +
+                Math.max(node.children[0]!.height, node.children[1]!.height);
             child2.height = 1 + Math.max(node.height, child2Child1.height);
         } else {
             child2.children[1] = child2Child2;
@@ -437,7 +484,9 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             child2Child1.parent = node;
             node.updateAABB(this.margin);
             child2.updateAABB(this.margin);
-            node.height = 1 + Math.max(node.children[0]!.height, node.children[1]!.height);
+            node.height =
+                1 +
+                Math.max(node.children[0]!.height, node.children[1]!.height);
             child2.height = 1 + Math.max(node.height, child2Child2.height);
         }
 
@@ -472,7 +521,9 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             child1Child2.parent = node;
             node.updateAABB(this.margin);
             child1.updateAABB(this.margin);
-            node.height = 1 + Math.max(node.children[0]!.height, node.children[1]!.height);
+            node.height =
+                1 +
+                Math.max(node.children[0]!.height, node.children[1]!.height);
             child1.height = 1 + Math.max(child1Child1.height, node.height);
         } else {
             child1.children[0] = child1Child2;
@@ -480,7 +531,9 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
             child1Child1.parent = node;
             node.updateAABB(this.margin);
             child1.updateAABB(this.margin);
-            node.height = 1 + Math.max(node.children[0]!.height, node.children[1]!.height);
+            node.height =
+                1 +
+                Math.max(node.children[0]!.height, node.children[1]!.height);
             child1.height = 1 + Math.max(child1Child2.height, node.height);
         }
 
@@ -516,9 +569,13 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
         this.drawNode(context, this.root, 0);
     }
 
-    private drawNode(context: CanvasRenderingContext2D, node: TreeNode<T>, depth: number): void {
+    private drawNode(
+        context: CanvasRenderingContext2D,
+        node: TreeNode<T>,
+        depth: number
+    ): void {
         const { min, max } = node.aabb;
-        
+
         // Different colors for different depths
         const colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown'];
         context.strokeStyle = colors[depth % colors.length];
@@ -529,8 +586,10 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
         context.stroke();
 
         if (!node.isLeaf()) {
-            if (node.children[0]) this.drawNode(context, node.children[0], depth + 1);
-            if (node.children[1]) this.drawNode(context, node.children[1], depth + 1);
+            if (node.children[0])
+                this.drawNode(context, node.children[0], depth + 1);
+            if (node.children[1])
+                this.drawNode(context, node.children[1], depth + 1);
         }
     }
 
@@ -542,27 +601,29 @@ export class DynamicTree<T extends SpatialIndexObject> implements SpatialIndex<T
         return {
             min: {
                 x: Math.min(aabb1.min.x, aabb2.min.x),
-                y: Math.min(aabb1.min.y, aabb2.min.y)
+                y: Math.min(aabb1.min.y, aabb2.min.y),
             },
             max: {
                 x: Math.max(aabb1.max.x, aabb2.max.x),
-                y: Math.max(aabb1.max.y, aabb2.max.y)
-            }
+                y: Math.max(aabb1.max.y, aabb2.max.y),
+            },
         };
     }
 
     private aabbIntersects(aabb1: AABB, aabb2: AABB): boolean {
-        return !(aabb1.max.x < aabb2.min.x || 
-                 aabb1.min.x > aabb2.max.x || 
-                 aabb1.max.y < aabb2.min.y || 
-                 aabb1.min.y > aabb2.max.y);
+        return !(
+            aabb1.max.x < aabb2.min.x ||
+            aabb1.min.x > aabb2.max.x ||
+            aabb1.max.y < aabb2.min.y ||
+            aabb1.min.y > aabb2.max.y
+        );
     }
 
     // Getter for tree statistics
-    getStats(): { nodeCount: number, height: number } {
+    getStats(): { nodeCount: number; height: number } {
         return {
             nodeCount: this.nodeCount,
-            height: this.root ? this.root.height : 0
+            height: this.root ? this.root.height : 0,
         };
     }
 }

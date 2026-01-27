@@ -142,11 +142,11 @@ export type SystemName = symbol;
  * Supported field types for runtime-defined component schemas.
  * @category Types
  */
-export type ComponentFieldType = 
-    | 'string' 
-    | 'number' 
-    | 'boolean' 
-    | 'object' 
+export type ComponentFieldType =
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'object'
     | 'array'
     | 'entity';
 
@@ -155,7 +155,7 @@ export type ComponentFieldType =
  * Supports both built-in types and custom component types.
  * @category Types
  */
-export type ArrayElementType = 
+export type ArrayElementType =
     | { kind: 'builtin'; type: Exclude<ComponentFieldType, 'array'> }
     | { kind: 'custom'; typeName: ComponentName };
 
@@ -188,7 +188,7 @@ export interface ComponentPrimitiveField extends BaseComponentField {
 export interface ComponentArrayField extends BaseComponentField {
     /** Discriminator for the union type */
     type: 'array';
-    /** 
+    /**
      * The element type for array fields (required).
      * Specifies what type each element in the array should be.
      * Can be a built-in type or a custom component type name.
@@ -201,7 +201,9 @@ export interface ComponentArrayField extends BaseComponentField {
  * Use type guards to distinguish between primitive and array fields.
  * @category Types
  */
-export type ComponentFieldDefinition = ComponentPrimitiveField | ComponentArrayField;
+export type ComponentFieldDefinition =
+    | ComponentPrimitiveField
+    | ComponentArrayField;
 
 /**
  * Schema definition for a component type that can be defined at runtime.
@@ -217,16 +219,16 @@ export interface ComponentSchema {
 /**
  * Helper function to create a component name from a string.
  * This creates a unique symbol for the component name.
- * 
+ *
  * @param name - The string name for the component
  * @returns A unique symbol for the component name
- * 
+ *
  * @example
  * ```typescript
  * const Position = createComponentName('Position');
  * coordinator.registerComponent<Position>(Position);
  * ```
- * 
+ *
  * @category Utilities
  */
 export function createComponentName(name: string): ComponentName {
@@ -236,10 +238,10 @@ export function createComponentName(name: string): ComponentName {
 /**
  * Helper function to get the string description from a component name symbol.
  * Useful for debugging and serialization.
- * 
+ *
  * @param componentName - The component name symbol
  * @returns The string description of the symbol
- * 
+ *
  * @category Utilities
  */
 export function getComponentNameString(componentName: ComponentName): string {
@@ -250,17 +252,17 @@ export function getComponentNameString(componentName: ComponentName): string {
  * Helper function to create a component name using Symbol.for().
  * This creates a global symbol that can be looked up by string key,
  * which is useful for serialization and cross-module access.
- * 
+ *
  * @param key - The string key for the global symbol
  * @returns A global symbol for the component name
- * 
+ *
  * @example
  * ```typescript
  * const Position = createGlobalComponentName('Position');
  * coordinator.registerComponent<Position>(Position);
  * // Can be retrieved later with Symbol.for('Position')
  * ```
- * 
+ *
  * @category Utilities
  */
 export function createGlobalComponentName(key: string): ComponentName {
@@ -270,16 +272,16 @@ export function createGlobalComponentName(key: string): ComponentName {
 /**
  * Helper function to create a system name from a string.
  * This creates a unique symbol for the system name.
- * 
+ *
  * @param name - The string name for the system
  * @returns A unique symbol for the system name
- * 
+ *
  * @example
  * ```typescript
  * const Movement = createSystemName('Movement');
  * coordinator.registerSystem(Movement, movementSystem);
  * ```
- * 
+ *
  * @category Utilities
  */
 export function createSystemName(name: string): SystemName {
@@ -289,10 +291,10 @@ export function createSystemName(name: string): SystemName {
 /**
  * Helper function to get the string description from a system name symbol.
  * Useful for debugging and serialization.
- * 
+ *
  * @param systemName - The system name symbol
  * @returns The string description of the symbol
- * 
+ *
  * @category Utilities
  */
 export function getSystemNameString(systemName: SystemName): string {
@@ -303,17 +305,17 @@ export function getSystemNameString(systemName: SystemName): string {
  * Helper function to create a system name using Symbol.for().
  * This creates a global symbol that can be looked up by string key,
  * which is useful for serialization and cross-module access.
- * 
+ *
  * @param key - The string key for the global symbol
  * @returns A global symbol for the system name
- * 
+ *
  * @example
  * ```typescript
  * const Movement = createGlobalSystemName('Movement');
  * coordinator.registerSystem(Movement, movementSystem);
  * // Can be retrieved later with Symbol.for('Movement')
  * ```
- * 
+ *
  * @category Utilities
  */
 export function createGlobalSystemName(key: string): SystemName {
@@ -324,7 +326,7 @@ export function createGlobalSystemName(key: string): SystemName {
  * Serialized representation of an array element type for JSON storage.
  * @category Types
  */
-type SerializedArrayElementType = 
+type SerializedArrayElementType =
     | { kind: 'builtin'; type: Exclude<ComponentFieldType, 'array'> }
     | { kind: 'custom'; typeName: string };
 
@@ -332,9 +334,13 @@ type SerializedArrayElementType =
  * Serialized representation of a component field for JSON storage.
  * @category Types
  */
-type SerializedComponentField = 
-    | (Omit<ComponentPrimitiveField, 'type'> & { type: Exclude<ComponentFieldType, 'array'> })
-    | (Omit<ComponentArrayField, 'arrayElementType'> & { arrayElementType: SerializedArrayElementType });
+type SerializedComponentField =
+    | (Omit<ComponentPrimitiveField, 'type'> & {
+          type: Exclude<ComponentFieldType, 'array'>;
+      })
+    | (Omit<ComponentArrayField, 'arrayElementType'> & {
+          arrayElementType: SerializedArrayElementType;
+      });
 
 /**
  * Serialized representation of a component schema for JSON storage.
@@ -371,56 +377,66 @@ export interface SerializedECSState {
 /**
  * Serialize a component schema to a JSON-compatible format.
  * Note: Only works with global symbols (created via Symbol.for).
- * 
+ *
  * @param schema - The component schema to serialize
  * @returns A serializable representation of the schema
  * @throws Error if component name is not a global symbol
- * 
+ *
  * @category Utilities
  */
-export function serializeComponentSchema(schema: ComponentSchema): SerializedComponentSchema {
+export function serializeComponentSchema(
+    schema: ComponentSchema
+): SerializedComponentSchema {
     const key = Symbol.keyFor(schema.componentName);
     if (key === undefined) {
-        throw new Error(`Cannot serialize schema: component name is not a global symbol. Use createGlobalComponentName() or Symbol.for() to create component names.`);
+        throw new Error(
+            `Cannot serialize schema: component name is not a global symbol. Use createGlobalComponentName() or Symbol.for() to create component names.`
+        );
     }
-    
+
     return {
         componentName: key,
         fields: schema.fields.map(field => {
             if (field.type === 'array') {
                 if (field.arrayElementType.kind === 'custom') {
-                    const customKey = Symbol.keyFor(field.arrayElementType.typeName);
+                    const customKey = Symbol.keyFor(
+                        field.arrayElementType.typeName
+                    );
                     if (customKey === undefined) {
-                        throw new Error(`Cannot serialize schema: custom array element type is not a global symbol.`);
+                        throw new Error(
+                            `Cannot serialize schema: custom array element type is not a global symbol.`
+                        );
                     }
                     return {
                         ...field,
                         arrayElementType: {
                             kind: 'custom' as const,
-                            typeName: customKey
-                        }
+                            typeName: customKey,
+                        },
                     } as SerializedComponentField;
                 } else {
                     return {
                         ...field,
-                        arrayElementType: field.arrayElementType
+                        arrayElementType: field.arrayElementType,
                     } as SerializedComponentField;
                 }
             }
             return field as SerializedComponentField;
-        })
+        }),
     };
 }
 
 /**
  * Deserialize a component schema from a JSON-compatible format.
- * 
+ *
  * @param serialized - The serialized schema
  * @returns The component schema with symbols restored
- * 
+ *
  * @category Utilities
  */
-export function deserializeComponentSchema(serialized: SerializedComponentSchema): ComponentSchema {
+export function deserializeComponentSchema(
+    serialized: SerializedComponentSchema
+): ComponentSchema {
     return {
         componentName: Symbol.for(serialized.componentName),
         fields: serialized.fields.map(field => {
@@ -430,18 +446,20 @@ export function deserializeComponentSchema(serialized: SerializedComponentSchema
                         ...field,
                         arrayElementType: {
                             kind: 'custom' as const,
-                            typeName: Symbol.for(field.arrayElementType.typeName)
-                        }
+                            typeName: Symbol.for(
+                                field.arrayElementType.typeName
+                            ),
+                        },
                     } as ComponentArrayField;
                 } else {
                     return {
                         ...field,
-                        arrayElementType: field.arrayElementType
+                        arrayElementType: field.arrayElementType,
                     } as ComponentArrayField;
                 }
             }
             return field as ComponentPrimitiveField;
-        })
+        }),
     };
 }
 
@@ -460,7 +478,6 @@ export function deserializeComponentSchema(serialized: SerializedComponentSchema
  * @category Managers
  */
 export class EntityManager {
-
     private _availableEntities: Entity[] = [];
     private _signatures: ComponentSignature[] = [];
     private _maxEntities: number;
@@ -476,11 +493,11 @@ export class EntityManager {
     }
 
     createEntity(): Entity {
-        if(this._livingEntityCount >= this._maxEntities) {
+        if (this._livingEntityCount >= this._maxEntities) {
             throw new Error('Max entities reached');
         }
         const entity = this._availableEntities.shift();
-        if(entity === undefined) {
+        if (entity === undefined) {
             throw new Error('No available entities');
         }
         this._signatures[entity] = 0;
@@ -489,7 +506,7 @@ export class EntityManager {
     }
 
     destroyEntity(entity: Entity): void {
-        if(entity >= this._maxEntities || entity < 0) {
+        if (entity >= this._maxEntities || entity < 0) {
             throw new Error('Invalid entity out of range');
         }
         this._signatures[entity] = 0;
@@ -498,14 +515,14 @@ export class EntityManager {
     }
 
     setSignature(entity: Entity, signature: ComponentSignature): void {
-        if(entity >= this._maxEntities || entity < 0) {
+        if (entity >= this._maxEntities || entity < 0) {
             throw new Error('Invalid entity out of range');
         }
         this._signatures[entity] = signature;
     }
 
     getSignature(entity: Entity): ComponentSignature | null {
-        if(entity >= this._maxEntities || entity < 0) {
+        if (entity >= this._maxEntities || entity < 0) {
             return null;
         }
         return this._signatures[entity];
@@ -518,13 +535,13 @@ export class EntityManager {
     getAllLivingEntities(): Entity[] {
         const livingEntities: Entity[] = [];
         const availableSet = new Set(this._availableEntities);
-        
+
         for (let i = 0; i < this._maxEntities; i++) {
             if (!availableSet.has(i)) {
                 livingEntities.push(i);
             }
         }
-        
+
         return livingEntities;
     }
 
@@ -543,14 +560,14 @@ export class EntityManager {
 }
 
 type Tuple<T, N extends number> = N extends N
-  ? number extends N
-    ? T[]
-    : _TupleOf<T, N, []>
-  : never;
+    ? number extends N
+        ? T[]
+        : _TupleOf<T, N, []>
+    : never;
 
 type _TupleOf<T, N extends number, R extends unknown[]> = R['length'] extends N
-  ? R
-  : _TupleOf<T, N, [...R, T]>;
+    ? R
+    : _TupleOf<T, N, [...R, T]>;
 
 // Usage
 
@@ -582,7 +599,6 @@ export interface CArray {
  * @category Data Structures
  */
 export class ComponentArray<T> implements CArray {
-
     private denseArray: T[]; // packed array of data
     private sparse: (Entity | null)[]; // maps entity to index in dense array
     private reverse: (Entity | null)[]; // maps index in dense array to entity
@@ -596,12 +612,15 @@ export class ComponentArray<T> implements CArray {
     }
 
     insertData(entity: Entity, data: T): void {
-        if(this.getData(entity) !== null) {
+        if (this.getData(entity) !== null) {
             this.removeData(entity);
         }
-        if(this.sparse.length < entity){
+        if (this.sparse.length < entity) {
             // resize the array for the new entity but normally this should not happen
-            this.sparse = [...this.sparse, ...new Array(entity - this.sparse.length).fill(null)];
+            this.sparse = [
+                ...this.sparse,
+                ...new Array(entity - this.sparse.length).fill(null),
+            ];
         }
 
         this.denseArray[this._count] = data;
@@ -611,16 +630,20 @@ export class ComponentArray<T> implements CArray {
     }
 
     getData(entity: Entity): T | null {
-        if(this.sparse.length <= entity){
+        if (this.sparse.length <= entity) {
             return null;
         }
 
         const denseIndex = this.sparse[entity];
-        if(denseIndex === undefined || denseIndex === null || denseIndex >= this._count){
+        if (
+            denseIndex === undefined ||
+            denseIndex === null ||
+            denseIndex >= this._count
+        ) {
             return null;
         }
 
-        if(this.reverse[denseIndex] !== entity) {
+        if (this.reverse[denseIndex] !== entity) {
             return null;
         }
 
@@ -629,13 +652,17 @@ export class ComponentArray<T> implements CArray {
 
     removeData(entity: Entity): void {
         const denseIndex = this.sparse[entity];
-        if(denseIndex === undefined || denseIndex === null || denseIndex >= this._count){
+        if (
+            denseIndex === undefined ||
+            denseIndex === null ||
+            denseIndex >= this._count
+        ) {
             return;
         }
 
         const lastEntity = this.reverse[this._count - 1];
 
-        if(lastEntity === null) {
+        if (lastEntity === null) {
             return;
         }
 
@@ -691,8 +718,10 @@ export class ComponentArray<T> implements CArray {
  * @category Managers
  */
 export class ComponentManager {
-
-    private _componentNameToTypeMap: Map<ComponentName, {componentType: ComponentType, componentArray: CArray}> = new Map();
+    private _componentNameToTypeMap: Map<
+        ComponentName,
+        { componentType: ComponentType; componentArray: CArray }
+    > = new Map();
     private _nextAvailableComponentType: ComponentType = 0;
     private _schemas: Map<ComponentName, ComponentSchema> = new Map();
 
@@ -710,7 +739,9 @@ export class ComponentManager {
         if (component === undefined) {
             return [];
         }
-        return (component.componentArray as ComponentArray<unknown>).getAllEntities();
+        return (
+            component.componentArray as ComponentArray<unknown>
+        ).getAllEntities();
     }
 
     /**
@@ -729,55 +760,72 @@ export class ComponentManager {
     getAllComponentSchemas(): ComponentSchema[] {
         return Array.from(this._schemas.values());
     }
-    
-    registerComponent<T>(componentName: ComponentName){
+
+    registerComponent<T>(componentName: ComponentName) {
         // Idempotent: if component is already registered, do nothing
-        if(this._componentNameToTypeMap.has(componentName)) {
+        if (this._componentNameToTypeMap.has(componentName)) {
             return;
         }
         const componentType = this._nextAvailableComponentType;
-        this._componentNameToTypeMap.set(componentName, {componentType, componentArray: new ComponentArray<T>(MAX_ENTITIES)});
+        this._componentNameToTypeMap.set(componentName, {
+            componentType,
+            componentArray: new ComponentArray<T>(MAX_ENTITIES),
+        });
         this._nextAvailableComponentType++;
     }
 
     getComponentType(componentName: ComponentName): ComponentType | null {
-        return this._componentNameToTypeMap.get(componentName)?.componentType ?? null;
+        return (
+            this._componentNameToTypeMap.get(componentName)?.componentType ??
+            null
+        );
     }
 
-    addComponentToEntity<T>(componentName: ComponentName, entity: Entity, component: T){
+    addComponentToEntity<T>(
+        componentName: ComponentName,
+        entity: Entity,
+        component: T
+    ) {
         const componentArray = this._getComponentArray<T>(componentName);
-        if(componentArray === null) {
+        if (componentArray === null) {
             return;
         }
         componentArray.insertData(entity, component);
     }
 
-    removeComponentFromEntity<T>(componentName: ComponentName, entity: Entity){
+    removeComponentFromEntity<T>(componentName: ComponentName, entity: Entity) {
         const componentArray = this._getComponentArray<T>(componentName);
-        if(componentArray === null) {
+        if (componentArray === null) {
             return;
         }
         componentArray.removeData(entity);
     }
 
-    getComponentFromEntity<T>(componentName: ComponentName, entity: Entity): T | null {
+    getComponentFromEntity<T>(
+        componentName: ComponentName,
+        entity: Entity
+    ): T | null {
         const componentArray = this._getComponentArray<T>(componentName);
-        if(componentArray === null) {
+        if (componentArray === null) {
             return null;
         }
         return componentArray.getData(entity);
     }
 
-    entityDestroyed(entity: Entity){
-        for(const component of this._componentNameToTypeMap.values()){
+    entityDestroyed(entity: Entity) {
+        for (const component of this._componentNameToTypeMap.values()) {
             component.componentArray.entityDestroyed(entity);
         }
     }
 
-    private _getComponentArray<T>(componentName: ComponentName): ComponentArray<T> | null {
+    private _getComponentArray<T>(
+        componentName: ComponentName
+    ): ComponentArray<T> | null {
         const component = this._componentNameToTypeMap.get(componentName);
-        if(component === undefined) {
-            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
+        if (component === undefined) {
+            console.warn(
+                `Component ${getComponentNameString(componentName)} not registered`
+            );
             return null;
         }
         return component.componentArray as ComponentArray<T>;
@@ -790,7 +838,7 @@ export class ComponentManager {
     /**
      * Register a component with a runtime-defined schema.
      * This allows components to be defined dynamically (e.g., through a GUI).
-     * 
+     *
      * @param schema - The component schema definition
      * @throws Error if schema validation fails
      */
@@ -807,7 +855,9 @@ export class ComponentManager {
         const fieldNames = new Set<string>();
         for (const field of schema.fields) {
             if (fieldNames.has(field.name)) {
-                throw new Error(`Duplicate field name "${field.name}" in schema for component "${getComponentNameString(schema.componentName)}"`);
+                throw new Error(
+                    `Duplicate field name "${field.name}" in schema for component "${getComponentNameString(schema.componentName)}"`
+                );
             }
             fieldNames.add(field.name);
 
@@ -822,37 +872,43 @@ export class ComponentManager {
         if (this._schemas.has(schema.componentName)) {
             return;
         }
-        
+
         // Register the component type (if not already registered)
         if (!this._componentNameToTypeMap.has(schema.componentName)) {
             const componentType = this._nextAvailableComponentType;
             this._componentNameToTypeMap.set(schema.componentName, {
                 componentType,
-                componentArray: new ComponentArray<Record<string, unknown>>(MAX_ENTITIES)
+                componentArray: new ComponentArray<Record<string, unknown>>(
+                    MAX_ENTITIES
+                ),
             });
             this._nextAvailableComponentType++;
         }
         // Store the schema
         this._schemas.set(schema.componentName, schema);
-
     }
 
     /**
      * Create a component instance from a schema with default values.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param overrides - Optional values to override defaults
      * @returns A component instance with all fields initialized
      * @throws Error if component is not registered with a schema
      */
-    createComponentFromSchema(componentName: ComponentName, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    createComponentFromSchema(
+        componentName: ComponentName,
+        overrides: Record<string, unknown> = {}
+    ): Record<string, unknown> {
         const schema = this._schemas.get(componentName);
         if (!schema) {
-            throw new Error(`Component "${getComponentNameString(componentName)}" is not registered with a schema`);
+            throw new Error(
+                `Component "${getComponentNameString(componentName)}" is not registered with a schema`
+            );
         }
 
         const component: Record<string, unknown> = {};
-        
+
         for (const field of schema.fields) {
             if (overrides.hasOwnProperty(field.name)) {
                 component[field.name] = overrides[field.name];
@@ -861,9 +917,14 @@ export class ComponentManager {
             } else if (!field.optional) {
                 // Required field with no default - use type-appropriate default
                 if (field.type === 'array') {
-                    component[field.name] = this._getDefaultValueForType(field.type, field.arrayElementType);
+                    component[field.name] = this._getDefaultValueForType(
+                        field.type,
+                        field.arrayElementType
+                    );
                 } else {
-                    component[field.name] = this._getDefaultValueForType(field.type);
+                    component[field.name] = this._getDefaultValueForType(
+                        field.type
+                    );
                 }
             }
             // Optional fields without defaults are omitted
@@ -874,12 +935,15 @@ export class ComponentManager {
 
     /**
      * Validate component data against its schema.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param data - The component data to validate
      * @returns true if valid, false otherwise
      */
-    validateComponentData(componentName: ComponentName, data: unknown): boolean {
+    validateComponentData(
+        componentName: ComponentName,
+        data: unknown
+    ): boolean {
         const schema = this._schemas.get(componentName);
         if (!schema) {
             // No schema means no validation required
@@ -901,11 +965,22 @@ export class ComponentManager {
             // If field is present, validate its type
             if (dataObj.hasOwnProperty(field.name)) {
                 if (field.type === 'array') {
-                    if (!this._validateFieldType(field.type, dataObj[field.name], field.arrayElementType)) {
+                    if (
+                        !this._validateFieldType(
+                            field.type,
+                            dataObj[field.name],
+                            field.arrayElementType
+                        )
+                    ) {
                         return false;
                     }
                 } else {
-                    if (!this._validateFieldType(field.type, dataObj[field.name])) {
+                    if (
+                        !this._validateFieldType(
+                            field.type,
+                            dataObj[field.name]
+                        )
+                    ) {
                         return false;
                     }
                 }
@@ -921,7 +996,10 @@ export class ComponentManager {
     /**
      * Get default value for a field type.
      */
-    private _getDefaultValueForType(type: ComponentFieldType, arrayElementType?: ArrayElementType): unknown {
+    private _getDefaultValueForType(
+        type: ComponentFieldType,
+        arrayElementType?: ArrayElementType
+    ): unknown {
         switch (type) {
             case 'string':
                 return '';
@@ -942,13 +1020,17 @@ export class ComponentManager {
 
     /**
      * Validate that a value matches the expected field type.
-     * 
+     *
      * @param type - The field type
      * @param value - The value to validate
      * @param arrayElementType - The element type for array fields
      * @returns true if the value matches the expected type
      */
-    private _validateFieldType(type: ComponentFieldType, value: unknown, arrayElementType?: ArrayElementType): boolean {
+    private _validateFieldType(
+        type: ComponentFieldType,
+        value: unknown,
+        arrayElementType?: ArrayElementType
+    ): boolean {
         switch (type) {
             case 'string':
                 return typeof value === 'string';
@@ -957,7 +1039,11 @@ export class ComponentManager {
             case 'boolean':
                 return typeof value === 'boolean';
             case 'object':
-                return typeof value === 'object' && value !== null && !Array.isArray(value);
+                return (
+                    typeof value === 'object' &&
+                    value !== null &&
+                    !Array.isArray(value)
+                );
             case 'array':
                 if (!Array.isArray(value)) {
                     return false;
@@ -965,22 +1051,33 @@ export class ComponentManager {
                 // If arrayElementType is specified, validate each element
                 if (arrayElementType) {
                     if (arrayElementType.kind === 'builtin') {
-                        return (value as unknown[]).every(element => 
-                            this._validateFieldType(arrayElementType.type, element)
+                        return (value as unknown[]).every(element =>
+                            this._validateFieldType(
+                                arrayElementType.type,
+                                element
+                            )
                         );
                     } else {
                         // Custom type: validate against the referenced component schema
-                        const customSchema = this._schemas.get(arrayElementType.typeName);
+                        const customSchema = this._schemas.get(
+                            arrayElementType.typeName
+                        );
                         if (!customSchema) {
                             // Custom type not found - could be strict or lenient
                             // For now, we'll validate that it's an object
-                            return (value as unknown[]).every(element => 
-                                typeof element === 'object' && element !== null && !Array.isArray(element)
+                            return (value as unknown[]).every(
+                                element =>
+                                    typeof element === 'object' &&
+                                    element !== null &&
+                                    !Array.isArray(element)
                             );
                         }
                         // Validate each element against the custom schema
-                        return (value as unknown[]).every(element => 
-                            this.validateComponentData(arrayElementType.typeName, element)
+                        return (value as unknown[]).every(element =>
+                            this.validateComponentData(
+                                arrayElementType.typeName,
+                                element
+                            )
                         );
                     }
                 }
@@ -994,20 +1091,30 @@ export class ComponentManager {
 
     /**
      * Add a component to an entity with schema validation.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param entity - The entity to add the component to
      * @param component - The component data
      * @param validate - Whether to validate against schema (default: true)
      * @throws Error if validation fails
      */
-    addComponentToEntityWithSchema(componentName: ComponentName, entity: Entity, component: Record<string, unknown>, validate: boolean = true): void {
+    addComponentToEntityWithSchema(
+        componentName: ComponentName,
+        entity: Entity,
+        component: Record<string, unknown>,
+        validate: boolean = true
+    ): void {
         if (validate && !this.validateComponentData(componentName, component)) {
-            throw new Error(`Component data for "${getComponentNameString(componentName)}" does not match its schema`);
+            throw new Error(
+                `Component data for "${getComponentNameString(componentName)}" does not match its schema`
+            );
         }
-        this.addComponentToEntity<Record<string, unknown>>(componentName, entity, component);
+        this.addComponentToEntity<Record<string, unknown>>(
+            componentName,
+            entity,
+            component
+        );
     }
-
 }
 
 /**
@@ -1066,39 +1173,46 @@ export interface System {
  * @category Managers
  */
 export class SystemManager {
-    private _systems: Map<SystemName, {system: System, signature: ComponentSignature}> = new Map();
+    private _systems: Map<
+        SystemName,
+        { system: System; signature: ComponentSignature }
+    > = new Map();
 
-    registerSystem(systemName: SystemName, system: System){
+    registerSystem(systemName: SystemName, system: System) {
         // Idempotent: if system is already registered, do nothing
-        if(this._systems.has(systemName)) {
+        if (this._systems.has(systemName)) {
             return;
         }
-        this._systems.set(systemName, {system, signature: 0});
+        this._systems.set(systemName, { system, signature: 0 });
     }
 
-    setSignature(systemName: SystemName, signature: ComponentSignature){
-        if(!this._systems.has(systemName)) {
-            console.warn(`System ${getSystemNameString(systemName)} not registered`);
+    setSignature(systemName: SystemName, signature: ComponentSignature) {
+        if (!this._systems.has(systemName)) {
+            console.warn(
+                `System ${getSystemNameString(systemName)} not registered`
+            );
             return;
         }
         const system = this._systems.get(systemName);
-        if(system === undefined) {
-            console.warn(`System ${getSystemNameString(systemName)} not registered`);
+        if (system === undefined) {
+            console.warn(
+                `System ${getSystemNameString(systemName)} not registered`
+            );
             return;
         }
         system.signature = signature;
     }
 
-    entityDestroyed(entity: Entity){
-        for(const system of this._systems.values()){
+    entityDestroyed(entity: Entity) {
+        for (const system of this._systems.values()) {
             system.system.entities.delete(entity);
         }
     }
 
-    entitySignatureChanged(entity: Entity, signature: ComponentSignature){
-        for(const system of this._systems.values()){
+    entitySignatureChanged(entity: Entity, signature: ComponentSignature) {
+        for (const system of this._systems.values()) {
             const systemSignature = system.signature;
-            if((systemSignature & signature) === systemSignature){
+            if ((systemSignature & signature) === systemSignature) {
                 system.system.entities.add(entity);
             } else {
                 system.system.entities.delete(entity);
@@ -1108,7 +1222,7 @@ export class SystemManager {
 
     getSystem<T extends System>(systemName: SystemName): T | null {
         const system = this._systems.get(systemName);
-        if(system === undefined) {
+        if (system === undefined) {
             return null;
         }
         return system.system as T;
@@ -1162,7 +1276,7 @@ export class Coordinator {
     private _componentManager: ComponentManager;
     private _systemManager: SystemManager;
 
-    constructor(){
+    constructor() {
         this._entityManager = new EntityManager();
         this._componentManager = new ComponentManager();
         this._systemManager = new SystemManager();
@@ -1182,15 +1296,26 @@ export class Coordinator {
         this._componentManager.registerComponent<T>(componentName);
     }
 
-    addComponentToEntity<T>(componentName: ComponentName, entity: Entity, component: T): void {
-        this._componentManager.addComponentToEntity<T>(componentName, entity, component);
+    addComponentToEntity<T>(
+        componentName: ComponentName,
+        entity: Entity,
+        component: T
+    ): void {
+        this._componentManager.addComponentToEntity<T>(
+            componentName,
+            entity,
+            component
+        );
         let signature = this._entityManager.getSignature(entity);
-        if(signature === null) {
+        if (signature === null) {
             signature = 0;
         }
-        const componentType = this._componentManager.getComponentType(componentName);
-        if(componentType === null) {
-            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
+        const componentType =
+            this._componentManager.getComponentType(componentName);
+        if (componentType === null) {
+            console.warn(
+                `Component ${getComponentNameString(componentName)} not registered`
+            );
             return;
         }
         signature |= 1 << componentType;
@@ -1198,14 +1323,21 @@ export class Coordinator {
         this._systemManager.entitySignatureChanged(entity, signature);
     }
 
-    removeComponentFromEntity<T>(componentName: ComponentName, entity: Entity): void {
-        this._componentManager.removeComponentFromEntity<T>(componentName, entity);
+    removeComponentFromEntity<T>(
+        componentName: ComponentName,
+        entity: Entity
+    ): void {
+        this._componentManager.removeComponentFromEntity<T>(
+            componentName,
+            entity
+        );
         let signature = this._entityManager.getSignature(entity);
-        if(signature === null) {
+        if (signature === null) {
             signature = 0;
         }
-        const componentType = this._componentManager.getComponentType(componentName);
-        if(componentType === null) {
+        const componentType =
+            this._componentManager.getComponentType(componentName);
+        if (componentType === null) {
             return;
         }
         signature &= ~(1 << componentType);
@@ -1213,8 +1345,14 @@ export class Coordinator {
         this._systemManager.entitySignatureChanged(entity, signature);
     }
 
-    getComponentFromEntity<T>(componentName: ComponentName, entity: Entity): T | null {
-        return this._componentManager.getComponentFromEntity<T>(componentName, entity);
+    getComponentFromEntity<T>(
+        componentName: ComponentName,
+        entity: Entity
+    ): T | null {
+        return this._componentManager.getComponentFromEntity<T>(
+            componentName,
+            entity
+        );
     }
 
     getComponentType(componentName: ComponentName): ComponentType | null {
@@ -1225,7 +1363,10 @@ export class Coordinator {
         this._systemManager.registerSystem(systemName, system);
     }
 
-    setSystemSignature(systemName: SystemName, signature: ComponentSignature): void {
+    setSystemSignature(
+        systemName: SystemName,
+        signature: ComponentSignature
+    ): void {
         this._systemManager.setSignature(systemName, signature);
     }
 
@@ -1236,14 +1377,14 @@ export class Coordinator {
     /**
      * Register a component with a runtime-defined schema.
      * This allows components to be defined dynamically (e.g., through a GUI).
-     * 
+     *
      * @param schema - The component schema definition
      * @throws Error if schema validation fails
-     * 
+     *
      * @example
      * ```typescript
      * const coordinator = new Coordinator();
-     * 
+     *
      * // Define a component schema at runtime
      * coordinator.registerComponentWithSchema({
      *   componentName: 'PlayerStats',
@@ -1254,7 +1395,7 @@ export class Coordinator {
      *     { name: 'inventory', type: 'array', defaultValue: [] }
      *   ]
      * });
-     * 
+     *
      * // Create an entity with the component
      * const entity = coordinator.createEntity();
      * const component = coordinator.createComponentFromSchema('PlayerStats', { health: 150 });
@@ -1267,7 +1408,7 @@ export class Coordinator {
 
     /**
      * Get the schema for a component type, if it was registered with a schema.
-     * 
+     *
      * @param componentName - The name of the component type
      * @returns The component schema or null if not found
      */
@@ -1277,19 +1418,19 @@ export class Coordinator {
 
     /**
      * Get the property field names of a component.
-     * 
+     *
      * This method works in two ways:
      * 1. If the component was registered with a schema, returns field names from the schema
      * 2. If no schema exists, attempts to extract property names from an actual component instance
      *    (requires at least one entity to have an instance of the component)
-     * 
+     *
      * @param componentName - The name of the component type
      * @returns Array of property field names, or empty array if component has no schema and no instances exist
-     * 
+     *
      * @example
      * ```typescript
      * const coordinator = new Coordinator();
-     * 
+     *
      * // Method 1: Using schema
      * coordinator.registerComponentWithSchema({
      *   componentName: 'PlayerStats',
@@ -1301,14 +1442,14 @@ export class Coordinator {
      * });
      * const fieldNames1 = coordinator.getComponentPropertyNames('PlayerStats');
      * console.log(fieldNames1); // ['health', 'name', 'isAlive']
-     * 
+     *
      * // Method 2: From component instance
      * type LocationComponent = { location: Entity; sortIndex: number };
      * coordinator.registerComponent<LocationComponent>('LocationComponent');
      * const entity = coordinator.createEntity();
-     * coordinator.addComponentToEntity('LocationComponent', entity, { 
-     *   location: otherEntity, 
-     *   sortIndex: 0 
+     * coordinator.addComponentToEntity('LocationComponent', entity, {
+     *   location: otherEntity,
+     *   sortIndex: 0
      * });
      * const fieldNames2 = coordinator.getComponentPropertyNames('LocationComponent');
      * console.log(fieldNames2); // ['location', 'sortIndex']
@@ -1320,30 +1461,38 @@ export class Coordinator {
         if (schema) {
             return schema.fields.map(field => field.name);
         }
-        
+
         // If no schema, try to extract from an actual component instance
-        const entitiesWithComponent = this._componentManager.getAllEntitiesWithComponent(componentName);
+        const entitiesWithComponent =
+            this._componentManager.getAllEntitiesWithComponent(componentName);
         if (entitiesWithComponent.length === 0) {
             return [];
         }
-        
+
         // Get the first entity's component instance
-        const component = this._componentManager.getComponentFromEntity(componentName, entitiesWithComponent[0]);
+        const component = this._componentManager.getComponentFromEntity(
+            componentName,
+            entitiesWithComponent[0]
+        );
         if (component === null) {
             return [];
         }
-        
+
         // Extract property names from the component object
-        if (typeof component === 'object' && component !== null && !Array.isArray(component)) {
+        if (
+            typeof component === 'object' &&
+            component !== null &&
+            !Array.isArray(component)
+        ) {
             return Object.keys(component);
         }
-        
+
         return [];
     }
 
     /**
      * Get all registered component schemas.
-     * 
+     *
      * @returns Array of all component schemas
      */
     getAllComponentSchemas(): ComponentSchema[] {
@@ -1352,17 +1501,17 @@ export class Coordinator {
 
     /**
      * Create a component instance from a schema with default values.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param overrides - Optional values to override defaults
      * @returns A component instance with all fields initialized
      * @throws Error if component is not registered with a schema
-     * 
+     *
      * @example
      * ```typescript
      * // Create component with all defaults
      * const component1 = coordinator.createComponentFromSchema('PlayerStats');
-     * 
+     *
      * // Create component with some overrides
      * const component2 = coordinator.createComponentFromSchema('PlayerStats', {
      *   health: 200,
@@ -1370,39 +1519,64 @@ export class Coordinator {
      * });
      * ```
      */
-    createComponentFromSchema(componentName: ComponentName, overrides: Record<string, unknown> = {}): Record<string, unknown> {
-        return this._componentManager.createComponentFromSchema(componentName, overrides);
+    createComponentFromSchema(
+        componentName: ComponentName,
+        overrides: Record<string, unknown> = {}
+    ): Record<string, unknown> {
+        return this._componentManager.createComponentFromSchema(
+            componentName,
+            overrides
+        );
     }
 
     /**
      * Validate component data against its schema.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param data - The component data to validate
      * @returns true if valid, false otherwise
      */
-    validateComponentData(componentName: ComponentName, data: unknown): boolean {
-        return this._componentManager.validateComponentData(componentName, data);
+    validateComponentData(
+        componentName: ComponentName,
+        data: unknown
+    ): boolean {
+        return this._componentManager.validateComponentData(
+            componentName,
+            data
+        );
     }
 
     /**
      * Add a component to an entity with schema validation.
-     * 
+     *
      * @param componentName - The name of the component type
      * @param entity - The entity to add the component to
      * @param component - The component data
      * @param validate - Whether to validate against schema (default: true)
      * @throws Error if validation fails
      */
-    addComponentToEntityWithSchema(componentName: ComponentName, entity: Entity, component: Record<string, unknown>, validate: boolean = true): void {
-        this._componentManager.addComponentToEntityWithSchema(componentName, entity, component, validate);
+    addComponentToEntityWithSchema(
+        componentName: ComponentName,
+        entity: Entity,
+        component: Record<string, unknown>,
+        validate: boolean = true
+    ): void {
+        this._componentManager.addComponentToEntityWithSchema(
+            componentName,
+            entity,
+            component,
+            validate
+        );
         let signature = this._entityManager.getSignature(entity);
-        if(signature === null) {
+        if (signature === null) {
             signature = 0;
         }
-        const componentType = this._componentManager.getComponentType(componentName);
-        if(componentType === null) {
-            console.warn(`Component ${getComponentNameString(componentName)} not registered`);
+        const componentType =
+            this._componentManager.getComponentType(componentName);
+        if (componentType === null) {
+            console.warn(
+                `Component ${getComponentNameString(componentName)} not registered`
+            );
             return;
         }
         signature |= 1 << componentType;
@@ -1413,7 +1587,7 @@ export class Coordinator {
     /**
      * Get all living entities in the ECS.
      * @returns Array of all entity IDs that are currently active
-     * 
+     *
      * @example
      * ```typescript
      * const entities = coordinator.getAllEntities();
@@ -1428,14 +1602,14 @@ export class Coordinator {
      * Check if an entity exists in the coordinator.
      * @param entity - The entity ID to check
      * @returns true if the entity exists, false otherwise
-     * 
+     *
      * @example
      * ```typescript
      * const entity = coordinator.createEntity();
      * if (coordinator.entityExists(entity)) {
      *   console.log('Entity exists');
      * }
-     * 
+     *
      * coordinator.destroyEntity(entity);
      * if (!coordinator.entityExists(entity)) {
      *   console.log('Entity no longer exists');
@@ -1450,7 +1624,7 @@ export class Coordinator {
      * Get all components for a specific entity.
      * @param entity - The entity ID
      * @returns Map of component names to their data, or null if entity doesn't exist
-     * 
+     *
      * @example
      * ```typescript
      * const components = coordinator.getEntityComponents(entity);
@@ -1466,17 +1640,23 @@ export class Coordinator {
         }
 
         const components = new Map<ComponentName, unknown>();
-        const componentNames = this._componentManager.getRegisteredComponentNames();
+        const componentNames =
+            this._componentManager.getRegisteredComponentNames();
 
         for (const componentName of componentNames) {
-            const componentType = this._componentManager.getComponentType(componentName);
+            const componentType =
+                this._componentManager.getComponentType(componentName);
             if (componentType === null) {
                 continue;
             }
 
             // Check if entity has this component (bit is set in signature)
             if ((signature & (1 << componentType)) !== 0) {
-                const componentData = this._componentManager.getComponentFromEntity(componentName, entity);
+                const componentData =
+                    this._componentManager.getComponentFromEntity(
+                        componentName,
+                        entity
+                    );
                 if (componentData !== null) {
                     components.set(componentName, componentData);
                 }
@@ -1489,7 +1669,7 @@ export class Coordinator {
     /**
      * Get the entire state of the ECS: all entities with all their component values.
      * @returns Object containing all entities and their components
-     * 
+     *
      * @example
      * ```typescript
      * const state = coordinator.getFullState();
@@ -1499,11 +1679,18 @@ export class Coordinator {
      * });
      * ```
      */
-    getFullState(): { entities: Array<{ entity: Entity; components: Map<ComponentName, unknown> }> } {
+    getFullState(): {
+        entities: Array<{
+            entity: Entity;
+            components: Map<ComponentName, unknown>;
+        }>;
+    } {
         const allEntities = this.getAllEntities();
         const entities = allEntities.map(entity => ({
             entity,
-            components: this.getEntityComponents(entity) ?? new Map<ComponentName, unknown>()
+            components:
+                this.getEntityComponents(entity) ??
+                new Map<ComponentName, unknown>(),
         }));
 
         return { entities };
@@ -1512,10 +1699,10 @@ export class Coordinator {
     /**
      * Serialize the entire ECS state to a JSON-compatible format.
      * Note: Only works with global symbols (created via Symbol.for or createGlobalComponentName).
-     * 
+     *
      * @returns A serializable representation of the ECS state
      * @throws Error if any component name is not a global symbol
-     * 
+     *
      * @example
      * ```typescript
      * const serialized = coordinator.serialize();
@@ -1526,20 +1713,25 @@ export class Coordinator {
     serialize(): SerializedECSState {
         const allEntities = this.getAllEntities();
         const serializedEntities: SerializedEntity[] = [];
-        const componentNames = this._componentManager.getRegisteredComponentNames();
+        const componentNames =
+            this._componentManager.getRegisteredComponentNames();
 
         for (const entity of allEntities) {
             const components: Record<string, unknown> = {};
             let hasComponents = false;
 
             for (const componentName of componentNames) {
-                const componentData = this._componentManager.getComponentFromEntity(componentName, entity);
+                const componentData =
+                    this._componentManager.getComponentFromEntity(
+                        componentName,
+                        entity
+                    );
                 if (componentData !== null) {
                     const key = Symbol.keyFor(componentName);
                     if (key === undefined) {
                         throw new Error(
                             `Cannot serialize: component name "${getComponentNameString(componentName)}" is not a global symbol. ` +
-                            `Use createGlobalComponentName() or Symbol.for() to create component names.`
+                                `Use createGlobalComponentName() or Symbol.for() to create component names.`
                         );
                     }
                     components[key] = componentData;
@@ -1551,32 +1743,33 @@ export class Coordinator {
             if (hasComponents) {
                 serializedEntities.push({
                     entity,
-                    components
+                    components,
                 });
             }
         }
 
         // Optionally include schemas
         const schemas = this._componentManager.getAllComponentSchemas();
-        const serializedSchemas = schemas.length > 0
-            ? schemas.map(schema => serializeComponentSchema(schema))
-            : undefined;
+        const serializedSchemas =
+            schemas.length > 0
+                ? schemas.map(schema => serializeComponentSchema(schema))
+                : undefined;
 
         return {
             entities: serializedEntities,
-            ...(serializedSchemas && { schemas: serializedSchemas })
+            ...(serializedSchemas && { schemas: serializedSchemas }),
         };
     }
 
     /**
      * Deserialize an ECS state from a JSON-compatible format.
      * This will restore all entities and their components.
-     * 
+     *
      * @param serialized - The serialized ECS state
      * @param options - Options for deserialization
      * @param options.clearExisting - Whether to clear existing entities before deserializing (default: false)
      * @throws Error if component names cannot be resolved or components are not registered
-     * 
+     *
      * @example
      * ```typescript
      * const json = fs.readFileSync('state.json', 'utf-8');
@@ -1584,7 +1777,10 @@ export class Coordinator {
      * coordinator.deserialize(serialized, { clearExisting: true });
      * ```
      */
-    deserialize(serialized: SerializedECSState, options: { clearExisting?: boolean } = {}): void {
+    deserialize(
+        serialized: SerializedECSState,
+        options: { clearExisting?: boolean } = {}
+    ): void {
         const { clearExisting = false } = options;
 
         if (clearExisting) {
@@ -1604,7 +1800,9 @@ export class Coordinator {
             } else {
                 // Try to use the original entity ID if available
                 // If entity already exists, we'll update it; otherwise create new
-                const existingSignature = this._entityManager.getSignature(entityData.entity);
+                const existingSignature = this._entityManager.getSignature(
+                    entityData.entity
+                );
                 if (existingSignature === null) {
                     // Entity doesn't exist, we need to create it
                     // But we can't control the entity ID, so we'll create a new one
@@ -1615,20 +1813,24 @@ export class Coordinator {
             }
 
             // Add all components
-            for (const [componentNameStr, componentData] of Object.entries(entityData.components)) {
+            for (const [componentNameStr, componentData] of Object.entries(
+                entityData.components
+            )) {
                 const componentName = Symbol.for(componentNameStr);
-                
+
                 // Check if component is registered
-                const componentType = this._componentManager.getComponentType(componentName);
+                const componentType =
+                    this._componentManager.getComponentType(componentName);
                 if (componentType === null) {
                     throw new Error(
                         `Cannot deserialize: component "${componentNameStr}" is not registered. ` +
-                        `Register it first using registerComponent() or registerComponentWithSchema().`
+                            `Register it first using registerComponent() or registerComponentWithSchema().`
                     );
                 }
 
                 // Add component (with schema validation if schema exists)
-                const schema = this._componentManager.getComponentSchema(componentName);
+                const schema =
+                    this._componentManager.getComponentSchema(componentName);
                 if (schema) {
                     this.addComponentToEntityWithSchema(
                         componentName,
@@ -1637,7 +1839,11 @@ export class Coordinator {
                         true
                     );
                 } else {
-                    this.addComponentToEntity(componentName, entity, componentData);
+                    this.addComponentToEntity(
+                        componentName,
+                        entity,
+                        componentData
+                    );
                 }
             }
         }

@@ -1,6 +1,6 @@
-import { Point } from "@ue-too/math";
-import type { EventReactions, State, BaseContext } from "@ue-too/being";
-import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import type { BaseContext, EventReactions, State } from '@ue-too/being';
+import { NO_OP, TemplateState, TemplateStateMachine } from '@ue-too/being';
+import { Point } from '@ue-too/math';
 
 /**
  * State identifiers for the pan control state machine.
@@ -13,7 +13,10 @@ import { NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
  *
  * @category Input Flow Control
  */
-export type PanControlStates = "ACCEPTING_USER_INPUT" | "TRANSITION" | "LOCKED_ON_OBJECT";
+export type PanControlStates =
+    | 'ACCEPTING_USER_INPUT'
+    | 'TRANSITION'
+    | 'LOCKED_ON_OBJECT';
 
 /**
  * Payload for pan-by input events (relative panning).
@@ -49,14 +52,14 @@ type EmptyPayload = {};
  * @category Input Flow Control
  */
 export type PanEventPayloadMapping = {
-    "userPanByInput": PanByInputEventPayload,
-    "userPanToInput": PanToInputEventPayload,
-    "transitionPanByInput": PanByInputEventPayload,
-    "transitionPanToInput": PanToInputEventPayload,
-    "lockedOnObjectPanByInput": PanByInputEventPayload,
-    "lockedOnObjectPanToInput": PanToInputEventPayload,
-    "unlock": EmptyPayload,
-    "initateTransition": EmptyPayload,
+    userPanByInput: PanByInputEventPayload;
+    userPanToInput: PanToInputEventPayload;
+    transitionPanByInput: PanByInputEventPayload;
+    transitionPanToInput: PanToInputEventPayload;
+    lockedOnObjectPanByInput: PanByInputEventPayload;
+    lockedOnObjectPanToInput: PanToInputEventPayload;
+    unlock: EmptyPayload;
+    initateTransition: EmptyPayload;
 };
 
 /**
@@ -71,9 +74,9 @@ export type PanEventPayloadMapping = {
  * @category Input Flow Control
  */
 export type PanControlOutputEvent =
-    | { type: "panByViewPort", delta: Point }
-    | { type: "panToWorld", target: Point }
-    | { type: "none" };
+    | { type: 'panByViewPort'; delta: Point }
+    | { type: 'panToWorld'; target: Point }
+    | { type: 'none' };
 
 /**
  * Output event type mapping for pan control events.
@@ -82,14 +85,13 @@ export type PanControlOutputEvent =
  * @category Input Flow Control
  */
 export type PanControlOutputMapping = {
-    "userPanByInput": PanControlOutputEvent,
-    "userPanToInput": PanControlOutputEvent,
-    "transitionPanByInput": PanControlOutputEvent,
-    "transitionPanToInput": PanControlOutputEvent,
-    "lockedOnObjectPanByInput": PanControlOutputEvent,
-    "lockedOnObjectPanToInput": PanControlOutputEvent,
+    userPanByInput: PanControlOutputEvent;
+    userPanToInput: PanControlOutputEvent;
+    transitionPanByInput: PanControlOutputEvent;
+    transitionPanToInput: PanControlOutputEvent;
+    lockedOnObjectPanByInput: PanControlOutputEvent;
+    lockedOnObjectPanToInput: PanControlOutputEvent;
 };
-
 
 /**
  * State machine controlling pan input flow and animations.
@@ -124,9 +126,25 @@ export type PanControlOutputMapping = {
  * @category Input Flow Control
  * @see {@link createDefaultPanControlStateMachine} for factory function
  */
-export class PanControlStateMachine extends TemplateStateMachine<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> {
-
-    constructor(states: Record<PanControlStates, State<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping>>, initialState: PanControlStates, context: BaseContext){
+export class PanControlStateMachine extends TemplateStateMachine<
+    PanEventPayloadMapping,
+    BaseContext,
+    PanControlStates,
+    PanControlOutputMapping
+> {
+    constructor(
+        states: Record<
+            PanControlStates,
+            State<
+                PanEventPayloadMapping,
+                BaseContext,
+                PanControlStates,
+                PanControlOutputMapping
+            >
+        >,
+        initialState: PanControlStates,
+        context: BaseContext
+    ) {
         super(states, initialState, context);
     }
 
@@ -141,7 +159,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * where it may transition back to `ACCEPTING_USER_INPUT` (user interrupting animation).
      */
     notifyPanInput(diff: Point) {
-        return this.happens("userPanByInput", {diff: diff});
+        return this.happens('userPanByInput', { diff: diff });
     }
 
     /**
@@ -155,7 +173,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * Transitions to `TRANSITION` state where animation updates occur.
      */
     notifyPanToAnimationInput(target: Point) {
-        return this.happens("transitionPanToInput", {target: target});
+        return this.happens('transitionPanToInput', { target: target });
     }
 
     /**
@@ -166,7 +184,7 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
      * Called when starting programmatic camera movements.
      */
     initateTransition() {
-        return this.happens("initateTransition");
+        return this.happens('initateTransition');
     }
 }
 
@@ -175,36 +193,68 @@ export class PanControlStateMachine extends TemplateStateMachine<PanEventPayload
  * Accepts user pan input and can transition to animation or locked states.
  * @category Input Flow Control
  */
-export class AcceptingUserInputState extends TemplateState<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> {
-
-    constructor(){
+export class AcceptingUserInputState extends TemplateState<
+    PanEventPayloadMapping,
+    BaseContext,
+    PanControlStates,
+    PanControlOutputMapping
+> {
+    constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
-        userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
-        lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
-        initateTransition: {action: NO_OP, defaultTargetState: "TRANSITION"},
+    protected _eventReactions: EventReactions<
+        PanEventPayloadMapping,
+        BaseContext,
+        PanControlStates,
+        PanControlOutputMapping
+    > = {
+        userPanByInput: {
+            action: this.userPanByInputHandler,
+            defaultTargetState: 'ACCEPTING_USER_INPUT',
+        },
+        userPanToInput: {
+            action: this.userPanToInputHandler,
+            defaultTargetState: 'ACCEPTING_USER_INPUT',
+        },
+        lockedOnObjectPanByInput: {
+            action: this.lockedOnObjectPanByInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+        lockedOnObjectPanToInput: {
+            action: this.lockedOnObjectPanToInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+        initateTransition: { action: NO_OP, defaultTargetState: 'TRANSITION' },
+    };
+
+    userPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    userPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        return { type: "panByViewPort", delta: payload.diff };
+    userPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
 
-    userPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
+    lockedOnObjectPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    lockedOnObjectPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        return { type: "panByViewPort", delta: payload.diff };
+    lockedOnObjectPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
-
-    lockedOnObjectPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
-    }
-
 }
 
 /**
@@ -212,45 +262,89 @@ export class AcceptingUserInputState extends TemplateState<PanEventPayloadMappin
  * Processes animation updates and allows user input to interrupt.
  * @category Input Flow Control
  */
-export class TransitionState extends TemplateState<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> {
-
-    constructor(){
+export class TransitionState extends TemplateState<
+    PanEventPayloadMapping,
+    BaseContext,
+    PanControlStates,
+    PanControlOutputMapping
+> {
+    constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
-        userPanByInput: {action: this.userPanByInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        userPanToInput: {action: this.userPanToInputHandler, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        transitionPanByInput: {action: this.transitionPanByInputHandler, defaultTargetState: "TRANSITION"},
-        transitionPanToInput: {action: this.transitionPanToInputHandler, defaultTargetState: "TRANSITION"},
-        lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
-        lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
+    protected _eventReactions: EventReactions<
+        PanEventPayloadMapping,
+        BaseContext,
+        PanControlStates,
+        PanControlOutputMapping
+    > = {
+        userPanByInput: {
+            action: this.userPanByInputHandler,
+            defaultTargetState: 'ACCEPTING_USER_INPUT',
+        },
+        userPanToInput: {
+            action: this.userPanToInputHandler,
+            defaultTargetState: 'ACCEPTING_USER_INPUT',
+        },
+        transitionPanByInput: {
+            action: this.transitionPanByInputHandler,
+            defaultTargetState: 'TRANSITION',
+        },
+        transitionPanToInput: {
+            action: this.transitionPanToInputHandler,
+            defaultTargetState: 'TRANSITION',
+        },
+        lockedOnObjectPanByInput: {
+            action: this.lockedOnObjectPanByInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+        lockedOnObjectPanToInput: {
+            action: this.lockedOnObjectPanToInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+    };
+
+    userPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    userPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent  {
-        return { type: "panByViewPort", delta: payload.diff };
+    userPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
 
-    userPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
+    transitionPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    transitionPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        return { type: "panByViewPort", delta: payload.diff };
+    transitionPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
 
-    transitionPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
+    lockedOnObjectPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    lockedOnObjectPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        return { type: "panByViewPort", delta: payload.diff };
+    lockedOnObjectPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
-
-    lockedOnObjectPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
-    }
-
 }
 
 /**
@@ -258,26 +352,46 @@ export class TransitionState extends TemplateState<PanEventPayloadMapping, BaseC
  * Only accepts locked object pan events until unlocked.
  * @category Input Flow Control
  */
-export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> {
-
-    constructor(){
+export class LockedOnObjectState extends TemplateState<
+    PanEventPayloadMapping,
+    BaseContext,
+    PanControlStates,
+    PanControlOutputMapping
+> {
+    constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping> = {
-        unlock: {action: NO_OP, defaultTargetState: "ACCEPTING_USER_INPUT"},
-        lockedOnObjectPanByInput: {action: this.lockedOnObjectPanByInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
-        lockedOnObjectPanToInput: {action: this.lockedOnObjectPanToInputHandler, defaultTargetState: "LOCKED_ON_OBJECT"},
+    protected _eventReactions: EventReactions<
+        PanEventPayloadMapping,
+        BaseContext,
+        PanControlStates,
+        PanControlOutputMapping
+    > = {
+        unlock: { action: NO_OP, defaultTargetState: 'ACCEPTING_USER_INPUT' },
+        lockedOnObjectPanByInput: {
+            action: this.lockedOnObjectPanByInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+        lockedOnObjectPanToInput: {
+            action: this.lockedOnObjectPanToInputHandler,
+            defaultTargetState: 'LOCKED_ON_OBJECT',
+        },
+    };
+
+    lockedOnObjectPanByInputHandler(
+        context: BaseContext,
+        payload: PanByInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panByViewPort', delta: payload.diff };
     }
 
-    lockedOnObjectPanByInputHandler(context: BaseContext, payload: PanByInputEventPayload): PanControlOutputEvent {
-        return { type: "panByViewPort", delta: payload.diff };
+    lockedOnObjectPanToInputHandler(
+        context: BaseContext,
+        payload: PanToInputEventPayload
+    ): PanControlOutputEvent {
+        return { type: 'panToWorld', target: payload.target };
     }
-
-    lockedOnObjectPanToInputHandler(context: BaseContext, payload: PanToInputEventPayload): PanControlOutputEvent {
-        return { type: "panToWorld", target: payload.target };
-    }
-
 }
 
 /**
@@ -285,12 +399,20 @@ export class LockedOnObjectState extends TemplateState<PanEventPayloadMapping, B
  * @returns State instances for all pan control states
  * @category Input Flow Control
  */
-export function createDefaultPanControlStates(): Record<PanControlStates, State<PanEventPayloadMapping, BaseContext, PanControlStates, PanControlOutputMapping>> {
+export function createDefaultPanControlStates(): Record<
+    PanControlStates,
+    State<
+        PanEventPayloadMapping,
+        BaseContext,
+        PanControlStates,
+        PanControlOutputMapping
+    >
+> {
     return {
         ACCEPTING_USER_INPUT: new AcceptingUserInputState(),
         TRANSITION: new TransitionState(),
         LOCKED_ON_OBJECT: new LockedOnObjectState(),
-    }
+    };
 }
 
 /**
@@ -311,6 +433,12 @@ export function createDefaultPanControlStates(): Record<PanControlStates, State<
  *
  * @category Input Flow Control
  */
-export function createDefaultPanControlStateMachine(context: BaseContext = {setup: NO_OP, cleanup: NO_OP}): PanControlStateMachine {
-    return new PanControlStateMachine(createDefaultPanControlStates(), "ACCEPTING_USER_INPUT", context);
+export function createDefaultPanControlStateMachine(
+    context: BaseContext = { setup: NO_OP, cleanup: NO_OP }
+): PanControlStateMachine {
+    return new PanControlStateMachine(
+        createDefaultPanControlStates(),
+        'ACCEPTING_USER_INPUT',
+        context
+    );
 }

@@ -5,6 +5,7 @@ This module manages and controls camera input permissions and behavior.
 For instance, during a camera transition animation, you may want to allow user input to interrupt the transition.
 
 The `CameraMux` interface defines the following user input methods:
+
 - `notifyPanInput`
 - `notifyZoomInput`
 - `notifyRotateInput`
@@ -38,4 +39,4 @@ cameraMux.yourOwnInput(value);
 
 Alternatively, you can choose not to use the `Board` class at all.
 
-The camera multiplexer is entirely optional. Only implement it if you need its functionality; you can skip it entirely if not required. 
+The camera multiplexer is entirely optional. Only implement it if you need its functionality; you can skip it entirely if not required.

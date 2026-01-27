@@ -3,7 +3,7 @@
 
 # Get repository root, with fallback for non-git repositories
 get_repo_root() {
-    if git rev-parse --show-toplevel >/dev/null 2>&1; then
+    if git rev-parse --show-toplevel > /dev/null 2>&1; then
         git rev-parse --show-toplevel
     else
         # Fall back to script location for non-git repos
@@ -21,7 +21,7 @@ get_current_branch() {
     fi
 
     # Then check git if available
-    if git rev-parse --abbrev-ref HEAD >/dev/null 2>&1; then
+    if git rev-parse --abbrev-ref HEAD > /dev/null 2>&1; then
         git rev-parse --abbrev-ref HEAD
         return
     fi
@@ -54,12 +54,12 @@ get_current_branch() {
         fi
     fi
 
-    echo "main"  # Final fallback
+    echo "main" # Final fallback
 }
 
 # Check if we have git available
 has_git() {
-    git rev-parse --show-toplevel >/dev/null 2>&1
+    git rev-parse --show-toplevel > /dev/null 2>&1
 }
 
 check_feature_branch() {
@@ -120,7 +120,7 @@ find_feature_dir_by_prefix() {
         # Multiple matches - this shouldn't happen with proper naming convention
         echo "ERROR: Multiple spec directories found with prefix '$prefix': ${matches[*]}" >&2
         echo "Please ensure only one spec directory exists per numeric prefix." >&2
-        echo "$specs_dir/$branch_name"  # Return something to avoid breaking the script
+        echo "$specs_dir/$branch_name" # Return something to avoid breaking the script
     fi
 }
 
@@ -136,7 +136,7 @@ get_feature_paths() {
     # Use prefix-based lookup to support multiple branches per spec
     local feature_dir=$(find_feature_dir_by_prefix "$repo_root" "$current_branch")
 
-    cat <<EOF
+    cat << EOF
 REPO_ROOT='$repo_root'
 CURRENT_BRANCH='$current_branch'
 HAS_GIT='$has_git_repo'
@@ -152,5 +152,4 @@ EOF
 }
 
 check_file() { [[ -f "$1" ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
-check_dir() { [[ -d "$1" && -n $(ls -A "$1" 2>/dev/null) ]] && echo "  ✓ $2" || echo "  ✗ $2"; }
-
+check_dir() { [[ -d "$1" && -n $(ls -A "$1" 2> /dev/null) ]] && echo "  ✓ $2" || echo "  ✗ $2"; }

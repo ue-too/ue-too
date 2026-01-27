@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "strict": false,
-    "moduleResolution": "bundler",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": false,
-    "sourceMap": true,
-    "esModuleInterop": true,
-    // "allowImportingTsExtensions": true,
-    // "noEmit": true
-  }
+    "compilerOptions": {
+        "composite": true,
+        "declaration": true,
+        "declarationMap": false,
+        "esModuleInterop": true,
+        // "allowImportingTsExtensions": true,
+        // "noEmit": true
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "sourceMap": true,
+        "strict": false,
+        "target": "ES2020"
+    }
 }

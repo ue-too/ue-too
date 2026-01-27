@@ -95,7 +95,7 @@
  * @see {@link Line} for line segment utilities
  */
 
-export * from "./b-curve";
-export * from "./line";
-export * from "./composite-curve";
-export * from "./path";
+export * from './b-curve';
+export * from './line';
+export * from './composite-curve';
+export * from './path';

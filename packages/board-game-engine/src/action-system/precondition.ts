@@ -1,4 +1,4 @@
-import { ComponentName, Coordinator, Entity } from "@ue-too/ecs";
+import { ComponentName, Coordinator, Entity } from '@ue-too/ecs';
 
 export interface Precondition {
     check(): boolean;
@@ -8,14 +8,14 @@ export interface Precondition {
  * Unified value comparison precondition that works with both custom schema components
  * and typed components. Automatically detects which approach to use based on whether
  * the component has a registered schema.
- * 
+ *
  * @example
  * ```typescript
  * // With custom schema component
  * const precondition1 = new ValueComparisonPrecondition(
  *     100, '>', coordinator, HEALTH_COMPONENT, entity, 'health'
  * );
- * 
+ *
  * // With typed component (type-safe)
  * type HealthComponent = { health: number; maxHealth: number };
  * const precondition2 = new ValueComparisonPrecondition<HealthComponent>(
@@ -23,7 +23,9 @@ export interface Precondition {
  * );
  * ```
  */
-export class ValueComparisonPrecondition<T = Record<string, unknown>> implements Precondition {
+export class ValueComparisonPrecondition<
+    T = Record<string, unknown>,
+> implements Precondition {
     private _coordinator: Coordinator;
     private _value: number;
     private _operator: '>' | '<' | '>=' | '<=' | '==' | '!=';
@@ -32,13 +34,34 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
     private _valuePath: string | keyof T;
 
     // Overload for typed components (type-safe)
-    constructor(coordinator: Coordinator, componentName: ComponentName, entity: Entity, valuePath: keyof T, value: number, operator: '>' | '<' | '>=' | '<=' | '==' | '!=');
+    constructor(
+        coordinator: Coordinator,
+        componentName: ComponentName,
+        entity: Entity,
+        valuePath: keyof T,
+        value: number,
+        operator: '>' | '<' | '>=' | '<=' | '==' | '!='
+    );
     // Overload for schema-based components (backward compatible)
-    constructor(value: number, operator: '>' | '<' | '>=' | '<=' | '==' | '!=', coordinator: Coordinator, componentName: ComponentName, entity: Entity, valuePath: string);
+    constructor(
+        value: number,
+        operator: '>' | '<' | '>=' | '<=' | '==' | '!=',
+        coordinator: Coordinator,
+        componentName: ComponentName,
+        entity: Entity,
+        valuePath: string
+    );
     // Implementation
     constructor(
         valueOrCoordinator: number | Coordinator,
-        operatorOrComponentName: '>' | '<' | '>=' | '<=' | '==' | '!=' | ComponentName,
+        operatorOrComponentName:
+            | '>'
+            | '<'
+            | '>='
+            | '<='
+            | '=='
+            | '!='
+            | ComponentName,
         coordinatorOrEntity: Coordinator | Entity,
         componentNameOrValuePath: ComponentName | keyof T,
         entityOrValue: Entity | number,
@@ -48,7 +71,13 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
         if (typeof valueOrCoordinator === 'number') {
             // Schema-based constructor: (value, operator, coordinator, componentName, entity, valuePath)
             this._value = valueOrCoordinator;
-            this._operator = operatorOrComponentName as '>' | '<' | '>=' | '<=' | '==' | '!=';
+            this._operator = operatorOrComponentName as
+                | '>'
+                | '<'
+                | '>='
+                | '<='
+                | '=='
+                | '!=';
             this._coordinator = coordinatorOrEntity as Coordinator;
             this._componentName = componentNameOrValuePath as ComponentName;
             this._entity = entityOrValue as Entity;
@@ -60,12 +89,20 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
             this._entity = coordinatorOrEntity as Entity;
             this._valuePath = componentNameOrValuePath as keyof T;
             this._value = entityOrValue as number;
-            this._operator = valuePathOrOperator as '>' | '<' | '>=' | '<=' | '==' | '!=';
+            this._operator = valuePathOrOperator as
+                | '>'
+                | '<'
+                | '>='
+                | '<='
+                | '=='
+                | '!=';
         }
     }
 
     check(): boolean {
-        const schema = this._coordinator.getComponentSchema(this._componentName);
+        const schema = this._coordinator.getComponentSchema(
+            this._componentName
+        );
         const hasCustomSchema = schema !== null;
 
         if (hasCustomSchema) {
@@ -73,7 +110,9 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
             const field = schema!.fields.find(field => {
                 return field.name === this._valuePath;
             });
-            const component = this._coordinator.getComponentFromEntity<Record<string, unknown>>(this._componentName, this._entity);
+            const component = this._coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(this._componentName, this._entity);
 
             if (!component || !field) {
                 return false;
@@ -87,15 +126,21 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
             return this._compare(value);
         } else {
             // Use type-based approach
-            const component = this._coordinator.getComponentFromEntity<T>(this._componentName, this._entity);
+            const component = this._coordinator.getComponentFromEntity<T>(
+                this._componentName,
+                this._entity
+            );
             if (!component) {
                 return false;
             }
-            if (typeof component !== "object" || !(this._valuePath in component)) {
+            if (
+                typeof component !== 'object' ||
+                !(this._valuePath in component)
+            ) {
                 return false;
             }
             const value = component[this._valuePath as keyof T];
-            if (typeof value !== "number") {
+            if (typeof value !== 'number') {
                 return false;
             }
 
@@ -104,7 +149,7 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
     }
 
     private _compare(value: number): boolean {
-        switch(this._operator) {
+        switch (this._operator) {
             case '>':
                 return value > this._value;
             case '<':
@@ -128,14 +173,14 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
  * Supports multiple types (number, string, boolean, etc.) and works with both custom schema
  * components and typed components. Automatically detects which approach to use based on whether
  * the component has a registered schema.
- * 
+ *
  * @example
  * ```typescript
  * // With custom schema component
  * const precondition1 = new PropertyIsPrecondition(
  *     coordinator, HEALTH_COMPONENT, entity, 'status', 'active'
  * );
- * 
+ *
  * // With typed component (type-safe)
  * type PlayerComponent = { name: string; level: number; isActive: boolean };
  * const precondition2 = new PropertyIsPrecondition<PlayerComponent>(
@@ -143,7 +188,9 @@ export class ValueComparisonPrecondition<T = Record<string, unknown>> implements
  * );
  * ```
  */
-export class PropertyIsPrecondition<T = Record<string, unknown>> implements Precondition {
+export class PropertyIsPrecondition<
+    T = Record<string, unknown>,
+> implements Precondition {
     private _coordinator: Coordinator;
     private _componentName: ComponentName;
     private _entity: Entity;
@@ -165,7 +212,9 @@ export class PropertyIsPrecondition<T = Record<string, unknown>> implements Prec
     }
 
     check(): boolean {
-        const schema = this._coordinator.getComponentSchema(this._componentName);
+        const schema = this._coordinator.getComponentSchema(
+            this._componentName
+        );
         const hasCustomSchema = schema !== null;
 
         if (hasCustomSchema) {
@@ -173,7 +222,9 @@ export class PropertyIsPrecondition<T = Record<string, unknown>> implements Prec
             const field = schema!.fields.find(field => {
                 return field.name === this._property;
             });
-            const component = this._coordinator.getComponentFromEntity<Record<string, unknown>>(this._componentName, this._entity);
+            const component = this._coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(this._componentName, this._entity);
 
             if (!component || !field) {
                 return false;
@@ -183,11 +234,17 @@ export class PropertyIsPrecondition<T = Record<string, unknown>> implements Prec
             return this._compare(value, this._value);
         } else {
             // Use type-based approach
-            const component = this._coordinator.getComponentFromEntity<T>(this._componentName, this._entity);
+            const component = this._coordinator.getComponentFromEntity<T>(
+                this._componentName,
+                this._entity
+            );
             if (!component) {
                 return false;
             }
-            if (typeof component !== "object" || !(this._property in component)) {
+            if (
+                typeof component !== 'object' ||
+                !(this._property in component)
+            ) {
                 return false;
             }
             const value = component[this._property as keyof T];

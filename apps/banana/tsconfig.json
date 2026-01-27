@@ -1,48 +1,45 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "../../dist",
-    "declaration": true,
-    "allowImportingTsExtensions": false,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "resolveJsonModule": true,
-    "baseUrl": ".",
-    "jsx": "react-jsx",
-    "types": [],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
-  "include": [
-    "src/**/*",
-    "assets/*.json",
-  ],
-  "references": [
-    {
-      "path": "../../packages/ecs"
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "baseUrl": ".",
+        "declaration": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "../../dist",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "resolveJsonModule": true,
+        "strict": true,
+        "types": []
     },
-    {
-      "path": "../../packages/border"
-    },
-    {
-      "path": "../../packages/dynamics"
-    },
-    {
-      "path": "../../packages/curve"
-    },
-    {
-      "path": "../../packages/being"
-    },
-    {
-      "path": "../../packages/animate"
-    },
-    {
-      "path": "../../packages/math"
-    },
-    {
-      "path": "../../packages/board"
-    }
-  ]
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*", "assets/*.json"],
+    "references": [
+        {
+            "path": "../../packages/ecs"
+        },
+        {
+            "path": "../../packages/border"
+        },
+        {
+            "path": "../../packages/dynamics"
+        },
+        {
+            "path": "../../packages/curve"
+        },
+        {
+            "path": "../../packages/being"
+        },
+        {
+            "path": "../../packages/animate"
+        },
+        {
+            "path": "../../packages/math"
+        },
+        {
+            "path": "../../packages/board"
+        }
+    ]
 }

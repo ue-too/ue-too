@@ -1,17 +1,11 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
+    "categoryOrder": ["Core", "Helpers", "Types", "Easing", "*"],
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/animate",
-    "name": "@ue-too/animate",
-    "readme": "./README.md",
+    "extends": "../../typedoc.json",
     "includeVersion": true,
-    "categoryOrder": [
-        "Core",
-        "Helpers",
-        "Types",
-        "Easing",
-        "*"
-    ],
+    "name": "@ue-too/animate",
+    "out": "../../docs/animate",
+    "readme": "./README.md",
     "sort": ["static-first", "alphabetical"]
 }

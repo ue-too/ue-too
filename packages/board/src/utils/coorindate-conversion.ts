@@ -1,7 +1,8 @@
-import { Point } from "@ue-too/math";
-import { Canvas } from "../input-interpretation/input-state-machine/kmt-input-context";
-import { convertFromWindow2Canvas } from "./coordinate-conversions/window-canvas";
-import { convertFromCanvas2ViewPort } from "./coordinate-conversions/canvas-viewport";
+import { Point } from '@ue-too/math';
+
+import { Canvas } from '../input-interpretation/input-state-machine/kmt-input-context';
+import { convertFromCanvas2ViewPort } from './coordinate-conversions/canvas-viewport';
+import { convertFromWindow2Canvas } from './coordinate-conversions/window-canvas';
 
 /**
  * Converts an isometric 3D point to a flat 2D world point.
@@ -52,8 +53,8 @@ export function pointConversion(point: Point) {
 
     return {
         x: point.x * cos30 - point.y * cos30,
-        y: point.x * cos60 + point.y * cos60 + (point.z ?? 0)
-    }
+        y: point.x * cos60 + point.y * cos60 + (point.z ?? 0),
+    };
 }
 
 /**
@@ -102,7 +103,19 @@ export function pointConversion(point: Point) {
  * @see {@link convertFromWindow2Canvas} for window to canvas conversion
  * @see {@link convertFromCanvas2ViewPort} for canvas to viewport conversion
  */
-export function convertFromWindow2ViewPortWithCanvasOperator(point: Point, canvas: Canvas, viewportOriginInCanvasSpace: Point = {x: canvas.width / 2, y: canvas.height / 2}, viewportHasFlippedYAxis: boolean = false): Point {
+export function convertFromWindow2ViewPortWithCanvasOperator(
+    point: Point,
+    canvas: Canvas,
+    viewportOriginInCanvasSpace: Point = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+    },
+    viewportHasFlippedYAxis: boolean = false
+): Point {
     const pointInCanvas = convertFromWindow2Canvas(point, canvas);
-    return convertFromCanvas2ViewPort(pointInCanvas, viewportOriginInCanvasSpace, viewportHasFlippedYAxis);
+    return convertFromCanvas2ViewPort(
+        pointInCanvas,
+        viewportOriginInCanvasSpace,
+        viewportHasFlippedYAxis
+    );
 }

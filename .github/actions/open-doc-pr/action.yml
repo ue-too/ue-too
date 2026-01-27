@@ -1,117 +1,116 @@
 name: 'Open Documentation Update Pull Request'
 description: 'Open a pull request to update the documentation'
 inputs:
-  doc-version:
-    description: 'Documentation version'
-    required: true
-  bun-version:
-    description: 'bun version'
-    required: false
-    default: '1.3.4'
-  pat:
-    description: 'Personal Access Token for checkout'
-    required: false
-  target-repo:
-    description: 'Target repository in format owner/repo (e.g., owner/docs-repo)'
-    required: true
-  target-branch:
-    description: 'Target branch to open PR against'
-    required: false
-    default: 'main'
-  pr-branch:
-    description: 'Branch name for the PR (will be created if it does not exist)'
-    required: false
-    default: 'update-docs'
-  pr-title:
-    description: 'Pull request title'
-    required: false
-    default: 'Update documentation'
-  pr-body:
-    description: 'Pull request body/description'
-    required: false
-    default: 'Automated documentation update'
-  install-deps:
-    description: 'Whether to install dependencies'
-    required: false
-    default: 'false'
-  build:
-    description: 'Whether to build documentation'
-    required: false
-    default: 'false'
-  docs-destination:
-    description: 'Destination path in target repo for documentation files (relative to repo root)'
-    required: false
-    default: 'docs'
+    doc-version:
+        description: 'Documentation version'
+        required: true
+    bun-version:
+        description: 'bun version'
+        required: false
+        default: '1.3.4'
+    pat:
+        description: 'Personal Access Token for checkout'
+        required: false
+    target-repo:
+        description: 'Target repository in format owner/repo (e.g., owner/docs-repo)'
+        required: true
+    target-branch:
+        description: 'Target branch to open PR against'
+        required: false
+        default: 'main'
+    pr-branch:
+        description: 'Branch name for the PR (will be created if it does not exist)'
+        required: false
+        default: 'update-docs'
+    pr-title:
+        description: 'Pull request title'
+        required: false
+        default: 'Update documentation'
+    pr-body:
+        description: 'Pull request body/description'
+        required: false
+        default: 'Automated documentation update'
+    install-deps:
+        description: 'Whether to install dependencies'
+        required: false
+        default: 'false'
+    build:
+        description: 'Whether to build documentation'
+        required: false
+        default: 'false'
+    docs-destination:
+        description: 'Destination path in target repo for documentation files (relative to repo root)'
+        required: false
+        default: 'docs'
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Download documentation artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: built-docs
-        path: ./source-docs
+    using: 'composite'
+    steps:
+        - name: Download documentation artifacts
+          uses: actions/download-artifact@v4
+          with:
+              name: built-docs
+              path: ./source-docs
 
-    - name: Checkout target repository
-      shell: bash
-      run: |
-        cd /tmp
-        git clone https://${{ inputs.pat }}@github.com/${{ inputs.target-repo }}.git target-repo
-        cd target-repo
-        git config user.name "GitHub Actions Bot"
-        git config user.email "actions@github.com"
-        echo "TARGET_REPO_DIR=$(pwd)" >> $GITHUB_ENV
+        - name: Checkout target repository
+          shell: bash
+          run: |
+              cd /tmp
+              git clone https://${{ inputs.pat }}@github.com/${{ inputs.target-repo }}.git target-repo
+              cd target-repo
+              git config user.name "GitHub Actions Bot"
+              git config user.email "actions@github.com"
+              echo "TARGET_REPO_DIR=$(pwd)" >> $GITHUB_ENV
 
-    - name: Create branch and prepare changes
-      shell: bash
-      run: |
-        cd "$TARGET_REPO_DIR"
-        # Check if branch exists, if not create it
-        if git ls-remote --heads origin ${{ inputs.pr-branch }} | grep -q ${{ inputs.pr-branch }}; then
-          git fetch origin ${{ inputs.pr-branch }}
-          git checkout ${{ inputs.pr-branch }}
-        else
-          git checkout -b ${{ inputs.pr-branch }}
-        fi
-        
-        # Copy built documentation from source repo to target repo
-        if [ -d "$GITHUB_WORKSPACE/source-docs" ]; then
-          # Create destination directory if it doesn't exist
-          mkdir -p "./${{ inputs.docs-destination }}"
-          # Copy all docs directories to the target repo
-          cp -r "$GITHUB_WORKSPACE/source-docs"/* "./${{ inputs.docs-destination }}/"
-        fi
-        
-        echo "BRANCH_NAME=${{ inputs.pr-branch }}" >> $GITHUB_ENV
+        - name: Create branch and prepare changes
+          shell: bash
+          run: |
+              cd "$TARGET_REPO_DIR"
+              # Check if branch exists, if not create it
+              if git ls-remote --heads origin ${{ inputs.pr-branch }} | grep -q ${{ inputs.pr-branch }}; then
+                git fetch origin ${{ inputs.pr-branch }}
+                git checkout ${{ inputs.pr-branch }}
+              else
+                git checkout -b ${{ inputs.pr-branch }}
+              fi
 
-    - name: Commit and push changes
-      shell: bash
-      run: |
-        cd "$TARGET_REPO_DIR"
-        git add .
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-          echo "HAS_CHANGES=false" >> $GITHUB_ENV
-        else
-          git commit -m "Update documentation to version ${{ inputs.doc-version }}"
-          git push origin ${{ inputs.pr-branch }}
-          echo "HAS_CHANGES=true" >> $GITHUB_ENV
-        fi
+              # Copy built documentation from source repo to target repo
+              if [ -d "$GITHUB_WORKSPACE/source-docs" ]; then
+                # Create destination directory if it doesn't exist
+                mkdir -p "./${{ inputs.docs-destination }}"
+                # Copy all docs directories to the target repo
+                cp -r "$GITHUB_WORKSPACE/source-docs"/* "./${{ inputs.docs-destination }}/"
+              fi
 
-    - name: Open Pull Request
-      shell: bash
-      env:
-        GH_TOKEN: ${{ inputs.pat }}
-      run: |
-        if [ "$HAS_CHANGES" = "true" ]; then
-          cd "$TARGET_REPO_DIR"
-          gh pr create \
-            --repo "${{ inputs.target-repo }}" \
-            --base "${{ inputs.target-branch }}" \
-            --head "${{ inputs.pr-branch }}" \
-            --title "${{ inputs.pr-title }}" \
-            --body "${{ inputs.pr-body }}"
-        else
-          echo "No changes detected, skipping PR creation"
-        fi
+              echo "BRANCH_NAME=${{ inputs.pr-branch }}" >> $GITHUB_ENV
 
+        - name: Commit and push changes
+          shell: bash
+          run: |
+              cd "$TARGET_REPO_DIR"
+              git add .
+              if git diff --staged --quiet; then
+                echo "No changes to commit"
+                echo "HAS_CHANGES=false" >> $GITHUB_ENV
+              else
+                git commit -m "Update documentation to version ${{ inputs.doc-version }}"
+                git push origin ${{ inputs.pr-branch }}
+                echo "HAS_CHANGES=true" >> $GITHUB_ENV
+              fi
+
+        - name: Open Pull Request
+          shell: bash
+          env:
+              GH_TOKEN: ${{ inputs.pat }}
+          run: |
+              if [ "$HAS_CHANGES" = "true" ]; then
+                cd "$TARGET_REPO_DIR"
+                gh pr create \
+                  --repo "${{ inputs.target-repo }}" \
+                  --base "${{ inputs.target-branch }}" \
+                  --head "${{ inputs.pr-branch }}" \
+                  --title "${{ inputs.pr-title }}" \
+                  --body "${{ inputs.pr-body }}"
+              else
+                echo "No changes detected, skipping PR creation"
+              fi

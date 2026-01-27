@@ -1,27 +1,28 @@
-import { Point } from "@ue-too/math";
-import { RigidBody } from "./rigidbody";
-import { SpatialIndex, SpatialIndexObject } from "./dynamic-tree";
+import { Point } from '@ue-too/math';
 
-export class RectangleBound{
+import { SpatialIndex, SpatialIndexObject } from './dynamic-tree';
+import { RigidBody } from './rigidbody';
+
+export class RectangleBound {
     private bottomLeft: Point;
     private width: number;
     private height: number;
 
-    constructor(bottomLeft: Point, width: number, height: number){
+    constructor(bottomLeft: Point, width: number, height: number) {
         this.bottomLeft = bottomLeft;
         this.width = width;
         this.height = height;
     }
 
-    getWidth(){
+    getWidth() {
         return this.width;
     }
 
-    getHeight(){
+    getHeight() {
         return this.height;
     }
 
-    getbottomLeft(){
+    getbottomLeft() {
         return this.bottomLeft;
     }
 }
@@ -40,77 +41,116 @@ export class QuadTree<T extends QuadTreeObject> implements SpatialIndex<T> {
     private objects: T[] = [];
     private nodes: (QuadTree<T> | undefined)[] = [];
     private bounds: RectangleBound;
-    
 
-    constructor(level: number, bounds: RectangleBound){
+    constructor(level: number, bounds: RectangleBound) {
         this.level = level;
         this.objects = [];
         this.bounds = bounds;
         this.nodes = [undefined, undefined, undefined, undefined];
     }
 
-    draw(context: CanvasRenderingContext2D){
+    draw(context: CanvasRenderingContext2D) {
         context.beginPath();
-        context.rect(this.bounds.getbottomLeft().x, this.bounds.getbottomLeft().y, this.bounds.getWidth(), this.bounds.getHeight());
+        context.rect(
+            this.bounds.getbottomLeft().x,
+            this.bounds.getbottomLeft().y,
+            this.bounds.getWidth(),
+            this.bounds.getHeight()
+        );
         context.stroke();
         // console.log("objects: ", this.objects.length, "level: ", this.level);
-        for(let index = 0; index < this.nodes.length; index++){
+        for (let index = 0; index < this.nodes.length; index++) {
             let node = this.nodes[index];
-            if(node != undefined){
+            if (node != undefined) {
                 node.draw(context);
             }
         }
     }
 
-    clear(){
+    clear() {
         this.objects = [];
-        for(let index = 0; index < this.nodes.length; index++){
+        for (let index = 0; index < this.nodes.length; index++) {
             let node = this.nodes[index];
-            if(node != undefined){
+            if (node != undefined) {
                 node.clear();
                 node = undefined;
             }
         }
     }
 
-    split(){
+    split() {
         // console.log("split");
         let subWidth = this.bounds.getWidth() / 2;
         let subHeight = this.bounds.getHeight() / 2;
         let bottomLeft = this.bounds.getbottomLeft();
-        // bottom left is the first node and it goes clock wise 
-        this.nodes[0] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y}, subWidth, subHeight));
-        this.nodes[1] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x, y: bottomLeft.y + subHeight}, subWidth, subHeight));
-        this.nodes[2] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y + subHeight}, subWidth, subHeight));
-        this.nodes[3] = new QuadTree<T>(this.level + 1, new RectangleBound({x: bottomLeft.x + subWidth, y: bottomLeft.y}, subWidth, subHeight));
+        // bottom left is the first node and it goes clock wise
+        this.nodes[0] = new QuadTree<T>(
+            this.level + 1,
+            new RectangleBound(
+                { x: bottomLeft.x, y: bottomLeft.y },
+                subWidth,
+                subHeight
+            )
+        );
+        this.nodes[1] = new QuadTree<T>(
+            this.level + 1,
+            new RectangleBound(
+                { x: bottomLeft.x, y: bottomLeft.y + subHeight },
+                subWidth,
+                subHeight
+            )
+        );
+        this.nodes[2] = new QuadTree<T>(
+            this.level + 1,
+            new RectangleBound(
+                { x: bottomLeft.x + subWidth, y: bottomLeft.y + subHeight },
+                subWidth,
+                subHeight
+            )
+        );
+        this.nodes[3] = new QuadTree<T>(
+            this.level + 1,
+            new RectangleBound(
+                { x: bottomLeft.x + subWidth, y: bottomLeft.y },
+                subWidth,
+                subHeight
+            )
+        );
     }
 
-    getIndex(vBody: T){
-        let midPoint = {x: this.bounds.getbottomLeft().x + this.bounds.getWidth() / 2, y: this.bounds.getbottomLeft().y + this.bounds.getHeight() / 2};
+    getIndex(vBody: T) {
+        let midPoint = {
+            x: this.bounds.getbottomLeft().x + this.bounds.getWidth() / 2,
+            y: this.bounds.getbottomLeft().y + this.bounds.getHeight() / 2,
+        };
         let points = vBody.AABB;
-        let bottom = points.max.y < midPoint.y && points.min.y > this.bounds.getbottomLeft().y;
-        let left = points.max.x < midPoint.x && points.min.x > this.bounds.getbottomLeft().x;
+        let bottom =
+            points.max.y < midPoint.y &&
+            points.min.y > this.bounds.getbottomLeft().y;
+        let left =
+            points.max.x < midPoint.x &&
+            points.min.x > this.bounds.getbottomLeft().x;
         let right = points.max.x > midPoint.x && points.min.x > midPoint.x;
         let top = points.max.y > midPoint.y && points.min.y > midPoint.y;
         // console.log("level", this.level);
-        if (bottom && left){
+        if (bottom && left) {
             return 0;
-        } else if (bottom && right){
+        } else if (bottom && right) {
             return 3;
-        } else if (top && left){
+        } else if (top && left) {
             return 1;
-        } else if (top && right){
+        } else if (top && right) {
             return 2;
         }
         return -1;
     }
 
-    insert(vBody: T){
+    insert(vBody: T) {
         let node = this.nodes[0];
-        if (node != undefined){
+        if (node != undefined) {
             let index = this.getIndex(vBody);
 
-            if (index !== -1){
+            if (index !== -1) {
                 node = this.nodes[index];
                 node?.insert(vBody);
                 return;
@@ -118,34 +158,36 @@ export class QuadTree<T extends QuadTreeObject> implements SpatialIndex<T> {
         }
 
         this.objects.push(vBody);
-        if(this.objects.length > this.MAX_OBJECTS && this.level < this.MAX_LEVELS){
-            if (this.nodes[0] == null || this.nodes[0] == undefined){
+        if (
+            this.objects.length > this.MAX_OBJECTS &&
+            this.level < this.MAX_LEVELS
+        ) {
+            if (this.nodes[0] == null || this.nodes[0] == undefined) {
                 this.split();
             }
             let i = 0;
-            while (i < this.objects.length){
+            while (i < this.objects.length) {
                 let index = this.getIndex(this.objects[i]);
                 let node = this.nodes[index];
-                if (index != -1 && node !== undefined){
+                if (index != -1 && node !== undefined) {
                     let vBody = this.objects[i];
                     this.objects.splice(i, 1);
                     node.insert(vBody);
-                } else{
+                } else {
                     i++;
                 }
             }
         }
     }
 
-    retrieve(vBody: T): T[]{
+    retrieve(vBody: T): T[] {
         let index = this.getIndex(vBody);
         let res = [];
         let node = this.nodes[index];
-        if(index !== -1 && node !== undefined){
+        if (index !== -1 && node !== undefined) {
             res.push(...node.retrieve(vBody));
         }
         res.push(...this.objects);
         return res;
     }
-
 }

@@ -3,17 +3,20 @@
 This is one of three core modules.
 
 This module consists of the following sub-modules:
+
 - `board-camera`: The core of the board camera system
 - `camera-rig`: Transforms camera input based on configuration (e.g., clamping, restrictions) before passing it to the board camera
 - `camera-update-publisher`: Publishes camera updates to registered callbacks
 - `camera-update-batcher`: Batches camera updates (currently unstable, not recommended for use)
 
 ## Purpose of `BoardCamera`
+
 - Maintains viewport information
 - Converts viewport information into transform matrices compatible with various rendering engines (e.g., Vanilla Canvas, pixi.js, fabric.js)
 - Converts coordinates between viewport and world coordinate systems
 
 ## Camera (Viewport) Concept
+
 Before diving into the `BoardCamera` API details, let's establish the conceptual framework behind the camera (viewport) to align with the API's assumptions.
 
 Panning and zooming a canvas requires a viewport, a concept present in many libraries that implement infinite canvas functionality (even in the name of pixi-viewport). It's similar to the viewBox in SVG, where you only see a portion of the larger picture through the viewport.
@@ -29,6 +32,7 @@ This analogy becomes more complex when considering zooming effects. Think of it 
 ### The `BoardCamera` Interface and Default Implementation
 
 There are two types of board camera interfaces:
+
 1. `BoardCamera` interface
 2. `ObservableBoardCamera` interface
 
@@ -123,14 +127,32 @@ For the device pixel ratio, you can typically use `window.devicePixelRatio`. How
 After obtaining the transform matrix, you can apply it to your rendering engine's context:
 
 For vanilla canvas:
+
 ```typescript
 const ctx = canvas.getContext('2d');
-ctx.setTransform(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f);
+ctx.setTransform(
+    transform.a,
+    transform.b,
+    transform.c,
+    transform.d,
+    transform.e,
+    transform.f
+);
 ```
 
 For pixi.js:
+
 ```typescript
-app.stage.setFromMatrix(new Matrix(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f));
+app.stage.setFromMatrix(
+    new Matrix(
+        transform.a,
+        transform.b,
+        transform.c,
+        transform.d,
+        transform.e,
+        transform.f
+    )
+);
 ```
 
 #### The `CameraRig`
@@ -141,14 +163,14 @@ When panning with the default camera rig, it automatically clamps the camera mov
 
 ```typescript
 // Disable clamping behavior (enabled by default)
-cameraRig.configure({clampTranslation: false});
+cameraRig.configure({ clampTranslation: false });
 ```
 
 The default camera rig also manages restrictions. For example, to restrict lateral movement:
 
 ```typescript
 // Enable lateral movement restriction (disabled by default)
-cameraRig.configure({restrictTranslationX: true});
+cameraRig.configure({ restrictTranslationX: true });
 ```
 
 A utility function creates a camera rig with default configuration:
@@ -161,12 +183,13 @@ const cameraRig = createDefaultCameraRig(boardCamera);
 You can then use the camera rig to control the board camera:
 
 ```typescript
-cameraRig.panByViewPort({x: 100, y: 100}); // Pan by 100px in viewport coordinates
+cameraRig.panByViewPort({ x: 100, y: 100 }); // Pan by 100px in viewport coordinates
 cameraRig.zoomBy(2); // Zoom by 2 (additive, not multiplicative)
 cameraRig.rotateBy(Math.PI / 4); // Rotate by π/4 radians
 ```
 
 Available camera rig methods:
+
 - `panByViewPort`: Pan by a specified amount in viewport coordinates
 - `panByWorld`: Pan by a specified amount in world coordinates
 - `panToViewPort`: Pan to a specified position in viewport coordinates (currently doesn't check if destination is outside viewport)
@@ -203,7 +226,7 @@ type CameraState = {
 You can access the pan event delta from `eventPayload` and the current camera state from `cameraState`:
 
 ```typescript
-observableCamera.on("pan", (event, cameraState) => {
+observableCamera.on('pan', (event, cameraState) => {
     // Handle the pan event
     console.log('pan event', event.diff);
     console.log('camera state', cameraState);
@@ -213,7 +236,7 @@ observableCamera.on("pan", (event, cameraState) => {
 The `on` method returns an unsubscribe function:
 
 ```typescript
-const unsubscribe = observableCamera.on("pan", (event, cameraState) => {
+const unsubscribe = observableCamera.on('pan', (event, cameraState) => {
     // Handle the pan event
 });
 
@@ -225,9 +248,13 @@ Alternatively, you can pass an abort signal in the options argument of the `on` 
 
 ```typescript
 const abortController = new AbortController();
-const unsubscribe = observableCamera.on("pan", (event, cameraState) => {
-    // Handle the pan event
-}, {signal: abortController.signal});
+const unsubscribe = observableCamera.on(
+    'pan',
+    (event, cameraState) => {
+        // Handle the pan event
+    },
+    { signal: abortController.signal }
+);
 
 // Unsubscribe when no longer needed
 abortController.abort();
@@ -262,15 +289,15 @@ To differentiate which event triggered the callback, you can check the `type` pr
 You can either use `switch` or `if` statements to do this.
 
 ```typescript
-if (eventPayload.type === "pan") {
+if (eventPayload.type === 'pan') {
     // handle the pan event
     // if you use typescript, it'll automatically infer the type of the eventPayload
     console.log('pan event', eventPayload.diff); // deltaZoomAmount or deltaRotation would not be available in autocomplete
-} else if (eventPayload.type === "zoom") {
+} else if (eventPayload.type === 'zoom') {
     // handle the zoom event
     // if you use typescript, it'll automatically infer the type of the eventPayload
     console.log('zoom event', eventPayload.deltaZoomAmount); // diff would not be available in autocomplete
-} else if (eventPayload.type === "rotate") {
+} else if (eventPayload.type === 'rotate') {
     // handle the rotate event
     // if you use typescript, it'll automatically infer the type of the eventPayload
     console.log('rotate event', eventPayload.deltaRotation); // diff would not be available in autocomplete

@@ -1,67 +1,65 @@
 {
-  "name": "dynamics",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/dynamics/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/dynamics"
-      },
-      "dependsOn": [
-        {
-          "projects": ["ecs", "math"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": ["math"],
+    "name": "dynamics",
+    "projectType": "library",
+    "sourceRoot": "packages/dynamics/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["ecs", "math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/dynamics"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["ecs", "math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/dynamics"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/dynamics && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/dynamics"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/dynamics"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/dynamics/dist",
+                "forwardAllArgs": false
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/dynamics"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/dynamics"
-      },
-      "dependsOn": [
-        {
-          "projects": ["ecs", "math"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/dynamics"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/dynamics"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "forwardAllArgs": false,
-        "cwd": "packages/dynamics/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/dynamics && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/dynamics"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": [
-    "math"
-  ]
 }

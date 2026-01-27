@@ -99,5 +99,5 @@
  * @see {@link CompositeAnimation} for animation sequencing
  */
 
-export * from "./animatable-attribute";
-export * from "./composite-animation";
+export * from './animatable-attribute';
+export * from './composite-animation';

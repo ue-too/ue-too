@@ -1,0 +1,18 @@
+# Ignore artifacts:
+build
+coverage
+
+# Ignore files:
+.gitignore
+.npmignore
+.prettierrc
+.eslintignore
+.eslintrc
+.prettierignore
+.eslintrc
+.prettierrc
+.eslintignore
+.eslintrc
+
+package.json
+bun.lock

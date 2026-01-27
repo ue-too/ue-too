@@ -4,43 +4,43 @@
  * Provides abstract base classes for implementing effects that modify game state.
  * Effects integrate directly with the ECS coordinator.
  */
-
-import type { Effect, ActionContext, Event } from '../../core/types';
 import type { Coordinator } from '@ue-too/ecs';
+
+import type { ActionContext, Effect, Event } from '../../core/types';
 
 /**
  * Abstract base class for all effects.
  * Provides default implementations for event generation.
  */
 export abstract class BaseEffect implements Effect {
-  /**
-   * Apply the effect to the game state.
-   * Must be implemented by subclasses.
-   *
-   * @param context - Action context containing state and entities
-   */
-  abstract apply(context: ActionContext): void;
+    /**
+     * Apply the effect to the game state.
+     * Must be implemented by subclasses.
+     *
+     * @param context - Action context containing state and entities
+     */
+    abstract apply(context: ActionContext): void;
 
-  /**
-   * Whether this effect generates an event.
-   * Override to return true if this effect should generate events.
-   *
-   * @returns False by default
-   */
-  generatesEvent(): boolean {
-    return false;
-  }
+    /**
+     * Whether this effect generates an event.
+     * Override to return true if this effect should generate events.
+     *
+     * @returns False by default
+     */
+    generatesEvent(): boolean {
+        return false;
+    }
 
-  /**
-   * Create an event if this effect generates one.
-   * Override if generatesEvent() returns true.
-   *
-   * @param context - Action context
-   * @returns Null by default
-   */
-  createEvent(context: ActionContext): Event | null {
-    return null;
-  }
+    /**
+     * Create an event if this effect generates one.
+     * Override if generatesEvent() returns true.
+     *
+     * @param context - Action context
+     * @returns Null by default
+     */
+    createEvent(context: ActionContext): Event | null {
+        return null;
+    }
 }
 
 /**
@@ -48,16 +48,16 @@ export abstract class BaseEffect implements Effect {
  * Provides direct access to the coordinator for convenience.
  */
 export abstract class ECSEffect extends BaseEffect {
-  /**
-   * Get the coordinator from the context.
-   * Helper method for subclasses.
-   *
-   * @param context - Action context
-   * @returns The ECS coordinator
-   */
-  protected getCoordinator(context: ActionContext): Coordinator {
-    return context.state.coordinator;
-  }
+    /**
+     * Get the coordinator from the context.
+     * Helper method for subclasses.
+     *
+     * @param context - Action context
+     * @returns The ECS coordinator
+     */
+    protected getCoordinator(context: ActionContext): Coordinator {
+        return context.state.coordinator;
+    }
 }
 
 /**
@@ -73,56 +73,56 @@ export abstract class ECSEffect extends BaseEffect {
  * ```
  */
 export class CompositeEffect extends BaseEffect {
-  constructor(private effects: Effect[]) {
-    super();
-  }
-
-  /**
-   * Apply all effects in sequence.
-   *
-   * @param context - Action context
-   */
-  apply(context: ActionContext): void {
-    for (const effect of this.effects) {
-      effect.apply(context);
+    constructor(private effects: Effect[]) {
+        super();
     }
-  }
 
-  /**
-   * Generates event if any sub-effect generates events.
-   *
-   * @returns True if any sub-effect generates events
-   */
-  generatesEvent(): boolean {
-    return this.effects.some((effect) => effect.generatesEvent());
-  }
-
-  /**
-   * Create events from all sub-effects that generate them.
-   * Note: Returns only the first event found. If you need multiple events,
-   * use separate EmitEvent effects.
-   *
-   * @param context - Action context
-   * @returns First event found or null
-   */
-  createEvent(context: ActionContext): Event | null {
-    for (const effect of this.effects) {
-      if (effect.generatesEvent()) {
-        const event = effect.createEvent(context);
-        if (event) return event;
-      }
+    /**
+     * Apply all effects in sequence.
+     *
+     * @param context - Action context
+     */
+    apply(context: ActionContext): void {
+        for (const effect of this.effects) {
+            effect.apply(context);
+        }
     }
-    return null;
-  }
 
-  /**
-   * Get all sub-effects.
-   *
-   * @returns Array of effects
-   */
-  getEffects(): Effect[] {
-    return [...this.effects];
-  }
+    /**
+     * Generates event if any sub-effect generates events.
+     *
+     * @returns True if any sub-effect generates events
+     */
+    generatesEvent(): boolean {
+        return this.effects.some(effect => effect.generatesEvent());
+    }
+
+    /**
+     * Create events from all sub-effects that generate them.
+     * Note: Returns only the first event found. If you need multiple events,
+     * use separate EmitEvent effects.
+     *
+     * @param context - Action context
+     * @returns First event found or null
+     */
+    createEvent(context: ActionContext): Event | null {
+        for (const effect of this.effects) {
+            if (effect.generatesEvent()) {
+                const event = effect.createEvent(context);
+                if (event) return event;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get all sub-effects.
+     *
+     * @returns Array of effects
+     */
+    getEffects(): Effect[] {
+        return [...this.effects];
+    }
 }
 
 /**
@@ -130,9 +130,9 @@ export class CompositeEffect extends BaseEffect {
  * Useful as a placeholder or for testing.
  */
 export class NoOpEffect extends BaseEffect {
-  apply(context: ActionContext): void {
-    // Do nothing
-  }
+    apply(context: ActionContext): void {
+        // Do nothing
+    }
 }
 
 /**
@@ -150,22 +150,22 @@ export class NoOpEffect extends BaseEffect {
  * ```
  */
 export class CustomEffect extends BaseEffect {
-  constructor(
-    private effectFn: (context: ActionContext) => void,
-    private eventGenerator?: (context: ActionContext) => Event | null
-  ) {
-    super();
-  }
+    constructor(
+        private effectFn: (context: ActionContext) => void,
+        private eventGenerator?: (context: ActionContext) => Event | null
+    ) {
+        super();
+    }
 
-  apply(context: ActionContext): void {
-    this.effectFn(context);
-  }
+    apply(context: ActionContext): void {
+        this.effectFn(context);
+    }
 
-  generatesEvent(): boolean {
-    return this.eventGenerator !== undefined;
-  }
+    generatesEvent(): boolean {
+        return this.eventGenerator !== undefined;
+    }
 
-  createEvent(context: ActionContext): Event | null {
-    return this.eventGenerator ? this.eventGenerator(context) : null;
-  }
+    createEvent(context: ActionContext): Event | null {
+        return this.eventGenerator ? this.eventGenerator(context) : null;
+    }
 }

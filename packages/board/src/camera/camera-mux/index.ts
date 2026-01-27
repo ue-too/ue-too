@@ -25,6 +25,6 @@
  * @module
  */
 
-export * from "./interface";
-export * from "./relay";
-export * from "./animation-and-lock";
+export * from './interface';
+export * from './relay';
+export * from './animation-and-lock';

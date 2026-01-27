@@ -1,8 +1,17 @@
-import { System, Coordinator, Entity, ComponentType, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
+import {
+    ComponentName,
+    ComponentType,
+    Coordinator,
+    Entity,
+    System,
+    createGlobalComponentName,
+} from '@ue-too/ecs';
 
-export const GRID_COMPONENT: ComponentName = createGlobalComponentName("Grid");
-export const GRID_LOCATION_COMPONENT: ComponentName = createGlobalComponentName("GridLocation");
-export const TEST_FUNCTION_IN_COMPONENT: ComponentName = createGlobalComponentName("TestFunctionInComponent");
+export const GRID_COMPONENT: ComponentName = createGlobalComponentName('Grid');
+export const GRID_LOCATION_COMPONENT: ComponentName =
+    createGlobalComponentName('GridLocation');
+export const TEST_FUNCTION_IN_COMPONENT: ComponentName =
+    createGlobalComponentName('TestFunctionInComponent');
 
 export type GridComponent = {
     cells: Entity[][];
@@ -16,37 +25,60 @@ export type GridLocationComponent = {
 
 export type TestFunctionInComponent = {
     testFunc: () => void;
-}
+};
 
-export function addAndDisplace(grid: Entity, row: number, column: number, entity: Entity, coordinator: Coordinator): void {
-    const gridComponentOfGrid = coordinator.getComponentFromEntity<GridComponent>(GRID_COMPONENT, grid);
-    const testFunctionInComponentOfEntity = coordinator.getComponentFromEntity<TestFunctionInComponent>(TEST_FUNCTION_IN_COMPONENT, entity);
-    if(!testFunctionInComponentOfEntity) {
-        throw new Error(entity + " does not have a test function component");
+export function addAndDisplace(
+    grid: Entity,
+    row: number,
+    column: number,
+    entity: Entity,
+    coordinator: Coordinator
+): void {
+    const gridComponentOfGrid =
+        coordinator.getComponentFromEntity<GridComponent>(GRID_COMPONENT, grid);
+    const testFunctionInComponentOfEntity =
+        coordinator.getComponentFromEntity<TestFunctionInComponent>(
+            TEST_FUNCTION_IN_COMPONENT,
+            entity
+        );
+    if (!testFunctionInComponentOfEntity) {
+        throw new Error(entity + ' does not have a test function component');
     }
-    if(!gridComponentOfGrid) {
-        throw new Error(grid + " is not a grid, thus cannot be added to");
+    if (!gridComponentOfGrid) {
+        throw new Error(grid + ' is not a grid, thus cannot be added to');
     }
-    const gridLocationComponentOfEntity = coordinator.getComponentFromEntity<GridLocationComponent>(GRID_LOCATION_COMPONENT, entity);
+    const gridLocationComponentOfEntity =
+        coordinator.getComponentFromEntity<GridLocationComponent>(
+            GRID_LOCATION_COMPONENT,
+            entity
+        );
 
-    if(!gridLocationComponentOfEntity) {
-        throw new Error(entity + " is not in a grid, thus cannot be added to " + grid);
+    if (!gridLocationComponentOfEntity) {
+        throw new Error(
+            entity + ' is not in a grid, thus cannot be added to ' + grid
+        );
     }
 
-    if(row < 0 || row >= gridComponentOfGrid.cells.length) {
-        throw new Error("Row " + row + " is out of bounds for grid " + grid);
+    if (row < 0 || row >= gridComponentOfGrid.cells.length) {
+        throw new Error('Row ' + row + ' is out of bounds for grid ' + grid);
     }
 
-    if(column < 0 || column >= gridComponentOfGrid.cells[row].length) {
-        throw new Error("Column " + column + " is out of bounds for grid " + grid);
+    if (column < 0 || column >= gridComponentOfGrid.cells[row].length) {
+        throw new Error(
+            'Column ' + column + ' is out of bounds for grid ' + grid
+        );
     }
 
     const originalEntity = gridComponentOfGrid.cells[row][column];
 
-    if(originalEntity) {
-        const originalGridLocationComponent = coordinator.getComponentFromEntity<GridLocationComponent>(GRID_LOCATION_COMPONENT, originalEntity);
+    if (originalEntity) {
+        const originalGridLocationComponent =
+            coordinator.getComponentFromEntity<GridLocationComponent>(
+                GRID_LOCATION_COMPONENT,
+                originalEntity
+            );
 
-        if(originalGridLocationComponent) {
+        if (originalGridLocationComponent) {
             originalGridLocationComponent.grid = null;
             originalGridLocationComponent.row = null;
             originalGridLocationComponent.column = null;

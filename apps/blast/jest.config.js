@@ -7,14 +7,16 @@ export default {
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
     extensionsToTreatAsEsm: ['.ts', '.tsx'],
     transform: {
-      '^.+\\.(ts|tsx)$': ['ts-jest', {
-        useESM: true,
-        tsconfig: 'tsconfig.spec.json'
-      }]
+        '^.+\\.(ts|tsx)$': [
+            'ts-jest',
+            {
+                useESM: true,
+                tsconfig: 'tsconfig.spec.json',
+            },
+        ],
     },
     moduleNameMapper: {
-      '^@ue-too/(.*)$': '<rootDir>/../../packages/$1/src',
-      '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
+        '^@ue-too/(.*)$': '<rootDir>/../../packages/$1/src',
+        '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     },
 };
-

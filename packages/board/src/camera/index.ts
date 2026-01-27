@@ -19,7 +19,7 @@
  * @module
  */
 
-export * from "./base";
+export * from './base';
 export * from './utils';
 export * from './default-camera';
 export * from './interface';

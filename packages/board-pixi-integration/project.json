@@ -1,64 +1,64 @@
 {
-  "name": "board-pixi-integration",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/board-pixi-integration/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/board-pixi-integration"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math", "being", "board"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": [],
+    "name": "board-pixi-integration",
+    "projectType": "library",
+    "sourceRoot": "packages/board-pixi-integration/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["math", "being", "board"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/board-pixi-integration"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["math", "being", "board"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/board-pixi-integration"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/board-pixi-integration && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/board-pixi-integration"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/board-pixi-integration"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/board-pixi-integration/dist"
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/board-pixi-integration"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/board-pixi-integration"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math", "being", "board"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/board-pixi-integration"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/board-pixi-integration"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "cwd": "packages/board-pixi-integration/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/board-pixi-integration && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/board-pixi-integration"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": []
 }

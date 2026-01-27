@@ -1,4 +1,4 @@
-import { Point } from "src";
+import { Point } from 'src';
 
 export class Matrix {
     private _inverse: Matrix3x3 | null = null;
@@ -21,7 +21,7 @@ export class Matrix {
     }
 
     invertPoint(point: Point): Point | null {
-        if(!this._inverse){
+        if (!this._inverse) {
             return null;
         }
         return transformPoint(point, this._inverse);
@@ -29,9 +29,15 @@ export class Matrix {
 }
 
 export interface Matrix3x3 {
-    a: number; c: number; e: number;
-    b: number; d: number; f: number;
-    g: number; h: number; i: number;
+    a: number;
+    c: number;
+    e: number;
+    b: number;
+    d: number;
+    f: number;
+    g: number;
+    h: number;
+    i: number;
 }
 
 export function inverseMatrix3x3(m: Matrix3x3): Matrix3x3 | null {
@@ -73,10 +79,8 @@ export function inverseMatrix3x3(m: Matrix3x3): Matrix3x3 | null {
         g: G,
         h: H,
         i: I,
-    }
+    };
 }
-  
-
 
 function transformPoint(point: Point, matrix: Matrix3x3): Point {
     const { x, y } = point;
@@ -92,6 +96,6 @@ function transformPoint(point: Point, matrix: Matrix3x3): Point {
 
     return {
         x: (a * x + c * y + e) / w,
-        y: (b * x + d * y + f) / w
+        y: (b * x + d * y + f) / w,
     };
 }

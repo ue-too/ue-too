@@ -6,8 +6,8 @@
  *
  * @module resolvers
  */
+import type { ComponentName, Entity } from '@ue-too/ecs';
 
-import type { Entity, ComponentName } from '@ue-too/ecs';
 import type { ActionContext } from '../core/types';
 
 // ============================================================================
@@ -58,20 +58,22 @@ export type ValueResolver<T> = (context: ActionContext) => T;
  * ```
  */
 export const EntityResolvers = {
-  /** Returns the actor (player performing the action) */
-  actor: (ctx: ActionContext) => ctx.actor,
+    /** Returns the actor (player performing the action) */
+    actor: (ctx: ActionContext) => ctx.actor,
 
-  /** Returns the first target */
-  target: (ctx: ActionContext) => ctx.targets[0] ?? null,
+    /** Returns the first target */
+    target: (ctx: ActionContext) => ctx.targets[0] ?? null,
 
-  /** Returns target at specific index */
-  targetAt: (index: number) => (ctx: ActionContext) => ctx.targets[index] ?? null,
+    /** Returns target at specific index */
+    targetAt: (index: number) => (ctx: ActionContext) =>
+        ctx.targets[index] ?? null,
 
-  /** Returns entity from parameters */
-  fromParam: (paramName: string) => (ctx: ActionContext) => ctx.parameters[paramName] ?? null,
+    /** Returns entity from parameters */
+    fromParam: (paramName: string) => (ctx: ActionContext) =>
+        ctx.parameters[paramName] ?? null,
 
-  /** Returns a fixed entity */
-  fixed: (entity: Entity) => (_ctx: ActionContext) => entity,
+    /** Returns a fixed entity */
+    fixed: (entity: Entity) => (_ctx: ActionContext) => entity,
 };
 
 // ============================================================================
@@ -97,47 +99,57 @@ export const EntityResolvers = {
  * ```
  */
 export const NumberResolvers = {
-  /** Returns a fixed number */
-  fixed: (value: number) => (_ctx: ActionContext) => value,
+    /** Returns a fixed number */
+    fixed: (value: number) => (_ctx: ActionContext) => value,
 
-  /** Returns value from parameters */
-  fromParam: (paramName: string) => (ctx: ActionContext) => ctx.parameters[paramName] ?? 0,
+    /** Returns value from parameters */
+    fromParam: (paramName: string) => (ctx: ActionContext) =>
+        ctx.parameters[paramName] ?? 0,
 
-  /** Returns component value */
-  fromComponent: <T>(
-    componentName: ComponentName,
-    entityResolver: EntityResolver,
-    property: keyof T
-  ) => (ctx: ActionContext) => {
-    const entity = entityResolver(ctx);
-    if (!entity) return 0;
-    const comp = ctx.state.coordinator.getComponentFromEntity<T>(componentName, entity);
-    if (!comp) return 0;
-    const value = comp[property];
-    return typeof value === 'number' ? value : 0;
-  },
+    /** Returns component value */
+    fromComponent:
+        <T>(
+            componentName: ComponentName,
+            entityResolver: EntityResolver,
+            property: keyof T
+        ) =>
+        (ctx: ActionContext) => {
+            const entity = entityResolver(ctx);
+            if (!entity) return 0;
+            const comp = ctx.state.coordinator.getComponentFromEntity<T>(
+                componentName,
+                entity
+            );
+            if (!comp) return 0;
+            const value = comp[property];
+            return typeof value === 'number' ? value : 0;
+        },
 
-  /** Returns negative of another resolver (for subtraction) */
-  negate: (resolver: NumberResolver | number) => (ctx: ActionContext) => {
-    const value = typeof resolver === 'function' ? resolver(ctx) : resolver;
-    return -value;
-  },
+    /** Returns negative of another resolver (for subtraction) */
+    negate: (resolver: NumberResolver | number) => (ctx: ActionContext) => {
+        const value = typeof resolver === 'function' ? resolver(ctx) : resolver;
+        return -value;
+    },
 
-  /** Adds multiple resolvers together */
-  add: (...resolvers: (NumberResolver | number)[]) => (ctx: ActionContext) => {
-    return resolvers.reduce((sum: number, r) => {
-      const value = typeof r === 'function' ? r(ctx) : r;
-      return sum + value;
-    }, 0);
-  },
+    /** Adds multiple resolvers together */
+    add:
+        (...resolvers: (NumberResolver | number)[]) =>
+        (ctx: ActionContext) => {
+            return resolvers.reduce((sum: number, r) => {
+                const value = typeof r === 'function' ? r(ctx) : r;
+                return sum + value;
+            }, 0);
+        },
 
-  /** Multiplies multiple resolvers together */
-  multiply: (...resolvers: (NumberResolver | number)[]) => (ctx: ActionContext) => {
-    return resolvers.reduce((product: number, r) => {
-      const value = typeof r === 'function' ? r(ctx) : r;
-      return product * value;
-    }, 1);
-  },
+    /** Multiplies multiple resolvers together */
+    multiply:
+        (...resolvers: (NumberResolver | number)[]) =>
+        (ctx: ActionContext) => {
+            return resolvers.reduce((product: number, r) => {
+                const value = typeof r === 'function' ? r(ctx) : r;
+                return product * value;
+            }, 1);
+        },
 };
 
 // ============================================================================
@@ -148,37 +160,37 @@ export const NumberResolvers = {
  * Resolves an entity from either a resolver function or a fixed entity.
  */
 export function resolveEntity(
-  resolver: EntityResolver | Entity,
-  context: ActionContext
+    resolver: EntityResolver | Entity,
+    context: ActionContext
 ): Entity | null {
-  if (typeof resolver === 'function') {
-    return resolver(context);
-  }
-  return resolver;
+    if (typeof resolver === 'function') {
+        return resolver(context);
+    }
+    return resolver;
 }
 
 /**
  * Resolves a number from either a resolver function or a fixed value.
  */
 export function resolveNumber(
-  resolver: NumberResolver | number,
-  context: ActionContext
+    resolver: NumberResolver | number,
+    context: ActionContext
 ): number {
-  if (typeof resolver === 'function') {
-    return resolver(context);
-  }
-  return resolver;
+    if (typeof resolver === 'function') {
+        return resolver(context);
+    }
+    return resolver;
 }
 
 /**
  * Resolves a value from either a resolver function or a fixed value.
  */
 export function resolveValue<T>(
-  resolver: ValueResolver<T> | T,
-  context: ActionContext
+    resolver: ValueResolver<T> | T,
+    context: ActionContext
 ): T {
-  if (typeof resolver === 'function') {
-    return (resolver as ValueResolver<T>)(context);
-  }
-  return resolver;
+    if (typeof resolver === 'function') {
+        return (resolver as ValueResolver<T>)(context);
+    }
+    return resolver;
 }

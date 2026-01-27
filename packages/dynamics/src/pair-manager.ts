@@ -1,5 +1,6 @@
-import { RigidBody } from "./rigidbody";
-import { Point } from "@ue-too/math";
+import { Point } from '@ue-too/math';
+
+import { RigidBody } from './rigidbody';
 
 /**
  * Represents a collision pair between two bodies.
@@ -76,13 +77,21 @@ export class PairManager {
     }
 
     // Update pairs for current frame
-    updatePairs(newCollisions: {bodyA: RigidBody, bodyB: RigidBody, contactPoints?: Point[], normal?: Point, depth?: number}[]): PairEvents {
+    updatePairs(
+        newCollisions: {
+            bodyA: RigidBody;
+            bodyB: RigidBody;
+            contactPoints?: Point[];
+            normal?: Point;
+            depth?: number;
+        }[]
+    ): PairEvents {
         this.frameNumber++;
-        
+
         const events: PairEvents = {
             created: [],
             updated: [],
-            removed: []
+            removed: [],
         };
 
         // Mark all existing pairs as inactive for this frame
@@ -114,7 +123,7 @@ export class PairManager {
                     normal: collision.normal,
                     depth: collision.depth,
                     frameCreated: this.frameNumber,
-                    frameUpdated: this.frameNumber
+                    frameUpdated: this.frameNumber,
                 };
                 this.pairs.set(id, newPair);
                 events.created.push(newPair);
@@ -124,7 +133,10 @@ export class PairManager {
         // Remove old inactive pairs
         const pairsToRemove: string[] = [];
         this.pairs.forEach((pair, id) => {
-            if (!pair.isActive && (this.frameNumber - pair.frameUpdated) > this.maxPairAge) {
+            if (
+                !pair.isActive &&
+                this.frameNumber - pair.frameUpdated > this.maxPairAge
+            ) {
                 pairsToRemove.push(id);
                 events.removed.push(pair);
             }
@@ -159,7 +171,7 @@ export class PairManager {
         return {
             totalPairs: this.pairs.size,
             activePairs: this.getActivePairs().length,
-            frameNumber: this.frameNumber
+            frameNumber: this.frameNumber,
         };
     }
 }

@@ -1,9 +1,9 @@
-import { Matrix } from "../src/matrix";
-import { Point } from "../src";
+import { Point } from '../src';
+import { Matrix } from '../src/matrix';
 
-describe("Matrix", () => {
-    describe("inverse", () => {
-        it("should invert an identity matrix", () => {
+describe('Matrix', () => {
+    describe('inverse', () => {
+        it('should invert an identity matrix', () => {
             const matrix = new Matrix({
                 a: 1,
                 b: 0,
@@ -29,7 +29,7 @@ describe("Matrix", () => {
             });
         });
 
-        it("should invert a translation matrix", () => {
+        it('should invert a translation matrix', () => {
             // Translation by (5, 10)
             const matrix = new Matrix({
                 a: 1,
@@ -58,7 +58,7 @@ describe("Matrix", () => {
             });
         });
 
-        it("should invert a scaling matrix", () => {
+        it('should invert a scaling matrix', () => {
             // Scale by (2, 3)
             const matrix = new Matrix({
                 a: 2,
@@ -87,7 +87,7 @@ describe("Matrix", () => {
             });
         });
 
-        it("should invert a rotation matrix", () => {
+        it('should invert a rotation matrix', () => {
             // 90 degree rotation (cos(90°) = 0, sin(90°) = 1)
             const matrix = new Matrix({
                 a: 0,
@@ -115,7 +115,7 @@ describe("Matrix", () => {
             expect(inv!.i).toBe(1);
         });
 
-        it("should return null for a singular matrix", () => {
+        it('should return null for a singular matrix', () => {
             // Matrix with zero determinant (all zeros in first two rows)
             const matrix = new Matrix({
                 a: 0,
@@ -132,7 +132,7 @@ describe("Matrix", () => {
             expect(matrix.inverse).toBeNull();
         });
 
-        it("should return null for a matrix with near-zero determinant", () => {
+        it('should return null for a matrix with near-zero determinant', () => {
             // Matrix with very small determinant
             const matrix = new Matrix({
                 a: 1e-11,
@@ -149,7 +149,7 @@ describe("Matrix", () => {
             expect(matrix.inverse).toBeNull();
         });
 
-        it("should invert a combined transformation matrix", () => {
+        it('should invert a combined transformation matrix', () => {
             // Combined: scale(2, 2) then translate(3, 4)
             const matrix = new Matrix({
                 a: 2,
@@ -180,8 +180,8 @@ describe("Matrix", () => {
         });
     });
 
-    describe("transformPoint", () => {
-        it("should transform a point with identity matrix", () => {
+    describe('transformPoint', () => {
+        it('should transform a point with identity matrix', () => {
             const matrix = new Matrix({
                 a: 1,
                 b: 0,
@@ -200,7 +200,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 5, y: 10 });
         });
 
-        it("should translate a point", () => {
+        it('should translate a point', () => {
             // Translation by (3, 4)
             const matrix = new Matrix({
                 a: 1,
@@ -220,7 +220,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 5, y: 7 });
         });
 
-        it("should scale a point", () => {
+        it('should scale a point', () => {
             // Scale by (2, 3)
             const matrix = new Matrix({
                 a: 2,
@@ -240,7 +240,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 8, y: 15 });
         });
 
-        it("should rotate a point 90 degrees", () => {
+        it('should rotate a point 90 degrees', () => {
             // 90 degree rotation: (x, y) -> (-y, x)
             const matrix = new Matrix({
                 a: 0,
@@ -260,7 +260,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: -4, y: 3 });
         });
 
-        it("should handle combined transformations", () => {
+        it('should handle combined transformations', () => {
             // Scale(2, 2) then translate(1, 1)
             const matrix = new Matrix({
                 a: 2,
@@ -280,7 +280,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 5, y: 7 });
         });
 
-        it("should handle perspective transformation", () => {
+        it('should handle perspective transformation', () => {
             // Matrix with non-zero g, h values (perspective)
             const matrix = new Matrix({
                 a: 1,
@@ -305,8 +305,8 @@ describe("Matrix", () => {
         });
     });
 
-    describe("invertPoint", () => {
-        it("should invert a transformed point back to original", () => {
+    describe('invertPoint', () => {
+        it('should invert a transformed point back to original', () => {
             const matrix = new Matrix({
                 a: 2,
                 b: 0,
@@ -328,7 +328,7 @@ describe("Matrix", () => {
             expect(inverted!.y).toBeCloseTo(10, 10);
         });
 
-        it("should return null when matrix is not invertible", () => {
+        it('should return null when matrix is not invertible', () => {
             const matrix = new Matrix({
                 a: 0,
                 b: 0,
@@ -347,7 +347,7 @@ describe("Matrix", () => {
             expect(result).toBeNull();
         });
 
-        it("should handle identity transformation", () => {
+        it('should handle identity transformation', () => {
             const matrix = new Matrix({
                 a: 1,
                 b: 0,
@@ -366,7 +366,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 7, y: 8 });
         });
 
-        it("should round-trip through multiple transformations", () => {
+        it('should round-trip through multiple transformations', () => {
             // Complex transformation: scale + translate + slight rotation
             const matrix = new Matrix({
                 a: 1.5,
@@ -390,8 +390,8 @@ describe("Matrix", () => {
         });
     });
 
-    describe("setMatrix", () => {
-        it("should update the matrix and recalculate inverse", () => {
+    describe('setMatrix', () => {
+        it('should update the matrix and recalculate inverse', () => {
             const matrix = new Matrix({
                 a: 1,
                 b: 0,
@@ -435,7 +435,7 @@ describe("Matrix", () => {
             expect(result).toEqual({ x: 7, y: 13 });
         });
 
-        it("should handle setting to singular matrix", () => {
+        it('should handle setting to singular matrix', () => {
             const matrix = new Matrix({
                 a: 1,
                 b: 0,

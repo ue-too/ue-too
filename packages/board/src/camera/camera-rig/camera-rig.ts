@@ -1,25 +1,36 @@
-import { PointCal } from "@ue-too/math";
+import type { BaseContext } from '@ue-too/being';
+import { PointCal } from '@ue-too/math';
+import { Point } from '@ue-too/math';
 
-import { 
-    createDefaultPanByHandler, 
-    createDefaultPanToHandler, 
-    PanByHandlerFunction, 
-    PanHandlerConfig, 
-    PanToHandlerFunction } from "./pan-handler";
-import { 
-    ZoomHandlerConfig, 
-    ZoomToHandlerFunction, 
-    createDefaultZoomToOnlyHandler, 
-    ZoomByHandlerFunction, 
-    createDefaultZoomByOnlyHandler, 
-} from "./zoom-handler";
-import DefaultBoardCamera from "../default-camera";
-import { createDefaultRotateToHandler, createDefaultRotateByHandler } from "./rotation-handler";
-import type { RotateToHandlerFunction, RotateByHandlerFunction, RotationHandlerConfig } from "./rotation-handler";
-import { ObservableBoardCamera } from "../interface";
-import { Point } from "@ue-too/math";
-import { clampPointEntireViewPort, convertDeltaInViewPortToWorldSpace } from "../utils";
-import type { BaseContext } from "@ue-too/being";
+import DefaultBoardCamera from '../default-camera';
+import { ObservableBoardCamera } from '../interface';
+import {
+    clampPointEntireViewPort,
+    convertDeltaInViewPortToWorldSpace,
+} from '../utils';
+import {
+    PanByHandlerFunction,
+    PanHandlerConfig,
+    PanToHandlerFunction,
+    createDefaultPanByHandler,
+    createDefaultPanToHandler,
+} from './pan-handler';
+import {
+    createDefaultRotateByHandler,
+    createDefaultRotateToHandler,
+} from './rotation-handler';
+import type {
+    RotateByHandlerFunction,
+    RotateToHandlerFunction,
+    RotationHandlerConfig,
+} from './rotation-handler';
+import {
+    ZoomByHandlerFunction,
+    ZoomHandlerConfig,
+    ZoomToHandlerFunction,
+    createDefaultZoomByOnlyHandler,
+    createDefaultZoomToOnlyHandler,
+} from './zoom-handler';
 
 /**
  * Configuration for camera rig behavior combining pan, zoom, and rotation settings.
@@ -36,7 +47,9 @@ import type { BaseContext } from "@ue-too/being";
  * @see {@link ZoomHandlerConfig}
  * @see {@link RotationHandlerConfig}
  */
-export type CameraRigConfig = PanHandlerConfig & ZoomHandlerConfig & RotationHandlerConfig;
+export type CameraRigConfig = PanHandlerConfig &
+    ZoomHandlerConfig &
+    RotationHandlerConfig;
 
 /**
  * High-level camera control interface providing intuitive methods for pan, zoom, and rotation.
@@ -192,7 +205,6 @@ export interface CameraRig extends BaseContext {
  * @see {@link createDefaultCameraRig} for a convenient factory function
  */
 export class DefaultCameraRig implements CameraRig {
-
     private _panBy: PanByHandlerFunction;
     private _panTo: PanToHandlerFunction;
     private _zoomTo: ZoomToHandlerFunction;
@@ -226,14 +238,21 @@ export class DefaultCameraRig implements CameraRig {
      * });
      * ```
      */
-    constructor(config: PanHandlerConfig & ZoomHandlerConfig, camera: ObservableBoardCamera = new DefaultBoardCamera()){
+    constructor(
+        config: PanHandlerConfig & ZoomHandlerConfig,
+        camera: ObservableBoardCamera = new DefaultBoardCamera()
+    ) {
         this._panBy = createDefaultPanByHandler();
         this._panTo = createDefaultPanToHandler();
         this._zoomTo = createDefaultZoomToOnlyHandler();
         this._zoomBy = createDefaultZoomByOnlyHandler();
         this._rotateBy = createDefaultRotateByHandler();
         this._rotateTo = createDefaultRotateToHandler();
-        this._config = {...config, restrictRotation: false, clampRotation: true};
+        this._config = {
+            ...config,
+            restrictRotation: false,
+            clampRotation: true,
+        };
         this._camera = camera;
     }
 
@@ -262,13 +281,31 @@ export class DefaultCameraRig implements CameraRig {
      * ```
      */
     zoomToAt(targetZoom: number, at: Point): void {
-        let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
-        const transformTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        let originalAnchorInWorld =
+            this._camera.convertFromViewPort2WorldSpace(at);
+        const transformTarget = this._zoomTo(
+            targetZoom,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(transformTarget);
-        let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
-        const cameraPositionDiff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
-        const transformedCameraPositionDiff = this._panBy(cameraPositionDiff, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+        let anchorInWorldAfterZoom =
+            this._camera.convertFromViewPort2WorldSpace(at);
+        const cameraPositionDiff = PointCal.subVector(
+            originalAnchorInWorld,
+            anchorInWorldAfterZoom
+        );
+        const transformedCameraPositionDiff = this._panBy(
+            cameraPositionDiff,
+            this._camera,
+            this._config
+        );
+        this._camera.setPosition(
+            PointCal.addVector(
+                this._camera.position,
+                transformedCameraPositionDiff
+            )
+        );
     }
 
     /**
@@ -299,13 +336,24 @@ export class DefaultCameraRig implements CameraRig {
      */
     zoomByAt(delta: number, at: Point): void {
         const convertedDelta = delta * this._camera.zoomLevel;
-        let originalAnchorInWorld = this._camera.convertFromViewPort2WorldSpace(at);
-        const transformedDelta = this._zoomBy(convertedDelta, this._camera, this._config);
+        let originalAnchorInWorld =
+            this._camera.convertFromViewPort2WorldSpace(at);
+        const transformedDelta = this._zoomBy(
+            convertedDelta,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
-        let anchorInWorldAfterZoom = this._camera.convertFromViewPort2WorldSpace(at);
-        const diff = PointCal.subVector(originalAnchorInWorld, anchorInWorldAfterZoom);
+        let anchorInWorldAfterZoom =
+            this._camera.convertFromViewPort2WorldSpace(at);
+        const diff = PointCal.subVector(
+            originalAnchorInWorld,
+            anchorInWorldAfterZoom
+        );
         const transformedDiff = this._panBy(diff, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
+        this._camera.setPosition(
+            PointCal.addVector(this._camera.position, transformedDiff)
+        );
     }
 
     /**
@@ -333,7 +381,11 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link zoomToAt} for zoom with custom anchor point
      */
     zoomTo(targetZoom: number): void {
-        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        const transformedTarget = this._zoomTo(
+            targetZoom,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(transformedTarget);
     }
 
@@ -360,7 +412,11 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link zoomByAt} for zoom with custom anchor point and scaling
      */
     zoomBy(delta: number): void {
-        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
+        const transformedDelta = this._zoomBy(
+            delta,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
     }
 
@@ -392,14 +448,36 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link zoomToAt} for viewport-space variant
      */
     zoomToAtWorld(targetZoom: number, at: Point): void {
-        let originalAnchorInViewPort = this._camera.convertFromWorld2ViewPort(at);
-        const transformedTarget = this._zoomTo(targetZoom, this._camera, this._config);
+        let originalAnchorInViewPort =
+            this._camera.convertFromWorld2ViewPort(at);
+        const transformedTarget = this._zoomTo(
+            targetZoom,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(transformedTarget);
-        let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const cameraPositionDiffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, originalAnchorInViewPort);
-        const cameraPositionDiffInWorld = convertDeltaInViewPortToWorldSpace(cameraPositionDiffInViewPort, this._camera.zoomLevel, this._camera.rotation);
-        const transformedCameraPositionDiff = this._panBy(cameraPositionDiffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedCameraPositionDiff));
+        let anchorInViewPortAfterZoom =
+            this._camera.convertFromWorld2ViewPort(at);
+        const cameraPositionDiffInViewPort = PointCal.subVector(
+            anchorInViewPortAfterZoom,
+            originalAnchorInViewPort
+        );
+        const cameraPositionDiffInWorld = convertDeltaInViewPortToWorldSpace(
+            cameraPositionDiffInViewPort,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const transformedCameraPositionDiff = this._panBy(
+            cameraPositionDiffInWorld,
+            this._camera,
+            this._config
+        );
+        this._camera.setPosition(
+            PointCal.addVector(
+                this._camera.position,
+                transformedCameraPositionDiff
+            )
+        );
     }
 
     /**
@@ -424,14 +502,33 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link zoomByAt} for viewport-space variant with scaled delta
      */
     zoomByAtWorld(delta: number, at: Point): void {
-        let anchorInViewPortBeforeZoom = this._camera.convertFromWorld2ViewPort(at);
-        const transformedDelta = this._zoomBy(delta, this._camera, this._config);
+        let anchorInViewPortBeforeZoom =
+            this._camera.convertFromWorld2ViewPort(at);
+        const transformedDelta = this._zoomBy(
+            delta,
+            this._camera,
+            this._config
+        );
         this._camera.setZoomLevel(this._camera.zoomLevel + transformedDelta);
-        let anchorInViewPortAfterZoom = this._camera.convertFromWorld2ViewPort(at);
-        const diffInViewPort = PointCal.subVector(anchorInViewPortAfterZoom, anchorInViewPortBeforeZoom);
-        const diffInWorld = convertDeltaInViewPortToWorldSpace(diffInViewPort, this._camera.zoomLevel, this._camera.rotation);
-        const transformedDiff = this._panBy(diffInWorld, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDiff));
+        let anchorInViewPortAfterZoom =
+            this._camera.convertFromWorld2ViewPort(at);
+        const diffInViewPort = PointCal.subVector(
+            anchorInViewPortAfterZoom,
+            anchorInViewPortBeforeZoom
+        );
+        const diffInWorld = convertDeltaInViewPortToWorldSpace(
+            diffInViewPort,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const transformedDiff = this._panBy(
+            diffInWorld,
+            this._camera,
+            this._config
+        );
+        this._camera.setPosition(
+            PointCal.addVector(this._camera.position, transformedDiff)
+        );
     }
 
     /**
@@ -463,7 +560,10 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link panByWorld} for world-space panning
      */
     panByViewPort(delta: Point): void {
-        const diffInWorld = PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, this._camera.rotation), 1 / this._camera.zoomLevel);
+        const diffInWorld = PointCal.multiplyVectorByScalar(
+            PointCal.rotatePoint(delta, this._camera.rotation),
+            1 / this._camera.zoomLevel
+        );
         this.panByWorld(diffInWorld);
     }
 
@@ -495,7 +595,9 @@ export class DefaultCameraRig implements CameraRig {
      */
     panByWorld(delta: Point): void {
         const transformedDelta = this._panBy(delta, this._camera, this._config);
-        this._camera.setPosition(PointCal.addVector(this._camera.position, transformedDelta));
+        this._camera.setPosition(
+            PointCal.addVector(this._camera.position, transformedDelta)
+        );
     }
 
     /**
@@ -529,7 +631,11 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link panToViewPort} for viewport-space variant
      */
     panToWorld(target: Point): void {
-        const transformedTarget = this._panTo(target, this._camera, this._config);
+        const transformedTarget = this._panTo(
+            target,
+            this._camera,
+            this._config
+        );
         this._camera.setPosition(transformedTarget);
     }
 
@@ -553,7 +659,8 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link panToWorld} for world-space variant (more commonly used)
      */
     panToViewPort(target: Point): void {
-        const targetInWorld = this._camera.convertFromViewPort2WorldSpace(target);
+        const targetInWorld =
+            this._camera.convertFromViewPort2WorldSpace(target);
         this.panToWorld(targetInWorld);
     }
 
@@ -583,13 +690,28 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link rotateTo} for absolute rotation
      */
     rotateBy(delta: number): void {
-        const transformedDelta = this._rotateBy(delta, this._camera, this._config);
+        const transformedDelta = this._rotateBy(
+            delta,
+            this._camera,
+            this._config
+        );
         this._camera.setRotation(this._camera.rotation + transformedDelta);
-        if(!this._config.limitEntireViewPort){
+        if (!this._config.limitEntireViewPort) {
             return;
         }
-        const pointAfterRotation = clampPointEntireViewPort(this._camera.position, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation);
-        const transformedDestination = this._panTo(pointAfterRotation, this._camera, this._config);
+        const pointAfterRotation = clampPointEntireViewPort(
+            this._camera.position,
+            this._camera.viewPortWidth,
+            this._camera.viewPortHeight,
+            this._camera.boundaries,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const transformedDestination = this._panTo(
+            pointAfterRotation,
+            this._camera,
+            this._config
+        );
         this._camera.setPosition(transformedDestination);
     }
 
@@ -619,13 +741,28 @@ export class DefaultCameraRig implements CameraRig {
      * @see {@link rotateBy} for relative rotation
      */
     rotateTo(target: number): void {
-        const transformedTarget = this._rotateTo(target, this._camera, this._config);
+        const transformedTarget = this._rotateTo(
+            target,
+            this._camera,
+            this._config
+        );
         this._camera.setRotation(transformedTarget);
-        if(!this._config.limitEntireViewPort){
+        if (!this._config.limitEntireViewPort) {
             return;
         }
-        const pointAfterRotation = clampPointEntireViewPort(this._camera.position, this._camera.viewPortWidth, this._camera.viewPortHeight, this._camera.boundaries, this._camera.zoomLevel, this._camera.rotation);
-        const transformedDestination = this._panTo(pointAfterRotation, this._camera, this._config);
+        const pointAfterRotation = clampPointEntireViewPort(
+            this._camera.position,
+            this._camera.viewPortWidth,
+            this._camera.viewPortHeight,
+            this._camera.boundaries,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const transformedDestination = this._panTo(
+            pointAfterRotation,
+            this._camera,
+            this._config
+        );
         this._camera.setPosition(transformedDestination);
     }
 
@@ -638,7 +775,7 @@ export class DefaultCameraRig implements CameraRig {
      *
      * This is a convenience setter for {@link CameraRigConfig}.limitEntireViewPort.
      */
-    set limitEntireViewPort(limit: boolean){
+    set limitEntireViewPort(limit: boolean) {
         this._config.limitEntireViewPort = limit;
     }
 
@@ -669,7 +806,7 @@ export class DefaultCameraRig implements CameraRig {
      * Use this to swap cameras at runtime, though this is uncommon.
      * Usually you create a new rig instead.
      */
-    set camera(camera: ObservableBoardCamera){
+    set camera(camera: ObservableBoardCamera) {
         this._camera = camera;
     }
 
@@ -695,8 +832,8 @@ export class DefaultCameraRig implements CameraRig {
      * Creates a shallow copy of the provided config.
      * For partial updates, use {@link configure} instead.
      */
-    set config(config: CameraRigConfig){
-        this._config = {...config};
+    set config(config: CameraRigConfig) {
+        this._config = { ...config };
     }
 
     /**
@@ -720,8 +857,8 @@ export class DefaultCameraRig implements CameraRig {
      * rig.configure({ clampTranslation: false });
      * ```
      */
-    configure(config: Partial<CameraRigConfig>){
-        this._config = {...this._config, ...config};
+    configure(config: Partial<CameraRigConfig>) {
+        this._config = { ...this._config, ...config };
     }
 
     /**
@@ -731,8 +868,7 @@ export class DefaultCameraRig implements CameraRig {
      * Currently a no-op as DefaultCameraRig has no resources to clean up.
      * Implements {@link BaseContext} interface for consistency with other systems.
      */
-    cleanup(): void {
-    }
+    cleanup(): void {}
 
     /**
      * Sets up the camera rig.
@@ -741,8 +877,7 @@ export class DefaultCameraRig implements CameraRig {
      * Currently a no-op as DefaultCameraRig requires no setup.
      * Implements {@link BaseContext} interface for consistency with other systems.
      */
-    setup(): void {
-    }
+    setup(): void {}
 
     /**
      * Updates the camera rig state.
@@ -756,8 +891,7 @@ export class DefaultCameraRig implements CameraRig {
      * - Momentum/inertia
      * - Smooth camera following
      */
-    update(): void {
-    }
+    update(): void {}
 }
 
 /**
@@ -803,15 +937,20 @@ export class DefaultCameraRig implements CameraRig {
  * @see {@link DefaultCameraRig} for the implementation
  * @see {@link CameraRigConfig} for all available configuration options
  */
-export function createDefaultCameraRig(camera: ObservableBoardCamera): CameraRig{
-    return new DefaultCameraRig({
-        limitEntireViewPort: true,
-        restrictRelativeXTranslation: false,
-        restrictRelativeYTranslation: false,
-        restrictXTranslation: false,
-        restrictYTranslation: false,
-        restrictZoom: false,
-        clampTranslation: true,
-        clampZoom: true,
-    }, camera);
+export function createDefaultCameraRig(
+    camera: ObservableBoardCamera
+): CameraRig {
+    return new DefaultCameraRig(
+        {
+            limitEntireViewPort: true,
+            restrictRelativeXTranslation: false,
+            restrictRelativeYTranslation: false,
+            restrictXTranslation: false,
+            restrictYTranslation: false,
+            restrictZoom: false,
+            clampTranslation: true,
+            clampZoom: true,
+        },
+        camera
+    );
 }

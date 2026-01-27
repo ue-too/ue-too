@@ -27,24 +27,28 @@ Organize findings by severity and category:
 ### Severity Levels
 
 **🔴 Critical** - Must fix before merge
+
 - Security vulnerabilities
 - Data loss risks
 - Breaking changes
 - Critical bugs
 
 **🟡 Important** - Should fix soon
+
 - Performance issues
 - Poor error handling
 - Maintainability concerns
 - API design problems
 
 **🔵 Minor** - Nice to have
+
 - Style inconsistencies
 - Documentation gaps
 - Minor optimizations
 - Suggestion for refactoring
 
 **✅ Positive** - What's done well
+
 - Good patterns used
 - Clever solutions
 - Solid error handling
@@ -55,23 +59,27 @@ Organize findings by severity and category:
 ### 1. Security
 
 **Authentication & Authorization**
+
 - Are authentication checks present and correct?
 - Is authorization enforced at the right level?
 - Are user permissions validated before sensitive operations?
 
 **Input Validation**
+
 - Is all user input validated and sanitized?
 - Are there SQL injection risks? (Check raw queries, string concatenation)
 - Are there XSS vulnerabilities? (Check unescaped output)
 - Are file uploads validated properly? (Type, size, content)
 
 **Sensitive Data**
+
 - Are secrets/API keys hardcoded? (Should use environment variables)
 - Is sensitive data logged inappropriately?
 - Are passwords hashed properly? (bcrypt, argon2, not MD5/SHA1)
 - Is PII (Personally Identifiable Information) handled correctly?
 
 **Common Vulnerabilities**
+
 - Path traversal: `../../../etc/passwd`
 - Command injection: Unescaped shell commands
 - Deserialization: Unsafe pickle/eval/JSON parsing
@@ -81,22 +89,26 @@ Organize findings by severity and category:
 ### 2. Performance
 
 **Algorithmic Complexity**
+
 - Are there O(n²) or worse algorithms where O(n log n) or O(n) would work?
 - Nested loops over large datasets?
 - Inefficient string concatenation in loops?
 
 **Database Queries**
+
 - N+1 query problems? (Load related data in single query)
 - Missing indexes on frequently queried columns?
-- SELECT * when only specific columns needed?
+- SELECT \* when only specific columns needed?
 - Queries inside loops?
 
 **Resource Management**
+
 - Are files/connections/streams properly closed?
 - Memory leaks? (Event listeners not cleaned up, circular references)
 - Large objects kept in memory unnecessarily?
 
 **Caching Opportunities**
+
 - Repeated expensive computations that could be cached?
 - API calls that could be batched or memoized?
 - Static data fetched on every request?
@@ -104,18 +116,21 @@ Organize findings by severity and category:
 ### 3. Error Handling
 
 **Exception Handling**
+
 - Are exceptions caught at the right level?
 - Are errors logged with sufficient context?
 - Are generic catch-all blocks hiding specific errors?
 - Are custom errors informative?
 
 **Edge Cases**
+
 - Null/undefined checks where needed?
 - Empty array/collection handling?
 - Division by zero checks?
 - Boundary conditions tested?
 
 **User-Facing Errors**
+
 - Are error messages helpful but not exposing internals?
 - Are errors returned with appropriate HTTP status codes?
 - Is there graceful degradation when services fail?
@@ -123,18 +138,21 @@ Organize findings by severity and category:
 ### 4. Code Quality
 
 **Readability**
+
 - Are variable/function names clear and descriptive?
 - Is the code self-documenting or does it need comments?
 - Are functions doing one thing (Single Responsibility)?
 - Is nesting depth reasonable (< 4 levels)?
 
 **Maintainability**
+
 - Are magic numbers/strings extracted to named constants?
 - Is there duplicated code that should be DRYed?
 - Are functions too long (>50 lines is a smell)?
 - Is coupling loose and cohesion high?
 
 **Testing**
+
 - Are there tests for the new/changed code?
 - Are edge cases covered?
 - Are tests meaningful or just achieving coverage?
@@ -143,36 +161,42 @@ Organize findings by severity and category:
 ### 5. Best Practices (Language-Specific)
 
 **JavaScript/TypeScript**
+
 - Using const/let instead of var?
 - Avoiding == in favor of ===?
 - Proper async/await usage (not missing await)?
 - TypeScript types comprehensive and not using `any` excessively?
 
 **Python**
+
 - Following PEP 8 style guidelines?
 - Using context managers (with statement) for resources?
 - Proper use of list comprehensions vs loops?
 - Type hints for function signatures?
 
 **Go**
+
 - Errors checked and not ignored?
 - Defer used for cleanup?
 - Interfaces kept small?
 - Goroutines have proper lifecycle management?
 
 **Java**
+
 - Resources in try-with-resources?
 - Using appropriate collection types?
 - Avoiding primitive obsession?
 - Proper exception hierarchy?
 
 **Rust**
+
 - Proper error propagation with `?` operator?
 - Ownership and borrowing used correctly?
 - No unnecessary clones?
 - Unsafe blocks justified and minimal?
 
 **Web Graphics (Canvas/WebGL/WebGPU)**
+
 - Draw calls batched and minimized?
 - Texture atlases used instead of individual textures?
 - Shaders optimized (precision, conditionals, uniform updates)?
@@ -188,16 +212,19 @@ Include everything from Standard Review plus:
 ### Architecture & Design
 
 **Design Patterns**
+
 - Are appropriate design patterns used?
 - Are patterns over-engineered for the problem?
 - Is there clear separation of concerns?
 
 **Dependencies**
+
 - Are dependencies up-to-date and secure?
 - Are heavy dependencies justified?
 - Is the dependency graph reasonable?
 
 **API Design**
+
 - Are API contracts clear and versioned?
 - Is the API consistent with existing patterns?
 - Are breaking changes properly communicated?
@@ -205,11 +232,13 @@ Include everything from Standard Review plus:
 ### Code Organization
 
 **Project Structure**
+
 - Are files organized logically?
 - Is code grouped by feature or layer appropriately?
 - Are module boundaries clear?
 
 **Configuration**
+
 - Is configuration externalized?
 - Are environment-specific configs handled properly?
 - Are defaults sensible?
@@ -217,11 +246,13 @@ Include everything from Standard Review plus:
 ### Documentation
 
 **Code Documentation**
+
 - Are complex algorithms explained?
 - Are public APIs documented?
 - Are assumptions stated?
 
 **README & Guides**
+
 - Is setup documentation current?
 - Are examples provided?
 - Are breaking changes noted?
@@ -245,45 +276,55 @@ Structure reviews clearly:
 
 ```markdown
 ## Review Summary
+
 [1-2 sentence overview of the changes and overall assessment]
 
 ## Critical Issues 🔴
+
 - [Issue with specific line reference and fix suggestion]
 
 ## Important Issues 🟡
+
 - [Issue with context and recommendation]
 
 ## Minor Issues 🔵
+
 - [Suggestion for improvement]
 
 ## Positive Feedback ✅
+
 - [What's done well]
 
 ## Recommendations
+
 [Overall suggestions or next steps]
 ```
 
 ## Review Tips
 
 ### Be Constructive
+
 - Frame feedback as questions when uncertain: "Could this cause X if Y happens?"
 - Suggest solutions, not just problems
 - Acknowledge good code: "Nice use of X pattern here"
 - Explain the "why" behind suggestions
 
 ### Prioritize
+
 - Focus on high-impact issues first
 - Don't nitpick style in critical reviews
 - Separate must-fix from nice-to-have
 - Consider the scope of changes (minor fix vs major feature)
 
 ### Context Matters
+
 - Consider the codebase's existing patterns
 - Understand the urgency (hotfix vs planned feature)
 - Recognize team conventions may differ from ideal
 - Ask clarifying questions if intent is unclear
 
 ### Code Review Anti-Patterns to Avoid
+
 - Bikeshedding: Endless debate over trivial matters
 - Style crusading: Enforcing personal preferences
 - Perfectionism: Blocking reasonable code for minor issues
@@ -293,6 +334,7 @@ Structure reviews clearly:
 ## Language-Specific Guidance
 
 For detailed language-specific patterns, see `references/` directory for:
+
 - JavaScript/TypeScript best practices
 - Python idioms and patterns
 - Security vulnerability patterns by language
@@ -301,6 +343,7 @@ For detailed language-specific patterns, see `references/` directory for:
 ## Common Vulnerability Patterns
 
 ### SQL Injection
+
 ```python
 # ❌ Vulnerable
 query = f"SELECT * FROM users WHERE id = {user_id}"
@@ -311,6 +354,7 @@ cursor.execute(query, (user_id,))
 ```
 
 ### XSS (Cross-Site Scripting)
+
 ```javascript
 // ❌ Vulnerable
 element.innerHTML = userInput;
@@ -321,6 +365,7 @@ element.textContent = userInput;
 ```
 
 ### Path Traversal
+
 ```python
 # ❌ Vulnerable
 with open(f"/uploads/{filename}") as f:
@@ -334,6 +379,7 @@ if not safe_path.resolve().is_relative_to(Path("/uploads").resolve()):
 ```
 
 ### Command Injection
+
 ```javascript
 // ❌ Vulnerable
 exec(`ffmpeg -i ${userFile} output.mp4`);

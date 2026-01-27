@@ -1,72 +1,79 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { Application } from 'pixi.js';
-import { initApp, PixiAppComponents } from '../../utils/pixi';
-import { usePixiCanvas } from '@/PixiCanvas';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 
-export const useInitializePixiApp = (option: { fullScreen: boolean} = { fullScreen: true}) => {
+import { usePixiCanvas } from '@/contexts/pixi';
 
-  const { setResult } = usePixiCanvas();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const appComponentsRef = useRef<PixiAppComponents | null>(null);
-  const isInitializingRef = useRef(false);
+import { PixiAppComponents, initApp } from '../../utils/pixi';
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || isInitializingRef.current) return;
+export const useInitializePixiApp = (
+    option: { fullScreen: boolean } = { fullScreen: true }
+) => {
+    const { setResult } = usePixiCanvas();
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const appComponentsRef = useRef<PixiAppComponents | null>(null);
+    const isInitializingRef = useRef(false);
 
-    let isMounted = true;
-    isInitializingRef.current = true;
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || isInitializingRef.current) return;
 
-    const initializePixi = async () => {
-      try {
-        // Clean up any existing app first
-        if (appComponentsRef.current) {
-          appComponentsRef.current.app.destroy(false);
-          appComponentsRef.current.cleanup();
-          appComponentsRef.current = null;
-          setResult({initialized: false});
-        }
+        let isMounted = true;
+        isInitializingRef.current = true;
 
-        // Small delay to ensure canvas is fully ready
-        await new Promise(resolve => setTimeout(resolve, 0));
+        const initializePixi = async () => {
+            try {
+                // Clean up any existing app first
+                if (appComponentsRef.current) {
+                    appComponentsRef.current.app.destroy(false);
+                    appComponentsRef.current.cleanup();
+                    appComponentsRef.current = null;
+                    setResult({ initialized: false });
+                }
 
-        if (!isMounted) return;
+                // Small delay to ensure canvas is fully ready
+                await new Promise(resolve => setTimeout(resolve, 0));
 
-        const appComponents = await initApp(canvas, option);
-        
-        if (!isMounted) {
-          appComponents.app.destroy(false);
-          appComponentsRef.current = null;
-          appComponents.cleanup();
-          setResult({initialized: true, success: false});
-          return;
-        }
+                if (!isMounted) return;
 
-        appComponentsRef.current = appComponents;
-        setResult({initialized: true, success: true, components: appComponents});
-      } catch (error) {
-        console.error('Failed to initialize PixiJS:', error);
-        appComponentsRef.current?.cleanup();
-        setResult({initialized: true, success: false});
-      } finally {
-        isInitializingRef.current = false;
-      }
-    };
+                const appComponents = await initApp(canvas, option);
 
-    initializePixi();
+                if (!isMounted) {
+                    appComponents.app.destroy(false);
+                    appComponentsRef.current = null;
+                    appComponents.cleanup();
+                    setResult({ initialized: true, success: false });
+                    return;
+                }
 
-    // Cleanup function
-    return () => {
-      isMounted = false;
-      isInitializingRef.current = false;
-      if (appComponentsRef.current) {
-        appComponentsRef.current.cleanup();
-        appComponentsRef.current.app.destroy(false);
-        setResult({initialized: false});
-        appComponentsRef.current = null;
-      }
-    };
-  }, [setResult]);
+                appComponentsRef.current = appComponents;
+                setResult({
+                    initialized: true,
+                    success: true,
+                    components: appComponents,
+                });
+            } catch (error) {
+                console.error('Failed to initialize PixiJS:', error);
+                appComponentsRef.current?.cleanup();
+                setResult({ initialized: true, success: false });
+            } finally {
+                isInitializingRef.current = false;
+            }
+        };
 
-  return { canvasRef };
-}
+        initializePixi();
+
+        // Cleanup function
+        return () => {
+            isMounted = false;
+            isInitializingRef.current = false;
+            if (appComponentsRef.current) {
+                appComponentsRef.current.cleanup();
+                appComponentsRef.current.app.destroy(false);
+                setResult({ initialized: false });
+                appComponentsRef.current = null;
+            }
+        };
+    }, [setResult]);
+
+    return { canvasRef };
+};

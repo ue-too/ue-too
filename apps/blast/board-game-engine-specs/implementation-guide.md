@@ -24,9 +24,11 @@
 ### Core Systems (All 4 Complete)
 
 #### 1. **Action System** (`src/board-game-engine/action-system/`)
+
 The action system handles player intents and validates/executes them.
 
 **Components**:
+
 - `ActionDefinition` - Templates for action types (e.g., "PlayCard", "EndTurn")
 - `ActionContext` - Bridges actions with ECS operations
 - `Precondition` - Conditions that must be true for actions to execute
@@ -34,6 +36,7 @@ The action system handles player intents and validates/executes them.
 - `ActionSystem` - Validates and executes actions
 
 **Built-in Preconditions**:
+
 - `IsPlayerTurn` - Check if it's the actor's turn
 - `HasComponent` - Verify entity has a component
 - `PhaseCheck` - Ensure current phase allows the action
@@ -41,56 +44,67 @@ The action system handles player intents and validates/executes them.
 - `CustomPrecondition` - Define custom logic
 
 **Built-in Effects**:
+
 - `ECSEffect` - Base class for effects that modify components
 - `EmitEvent` - Generate events for the rule engine
 - `CustomEffect` - Define custom state modifications
 - `CompositeEffect` - Chain multiple effects together
 
 #### 2. **Event System** (`src/board-game-engine/event-system/`)
+
 Handles game events and enables event-driven rules.
 
 **Components**:
+
 - `Event` - Immutable records of what happened (e.g., "CardPlayed")
 - `EventPattern` - Patterns for matching specific events
 - `EventQueue` - FIFO queue with cycle detection
 - `EventProcessor` - Processes events and triggers rules
 
 **Features**:
+
 - Pattern matching with filters (equality and predicates)
 - Infinite loop detection (prevents runaway rule triggers)
 - Event history tracking
 - Priority-based event processing
 
-**Important Note**: 
+**Important Note**:
+
 - Actions can have **direct effects** that modify state immediately (MoveEntity, ModifyResource, etc.) - these don't go through the event system
 - Actions can **optionally emit events** (via EmitEvent effect) - these go through the event system to trigger rules
 - The event system is for **reactive logic** (rules), not for all action effects
 - In the game builder UI, you can add both direct effects (immediate state changes) and event-emitting effects (for reactive rules)
 
 #### 3. **Rule Engine** (`src/board-game-engine/rule-engine/`)
+
 Executes game logic in response to events.
 
 **Components**:
+
 - `Rule` - Defines trigger patterns, conditions, and effects
 - `RuleContext` - Context for rule evaluation
 - `Condition` - Additional checks beyond event matching
 - `RuleEngine` - Processes rules when events occur
 
 **Features**:
+
 - Priority-based rule execution (higher priority = earlier)
 - Entity-specific rules (rules attached to specific cards/entities)
 - Global rules (apply to all events)
 - Composable conditions
 
 #### 4. **Phase System** (`src/board-game-engine/phase-system/`)
+
 Manages game flow through different phases.
 
 **Components**:
+
 - `PhaseDefinition` - Templates for phase types (e.g., "Upkeep", "Main", "Combat")
 - `Phase` - Current phase state
 - `PhaseManager` - Handles phase transitions and lifecycle
 
 **Features**:
+
 - Auto-advancing phases (e.g., "Upkeep" → "Main")
 - Phase-specific action restrictions
 - OnEnter/OnExit hooks for phase-specific logic
@@ -99,12 +113,14 @@ Manages game flow through different phases.
 ### ECS Integration
 
 **Key Design Decision**: ECS as Primary Game State
+
 - All game state lives in ECS entities and components
 - `GameState` class wraps the @ue-too/ecs `Coordinator`
 - Game metadata stored in a `GameManager` entity with a component
 - Snapshot-based immutability (ECS remains mutable internally)
 
 **Core Components Defined**:
+
 - `GameManagerComponent` - Stores phase, turn, active player, event queue
 - `PlayerComponent` - Identifies player entities
 - `ZoneComponent` - Represents game zones (hand, deck, board, etc.)
@@ -119,6 +135,7 @@ Manages game flow through different phases.
 A 2-player card game demonstrating the full engine capabilities:
 
 **Game Rules**:
+
 - 2 players, each with mana (1-10) and health (20)
 - Each player starts with a 10-card deck and draws 3 cards
 - Gain +1 mana at the start of each turn (up to 10 max)
@@ -127,6 +144,7 @@ A 2-player card game demonstrating the full engine capabilities:
 - Attack enemy creatures or the opponent directly to win
 
 **Implemented Actions**:
+
 - `DrawCard` - Draw top card from deck to hand (1 per turn)
 - `PlayCard` - Play card from hand to board (pays mana cost)
 - `AttackCreature` - Attack enemy creature (mutual damage)
@@ -135,6 +153,7 @@ A 2-player card game demonstrating the full engine capabilities:
 - `EndTurn` - Pass to next player, increment turn counter
 
 **Components**:
+
 - `CardComponent` - Card data (name, type, cost, power, toughness)
 - `ResourceComponent` - Player resources (mana, health)
 - `CardStateComponent` - Card state (tapped, summoning sickness)
@@ -150,6 +169,7 @@ A 2-player card game demonstrating the full engine capabilities:
 A fully interactive interface for the board game engine.
 
 **Features**:
+
 - Display game status (turn, phase, active player)
 - Show both players' stats (health, mana, deck size)
 - Card display with cost, power/toughness, and status (tapped, sick)
@@ -169,6 +189,7 @@ A fully interactive interface for the board game engine.
 A declarative system for defining board games in JSON without writing TypeScript code.
 
 **Components**:
+
 - `GameDefinitionSchema` - Complete game definition structure
 - `ExpressionResolver` - Resolves dynamic expressions like `$actor`, `$target`, `$component.$target.Card.cost`
 - `ActionFactory` - Creates action definitions from JSON
@@ -178,6 +199,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `GameDefinitionLoader` - Loads JSON and creates playable games
 
 **Expression Language**:
+
 - `$actor` - The player performing the action
 - `$target` / `$target.0` - Target entity at index
 - `$activePlayer` - Currently active player
@@ -188,6 +210,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `$negate(value)`, `$add(a, b)`, `$multiply(a, b)` - Math operations
 
 **Condition Types**:
+
 - `isPlayerTurn` - Check if it's the actor's turn
 - `phaseCheck` - Check current phase
 - `resourceCheck` - Check numeric resource with operators
@@ -199,6 +222,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `and`, `or`, `not` - Logical combinators
 
 **Effect Types**:
+
 - `moveEntity` - Move entity between zones
 - `modifyResource` - Add/subtract numeric resources
 - `setComponentValue` - Set component properties
@@ -213,6 +237,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 - `switchActivePlayer` - Switch to the next player in rotation
 
 **Win Conditions**:
+
 - Win conditions define when the game ends and who wins
 - Evaluated lazily when `isGameOver()` or `getWinner()` is called
 - First matching condition determines the winner
@@ -221,12 +246,14 @@ A declarative system for defining board games in JSON without writing TypeScript
 - Can be defined in JSON or created via visual builder UI
 
 **Rule System**:
+
 - Rules can be defined in JSON to respond to events
 - Rules have triggers (event patterns), conditions, and effects
 - Rules execute in priority order when matching events occur
 - Example: `TurnEnded` event triggers a rule that switches the active player
 
 **File Locations**:
+
 - Schema types: `src/board-game-engine/schema/types.ts`
 - Expression resolver: `src/board-game-engine/schema/expression-resolver.ts`
 - Factories: `src/board-game-engine/schema/factories/` (includes `rule-factory.ts`)
@@ -240,6 +267,7 @@ A declarative system for defining board games in JSON without writing TypeScript
 A visual tool for creating board game definitions without writing JSON manually.
 
 **Features**:
+
 - Tab-based navigation: Metadata, Components, Zones, Templates, Actions, Phases, Rules, Win Conditions, Setup, Play
 - Split-panel layout with live JSON preview
 - Load/Save JSON files
@@ -252,11 +280,12 @@ A visual tool for creating board game definitions without writing JSON manually.
 - Visual win condition builder with condition integration
 
 **Sections**:
+
 1. **Metadata** - Game name, version, author, description, player count, complexity, tags
 2. **Components** - Define component types with properties (type, default value)
 3. **Zones** - Define game zones with visibility (public/owner-only/private), ordering, and shared flag
-   - Per-player zones: Each player gets their own instance (hand, deck, board)
-   - Shared zones: One instance accessible to all players (marketplace, common area)
+    - Per-player zones: Each player gets their own instance (hand, deck, board)
+    - Shared zones: One instance accessible to all players (marketplace, common area)
 4. **Templates** - Create entity templates with component instances and values
 5. **Actions** - Define actions with preconditions, costs, and effects using visual builders
 6. **Phases** - Define phases with allowed actions, next phase, auto-advance
@@ -266,6 +295,7 @@ A visual tool for creating board game definitions without writing JSON manually.
 
 **Visual Condition Builder**:
 Supports all 13 condition types with dropdown-based editing:
+
 - Basic: `isPlayerTurn`, `phaseCheck`, `hasComponent`
 - Resource/Value checks: `resourceCheck`, `componentValueCheck`
 - Entity checks: `entityInZone`, `ownerCheck`, `entityExists`
@@ -276,6 +306,7 @@ Features entity/zone dropdowns (`$actor`, `$target`, `$zone.actor.hand`, etc.), 
 
 **Visual Effect Builder**:
 Supports 8 effect types with visual editing:
+
 - `moveEntity` - Move entities between zones
 - `modifyResource` - Add/subtract numeric values
 - `setComponentValue` - Set component properties
@@ -317,23 +348,24 @@ Player Input → Action → Validation (Preconditions) → Execution (Effects)
 2. **Action Creation**: UI creates an `Action` object (with correct `actorId` from valid actions)
 3. **Validation**: `ActionSystem.isActionValid()` checks preconditions
 4. **Execution**: `ActionSystem.executeAction()` applies costs and effects
-   - **Direct Effects**: Effects like `MoveEntity`, `ModifyResource`, `SetComponentValue` directly modify game state immediately
-   - **Event-Generating Effects**: Effects like `EmitEvent` (or effects with `generatesEvent() = true`) create events
+    - **Direct Effects**: Effects like `MoveEntity`, `ModifyResource`, `SetComponentValue` directly modify game state immediately
+    - **Event-Generating Effects**: Effects like `EmitEvent` (or effects with `generatesEvent() = true`) create events
 5. **Event Collection**: Events from action effects are collected into an event queue
 6. **Event Processing**: `EventProcessor.processAll()` processes events through the rule engine
 7. **Rules**: `RuleEngine.processEvent()` triggers matching rules (including JSON-defined rules)
 8. **Rule Effects**: Rule effects execute (e.g., `switchActivePlayer` switches to next player)
-   - Rule effects can also directly modify state OR emit more events
+    - Rule effects can also directly modify state OR emit more events
 9. **Cascading**: Rule effects may emit more events (event chain with cycle detection)
 10. **Phase Check**: `PhaseManager` checks if phase should advance
 11. **State Update**: React component re-renders with new state
 
-**Key Architecture**: 
+**Key Architecture**:
+
 - **Direct Effects**: Actions can directly modify state through effects (MoveEntity, ModifyResource, SetComponentValue, etc.) - these happen immediately during action execution, synchronously
 - **Event-Generating Effects**: Some effects emit events (via `EmitEvent` effect or effects with `generatesEvent() = true`), which are queued and processed after action execution
 - **Hybrid Approach**: Actions commonly have both:
-  - Direct effects for immediate state changes (e.g., move card, pay mana)
-  - Event-emitting effects for reactive logic (e.g., emit "CardPlayed" event)
+    - Direct effects for immediate state changes (e.g., move card, pay mana)
+    - Event-emitting effects for reactive logic (e.g., emit "CardPlayed" event)
 - **Event System Role**: Events enable decoupled reactive logic - actions don't need to know all their consequences, rules handle reactive behavior based on events
 - **Rule Effects**: Rules triggered by events can also directly modify state (like `switchActivePlayer`) or emit more events for cascading logic
 
@@ -342,35 +374,39 @@ Player Input → Action → Validation (Preconditions) → Execution (Effects)
 ```typescript
 // GameState wraps Coordinator
 class GameState {
-  readonly coordinator: Coordinator;  // The actual ECS
-  private gameManagerEntity: Entity;  // Holds metadata
+    readonly coordinator: Coordinator; // The actual ECS
+    private gameManagerEntity: Entity; // Holds metadata
 
-  // Convenience accessors
-  get currentPhase(): string { /* read from component */ }
-  setCurrentPhase(phase: string): void { /* write to component */ }
+    // Convenience accessors
+    get currentPhase(): string {
+        /* read from component */
+    }
+    setCurrentPhase(phase: string): void {
+        /* write to component */
+    }
 }
 
 // ActionContext bridges actions and ECS
 class ActionContext {
-  constructor(
-    public state: GameState,
-    public action: Action,
-    public actor: Entity,
-    public targets: Entity[]
-  ) {}
+    constructor(
+        public state: GameState,
+        public action: Action,
+        public actor: Entity,
+        public targets: Entity[]
+    ) {}
 
-  // Helpers for ECS operations
-  getComponent<T>(name, entity): T | null
-  setComponent<T>(name, entity, data): void
+    // Helpers for ECS operations
+    getComponent<T>(name, entity): T | null;
+    setComponent<T>(name, entity, data): void;
 }
 
 // Effects operate on ECS through context
 class CustomEffect implements Effect {
-  apply(context: ActionContext): void {
-    // Modify ECS state
-    const comp = context.getComponent(RESOURCE_COMPONENT, context.actor);
-    comp.mana -= 3;
-  }
+    apply(context: ActionContext): void {
+        // Modify ECS state
+        const comp = context.getComponent(RESOURCE_COMPONENT, context.actor);
+        comp.mana -= 3;
+    }
 }
 ```
 
@@ -381,20 +417,20 @@ class CustomEffect implements Effect {
 const snapshot = gameState.createSnapshot();
 
 try {
-  actionSystem.executeAction(action);
+    actionSystem.executeAction(action);
 } catch (error) {
-  // Restore on failure
-  gameState.restoreSnapshot(snapshot);
+    // Restore on failure
+    gameState.restoreSnapshot(snapshot);
 }
 
 // Snapshots use coordinator.serialize()
 class GameStateSnapshot {
-  private ecsState: any;  // Serialized ECS
-  readonly metadata: GameMetadata;
+    private ecsState: any; // Serialized ECS
+    readonly metadata: GameMetadata;
 
-  restore(coordinator: Coordinator): void {
-    coordinator.deserialize(this.ecsState, { clearExisting: true });
-  }
+    restore(coordinator: Coordinator): void {
+        coordinator.deserialize(this.ecsState, { clearExisting: true });
+    }
 }
 ```
 
@@ -484,21 +520,23 @@ apps/blast/src/
 ### Key Entry Points
 
 #### For Learning:
+
 1. **Start here**: `board-game-engine/core/types.ts`
-   - Read all interface definitions
-   - Understand the type relationships
-   - See JSDoc examples
+    - Read all interface definitions
+    - Understand the type relationships
+    - See JSDoc examples
 
 2. **Then**: `games/simple-card-game/game-definition.ts`
-   - See a complete game implementation
-   - Understand how systems integrate
-   - Copy patterns for your game
+    - See a complete game implementation
+    - Understand how systems integrate
+    - Copy patterns for your game
 
 3. **Finally**: `board-game-engine/game-engine.ts`
-   - See how all systems work together
-   - Understand the initialization flow
+    - See how all systems work together
+    - Understand the initialization flow
 
 #### For Implementing a Game:
+
 1. **Define components**: Create `my-game/components.ts`
 2. **Define actions**: Create `my-game/actions.ts`
 3. **Define rules**: Create `my-game/rules.ts`
@@ -506,6 +544,7 @@ apps/blast/src/
 5. **Tie it together**: Create `my-game/game-definition.ts`
 
 #### For Extending the Engine:
+
 1. **New precondition**: Add to `action-system/preconditions/`
 2. **New effect**: Add to `action-system/effects/`
 3. **New condition**: Add to `rule-engine/conditions/`
@@ -518,6 +557,7 @@ apps/blast/src/
 ### 1. Actions vs Events vs Rules
 
 **Actions** = Player Intent
+
 - "I want to play this card"
 - "I want to attack with this creature"
 - Synchronous, validated before execution
@@ -527,6 +567,7 @@ apps/blast/src/
 - **Hybrid approach** - Actions commonly have both direct effects (immediate state changes) and event-emitting effects (for reactive logic)
 
 **Events** = Historical Facts (Optional)
+
 - "A card was played"
 - "A creature died"
 - "Turn ended"
@@ -537,6 +578,7 @@ apps/blast/src/
 - Enables decoupled reactive logic
 
 **Rules** = Reactive Logic (Event-Driven)
+
 - "When a spell is cast, draw a card"
 - "When a creature dies, deal 1 damage to its owner"
 - "When TurnEnded event occurs, switch to next player"
@@ -546,6 +588,7 @@ apps/blast/src/
 - Rule effects can directly modify state OR emit more events
 
 **Example Flow**:
+
 - Action "PlayCard" has **direct effects**: `MoveEntity` (moves card to board) + `ModifyResource` (pays mana) - these happen immediately
 - Action "PlayCard" also has: `EmitEvent('CardPlayed')` - this creates an event
 - Event "CardPlayed" triggers a rule that draws a card - this is reactive logic
@@ -553,11 +596,13 @@ apps/blast/src/
 ### 2. Preconditions vs Conditions
 
 **Preconditions** = Action Requirements
+
 - Checked before action execution
 - Block the action if false
 - Example: "It must be your turn"
 
 **Conditions** = Rule Requirements
+
 - Checked after event matching
 - Block rule execution if false
 - Example: "Target must be a creature"
@@ -565,11 +610,13 @@ apps/blast/src/
 ### 3. Costs vs Effects
 
 **Costs** = Paid Before Effects
+
 - Applied first, before main effects
 - If cost fails, entire action fails
 - Example: "Pay 3 mana"
 
 **Effects** = Main Action Results
+
 - Applied after costs succeed
 - Can emit events
 - Example: "Draw 2 cards"
@@ -583,16 +630,17 @@ The ECS is mutable for performance, but we achieve immutability at boundaries:
 const snapshot = state.createSnapshot();
 
 try {
-  // Mutate ECS state
-  executeAction(action);
-  processEvents();
+    // Mutate ECS state
+    executeAction(action);
+    processEvents();
 } catch (error) {
-  // Rollback on failure
-  state.restoreSnapshot(snapshot);
+    // Rollback on failure
+    state.restoreSnapshot(snapshot);
 }
 ```
 
 **When to Snapshot**:
+
 - Before executing actions (for rollback)
 - After each turn (for undo)
 - Before AI simulation (for lookahead)
@@ -600,12 +648,14 @@ try {
 ### 5. Zone Ownership Model
 
 **Per-Player Zones** (default):
+
 - Each player gets their own instance of the zone
 - Referenced via `$zone.actor.hand`, `$zone.opponent.deck`, etc.
 - Created during game setup for each player
 - Zone entity has `owner` set to the player entity
 
 **Shared Zones** (optional):
+
 - One instance accessible to all players
 - Mark zone as `shared: true` in zone definition
 - Referenced via `$zone.shared.zoneName`
@@ -638,7 +688,7 @@ const signature = `${event.type}:${JSON.stringify(event.data)}`;
 
 // If same event repeats too many times → throw error
 if (count > MAX_CYCLES) {
-  throw new InfiniteLoopError(signature, count);
+    throw new InfiniteLoopError(signature, count);
 }
 ```
 
@@ -707,14 +757,14 @@ export const drawCardAction = new ActionDefinition({
 ```typescript
 // games/simple-card-game/game-definition.ts
 const gameDefinition: GameDefinition = {
-  name: 'Simple Card Game',
-  actions: [
-    endTurnAction,
-    drawCardAction, // Add here
-  ],
-  rules: rules,
-  phases: phases,
-  createInitialState: createInitialState,
+    name: 'Simple Card Game',
+    actions: [
+        endTurnAction,
+        drawCardAction, // Add here
+    ],
+    rules: rules,
+    phases: phases,
+    createInitialState: createInitialState,
 };
 ```
 
@@ -744,36 +794,43 @@ const gameDefinition: GameDefinition = {
 
 ```typescript
 // games/simple-card-game/rules.ts
-import { Rule, EventPattern } from '@blast/board-game-engine';
+import { EventPattern, Rule } from '@blast/board-game-engine';
 
 export const drawOnTurnStartRule: Rule = {
-  id: 'draw-on-turn-start',
+    id: 'draw-on-turn-start',
 
-  // Trigger on TurnEnded events
-  trigger: new EventPattern({
-    eventType: 'TurnEnded',
-    filters: {}, // Match all TurnEnded events
-  }),
-
-  conditions: [], // No additional conditions
-
-  effects: [
-    new CustomEffect((ctx) => {
-      // Get the new active player (turn just ended, so it switched)
-      const newActivePlayer = ctx.state.activePlayer;
-
-      // Draw a card for them
-      const deck = getDeckEntities(ctx.state, newActivePlayer);
-      if (deck.length > 0) {
-        const card = deck[0];
-        const handZone = getZoneEntity(ctx.state, 'hand', newActivePlayer);
-        ctx.state.coordinator.getComponentFromEntity(LOCATION_COMPONENT, card).location = handZone;
-      }
+    // Trigger on TurnEnded events
+    trigger: new EventPattern({
+        eventType: 'TurnEnded',
+        filters: {}, // Match all TurnEnded events
     }),
-  ],
 
-  priority: 100, // Higher = earlier
-  source: null, // Global rule
+    conditions: [], // No additional conditions
+
+    effects: [
+        new CustomEffect(ctx => {
+            // Get the new active player (turn just ended, so it switched)
+            const newActivePlayer = ctx.state.activePlayer;
+
+            // Draw a card for them
+            const deck = getDeckEntities(ctx.state, newActivePlayer);
+            if (deck.length > 0) {
+                const card = deck[0];
+                const handZone = getZoneEntity(
+                    ctx.state,
+                    'hand',
+                    newActivePlayer
+                );
+                ctx.state.coordinator.getComponentFromEntity(
+                    LOCATION_COMPONENT,
+                    card
+                ).location = handZone;
+            }
+        }),
+    ],
+
+    priority: 100, // Higher = earlier
+    source: null, // Global rule
 };
 ```
 
@@ -781,9 +838,7 @@ export const drawOnTurnStartRule: Rule = {
 
 ```typescript
 // games/simple-card-game/game-definition.ts
-const rules: Rule[] = [
-  drawOnTurnStartRule,
-];
+const rules: Rule[] = [drawOnTurnStartRule];
 ```
 
 ### Adding a New Phase
@@ -795,29 +850,29 @@ const rules: Rule[] = [
 ```typescript
 // games/simple-card-game/phases.ts
 const combatPhase: PhaseDefinition = {
-  name: 'Combat',
+    name: 'Combat',
 
-  allowedActionTypes: [
-    'DeclareAttacker',
-    'DeclareBlocker',
-  ],
+    allowedActionTypes: ['DeclareAttacker', 'DeclareBlocker'],
 
-  autoAdvance: false, // Wait for player to pass
+    autoAdvance: false, // Wait for player to pass
 
-  onEnter: (state) => {
-    // Reset all creatures' attack counts
-    const creatures = getAllCreatures(state);
-    creatures.forEach(creature => {
-      const cardState = state.coordinator.getComponentFromEntity(CARD_STATE_COMPONENT, creature);
-      cardState.attacksThisTurn = 0;
-    });
-  },
+    onEnter: state => {
+        // Reset all creatures' attack counts
+        const creatures = getAllCreatures(state);
+        creatures.forEach(creature => {
+            const cardState = state.coordinator.getComponentFromEntity(
+                CARD_STATE_COMPONENT,
+                creature
+            );
+            cardState.attacksThisTurn = 0;
+        });
+    },
 
-  onExit: (state) => {
-    // Clean up combat-related state
-  },
+    onExit: state => {
+        // Clean up combat-related state
+    },
 
-  nextPhase: 'End', // After combat, go to End phase
+    nextPhase: 'End', // After combat, go to End phase
 };
 ```
 
@@ -825,10 +880,10 @@ const combatPhase: PhaseDefinition = {
 
 ```typescript
 const phases: PhaseDefinition[] = [
-  upkeepPhase,
-  mainPhase,
-  combatPhase, // Add here
-  endPhase,
+    upkeepPhase,
+    mainPhase,
+    combatPhase, // Add here
+    endPhase,
 ];
 ```
 
@@ -840,22 +895,22 @@ const phases: PhaseDefinition[] = [
 
 ```typescript
 // board-game-engine/action-system/preconditions/has-mana.ts
-import { Precondition, ActionContext } from '../../core/types';
+import { ActionContext, Precondition } from '../../core/types';
 
 export class HasMana implements Precondition {
-  constructor(private amount: number) {}
+    constructor(private amount: number) {}
 
-  check(context: ActionContext): boolean {
-    const resources = context.getComponent(
-      RESOURCE_COMPONENT,
-      context.actor
-    );
-    return resources !== null && resources.mana >= this.amount;
-  }
+    check(context: ActionContext): boolean {
+        const resources = context.getComponent(
+            RESOURCE_COMPONENT,
+            context.actor
+        );
+        return resources !== null && resources.mana >= this.amount;
+    }
 
-  getErrorMessage(context: ActionContext): string {
-    return `Not enough mana (need ${this.amount})`;
-  }
+    getErrorMessage(context: ActionContext): string {
+        return `Not enough mana (need ${this.amount})`;
+    }
 }
 ```
 
@@ -870,12 +925,12 @@ export { HasMana } from './has-mana';
 
 ```typescript
 const playCardAction = new ActionDefinition({
-  name: 'PlayCard',
-  preconditions: [
-    new IsPlayerTurn(),
-    new HasMana(3), // Requires 3 mana
-  ],
-  // ...
+    name: 'PlayCard',
+    preconditions: [
+        new IsPlayerTurn(),
+        new HasMana(3), // Requires 3 mana
+    ],
+    // ...
 });
 ```
 
@@ -887,49 +942,50 @@ const playCardAction = new ActionDefinition({
 
 ```typescript
 // board-game-engine/action-system/effects/deal-damage.ts
-import { Effect, ActionContext, Event } from '../../core/types';
 import { Entity } from '@ue-too/ecs';
 
+import { ActionContext, Effect, Event } from '../../core/types';
+
 export class DealDamage implements Effect {
-  constructor(
-    private amount: number,
-    private targetResolver: (ctx: ActionContext) => Entity
-  ) {}
+    constructor(
+        private amount: number,
+        private targetResolver: (ctx: ActionContext) => Entity
+    ) {}
 
-  apply(context: ActionContext): void {
-    const target = this.targetResolver(context);
+    apply(context: ActionContext): void {
+        const target = this.targetResolver(context);
 
-    const resources = context.getComponent(RESOURCE_COMPONENT, target);
-    if (resources) {
-      resources.health -= this.amount;
+        const resources = context.getComponent(RESOURCE_COMPONENT, target);
+        if (resources) {
+            resources.health -= this.amount;
 
-      // Check for death
-      if (resources.health <= 0) {
-        context.state.addEvent({
-          type: 'PlayerDefeated',
-          data: { playerId: target },
-          timestamp: Date.now(),
-          id: generateEventId(),
-        });
-      }
+            // Check for death
+            if (resources.health <= 0) {
+                context.state.addEvent({
+                    type: 'PlayerDefeated',
+                    data: { playerId: target },
+                    timestamp: Date.now(),
+                    id: generateEventId(),
+                });
+            }
+        }
     }
-  }
 
-  generatesEvent(): boolean {
-    return true;
-  }
+    generatesEvent(): boolean {
+        return true;
+    }
 
-  createEvent(context: ActionContext): Event {
-    return {
-      type: 'DamageDealt',
-      data: {
-        amount: this.amount,
-        target: this.targetResolver(context),
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
+    createEvent(context: ActionContext): Event {
+        return {
+            type: 'DamageDealt',
+            data: {
+                amount: this.amount,
+                target: this.targetResolver(context),
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
+    }
 }
 ```
 
@@ -937,17 +993,15 @@ export class DealDamage implements Effect {
 
 ```typescript
 const lightningBoltAction = new ActionDefinition({
-  name: 'LightningBolt',
-  preconditions: [new IsPlayerTurn(), new HasMana(1)],
-  costs: [new ModifyResource(-1, 0)], // Pay 1 mana
-  effects: [
-    new DealDamage(3, (ctx) => ctx.targets[0]),
-  ],
-  targetSelector: (state, actor) => {
-    // Can target any player
-    return state.getAllPlayers().map(p => [p]);
-  },
-  // ...
+    name: 'LightningBolt',
+    preconditions: [new IsPlayerTurn(), new HasMana(1)],
+    costs: [new ModifyResource(-1, 0)], // Pay 1 mana
+    effects: [new DealDamage(3, ctx => ctx.targets[0])],
+    targetSelector: (state, actor) => {
+        // Can target any player
+        return state.getAllPlayers().map(p => [p]);
+    },
+    // ...
 });
 ```
 
@@ -958,6 +1012,7 @@ const lightningBoltAction = new ActionDefinition({
 ### Short-Term (Next Sprints)
 
 #### 1. **Complete Card Game Actions**
+
 - [x] `DrawCard` - Draw from deck to hand (includes 1 card per turn limit)
 - [x] `PlayCard` - Play card from hand to board (pays mana cost, adds summoning sickness)
 - [x] `AttackCreature` - Combat between creatures (mutual damage, creatures can die)
@@ -971,6 +1026,7 @@ const lightningBoltAction = new ActionDefinition({
 **Docs**: `docs/simple-card-game-manual.md` - Player manual
 
 #### 2. **Deck Building & Card Library**
+
 - [ ] Card database (JSON file or database)
 - [ ] Deck construction UI
 - [ ] Card rendering (images, stats, effects)
@@ -980,6 +1036,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: High (core gameplay)
 
 #### 3. **Win Conditions & Game Over** ✅ Complete
+
 - [x] `GameStatusComponent` integration - Moved to core engine, stored on game manager entity
 - [x] Win condition evaluation system - `WinConditionEvaluator` with lazy evaluation
 - [x] Win condition factory - Converts JSON win conditions to evaluatable objects
@@ -988,12 +1045,13 @@ const lightningBoltAction = new ActionDefinition({
 - [x] Fallback behavior - Still supports health-based game over for games without win conditions
 
 **Status**: ✅ Complete
-**Files**: 
+**Files**:
+
 - `src/board-game-engine/win-condition-system/win-condition-evaluator.ts`
 - `src/board-game-engine/schema/factories/win-condition-factory.ts`
 - `src/board-game-engine/core/game-state.ts` (GameStatusComponent)
 - `src/components/GameDefinitionBuilder/index.tsx` (WinConditionsSection)
-**Features**:
+  **Features**:
 - Lazy evaluation: Win conditions checked on-demand when `isGameOver()` or `getWinner()` is called
 - First match wins: Conditions evaluated in order, first match determines winner
 - Expression support: Winner/loser can be entity expressions (`$actor`, `$opponent`, `$eachPlayer`, etc.)
@@ -1001,6 +1059,7 @@ const lightningBoltAction = new ActionDefinition({
 - Visual builder: Full UI support with condition builder integration
 
 #### 4. **Enhanced UI**
+
 - [ ] Visual card representations
 - [ ] Drag-and-drop for playing cards
 - [ ] Target selection UI
@@ -1013,6 +1072,7 @@ const lightningBoltAction = new ActionDefinition({
 ### Medium-Term (Next Month)
 
 #### 5. **AI Opponent**
+
 - [ ] Action generation (find all valid actions)
 - [ ] Minimax or MCTS tree search
 - [ ] State evaluation heuristics
@@ -1022,6 +1082,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: High (enables single-player)
 
 #### 6. **Multiplayer Support**
+
 - [ ] Network synchronization (WebSocket or WebRTC)
 - [ ] Game lobbies
 - [ ] Turn-based protocol
@@ -1031,6 +1092,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: Medium (enables real multiplayer)
 
 #### 7. **Comprehensive Testing**
+
 - [ ] Unit tests for all preconditions/effects/conditions
 - [ ] Integration tests for action → event → rule flow
 - [ ] Simulation tests (1000 random games, no crashes)
@@ -1042,6 +1104,7 @@ const lightningBoltAction = new ActionDefinition({
 #### 8. **Generic Effects & Preconditions Library**
 
 **Generic Effects** (all complete):
+
 - [x] `MoveEntity` - Move entities between zones with cache updates
 - [x] `ModifyResource` - Add/subtract numeric resources with min/max clamping
 - [x] `SetComponentValue` - Set any component property dynamically
@@ -1053,6 +1116,7 @@ const lightningBoltAction = new ActionDefinition({
 - [x] `RepeatEffect` - Repeat effect N times
 
 **Generic Preconditions** (all complete):
+
 - [x] `ResourceCheck` - Check numeric resource with operators (>=, >, <=, <, ==, !=)
 - [x] `ZoneHasEntities` - Check zone has min/max entities with optional filter
 - [x] `EntityInZone` - Check entity is in expected zone(s)
@@ -1062,20 +1126,23 @@ const lightningBoltAction = new ActionDefinition({
 - [x] `EntityExists` - Check entity exists with optional required component
 
 **Resolver System** (complete):
+
 - [x] `EntityResolvers` - Resolve entities (actor, target, fromParam, fixed)
 - [x] `NumberResolvers` - Resolve numbers (fixed, fromParam, fromComponent, negate, add, multiply)
 - [x] `ValueResolver<T>` - Generic value resolution
 
 **Status**: ✅ Complete
 **Files**:
+
 - `src/board-game-engine/action-system/effects/generic.ts`
 - `src/board-game-engine/action-system/preconditions/generic.ts`
 - `src/board-game-engine/action-system/resolvers.ts`
-**Tests**: `test/generic-effects.test.ts` (19 tests), `test/generic-preconditions.test.ts` (24 tests)
+  **Tests**: `test/generic-effects.test.ts` (19 tests), `test/generic-preconditions.test.ts` (24 tests)
 
 ### Long-Term (3-6 Months)
 
 #### 9. **Reusable Abilities System**
+
 - [ ] Keyword abilities (e.g., "Flying", "Haste", "Lifelink")
 - [ ] Triggered abilities (attach rules to entities)
 - [ ] Activated abilities (costs + effects)
@@ -1085,6 +1152,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: Medium (reduces duplication)
 
 #### 10. **Save/Load & Replay**
+
 - [ ] Serialize entire game state to JSON
 - [ ] Save games to localStorage or server
 - [ ] Load saved games
@@ -1095,6 +1163,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: Low (nice-to-have)
 
 #### 11. **Advanced Game Modes**
+
 - [ ] Draft mode (pick cards, build deck)
 - [ ] Arena mode (gauntlet of AI opponents)
 - [ ] Campaign mode (story-driven progression)
@@ -1104,6 +1173,7 @@ const lightningBoltAction = new ActionDefinition({
 **Priority**: Low (content expansion)
 
 #### 12. **Performance Optimization**
+
 - [ ] Profile action execution
 - [ ] Optimize event processing (batch events)
 - [ ] Cache expensive queries (entities in zone)
@@ -1116,6 +1186,7 @@ const lightningBoltAction = new ActionDefinition({
 #### 13. **Card Effect Scripting** ✅ Partially Complete
 
 **Implemented**:
+
 - [x] Domain-specific language (DSL) for card effects - JSON-based expression language
 - [x] JSON Schema validation for game definitions
 - [x] Expression resolver for `$actor`, `$target`, `$component`, `$zone`, etc.
@@ -1125,11 +1196,13 @@ const lightningBoltAction = new ActionDefinition({
 - [x] Event-driven architecture - Actions emit events, rules respond to events
 
 **Remaining**:
+
 - [ ] Hot-reload card definitions during gameplay
 - [ ] Sandboxed effect execution
 - [ ] More advanced expressions (loops, custom functions)
 
 **File Locations**:
+
 - Expression language: `src/board-game-engine/schema/expression-resolver.ts`
 - JSON Schema: `src/board-game-engine/schema/json-schema/game-definition.schema.json`
 - GUI Builder: `src/components/GameDefinitionBuilder/index.tsx`
@@ -1156,6 +1229,7 @@ The GUI builder now includes visual builders for conditions, effects, rules, and
 - [ ] Dark mode support
 
 **Implemented**:
+
 - `ConditionBuilder` component - Supports all 13 condition types with nested AND/OR/NOT
 - `EffectBuilder` component - Supports 8 effect types with conditional nesting (including `switchActivePlayer`)
 - `EffectListBuilder` component - Manages lists of effects with reordering
@@ -1169,6 +1243,7 @@ The GUI builder now includes visual builders for conditions, effects, rules, and
 - `WinConditionsSection` component - Visual win condition builder with condition builder integration
 
 **File Locations**:
+
 - `src/components/GameDefinitionBuilder/GamePreview.tsx` - Preview wrapper with validation
 - `src/components/GameDefinitionBuilder/GenericGameUI.tsx` - Game renderer
 - `src/components/GameDefinitionBuilder/EntityDisplay.tsx` - Entity card display
@@ -1180,11 +1255,13 @@ The GUI builder now includes visual builders for conditions, effects, rules, and
 #### 15. **Phase System Fixes and Improvements**
 
 **Recent Fixes (v1.0.2)**:
+
 - [x] Fixed infinite loop in phase advancement - Added cycle detection and maximum limit (10 advances per action) to prevent infinite loops when phases with `autoAdvance: true` form cycles
 - [x] Fixed phase self-reference bug - Improved `nextPhase` handling in `game-definition-loader.ts` to prevent phases from defaulting to themselves, which caused infinite loops
 - [x] Fixed phase restriction enforcement - `allowedActions` in phase definitions now properly restricts which actions can be performed. Actions are automatically filtered based on phase restrictions even without explicit `phaseCheck` preconditions
 
 **Implementation Details**:
+
 - `GameEngine.performAction()` now includes cycle detection using a `Set` to track visited phases
 - Maximum phase advancement limit of 10 per action execution to prevent runaway loops
 - `ActionSystem` now integrates with `PhaseManager` to enforce phase-based action restrictions
@@ -1192,6 +1269,7 @@ The GUI builder now includes visual builders for conditions, effects, rules, and
 - Improved error messages when actions are attempted in disallowed phases
 
 **File Locations**:
+
 - `src/board-game-engine/game-engine.ts` - Phase advancement cycle detection
 - `src/board-game-engine/schema/game-definition-loader.ts` - Phase creation with proper nextPhase handling
 - `src/board-game-engine/action-system/action-system.ts` - Phase restriction enforcement
@@ -1200,7 +1278,9 @@ The GUI builder now includes visual builders for conditions, effects, rules, and
 **Priority**: High (prevents game freezing)
 
 #### 16. **Other Game Types**
+
 The engine is generic enough to support:
+
 - [ ] **Chess** - Turn-based, deterministic
 - [ ] **Checkers** - Simpler board game
 - [ ] **Poker** - Betting, hidden information
@@ -1218,27 +1298,27 @@ The engine is generic enough to support:
 ### Code Organization Principles
 
 1. **Keep Engine Game-Agnostic**
-   - `board-game-engine/` should have zero game-specific logic
-   - All game rules live in `games/<game-name>/`
-   - Engine provides building blocks, games compose them
+    - `board-game-engine/` should have zero game-specific logic
+    - All game rules live in `games/<game-name>/`
+    - Engine provides building blocks, games compose them
 
 2. **Favor Composition Over Inheritance**
-   - Use `CompositeEffect` instead of complex subclasses
-   - Use `AndPrecondition` / `OrPrecondition` for logic
-   - Keep classes small and focused
+    - Use `CompositeEffect` instead of complex subclasses
+    - Use `AndPrecondition` / `OrPrecondition` for logic
+    - Keep classes small and focused
 
 3. **Immutable Data Structures**
-   - Events are immutable (never modify after creation)
-   - Components can be mutable (for performance)
-   - Use snapshots at boundaries for safety
+    - Events are immutable (never modify after creation)
+    - Components can be mutable (for performance)
+    - Use snapshots at boundaries for safety
 
 4. **Clear Separation of Concerns**
-   - **Core**: Types and state management
-   - **Action System**: Player inputs
-   - **Event System**: Notifications
-   - **Rule Engine**: Game logic
-   - **Phase System**: Game flow
-   - **GameEngine**: Integration
+    - **Core**: Types and state management
+    - **Action System**: Player inputs
+    - **Event System**: Notifications
+    - **Rule Engine**: Game logic
+    - **Phase System**: Game flow
+    - **GameEngine**: Integration
 
 ### Adding New Features Checklist
 
@@ -1261,11 +1341,11 @@ When adding a new feature:
 ```typescript
 // BAD: Infinite loop
 const rule: Rule = {
-  id: 'bad-rule',
-  trigger: { eventType: 'CardPlayed', filters: {} },
-  effects: [
-    new EmitEvent('CardPlayed', /* ... */), // Triggers itself!
-  ],
+    id: 'bad-rule',
+    trigger: { eventType: 'CardPlayed', filters: {} },
+    effects: [
+        new EmitEvent('CardPlayed' /* ... */), // Triggers itself!
+    ],
 };
 ```
 
@@ -1274,11 +1354,11 @@ const rule: Rule = {
 ```typescript
 // GOOD: Different event
 const rule: Rule = {
-  id: 'good-rule',
-  trigger: { eventType: 'CardPlayed', filters: {} },
-  effects: [
-    new EmitEvent('CardPlayedReaction', /* ... */), // Different type
-  ],
+    id: 'good-rule',
+    trigger: { eventType: 'CardPlayed', filters: {} },
+    effects: [
+        new EmitEvent('CardPlayedReaction' /* ... */), // Different type
+    ],
 };
 ```
 
@@ -1288,9 +1368,9 @@ const rule: Rule = {
 
 ```typescript
 // BAD: State changes but no one knows
-new CustomEffect((ctx) => {
-  ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health -= 5;
-  // No event emitted!
+new CustomEffect(ctx => {
+    ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health -= 5;
+    // No event emitted!
 });
 ```
 
@@ -1299,13 +1379,13 @@ new CustomEffect((ctx) => {
 ```typescript
 // GOOD: Emit event
 new CompositeEffect([
-  new CustomEffect((ctx) => {
-    ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health -= 5;
-  }),
-  new EmitEvent('HealthChanged', (ctx) => ({
-    playerId: ctx.actor,
-    newHealth: ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health,
-  })),
+    new CustomEffect(ctx => {
+        ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health -= 5;
+    }),
+    new EmitEvent('HealthChanged', ctx => ({
+        playerId: ctx.actor,
+        newHealth: ctx.getComponent(RESOURCE_COMPONENT, ctx.actor).health,
+    })),
 ]);
 ```
 
@@ -1323,8 +1403,8 @@ event.data.playerId = newPlayer; // Events are immutable!
 ```typescript
 // GOOD: Create new event
 const newEvent: Event = {
-  ...event,
-  data: { ...event.data, playerId: newPlayer },
+    ...event,
+    data: { ...event.data, playerId: newPlayer },
 };
 ```
 
@@ -1342,9 +1422,9 @@ actionSystem.executeAction(action); // Might violate rules!
 ```typescript
 // GOOD: Validate before execute
 if (actionSystem.isActionValid(action)) {
-  actionSystem.executeAction(action);
+    actionSystem.executeAction(action);
 } else {
-  console.error('Invalid action:', actionSystem.getValidationError(action));
+    console.error('Invalid action:', actionSystem.getValidationError(action));
 }
 ```
 
@@ -1378,7 +1458,7 @@ Each event can trigger multiple rules, which emit more events.
 const MAX_CASCADE_DEPTH = 3;
 
 if (currentDepth > MAX_CASCADE_DEPTH) {
-  console.warn('Deep event cascade detected:', eventChain);
+    console.warn('Deep event cascade detected:', eventChain);
 }
 ```
 
@@ -1391,13 +1471,13 @@ Queries like "get all cards in hand" can be expensive.
 ```typescript
 // Bad: Queries in hot loop
 for (let i = 0; i < 100; i++) {
-  const cards = getCardsInHand(state, player); // Queries ECS every time
+    const cards = getCardsInHand(state, player); // Queries ECS every time
 }
 
 // Good: Cache once
 const cards = getCardsInHand(state, player);
 for (let i = 0; i < 100; i++) {
-  // Use cached result
+    // Use cached result
 }
 ```
 
@@ -1410,14 +1490,14 @@ Snapshots serialize the entire ECS, which is expensive.
 ```typescript
 // Bad: Snapshot every action
 for (const action of actions) {
-  const snapshot = state.createSnapshot(); // Expensive!
-  executeAction(action);
+    const snapshot = state.createSnapshot(); // Expensive!
+    executeAction(action);
 }
 
 // Good: Snapshot once per turn
 const snapshot = state.createSnapshot();
 for (const action of actions) {
-  executeAction(action);
+    executeAction(action);
 }
 ```
 
@@ -1429,7 +1509,7 @@ Log all events to see what's happening:
 
 ```typescript
 state.coordinator.on('event', (event: Event) => {
-  console.log('Event:', event.type, event.data);
+    console.log('Event:', event.type, event.data);
 });
 ```
 
@@ -1441,12 +1521,12 @@ Track event causality:
 const eventGraph = new Map<string, string[]>();
 
 function recordEvent(event: Event, cause: Event | null) {
-  if (cause) {
-    if (!eventGraph.has(cause.id)) {
-      eventGraph.set(cause.id, []);
+    if (cause) {
+        if (!eventGraph.has(cause.id)) {
+            eventGraph.set(cause.id, []);
+        }
+        eventGraph.get(cause.id)!.push(event.id);
     }
-    eventGraph.get(cause.id)!.push(event.id);
-  }
 }
 ```
 
@@ -1470,15 +1550,15 @@ Record all actions and replay them:
 const actionHistory: Action[] = [];
 
 function executeWithRecording(action: Action) {
-  actionHistory.push(action);
-  actionSystem.executeAction(action);
+    actionHistory.push(action);
+    actionSystem.executeAction(action);
 }
 
 function replay() {
-  const initialState = loadInitialState();
-  for (const action of actionHistory) {
-    actionSystem.executeAction(action);
-  }
+    const initialState = loadInitialState();
+    for (const action of actionHistory) {
+        actionSystem.executeAction(action);
+    }
 }
 ```
 
@@ -1490,23 +1570,23 @@ Test individual pieces in isolation:
 
 ```typescript
 describe('HasMana precondition', () => {
-  it('should pass when player has enough mana', () => {
-    const state = createTestState();
-    const player = createPlayerWithMana(state, 5);
-    const context = createMockContext(state, player);
+    it('should pass when player has enough mana', () => {
+        const state = createTestState();
+        const player = createPlayerWithMana(state, 5);
+        const context = createMockContext(state, player);
 
-    const precondition = new HasMana(3);
-    expect(precondition.check(context)).toBe(true);
-  });
+        const precondition = new HasMana(3);
+        expect(precondition.check(context)).toBe(true);
+    });
 
-  it('should fail when player lacks mana', () => {
-    const state = createTestState();
-    const player = createPlayerWithMana(state, 2);
-    const context = createMockContext(state, player);
+    it('should fail when player lacks mana', () => {
+        const state = createTestState();
+        const player = createPlayerWithMana(state, 2);
+        const context = createMockContext(state, player);
 
-    const precondition = new HasMana(3);
-    expect(precondition.check(context)).toBe(false);
-  });
+        const precondition = new HasMana(3);
+        expect(precondition.check(context)).toBe(false);
+    });
 });
 ```
 
@@ -1516,39 +1596,44 @@ Test complete flows:
 
 ```typescript
 describe('PlayCard action', () => {
-  it('should move card from hand to board and trigger rules', () => {
-    const engine = createTestEngine();
-    const state = engine.getState();
+    it('should move card from hand to board and trigger rules', () => {
+        const engine = createTestEngine();
+        const state = engine.getState();
 
-    // Setup: Card in hand
-    const card = createCard(state, { cost: 3 });
-    const player = getActivePlayer(state);
-    moveToHand(state, card, player);
+        // Setup: Card in hand
+        const card = createCard(state, { cost: 3 });
+        const player = getActivePlayer(state);
+        moveToHand(state, card, player);
 
-    // Execute: Play the card
-    const action: Action = {
-      type: 'PlayCard',
-      actorId: player,
-      targetIds: [card],
-      parameters: {},
-    };
+        // Execute: Play the card
+        const action: Action = {
+            type: 'PlayCard',
+            actorId: player,
+            targetIds: [card],
+            parameters: {},
+        };
 
-    engine.getActionSystem().executeAction(action);
+        engine.getActionSystem().executeAction(action);
 
-    // Verify: Card moved to board
-    expect(isInZone(state.coordinator, card, 'board', player)).toBe(true);
+        // Verify: Card moved to board
+        expect(isInZone(state.coordinator, card, 'board', player)).toBe(true);
 
-    // Verify: Mana was spent
-    const resources = state.coordinator.getComponentFromEntity(RESOURCE_COMPONENT, player);
-    expect(resources.mana).toBe(/* initial - 3 */);
+        // Verify: Mana was spent
+        const resources = state.coordinator.getComponentFromEntity(
+            RESOURCE_COMPONENT,
+            player
+        );
+        expect(resources.mana).toBe(/* initial - 3 */);
 
-    // Verify: CardPlayed event was emitted
-    const events = state.getEventQueue();
-    expect(events).toContainEqual(expect.objectContaining({
-      type: 'CardPlayed',
-      data: expect.objectContaining({ cardId: card }),
-    }));
-  });
+        // Verify: CardPlayed event was emitted
+        const events = state.getEventQueue();
+        expect(events).toContainEqual(
+            expect.objectContaining({
+                type: 'CardPlayed',
+                data: expect.objectContaining({ cardId: card }),
+            })
+        );
+    });
 });
 ```
 
@@ -1558,21 +1643,24 @@ Run random games to catch edge cases:
 
 ```typescript
 describe('Game stability', () => {
-  it('should complete 1000 random games without crashing', () => {
-    for (let i = 0; i < 1000; i++) {
-      const engine = createTestEngine();
+    it('should complete 1000 random games without crashing', () => {
+        for (let i = 0; i < 1000; i++) {
+            const engine = createTestEngine();
 
-      while (!engine.getState().isGameOver()) {
-        const validActions = engine.getActionSystem().getValidActions();
-        const randomAction = validActions[Math.floor(Math.random() * validActions.length)];
+            while (!engine.getState().isGameOver()) {
+                const validActions = engine.getActionSystem().getValidActions();
+                const randomAction =
+                    validActions[
+                        Math.floor(Math.random() * validActions.length)
+                    ];
 
-        engine.getActionSystem().executeAction(randomAction);
-      }
+                engine.getActionSystem().executeAction(randomAction);
+            }
 
-      // If we got here, game completed successfully
-      expect(engine.getState().isGameOver()).toBe(true);
-    }
-  });
+            // If we got here, game completed successfully
+            expect(engine.getState().isGameOver()).toBe(true);
+        }
+    });
 });
 ```
 
@@ -1580,7 +1668,7 @@ describe('Game stability', () => {
 
 #### JSDoc Format
 
-```typescript
+````typescript
 /**
  * Brief one-line description.
  *
@@ -1607,7 +1695,7 @@ describe('Game stability', () => {
  *
  * @group Category Name
  */
-```
+````
 
 #### README Structure
 
@@ -1690,18 +1778,18 @@ A: Use `targetSelector` to return arrays with multiple elements:
 
 ```typescript
 targetSelector: (state, actor) => {
-  const creatures = getCreatures(state, actor);
-  const combinations: Entity[][] = [];
+    const creatures = getCreatures(state, actor);
+    const combinations: Entity[][] = [];
 
-  // Generate all 2-creature combinations
-  for (let i = 0; i < creatures.length; i++) {
-    for (let j = i + 1; j < creatures.length; j++) {
-      combinations.push([creatures[i], creatures[j]]);
+    // Generate all 2-creature combinations
+    for (let i = 0; i < creatures.length; i++) {
+        for (let j = i + 1; j < creatures.length; j++) {
+            combinations.push([creatures[i], creatures[j]]);
+        }
     }
-  }
 
-  return combinations;
-}
+    return combinations;
+};
 ```
 
 **Q: How do I implement hidden information (opponent's hand)?**
@@ -1710,17 +1798,18 @@ A: Add a visibility system:
 
 ```typescript
 interface ZoneComponent {
-  name: string;
-  owner: Entity | null;
-  visibility: 'public' | 'private' | 'owner-only'; // Add this
+    name: string;
+    owner: Entity | null;
+    visibility: 'public' | 'private' | 'owner-only'; // Add this
 }
 
 // When rendering, check visibility
 function canSee(viewer: Entity, zone: Entity): boolean {
-  const zoneComp = getComponent(ZONE_COMPONENT, zone);
-  if (zoneComp.visibility === 'public') return true;
-  if (zoneComp.visibility === 'owner-only' && zoneComp.owner === viewer) return true;
-  return false;
+    const zoneComp = getComponent(ZONE_COMPONENT, zone);
+    if (zoneComp.visibility === 'public') return true;
+    if (zoneComp.visibility === 'owner-only' && zoneComp.owner === viewer)
+        return true;
+    return false;
 }
 ```
 
@@ -1730,18 +1819,18 @@ A: Attach rules to specific entities:
 
 ```typescript
 const cardAbilityRule: Rule = {
-  id: 'lightning-rod-ability',
-  trigger: { eventType: 'CreatureEntersPlay', filters: {} },
-  conditions: [],
-  effects: [new DealDamage(1, /* target */)],
-  priority: 100,
-  source: cardEntity, // Attach to specific card
+    id: 'lightning-rod-ability',
+    trigger: { eventType: 'CreatureEntersPlay', filters: {} },
+    conditions: [],
+    effects: [new DealDamage(1 /* target */)],
+    priority: 100,
+    source: cardEntity, // Attach to specific card
 };
 
 // When card leaves play, remove its rules
 function destroyCard(cardEntity: Entity) {
-  ruleEngine.removeRulesForSource(cardEntity);
-  coordinator.destroyEntity(cardEntity);
+    ruleEngine.removeRulesForSource(cardEntity);
+    coordinator.destroyEntity(cardEntity);
 }
 ```
 
@@ -1751,27 +1840,27 @@ A: Use a "batch action":
 
 ```typescript
 const declareAttackersAction = new ActionDefinition({
-  name: 'DeclareAttackers',
-  // ...
-  parameterGenerator: (state, actor) => {
-    const creatures = getCreatures(state, actor);
+    name: 'DeclareAttackers',
+    // ...
+    parameterGenerator: (state, actor) => {
+        const creatures = getCreatures(state, actor);
 
-    // Generate all possible attacker combinations
-    const combinations: Record<string, any>[] = [];
+        // Generate all possible attacker combinations
+        const combinations: Record<string, any>[] = [];
 
-    for (let mask = 0; mask < (1 << creatures.length); mask++) {
-      const attackers: Entity[] = [];
-      for (let i = 0; i < creatures.length; i++) {
-        if (mask & (1 << i)) {
-          attackers.push(creatures[i]);
+        for (let mask = 0; mask < 1 << creatures.length; mask++) {
+            const attackers: Entity[] = [];
+            for (let i = 0; i < creatures.length; i++) {
+                if (mask & (1 << i)) {
+                    attackers.push(creatures[i]);
+                }
+            }
+            combinations.push({ attackers });
         }
-      }
-      combinations.push({ attackers });
-    }
 
-    return combinations;
-  },
-  // ...
+        return combinations;
+    },
+    // ...
 });
 ```
 
@@ -1786,6 +1875,7 @@ const declareAttackersAction = new ActionDefinition({
 ### Contact
 
 For questions or issues:
+
 1. Check existing documentation
 2. Search for similar patterns in `games/simple-card-game/`
 3. Create a GitHub issue
@@ -1799,62 +1889,68 @@ For questions or issues:
 
 ```typescript
 // From board-game-engine/core/game-state.ts
-GAME_MANAGER_COMPONENT
-ZONE_COMPONENT
-PLAYER_COMPONENT
+GAME_MANAGER_COMPONENT;
+ZONE_COMPONENT;
+PLAYER_COMPONENT;
 
 // From games/simple-card-game/components.ts
-CARD_COMPONENT
-RESOURCE_COMPONENT
-CARD_STATE_COMPONENT
-OWNER_COMPONENT
-GAME_STATUS_COMPONENT
+CARD_COMPONENT;
+RESOURCE_COMPONENT;
+CARD_STATE_COMPONENT;
+OWNER_COMPONENT;
+GAME_STATUS_COMPONENT;
 ```
 
 ### Built-in Preconditions
 
 ```typescript
 // Basic preconditions
-new IsPlayerTurn()
-new HasComponent(CARD_COMPONENT, 'actor')
-new PhaseCheck('Main')
-new AndPrecondition([precond1, precond2])
-new OrPrecondition([precond1, precond2])
-new NotPrecondition(precond)
-new AlwaysTruePrecondition()
-new AlwaysFalsePrecondition()
-new CustomPrecondition(checkFn, errorMsg)
+new IsPlayerTurn();
+new HasComponent(CARD_COMPONENT, 'actor');
+new PhaseCheck('Main');
+new AndPrecondition([precond1, precond2]);
+new OrPrecondition([precond1, precond2]);
+new NotPrecondition(precond);
+new AlwaysTruePrecondition();
+new AlwaysFalsePrecondition();
+new CustomPrecondition(checkFn, errorMsg);
 
 // Generic preconditions (configurable via resolvers)
-new ResourceCheck({ entity, component, property, operator, value })
-new ZoneHasEntities({ zone, minCount, maxCount, filter })
-new EntityInZone({ entity, expectedZones })
-new ComponentValueCheck({ entity, component, property, expectedValue, predicate })
-new OwnerCheck({ entity, expectedOwner, invert })
-new TargetCount({ count, min, max })
-new EntityExists({ entity, requiredComponent })
+new ResourceCheck({ entity, component, property, operator, value });
+new ZoneHasEntities({ zone, minCount, maxCount, filter });
+new EntityInZone({ entity, expectedZones });
+new ComponentValueCheck({
+    entity,
+    component,
+    property,
+    expectedValue,
+    predicate,
+});
+new OwnerCheck({ entity, expectedOwner, invert });
+new TargetCount({ count, min, max });
+new EntityExists({ entity, requiredComponent });
 ```
 
 ### Built-in Effects
 
 ```typescript
 // Basic effects
-new EmitEvent('EventType', dataFn)
-new CustomEffect(applyFn)
-new CompositeEffect([effect1, effect2])
-new NoOpEffect()
+new EmitEvent('EventType', dataFn);
+new CustomEffect(applyFn);
+new CompositeEffect([effect1, effect2]);
+new NoOpEffect();
 
 // Generic effects (configurable via resolvers)
-new MoveEntity({ entity, fromZone, toZone, eventType })
-new ModifyResource({ entity, component, property, amount, min, max })
-new SetComponentValue({ entity, component, property, value })
-new CreateEntity({ components, targetZone, eventType })
-new DestroyEntity({ entity, discardZone, eventType })
-new ShuffleZone({ zone, eventType })
-new TransferMultiple({ fromZone, toZone, count, filter })
-new ConditionalEffect({ condition, ifEffect, elseEffect })
-new RepeatEffect({ effect, count })
-new SwitchActivePlayer() // Switch to next player in rotation
+new MoveEntity({ entity, fromZone, toZone, eventType });
+new ModifyResource({ entity, component, property, amount, min, max });
+new SetComponentValue({ entity, component, property, value });
+new CreateEntity({ components, targetZone, eventType });
+new DestroyEntity({ entity, discardZone, eventType });
+new ShuffleZone({ zone, eventType });
+new TransferMultiple({ fromZone, toZone, count, filter });
+new ConditionalEffect({ condition, ifEffect, elseEffect });
+new RepeatEffect({ effect, count });
+new SwitchActivePlayer(); // Switch to next player in rotation
 ```
 
 ### Resolver System
@@ -1881,7 +1977,7 @@ NumberResolvers.multiply(r1, r2, ...)            // Multiply values
 ```typescript
 // Get all entities in a zone
 const cards = state.coordinator.getAllEntities().filter(entity => {
-  return isInZone(state.coordinator, entity, 'hand', playerId);
+    return isInZone(state.coordinator, entity, 'hand', playerId);
 });
 
 // Modify a component
@@ -1890,19 +1986,19 @@ comp.property = newValue;
 
 // Emit an event
 state.addEvent({
-  type: 'CustomEvent',
-  data: { key: 'value' },
-  timestamp: Date.now(),
-  id: generateEventId(),
+    type: 'CustomEvent',
+    data: { key: 'value' },
+    timestamp: Date.now(),
+    id: generateEventId(),
 });
 
 // Check game over
 const gameStatus = state.coordinator.getComponentFromEntity(
-  GAME_STATUS_COMPONENT,
-  gameManagerEntity
+    GAME_STATUS_COMPONENT,
+    gameManagerEntity
 );
 if (gameStatus?.isGameOver) {
-  console.log('Winner:', gameStatus.winner);
+    console.log('Winner:', gameStatus.winner);
 }
 ```
 
@@ -2034,17 +2130,17 @@ $multiply($param.damage, 2)           // Double the damage
 ```json
 // Rule that switches players on TurnEnded event
 {
-  "id": "switchPlayerOnTurnEnded",
-  "trigger": {
-    "eventType": "TurnEnded"
-  },
-  "conditions": [],
-  "effects": [
-    {
-      "type": "switchActivePlayer"
+    "conditions": [],
+    "effects": [
+        {
+            "type": "switchActivePlayer"
+        }
+    ],
+    "id": "switchPlayerOnTurnEnded",
+    "priority": 100,
+    "trigger": {
+        "eventType": "TurnEnded"
     }
-  ],
-  "priority": 100
 }
 ```
 
@@ -2053,23 +2149,24 @@ $multiply($param.damage, 2)           // Double the damage
 ```json
 // Win condition: Game ends when a player's health reaches 0
 {
-  "id": "player-defeated",
-  "name": "Player Defeated",
-  "description": "Game ends when a player's health reaches 0 or below",
-  "condition": {
-    "type": "resourceCheck",
-    "entity": "$opponent",
-    "component": "Resource",
-    "property": "health",
-    "operator": "<=",
-    "value": 0
-  },
-  "winner": "actor",
-  "message": "Player defeated!"
+    "condition": {
+        "component": "Resource",
+        "entity": "$opponent",
+        "operator": "<=",
+        "property": "health",
+        "type": "resourceCheck",
+        "value": 0
+    },
+    "description": "Game ends when a player's health reaches 0 or below",
+    "id": "player-defeated",
+    "message": "Player defeated!",
+    "name": "Player Defeated",
+    "winner": "actor"
 }
 ```
 
 **Win Condition Fields**:
+
 - `id` (required) - Unique identifier
 - `name` (optional) - Human-readable name
 - `description` (optional) - Description of what this win condition checks
@@ -2078,6 +2175,7 @@ $multiply($param.damage, 2)           // Double the damage
 - `loser` (optional) - Entity expression for loser (if set, winner is the other player)
 
 **Evaluation**:
+
 - Win conditions are evaluated lazily when `isGameOver()` or `getWinner()` is called
 - Conditions are checked in order - first match wins
 - Results are stored in `GameStatusComponent` for persistence

@@ -1,52 +1,52 @@
 {
-  "name": "being",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/being/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/being"
-      }
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/being"
-      }
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/being"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/being"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "forwardAllArgs": false,
-        "cwd": "packages/being/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/being && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/being"
-      }
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "name": "being",
+    "projectType": "library",
+    "sourceRoot": "packages/being/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/being"
+            }
+        },
+        "build:bun": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/being"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/being && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/being"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/being"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/being/dist",
+                "forwardAllArgs": false
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/being"
+            }
+        }
     }
-  },
-  "tags": []
 }

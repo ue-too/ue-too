@@ -1,68 +1,65 @@
 {
-  "name": "board",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/board/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
-        "cwd": "packages/board"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math", "being"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": ["math", "being"],
+    "name": "board",
+    "projectType": "library",
+    "sourceRoot": "packages/board/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["math", "being"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
+                "cwd": "packages/board"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["math", "being"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
+                "cwd": "packages/board"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/board && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/board"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/board"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/board/dist",
+                "forwardAllArgs": false
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/board"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math --external @ue-too/being",
-        "cwd": "packages/board"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math", "being"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/board"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/board"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "forwardAllArgs": false,
-        "cwd": "packages/board/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/board && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/board"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": [
-    "math",
-    "being"
-  ]
 }

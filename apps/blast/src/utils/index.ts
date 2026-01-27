@@ -1,2 +1,2 @@
-export * from "./random-with-weight";
-export * from "./shuffle";
+export * from './random-with-weight';
+export * from './shuffle';

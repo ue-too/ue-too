@@ -1,24 +1,31 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import vue from "@vitejs/plugin-vue";
-import { resolve, join } from 'path';
+import react from '@vitejs/plugin-react';
+import vue from '@vitejs/plugin-vue';
+import { join, resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
     plugins: [react(), vue()],
-    root: resolve(__dirname, "./src"),
-    publicDir: resolve(__dirname, "public"),
+    root: resolve(__dirname, './src'),
+    publicDir: resolve(__dirname, 'public'),
     build: {
-        outDir: resolve(join(__dirname, "../../"), "dist"),
+        outDir: resolve(join(__dirname, '../../'), 'dist'),
         emptyOutDir: true,
         sourcemap: true,
-        assetsDir: "assets",
+        assetsDir: 'assets',
         rollupOptions: {
             input: {
-                main: resolve(__dirname, "src/index.html"),
+                main: resolve(__dirname, 'src/index.html'),
             },
         },
     },
-    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg', '**/*.webp'],
+    assetsInclude: [
+        '**/*.png',
+        '**/*.jpg',
+        '**/*.jpeg',
+        '**/*.gif',
+        '**/*.svg',
+        '**/*.webp',
+    ],
     server: {
         host: true,
         strictPort: false,

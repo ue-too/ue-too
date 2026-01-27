@@ -1,10 +1,10 @@
 /**
  * HasComponent precondition - checks if an entity has a specific component.
  */
+import type { ComponentName, Entity } from '@ue-too/ecs';
 
-import { BasePrecondition } from './base';
 import type { ActionContext } from '../../core/types';
-import type { Entity, ComponentName } from '@ue-too/ecs';
+import { BasePrecondition } from './base';
 
 /**
  * Target selector type for HasComponent precondition.
@@ -24,41 +24,41 @@ export type TargetSelector = 'actor' | `target${number}`;
  * ```
  */
 export class HasComponent extends BasePrecondition {
-  constructor(
-    private componentType: ComponentName,
-    private target: TargetSelector = 'actor'
-  ) {
-    super();
-  }
-
-  /**
-   * Resolve the entity from the target selector.
-   *
-   * @param context - Action context
-   * @returns The resolved entity
-   */
-  private resolveEntity(context: ActionContext): Entity | null {
-    if (this.target === 'actor') {
-      return context.actor;
+    constructor(
+        private componentType: ComponentName,
+        private target: TargetSelector = 'actor'
+    ) {
+        super();
     }
-    // Parse target index (e.g., 'target0' -> 0)
-    const match = this.target.match(/^target(\d+)$/);
-    if (match) {
-      const index = parseInt(match[1], 10);
-      return context.targets[index] ?? null;
+
+    /**
+     * Resolve the entity from the target selector.
+     *
+     * @param context - Action context
+     * @returns The resolved entity
+     */
+    private resolveEntity(context: ActionContext): Entity | null {
+        if (this.target === 'actor') {
+            return context.actor;
+        }
+        // Parse target index (e.g., 'target0' -> 0)
+        const match = this.target.match(/^target(\d+)$/);
+        if (match) {
+            const index = parseInt(match[1], 10);
+            return context.targets[index] ?? null;
+        }
+        return null;
     }
-    return null;
-  }
 
-  check(context: ActionContext): boolean {
-    const entity = this.resolveEntity(context);
-    if (entity === null) return false;
+    check(context: ActionContext): boolean {
+        const entity = this.resolveEntity(context);
+        if (entity === null) return false;
 
-    return context.getComponent(this.componentType, entity) !== null;
-  }
+        return context.getComponent(this.componentType, entity) !== null;
+    }
 
-  getErrorMessage(context: ActionContext): string {
-    const entity = this.resolveEntity(context);
-    return `Entity ${entity} (${this.target}) does not have required component`;
-  }
+    getErrorMessage(context: ActionContext): string {
+        const entity = this.resolveEntity(context);
+        return `Entity ${entity} (${this.target}) does not have required component`;
+    }
 }

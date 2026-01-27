@@ -1,25 +1,25 @@
 {
-  "name": "examples",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/examples/src",
-  "projectType": "application",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun run build",
-        "cwd": "apps/examples"
-      }
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": [
+        "math",
+        "being",
+        "animate",
+        "border",
+        "curve",
+        "dynamics",
+        "board"
+    ],
+    "name": "examples",
+    "projectType": "application",
+    "sourceRoot": "apps/examples/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun run build",
+                "cwd": "apps/examples"
+            }
+        }
     }
-  },
-  "tags": [],
-  "implicitDependencies": [
-    "math",
-    "being",
-    "animate",
-    "border",
-    "curve",
-    "dynamics",
-    "board"
-  ]
 }

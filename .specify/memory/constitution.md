@@ -35,12 +35,14 @@ A toolkit for interactive HTML canvas applications
 **Tests are required for public APIs and critical paths, encouraged elsewhere.**
 
 All packages MUST have comprehensive test coverage for:
+
 - Public APIs and exported functions
 - Critical rendering and transformation paths
 - Canvas interaction handlers
 - Core mathematical operations and algorithms
 
 Tests are HIGHLY ENCOURAGED but not blocking for:
+
 - Internal utility functions
 - Configuration and setup code
 - Simple getters/setters
@@ -52,12 +54,14 @@ Tests are HIGHLY ENCOURAGED but not blocking for:
 **Each package must be standalone and independently publishable with minimal cross-package coupling.**
 
 Every package in the ue-too monorepo MUST:
+
 - Be independently testable and runnable
 - Have clear, documented purpose and scope
 - Include comprehensive README with examples
 - Be publishable to npm as a standalone artifact (via Bun)
 
-Workspace dependencies (@ue-too/*) are ALLOWED but:
+Workspace dependencies (@ue-too/\*) are ALLOWED but:
+
 - Must be minimized and well-justified
 - Should follow a layered architecture (e.g., foundational packages like `math` can be depended upon, but circular dependencies are forbidden)
 - Each dependency must be explicitly documented in the package README
@@ -69,12 +73,14 @@ Workspace dependencies (@ue-too/*) are ALLOWED but:
 **Strict TypeScript configuration with comprehensive type definitions for all public APIs.**
 
 All packages MUST:
+
 - Use strict TypeScript configuration (`strict: true`)
 - Export complete type definitions for all public APIs
 - Include JSDoc comments with `@param` and `@returns` for exported functions
 - Avoid `any` types in public interfaces (use `unknown` with type guards when needed)
 
 TypeScript compiler errors are BLOCKING for:
+
 - All pull requests
 - Package builds
 - Publishing to npm (via Bun)
@@ -86,17 +92,19 @@ TypeScript compiler errors are BLOCKING for:
 **All public APIs require TypeDoc documentation; each package requires comprehensive README.**
 
 Documentation requirements:
+
 - **TypeDoc/JSDoc**: All exported functions, classes, types, and interfaces MUST have JSDoc comments
 - **Package README**: Each package MUST include:
-  - Overview and purpose
-  - Installation instructions (using Bun or npm)
-  - Quick start code examples
-  - API reference or link to generated docs
-  - Links to related packages
+    - Overview and purpose
+    - Installation instructions (using Bun or npm)
+    - Quick start code examples
+    - API reference or link to generated docs
+    - Links to related packages
 - **Examples**: At least one working example demonstrating primary use case
 - **Automated Generation**: Documentation must be generated via TypeDoc and kept up-to-date
 
 Optional but encouraged:
+
 - Migration guides for breaking changes
 - Advanced usage tutorials
 - Performance considerations
@@ -108,11 +116,13 @@ Optional but encouraged:
 **Canvas rendering must maintain 60 FPS under normal load; performance regressions require benchmarking.**
 
 Performance requirements:
+
 - **60 FPS Target**: All animations, pan/zoom interactions, and real-time rendering MUST maintain 60fps (16.67ms frame budget) under normal load
 - **Benchmarking**: Critical paths (transformations, collision detection, physics calculations) MUST have performance benchmarks
 - **Regression Testing**: Performance-sensitive changes require before/after benchmarks
 
 Normal load is defined as:
+
 - Up to 1000 rendered objects for board/rendering operations
 - Standard desktop browser (Chrome, Firefox, Safari) on mid-range hardware
 - Single viewport/canvas instance
@@ -124,6 +134,7 @@ Normal load is defined as:
 ### Pull Request Requirements
 
 All pull requests MUST:
+
 - Pass CI/CD checks (TypeScript compilation, linting, tests)
 - Include tests for new public APIs or bug fixes
 - Update relevant documentation (README, JSDoc, examples)
@@ -131,6 +142,7 @@ All pull requests MUST:
 - Be reviewed by at least one maintainer
 
 Pull requests SHOULD:
+
 - Keep changes focused and scoped to a single concern
 - Include performance benchmarks for rendering/math optimizations
 - Reference related issues or feature specifications
@@ -138,6 +150,7 @@ Pull requests SHOULD:
 ### Code Review Process
 
 Code reviews must verify:
+
 1. **Constitution Compliance**: Does the change align with core principles?
 2. **Test Coverage**: Are public APIs and critical paths tested?
 3. **Documentation**: Are READMEs and JSDoc updated?
@@ -152,6 +165,7 @@ Code reviews must verify:
 - **Refactoring**: `refactor/what-changed`
 
 Commit messages should follow conventional commits:
+
 - `feat(package): add new feature`
 - `fix(package): resolve rendering bug`
 - `docs(package): update README examples`
@@ -160,12 +174,14 @@ Commit messages should follow conventional commits:
 ### CI/CD Gates
 
 The following checks are BLOCKING for all PRs:
+
 - TypeScript compilation (no errors)
 - Linting (Prettier formatting, ESLint rules)
 - Unit and integration tests (must pass)
 - Package builds (must succeed)
 
 Non-blocking but tracked:
+
 - Test coverage percentage (trend monitoring)
 - Bundle size changes (alert on significant increases)
 
@@ -181,11 +197,13 @@ Non-blocking but tracked:
 ### Code Quality Tools
 
 Required tooling:
+
 - **Prettier**: Code formatting (enforced via pre-commit hooks or CI)
 - **ESLint**: Linting for TypeScript and JavaScript
 - **TypeScript Compiler**: Strict mode enabled across all packages
 
 Configuration files MUST be:
+
 - Shared across packages via workspace root configuration
 - Versioned in the repository
 - Updated consistently across the monorepo
@@ -204,14 +222,15 @@ Configuration files MUST be:
 - **Frame Budget**: 16.67ms (60fps) for rendering operations
 - **Profiling**: Performance-sensitive changes MUST be profiled using browser DevTools
 - **Optimization Priorities**:
-  1. Minimize canvas state changes (save/restore, strokeStyle, fillStyle)
-  2. Batch drawing operations where possible
-  3. Use requestAnimationFrame for animations
-  4. Implement object pooling for frequently allocated objects (vectors, matrices)
+    1. Minimize canvas state changes (save/restore, strokeStyle, fillStyle)
+    2. Batch drawing operations where possible
+    3. Use requestAnimationFrame for animations
+    4. Implement object pooling for frequently allocated objects (vectors, matrices)
 
 ### Bundle Size Constraints
 
 While no hard limits are enforced, packages SHOULD:
+
 - Keep individual package sizes under 50KB minified+gzipped when practical
 - Tree-shake effectively (use ES modules, avoid side effects)
 - Document bundle size in README (e.g., "~12KB minified+gzipped")
@@ -220,12 +239,14 @@ While no hard limits are enforced, packages SHOULD:
 ### Benchmarking Requirements
 
 Performance benchmarks MUST be included for:
+
 - Mathematical operations called in tight loops (vector math, matrix transformations)
 - Collision detection and spatial queries
 - Physics simulation steps
 - Curve tessellation and path operations
 
 Benchmarks SHOULD:
+
 - Use realistic datasets (e.g., 1000 objects, typical canvas size)
 - Report operations per second or frame time impact
 - Be automated and runnable via Bun scripts (e.g., `bun run bench`)
@@ -239,6 +260,7 @@ This constitution supersedes all other development practices, conventions, or in
 ### Amendment Process
 
 Amendments to this constitution require:
+
 1. **Proposal**: Document proposed change with rationale in GitHub issue or discussion
 2. **Impact Analysis**: Assess impact on existing code, templates, and workflows
 3. **Maintainer Approval**: Consensus among project maintainers
@@ -249,6 +271,7 @@ Amendments to this constitution require:
 ### Versioning Policy
 
 Constitution versions follow semantic versioning (MAJOR.MINOR.PATCH):
+
 - **MAJOR**: Backward-incompatible governance changes (e.g., removing a principle, making tests strictly mandatory)
 - **MINOR**: New principles added or existing principles materially expanded (e.g., adding new quality gates)
 - **PATCH**: Clarifications, wording improvements, typo fixes, non-semantic refinements
@@ -256,6 +279,7 @@ Constitution versions follow semantic versioning (MAJOR.MINOR.PATCH):
 ### Compliance Reviews
 
 Constitution compliance MUST be verified:
+
 - **During Code Review**: Reviewers check constitutional alignment
 - **During Planning**: Feature specifications must reference constitutional requirements
 - **Quarterly Audits**: Project maintainers review codebase for systemic compliance issues
@@ -263,6 +287,7 @@ Constitution compliance MUST be verified:
 ### Complexity Justification
 
 When constitutional principles would be violated (e.g., adding tight coupling between packages, skipping tests for public APIs), violations MUST be:
+
 - Explicitly documented in pull request description
 - Justified with specific technical rationale
 - Approved by at least two maintainers

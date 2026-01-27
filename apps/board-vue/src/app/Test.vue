@@ -1,28 +1,29 @@
 <script setup lang="ts">
-    import { useBoard } from "@ue-too/board-vue-adapter";
-import { ref, onMounted } from "vue";
-import { useAnimationFrameWithBoard, useCameraState } from "@ue-too/board-vue-adapter";
+import { useBoard } from '@ue-too/board-vue-adapter';
+import {
+    useAnimationFrameWithBoard,
+    useCameraState,
+} from '@ue-too/board-vue-adapter';
+import { onMounted, ref } from 'vue';
 
-    const canvas = ref<HTMLCanvasElement | null>(null);
-    const board = useBoard();
-    const position = useCameraState("position");
-    const zoomLevel = useCameraState("zoomLevel");
+const canvas = ref<HTMLCanvasElement | null>(null);
+const board = useBoard();
+const position = useCameraState('position');
+const zoomLevel = useCameraState('zoomLevel');
 
-    useAnimationFrameWithBoard((timestamp, ctx) => {
-        board.step(timestamp);
-        ctx.fillStyle = "red";
-        ctx.fillRect(0, 0, 100, 100);
-    });
+useAnimationFrameWithBoard((timestamp, ctx) => {
+    board.step(timestamp);
+    ctx.fillStyle = 'red';
+    ctx.fillRect(0, 0, 100, 100);
+});
 
-
-    onMounted(()=>{
-        if(canvas.value){
-            board.attach(canvas.value);
-        } else {
-            board.tearDown();
-        }
-    })
-
+onMounted(() => {
+    if (canvas.value) {
+        board.attach(canvas.value);
+    } else {
+        board.tearDown();
+    }
+});
 </script>
 
 <template>

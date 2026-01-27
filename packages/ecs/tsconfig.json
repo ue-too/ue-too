@@ -1,16 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/math.tsbuildinfo",
-    "declaration": true,
-    "moduleResolution": "bundler",
-    "module": "esnext",
-    "composite": true,
-    "strict": true,
-    "types": []
-  },
-  "include": ["src/**/*"]
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "module": "esnext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "tsBuildInfoFile": "dist/math.tsbuildinfo",
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"]
 }

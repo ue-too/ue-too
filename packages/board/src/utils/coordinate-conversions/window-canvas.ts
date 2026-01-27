@@ -1,5 +1,6 @@
-import { Point, PointCal } from "@ue-too/math";
-import { Canvas } from "../../input-interpretation/input-state-machine/kmt-input-context";
+import { Point, PointCal } from '@ue-too/math';
+
+import { Canvas } from '../../input-interpretation/input-state-machine/kmt-input-context';
 
 /**
  * Converts a point from browser window coordinates to canvas coordinates.
@@ -44,7 +45,10 @@ import { Canvas } from "../../input-interpretation/input-state-machine/kmt-input
  * @category Coordinate Conversion
  * @see {@link convertFromCanvas2Window} for inverse conversion
  */
-export function convertFromWindow2Canvas(pointInWindow: Point, canvas: Canvas): Point {
+export function convertFromWindow2Canvas(
+    pointInWindow: Point,
+    canvas: Canvas
+): Point {
     return PointCal.subVector(pointInWindow, canvas.position);
 }
 
@@ -91,7 +95,9 @@ export function convertFromWindow2Canvas(pointInWindow: Point, canvas: Canvas): 
  * @category Coordinate Conversion
  * @see {@link convertFromWindow2Canvas} for inverse conversion
  */
-export function convertFromCanvas2Window(pointInCanvas: Point, canvas: Canvas): Point {
+export function convertFromCanvas2Window(
+    pointInCanvas: Point,
+    canvas: Canvas
+): Point {
     return PointCal.addVector(pointInCanvas, canvas.position);
 }
-

@@ -21,8 +21,8 @@
  * @module
  */
 
-export * from "./coordinate-conversion";
-export * from "./matrix";
-export * from "./position";
-export * from "./rotation";
-export * from "./zoom";
+export * from './coordinate-conversion';
+export * from './matrix';
+export * from './position';
+export * from './rotation';
+export * from './zoom';

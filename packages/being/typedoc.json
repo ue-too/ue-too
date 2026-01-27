@@ -1,17 +1,11 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
+    "categoryOrder": ["Core", "Types", "Utilities", "*"],
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/being",
-    "name": "@ue-too/being",
-    "readme": "./README.md",
+    "extends": "../../typedoc.json",
     "includeVersion": true,
-    "categoryOrder": [
-        "Core",
-        "Types",
-        "Utilities",
-        "*"
-    ],
+    "name": "@ue-too/being",
+    "out": "../../docs/being",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

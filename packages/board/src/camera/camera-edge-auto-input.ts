@@ -1,5 +1,6 @@
-import { CameraMux } from "./camera-mux";
-import { PointCal } from "@ue-too/math";
+import { PointCal } from '@ue-too/math';
+
+import { CameraMux } from './camera-mux';
 
 /**
  * Automatic camera panning triggered by cursor proximity to viewport edges.
@@ -50,7 +51,6 @@ import { PointCal } from "@ue-too/math";
  * @see {@link CameraMux} for the camera input multiplexer this feeds into
  */
 export class EdgeAutoCameraInput {
-
     private _cameraMux: CameraMux;
     private _state: 'idle' | 'moving' = 'idle';
     private _speed: number = 100; // pixels per second in viewport space
@@ -71,7 +71,7 @@ export class EdgeAutoCameraInput {
      * Disables edge scrolling.
      * The camera will stop panning even if direction is set.
      */
-    toggleOff(){
+    toggleOff() {
         this._state = 'idle';
     }
 
@@ -79,7 +79,7 @@ export class EdgeAutoCameraInput {
      * Enables edge scrolling.
      * The camera will pan according to the current direction setting.
      */
-    toggleOn(){
+    toggleOn() {
         this._state = 'moving';
     }
 
@@ -100,7 +100,10 @@ export class EdgeAutoCameraInput {
      * edgeScroll.setDirection('none', 'none');  // Stop scrolling
      * ```
      */
-    setDirection(horizontalDirection: 'left' | 'right' | 'none', verticalDirection: 'up' | 'down' | 'none'): void {
+    setDirection(
+        horizontalDirection: 'left' | 'right' | 'none',
+        verticalDirection: 'up' | 'down' | 'none'
+    ): void {
         this._horizontalDirection = horizontalDirection;
         this._verticalDirection = verticalDirection;
     }
@@ -132,20 +135,32 @@ export class EdgeAutoCameraInput {
      * }
      * ```
      */
-    update(deltaTime: number){
-
-        if(this._state === 'idle') {
+    update(deltaTime: number) {
+        if (this._state === 'idle') {
             return;
         }
 
         const direction = {
-            x: this._horizontalDirection === 'left' ? -1 : this._horizontalDirection === 'right' ? 1 : 0,
-            y: this._verticalDirection === 'up' ? -1 : this._verticalDirection === 'down' ? 1 : 0
+            x:
+                this._horizontalDirection === 'left'
+                    ? -1
+                    : this._horizontalDirection === 'right'
+                      ? 1
+                      : 0,
+            y:
+                this._verticalDirection === 'up'
+                    ? -1
+                    : this._verticalDirection === 'down'
+                      ? 1
+                      : 0,
         };
 
         const distance = this._speed * deltaTime;
 
-        const deltaVector = PointCal.multiplyVectorByScalar(direction, distance);
+        const deltaVector = PointCal.multiplyVectorByScalar(
+            direction,
+            distance
+        );
 
         this._cameraMux.notifyPanInput(deltaVector);
     }

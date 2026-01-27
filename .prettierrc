@@ -1,0 +1,68 @@
+{
+    "arrowParens": "avoid",
+    "bracketSpacing": true,
+    "importOrder": ["<THIRD_PARTY_MODULES>", "^@/", "^\\.\\.?/", "^\\.\\.?$"],
+    "importOrderSeparation": true,
+    "importOrderSortSpecifiers": true,
+    "jsonRecursiveSort": true,
+    "overrides": [
+        {
+            "files": "*.{ts,tsx}",
+            "options": {
+                "parser": "typescript"
+            }
+        }
+    ],
+    "plugins": [
+        "@trivago/prettier-plugin-sort-imports",
+        "prettier-plugin-sort-json",
+        "prettier-plugin-sh",
+        "prettier-plugin-tailwindcss"
+    ],
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 4,
+    "tailwindAttributes": [
+        "activeClassName",
+        "actualClassName",
+        "backdropClassName",
+        "badgeClassName",
+        "bgClassName",
+        "boxClassName",
+        "btnClassName",
+        "cardFrameClassName",
+        "clearClassName",
+        "containerClassName",
+        "contentClassName",
+        "coverClassName",
+        "editorClassName",
+        "footerClassName",
+        "getPlacedClassName",
+        "gridContentClassName",
+        "inputClassName",
+        "itemClassName",
+        "labelActiveClassName",
+        "labelClassName",
+        "listClassName",
+        "logoClassName",
+        "mergedPanelClassName",
+        "mockClassName",
+        "myClassName",
+        "nameClassName",
+        "okBtnClassName",
+        "optionClassName",
+        "panelBaseClassName",
+        "panelClassName",
+        "panelWrapperClassName",
+        "resetClassName",
+        "setActualClassName",
+        "showClassName",
+        "titleClassName",
+        "titleWrapClassName",
+        "wrapperClassName"
+    ],
+    "tailwindFunctions": ["classnames", "classNames", "customTwMerge"],
+    "trailingComma": "es5",
+    "useTabs": false
+}

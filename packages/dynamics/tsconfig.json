@@ -1,27 +1,24 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/dynamics.tsbuildinfo",
-    "declaration": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "composite": true,
-    "strict": true,
-    "types": []
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "../ecs"
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "tsBuildInfoFile": "dist/dynamics.tsbuildinfo",
+        "types": []
     },
-    {
-      "path": "../math"
-    }
-  ]
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../ecs"
+        },
+        {
+            "path": "../math"
+        }
+    ]
 }
-  

@@ -1,11 +1,5 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
-    "entryPoints": ["src/index.ts"],
-    "out": "../../docs/ecs",
-    "name": "@ue-too/ecs",
-    "readme": "./README.md",
-    "includeVersion": true,
     "categoryOrder": [
         "Core",
         "Managers",
@@ -14,5 +8,11 @@
         "Configuration",
         "*"
     ],
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/ecs",
+    "out": "../../docs/ecs",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }

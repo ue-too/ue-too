@@ -1,5 +1,9 @@
-import { Boundaries, translationHeightOf, translationWidthOf } from "../camera/utils/position";
-import { ZoomLevelLimits } from "../camera/utils/zoom";
+import {
+    Boundaries,
+    translationHeightOf,
+    translationWidthOf,
+} from '../camera/utils/position';
+import { ZoomLevelLimits } from '../camera/utils/zoom';
 
 /**
  * Calculates minimum zoom level to fit boundaries within canvas at any rotation.
@@ -50,10 +54,15 @@ import { ZoomLevelLimits } from "../camera/utils/zoom";
  * @see {@link minZoomLevelBaseOnWidth} for width-only calculation
  * @see {@link minZoomLevelBaseOnHeight} for height-only calculation
  */
-export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
+export function minZoomLevelBaseOnDimensions(
+    boundaries: Boundaries | undefined,
+    canvasWidth: number,
+    canvasHeight: number,
+    cameraRotation: number
+): number | undefined {
     const width = translationWidthOf(boundaries);
     const height = translationHeightOf(boundaries);
-    if(width == undefined || height == undefined){
+    if (width == undefined || height == undefined) {
         return undefined;
     }
     // console.log(canvasHeight, canvasWidth);
@@ -65,16 +74,16 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
     let minZoomLevelHeightWidth = canvasWidth / heightWidthProjection;
     let minZoomLevelWidthHeight = canvasHeight / widthHeightProjection;
     let minZoomLevelHeightHeight = canvasHeight / heightHeightProjection;
-    if(minZoomLevelWidthWidth == Infinity){
+    if (minZoomLevelWidthWidth == Infinity) {
         minZoomLevelWidthWidth = 0;
     }
-    if(minZoomLevelHeightWidth == Infinity){
+    if (minZoomLevelHeightWidth == Infinity) {
         minZoomLevelHeightWidth = 0;
     }
-    if(minZoomLevelWidthHeight == Infinity){
+    if (minZoomLevelWidthHeight == Infinity) {
         minZoomLevelWidthHeight = 0;
     }
-    if(minZoomLevelHeightHeight == Infinity){
+    if (minZoomLevelHeightHeight == Infinity) {
         minZoomLevelHeightHeight = 0;
     }
 
@@ -82,7 +91,14 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
 
     const minZoomLevelHeight = canvasHeight / height;
     const minZoomLevelWidth = canvasWidth / width;
-    const minZoomLevel = Math.max(minZoomLevelHeight, minZoomLevelWidth, minZoomLevelWidthWidth, minZoomLevelHeightWidth, minZoomLevelWidthHeight, minZoomLevelHeightHeight);
+    const minZoomLevel = Math.max(
+        minZoomLevelHeight,
+        minZoomLevelWidth,
+        minZoomLevelWidthWidth,
+        minZoomLevelHeightWidth,
+        minZoomLevelWidthHeight,
+        minZoomLevelHeightHeight
+    );
     return minZoomLevel;
 }
 
@@ -125,17 +141,24 @@ export function minZoomLevelBaseOnDimensions(boundaries: Boundaries | undefined,
  *
  * @category Camera
  */
-export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLimits | undefined, targetMinZoomLevel: number | undefined): targetMinZoomLevel is number{
-    if(targetMinZoomLevel == undefined){
+export function zoomLevelBoundariesShouldUpdate(
+    zoomLevelBoundaries: ZoomLevelLimits | undefined,
+    targetMinZoomLevel: number | undefined
+): targetMinZoomLevel is number {
+    if (targetMinZoomLevel == undefined) {
         return false;
     }
-    if(zoomLevelBoundaries == undefined){
+    if (zoomLevelBoundaries == undefined) {
         return true;
     }
-    if(targetMinZoomLevel == Infinity){
+    if (targetMinZoomLevel == Infinity) {
         return false;
     }
-    if(zoomLevelBoundaries !== undefined && (zoomLevelBoundaries.min == undefined || targetMinZoomLevel > zoomLevelBoundaries.min)){
+    if (
+        zoomLevelBoundaries !== undefined &&
+        (zoomLevelBoundaries.min == undefined ||
+            targetMinZoomLevel > zoomLevelBoundaries.min)
+    ) {
         return true;
     }
     return false;
@@ -176,19 +199,27 @@ export function zoomLevelBoundariesShouldUpdate(zoomLevelBoundaries: ZoomLevelLi
  * @category Camera
  * @see {@link minZoomLevelBaseOnDimensions} for full calculation
  */
-export function minZoomLevelBaseOnWidth(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
+export function minZoomLevelBaseOnWidth(
+    boundaries: Boundaries | undefined,
+    canvasWidth: number,
+    canvasHeight: number,
+    cameraRotation: number
+): number | undefined {
     const width = translationWidthOf(boundaries);
-    if(width == undefined){
+    if (width == undefined) {
         return undefined;
     }
     const widthWidthProjection = Math.abs(width * Math.cos(cameraRotation));
     const widthHeightProjection = Math.abs(width * Math.sin(cameraRotation));
     const minZoomLevelWidthWidth = canvasWidth / widthWidthProjection;
     const minZoomLevelWidthHeight = canvasHeight / widthHeightProjection;
-    if(minZoomLevelWidthWidth == Infinity){
+    if (minZoomLevelWidthWidth == Infinity) {
         return minZoomLevelWidthHeight;
     }
-    const minZoomLevel = Math.max(canvasWidth / widthWidthProjection, canvasHeight / widthHeightProjection);
+    const minZoomLevel = Math.max(
+        canvasWidth / widthWidthProjection,
+        canvasHeight / widthHeightProjection
+    );
     return minZoomLevel;
 }
 
@@ -227,18 +258,26 @@ export function minZoomLevelBaseOnWidth(boundaries: Boundaries | undefined, canv
  * @category Camera
  * @see {@link minZoomLevelBaseOnDimensions} for full calculation
  */
-export function minZoomLevelBaseOnHeight(boundaries: Boundaries | undefined, canvasWidth: number, canvasHeight: number, cameraRotation: number): number | undefined{
+export function minZoomLevelBaseOnHeight(
+    boundaries: Boundaries | undefined,
+    canvasWidth: number,
+    canvasHeight: number,
+    cameraRotation: number
+): number | undefined {
     const height = translationHeightOf(boundaries);
-    if(height == undefined){
+    if (height == undefined) {
         return undefined;
     }
     const heightWidthProjection = Math.abs(height * Math.cos(cameraRotation));
     const heightHeightProjection = Math.abs(height * Math.sin(cameraRotation));
     const minZoomLevelHeightWidth = canvasWidth / heightWidthProjection;
     const minZoomLevelHeightHeight = canvasHeight / heightHeightProjection;
-    if(minZoomLevelHeightHeight == Infinity){
+    if (minZoomLevelHeightHeight == Infinity) {
         return minZoomLevelHeightWidth;
     }
-    const minZoomLevel = Math.max(minZoomLevelHeightWidth, minZoomLevelHeightHeight);
+    const minZoomLevel = Math.max(
+        minZoomLevelHeightWidth,
+        minZoomLevelHeightHeight
+    );
     return minZoomLevel;
 }

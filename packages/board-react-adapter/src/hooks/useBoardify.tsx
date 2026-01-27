@@ -1,14 +1,31 @@
-import {Board as Boardify, KMTEventParser, KmtInputStateMachine, OutputEvent, TouchEventParser} from "@ue-too/board";
-import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore} from "react";
-import { CameraMux, CameraState  } from "@ue-too/board/camera";
-import { Point } from "@ue-too/math";
+import {
+    Board as Boardify,
+    KMTEventParser,
+    KmtInputStateMachine,
+    OutputEvent,
+    TouchEventParser,
+} from '@ue-too/board';
+import { CameraMux, CameraState } from '@ue-too/board/camera';
+import { Point } from '@ue-too/math';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useSyncExternalStore,
+} from 'react';
 
 /**
  * Maps camera state keys to their corresponding event names.
  * @internal
  */
-type StateToEventKey<K extends keyof CameraState> =
-    K extends "position" ? "pan" : K extends "zoomLevel" ? "zoom" : "rotate";
+type StateToEventKey<K extends keyof CameraState> = K extends 'position'
+    ? 'pan'
+    : K extends 'zoomLevel'
+      ? 'zoom'
+      : 'rotate';
 
 /**
  * Hook to subscribe to a specific camera state property with automatic re-rendering.
@@ -47,34 +64,42 @@ type StateToEventKey<K extends keyof CameraState> =
  * @category Hooks
  * @see {@link useAllBoardCameraState} for subscribing to all camera state at once
  */
-export function useBoardCameraState<K extends keyof CameraState>(state: K): CameraState[K] {
+export function useBoardCameraState<K extends keyof CameraState>(
+    state: K
+): CameraState[K] {
     const board = useBoard();
-    const stateKey = (state === "position" ? "pan" : state === "zoomLevel" ? "zoom" : "rotate") as StateToEventKey<K>;
+    const stateKey = (
+        state === 'position' ? 'pan' : state === 'zoomLevel' ? 'zoom' : 'rotate'
+    ) as StateToEventKey<K>;
     const cachedPositionRef = useRef<{ x: number; y: number } | null>(null);
 
     return useSyncExternalStore(
-        (cb) => board.camera.on(stateKey, cb),
+        cb => board.camera.on(stateKey, cb),
         () => {
             // For position (object), we need to cache to avoid creating new objects
-            if (state === "position") {
+            if (state === 'position') {
                 const currentPosition = board.camera.position;
                 const cached = cachedPositionRef.current;
-                
-                if (cached && cached.x === currentPosition.x && cached.y === currentPosition.y) {
+
+                if (
+                    cached &&
+                    cached.x === currentPosition.x &&
+                    cached.y === currentPosition.y
+                ) {
                     // Return cached snapshot to maintain referential equality
                     return cached as CameraState[K];
                 }
-                
+
                 // Cache the new position object
-                const newPosition = {...currentPosition};
+                const newPosition = { ...currentPosition };
                 cachedPositionRef.current = newPosition;
                 return newPosition as CameraState[K];
             }
-            
+
             // For primitive values (rotation, zoomLevel), return directly
             // Object.is works correctly for primitives
             return board.camera[state] as CameraState[K];
-        },
+        }
     );
 }
 
@@ -119,10 +144,10 @@ export function useBoardCameraState<K extends keyof CameraState>(state: K): Came
  *
  * @category Hooks
  */
-export function useCameraInput(){
+export function useCameraInput() {
     const board = useBoard();
 
-    const test = useMemo(()=>{
+    const test = useMemo(() => {
         const cameraRig = board.getCameraRig();
 
         return {
@@ -155,9 +180,8 @@ export function useCameraInput(){
             },
             rotateBy: (rotationDelta: number) => {
                 cameraRig.rotateBy(rotationDelta);
-            }
-        }
-
+            },
+        };
     }, [board]);
 
     return test;
@@ -198,7 +222,7 @@ export function useCameraInput(){
  * @category Hooks
  * @see {@link useBoardCameraState} for subscribing to individual state properties
  */
-export function useAllBoardCameraState()  {
+export function useAllBoardCameraState() {
     const board = useBoard();
     const cachedSnapshotRef = useRef<{
         position: { x: number; y: number };
@@ -207,7 +231,9 @@ export function useAllBoardCameraState()  {
     } | null>(null);
 
     return useSyncExternalStore(
-        (cb) => { return board.camera.on("all", cb) },
+        cb => {
+            return board.camera.on('all', cb);
+        },
         () => {
             const currentPosition = board.camera.position;
             const currentRotation = board.camera.rotation;
@@ -228,14 +254,14 @@ export function useAllBoardCameraState()  {
 
             // Create new snapshot only when values changed
             const newSnapshot = {
-                position: {...currentPosition},
+                position: { ...currentPosition },
                 rotation: currentRotation,
                 zoomLevel: currentZoomLevel,
             };
             cachedSnapshotRef.current = newSnapshot;
             return newSnapshot;
-        },
-    )
+        }
+    );
 }
 
 /**
@@ -268,21 +294,21 @@ export function useAllBoardCameraState()  {
 export function useCustomCameraMux(cameraMux: CameraMux) {
     const board = useBoard();
 
-    useEffect(()=>{
+    useEffect(() => {
         board.cameraMux = cameraMux;
     }, [cameraMux, board]);
 }
 
 /**
- * The custom input handling logic is before everything else. To use this hook, you would need to handle the event from the canvas and pass down the result to the `processInputEvent` function. 
+ * The custom input handling logic is before everything else. To use this hook, you would need to handle the event from the canvas and pass down the result to the `processInputEvent` function.
  * @returns Object containing the `processInputEvent` function
  * @example
  * ```typescript
  * const { processInputEvent } = useCustomInputHandling();
- * 
+ *
  * const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
  *   // custom logic to determine the user input
- * 
+ *
  *   // if the user input is valid, pass it to the `processInputEvent` function
  *   // e.g. pass the pan event down the input handling system
  *   processInputEvent({
@@ -295,27 +321,28 @@ export function useCustomCameraMux(cameraMux: CameraMux) {
  * }
  * ```
  */
-export function useCustomInputHandling(){
+export function useCustomInputHandling() {
     const board = useBoard();
 
-    const processInputEvent = useCallback((input: OutputEvent) => {
-        board.inputOrchestrator.processInputEvent(input);
-    }, [board]);
+    const processInputEvent = useCallback(
+        (input: OutputEvent) => {
+            board.inputOrchestrator.processInputEvent(input);
+        },
+        [board]
+    );
 
-    useEffect(()=>{
+    useEffect(() => {
         board.disableEventListeners();
 
         return () => {
             board.enableEventListeners();
         };
-    }, [board])
+    }, [board]);
 
     return {
-        processInputEvent
+        processInputEvent,
     };
 }
-
-
 
 /**
  * React context for sharing a Board instance across components.
@@ -353,9 +380,11 @@ const BoardContext = createContext<Boardify | null>(null);
  * @category Components
  * @see {@link useBoard} for accessing the board instance
  */
-export function BoardProvider({children}: {children: React.ReactNode}) {
+export function BoardProvider({ children }: { children: React.ReactNode }) {
     const board = useMemo(() => new Boardify(), []);
-    return <BoardContext.Provider value={board}>{children}</BoardContext.Provider>;
+    return (
+        <BoardContext.Provider value={board}>{children}</BoardContext.Provider>
+    );
 }
 
 /**
@@ -429,23 +458,28 @@ export function useBoardCamera() {
 export function useCanvasDimension() {
     const board = useBoard();
 
-    return useSyncExternalStore((cb) => board.onCanvasDimensionChange(cb), ()=> {
-        return board.canvasDimensions
-    });
+    return useSyncExternalStore(
+        cb => board.onCanvasDimensionChange(cb),
+        () => {
+            return board.canvasDimensions;
+        }
+    );
 }
 
 export function useCoordinateConversion() {
     const board = useBoard();
-    return useCallback((pointInWindow: Point)=>{
-        return board.convertWindowPoint2WorldCoord(pointInWindow);
-    }, [board]);
+    return useCallback(
+        (pointInWindow: Point) => {
+            return board.convertWindowPoint2WorldCoord(pointInWindow);
+        },
+        [board]
+    );
 }
-
 
 export function useCustomKMTEventParser(eventParser: KMTEventParser) {
     const board = useBoard();
 
-    useEffect(()=>{
+    useEffect(() => {
         board.kmtParser = eventParser;
     }, [eventParser, board]);
 }
@@ -453,7 +487,7 @@ export function useCustomKMTEventParser(eventParser: KMTEventParser) {
 export function useCustomTouchEventParser(eventParser: TouchEventParser) {
     const board = useBoard();
 
-    useEffect(()=>{
+    useEffect(() => {
         board.touchParser = eventParser;
     }, [eventParser, board]);
 }

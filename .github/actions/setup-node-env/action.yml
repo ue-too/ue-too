@@ -1,72 +1,71 @@
 name: 'Setup Node Environment'
 description: 'Setup Node.js, PNPM, and install dependencies'
 inputs:
-  node-version:
-    description: 'Node.js version'
-    required: false
-    default: '22.19.0'
-  pnpm-version:
-    description: 'PNPM version'
-    required: false
-    default: '10'
-  registry-url:
-    description: 'NPM registry URL'
-    required: false
-    default: 'https://registry.npmjs.org'
-  scope:
-    description: 'NPM scope'
-    required: false
-    default: '@ue-too'
-  install-deps:
-    description: 'Whether to install dependencies'
-    required: false
-    default: 'true'
-  build:
-    description: 'Whether to build packages'
-    required: false
-    default: 'false'
-  npm-token:
-    description: 'NPM token for authentication'
-    required: false
-  pat:
-    description: 'Personal Access Token for checkout'
-    required: false
-
+    node-version:
+        description: 'Node.js version'
+        required: false
+        default: '22.19.0'
+    pnpm-version:
+        description: 'PNPM version'
+        required: false
+        default: '10'
+    registry-url:
+        description: 'NPM registry URL'
+        required: false
+        default: 'https://registry.npmjs.org'
+    scope:
+        description: 'NPM scope'
+        required: false
+        default: '@ue-too'
+    install-deps:
+        description: 'Whether to install dependencies'
+        required: false
+        default: 'true'
+    build:
+        description: 'Whether to build packages'
+        required: false
+        default: 'false'
+    npm-token:
+        description: 'NPM token for authentication'
+        required: false
+    pat:
+        description: 'Personal Access Token for checkout'
+        required: false
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        token: ${{ inputs.pat }}
+    using: 'composite'
+    steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+          with:
+              token: ${{ inputs.pat }}
 
-    - name: Setup Node.js
-      id: setup-node
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ inputs.node-version }}
-        registry-url: ${{ inputs.registry-url }}
-        scope: ${{ inputs.scope }}
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
+        - name: Setup Node.js
+          id: setup-node
+          uses: actions/setup-node@v3
+          with:
+              node-version: ${{ inputs.node-version }}
+              registry-url: ${{ inputs.registry-url }}
+              scope: ${{ inputs.scope }}
+          env:
+              NODE_AUTH_TOKEN: ${{ inputs.npm-token }}
 
-    - name: Setup PNPM
-      uses: pnpm/action-setup@v3
-      with:
-        version: ${{ inputs.pnpm-version }}
+        - name: Setup PNPM
+          uses: pnpm/action-setup@v3
+          with:
+              version: ${{ inputs.pnpm-version }}
 
-    - name: Install dependencies
-      if: ${{ inputs.install-deps }}
-      shell: bash
-      run: |
-        if [ -f pnpm-lock.yaml ]; then
-          pnpm install --frozen-lockfile || pnpm install
-        else
-          pnpm install
-        fi
+        - name: Install dependencies
+          if: ${{ inputs.install-deps }}
+          shell: bash
+          run: |
+              if [ -f pnpm-lock.yaml ]; then
+                pnpm install --frozen-lockfile || pnpm install
+              else
+                pnpm install
+              fi
 
-    - name: Build packages
-      if: ${{ inputs.build }}
-      shell: bash
-      run: pnpm build:examples
+        - name: Build packages
+          if: ${{ inputs.build }}
+          shell: bash
+          run: pnpm build:examples

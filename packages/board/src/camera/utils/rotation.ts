@@ -16,7 +16,12 @@
  *
  * @category Camera
  */
-export type RotationLimits = {start: number, end: number, ccw: boolean, startAsTieBreaker: boolean};
+export type RotationLimits = {
+    start: number;
+    end: number;
+    ccw: boolean;
+    startAsTieBreaker: boolean;
+};
 
 /**
  * Experimental rotation boundary type with positive/negative direction semantics.
@@ -31,7 +36,12 @@ export type RotationLimits = {start: number, end: number, ccw: boolean, startAsT
  *
  * @category Camera
  */
-export type RotationBoundary = {start: number, end: number, positiveDirection: boolean, startAsTieBreaker: boolean};
+export type RotationBoundary = {
+    start: number;
+    end: number;
+    positiveDirection: boolean;
+    startAsTieBreaker: boolean;
+};
 
 /**
  * Clamps a rotation angle to stay within specified angular limits.
@@ -58,20 +68,34 @@ export type RotationBoundary = {start: number, end: number, positiveDirection: b
  *
  * @category Camera
  */
-export function clampRotation(rotation: number, rotationLimits?: RotationLimits): number{
-    if(rotationWithinLimits(rotation, rotationLimits) || rotationLimits === undefined){
+export function clampRotation(
+    rotation: number,
+    rotationLimits?: RotationLimits
+): number {
+    if (
+        rotationWithinLimits(rotation, rotationLimits) ||
+        rotationLimits === undefined
+    ) {
         return rotation;
     }
     rotation = normalizeAngleZero2TwoPI(rotation);
     const angleSpanFromStart = angleSpan(rotationLimits.start, rotation);
     const angleSpanFromEnd = angleSpan(rotationLimits.end, rotation);
-    if((rotationLimits.ccw && (angleSpanFromStart < 0 || angleSpanFromEnd > 0)) || (!rotationLimits.ccw && (angleSpanFromStart > 0 || angleSpanFromEnd < 0))){
+    if (
+        (rotationLimits.ccw &&
+            (angleSpanFromStart < 0 || angleSpanFromEnd > 0)) ||
+        (!rotationLimits.ccw &&
+            (angleSpanFromStart > 0 || angleSpanFromEnd < 0))
+    ) {
         // ccw out of bounds
-        if(Math.abs(angleSpanFromStart) === Math.abs(angleSpanFromEnd)){
+        if (Math.abs(angleSpanFromStart) === Math.abs(angleSpanFromEnd)) {
             // console.log("tie", "start:", rotationLimits.start, "end:", rotationLimits.end, "rotation:", rotation);
-            return rotationLimits.startAsTieBreaker ? rotationLimits.start : rotationLimits.end;
+            return rotationLimits.startAsTieBreaker
+                ? rotationLimits.start
+                : rotationLimits.end;
         }
-        const closerToStart = Math.abs(angleSpanFromStart) < Math.abs(angleSpanFromEnd);
+        const closerToStart =
+            Math.abs(angleSpanFromStart) < Math.abs(angleSpanFromEnd);
         return closerToStart ? rotationLimits.start : rotationLimits.end;
     }
     return rotation;
@@ -104,20 +128,37 @@ export function clampRotation(rotation: number, rotationLimits?: RotationLimits)
  *
  * @category Camera
  */
-export function rotationWithinLimits(rotation: number, rotationLimits?: RotationLimits): boolean{
-    if(rotationLimits === undefined){
+export function rotationWithinLimits(
+    rotation: number,
+    rotationLimits?: RotationLimits
+): boolean {
+    if (rotationLimits === undefined) {
         return true;
     }
-    if(normalizeAngleZero2TwoPI(rotationLimits.start) === normalizeAngleZero2TwoPI(rotationLimits.end)){
+    if (
+        normalizeAngleZero2TwoPI(rotationLimits.start) ===
+        normalizeAngleZero2TwoPI(rotationLimits.end)
+    ) {
         return true;
     }
-    if(normalizeAngleZero2TwoPI(rotationLimits.start + 0.01) === normalizeAngleZero2TwoPI(rotationLimits.end + 0.01)){
+    if (
+        normalizeAngleZero2TwoPI(rotationLimits.start + 0.01) ===
+        normalizeAngleZero2TwoPI(rotationLimits.end + 0.01)
+    ) {
         return true;
     }
     const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
-    const angleSpanFromStart = angleSpan(rotationLimits.start, normalizedRotation);
+    const angleSpanFromStart = angleSpan(
+        rotationLimits.start,
+        normalizedRotation
+    );
     const angleSpanFromEnd = angleSpan(rotationLimits.end, normalizedRotation);
-    if((rotationLimits.ccw && (angleSpanFromStart < 0 || angleSpanFromEnd > 0)) || (!rotationLimits.ccw && (angleSpanFromStart > 0 || angleSpanFromEnd < 0))){
+    if (
+        (rotationLimits.ccw &&
+            (angleSpanFromStart < 0 || angleSpanFromEnd > 0)) ||
+        (!rotationLimits.ccw &&
+            (angleSpanFromStart > 0 || angleSpanFromEnd < 0))
+    ) {
         return false;
     }
     return true;
@@ -136,28 +177,40 @@ export function rotationWithinLimits(rotation: number, rotationLimits?: Rotation
  *
  * @category Camera
  */
-export function rotationWithinBoundary(rotation: number, rotationBoundary: RotationBoundary): boolean {
-    if(normalizeAngleZero2TwoPI(rotationBoundary.start) === normalizeAngleZero2TwoPI(rotationBoundary.end)){
+export function rotationWithinBoundary(
+    rotation: number,
+    rotationBoundary: RotationBoundary
+): boolean {
+    if (
+        normalizeAngleZero2TwoPI(rotationBoundary.start) ===
+        normalizeAngleZero2TwoPI(rotationBoundary.end)
+    ) {
         return true;
     }
-    if(normalizeAngleZero2TwoPI(rotationBoundary.start + 0.01) === normalizeAngleZero2TwoPI(rotationBoundary.end + 0.01)){
+    if (
+        normalizeAngleZero2TwoPI(rotationBoundary.start + 0.01) ===
+        normalizeAngleZero2TwoPI(rotationBoundary.end + 0.01)
+    ) {
         return true;
     }
     const normalizedRotation = normalizeAngleZero2TwoPI(rotation);
 
-    let angleFromStart = normalizedRotation - normalizeAngleZero2TwoPI(rotationBoundary.start);
-    if (angleFromStart < 0){
-        angleFromStart += (Math.PI * 2);
+    let angleFromStart =
+        normalizedRotation - normalizeAngleZero2TwoPI(rotationBoundary.start);
+    if (angleFromStart < 0) {
+        angleFromStart += Math.PI * 2;
     }
-    if (!rotationBoundary.positiveDirection && angleFromStart > 0){
+    if (!rotationBoundary.positiveDirection && angleFromStart > 0) {
         angleFromStart = Math.PI * 2 - angleFromStart;
     }
 
-    let angleRange = normalizeAngleZero2TwoPI(rotationBoundary.end) - normalizeAngleZero2TwoPI(rotationBoundary.start);
-    if(angleRange < 0){
-        angleRange += (Math.PI * 2);
+    let angleRange =
+        normalizeAngleZero2TwoPI(rotationBoundary.end) -
+        normalizeAngleZero2TwoPI(rotationBoundary.start);
+    if (angleRange < 0) {
+        angleRange += Math.PI * 2;
     }
-    if(!rotationBoundary.positiveDirection && angleRange > 0){
+    if (!rotationBoundary.positiveDirection && angleRange > 0) {
         angleRange = Math.PI * 2 - angleRange;
     }
 
@@ -185,7 +238,7 @@ export function rotationWithinBoundary(rotation: number, rotationBoundary: Rotat
  *
  * @category Camera
  */
-export function normalizeAngleZero2TwoPI(angle: number){
+export function normalizeAngleZero2TwoPI(angle: number) {
     // reduce the angle
     angle = angle % (Math.PI * 2);
 
@@ -218,18 +271,18 @@ export function normalizeAngleZero2TwoPI(angle: number){
  *
  * @category Camera
  */
-export function angleSpan(from: number, to: number): number{
+export function angleSpan(from: number, to: number): number {
     // in radians
     from = normalizeAngleZero2TwoPI(from);
     to = normalizeAngleZero2TwoPI(to);
     let angleDiff = to - from;
 
-    if(angleDiff > Math.PI){
-        angleDiff = - (Math.PI * 2 - angleDiff);
+    if (angleDiff > Math.PI) {
+        angleDiff = -(Math.PI * 2 - angleDiff);
     }
 
-    if(angleDiff < -Math.PI){
-        angleDiff += (Math.PI * 2);
+    if (angleDiff < -Math.PI) {
+        angleDiff += Math.PI * 2;
     }
     return angleDiff;
 }
@@ -251,8 +304,8 @@ export function angleSpan(from: number, to: number): number{
  *
  * @category Camera
  */
-export function deg2rad(deg: number): number{
-    return deg * Math.PI / 180;
+export function deg2rad(deg: number): number {
+    return (deg * Math.PI) / 180;
 }
 
 /**
@@ -272,6 +325,6 @@ export function deg2rad(deg: number): number{
  *
  * @category Camera
  */
-export function rad2deg(rad: number): number{
-    return rad * 180 / Math.PI;
+export function rad2deg(rad: number): number {
+    return (rad * 180) / Math.PI;
 }

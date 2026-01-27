@@ -25,11 +25,13 @@
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/dynamics
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/dynamics
 ```
@@ -39,41 +41,42 @@ npm install @ue-too/dynamics
 Here's a simple example creating a physics world with a falling ball:
 
 ```typescript
-import { World, Circle, Polygon } from '@ue-too/dynamics';
+import { Circle, Polygon, World } from '@ue-too/dynamics';
 
 // Create a physics world (2000x2000 world size)
 const world = new World(2000, 2000, 'dynamictree');
 
 // Create static ground
 const ground = new Polygon(
-  { x: 0, y: -100 },                      // Position
-  [                                        // Vertices (local space)
-    { x: -1000, y: 0 },
-    { x: 1000, y: 0 },
-    { x: 1000, y: 50 },
-    { x: -1000, y: 50 }
-  ],
-  0,      // Rotation
-  100,    // Mass (ignored for static bodies)
-  true    // isStatic
+    { x: 0, y: -100 }, // Position
+    [
+        // Vertices (local space)
+        { x: -1000, y: 0 },
+        { x: 1000, y: 0 },
+        { x: 1000, y: 50 },
+        { x: -1000, y: 50 },
+    ],
+    0, // Rotation
+    100, // Mass (ignored for static bodies)
+    true // isStatic
 );
 world.addRigidBody('ground', ground);
 
 // Create dynamic ball
 const ball = new Circle(
-  { x: 0, y: 200 },  // Position
-  20,                // Radius
-  0,                 // Rotation
-  10,                // Mass
-  false              // isStatic
+    { x: 0, y: 200 }, // Position
+    20, // Radius
+    0, // Rotation
+    10, // Mass
+    false // isStatic
 );
 world.addRigidBody('ball', ball);
 
 // Simulation loop (60 FPS)
 setInterval(() => {
-  world.step(1/60);  // deltaTime in seconds
+    world.step(1 / 60); // deltaTime in seconds
 
-  console.log('Ball position:', ball.position);
+    console.log('Ball position:', ball.position);
 }, 16);
 ```
 
@@ -99,15 +102,16 @@ Rigid bodies are objects that don't deform. They have:
 ### Collision Detection Phases
 
 1. **Broad Phase**: Uses spatial indexing to quickly find potentially colliding pairs
-   - QuadTree: Good for static worlds
-   - Dynamic Tree: Good for mixed static/dynamic
-   - Sweep-and-Prune: Best for many dynamic bodies
+    - QuadTree: Good for static worlds
+    - Dynamic Tree: Good for mixed static/dynamic
+    - Sweep-and-Prune: Best for many dynamic bodies
 
 2. **Narrow Phase**: Precise collision detection using Separating Axis Theorem (SAT)
 
 ### Collision Filtering
 
 Bodies can be filtered by:
+
 - **Category**: What category this body belongs to (bit flags)
 - **Mask**: Which categories this body collides with (bit flags)
 - **Group**: Positive groups collide only with same group, negative never collide
@@ -119,6 +123,7 @@ Bodies can be filtered by:
 Main physics world container.
 
 **Constructor:**
+
 ```typescript
 const world = new World(
   worldWidth: number,
@@ -128,6 +133,7 @@ const world = new World(
 ```
 
 **Methods:**
+
 - `step(deltaTime: number)`: Advance simulation by deltaTime seconds
 - `addRigidBody(id: string, body: RigidBody)`: Add a rigid body
 - `removeRigidBody(id: string)`: Remove a rigid body
@@ -139,6 +145,7 @@ const world = new World(
 - `rayCast(from, to): RayCastResult[]`: Ray casting
 
 **Properties:**
+
 - `gravity: Point`: World gravity vector (default: `{x: 0, y: -9.8}`)
 - `sleepingEnabled: boolean`: Enable/disable sleeping system
 - `bodies: Map<string, RigidBody>`: All bodies in the world
@@ -149,6 +156,7 @@ const world = new World(
 Circular rigid body.
 
 **Constructor:**
+
 ```typescript
 const circle = new Circle(
   position: Point,
@@ -160,6 +168,7 @@ const circle = new Circle(
 ```
 
 **Properties:**
+
 - `position: Point`: World position
 - `velocity: Point`: Linear velocity
 - `rotation: number`: Rotation in radians
@@ -175,6 +184,7 @@ const circle = new Circle(
 Convex polygon rigid body.
 
 **Constructor:**
+
 ```typescript
 const polygon = new Polygon(
   position: Point,
@@ -186,11 +196,13 @@ const polygon = new Polygon(
 ```
 
 **Properties:**
+
 - Same as Circle, plus:
 - `vertices: Point[]`: Vertices in local space
 - `worldVertices: Point[]`: Vertices in world space (computed)
 
 **Methods:**
+
 - `updateWorldVertices()`: Recompute world vertices after transform changes
 
 ### Constraints
@@ -224,21 +236,22 @@ const fixedJoint = new FixedPinJoint(
 
 ```typescript
 type CollisionFilter = {
-  category: number;    // What category this body is (bit flags)
-  mask: number;        // What categories to collide with (bit flags)
-  group: number;       // Collision group
+    category: number; // What category this body is (bit flags)
+    mask: number; // What categories to collide with (bit flags)
+    group: number; // Collision group
 };
 ```
 
 **Predefined Categories:**
+
 ```typescript
 enum CollisionCategory {
-  STATIC = 0x0001,
-  PLAYER = 0x0002,
-  ENEMY = 0x0004,
-  PROJECTILE = 0x0008,
-  SENSOR = 0x0010,
-  PLATFORM = 0x0020
+    STATIC = 0x0001,
+    PLAYER = 0x0002,
+    ENEMY = 0x0004,
+    PROJECTILE = 0x0008,
+    SENSOR = 0x0010,
+    PLATFORM = 0x0020,
 }
 ```
 
@@ -247,30 +260,40 @@ enum CollisionCategory {
 ### Basic Platformer Physics
 
 ```typescript
-import { World, Circle, Polygon, CollisionCategory } from '@ue-too/dynamics';
+import { Circle, CollisionCategory, Polygon, World } from '@ue-too/dynamics';
 
 const world = new World(2000, 2000, 'dynamictree');
 world.gravity = { x: 0, y: -20 }; // Downward gravity
 
 // Ground
 const ground = new Polygon(
-  { x: 0, y: -150 },
-  [{ x: -500, y: 0 }, { x: 500, y: 0 }, { x: 500, y: 50 }, { x: -500, y: 50 }],
-  0, 0, true
+    { x: 0, y: -150 },
+    [
+        { x: -500, y: 0 },
+        { x: 500, y: 0 },
+        { x: 500, y: 50 },
+        { x: -500, y: 50 },
+    ],
+    0,
+    0,
+    true
 );
 ground.collisionFilter = {
-  category: CollisionCategory.STATIC,
-  mask: 0xFFFF, // Collides with everything
-  group: 0
+    category: CollisionCategory.STATIC,
+    mask: 0xffff, // Collides with everything
+    group: 0,
 };
 world.addRigidBody('ground', ground);
 
 // Player
 const player = new Circle({ x: 0, y: 0 }, 20, 0, 10, false);
 player.collisionFilter = {
-  category: CollisionCategory.PLAYER,
-  mask: CollisionCategory.STATIC | CollisionCategory.PLATFORM | CollisionCategory.ENEMY,
-  group: 0
+    category: CollisionCategory.PLAYER,
+    mask:
+        CollisionCategory.STATIC |
+        CollisionCategory.PLATFORM |
+        CollisionCategory.ENEMY,
+    group: 0,
 };
 player.restitution = 0; // No bounce
 player.friction = 0.5;
@@ -278,20 +301,20 @@ world.addRigidBody('player', player);
 
 // Apply jump force
 function jump() {
-  player.velocity.y = 15; // Upward velocity
+    player.velocity.y = 15; // Upward velocity
 }
 
 // Game loop
 function update(deltaTime: number) {
-  world.step(deltaTime);
-  // Render player at player.position
+    world.step(deltaTime);
+    // Render player at player.position
 }
 ```
 
 ### Pendulum with Constraints
 
 ```typescript
-import { World, Circle, FixedPinJoint } from '@ue-too/dynamics';
+import { Circle, FixedPinJoint, World } from '@ue-too/dynamics';
 
 const world = new World(2000, 2000);
 world.gravity = { x: 0, y: -9.8 };
@@ -303,22 +326,22 @@ world.addRigidBody('bob', bob);
 
 // Fix to world origin
 const joint = new FixedPinJoint(
-  bob,
-  { x: 0, y: 0 },  // Bob's center
-  { x: 0, y: 0 }   // World origin
+    bob,
+    { x: 0, y: 0 }, // Bob's center
+    { x: 0, y: 0 } // World origin
 );
 world.addConstraint(joint);
 
 // Simulation
 function update(deltaTime: number) {
-  world.step(deltaTime);
+    world.step(deltaTime);
 }
 ```
 
 ### Chain of Bodies
 
 ```typescript
-import { World, Circle, PinJoint } from '@ue-too/dynamics';
+import { Circle, PinJoint, World } from '@ue-too/dynamics';
 
 const world = new World(2000, 2000);
 world.gravity = { x: 0, y: -9.8 };
@@ -328,27 +351,27 @@ const numLinks = 5;
 
 // Create chain links
 for (let i = 0; i < numLinks; i++) {
-  const link = new Circle({ x: i * 30, y: 0 }, 10, 0, 5, false);
-  world.addRigidBody(`link${i}`, link);
-  links.push(link);
+    const link = new Circle({ x: i * 30, y: 0 }, 10, 0, 5, false);
+    world.addRigidBody(`link${i}`, link);
+    links.push(link);
 
-  if (i > 0) {
-    // Connect to previous link
-    const joint = new PinJoint(
-      links[i - 1],
-      links[i],
-      { x: 10, y: 0 },  // Right edge of previous
-      { x: -10, y: 0 }  // Left edge of current
-    );
-    world.addConstraint(joint);
-  }
+    if (i > 0) {
+        // Connect to previous link
+        const joint = new PinJoint(
+            links[i - 1],
+            links[i],
+            { x: 10, y: 0 }, // Right edge of previous
+            { x: -10, y: 0 } // Left edge of current
+        );
+        world.addConstraint(joint);
+    }
 }
 
 // Fix first link to world
 const fixedJoint = new FixedPinJoint(
-  links[0],
-  { x: -10, y: 0 },
-  { x: 0, y: 0 }
+    links[0],
+    { x: -10, y: 0 },
+    { x: 0, y: 0 }
 );
 world.addConstraint(fixedJoint);
 ```
@@ -361,17 +384,17 @@ import { Circle, CollisionCategory } from '@ue-too/dynamics';
 // Create a trigger zone that doesn't physically collide
 const trigger = new Circle({ x: 100, y: 100 }, 50, 0, 0, true);
 trigger.collisionFilter = {
-  category: CollisionCategory.SENSOR,
-  mask: CollisionCategory.PLAYER,
-  group: -1  // Negative group = never physically collide
+    category: CollisionCategory.SENSOR,
+    mask: CollisionCategory.PLAYER,
+    group: -1, // Negative group = never physically collide
 };
 world.addRigidBody('trigger', trigger);
 
 // Listen for collisions
 world.onCollision((bodyA, bodyB, contacts) => {
-  if (bodyA === trigger || bodyB === trigger) {
-    console.log('Player entered trigger zone!');
-  }
+    if (bodyA === trigger || bodyB === trigger) {
+        console.log('Player entered trigger zone!');
+    }
 });
 ```
 
@@ -380,8 +403,8 @@ world.onCollision((bodyA, bodyB, contacts) => {
 ```typescript
 // Find all bodies in a region
 const aabb = {
-  min: { x: -50, y: -50 },
-  max: { x: 50, y: 50 }
+    min: { x: -50, y: -50 },
+    max: { x: 50, y: 50 },
 };
 const bodiesInRegion = world.queryAABB(aabb);
 
@@ -390,12 +413,12 @@ const bodiesAtPoint = world.queryPoint({ x: 100, y: 100 });
 
 // Ray cast
 const rayResults = world.rayCast(
-  { x: 0, y: 0 },     // From
-  { x: 100, y: 100 }  // To
+    { x: 0, y: 0 }, // From
+    { x: 100, y: 100 } // To
 );
 
 rayResults.forEach(result => {
-  console.log('Hit:', result.body, 'at distance:', result.distance);
+    console.log('Hit:', result.body, 'at distance:', result.distance);
 });
 ```
 
@@ -410,8 +433,8 @@ const world = new World(2000, 2000, 'sap'); // Sweep-and-prune for many dynamic 
 world.sleepingEnabled = true;
 
 // Customize sleeping thresholds per body
-body.sleepThreshold = 0.01;  // Velocity threshold
-body.sleepTime = 0.5;         // Seconds at rest before sleeping
+body.sleepThreshold = 0.01; // Velocity threshold
+body.sleepTime = 0.5; // Seconds at rest before sleeping
 
 // Get performance stats
 const stats = world.getCollisionStats();
@@ -434,13 +457,13 @@ This package is written in TypeScript with complete type definitions:
 
 ```typescript
 import {
-  World,
-  Circle,
-  Polygon,
-  RigidBody,
-  Constraint,
-  CollisionCategory,
-  type Point
+    Circle,
+    CollisionCategory,
+    Constraint,
+    type Point,
+    Polygon,
+    RigidBody,
+    World,
 } from '@ue-too/dynamics';
 
 // Bodies are fully typed
@@ -448,13 +471,18 @@ const circle: Circle = new Circle({ x: 0, y: 0 }, 20, 0, 10, false);
 const polygon: Polygon = new Polygon(/* ... */);
 
 // Constraints are typed
-const joint: Constraint = new PinJoint(circle, polygon, { x: 0, y: 0 }, { x: 0, y: 0 });
+const joint: Constraint = new PinJoint(
+    circle,
+    polygon,
+    { x: 0, y: 0 },
+    { x: 0, y: 0 }
+);
 
 // Filters are typed
 circle.collisionFilter = {
-  category: CollisionCategory.PLAYER,
-  mask: CollisionCategory.STATIC | CollisionCategory.ENEMY,
-  group: 0
+    category: CollisionCategory.PLAYER,
+    mask: CollisionCategory.STATIC | CollisionCategory.ENEMY,
+    group: 0,
 };
 ```
 
@@ -471,15 +499,16 @@ This physics engine follows these principles:
 ## Performance Considerations
 
 - **Spatial Indexing**: Choose based on your use case:
-  - QuadTree: Static worlds with few dynamic objects
-  - Dynamic Tree: Mixed static/dynamic (recommended default)
-  - Sweep-and-Prune: Many dynamic objects moving continuously
+    - QuadTree: Static worlds with few dynamic objects
+    - Dynamic Tree: Mixed static/dynamic (recommended default)
+    - Sweep-and-Prune: Many dynamic objects moving continuously
 
 - **Sleeping System**: Automatically disables physics for resting bodies
 - **Collision Filtering**: Reduces narrow phase tests significantly
 - **Fixed Time Step**: Use fixed time steps (1/60) for stability
 
 **Performance Tips:**
+
 - Enable sleeping for worlds with many resting bodies
 - Use collision filtering to avoid unnecessary collision tests
 - Choose appropriate spatial index for your scenario
@@ -500,23 +529,29 @@ This physics engine follows these principles:
 ```typescript
 // Enable debug rendering
 world.debugDraw = (ctx: CanvasRenderingContext2D) => {
-  // Draw all bodies
-  world.bodies.forEach(body => {
-    ctx.strokeStyle = body.isStatic ? 'gray' : 'blue';
-    if (body instanceof Circle) {
-      ctx.beginPath();
-      ctx.arc(body.position.x, body.position.y, body.radius, 0, Math.PI * 2);
-      ctx.stroke();
-    } else if (body instanceof Polygon) {
-      ctx.beginPath();
-      ctx.moveTo(body.worldVertices[0].x, body.worldVertices[0].y);
-      for (let i = 1; i < body.worldVertices.length; i++) {
-        ctx.lineTo(body.worldVertices[i].x, body.worldVertices[i].y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-    }
-  });
+    // Draw all bodies
+    world.bodies.forEach(body => {
+        ctx.strokeStyle = body.isStatic ? 'gray' : 'blue';
+        if (body instanceof Circle) {
+            ctx.beginPath();
+            ctx.arc(
+                body.position.x,
+                body.position.y,
+                body.radius,
+                0,
+                Math.PI * 2
+            );
+            ctx.stroke();
+        } else if (body instanceof Polygon) {
+            ctx.beginPath();
+            ctx.moveTo(body.worldVertices[0].x, body.worldVertices[0].y);
+            for (let i = 1; i < body.worldVertices.length; i++) {
+                ctx.lineTo(body.worldVertices[i].x, body.worldVertices[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+    });
 };
 ```
 

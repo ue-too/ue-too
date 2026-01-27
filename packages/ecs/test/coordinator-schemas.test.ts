@@ -1,4 +1,10 @@
-import { Coordinator, Entity, ComponentSchema, createComponentName, createSystemName } from "../src";
+import {
+    ComponentSchema,
+    Coordinator,
+    Entity,
+    createComponentName,
+    createSystemName,
+} from '../src';
 
 // Create component name symbols for tests
 const PLAYER_STATS = createComponentName('PlayerStats');
@@ -28,12 +34,12 @@ describe('Coordinator - Runtime Component Schemas', () => {
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
                 { name: 'name', type: 'string', defaultValue: 'Player' },
-                { name: 'isAlive', type: 'boolean', defaultValue: true }
-            ]
+                { name: 'isAlive', type: 'boolean', defaultValue: true },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         const retrievedSchema = coordinator.getComponentSchema(PLAYER_STATS);
         expect(retrievedSchema).toEqual(schema);
     });
@@ -45,39 +51,52 @@ describe('Coordinator - Runtime Component Schemas', () => {
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
                 { name: 'name', type: 'string', defaultValue: 'Player' },
-                { name: 'isAlive', type: 'boolean', defaultValue: true }
-            ]
+                { name: 'isAlive', type: 'boolean', defaultValue: true },
+            ],
         };
-        
+
         // Register schema first time
         coordinator.registerComponentWithSchema(schema);
         const firstSchema = coordinator.getComponentSchema(PLAYER_STATS);
         expect(firstSchema).toEqual(schema);
-        
+
         // Create an entity and add component data
         const entity = coordinator.createEntity();
-        const component = coordinator.createComponentFromSchema(PLAYER_STATS, { health: 150 });
-        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, component);
-        
+        const component = coordinator.createComponentFromSchema(PLAYER_STATS, {
+            health: 150,
+        });
+        coordinator.addComponentToEntityWithSchema(
+            PLAYER_STATS,
+            entity,
+            component
+        );
+
         // Register schema again - should be idempotent (do nothing)
         coordinator.registerComponentWithSchema(schema);
         const secondSchema = coordinator.getComponentSchema(PLAYER_STATS);
-        
+
         // Schema should still be accessible
         expect(secondSchema).toEqual(schema);
-        
+
         // Component data should still be accessible
-        const componentAfterReRegister = coordinator.getComponentFromEntity(PLAYER_STATS, entity);
-        expect(componentAfterReRegister).toEqual({ health: 150, name: 'Player', isAlive: true });
+        const componentAfterReRegister = coordinator.getComponentFromEntity(
+            PLAYER_STATS,
+            entity
+        );
+        expect(componentAfterReRegister).toEqual({
+            health: 150,
+            name: 'Player',
+            isAlive: true,
+        });
     });
 
     it('should throw error when registering schema with no fields', () => {
         const coordinator = new Coordinator();
         const schema: ComponentSchema = {
             componentName: EMPTY_COMPONENT,
-            fields: []
+            fields: [],
         };
-        
+
         expect(() => coordinator.registerComponentWithSchema(schema)).toThrow();
     });
 
@@ -87,10 +106,10 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: DUPLICATE_FIELDS,
             fields: [
                 { name: 'value', type: 'number' },
-                { name: 'value', type: 'string' }
-            ]
+                { name: 'value', type: 'string' },
+            ],
         };
-        
+
         expect(() => coordinator.registerComponentWithSchema(schema)).toThrow();
     });
 
@@ -101,17 +120,17 @@ describe('Coordinator - Runtime Component Schemas', () => {
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
                 { name: 'name', type: 'string', defaultValue: 'Player' },
-                { name: 'isAlive', type: 'boolean', defaultValue: true }
-            ]
+                { name: 'isAlive', type: 'boolean', defaultValue: true },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         const component = coordinator.createComponentFromSchema(PLAYER_STATS);
         expect(component).toEqual({
             health: 100,
             name: 'Player',
-            isAlive: true
+            isAlive: true,
         });
     });
 
@@ -121,19 +140,19 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: PLAYER_STATS,
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
-                { name: 'name', type: 'string', defaultValue: 'Player' }
-            ]
+                { name: 'name', type: 'string', defaultValue: 'Player' },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         const component = coordinator.createComponentFromSchema(PLAYER_STATS, {
             health: 150,
-            name: 'SuperPlayer'
+            name: 'SuperPlayer',
         });
         expect(component).toEqual({
             health: 150,
-            name: 'SuperPlayer'
+            name: 'SuperPlayer',
         });
     });
 
@@ -146,13 +165,17 @@ describe('Coordinator - Runtime Component Schemas', () => {
                 { name: 'num', type: 'number' },
                 { name: 'bool', type: 'boolean' },
                 { name: 'obj', type: 'object' },
-                { name: 'arr', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } },
-                { name: 'entity', type: 'entity' }
-            ]
+                {
+                    name: 'arr',
+                    type: 'array',
+                    arrayElementType: { kind: 'builtin', type: 'string' },
+                },
+                { name: 'entity', type: 'entity' },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         const component = coordinator.createComponentFromSchema(TEST_COMPONENT);
         expect(component).toEqual({
             str: '',
@@ -160,7 +183,7 @@ describe('Coordinator - Runtime Component Schemas', () => {
             bool: false,
             obj: {},
             arr: [],
-            entity: null
+            entity: null,
         });
     });
 
@@ -170,15 +193,16 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: OPTIONAL_COMPONENT,
             fields: [
                 { name: 'required', type: 'string', defaultValue: 'required' },
-                { name: 'optional', type: 'string', optional: true }
-            ]
+                { name: 'optional', type: 'string', optional: true },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
-        const component = coordinator.createComponentFromSchema(OPTIONAL_COMPONENT);
+
+        const component =
+            coordinator.createComponentFromSchema(OPTIONAL_COMPONENT);
         expect(component).toEqual({
-            required: 'required'
+            required: 'required',
         });
         expect(component).not.toHaveProperty('optional');
     });
@@ -190,35 +214,43 @@ describe('Coordinator - Runtime Component Schemas', () => {
             fields: [
                 { name: 'health', type: 'number' },
                 { name: 'name', type: 'string' },
-                { name: 'isAlive', type: 'boolean', optional: true }
-            ]
+                { name: 'isAlive', type: 'boolean', optional: true },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         // Valid data
-        expect(coordinator.validateComponentData(PLAYER_STATS, {
-            health: 100,
-            name: 'Player'
-        })).toBe(true);
-        
+        expect(
+            coordinator.validateComponentData(PLAYER_STATS, {
+                health: 100,
+                name: 'Player',
+            })
+        ).toBe(true);
+
         // Missing required field
-        expect(coordinator.validateComponentData(PLAYER_STATS, {
-            health: 100
-        })).toBe(false);
-        
+        expect(
+            coordinator.validateComponentData(PLAYER_STATS, {
+                health: 100,
+            })
+        ).toBe(false);
+
         // Wrong type
-        expect(coordinator.validateComponentData(PLAYER_STATS, {
-            health: '100',
-            name: 'Player'
-        })).toBe(false);
-        
+        expect(
+            coordinator.validateComponentData(PLAYER_STATS, {
+                health: '100',
+                name: 'Player',
+            })
+        ).toBe(false);
+
         // Valid with optional field
-        expect(coordinator.validateComponentData(PLAYER_STATS, {
-            health: 100,
-            name: 'Player',
-            isAlive: true
-        })).toBe(true);
+        expect(
+            coordinator.validateComponentData(PLAYER_STATS, {
+                health: 100,
+                name: 'Player',
+                isAlive: true,
+            })
+        ).toBe(true);
     });
 
     it('should be able to add a component to an entity with schema validation', () => {
@@ -227,21 +259,29 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: PLAYER_STATS,
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
-                { name: 'name', type: 'string', defaultValue: 'Player' }
-            ]
+                { name: 'name', type: 'string', defaultValue: 'Player' },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
         const entity = coordinator.createEntity();
-        
+
         // Valid component
-        const component = coordinator.createComponentFromSchema(PLAYER_STATS, { health: 150 });
-        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, component);
-        
-        const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(PLAYER_STATS, entity);
+        const component = coordinator.createComponentFromSchema(PLAYER_STATS, {
+            health: 150,
+        });
+        coordinator.addComponentToEntityWithSchema(
+            PLAYER_STATS,
+            entity,
+            component
+        );
+
+        const retrieved = coordinator.getComponentFromEntity<
+            Record<string, unknown>
+        >(PLAYER_STATS, entity);
         expect(retrieved).toEqual({
             health: 150,
-            name: 'Player'
+            name: 'Player',
         });
     });
 
@@ -251,16 +291,21 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: PLAYER_STATS,
             fields: [
                 { name: 'health', type: 'number' },
-                { name: 'name', type: 'string' }
-            ]
+                { name: 'name', type: 'string' },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
         const entity = coordinator.createEntity();
-        
+
         // Invalid component (missing required field)
         expect(() => {
-            coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, { health: 100 }, true);
+            coordinator.addComponentToEntityWithSchema(
+                PLAYER_STATS,
+                entity,
+                { health: 100 },
+                true
+            );
         }).toThrow();
     });
 
@@ -270,17 +315,24 @@ describe('Coordinator - Runtime Component Schemas', () => {
             componentName: PLAYER_STATS,
             fields: [
                 { name: 'health', type: 'number' },
-                { name: 'name', type: 'string' }
-            ]
+                { name: 'name', type: 'string' },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
         const entity = coordinator.createEntity();
-        
+
         // Invalid component but validation disabled
-        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, { health: 100 }, false);
-        
-        const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(PLAYER_STATS, entity);
+        coordinator.addComponentToEntityWithSchema(
+            PLAYER_STATS,
+            entity,
+            { health: 100 },
+            false
+        );
+
+        const retrieved = coordinator.getComponentFromEntity<
+            Record<string, unknown>
+        >(PLAYER_STATS, entity);
         expect(retrieved).toEqual({ health: 100 });
     });
 
@@ -293,19 +345,32 @@ describe('Coordinator - Runtime Component Schemas', () => {
                 { name: 'num', type: 'number', defaultValue: 42 },
                 { name: 'bool', type: 'boolean', defaultValue: true },
                 { name: 'obj', type: 'object', defaultValue: { x: 1 } },
-                { name: 'arr', type: 'array', arrayElementType: { kind: 'builtin', type: 'number' }, defaultValue: [1, 2, 3] },
-                { name: 'entity', type: 'entity', defaultValue: null }
-            ]
+                {
+                    name: 'arr',
+                    type: 'array',
+                    arrayElementType: { kind: 'builtin', type: 'number' },
+                    defaultValue: [1, 2, 3],
+                },
+                { name: 'entity', type: 'entity', defaultValue: null },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
         const entity = coordinator.createEntity();
         const component = coordinator.createComponentFromSchema(MIXED_TYPES);
-        
-        expect(coordinator.validateComponentData(MIXED_TYPES, component)).toBe(true);
-        
-        coordinator.addComponentToEntityWithSchema(MIXED_TYPES, entity, component);
-        const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(MIXED_TYPES, entity);
+
+        expect(coordinator.validateComponentData(MIXED_TYPES, component)).toBe(
+            true
+        );
+
+        coordinator.addComponentToEntityWithSchema(
+            MIXED_TYPES,
+            entity,
+            component
+        );
+        const retrieved = coordinator.getComponentFromEntity<
+            Record<string, unknown>
+        >(MIXED_TYPES, entity);
         expect(retrieved).toEqual(component);
     });
 
@@ -313,39 +378,43 @@ describe('Coordinator - Runtime Component Schemas', () => {
         const coordinator = new Coordinator();
         const schema: ComponentSchema = {
             componentName: PLAYER_STATS,
-            fields: [{ name: 'health', type: 'number', defaultValue: 100 }]
+            fields: [{ name: 'health', type: 'number', defaultValue: 100 }],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
         const mockSystem = { entities: new Set<Entity>() };
         const MOCK_SYSTEM = createSystemName('MockSystem');
         coordinator.registerSystem(MOCK_SYSTEM, mockSystem);
-        
+
         const componentType = coordinator.getComponentType(PLAYER_STATS)!;
         coordinator.setSystemSignature(MOCK_SYSTEM, 1 << componentType);
-        
+
         const entity = coordinator.createEntity();
         const component = coordinator.createComponentFromSchema(PLAYER_STATS);
-        coordinator.addComponentToEntityWithSchema(PLAYER_STATS, entity, component);
-        
+        coordinator.addComponentToEntityWithSchema(
+            PLAYER_STATS,
+            entity,
+            component
+        );
+
         expect(mockSystem.entities.has(entity)).toBe(true);
     });
 
     it('should be able to get all component schemas', () => {
         const coordinator = new Coordinator();
-        
+
         const schema1: ComponentSchema = {
             componentName: COMPONENT1,
-            fields: [{ name: 'value', type: 'number' }]
+            fields: [{ name: 'value', type: 'number' }],
         };
         const schema2: ComponentSchema = {
             componentName: COMPONENT2,
-            fields: [{ name: 'name', type: 'string' }]
+            fields: [{ name: 'name', type: 'string' }],
         };
-        
+
         coordinator.registerComponentWithSchema(schema1);
         coordinator.registerComponentWithSchema(schema2);
-        
+
         const schemas = coordinator.getAllComponentSchemas();
         expect(schemas.length).toBe(2);
         expect(schemas).toContainEqual(schema1);
@@ -354,18 +423,18 @@ describe('Coordinator - Runtime Component Schemas', () => {
 
     it('should be able to get component property field names', () => {
         const coordinator = new Coordinator();
-        
+
         const schema: ComponentSchema = {
             componentName: PLAYER_STATS,
             fields: [
                 { name: 'health', type: 'number', defaultValue: 100 },
                 { name: 'name', type: 'string', defaultValue: 'Player' },
-                { name: 'isAlive', type: 'boolean', defaultValue: true }
-            ]
+                { name: 'isAlive', type: 'boolean', defaultValue: true },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
+
         const fieldNames = coordinator.getComponentPropertyNames(PLAYER_STATS);
         expect(fieldNames).toEqual(['health', 'name', 'isAlive']);
     });
@@ -373,7 +442,7 @@ describe('Coordinator - Runtime Component Schemas', () => {
     it('should return empty array when component has no schema', () => {
         const coordinator = new Coordinator();
         const componentName = createComponentName('NonExistentComponent');
-        
+
         const fieldNames = coordinator.getComponentPropertyNames(componentName);
         expect(fieldNames).toEqual([]);
     });
@@ -383,14 +452,19 @@ describe('Coordinator - Runtime Component Schemas', () => {
         const schema: ComponentSchema = {
             componentName: INVENTORY_COMPONENT,
             fields: [
-                { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } },
-                { name: 'capacity', type: 'number', defaultValue: 10 }
-            ]
+                {
+                    name: 'items',
+                    type: 'array',
+                    arrayElementType: { kind: 'builtin', type: 'string' },
+                },
+                { name: 'capacity', type: 'number', defaultValue: 10 },
+            ],
         };
-        
+
         coordinator.registerComponentWithSchema(schema);
-        
-        const fieldNames = coordinator.getComponentPropertyNames(INVENTORY_COMPONENT);
+
+        const fieldNames =
+            coordinator.getComponentPropertyNames(INVENTORY_COMPONENT);
         expect(fieldNames).toEqual(['items', 'capacity']);
     });
 
@@ -401,18 +475,22 @@ describe('Coordinator - Runtime Component Schemas', () => {
                 location: Entity;
                 sortIndex: number;
             };
-            
+
             const LOCATION = createComponentName('Location');
             coordinator.registerComponent<LocationComponent>(LOCATION);
-            
+
             // Create an entity with the component
             const entity = coordinator.createEntity();
             const locationComponent: LocationComponent = {
                 location: coordinator.createEntity(),
-                sortIndex: 0
+                sortIndex: 0,
             };
-            coordinator.addComponentToEntity(LOCATION, entity, locationComponent);
-            
+            coordinator.addComponentToEntity(
+                LOCATION,
+                entity,
+                locationComponent
+            );
+
             const fieldNames = coordinator.getComponentPropertyNames(LOCATION);
             expect(fieldNames).toContain('location');
             expect(fieldNames).toContain('sortIndex');
@@ -424,10 +502,10 @@ describe('Coordinator - Runtime Component Schemas', () => {
             type TestComponent = {
                 value: number;
             };
-            
+
             const TEST = createComponentName('Test');
             coordinator.registerComponent<TestComponent>(TEST);
-            
+
             // Don't create any instances
             const fieldNames = coordinator.getComponentPropertyNames(TEST);
             expect(fieldNames).toEqual([]);
@@ -439,22 +517,23 @@ describe('Coordinator - Runtime Component Schemas', () => {
                 value: number;
                 other: string;
             };
-            
+
             const TEST = createComponentName('Test');
-            
+
             // Register with schema (only has 'value')
             const schema: ComponentSchema = {
                 componentName: TEST,
-                fields: [
-                    { name: 'value', type: 'number', defaultValue: 0 }
-                ]
+                fields: [{ name: 'value', type: 'number', defaultValue: 0 }],
             };
             coordinator.registerComponentWithSchema(schema);
-            
+
             // Add instance with extra property
             const entity = coordinator.createEntity();
-            coordinator.addComponentToEntity(TEST, entity, { value: 5, other: 'test' });
-            
+            coordinator.addComponentToEntity(TEST, entity, {
+                value: 5,
+                other: 'test',
+            });
+
             // Should return only schema fields, not instance fields
             const fieldNames = coordinator.getComponentPropertyNames(TEST);
             expect(fieldNames).toEqual(['value']);
@@ -466,13 +545,13 @@ describe('Coordinator - Runtime Component Schemas', () => {
                 value: number | null;
                 optional?: string;
             };
-            
+
             const TEST = createComponentName('Test');
             coordinator.registerComponent<TestComponent>(TEST);
-            
+
             const entity = coordinator.createEntity();
             coordinator.addComponentToEntity(TEST, entity, { value: null });
-            
+
             const fieldNames = coordinator.getComponentPropertyNames(TEST);
             expect(fieldNames).toContain('value');
         });
@@ -484,26 +563,36 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: NUMBER_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'numbers', type: 'array', arrayElementType: { kind: 'builtin', type: 'number' } }
-                ]
+                    {
+                        name: 'numbers',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'number' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
+
             // Valid: all elements are numbers
-            expect(coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
-                numbers: [1, 2, 3, 4, 5]
-            })).toBe(true);
-            
+            expect(
+                coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
+                    numbers: [1, 2, 3, 4, 5],
+                })
+            ).toBe(true);
+
             // Invalid: contains non-number
-            expect(coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
-                numbers: [1, 2, 'three', 4]
-            })).toBe(false);
-            
+            expect(
+                coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
+                    numbers: [1, 2, 'three', 4],
+                })
+            ).toBe(false);
+
             // Valid: empty array
-            expect(coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
-                numbers: []
-            })).toBe(true);
+            expect(
+                coordinator.validateComponentData(NUMBER_ARRAY_COMPONENT, {
+                    numbers: [],
+                })
+            ).toBe(true);
         });
 
         it('should validate string arrays', () => {
@@ -511,19 +600,27 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: STRING_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'names', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } }
-                ]
+                    {
+                        name: 'names',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'string' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
-            expect(coordinator.validateComponentData(STRING_ARRAY_COMPONENT, {
-                names: ['Alice', 'Bob', 'Charlie']
-            })).toBe(true);
-            
-            expect(coordinator.validateComponentData(STRING_ARRAY_COMPONENT, {
-                names: ['Alice', 123, 'Charlie']
-            })).toBe(false);
+
+            expect(
+                coordinator.validateComponentData(STRING_ARRAY_COMPONENT, {
+                    names: ['Alice', 'Bob', 'Charlie'],
+                })
+            ).toBe(true);
+
+            expect(
+                coordinator.validateComponentData(STRING_ARRAY_COMPONENT, {
+                    names: ['Alice', 123, 'Charlie'],
+                })
+            ).toBe(false);
         });
 
         it('should validate boolean arrays', () => {
@@ -531,19 +628,27 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: BOOLEAN_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'flags', type: 'array', arrayElementType: { kind: 'builtin', type: 'boolean' } }
-                ]
+                    {
+                        name: 'flags',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'boolean' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
-            expect(coordinator.validateComponentData(BOOLEAN_ARRAY_COMPONENT, {
-                flags: [true, false, true]
-            })).toBe(true);
-            
-            expect(coordinator.validateComponentData(BOOLEAN_ARRAY_COMPONENT, {
-                flags: [true, 'false', true]
-            })).toBe(false);
+
+            expect(
+                coordinator.validateComponentData(BOOLEAN_ARRAY_COMPONENT, {
+                    flags: [true, false, true],
+                })
+            ).toBe(true);
+
+            expect(
+                coordinator.validateComponentData(BOOLEAN_ARRAY_COMPONENT, {
+                    flags: [true, 'false', true],
+                })
+            ).toBe(false);
         });
 
         it('should validate entity arrays', () => {
@@ -551,23 +656,33 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: ENTITY_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'entities', type: 'array', arrayElementType: { kind: 'builtin', type: 'entity' } }
-                ]
+                    {
+                        name: 'entities',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'entity' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
-            expect(coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
-                entities: [1, 2, 3]
-            })).toBe(true);
-            
-            expect(coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
-                entities: [1, null, 3]
-            })).toBe(true);
-            
-            expect(coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
-                entities: [1, '2', 3]
-            })).toBe(false);
+
+            expect(
+                coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
+                    entities: [1, 2, 3],
+                })
+            ).toBe(true);
+
+            expect(
+                coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
+                    entities: [1, null, 3],
+                })
+            ).toBe(true);
+
+            expect(
+                coordinator.validateComponentData(ENTITY_ARRAY_COMPONENT, {
+                    entities: [1, '2', 3],
+                })
+            ).toBe(false);
         });
 
         it('should validate object arrays', () => {
@@ -575,23 +690,33 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: OBJECT_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'object' } }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'object' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
-            expect(coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
-                items: [{ x: 1 }, { y: 2 }]
-            })).toBe(true);
-            
-            expect(coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
-                items: [{ x: 1 }, 'not an object']
-            })).toBe(false);
-            
-            expect(coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
-                items: [{ x: 1 }, [1, 2, 3]] // Array is not an object
-            })).toBe(false);
+
+            expect(
+                coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
+                    items: [{ x: 1 }, { y: 2 }],
+                })
+            ).toBe(true);
+
+            expect(
+                coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
+                    items: [{ x: 1 }, 'not an object'],
+                })
+            ).toBe(false);
+
+            expect(
+                coordinator.validateComponentData(OBJECT_ARRAY_COMPONENT, {
+                    items: [{ x: 1 }, [1, 2, 3]], // Array is not an object
+                })
+            ).toBe(false);
         });
 
         it('should create component with typed array default', () => {
@@ -599,15 +724,21 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: INVENTORY_COMPONENT,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' }, defaultValue: [] }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'string' },
+                        defaultValue: [],
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
-            const component = coordinator.createComponentFromSchema(INVENTORY_COMPONENT);
+
+            const component =
+                coordinator.createComponentFromSchema(INVENTORY_COMPONENT);
             expect(component).toEqual({
-                items: []
+                items: [],
             });
         });
 
@@ -616,20 +747,30 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: INVENTORY_COMPONENT,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'string' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
             const entity = coordinator.createEntity();
-            
+
             const component = {
-                items: ['sword', 'shield', 'potion']
+                items: ['sword', 'shield', 'potion'],
             };
-            
-            coordinator.addComponentToEntityWithSchema(INVENTORY_COMPONENT, entity, component);
-            
-            const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(INVENTORY_COMPONENT, entity);
+
+            coordinator.addComponentToEntityWithSchema(
+                INVENTORY_COMPONENT,
+                entity,
+                component
+            );
+
+            const retrieved = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(INVENTORY_COMPONENT, entity);
             expect(retrieved).toEqual(component);
         });
 
@@ -638,18 +779,27 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: NUMBER_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'numbers', type: 'array', arrayElementType: { kind: 'builtin', type: 'number' } }
-                ]
+                    {
+                        name: 'numbers',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'number' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
             const entity = coordinator.createEntity();
-            
+
             // Invalid: array contains strings
             expect(() => {
-                coordinator.addComponentToEntityWithSchema(NUMBER_ARRAY_COMPONENT, entity, {
-                    numbers: [1, 2, 'three']
-                }, true);
+                coordinator.addComponentToEntityWithSchema(
+                    NUMBER_ARRAY_COMPONENT,
+                    entity,
+                    {
+                        numbers: [1, 2, 'three'],
+                    },
+                    true
+                );
             }).toThrow();
         });
 
@@ -658,136 +808,192 @@ describe('Coordinator - Runtime Component Schemas', () => {
             const schema: ComponentSchema = {
                 componentName: MULTI_ARRAY_COMPONENT,
                 fields: [
-                    { name: 'numbers', type: 'array', arrayElementType: { kind: 'builtin', type: 'number' } },
-                    { name: 'strings', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' } },
-                    { name: 'entities', type: 'array', arrayElementType: { kind: 'builtin', type: 'entity' } }
-                ]
+                    {
+                        name: 'numbers',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'number' },
+                    },
+                    {
+                        name: 'strings',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'string' },
+                    },
+                    {
+                        name: 'entities',
+                        type: 'array',
+                        arrayElementType: { kind: 'builtin', type: 'entity' },
+                    },
+                ],
             };
-            
+
             coordinator.registerComponentWithSchema(schema);
-            
+
             const component = {
                 numbers: [1, 2, 3],
                 strings: ['a', 'b', 'c'],
-                entities: [10, 20, 30]
+                entities: [10, 20, 30],
             };
-            
-            expect(coordinator.validateComponentData(MULTI_ARRAY_COMPONENT, component)).toBe(true);
-            
+
+            expect(
+                coordinator.validateComponentData(
+                    MULTI_ARRAY_COMPONENT,
+                    component
+                )
+            ).toBe(true);
+
             const entity = coordinator.createEntity();
-            coordinator.addComponentToEntityWithSchema(MULTI_ARRAY_COMPONENT, entity, component);
-            
-            const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(MULTI_ARRAY_COMPONENT, entity);
+            coordinator.addComponentToEntityWithSchema(
+                MULTI_ARRAY_COMPONENT,
+                entity,
+                component
+            );
+
+            const retrieved = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(MULTI_ARRAY_COMPONENT, entity);
             expect(retrieved).toEqual(component);
         });
 
         it('should support custom types in arrays', () => {
             const coordinator = new Coordinator();
-            
+
             // First, register a custom component type
             const itemSchema: ComponentSchema = {
                 componentName: ITEM,
                 fields: [
                     { name: 'name', type: 'string' },
-                    { name: 'value', type: 'number' }
-                ]
+                    { name: 'value', type: 'number' },
+                ],
             };
             coordinator.registerComponentWithSchema(itemSchema);
-            
+
             // Now create a component that has an array of Items
             const inventorySchema: ComponentSchema = {
                 componentName: INVENTORY,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'custom', typeName: ITEM } }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: { kind: 'custom', typeName: ITEM },
+                    },
+                ],
             };
             coordinator.registerComponentWithSchema(inventorySchema);
-            
+
             const entity = coordinator.createEntity();
             const inventory = {
                 items: [
                     { name: 'sword', value: 100 },
-                    { name: 'shield', value: 50 }
-                ]
+                    { name: 'shield', value: 50 },
+                ],
             };
-            
+
             // Should validate successfully
-            expect(coordinator.validateComponentData(INVENTORY, inventory)).toBe(true);
-            
-            coordinator.addComponentToEntityWithSchema(INVENTORY, entity, inventory);
-            const retrieved = coordinator.getComponentFromEntity<Record<string, unknown>>(INVENTORY, entity);
+            expect(
+                coordinator.validateComponentData(INVENTORY, inventory)
+            ).toBe(true);
+
+            coordinator.addComponentToEntityWithSchema(
+                INVENTORY,
+                entity,
+                inventory
+            );
+            const retrieved = coordinator.getComponentFromEntity<
+                Record<string, unknown>
+            >(INVENTORY, entity);
             expect(retrieved).toEqual(inventory);
         });
 
         it('should validate custom type array elements against their schema', () => {
             const coordinator = new Coordinator();
-            
+
             const itemSchema: ComponentSchema = {
                 componentName: ITEM,
                 fields: [
                     { name: 'name', type: 'string' },
-                    { name: 'value', type: 'number' }
-                ]
+                    { name: 'value', type: 'number' },
+                ],
             };
             coordinator.registerComponentWithSchema(itemSchema);
-            
+
             const inventorySchema: ComponentSchema = {
                 componentName: INVENTORY,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'custom', typeName: ITEM } }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: { kind: 'custom', typeName: ITEM },
+                    },
+                ],
             };
             coordinator.registerComponentWithSchema(inventorySchema);
-            
+
             // Valid: all items match Item schema
-            expect(coordinator.validateComponentData(INVENTORY, {
-                items: [
-                    { name: 'sword', value: 100 },
-                    { name: 'shield', value: 50 }
-                ]
-            })).toBe(true);
-            
+            expect(
+                coordinator.validateComponentData(INVENTORY, {
+                    items: [
+                        { name: 'sword', value: 100 },
+                        { name: 'shield', value: 50 },
+                    ],
+                })
+            ).toBe(true);
+
             // Invalid: item missing required field
-            expect(coordinator.validateComponentData(INVENTORY, {
-                items: [
-                    { name: 'sword' }, // missing 'value'
-                    { name: 'shield', value: 50 }
-                ]
-            })).toBe(false);
-            
+            expect(
+                coordinator.validateComponentData(INVENTORY, {
+                    items: [
+                        { name: 'sword' }, // missing 'value'
+                        { name: 'shield', value: 50 },
+                    ],
+                })
+            ).toBe(false);
+
             // Invalid: item has wrong type
-            expect(coordinator.validateComponentData(INVENTORY, {
-                items: [
-                    { name: 'sword', value: '100' }, // value should be number
-                    { name: 'shield', value: 50 }
-                ]
-            })).toBe(false);
+            expect(
+                coordinator.validateComponentData(INVENTORY, {
+                    items: [
+                        { name: 'sword', value: '100' }, // value should be number
+                        { name: 'shield', value: 50 },
+                    ],
+                })
+            ).toBe(false);
         });
 
         it('should handle custom types that are not yet registered (lenient validation)', () => {
             const coordinator = new Coordinator();
-            
+
             // Register a component with custom type that doesn't exist yet
             const inventorySchema: ComponentSchema = {
                 componentName: INVENTORY,
                 fields: [
-                    { name: 'items', type: 'array', arrayElementType: { kind: 'custom', typeName: FUTURE_ITEM } }
-                ]
+                    {
+                        name: 'items',
+                        type: 'array',
+                        arrayElementType: {
+                            kind: 'custom',
+                            typeName: FUTURE_ITEM,
+                        },
+                    },
+                ],
             };
             coordinator.registerComponentWithSchema(inventorySchema);
-            
+
             // Should still validate as objects (lenient mode)
-            expect(coordinator.validateComponentData(INVENTORY, {
-                items: [
-                    { name: 'sword', value: 100 },
-                    { name: 'shield', value: 50 }
-                ]
-            })).toBe(true);
-            
+            expect(
+                coordinator.validateComponentData(INVENTORY, {
+                    items: [
+                        { name: 'sword', value: 100 },
+                        { name: 'shield', value: 50 },
+                    ],
+                })
+            ).toBe(true);
+
             // But should reject non-objects
-            expect(coordinator.validateComponentData(INVENTORY, {
-                items: ['sword', 'shield'] // Not objects
-            })).toBe(false);
+            expect(
+                coordinator.validateComponentData(INVENTORY, {
+                    items: ['sword', 'shield'], // Not objects
+                })
+            ).toBe(false);
         });
     });
 });

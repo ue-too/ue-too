@@ -1,5 +1,6 @@
-import { Point, PointCal } from "@ue-too/math";
-import { convert2WorldSpaceWRT } from "./coordinate-conversion";
+import { Point, PointCal } from '@ue-too/math';
+
+import { convert2WorldSpaceWRT } from './coordinate-conversion';
 
 /**
  * Position boundaries for camera movement in world space.
@@ -42,9 +43,9 @@ import { convert2WorldSpaceWRT } from "./coordinate-conversion";
  * @category Camera
  */
 export type Boundaries = {
-    min?: {x?: number, y?: number};
-    max?: {x?: number, y?: number};
-}
+    min?: { x?: number; y?: number };
+    max?: { x?: number; y?: number };
+};
 
 /**
  * Checks if a point is within the specified boundaries.
@@ -77,9 +78,12 @@ export type Boundaries = {
  *
  * @category Camera
  */
-export function withinBoundaries(point: Point, boundaries: Boundaries | undefined): boolean{
-    if(boundaries == undefined){
-        // no boundaries 
+export function withinBoundaries(
+    point: Point,
+    boundaries: Boundaries | undefined
+): boolean {
+    if (boundaries == undefined) {
+        // no boundaries
         return true;
     }
     let leftSide = false;
@@ -87,16 +91,32 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
     let topSide = false;
     let bottomSide = false;
     // check within boundaries horizontally
-    if(boundaries.max == undefined || boundaries.max.x == undefined || point.x <= boundaries.max.x){
+    if (
+        boundaries.max == undefined ||
+        boundaries.max.x == undefined ||
+        point.x <= boundaries.max.x
+    ) {
         rightSide = true;
     }
-    if(boundaries.min == undefined || boundaries.min.x == undefined || point.x >= boundaries.min.x){
+    if (
+        boundaries.min == undefined ||
+        boundaries.min.x == undefined ||
+        point.x >= boundaries.min.x
+    ) {
         leftSide = true;
     }
-    if(boundaries.max == undefined || boundaries.max.y == undefined || point.y <= boundaries.max.y){
+    if (
+        boundaries.max == undefined ||
+        boundaries.max.y == undefined ||
+        point.y <= boundaries.max.y
+    ) {
         topSide = true;
     }
-    if(boundaries.min == undefined || boundaries.min.y == undefined || point.y >= boundaries.min.y){
+    if (
+        boundaries.min == undefined ||
+        boundaries.min.y == undefined ||
+        point.y >= boundaries.min.y
+    ) {
         bottomSide = true;
     }
     return leftSide && rightSide && topSide && bottomSide;
@@ -128,18 +148,18 @@ export function withinBoundaries(point: Point, boundaries: Boundaries | undefine
  *
  * @category Camera
  */
-export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
-    if(boundaries == undefined){
+export function isValidBoundaries(boundaries: Boundaries | undefined): boolean {
+    if (boundaries == undefined) {
         return true;
     }
     const minX = boundaries.min?.x;
     const maxX = boundaries.max?.x;
-    if (minX != undefined && maxX != undefined && minX >= maxX){
+    if (minX != undefined && maxX != undefined && minX >= maxX) {
         return false;
     }
     const minY = boundaries.min?.y;
     const maxY = boundaries.max?.y;
-    if (minY != undefined && maxY != undefined && minY >= maxY){
+    if (minY != undefined && maxY != undefined && minY >= maxY) {
         return false;
     }
     return true;
@@ -173,14 +193,24 @@ export function isValidBoundaries(boundaries: Boundaries | undefined): boolean{
  *
  * @category Camera
  */
-export function boundariesFullyDefined(boundaries: Boundaries | undefined): boundaries is {min: {x: number, y: number}, max: {x: number, y: number}}{
-    if(boundaries == undefined){
+export function boundariesFullyDefined(
+    boundaries: Boundaries | undefined
+): boundaries is {
+    min: { x: number; y: number };
+    max: { x: number; y: number };
+} {
+    if (boundaries == undefined) {
         return false;
     }
-    if(boundaries.max == undefined || boundaries.min == undefined){
+    if (boundaries.max == undefined || boundaries.min == undefined) {
         return false;
     }
-    if(boundaries.max.x == undefined || boundaries.max.y == undefined || boundaries.min.x == undefined || boundaries.min.y == undefined){
+    if (
+        boundaries.max.x == undefined ||
+        boundaries.max.y == undefined ||
+        boundaries.min.x == undefined ||
+        boundaries.min.y == undefined
+    ) {
         return false;
     }
     return true;
@@ -215,26 +245,29 @@ export function boundariesFullyDefined(boundaries: Boundaries | undefined): boun
  *
  * @category Camera
  */
-export function clampPoint(point: Point, boundaries: Boundaries | undefined): Point{
-    if(withinBoundaries(point, boundaries) || boundaries == undefined){
+export function clampPoint(
+    point: Point,
+    boundaries: Boundaries | undefined
+): Point {
+    if (withinBoundaries(point, boundaries) || boundaries == undefined) {
         return point;
     }
-    let manipulatePoint = {x: point.x, y: point.y};
+    let manipulatePoint = { x: point.x, y: point.y };
     let limit = boundaries.min;
-    if (limit != undefined){
-        if(limit.x != undefined){
+    if (limit != undefined) {
+        if (limit.x != undefined) {
             manipulatePoint.x = Math.max(manipulatePoint.x, limit.x);
         }
-        if(limit.y != undefined){
+        if (limit.y != undefined) {
             manipulatePoint.y = Math.max(manipulatePoint.y, limit.y);
         }
     }
     limit = boundaries.max;
-    if(limit != undefined){
-        if(limit.x != undefined){
+    if (limit != undefined) {
+        if (limit.x != undefined) {
             manipulatePoint.x = Math.min(manipulatePoint.x, limit.x);
         }
-        if(limit.y != undefined){
+        if (limit.y != undefined) {
             manipulatePoint.y = Math.min(manipulatePoint.y, limit.y);
         }
     }
@@ -264,8 +297,16 @@ export function clampPoint(point: Point, boundaries: Boundaries | undefined): Po
  *
  * @category Camera
  */
-export function translationWidthOf(boundaries: Boundaries | undefined): number | undefined{
-    if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.x == undefined || boundaries.max.x == undefined){
+export function translationWidthOf(
+    boundaries: Boundaries | undefined
+): number | undefined {
+    if (
+        boundaries == undefined ||
+        boundaries.min == undefined ||
+        boundaries.max == undefined ||
+        boundaries.min.x == undefined ||
+        boundaries.max.x == undefined
+    ) {
         return undefined;
     }
     return boundaries.max.x - boundaries.min.x;
@@ -291,7 +332,9 @@ export function translationWidthOf(boundaries: Boundaries | undefined): number |
  *
  * @category Camera
  */
-export function halfTranslationWidthOf(boundaries: Boundaries | undefined): number | undefined{
+export function halfTranslationWidthOf(
+    boundaries: Boundaries | undefined
+): number | undefined {
     const translationWidth = translationWidthOf(boundaries);
     return translationWidth != undefined ? translationWidth / 2 : undefined;
 }
@@ -319,8 +362,16 @@ export function halfTranslationWidthOf(boundaries: Boundaries | undefined): numb
  *
  * @category Camera
  */
-export function translationHeightOf(boundaries: Boundaries | undefined): number | undefined{
-    if(boundaries == undefined || boundaries.min == undefined || boundaries.max == undefined || boundaries.min.y == undefined || boundaries.max.y == undefined){
+export function translationHeightOf(
+    boundaries: Boundaries | undefined
+): number | undefined {
+    if (
+        boundaries == undefined ||
+        boundaries.min == undefined ||
+        boundaries.max == undefined ||
+        boundaries.min.y == undefined ||
+        boundaries.max.y == undefined
+    ) {
         return undefined;
     }
     return boundaries.max.y - boundaries.min.y;
@@ -346,7 +397,9 @@ export function translationHeightOf(boundaries: Boundaries | undefined): number 
  *
  * @category Camera
  */
-export function halfTranslationHeightOf(boundaries: Boundaries | undefined): number | undefined{
+export function halfTranslationHeightOf(
+    boundaries: Boundaries | undefined
+): number | undefined {
     const translationHeight = translationHeightOf(boundaries);
     return translationHeight != undefined ? translationHeight / 2 : undefined;
 }
@@ -400,32 +453,84 @@ export function halfTranslationHeightOf(boundaries: Boundaries | undefined): num
  * @category Camera
  * @see {@link clampPoint} for clamping camera center only
  */
-export function clampPointEntireViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, boundaries: Boundaries | undefined, cameraZoomLevel: number, cameraRotation: number): Point{
-    if(boundaries == undefined){
+export function clampPointEntireViewPort(
+    point: Point,
+    viewPortWidth: number,
+    viewPortHeight: number,
+    boundaries: Boundaries | undefined,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    if (boundaries == undefined) {
         return point;
     }
-    let topLeftCorner = convert2WorldSpaceWRT(point, {x: 0, y: viewPortHeight}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
-    let bottomLeftCorner = convert2WorldSpaceWRT(point, {x: 0, y: 0}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
-    let topRightCorner = convert2WorldSpaceWRT(point, {x: viewPortWidth, y: viewPortHeight}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
-    let bottomRightCorner = convert2WorldSpaceWRT(point, {x: viewPortWidth, y: 0}, viewPortWidth, viewPortHeight, cameraZoomLevel, cameraRotation);
+    let topLeftCorner = convert2WorldSpaceWRT(
+        point,
+        { x: 0, y: viewPortHeight },
+        viewPortWidth,
+        viewPortHeight,
+        cameraZoomLevel,
+        cameraRotation
+    );
+    let bottomLeftCorner = convert2WorldSpaceWRT(
+        point,
+        { x: 0, y: 0 },
+        viewPortWidth,
+        viewPortHeight,
+        cameraZoomLevel,
+        cameraRotation
+    );
+    let topRightCorner = convert2WorldSpaceWRT(
+        point,
+        { x: viewPortWidth, y: viewPortHeight },
+        viewPortWidth,
+        viewPortHeight,
+        cameraZoomLevel,
+        cameraRotation
+    );
+    let bottomRightCorner = convert2WorldSpaceWRT(
+        point,
+        { x: viewPortWidth, y: 0 },
+        viewPortWidth,
+        viewPortHeight,
+        cameraZoomLevel,
+        cameraRotation
+    );
     let topLeftCornerClamped = clampPoint(topLeftCorner, boundaries);
     let topRightCornerClamped = clampPoint(topRightCorner, boundaries);
     let bottomLeftCornerClamped = clampPoint(bottomLeftCorner, boundaries);
     let bottomRightCornerClamped = clampPoint(bottomRightCorner, boundaries);
-    let topLeftCornerDiff = PointCal.subVector(topLeftCornerClamped, topLeftCorner);
-    let topRightCornerDiff = PointCal.subVector(topRightCornerClamped, topRightCorner);
-    let bottomLeftCornerDiff = PointCal.subVector(bottomLeftCornerClamped, bottomLeftCorner);
-    let bottomRightCornerDiff = PointCal.subVector(bottomRightCornerClamped, bottomRightCorner);
-    let diffs = [topLeftCornerDiff, topRightCornerDiff, bottomLeftCornerDiff, bottomRightCornerDiff];
+    let topLeftCornerDiff = PointCal.subVector(
+        topLeftCornerClamped,
+        topLeftCorner
+    );
+    let topRightCornerDiff = PointCal.subVector(
+        topRightCornerClamped,
+        topRightCorner
+    );
+    let bottomLeftCornerDiff = PointCal.subVector(
+        bottomLeftCornerClamped,
+        bottomLeftCorner
+    );
+    let bottomRightCornerDiff = PointCal.subVector(
+        bottomRightCornerClamped,
+        bottomRightCorner
+    );
+    let diffs = [
+        topLeftCornerDiff,
+        topRightCornerDiff,
+        bottomLeftCornerDiff,
+        bottomRightCornerDiff,
+    ];
     let maxXDiff = Math.abs(diffs[0].x);
     let maxYDiff = Math.abs(diffs[0].y);
     let delta = diffs[0];
-    diffs.forEach((diff)=>{
-        if(Math.abs(diff.x) > maxXDiff){
+    diffs.forEach(diff => {
+        if (Math.abs(diff.x) > maxXDiff) {
             maxXDiff = Math.abs(diff.x);
             delta.x = diff.x;
         }
-        if(Math.abs(diff.y) > maxYDiff){
+        if (Math.abs(diff.y) > maxYDiff) {
             maxYDiff = Math.abs(diff.y);
             delta.y = diff.y;
         }
