@@ -1,4 +1,4 @@
-import type { EventArgs } from '@ue-too/being';
+import type { EventArgs, EventResult } from '@ue-too/being';
 
 import type {
     KmtInputEventMapping,
@@ -160,16 +160,20 @@ export type EventTargetWithPointerEvents = {
  * parser.tearDown();
  * ```
  */
+
+export interface StateMachine {
+    happens: (...args: any[]) => EventResult<any>;
+}
 export class VanillaKMTEventParser implements KMTEventParser {
     private _disabled: boolean = false;
-    private _stateMachine: KmtInputStateMachine;
+    private _stateMachine: StateMachine;
     private _orchestrator: InputOrchestrator;
     private _keyfirstPressed: Map<string, boolean>;
     private _abortController: AbortController;
     private _canvas?: HTMLCanvasElement | SVGSVGElement;
 
     constructor(
-        kmtInputStateMachine: KmtInputStateMachine,
+        kmtInputStateMachine: StateMachine,
         orchestrator: InputOrchestrator,
         canvas?: HTMLCanvasElement | SVGSVGElement
     ) {

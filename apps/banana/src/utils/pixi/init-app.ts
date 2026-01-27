@@ -3,6 +3,7 @@ import {
     DefaultBoardCamera,
     InputOrchestrator,
     KmtInputStateMachine,
+    StateMachine,
     TouchEventParser,
     TouchInputTracker,
     VanillaTouchEventParser,
@@ -22,6 +23,7 @@ import {
 } from '@ue-too/board';
 import { PixiInputParser } from '@ue-too/board-pixi-integration';
 import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
+import { createKnitInputStateMachine } from '../input-state-machine/knit-input-state-machine';
 
 export type PixiAppComponents = {
     app: Application;
@@ -30,7 +32,7 @@ export type PixiAppComponents = {
     cameraRig: CameraRig;
     inputOrchestrator: InputOrchestrator;
     observableInputTracker: ObservableInputTracker;
-    kmtInputStateMachine: KmtInputStateMachine;
+    kmtInputStateMachine: StateMachine;
     kmtParser: KMTEventParser;
     touchParser: TouchEventParser;
     cleanup: () => void;
@@ -61,9 +63,11 @@ export const initApp = async (
     );
     const observableInputTracker = new ObservableInputTracker(canvasProxy);
     const touchInputTracker = new TouchInputTracker(canvasProxy);
-    const kmtInputStateMachine = createKmtInputStateMachine(
-        observableInputTracker
-    );
+    // const kmtInputStateMachine = createKmtInputStateMachine(
+    //     observableInputTracker
+    // );
+    const kmtInputStateMachine = createKnitInputStateMachine(observableInputTracker);
+
     const touchInputStateMachine =
         createTouchInputStateMachine(touchInputTracker);
 
@@ -114,14 +118,13 @@ export const initApp = async (
     // console.log(camera.contextTransform);
     const transform = camera.getTransform(1);
     if (
-        transform.a === app.stage.localTransform.a &&
-        transform.b === app.stage.localTransform.b &&
-        transform.c === app.stage.localTransform.c &&
-        transform.d === app.stage.localTransform.d &&
-        transform.e === app.stage.localTransform.tx &&
-        transform.f === app.stage.localTransform.ty
+        transform.a !== app.stage.localTransform.a ||
+        transform.b !== app.stage.localTransform.b ||
+        transform.c !== app.stage.localTransform.c ||
+        transform.d !== app.stage.localTransform.d ||
+        transform.e !== app.stage.localTransform.tx ||
+        transform.f !== app.stage.localTransform.ty
     ) {
-    } else {
         app.stage.setFromMatrix(
             new Matrix(
                 transform.a,
@@ -147,14 +150,13 @@ export const initApp = async (
     app.ticker.add(time => {
         const transform = camera.getTransform(1);
         if (
-            transform.a === app.stage.localTransform.a &&
-            transform.b === app.stage.localTransform.b &&
-            transform.c === app.stage.localTransform.c &&
-            transform.d === app.stage.localTransform.d &&
-            transform.e === app.stage.localTransform.tx &&
-            transform.f === app.stage.localTransform.ty
+            transform.a !== app.stage.localTransform.a ||
+            transform.b !== app.stage.localTransform.b ||
+            transform.c !== app.stage.localTransform.c ||
+            transform.d !== app.stage.localTransform.d ||
+            transform.e !== app.stage.localTransform.tx ||
+            transform.f !== app.stage.localTransform.ty
         ) {
-        } else {
             // pixiInputParser.updateHitArea();
             app.stage.setFromMatrix(
                 new Matrix(
@@ -166,6 +168,7 @@ export const initApp = async (
                     transform.f
                 )
             );
+
         }
     });
 

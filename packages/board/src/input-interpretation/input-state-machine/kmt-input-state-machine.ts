@@ -185,7 +185,6 @@ export type KmtOutputEvent =
  * @category Input State Machine - KMT
  */
 export type KmtInputEventOutputMapping = {
-    spacebarDown: number;
     middlePointerMove: KmtOutputEvent;
     scroll: KmtOutputEvent;
     scrollWithCtrl: KmtOutputEvent;
@@ -316,27 +315,27 @@ export class KmtIdleState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        spacebarDown: {
-            action: this.spacebarDownHandler,
-            defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
-        },
-        scroll: {
-            action: this.scrollHandler,
-            defaultTargetState: 'IDLE',
-        },
-        scrollWithCtrl: {
-            action: this.scrollWithCtrlHandler,
-            defaultTargetState: 'IDLE',
-        },
-        middlePointerDown: {
-            action: this.middlePointerDownHandler,
-            defaultTargetState: 'READY_TO_PAN_VIA_SCROLL_WHEEL',
-        },
-        disable: {
-            action: NO_OP,
-            defaultTargetState: 'DISABLED',
-        },
-    };
+            spacebarDown: {
+                action: this.spacebarDownHandler,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            scroll: {
+                action: this.scrollHandler,
+                defaultTargetState: 'IDLE',
+            },
+            scrollWithCtrl: {
+                action: this.scrollWithCtrlHandler,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerDown: {
+                action: this.middlePointerDownHandler,
+                defaultTargetState: 'READY_TO_PAN_VIA_SCROLL_WHEEL',
+            },
+            disable: {
+                action: NO_OP,
+                defaultTargetState: 'DISABLED',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
@@ -388,11 +387,11 @@ export class DisabledState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        enable: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
-        },
-    };
+            enable: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+        };
 }
 
 /**
@@ -416,23 +415,23 @@ export class ReadyToPanViaSpaceBarState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        spacebarUp: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
-        },
-        leftPointerDown: {
-            action: this.leftPointerDownHandler,
-            defaultTargetState: 'INITIAL_PAN',
-        },
-        disable: {
-            action: context => context.cancelCurrentAction(),
-            defaultTargetState: 'DISABLED',
-        },
-        leftPointerMove: {
-            action: NO_OP,
-            defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
-        },
-    };
+            spacebarUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            leftPointerDown: {
+                action: this.leftPointerDownHandler,
+                defaultTargetState: 'INITIAL_PAN',
+            },
+            disable: {
+                action: context => context.cancelCurrentAction(),
+                defaultTargetState: 'DISABLED',
+            },
+            leftPointerMove: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRAB);
@@ -467,23 +466,23 @@ export class InitialPanState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        leftPointerUp: {
-            action: NO_OP,
-            defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: 'PAN',
-        },
-        spacebarUp: {
-            action: () => 'IDLE',
-            defaultTargetState: 'IDLE',
-        },
-        leftPointerDown: {
-            action: () => 'PAN',
-            defaultTargetState: 'PAN',
-        },
-    };
+            leftPointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            leftPointerMove: {
+                action: this.leftPointerMoveHandler,
+                defaultTargetState: 'PAN',
+            },
+            spacebarUp: {
+                action: () => 'IDLE',
+                defaultTargetState: 'IDLE',
+            },
+            leftPointerDown: {
+                action: () => 'PAN',
+                defaultTargetState: 'PAN',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
@@ -529,15 +528,15 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        middlePointerUp: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
-        },
-        middlePointerMove: {
-            action: NO_OP,
-            defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
-        },
-    };
+            middlePointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerMove: {
+                action: NO_OP,
+                defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
@@ -565,19 +564,19 @@ export class PanState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        leftPointerUp: {
-            action: NO_OP,
-            defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: 'PAN',
-        },
-        spacebarUp: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
-        },
-    };
+            leftPointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            leftPointerMove: {
+                action: this.leftPointerMoveHandler,
+                defaultTargetState: 'PAN',
+            },
+            spacebarUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
@@ -623,15 +622,15 @@ export class PanViaScrollWheelState extends TemplateState<
         KmtInputStates,
         KmtInputEventOutputMapping
     > = {
-        middlePointerUp: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
-        },
-        middlePointerMove: {
-            action: this.middlePointerMoveHandler,
-            defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
-        },
-    };
+            middlePointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerMove: {
+                action: this.middlePointerMoveHandler,
+                defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
+            },
+        };
 
     middlePointerMoveHandler(
         context: KmtInputContext,
