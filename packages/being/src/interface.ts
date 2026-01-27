@@ -324,6 +324,7 @@ export interface State<
     delay:
     | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
     | undefined;
+    eventReactions: EventReactions<EventPayloadMapping, Context, States, EventOutputMapping>;
 }
 
 /**
@@ -856,6 +857,10 @@ export abstract class TemplateState<
         EventGuards<EventPayloadMapping, States, Context, Guard<Context>>
     > {
         return this._eventGuards;
+    }
+
+    get eventReactions(): EventReactions<EventPayloadMapping, Context, States, EventOutputMapping> {
+        return this._eventReactions;
     }
 
     get delay():
