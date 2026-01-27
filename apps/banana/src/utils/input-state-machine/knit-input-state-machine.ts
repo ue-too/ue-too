@@ -1,6 +1,6 @@
 import { BaseContext, CompositeState, CreateStateType, DefaultOutputMapping, Defer, EventReactions, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { createKmtInputStateMachine, KmtInputStates, KmtInputEventOutputMapping, KmtInputContext, KmtInputEventMapping, KmtInputStateMachine } from "@ue-too/board";
-import { createKmtInputStateMachineExpansion } from "./kmt-input-state-machine-expansion";
+import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from "./kmt-input-state-machine-expansion";
 
 const KNIT_INPUT_STATES = ['IDLE', 'MOVING'] as const;
 
@@ -14,7 +14,7 @@ type KnitInputEventMapping = {
 
 class KnitMoveState extends TemplateState<KnitInputEventMapping, BaseContext, KnitInputStates> {
 
-    private _cMachine: KmtInputStateMachine;
+    private _cMachine: KmtExpandedStateMachine;
 
     constructor(childContext: KmtInputContext) {
         super();

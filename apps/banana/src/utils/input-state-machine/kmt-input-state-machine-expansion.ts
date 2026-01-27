@@ -1,11 +1,10 @@
-import { EventReactions, NO_OP, TemplateStateMachine } from "@ue-too/being";
+import { CreateStateType, EventReactions, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import {
     KmtIdleState,
     KmtInputStates,
     KmtInputContext,
     KmtInputEventMapping,
     KmtInputEventOutputMapping,
-    PointerEventPayload,
     DisabledState,
     PanViaScrollWheelState,
     PanState,
@@ -14,6 +13,21 @@ import {
     ReadyToPanViaScrollWheelState,
     KmtInputStateMachine
 } from "@ue-too/board";
+
+export type KmtInputStateMachineExpansionContext = KmtInputContext & {
+};
+
+export type KmtInputStateMachineExpansionEventMapping = KmtInputEventMapping & {
+};
+
+export type KmtInputStateMachineExpansionEventOutputMapping = KmtInputEventOutputMapping & {
+};
+
+export const KMT_INPUT_STATE_MACHINE_EXPANSION_STATES = [] as const;
+
+export type KmtInputStateMachineExpansionStates = KmtInputStates | CreateStateType<typeof KMT_INPUT_STATE_MACHINE_EXPANSION_STATES>;
+
+export type KmtExpandedStateMachine = StateMachine<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
 
 /**
  * Extended IDLE state that adds additional event reactions while preserving
@@ -64,9 +78,18 @@ export class KmtExtendedIdleState extends KmtIdleState {
     // }
 }
 
+export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> {
+    constructor() {
+        super();
+    }
+
+    protected _eventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> = {
+    };
+}
+
 export function createKmtInputStateMachineExpansion(
     context: KmtInputContext
-): KmtInputStateMachine {
+): KmtExpandedStateMachine {
     const states = {
         IDLE: new KmtExtendedIdleState(),
         READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
@@ -77,9 +100,9 @@ export function createKmtInputStateMachineExpansion(
         DISABLED: new DisabledState(),
     };
     return new TemplateStateMachine<
-        KmtInputEventMapping,
-        KmtInputContext,
-        KmtInputStates,
-        KmtInputEventOutputMapping
+        KmtInputStateMachineExpansionEventMapping,
+        KmtInputStateMachineExpansionContext,
+        KmtInputStateMachineExpansionStates,
+        KmtInputStateMachineExpansionEventOutputMapping
     >(states, 'IDLE', context);
 }

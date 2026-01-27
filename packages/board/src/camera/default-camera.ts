@@ -256,14 +256,14 @@ export default class DefaultBoardCamera implements ObservableBoardCamera {
         if (!this._baseCamera.setMaxZoomLevel(maxZoomLevel)) {
             return false;
         }
-        this._observer.notifyZoom(
-            { deltaZoomAmount: maxZoomLevel - currentZoomLevel },
-            {
-                position: this._baseCamera.position,
-                rotation: this._baseCamera.rotation,
-                zoomLevel: this._baseCamera.zoomLevel,
-            }
-        );
+        // this._observer.notifyZoom(
+        //     { deltaZoomAmount: maxZoomLevel - currentZoomLevel },
+        //     {
+        //         position: this._baseCamera.position,
+        //         rotation: this._baseCamera.rotation,
+        //         zoomLevel: this._baseCamera.zoomLevel,
+        //     }
+        // );
         return true;
     }
 
