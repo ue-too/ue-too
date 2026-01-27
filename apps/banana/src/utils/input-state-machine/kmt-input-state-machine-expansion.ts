@@ -1,4 +1,4 @@
-import { BaseContext, CreateStateType, EventReactions, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { BaseContext, CreateStateType, EventReactions, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import {
     KmtIdleState,
     KmtInputStates,
@@ -101,6 +101,9 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             KmtInputStateMachineExpansionEventOutputMapping
         >;
 
+        this.uponEnter = originalIdleState.uponEnter as (context: KmtInputContext, stateMachine: KmtExpandedStateMachine, from: KmtInputStateMachineExpansionStates | 'INITIAL') => void;
+        this.beforeExit = originalIdleState.beforeExit as (context: KmtInputContext, stateMachine: KmtExpandedStateMachine, to: KmtInputStateMachineExpansionStates | 'TERMINAL') => void;
+
         // Merge parent's event reactions with new ones
         // The spread operator ensures all existing handlers are preserved
         // Type assertion is safe because expansion types are supersets of original types
@@ -119,6 +122,14 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
                 defaultTargetState: "PLACEMENT",
             },
         } as EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
+
+        this._guards = {
+            ...originalIdleState.guards,
+            // Add your new guards here
+            // Example:
+            // hasEnoughMoney: (context) => context.balance >= context.itemPrice,
+        } as Guard<KmtInputStateMachineExpansionContext>;
+
     }
 
     // Example: Add a custom handler for a new event or override an existing one
