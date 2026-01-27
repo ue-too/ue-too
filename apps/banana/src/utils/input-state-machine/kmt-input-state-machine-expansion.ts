@@ -13,6 +13,7 @@ import {
     ReadyToPanViaScrollWheelState,
     KmtInputStateMachine
 } from "@ue-too/board";
+import { Point } from "@ue-too/math";
 
 export type KmtInputStateMachineExpansionContext = KmtInputContext & {
 };
@@ -21,6 +22,11 @@ export type KmtInputStateMachineExpansionEventMapping = KmtInputEventMapping & {
 };
 
 export type KmtInputStateMachineExpansionEventOutputMapping = KmtInputEventOutputMapping & {
+    leftPointerDown: void;
+    leftPointerUp: {
+        type: 'checkPlacement';
+        point: Point;
+    };
 };
 
 export const KMT_INPUT_STATE_MACHINE_EXPANSION_STATES = ['PLACEMENT'] as const;
@@ -117,7 +123,7 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             // },
             leftPointerDown: {
                 action: (context, eventPayload, stateMachine) => {
-                    console.log('leftPointerDown', eventPayload);
+                    // console.log('leftPointerDown', eventPayload);
                 },
                 defaultTargetState: "PLACEMENT",
             },
@@ -148,10 +154,17 @@ export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansi
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> = {
+    protected _eventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping> = {
         'leftPointerUp': {
             action: (context, eventPayload, stateMachine) => {
-                console.log('leftPointerUp', eventPayload);
+                // console.log('leftPointerUp', eventPayload);
+                return {
+                    type: 'checkPlacement',
+                    point: {
+                        x: eventPayload.x,
+                        y: eventPayload.y,
+                    },
+                }
             },
             defaultTargetState: 'IDLE',
         }
