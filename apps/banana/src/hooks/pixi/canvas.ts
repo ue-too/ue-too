@@ -5,6 +5,7 @@ import { usePixiCanvas } from '@/contexts/pixi';
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
 import { appIsReady } from '@/utils/pixi';
+import { useAllBoardCameraState, useBoardCameraState } from './camera';
 
 export const useAppTicker = (
     callback: (time: Ticker) => void,
@@ -69,6 +70,7 @@ export const useCanvasPointerDown = (
 
 export const useGrid = () => {
     const { result } = usePixiCanvas();
+    const zoomLevel = useBoardCameraState("zoomLevel");
     const appRef = useRef<Application | null>(null);
     const gridRef = useRef<PixiGrid | null>(null);
 
@@ -151,4 +153,13 @@ export const useGrid = () => {
             }
         };
     }, [app, pixiGrid]);
+
+    useEffect(() => {
+        if (pixiGrid == null) {
+            return;
+        }
+
+        pixiGrid.update(zoomLevel);
+
+    }, [zoomLevel, pixiGrid]);
 };

@@ -25,6 +25,9 @@ import { PixiInputParser } from '@ue-too/board-pixi-integration';
 import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
 import { createKnitInputStateMachine } from '../input-state-machine/knit-input-state-machine';
 import { PixiCanvasResult } from '@/contexts/pixi';
+import { createKmtInputStateMachineExpansion, ExpandedInputTracker } from '../input-state-machine';
+import { Grid } from '@/knit-grid/grid';
+import { PixiGrid } from '@/knit-grid/grid-pixi';
 
 export type PixiAppComponents = {
     app: Application;
@@ -34,8 +37,9 @@ export type PixiAppComponents = {
     inputOrchestrator: InputOrchestrator;
     observableInputTracker: ObservableInputTracker;
     kmtInputStateMachine: StateMachine;
-    kmtParser: KMTEventParser;
+    kmtParser: VanillaKMTEventParser;
     touchParser: TouchEventParser;
+    pixiGrid: PixiGrid;
     cleanup: () => void;
     cleanups: (() => void)[];
 };
@@ -68,10 +72,6 @@ export const initApp = async (
     );
     const observableInputTracker = new ObservableInputTracker(canvasProxy);
     const touchInputTracker = new TouchInputTracker(canvasProxy);
-    // const kmtInputStateMachine = createKmtInputStateMachine(
-    //     observableInputTracker
-    // );
-    const kmtInputStateMachine = createKnitInputStateMachine(observableInputTracker);
 
     const touchInputStateMachine =
         createTouchInputStateMachine(touchInputTracker);
@@ -95,6 +95,21 @@ export const initApp = async (
         camera.viewPortWidth = width;
         camera.viewPortHeight = height;
     });
+
+    const grid = new Grid(10, 10);
+    const pixiGrid = new PixiGrid(grid);
+    app.stage.addChild(pixiGrid);
+
+    camera.on('zoom', (_, cameraState) => {
+        pixiGrid.update(cameraState.zoomLevel);
+    });
+
+    const expandedInputTracker = new ExpandedInputTracker(canvasProxy, pixiGrid, camera);
+    // const kmtInputStateMachine = createKmtInputStateMachine(
+    //     observableInputTracker
+    // );
+    const kmtInputStateMachine = createKmtInputStateMachineExpansion(expandedInputTracker);
+
 
     const kmtParser = new VanillaKMTEventParser(
         kmtInputStateMachine,
@@ -180,6 +195,7 @@ export const initApp = async (
         }
     });
 
+
     const cleanup = () => {
         // pixiInputParser.tearDown();
         kmtParser.tearDown();
@@ -199,12 +215,13 @@ export const initApp = async (
         touchParser,
         cleanup,
         cleanups,
+        pixiGrid,
     };
 };
 
-export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application } => {
+export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application, components: PixiAppComponents } => {
     if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
         return { ready: false };
     }
-    return { ready: true, app: result.components.app };
+    return { ready: true, app: result.components.app, components: result.components };
 };

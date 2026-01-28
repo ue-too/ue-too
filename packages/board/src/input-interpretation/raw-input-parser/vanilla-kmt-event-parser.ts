@@ -361,4 +361,8 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this._canvas = canvas;
         this.setUp();
     }
+
+    set stateMachine(stateMachine: StateMachine) {
+        this._stateMachine = stateMachine;
+    }
 }

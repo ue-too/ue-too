@@ -1,3 +1,5 @@
+import { Cell } from "@/knit-grid/grid";
+import { PixiGrid } from "@/knit-grid/grid-pixi";
 import { BaseContext, CreateStateType, EventReactions, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import {
     KmtIdleState,
@@ -11,11 +13,18 @@ import {
     InitialPanState,
     ReadyToPanViaSpaceBarState,
     ReadyToPanViaScrollWheelState,
-    KmtInputStateMachine
+    KmtInputStateMachine,
+    ObservableInputTracker,
+    Canvas,
+    DefaultBoardCamera,
+    convertFromWindow2Canvas,
+    convertFromCanvas2ViewPort
 } from "@ue-too/board";
 import { Point } from "@ue-too/math";
 
 export type KmtInputStateMachineExpansionContext = KmtInputContext & {
+    isAtCell: (point: Point) => { row: number; column: number; cell: Cell } | null;
+    setAt: (row: number, column: number, cellType: string) => void;
 };
 
 export type KmtInputStateMachineExpansionEventMapping = KmtInputEventMapping & {
@@ -107,8 +116,8 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             KmtInputStateMachineExpansionEventOutputMapping
         >;
 
-        this.uponEnter = originalIdleState.uponEnter as (context: KmtInputContext, stateMachine: KmtExpandedStateMachine, from: KmtInputStateMachineExpansionStates | 'INITIAL') => void;
-        this.beforeExit = originalIdleState.beforeExit as (context: KmtInputContext, stateMachine: KmtExpandedStateMachine, to: KmtInputStateMachineExpansionStates | 'TERMINAL') => void;
+        this.uponEnter = originalIdleState.uponEnter as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, from: KmtInputStateMachineExpansionStates | 'INITIAL') => void;
+        this.beforeExit = originalIdleState.beforeExit as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, to: KmtInputStateMachineExpansionStates | 'TERMINAL') => void;
 
         // Merge parent's event reactions with new ones
         // The spread operator ensures all existing handlers are preserved
@@ -123,7 +132,7 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             // },
             leftPointerDown: {
                 action: (context, eventPayload, stateMachine) => {
-                    // console.log('leftPointerDown', eventPayload);
+                    console.log('leftPointerDown', eventPayload);
                 },
                 defaultTargetState: "PLACEMENT",
             },
@@ -158,6 +167,10 @@ export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansi
         'leftPointerUp': {
             action: (context, eventPayload, stateMachine) => {
                 // console.log('leftPointerUp', eventPayload);
+                const cell = context.isAtCell({ x: eventPayload.x, y: eventPayload.y });
+                if (cell != null) {
+                    context.setAt(cell.row, cell.column, 'knit');
+                }
                 return {
                     type: 'checkPlacement',
                     point: {
@@ -172,7 +185,7 @@ export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansi
 }
 
 export function createKmtInputStateMachineExpansion(
-    context: KmtInputContext
+    context: KmtInputStateMachineExpansionContext
 ): KmtExpandedStateMachine {
     const states = {
         IDLE: new KmtExtendedIdleState(),
@@ -190,4 +203,27 @@ export function createKmtInputStateMachineExpansion(
         KmtInputStateMachineExpansionStates,
         KmtInputStateMachineExpansionEventOutputMapping
     >(states, 'IDLE', context);
+}
+
+export class ExpandedInputTracker extends ObservableInputTracker implements KmtInputStateMachineExpansionContext {
+    private _grid: PixiGrid;
+    private _camera: DefaultBoardCamera;
+
+    constructor(canvas: Canvas, grid: PixiGrid, camera: DefaultBoardCamera) {
+        super(canvas);
+        this._grid = grid;
+        this._camera = camera;
+    }
+
+    isAtCell(point: Point): { row: number; column: number; cell: Cell } | null {
+        const canvasPoint = convertFromWindow2Canvas(point, this.canvas);
+        const viewportPoint = convertFromCanvas2ViewPort(canvasPoint, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        const worldPoint = this._camera.convertFromViewPort2WorldSpace(viewportPoint);
+        const cell = this._grid.getCell(worldPoint);
+        return cell;
+    }
+
+    setAt(row: number, column: number, cellType: string): void {
+        this._grid.setCell(row, column, cellType);
+    }
 }

@@ -47,7 +47,20 @@ export class Grid {
         return this._columns;
     }
 
-    setCell(row: number, column: number, cell: Cell): void {
+    addRow(at?: number): void {
+        this._rows++;
+        if (at == undefined) {
+            at = this._rows;
+        }
+        this._cells.splice(at, 0, new Array(this._columns).fill({ type: 'empty' }));
+    }
+
+    removeRow(at: number): void {
+        this._rows--;
+        this._cells.splice(at, 1);
+    }
+
+    setCell(row: number, column: number, cellType: string): void {
         if (
             row < 0 ||
             row >= this._rows ||
@@ -56,8 +69,8 @@ export class Grid {
         ) {
             throw new Error('Row or column out of bounds');
         }
-        this._cells[row][column] = cell;
-        this._changeObservable.notify({ row, column, cell });
+        this._cells[row][column].type = cellType;
+        this._changeObservable.notify({ row, column, cell: { type: cellType } });
     }
 
     onCellChange(

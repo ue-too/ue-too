@@ -1,5 +1,6 @@
 import {
     CameraState,
+    createKmtInputStateMachine,
     getScrollBar,
     translationHeightOf,
     translationWidthOf,
@@ -35,6 +36,9 @@ import {
 } from '@/hooks/pixi';
 import { useBoardCameraState } from '@/hooks/pixi/camera';
 import { useCanvasSize, useViewportScrollBar } from '@/hooks/pixi/utils';
+import { Button } from './components/ui/button';
+import { appIsReady } from './utils/pixi';
+import { createKmtInputStateMachineExpansion } from './utils/input-state-machine';
 
 /**
  * PixiCanvas Component
@@ -45,12 +49,6 @@ export const PixiCanvas = (
     option: { fullScreen: boolean } = { fullScreen: true }
 ): React.ReactNode => {
     const { canvasRef } = useInitializePixiApp(option);
-
-    // useCanvasPointerDown(() => {
-    //     console.log('pointerdown');
-    // });
-
-    useGrid();
 
     return <canvas ref={canvasRef} id="graph" />;
 };
@@ -87,6 +85,8 @@ export const Wrapper = (
                     <RotationDisplay />
                     <ZoomLevelDisplay />
                     <ScrollBarDisplay />
+                    <AddRowButton />
+                    <RemoveRowButton />
                 </OverlayContainer>
             </PixiCanvasProvider>
         </div>
@@ -273,4 +273,33 @@ export const ZoomLevelDisplay = () => {
     const zoomLevel = useBoardCameraState('zoomLevel');
 
     return <div>ZoomLevelDisplay {zoomLevel}</div>;
+};
+
+const AddRowButton = () => {
+    const { result } = usePixiCanvas();
+
+    return (
+        <Button className='pointer-events-auto' onClick={() => {
+            const check = appIsReady(result);
+            if(check.ready) {
+                check.components.pixiGrid.addRow();
+            }
+        }}>
+            Add Row
+        </Button>
+    );
+};
+const RemoveRowButton = () => {
+    const { result } = usePixiCanvas();
+
+    return (
+        <Button className='pointer-events-auto' onClick={() => {
+            const check = appIsReady(result);
+            if(check.ready) {
+                check.components.pixiGrid.removeRow();
+            }
+        }}>
+            Remove Row
+        </Button>
+    );
 };
