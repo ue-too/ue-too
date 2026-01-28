@@ -16,37 +16,38 @@ export class PixiGrid extends Container {
 
     private _createCells(): Container {
         const container = new Container();
+
+        // Outer border
         const rect = new Graphics();
-        rect.setStrokeStyle({ width: this._lineWidth, color: 0x000000 });
         rect.rect(
-            this.position.x,
-            this.position.y,
+            0,
+            0,
             this._grid.cellWidth * this._grid.columns,
             this._grid.cellHeight * this._grid.rows
         );
-        rect.stroke();
+        rect.stroke({ color: 0x000000, width: this._lineWidth });
         container.addChild(rect);
 
         const cells = new Container();
         container.addChild(cells);
 
+        // Grid lines
         for (let row = 0; row < this._grid.rows; row++) {
             for (let column = 0; column < this._grid.columns; column++) {
                 const cell = new Graphics();
-                cell.setStrokeStyle({
-                    width: this._lineWidth,
-                    color: 0x000000,
-                });
                 cell.rect(
-                    this.position.x + column * this._grid.cellWidth,
-                    this.position.y + row * this._grid.cellHeight,
+                    column * this._grid.cellWidth,
+                    row * this._grid.cellHeight,
                     this._grid.cellWidth,
                     this._grid.cellHeight
                 );
-                cell.stroke();
+                cell.stroke({ color: 0x000000, width: this._lineWidth });
                 cells.addChild(cell);
             }
         }
+
+        // Ensure container is visible and has proper bounds
+        container.visible = true;
         return container;
     }
 }

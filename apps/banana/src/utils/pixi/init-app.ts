@@ -114,6 +114,9 @@ export const initApp = async (
     // Create a new Sprite from an image path.
     const bala = new Sprite(texture);
 
+    // app.stage.addChild(bala);
+
+    // console.log('hmr test');
     // Add to stage.
     // console.log(camera.contextTransform);
     const transform = camera.getTransform(1);

@@ -23,10 +23,13 @@ export const useCanvasSize = () => {
                 result.success == false ||
                 result.components.app.renderer == null
             ) {
-                return () => {};
+                return () => { };
             }
             result.components.app.renderer.on('resize', cb);
             return () => {
+                if (result.components.app.renderer == null) {
+                    return;
+                }
                 result.components.app.renderer.off('resize', cb);
             };
         },

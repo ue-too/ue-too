@@ -35,6 +35,8 @@ export const useInitializePixiApp = (
 
                 if (!isMounted) return;
 
+                // console.log('initialize pixi');
+
                 const appComponents = await initApp(canvas, option);
 
                 if (!isMounted) {
@@ -73,7 +75,7 @@ export const useInitializePixiApp = (
                 appComponentsRef.current = null;
             }
         };
-    }, [setResult]);
+    }, [setResult, option]);
 
     return { canvasRef };
 };
