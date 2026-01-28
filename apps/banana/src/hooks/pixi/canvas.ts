@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { usePixiCanvas } from '@/contexts/pixi';
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
+import { appIsReady } from '@/utils/pixi';
 
 export const useAppTicker = (
     callback: (time: Ticker) => void,
@@ -12,19 +13,15 @@ export const useAppTicker = (
     const { result } = usePixiCanvas();
 
     useEffect(() => {
-        if (
-            result.initialized == false ||
-            result.success == false ||
-            result.components.app == null ||
-            !enabled
-        ) {
+        const check = appIsReady(result);
+        if (!check.ready) {
             return;
         }
 
-        result.components.app.ticker.add(callback);
+        check.app.ticker.add(callback);
 
         return () => {
-            result.components.app.ticker.remove(callback);
+            check.app.ticker.remove(callback);
         };
     }, [result, callback, enabled]);
 };
@@ -35,8 +32,7 @@ export const useToggleKmtInput = (enable: boolean) => {
     useEffect(() => {
         if (
             result.initialized == false ||
-            result.success == false ||
-            result.components.kmtInputStateMachine == null
+            result.success == false
         ) {
             return;
         }
@@ -54,20 +50,19 @@ export const useCanvasPointerDown = (
 ) => {
     const { result } = usePixiCanvas();
 
+    console.log('useCanvasPointerDown hook rendered', result);
+
     useEffect(() => {
-        if (
-            result.initialized == false ||
-            result.success == false ||
-            result.components.app == null
-        ) {
+        const check = appIsReady(result);
+        if (!check.ready) {
             return;
         }
-        result.components.app.canvas.addEventListener('pointerdown', callback);
+
+        const canvas = check.app.canvas;
+        canvas.addEventListener('pointerdown', callback);
         return () => {
-            result.components.app.canvas.removeEventListener(
-                'pointerdown',
-                callback
-            );
+            console.log('remove pointerdown');
+            canvas.removeEventListener('pointerdown', callback);
         };
     }, [result, callback]);
 };
@@ -81,7 +76,7 @@ export const useGrid = () => {
     const app =
         result.initialized &&
             result.success &&
-            result.components.app != null
+            result.components.app != null && result.components.app.renderer != null
             ? result.components.app
             : null;
 

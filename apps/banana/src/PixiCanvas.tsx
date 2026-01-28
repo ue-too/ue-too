@@ -28,6 +28,7 @@ import {
 } from '@/contexts/pixi';
 import {
     useAllBoardCameraState,
+    useAppTicker,
     useCanvasPointerDown,
     useGrid,
     useInitializePixiApp,
@@ -44,6 +45,10 @@ export const PixiCanvas = (
     option: { fullScreen: boolean } = { fullScreen: true }
 ): React.ReactNode => {
     const { canvasRef } = useInitializePixiApp(option);
+
+    // useCanvasPointerDown(() => {
+    //     console.log('pointerdown');
+    // });
 
     useGrid();
 
@@ -236,6 +241,7 @@ export const ScrollBarDisplay = () => {
 };
 
 export const TestDiv = () => {
+
     const { width, height } = useCanvasSize();
 
     return (

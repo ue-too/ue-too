@@ -24,6 +24,7 @@ import {
 import { PixiInputParser } from '@ue-too/board-pixi-integration';
 import { Application, Assets, Graphics, Matrix, Sprite } from 'pixi.js';
 import { createKnitInputStateMachine } from '../input-state-machine/knit-input-state-machine';
+import { PixiCanvasResult } from '@/contexts/pixi';
 
 export type PixiAppComponents = {
     app: Application;
@@ -36,6 +37,7 @@ export type PixiAppComponents = {
     kmtParser: KMTEventParser;
     touchParser: TouchEventParser;
     cleanup: () => void;
+    cleanups: (() => void)[];
 };
 
 export const initApp = async (
@@ -43,7 +45,10 @@ export const initApp = async (
     option: { fullScreen: boolean } = { fullScreen: true }
 ): Promise<PixiAppComponents> => {
     // Create a PixiJS application.
+    console.log('canvasElement', canvasElement);
     const app = new Application();
+
+    const cleanups: (() => void)[] = [];
 
     const camera = new DefaultBoardCamera({
         viewPortWidth: canvasElement.width,
@@ -193,5 +198,13 @@ export const initApp = async (
         kmtParser,
         touchParser,
         cleanup,
+        cleanups,
     };
+};
+
+export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application } => {
+    if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
+        return { ready: false };
+    }
+    return { ready: true, app: result.components.app };
 };

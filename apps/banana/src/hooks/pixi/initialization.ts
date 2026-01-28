@@ -24,10 +24,11 @@ export const useInitializePixiApp = (
             try {
                 // Clean up any existing app first
                 if (appComponentsRef.current) {
-                    appComponentsRef.current.app.destroy(false);
-                    appComponentsRef.current.cleanup();
-                    appComponentsRef.current = null;
                     setResult({ initialized: false });
+                    appComponentsRef.current.cleanup();
+                    appComponentsRef.current.cleanups.forEach(cleanup => cleanup());
+                    appComponentsRef.current.app.destroy(false);
+                    appComponentsRef.current = null;
                 }
 
                 // Small delay to ensure canvas is fully ready
@@ -40,10 +41,11 @@ export const useInitializePixiApp = (
                 const appComponents = await initApp(canvas, option);
 
                 if (!isMounted) {
+                    setResult({ initialized: true, success: false });
+                    appComponents.cleanup();
+                    appComponents.cleanups.forEach(cleanup => cleanup());
                     appComponents.app.destroy(false);
                     appComponentsRef.current = null;
-                    appComponents.cleanup();
-                    setResult({ initialized: true, success: false });
                     return;
                 }
 
@@ -54,9 +56,10 @@ export const useInitializePixiApp = (
                     components: appComponents,
                 });
             } catch (error) {
-                console.error('Failed to initialize PixiJS:', error);
-                appComponentsRef.current?.cleanup();
                 setResult({ initialized: true, success: false });
+                console.error('Failed to initialize PixiJS:', error);
+                appComponentsRef.current?.cleanups.forEach(cleanup => cleanup());
+                appComponentsRef.current?.cleanup();
             } finally {
                 isInitializingRef.current = false;
             }
@@ -69,9 +72,10 @@ export const useInitializePixiApp = (
             isMounted = false;
             isInitializingRef.current = false;
             if (appComponentsRef.current) {
-                appComponentsRef.current.cleanup();
-                appComponentsRef.current.app.destroy(false);
                 setResult({ initialized: false });
+                appComponentsRef.current.cleanup();
+                appComponentsRef.current.cleanups.forEach(cleanup => cleanup());
+                appComponentsRef.current.app.destroy(false);
                 appComponentsRef.current = null;
             }
         };
