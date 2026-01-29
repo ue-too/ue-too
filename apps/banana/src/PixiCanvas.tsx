@@ -36,9 +36,11 @@ import {
 } from '@/hooks/pixi';
 import { useBoardCameraState } from '@/hooks/pixi/camera';
 import { useCanvasSize, useViewportScrollBar } from '@/hooks/pixi/utils';
+
+import { Toolbar } from './components';
 import { Button } from './components/ui/button';
-import { appIsReady } from './utils/pixi';
 import { createKmtInputStateMachineExpansion } from './utils/input-state-machine';
+import { appIsReady } from './utils/pixi';
 
 /**
  * PixiCanvas Component
@@ -87,6 +89,7 @@ export const Wrapper = (
                     <ScrollBarDisplay />
                     <AddRowButton />
                     <RemoveRowButton />
+                    <Toolbar />
                 </OverlayContainer>
             </PixiCanvasProvider>
         </div>
@@ -241,7 +244,6 @@ export const ScrollBarDisplay = () => {
 };
 
 export const TestDiv = () => {
-
     const { width, height } = useCanvasSize();
 
     return (
@@ -279,12 +281,15 @@ const AddRowButton = () => {
     const { result } = usePixiCanvas();
 
     return (
-        <Button className='pointer-events-auto' onClick={() => {
-            const check = appIsReady(result);
-            if(check.ready) {
-                check.components.pixiGrid.addRow();
-            }
-        }}>
+        <Button
+            className="pointer-events-auto"
+            onClick={() => {
+                const check = appIsReady(result);
+                if (check.ready) {
+                    check.components.pixiGrid.addRow();
+                }
+            }}
+        >
             Add Row
         </Button>
     );
@@ -293,12 +298,15 @@ const RemoveRowButton = () => {
     const { result } = usePixiCanvas();
 
     return (
-        <Button className='pointer-events-auto' onClick={() => {
-            const check = appIsReady(result);
-            if(check.ready) {
-                check.components.pixiGrid.removeRow();
-            }
-        }}>
+        <Button
+            className="pointer-events-auto"
+            onClick={() => {
+                const check = appIsReady(result);
+                if (check.ready) {
+                    check.components.pixiGrid.removeRow();
+                }
+            }}
+        >
             Remove Row
         </Button>
     );

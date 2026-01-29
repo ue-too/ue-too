@@ -14,6 +14,7 @@
     "types": "./src/index.ts",
     "module": "./src/index.ts",
     "dependencies": {
+        "@radix-ui/react-separator": "^1.1.8",
         "@radix-ui/react-slot": "^1.2.4",
         "@radix-ui/react-toggle": "^1.1.10",
         "@tailwindcss/vite": "^4.1.18",
