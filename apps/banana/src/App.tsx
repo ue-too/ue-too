@@ -1,5 +1,5 @@
 import './App.css';
-import { Wrapper } from './PixiCanvas';
+import { Wrapper } from './components/PixiCanvas';
 
 /**
  * Main React App Component

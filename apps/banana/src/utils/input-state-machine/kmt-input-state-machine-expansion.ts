@@ -18,7 +18,8 @@ import {
     Canvas,
     DefaultBoardCamera,
     convertFromWindow2Canvas,
-    convertFromCanvas2ViewPort
+    convertFromCanvas2ViewPort,
+    PointerEventPayload
 } from "@ue-too/board";
 import { Point } from "@ue-too/math";
 
@@ -102,6 +103,7 @@ const expandState = createAdaptedStateToExpansionFunc<State<KmtInputEventMapping
  */
 export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> {
 
+    private _originalEventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping> = {};
 
     constructor() {
         super();
@@ -119,6 +121,9 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
         this.uponEnter = originalIdleState.uponEnter as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, from: KmtInputStateMachineExpansionStates | 'INITIAL') => void;
         this.beforeExit = originalIdleState.beforeExit as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, to: KmtInputStateMachineExpansionStates | 'TERMINAL') => void;
 
+        // NOTE if you want to expand the original event reactions instead of just overriding them, you can keep a reference to the original event reactions and merge them with the new ones.
+        this._originalEventReactions = parentReactions;
+
         // Merge parent's event reactions with new ones
         // The spread operator ensures all existing handlers are preserved
         // Type assertion is safe because expansion types are supersets of original types
@@ -131,9 +136,7 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             //     defaultTargetState: 'IDLE',
             // },
             leftPointerDown: {
-                action: (context, eventPayload, stateMachine) => {
-                    console.log('leftPointerDown', eventPayload);
-                },
+                action: this.leftPointerDown.bind(this),
                 defaultTargetState: "PLACEMENT",
             },
         } as EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
@@ -156,6 +159,11 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
     //     // You can still call the parent's handler if needed:
     //     // super.middlePointerDownHandler(context, payload);
     // }
+    leftPointerDown(context: KmtInputStateMachineExpansionContext, eventPayload: PointerEventPayload, stateMachine: KmtExpandedStateMachine): void {
+        const res = this._originalEventReactions['leftPointerDown']?.action(context, eventPayload, stateMachine);
+
+        console.log('leftPointerDown', eventPayload);
+    }
 }
 
 export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> {
