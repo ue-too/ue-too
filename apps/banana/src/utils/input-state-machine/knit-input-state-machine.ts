@@ -14,11 +14,11 @@ type KnitInputEventMapping = {
 
 class KnitMoveState extends TemplateState<KnitInputEventMapping, BaseContext, KnitInputStates> {
 
-    private _cMachine: KmtExpandedStateMachine;
+    private _cMachine: KmtInputStateMachine;
 
     constructor(childContext: KmtInputContext) {
         super();
-        this._cMachine = createKmtInputStateMachineExpansion(childContext);
+        this._cMachine = createKmtInputStateMachine(childContext);
     }
 
     uponEnter(context: BaseContext, stateMachine: StateMachine<KnitInputEventMapping, BaseContext, KnitInputStates, DefaultOutputMapping<KnitInputEventMapping>>, from: KnitInputStates | "INITIAL"): void {

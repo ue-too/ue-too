@@ -1,6 +1,6 @@
 import { Cell } from "@/knit-grid/grid";
 import { PixiGrid } from "@/knit-grid/grid-pixi";
-import { BaseContext, CreateStateType, EventReactions, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { CreateStateType, EventReactions, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import {
     KmtIdleState,
     KmtInputStates,
@@ -13,7 +13,6 @@ import {
     InitialPanState,
     ReadyToPanViaSpaceBarState,
     ReadyToPanViaScrollWheelState,
-    KmtInputStateMachine,
     ObservableInputTracker,
     Canvas,
     DefaultBoardCamera,
