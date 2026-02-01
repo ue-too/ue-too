@@ -1,6 +1,6 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
-import { TrackSegmentDrawData } from './track';
+import type { TrackSegmentDrawData } from './track';
 import { offset2 } from '@ue-too/curve';
 
 /**
@@ -443,15 +443,68 @@ export class GenericEntityManager<T> {
 }
 
 /**
+ * Cache key for shadow calculations
+ */
+type ShadowCacheKey = string;
+
+/**
+ * Cache entry for shadow calculations
+ */
+type ShadowCacheEntry = {
+    positive: Point[];
+    negative: Point[];
+};
+
+/**
+ * Global cache for shadow calculations
+ * Key format: `${sunAngle}_${curveHash}_${elevationFrom}_${elevationTo}`
+ */
+const shadowCache = new Map<ShadowCacheKey, ShadowCacheEntry>();
+
+/**
+ * Generate a hash string from curve control points for cache key
+ */
+function getCurveHash(curve: { getControlPoints(): Point[] }): string {
+    const cps = curve.getControlPoints();
+    // Create a stable string representation of control points
+    return cps.map(p => `${p.x.toFixed(6)},${p.y.toFixed(6)}`).join('|');
+}
+
+/**
+ * Generate cache key for shadow calculation
+ */
+function getShadowCacheKey(
+    trackSegment: TrackSegmentDrawData,
+    sunAngle: number,
+    baseShadowLength: number
+): ShadowCacheKey {
+    const curveHash = getCurveHash(trackSegment.curve);
+    return `${sunAngle}_${baseShadowLength}_${curveHash}_${trackSegment.elevation.from}_${trackSegment.elevation.to}`;
+}
+
+/**
  * Calculate shadow points for an elevated track segment.
  * The shadow is projected from the track edges in the sun direction.
+ * Results are memoized based on sun angle and track segment properties.
  * 
  * @param trackSegment - The track segment draw data
  * @param sunAngle - Sun angle in degrees (0 = right, 90 = up, 180 = left, 270 = down)
  * @param baseShadowLength - Base shadow length multiplier (default: 20)
  * @returns Object with positive and negative shadow edge points
  */
-export const shadows = (trackSegment: TrackSegmentDrawData, sunAngle: number, baseShadowLength: number = 20) => {
+export const shadows = (
+    trackSegment: TrackSegmentDrawData,
+    sunAngle: number,
+    baseShadowLength: number = 20
+): { positive: Point[]; negative: Point[] } => {
+    // Check cache first
+    const cacheKey = getShadowCacheKey(trackSegment, sunAngle, baseShadowLength);
+    const cached = shadowCache.get(cacheKey);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    // Calculate shadow points
     const steps = 10;
     const positive: Point[] = [];
     const negative: Point[] = [];
@@ -463,7 +516,9 @@ export const shadows = (trackSegment: TrackSegmentDrawData, sunAngle: number, ba
     const trackGauge = 1.067;
     const trackHalfWidth = trackGauge / 2;
 
-    for(let t = 0; t <= 1; t += 1 / steps) {
+    // Iterate from 0 to steps (inclusive) to ensure t=0 and t=1 are both included
+    for(let i = 0; i <= steps; i++) {
+        const t = i / steps; // This guarantees t=0 and t=1 exactly
         const point = trackSegment.curve.getPointbyPercentage(t);
         const elevationAtPoint = trackSegment.elevation.from + (trackSegment.elevation.to - trackSegment.elevation.from) * t;
         
@@ -493,7 +548,7 @@ export const shadows = (trackSegment: TrackSegmentDrawData, sunAngle: number, ba
         if (elevationAtPoint > 0) {
             // Shadow length scales with elevation
             // elevationAtPoint is in world units (e.g., 10, 20, 30 for ABOVE_1, ABOVE_2, ABOVE_3)
-            shadowLength = baseShadowLength * (elevationAtPoint / 100);
+            shadowLength = baseShadowLength * (elevationAtPoint / 10);
         }
 
         // Calculate shadow offset direction (sun direction)
@@ -515,8 +570,20 @@ export const shadows = (trackSegment: TrackSegmentDrawData, sunAngle: number, ba
         negative.push(negativeShadowPoint);
     }
 
-    return {
+    const result = {
         positive,
         negative,
     };
+
+    // Store in cache
+    shadowCache.set(cacheKey, result);
+
+    return result;
+};
+
+/**
+ * Clear the shadow cache. Useful when track data changes significantly.
+ */
+export const clearShadowCache = (): void => {
+    shadowCache.clear();
 };
