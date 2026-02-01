@@ -1,7 +1,14 @@
-import { Point, PointCal } from "@ue-too/math";
-import { multiplyMatrix, TransformationMatrix } from "./matrix";
-import { convertFromCanvas2ViewPort, convertFromViewPort2Canvas } from "../../utils/coordinate-conversions/canvas-viewport";
-import { convertFromViewport2World, convertFromWorld2Viewport } from "../../utils/coordinate-conversions/viewport-world";
+import { Point, PointCal } from '@ue-too/math';
+
+import {
+    convertFromCanvas2ViewPort,
+    convertFromViewPort2Canvas,
+} from '../../utils/coordinate-conversions/canvas-viewport';
+import {
+    convertFromViewport2World,
+    convertFromWorld2Viewport,
+} from '../../utils/coordinate-conversions/viewport-world';
+import { TransformationMatrix, multiplyMatrix } from './matrix';
 
 /**
  * Converts a viewport point to world space with respect to a hypothetical camera position.
@@ -38,9 +45,26 @@ import { convertFromViewport2World, convertFromWorld2Viewport } from "../../util
  *
  * @category Camera
  */
-export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Point, viewPortWidth: number, viewPortHeight: number, cameraZoomLevel: number, cameraRotation: number): Point{
-    const interestPointInViewPort = convertFromCanvas2ViewPort(interestPoint, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
-    return convertFromViewport2World(interestPointInViewPort, targetPosition, cameraZoomLevel, cameraRotation, false);
+export function convert2WorldSpaceWRT(
+    targetPosition: Point,
+    interestPoint: Point,
+    viewPortWidth: number,
+    viewPortHeight: number,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    const interestPointInViewPort = convertFromCanvas2ViewPort(
+        interestPoint,
+        { x: viewPortWidth / 2, y: viewPortHeight / 2 },
+        false
+    );
+    return convertFromViewport2World(
+        interestPointInViewPort,
+        targetPosition,
+        cameraZoomLevel,
+        cameraRotation,
+        false
+    );
 }
 
 /**
@@ -75,9 +99,26 @@ export function convert2WorldSpaceWRT(targetPosition: Point, interestPoint: Poin
  *
  * @category Camera
  */
-export function convert2WorldSpace(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    const pointInViewPort = convertFromCanvas2ViewPort(point, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
-    return convertFromViewport2World(pointInViewPort, cameraPosition, cameraZoomLevel, cameraRotation, false);
+export function convert2WorldSpace(
+    point: Point,
+    viewPortWidth: number,
+    viewPortHeight: number,
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    const pointInViewPort = convertFromCanvas2ViewPort(
+        point,
+        { x: viewPortWidth / 2, y: viewPortHeight / 2 },
+        false
+    );
+    return convertFromViewport2World(
+        pointInViewPort,
+        cameraPosition,
+        cameraZoomLevel,
+        cameraRotation,
+        false
+    );
 }
 
 /**
@@ -122,8 +163,19 @@ export function convert2WorldSpace(point: Point, viewPortWidth: number, viewPort
  *
  * @category Camera
  */
-export function convert2WorldSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    return convertFromViewport2World(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
+export function convert2WorldSpaceAnchorAtCenter(
+    point: Point,
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    return convertFromViewport2World(
+        point,
+        cameraPosition,
+        cameraZoomLevel,
+        cameraRotation,
+        false
+    );
 }
 
 /**
@@ -161,8 +213,19 @@ export function convert2WorldSpaceAnchorAtCenter(point: Point, cameraPosition: P
  *
  * @category Camera
  */
-export function convert2ViewPortSpaceAnchorAtCenter(point: Point, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    return convertFromWorld2Viewport(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
+export function convert2ViewPortSpaceAnchorAtCenter(
+    point: Point,
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    return convertFromWorld2Viewport(
+        point,
+        cameraPosition,
+        cameraZoomLevel,
+        cameraRotation,
+        false
+    );
 }
 
 /**
@@ -197,9 +260,26 @@ export function convert2ViewPortSpaceAnchorAtCenter(point: Point, cameraPosition
  *
  * @category Camera
  */
-export function invertFromWorldSpace(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    const pointInViewPort = convertFromWorld2Viewport(point, cameraPosition, cameraZoomLevel, cameraRotation, false);
-    return convertFromViewPort2Canvas(pointInViewPort, {x: viewPortWidth / 2, y: viewPortHeight / 2}, false);
+export function invertFromWorldSpace(
+    point: Point,
+    viewPortWidth: number,
+    viewPortHeight: number,
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    const pointInViewPort = convertFromWorld2Viewport(
+        point,
+        cameraPosition,
+        cameraZoomLevel,
+        cameraRotation,
+        false
+    );
+    return convertFromViewPort2Canvas(
+        pointInViewPort,
+        { x: viewPortWidth / 2, y: viewPortHeight / 2 },
+        false
+    );
 }
 
 /**
@@ -231,9 +311,28 @@ export function invertFromWorldSpace(point: Point, viewPortWidth: number, viewPo
  *
  * @category Camera
  */
-export function pointIsInViewPort(point: Point, viewPortWidth: number, viewPortHeight: number, cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): boolean{
-    const pointInCameraFrame = invertFromWorldSpace(point, viewPortWidth, viewPortHeight, cameraPosition, cameraZoomLevel, cameraRotation);
-    if(pointInCameraFrame.x < 0 || pointInCameraFrame.x > viewPortWidth || pointInCameraFrame.y < 0 || pointInCameraFrame.y > viewPortHeight){
+export function pointIsInViewPort(
+    point: Point,
+    viewPortWidth: number,
+    viewPortHeight: number,
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): boolean {
+    const pointInCameraFrame = invertFromWorldSpace(
+        point,
+        viewPortWidth,
+        viewPortHeight,
+        cameraPosition,
+        cameraZoomLevel,
+        cameraRotation
+    );
+    if (
+        pointInCameraFrame.x < 0 ||
+        pointInCameraFrame.x > viewPortWidth ||
+        pointInCameraFrame.y < 0 ||
+        pointInCameraFrame.y > viewPortHeight
+    ) {
         return false;
     }
     return true;
@@ -270,8 +369,15 @@ export function pointIsInViewPort(point: Point, viewPortWidth: number, viewPortH
  *
  * @category Camera
  */
-export function convertDeltaInViewPortToWorldSpace(delta: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    return PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, cameraRotation), 1 / cameraZoomLevel);
+export function convertDeltaInViewPortToWorldSpace(
+    delta: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    return PointCal.multiplyVectorByScalar(
+        PointCal.rotatePoint(delta, cameraRotation),
+        1 / cameraZoomLevel
+    );
 }
 
 /**
@@ -304,8 +410,15 @@ export function convertDeltaInViewPortToWorldSpace(delta: Point, cameraZoomLevel
  *
  * @category Camera
  */
-export function convertDeltaInWorldToViewPortSpace(delta: Point, cameraZoomLevel: number, cameraRotation: number): Point{
-    return PointCal.multiplyVectorByScalar(PointCal.rotatePoint(delta, -cameraRotation), cameraZoomLevel);
+export function convertDeltaInWorldToViewPortSpace(
+    delta: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    return PointCal.multiplyVectorByScalar(
+        PointCal.rotatePoint(delta, -cameraRotation),
+        cameraZoomLevel
+    );
 }
 
 /**
@@ -352,8 +465,16 @@ export function convertDeltaInWorldToViewPortSpace(delta: Point, cameraZoomLevel
  *
  * @category Camera
  */
-export function cameraPositionToGet(pointInWorld: Point, toPointInViewPort: Point, cameraZoomLevel: number, cameraRotation: number): Point {
-    const scaled = PointCal.multiplyVectorByScalar(toPointInViewPort, 1 / cameraZoomLevel);
+export function cameraPositionToGet(
+    pointInWorld: Point,
+    toPointInViewPort: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): Point {
+    const scaled = PointCal.multiplyVectorByScalar(
+        toPointInViewPort,
+        1 / cameraZoomLevel
+    );
     const rotated = PointCal.rotatePoint(scaled, cameraRotation);
     return PointCal.subVector(pointInWorld, rotated);
 }
@@ -375,31 +496,38 @@ export function cameraPositionToGet(pointInWorld: Point, toPointInViewPort: Poin
  *
  * @category Camera
  */
-export function transformationMatrixFromCamera(cameraPosition: Point, cameraZoomLevel: number, cameraRotation: number): TransformationMatrix{
+export function transformationMatrixFromCamera(
+    cameraPosition: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number
+): TransformationMatrix {
     const cos = Math.cos(cameraRotation);
     const sin = Math.sin(cameraRotation);
-    const trMatrix = multiplyMatrix({
-        a: 1,
-        b: 0,
-        c: 0,
-        d: 1,
-        e: cameraPosition.x,
-        f: cameraPosition.y
-    }, {
-        a: cos,
-        b: sin,
-        c: -sin,
-        d: cos,
-        e: 0,
-        f: 0
-    });
+    const trMatrix = multiplyMatrix(
+        {
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
+            e: cameraPosition.x,
+            f: cameraPosition.y,
+        },
+        {
+            a: cos,
+            b: sin,
+            c: -sin,
+            d: cos,
+            e: 0,
+            f: 0,
+        }
+    );
     const trsMatrix = multiplyMatrix(trMatrix, {
         a: 1 / cameraZoomLevel,
         b: 0,
         c: 0,
         d: 1 / cameraZoomLevel,
         e: 0,
-        f: 0
+        f: 0,
     });
     return trsMatrix;
 }
@@ -436,9 +564,18 @@ export function transformationMatrixFromCamera(cameraPosition: Point, cameraZoom
  * @category Camera
  * @see {@link transformationMatrixFromCamera} to create the matrix
  */
-export function convert2WorldSpaceWithTransformationMatrix(point: Point, transformationMatrix: TransformationMatrix): Point{
+export function convert2WorldSpaceWithTransformationMatrix(
+    point: Point,
+    transformationMatrix: TransformationMatrix
+): Point {
     return {
-        x: point.x * transformationMatrix.a + point.y * transformationMatrix.c + transformationMatrix.e,
-        y: point.x * transformationMatrix.b + point.y * transformationMatrix.d + transformationMatrix.f
-    }
+        x:
+            point.x * transformationMatrix.a +
+            point.y * transformationMatrix.c +
+            transformationMatrix.e,
+        y:
+            point.x * transformationMatrix.b +
+            point.y * transformationMatrix.d +
+            transformationMatrix.f,
+    };
 }

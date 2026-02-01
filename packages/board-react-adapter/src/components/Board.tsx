@@ -1,11 +1,28 @@
-import {useRef, useCallback, useSyncExternalStore, useMemo, useState} from "react";
-import {useAnimationFrame, useAnimationFrameWithBoard} from "../hooks/useAnimationFrame";
-import {BoardProvider, useBoard, useBoardCameraState, useCustomCameraMux, useCustomInputHandling} from "../hooks/useBoardify";
-import { Point, PointCal } from "@ue-too/math";
-import type { CameraMux } from "@ue-too/board/camera";
-import { useCanvasProxyWithRef } from "../hooks/useCanvasProxy";
-import { useEffect } from "react";
-import { OutputEvent } from "@ue-too/board";
+import { OutputEvent } from '@ue-too/board';
+import type { CameraMux } from '@ue-too/board/camera';
+import { Point, PointCal } from '@ue-too/math';
+import {
+    useCallback,
+    useMemo,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from 'react';
+import { useEffect } from 'react';
+
+import {
+    useAnimationFrame,
+    useAnimationFrameWithBoard,
+} from '../hooks/useAnimationFrame';
+import {
+    BoardProvider,
+    useBoard,
+    useBoardCameraState,
+    useCustomCameraMux,
+    useCustomInputHandling,
+} from '../hooks/useBoardify';
+import { useCanvasProxyWithRef } from '../hooks/useCanvasProxy';
+
 /**
  * Props for the Board component.
  *
@@ -19,10 +36,13 @@ export type BoardProps = {
     /** Canvas height in pixels */
     height?: number;
     /** Callback function for drawing on each animation frame */
-    animationCallback?: (timestamp: number, ctx: CanvasRenderingContext2D) => void;
+    animationCallback?: (
+        timestamp: number,
+        ctx: CanvasRenderingContext2D
+    ) => void;
     /** Child components that can access the board via hooks */
     children?: React.ReactNode;
-}
+};
 
 /**
  * Internal Board component that renders the canvas element.
@@ -33,8 +53,12 @@ export type BoardProps = {
  *
  * @internal
  */
-function Board({width, height, fullScreen, animationCallback: animationCallbackProp}: BoardProps) {
-
+function Board({
+    width,
+    height,
+    fullScreen,
+    animationCallback: animationCallbackProp,
+}: BoardProps) {
     const board = useBoard();
 
     useAnimationFrameWithBoard(animationCallbackProp);
@@ -47,7 +71,7 @@ function Board({width, height, fullScreen, animationCallback: animationCallbackP
         <canvas
             width={width}
             height={height}
-            ref={(ref) => {
+            ref={ref => {
                 if (ref == null) {
                     board.tearDown();
                     return;
@@ -159,24 +183,34 @@ function Board({width, height, fullScreen, animationCallback: animationCallbackP
  * @see {@link useCameraInput} for camera control functions
  * @see {@link useBoard} for accessing the board instance
  */
-export default function BoardWrapperWithChildren({width, height, fullScreen, animationCallback: animationCallbackProp, children}: BoardProps) {
+export default function BoardWrapperWithChildren({
+    width,
+    height,
+    fullScreen,
+    animationCallback: animationCallbackProp,
+    children,
+}: BoardProps) {
     return (
         <BoardProvider>
-            <Board width={width} height={height} fullScreen={fullScreen} animationCallback={animationCallbackProp} />
+            <Board
+                width={width}
+                height={height}
+                fullScreen={fullScreen}
+                animationCallback={animationCallbackProp}
+            />
             {children}
         </BoardProvider>
     );
 }
 
-class KeyboardMouseInput{
-
+class KeyboardMouseInput {
     private isPanning: boolean;
     private panStartPoint: Point;
     private processInputEvent: (input: OutputEvent) => void;
 
-    constructor(processInputEvent: (input: OutputEvent) => void){
+    constructor(processInputEvent: (input: OutputEvent) => void) {
         this.isPanning = false;
-        this.panStartPoint = {x: 0, y: 0};
+        this.panStartPoint = { x: 0, y: 0 };
         this.processInputEvent = processInputEvent;
         this.bindFunctions();
     }
@@ -188,18 +222,18 @@ class KeyboardMouseInput{
     }
 
     pointerdownHandler(event: PointerEvent): void {
-        if(event.pointerType !== "mouse"){
+        if (event.pointerType !== 'mouse') {
             return;
         }
         this.isPanning = true;
-        this.panStartPoint = {x: event.clientX, y: event.clientY};
+        this.panStartPoint = { x: event.clientX, y: event.clientY };
     }
 
     pointermoveHandler(event: PointerEvent): void {
-        if(!this.isPanning){
+        if (!this.isPanning) {
             return;
         }
-        const curPosition = {x: event.clientX, y: event.clientY};
+        const curPosition = { x: event.clientX, y: event.clientY };
         const diff = PointCal.subVector(this.panStartPoint, curPosition);
         this.processInputEvent({
             type: 'pan',
@@ -209,10 +243,9 @@ class KeyboardMouseInput{
     }
 
     pointerupHandler(event: PointerEvent): void {
-        if(event.pointerType !== "mouse"){
+        if (event.pointerType !== 'mouse') {
             return;
         }
         this.isPanning = false;
     }
-
 }

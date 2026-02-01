@@ -1,67 +1,65 @@
 {
-  "name": "curve",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/curve/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/curve"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": ["math"],
+    "name": "curve",
+    "projectType": "library",
+    "sourceRoot": "packages/curve/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/curve"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/curve"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/curve && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/curve"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/curve"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/curve/dist",
+                "forwardAllArgs": false
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/curve"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/curve"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/curve"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/curve"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "forwardAllArgs": false,
-        "cwd": "packages/curve/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/curve && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/curve"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": [
-    "math"
-  ]
 }

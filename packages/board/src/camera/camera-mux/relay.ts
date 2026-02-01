@@ -1,5 +1,11 @@
-import { CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput } from "./interface";
-import { Point } from "@ue-too/math";
+import { Point } from '@ue-too/math';
+
+import {
+    CameraMux,
+    CameraMuxPanOutput,
+    CameraMuxRotationOutput,
+    CameraMuxZoomOutput,
+} from './interface';
 
 /**
  * Stateless camera input multiplexer that always allows inputs to pass through.
@@ -40,12 +46,10 @@ import { Point } from "@ue-too/math";
  * @see {@link createDefaultCameraMux} for a factory function
  */
 export class Relay implements CameraMux {
-
     /**
      * Creates a new stateless relay multiplexer.
      */
-    constructor() {
-    }
+    constructor() {}
 
     /**
      * Processes pan input by always allowing it through unchanged.
@@ -64,8 +68,15 @@ export class Relay implements CameraMux {
      * @param anchorPoint - Point to zoom towards in viewport coordinates
      * @returns Output allowing passthrough with the original parameters
      */
-    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): CameraMuxZoomOutput {
-        return { allowPassThrough: true, delta: deltaZoomAmount, anchorPoint: anchorPoint };
+    notifyZoomInput(
+        deltaZoomAmount: number,
+        anchorPoint: Point
+    ): CameraMuxZoomOutput {
+        return {
+            allowPassThrough: true,
+            delta: deltaZoomAmount,
+            anchorPoint: anchorPoint,
+        };
     }
 
     /**
@@ -77,7 +88,6 @@ export class Relay implements CameraMux {
     notifyRotationInput(deltaRotation: number): CameraMuxRotationOutput {
         return { allowPassThrough: true, delta: deltaRotation };
     }
-
 }
 
 /**

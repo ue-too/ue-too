@@ -1,5 +1,6 @@
-import type { Point } from "@ue-too/math";
-import { AsyncObservable, Observable, Observer } from "../../utils/observable";
+import type { Point } from '@ue-too/math';
+
+import { AsyncObservable, Observable, Observer } from '../../utils/observable';
 
 /**
  * Function to unsubscribe from raw user input events.
@@ -20,7 +21,7 @@ export type UnsubscribeToUserRawInput = () => void;
  */
 export type RawUserPanInputEventPayload = {
     diff: Point;
-}
+};
 
 /**
  * Pan input event with discriminated type.
@@ -32,7 +33,7 @@ export type RawUserPanInputEventPayload = {
  * @category Raw Input Publisher
  */
 export type RawUserPanInputEvent = {
-    type: "pan",
+    type: 'pan';
 } & RawUserPanInputEventPayload;
 
 /**
@@ -46,7 +47,7 @@ export type RawUserPanInputEvent = {
 export type RawUserZoomInputEventPayload = {
     deltaZoomAmount: number;
     anchorPoint: Point;
-}
+};
 
 /**
  * Zoom input event with discriminated type.
@@ -58,7 +59,7 @@ export type RawUserZoomInputEventPayload = {
  * @category Raw Input Publisher
  */
 export type RawUserZoomInputEvent = {
-    type: "zoom",
+    type: 'zoom';
 } & RawUserZoomInputEventPayload;
 
 /**
@@ -70,7 +71,7 @@ export type RawUserZoomInputEvent = {
  */
 export type RawUserRotateInputEventPayload = {
     deltaRotation: number;
-}
+};
 
 /**
  * Rotate input event with discriminated type.
@@ -82,7 +83,7 @@ export type RawUserRotateInputEventPayload = {
  * @category Raw Input Publisher
  */
 export type RawUserRotateInputEvent = {
-    type: "rotate",
+    type: 'rotate';
 } & RawUserRotateInputEventPayload;
 
 /**
@@ -96,11 +97,11 @@ export type RawUserRotateInputEvent = {
  * @category Raw Input Publisher
  */
 export type RawUserInputEventMap = {
-    "pan": RawUserPanInputEventPayload,
-    "zoom": RawUserZoomInputEventPayload,
-    "rotate": RawUserRotateInputEventPayload,
-    "all": RawUserInputEvent,
-}
+    pan: RawUserPanInputEventPayload;
+    zoom: RawUserZoomInputEventPayload;
+    rotate: RawUserRotateInputEventPayload;
+    all: RawUserInputEvent;
+};
 
 /**
  * Union type of all raw user input events.
@@ -110,7 +111,10 @@ export type RawUserInputEventMap = {
  *
  * @category Raw Input Publisher
  */
-export type RawUserInputEvent = RawUserPanInputEvent | RawUserZoomInputEvent | RawUserRotateInputEvent;
+export type RawUserInputEvent =
+    | RawUserPanInputEvent
+    | RawUserZoomInputEvent
+    | RawUserRotateInputEvent;
 
 /**
  * Callback function type for raw user input events.
@@ -119,7 +123,9 @@ export type RawUserInputEvent = RawUserPanInputEvent | RawUserZoomInputEvent | R
  *
  * @category Raw Input Publisher
  */
-export type RawUserInputCallback<K extends keyof RawUserInputEventMap> = (event: RawUserInputEventMap[K])=>void;
+export type RawUserInputCallback<K extends keyof RawUserInputEventMap> = (
+    event: RawUserInputEventMap[K]
+) => void;
 
 /**
  * Interface for publishing raw user input events to observers.
@@ -139,7 +145,10 @@ export interface UserInputPublisher {
     /** Notifies subscribers of a rotate gesture */
     notifyRotate(deltaRotation: number): void;
     /** Subscribes to input events */
-    on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput;
+    on<K extends keyof RawUserInputEventMap>(
+        eventName: K,
+        callback: (event: RawUserInputEventMap[K]) => void
+    ): UnsubscribeToUserRawInput;
 }
 
 /**
@@ -203,46 +212,79 @@ export interface UserInputPublisher {
  * ```
  */
 export class RawUserInputPublisher implements UserInputPublisher {
+    private pan: Observable<Parameters<RawUserInputCallback<'pan'>>>;
+    private zoom: Observable<Parameters<RawUserInputCallback<'zoom'>>>;
+    private rotate: Observable<Parameters<RawUserInputCallback<'rotate'>>>;
+    private all: Observable<Parameters<RawUserInputCallback<'all'>>>;
 
-    private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
-    private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
-    private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
-    private all: Observable<Parameters<RawUserInputCallback<"all">>>;
-
-    constructor(){
-        this.pan = new AsyncObservable<Parameters<RawUserInputCallback<"pan">>>();
-        this.zoom = new AsyncObservable<Parameters<RawUserInputCallback<"zoom">>>();
-        this.rotate = new AsyncObservable<Parameters<RawUserInputCallback<"rotate">>>();
-        this.all = new AsyncObservable<Parameters<RawUserInputCallback<"all">>>();
+    constructor() {
+        this.pan = new AsyncObservable<
+            Parameters<RawUserInputCallback<'pan'>>
+        >();
+        this.zoom = new AsyncObservable<
+            Parameters<RawUserInputCallback<'zoom'>>
+        >();
+        this.rotate = new AsyncObservable<
+            Parameters<RawUserInputCallback<'rotate'>>
+        >();
+        this.all = new AsyncObservable<
+            Parameters<RawUserInputCallback<'all'>>
+        >();
     }
 
     notifyPan(diff: Point): void {
-        this.pan.notify({diff: diff});
-        this.all.notify({type: "pan", diff: diff});
+        this.pan.notify({ diff: diff });
+        this.all.notify({ type: 'pan', diff: diff });
     }
 
     notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
-        this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
-        this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
+        this.zoom.notify({
+            deltaZoomAmount: deltaZoomAmount,
+            anchorPoint: anchorPoint,
+        });
+        this.all.notify({
+            type: 'zoom',
+            deltaZoomAmount: deltaZoomAmount,
+            anchorPoint: anchorPoint,
+        });
     }
 
     notifyRotate(deltaRotation: number): void {
-        this.rotate.notify({deltaRotation: deltaRotation});
-        this.all.notify({type: "rotate", deltaRotation: deltaRotation});
+        this.rotate.notify({ deltaRotation: deltaRotation });
+        this.all.notify({ type: 'rotate', deltaRotation: deltaRotation });
     }
 
-    on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
-        switch (eventName){
-        case "pan":
-            return this.pan.subscribe(callback as Observer<Parameters<RawUserInputCallback<"pan">>>);
-        case "zoom":
-            return this.zoom.subscribe(callback as Observer<Parameters<RawUserInputCallback<"zoom">>>);
-        case "rotate":
-            return this.rotate.subscribe(callback as Observer<Parameters<RawUserInputCallback<"rotate">>>);
-        case "all":
-            return this.all.subscribe(callback as Observer<Parameters<RawUserInputCallback<"all">>>);
-        default:
-            throw new Error("Invalid raw user input event name");
+    on<K extends keyof RawUserInputEventMap>(
+        eventName: K,
+        callback: (event: RawUserInputEventMap[K]) => void
+    ): UnsubscribeToUserRawInput {
+        switch (eventName) {
+            case 'pan':
+                return this.pan.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'pan'>>
+                    >
+                );
+            case 'zoom':
+                return this.zoom.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'zoom'>>
+                    >
+                );
+            case 'rotate':
+                return this.rotate.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'rotate'>>
+                    >
+                );
+            case 'all':
+                return this.all.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'all'>>
+                    >
+                );
+            default:
+                throw new Error('Invalid raw user input event name');
         }
     }
 }
@@ -263,51 +305,97 @@ export function createDefaultRawUserInputPublisher(): RawUserInputPublisher {
 }
 
 export class RawUserInputPublisherWithWebWorkerRelay implements UserInputPublisher {
-
-    private pan: Observable<Parameters<RawUserInputCallback<"pan">>>;
-    private zoom: Observable<Parameters<RawUserInputCallback<"zoom">>>;
-    private rotate: Observable<Parameters<RawUserInputCallback<"rotate">>>;
-    private all: Observable<Parameters<RawUserInputCallback<"all">>>;
+    private pan: Observable<Parameters<RawUserInputCallback<'pan'>>>;
+    private zoom: Observable<Parameters<RawUserInputCallback<'zoom'>>>;
+    private rotate: Observable<Parameters<RawUserInputCallback<'rotate'>>>;
+    private all: Observable<Parameters<RawUserInputCallback<'all'>>>;
     private webWorker: Worker;
 
-    constructor(webWorker: Worker){
-        this.pan = new AsyncObservable<Parameters<RawUserInputCallback<"pan">>>();
-        this.zoom = new AsyncObservable<Parameters<RawUserInputCallback<"zoom">>>();
-        this.rotate = new AsyncObservable<Parameters<RawUserInputCallback<"rotate">>>();
-        this.all = new AsyncObservable<Parameters<RawUserInputCallback<"all">>>();
+    constructor(webWorker: Worker) {
+        this.pan = new AsyncObservable<
+            Parameters<RawUserInputCallback<'pan'>>
+        >();
+        this.zoom = new AsyncObservable<
+            Parameters<RawUserInputCallback<'zoom'>>
+        >();
+        this.rotate = new AsyncObservable<
+            Parameters<RawUserInputCallback<'rotate'>>
+        >();
+        this.all = new AsyncObservable<
+            Parameters<RawUserInputCallback<'all'>>
+        >();
         this.webWorker = webWorker;
     }
 
     notifyPan(diff: Point): void {
-        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "pan", diff: diff}});
-        this.pan.notify({diff: diff});
-        this.all.notify({type: "pan", diff: diff});
+        this.webWorker.postMessage({
+            type: 'notifyUserInput',
+            payload: { type: 'pan', diff: diff },
+        });
+        this.pan.notify({ diff: diff });
+        this.all.notify({ type: 'pan', diff: diff });
     }
 
     notifyZoom(deltaZoomAmount: number, anchorPoint: Point): void {
-        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint}});
-        this.zoom.notify({deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
-        this.all.notify({type: "zoom", deltaZoomAmount: deltaZoomAmount, anchorPoint: anchorPoint});
+        this.webWorker.postMessage({
+            type: 'notifyUserInput',
+            payload: {
+                type: 'zoom',
+                deltaZoomAmount: deltaZoomAmount,
+                anchorPoint: anchorPoint,
+            },
+        });
+        this.zoom.notify({
+            deltaZoomAmount: deltaZoomAmount,
+            anchorPoint: anchorPoint,
+        });
+        this.all.notify({
+            type: 'zoom',
+            deltaZoomAmount: deltaZoomAmount,
+            anchorPoint: anchorPoint,
+        });
     }
 
     notifyRotate(deltaRotation: number): void {
-        this.webWorker.postMessage({type: "notifyUserInput", payload: {type: "rotate", deltaRotation: deltaRotation}});
-        this.rotate.notify({deltaRotation: deltaRotation});
-        this.all.notify({type: "rotate", deltaRotation: deltaRotation});
+        this.webWorker.postMessage({
+            type: 'notifyUserInput',
+            payload: { type: 'rotate', deltaRotation: deltaRotation },
+        });
+        this.rotate.notify({ deltaRotation: deltaRotation });
+        this.all.notify({ type: 'rotate', deltaRotation: deltaRotation });
     }
-    
-    on<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=>void): UnsubscribeToUserRawInput {
-        switch (eventName){
-        case "pan":
-            return this.pan.subscribe(callback as Observer<Parameters<RawUserInputCallback<"pan">>>);
-        case "zoom":
-            return this.zoom.subscribe(callback as Observer<Parameters<RawUserInputCallback<"zoom">>>);
-        case "rotate":
-            return this.rotate.subscribe(callback as Observer<Parameters<RawUserInputCallback<"rotate">>>);
-        case "all":
-            return this.all.subscribe(callback as Observer<Parameters<RawUserInputCallback<"all">>>);
-        default:
-            throw new Error("Invalid raw user input event name");
+
+    on<K extends keyof RawUserInputEventMap>(
+        eventName: K,
+        callback: (event: RawUserInputEventMap[K]) => void
+    ): UnsubscribeToUserRawInput {
+        switch (eventName) {
+            case 'pan':
+                return this.pan.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'pan'>>
+                    >
+                );
+            case 'zoom':
+                return this.zoom.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'zoom'>>
+                    >
+                );
+            case 'rotate':
+                return this.rotate.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'rotate'>>
+                    >
+                );
+            case 'all':
+                return this.all.subscribe(
+                    callback as Observer<
+                        Parameters<RawUserInputCallback<'all'>>
+                    >
+                );
+            default:
+                throw new Error('Invalid raw user input event name');
         }
     }
 }

@@ -1,7 +1,11 @@
-import { TouchEventMapping, TouchInputStateMachine } from "../../input-interpretation/input-state-machine/touch-input-state-machine";
-import { TouchPoints } from "../../input-interpretation/input-state-machine/touch-input-context";
-import type { InputOrchestrator } from "../input-orchestrator";
-import { EventArgs } from "@ue-too/being";
+import { EventArgs } from '@ue-too/being';
+
+import { TouchPoints } from '../../input-interpretation/input-state-machine/touch-input-context';
+import {
+    TouchEventMapping,
+    TouchInputStateMachine,
+} from '../../input-interpretation/input-state-machine/touch-input-state-machine';
+import type { InputOrchestrator } from '../input-orchestrator';
 
 /**
  * Interface for touch event parsers.
@@ -78,7 +82,6 @@ export interface TouchEventParser {
  * ```
  */
 export class VanillaTouchEventParser implements TouchEventParser {
-
     private _canvas?: HTMLCanvasElement | SVGSVGElement;
     private _disabled: boolean;
     private _panDisabled: boolean = false;
@@ -90,7 +93,11 @@ export class VanillaTouchEventParser implements TouchEventParser {
 
     private _abortController: AbortController;
 
-    constructor(touchInputStateMachine: TouchInputStateMachine, orchestrator: InputOrchestrator, canvas?: HTMLCanvasElement | SVGSVGElement){
+    constructor(
+        touchInputStateMachine: TouchInputStateMachine,
+        orchestrator: InputOrchestrator,
+        canvas?: HTMLCanvasElement | SVGSVGElement
+    ) {
         this._canvas = canvas;
         this._disabled = false;
         this._stateMachine = touchInputStateMachine;
@@ -104,7 +111,7 @@ export class VanillaTouchEventParser implements TouchEventParser {
         return this._orchestrator;
     }
 
-    bindListeners(): void{
+    bindListeners(): void {
         this.touchstartHandler = this.touchstartHandler.bind(this);
         this.touchendHandler = this.touchendHandler.bind(this);
         this.touchcancelHandler = this.touchcancelHandler.bind(this);
@@ -120,16 +127,32 @@ export class VanillaTouchEventParser implements TouchEventParser {
     }
 
     setUp(): void {
-        if(this._canvas == undefined){
+        if (this._canvas == undefined) {
             return;
         }
-        if(this._abortController.signal.aborted){
+        if (this._abortController.signal.aborted) {
             this._abortController = new AbortController();
         }
-        this._canvas.addEventListener('touchstart', this.touchstartHandler as EventListener, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchend', this.touchendHandler as EventListener, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchcancel', this.touchcancelHandler as EventListener, {signal: this._abortController.signal});
-        this._canvas.addEventListener('touchmove', this.touchmoveHandler as EventListener, {signal: this._abortController.signal});
+        this._canvas.addEventListener(
+            'touchstart',
+            this.touchstartHandler as EventListener,
+            { signal: this._abortController.signal }
+        );
+        this._canvas.addEventListener(
+            'touchend',
+            this.touchendHandler as EventListener,
+            { signal: this._abortController.signal }
+        );
+        this._canvas.addEventListener(
+            'touchcancel',
+            this.touchcancelHandler as EventListener,
+            { signal: this._abortController.signal }
+        );
+        this._canvas.addEventListener(
+            'touchmove',
+            this.touchmoveHandler as EventListener,
+            { signal: this._abortController.signal }
+        );
     }
 
     tearDown(): void {
@@ -154,59 +177,75 @@ export class VanillaTouchEventParser implements TouchEventParser {
         ...args: EventArgs<TouchEventMapping, K>
     ): void {
         const result = this._stateMachine.happens(...args);
-        if (result.handled && "output" in result) {
+        if (result.handled && 'output' in result && result.output !== undefined) {
             this._orchestrator.processInputEventOutput(result.output);
         }
     }
 
-    touchstartHandler(e: TouchEvent){
-        if(this._disabled) {
+    touchstartHandler(e: TouchEvent) {
+        if (this._disabled) {
             return;
         }
 
         const pointsAdded: TouchPoints[] = [];
         for (let i = 0; i < e.changedTouches.length; i++) {
-            pointsAdded.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+            pointsAdded.push({
+                ident: e.changedTouches[i].identifier,
+                x: e.changedTouches[i].clientX,
+                y: e.changedTouches[i].clientY,
+            });
         }
-        this.processEvent("touchstart", {points: pointsAdded});
+        this.processEvent('touchstart', { points: pointsAdded });
         e.preventDefault();
     }
 
-    touchcancelHandler(e: TouchEvent){
-        if(this._disabled) {
+    touchcancelHandler(e: TouchEvent) {
+        if (this._disabled) {
             return;
         }
         const pointsRemoved: TouchPoints[] = [];
         for (let i = 0; i < e.changedTouches.length; i++) {
-            pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+            pointsRemoved.push({
+                ident: e.changedTouches[i].identifier,
+                x: e.changedTouches[i].clientX,
+                y: e.changedTouches[i].clientY,
+            });
         }
-        this.processEvent("touchend", {points: pointsRemoved});
+        this.processEvent('touchend', { points: pointsRemoved });
     }
 
-    touchendHandler(e: TouchEvent){
-        if(this._disabled) {
+    touchendHandler(e: TouchEvent) {
+        if (this._disabled) {
             return;
         }
         const pointsRemoved: TouchPoints[] = [];
         for (let i = 0; i < e.changedTouches.length; i++) {
-            pointsRemoved.push({ident: e.changedTouches[i].identifier, x: e.changedTouches[i].clientX, y: e.changedTouches[i].clientY});
+            pointsRemoved.push({
+                ident: e.changedTouches[i].identifier,
+                x: e.changedTouches[i].clientX,
+                y: e.changedTouches[i].clientY,
+            });
         }
-        this.processEvent("touchend", {points: pointsRemoved});
+        this.processEvent('touchend', { points: pointsRemoved });
     }
 
-    touchmoveHandler(e: TouchEvent){
-        if(this._disabled) {
+    touchmoveHandler(e: TouchEvent) {
+        if (this._disabled) {
             return;
         }
         e.preventDefault();
         const pointsMoved: TouchPoints[] = [];
         for (let i = 0; i < e.targetTouches.length; i++) {
-            pointsMoved.push({ident: e.targetTouches[i].identifier, x: e.targetTouches[i].clientX, y: e.targetTouches[i].clientY});
+            pointsMoved.push({
+                ident: e.targetTouches[i].identifier,
+                x: e.targetTouches[i].clientX,
+                y: e.targetTouches[i].clientY,
+            });
         }
-        this.processEvent("touchmove", {points: pointsMoved});
+        this.processEvent('touchmove', { points: pointsMoved });
     }
 
-    attach(canvas: HTMLCanvasElement){
+    attach(canvas: HTMLCanvasElement) {
         this.tearDown();
         this._canvas = canvas;
         this.setUp();

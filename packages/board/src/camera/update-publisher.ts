@@ -1,5 +1,11 @@
-import { Point } from "@ue-too/math";
-import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../utils/observable";
+import { Point } from '@ue-too/math';
+
+import {
+    AsyncObservable,
+    Observable,
+    Observer,
+    SubscriptionOptions,
+} from '../utils/observable';
 
 /**
  * Payload for camera pan (position change) events.
@@ -11,7 +17,7 @@ import { AsyncObservable, Observable, Observer, SubscriptionOptions } from "../u
 export type CameraPanEventPayload = {
     /** Movement delta in world coordinates */
     diff: Point;
-}
+};
 
 /**
  * Payload for camera zoom (scale change) events.
@@ -23,7 +29,7 @@ export type CameraPanEventPayload = {
 export type CameraZoomEventPayload = {
     /** Change in zoom level from previous value */
     deltaZoomAmount: number;
-}
+};
 
 /**
  * Payload for camera rotation events.
@@ -35,7 +41,7 @@ export type CameraZoomEventPayload = {
 export type CameraRotateEventPayload = {
     /** Change in rotation from previous value, in radians */
     deltaRotation: number;
-}
+};
 
 /**
  * Mapping of camera event names to their payload types.
@@ -45,14 +51,14 @@ export type CameraRotateEventPayload = {
  */
 export type CameraEventMap = {
     /** Position change event */
-    "pan": CameraPanEventPayload,
+    pan: CameraPanEventPayload;
     /** Zoom level change event */
-    "zoom": CameraZoomEventPayload,
+    zoom: CameraZoomEventPayload;
     /** Rotation change event */
-    "rotate": CameraRotateEventPayload,
+    rotate: CameraRotateEventPayload;
     /** Any camera change event (union of pan, zoom, rotate) */
-    "all": AllCameraEventPayload,
-}
+    all: AllCameraEventPayload;
+};
 
 /**
  * Rotation event with discriminated type field for 'all' event handling.
@@ -62,7 +68,7 @@ export type CameraEventMap = {
  */
 export type CameraRotateEvent = {
     /** Event type discriminator */
-    type: "rotate",
+    type: 'rotate';
 } & CameraRotateEventPayload;
 
 /**
@@ -73,7 +79,7 @@ export type CameraRotateEvent = {
  */
 export type CameraPanEvent = {
     /** Event type discriminator */
-    type: "pan",
+    type: 'pan';
 } & CameraPanEventPayload;
 
 /**
@@ -84,7 +90,7 @@ export type CameraPanEvent = {
  */
 export type CameraZoomEvent = {
     /** Event type discriminator */
-    type: "zoom",
+    type: 'zoom';
 } & CameraZoomEventPayload;
 
 /**
@@ -100,7 +106,7 @@ export type CameraState = {
     zoomLevel: number;
     /** Current rotation in radians */
     rotation: number;
-}
+};
 
 /**
  * Union type of all camera event payloads with type discriminators.
@@ -108,7 +114,10 @@ export type CameraState = {
  *
  * @category Camera
  */
-export type AllCameraEventPayload = CameraRotateEvent | CameraPanEvent | CameraZoomEvent;
+export type AllCameraEventPayload =
+    | CameraRotateEvent
+    | CameraPanEvent
+    | CameraZoomEvent;
 
 /**
  * Generic callback function type for camera events.
@@ -119,7 +128,10 @@ export type AllCameraEventPayload = CameraRotateEvent | CameraPanEvent | CameraZ
  *
  * @category Camera
  */
-export type Callback<K extends keyof CameraEventMap> = (event: CameraEventMap[K], cameraState: CameraState)=>void;
+export type Callback<K extends keyof CameraEventMap> = (
+    event: CameraEventMap[K],
+    cameraState: CameraState
+) => void;
 
 /**
  * Callback function type specifically for the 'all' camera event.
@@ -127,7 +139,10 @@ export type Callback<K extends keyof CameraEventMap> = (event: CameraEventMap[K]
  *
  * @category Camera
  */
-export type ConslidateCallback = (payload: AllCameraEventPayload, cameraState: CameraState) => void;
+export type ConslidateCallback = (
+    payload: AllCameraEventPayload,
+    cameraState: CameraState
+) => void;
 
 /**
  * Function returned by event subscriptions that unsubscribes the callback when called.
@@ -141,28 +156,28 @@ export type UnSubscribe = () => void;
  *
  * @category Camera
  */
-export type PanObserver = Callback<"pan">;
+export type PanObserver = Callback<'pan'>;
 
 /**
  * Callback type for zoom (scale change) events.
  *
  * @category Camera
  */
-export type ZoomObserver = Callback<"zoom">;
+export type ZoomObserver = Callback<'zoom'>;
 
 /**
  * Callback type for rotation events.
  *
  * @category Camera
  */
-export type RotateObserver = Callback<"rotate">;
+export type RotateObserver = Callback<'rotate'>;
 
 /**
  * Callback type for the 'all' event that fires on any camera change.
  *
  * @category Camera
  */
-export type AllObserver = Callback<"all">;
+export type AllObserver = Callback<'all'>;
 
 /**
  * Event publisher for camera state changes using the Observable pattern.
@@ -195,20 +210,19 @@ export type AllObserver = Callback<"all">;
  * @see {@link DefaultBoardCamera} for the primary consumer of this class
  */
 export class CameraUpdatePublisher {
-
-    private pan: Observable<Parameters<Callback<"pan">>>;
-    private zoom: Observable<Parameters<Callback<"zoom">>>;
-    private rotate: Observable<Parameters<Callback<"rotate">>>;
-    private all: Observable<Parameters<Callback<"all">>>;
+    private pan: Observable<Parameters<Callback<'pan'>>>;
+    private zoom: Observable<Parameters<Callback<'zoom'>>>;
+    private rotate: Observable<Parameters<Callback<'rotate'>>>;
+    private all: Observable<Parameters<Callback<'all'>>>;
 
     /**
      * Creates a new camera event publisher with async observables for each event type.
      */
     constructor() {
-        this.pan = new AsyncObservable<Parameters<Callback<"pan">>>();
-        this.zoom = new AsyncObservable<Parameters<Callback<"zoom">>>();
-        this.rotate = new AsyncObservable<Parameters<Callback<"rotate">>>();
-        this.all = new AsyncObservable<Parameters<Callback<"all">>>();
+        this.pan = new AsyncObservable<Parameters<Callback<'pan'>>>();
+        this.zoom = new AsyncObservable<Parameters<Callback<'zoom'>>>();
+        this.rotate = new AsyncObservable<Parameters<Callback<'rotate'>>>();
+        this.all = new AsyncObservable<Parameters<Callback<'all'>>>();
     }
 
     /**
@@ -218,9 +232,9 @@ export class CameraUpdatePublisher {
      * @param event - Pan event payload containing position delta
      * @param cameraState - Current camera state snapshot
      */
-    notifyPan(event: CameraEventMap["pan"], cameraState: CameraState): void {
+    notifyPan(event: CameraEventMap['pan'], cameraState: CameraState): void {
         this.pan.notify(event, cameraState);
-        this.all.notify({type: "pan", diff: event.diff}, cameraState);
+        this.all.notify({ type: 'pan', diff: event.diff }, cameraState);
     }
 
     /**
@@ -230,9 +244,12 @@ export class CameraUpdatePublisher {
      * @param event - Zoom event payload containing zoom delta
      * @param cameraState - Current camera state snapshot
      */
-    notifyZoom(event: CameraEventMap["zoom"], cameraState: CameraState): void {
+    notifyZoom(event: CameraEventMap['zoom'], cameraState: CameraState): void {
         this.zoom.notify(event, cameraState);
-        this.all.notify({type: "zoom", deltaZoomAmount: event.deltaZoomAmount}, cameraState);
+        this.all.notify(
+            { type: 'zoom', deltaZoomAmount: event.deltaZoomAmount },
+            cameraState
+        );
     }
 
     /**
@@ -242,11 +259,17 @@ export class CameraUpdatePublisher {
      * @param event - Rotation event payload containing rotation delta
      * @param cameraState - Current camera state snapshot
      */
-    notifyRotate(event: CameraEventMap["rotate"], cameraState: CameraState): void {
+    notifyRotate(
+        event: CameraEventMap['rotate'],
+        cameraState: CameraState
+    ): void {
         this.rotate.notify(event, cameraState);
-        this.all.notify({type: "rotate", deltaRotation: event.deltaRotation}, cameraState);
+        this.all.notify(
+            { type: 'rotate', deltaRotation: event.deltaRotation },
+            cameraState
+        );
     }
-    
+
     /**
      * Subscribes to camera events with type-safe callbacks and optional AbortController support.
      *
@@ -295,18 +318,34 @@ export class CameraUpdatePublisher {
      * });
      * ```
      */
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void, options?: SubscriptionOptions): UnSubscribe {
-        switch (eventName){
-        case "pan":
-            return this.pan.subscribe(callback as Observer<Parameters<Callback<"pan">>>, options);
-        case "zoom":
-            return this.zoom.subscribe(callback as Observer<Parameters<Callback<"zoom">>>, options);
-        case "rotate":
-            return this.rotate.subscribe(callback as Observer<Parameters<Callback<"rotate">>>, options);
-        case "all":
-            return this.all.subscribe(callback as Observer<Parameters<Callback<"all">>>, options);
-        default:
-            throw new Error(`Invalid event name: ${eventName}`);
+    on<K extends keyof CameraEventMap>(
+        eventName: K,
+        callback: (event: CameraEventMap[K], cameraState: CameraState) => void,
+        options?: SubscriptionOptions
+    ): UnSubscribe {
+        switch (eventName) {
+            case 'pan':
+                return this.pan.subscribe(
+                    callback as Observer<Parameters<Callback<'pan'>>>,
+                    options
+                );
+            case 'zoom':
+                return this.zoom.subscribe(
+                    callback as Observer<Parameters<Callback<'zoom'>>>,
+                    options
+                );
+            case 'rotate':
+                return this.rotate.subscribe(
+                    callback as Observer<Parameters<Callback<'rotate'>>>,
+                    options
+                );
+            case 'all':
+                return this.all.subscribe(
+                    callback as Observer<Parameters<Callback<'all'>>>,
+                    options
+                );
+            default:
+                throw new Error(`Invalid event name: ${eventName}`);
         }
     }
 }

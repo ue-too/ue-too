@@ -4,20 +4,44 @@
  * Defines all component types needed for a basic 2-player card game
  * with hand, deck, discard, and board zones, plus mana and health resources.
  */
+import {
+    ComponentName,
+    Coordinator,
+    Entity,
+    createGlobalComponentName,
+} from '@ue-too/ecs';
 
-import { createGlobalComponentName, Entity, ComponentName, Coordinator } from '@ue-too/ecs';
+import type {
+    GameStatusComponent,
+    ZoneComponent as ZoneComponentType,
+} from '../../board-game-engine/core/game-state';
+import {
+    GAME_STATUS_COMPONENT,
+    PLAYER_COMPONENT as PLAYER_COMP,
+    ZONE_COMPONENT as ZONE_COMP,
+} from '../../board-game-engine/core/game-state';
+// Import for local use
+import type { DeckComponent, LocationComponent } from '../../token';
+import {
+    DECK_COMPONENT as DECK_COMP,
+    LOCATION_COMPONENT as LOCATION_COMP,
+} from '../../token';
 
 // Re-export existing components from blast app
 export { LOCATION_COMPONENT, DECK_COMPONENT } from '../../token';
 export type { LocationComponent, DeckComponent } from '../../token';
-export { PLAYER_COMPONENT, ZONE_COMPONENT, GAME_STATUS_COMPONENT, GAME_MANAGER_COMPONENT } from '../../board-game-engine/core/game-state';
-export type { PlayerComponent, ZoneComponent, GameStatusComponent, GameManagerComponent } from '../../board-game-engine/core/game-state';
-
-// Import for local use
-import type { LocationComponent, DeckComponent } from '../../token';
-import type { ZoneComponent as ZoneComponentType, GameStatusComponent } from '../../board-game-engine/core/game-state';
-import { LOCATION_COMPONENT as LOCATION_COMP, DECK_COMPONENT as DECK_COMP } from '../../token';
-import { PLAYER_COMPONENT as PLAYER_COMP, ZONE_COMPONENT as ZONE_COMP, GAME_STATUS_COMPONENT } from '../../board-game-engine/core/game-state';
+export {
+    PLAYER_COMPONENT,
+    ZONE_COMPONENT,
+    GAME_STATUS_COMPONENT,
+    GAME_MANAGER_COMPONENT,
+} from '../../board-game-engine/core/game-state';
+export type {
+    PlayerComponent,
+    ZoneComponent,
+    GameStatusComponent,
+    GameManagerComponent,
+} from '../../board-game-engine/core/game-state';
 
 // ============================================================================
 // Card Component
@@ -32,26 +56,26 @@ export const CARD_COMPONENT: ComponentName = createGlobalComponentName('Card');
  * Card component - represents a playable card.
  */
 export interface CardComponent {
-  /** Card name */
-  name: string;
+    /** Card name */
+    name: string;
 
-  /** Card type (e.g., "Creature", "Spell", "Artifact") */
-  cardType: string;
+    /** Card type (e.g., "Creature", "Spell", "Artifact") */
+    cardType: string;
 
-  /** Mana cost to play the card */
-  cost: number;
+    /** Mana cost to play the card */
+    cost: number;
 
-  /** Card description/effect text */
-  description: string;
+    /** Card description/effect text */
+    description: string;
 
-  /** Card power (for creatures) */
-  power?: number;
+    /** Card power (for creatures) */
+    power?: number;
 
-  /** Card toughness (for creatures) */
-  toughness?: number;
+    /** Card toughness (for creatures) */
+    toughness?: number;
 
-  /** Custom effect identifier (for rule engine to match) */
-  effectId?: string;
+    /** Custom effect identifier (for rule engine to match) */
+    effectId?: string;
 }
 
 // ============================================================================
@@ -61,23 +85,24 @@ export interface CardComponent {
 /**
  * Component name for resource components.
  */
-export const RESOURCE_COMPONENT: ComponentName = createGlobalComponentName('Resource');
+export const RESOURCE_COMPONENT: ComponentName =
+    createGlobalComponentName('Resource');
 
 /**
  * Resource component - tracks player resources (mana, health, etc.)
  */
 export interface ResourceComponent {
-  /** Current mana */
-  mana: number;
+    /** Current mana */
+    mana: number;
 
-  /** Maximum mana */
-  maxMana: number;
+    /** Maximum mana */
+    maxMana: number;
 
-  /** Current health */
-  health: number;
+    /** Current health */
+    health: number;
 
-  /** Maximum health */
-  maxHealth: number;
+    /** Maximum health */
+    maxHealth: number;
 }
 
 // ============================================================================
@@ -87,20 +112,21 @@ export interface ResourceComponent {
 /**
  * Component name for card state components.
  */
-export const CARD_STATE_COMPONENT: ComponentName = createGlobalComponentName('CardState');
+export const CARD_STATE_COMPONENT: ComponentName =
+    createGlobalComponentName('CardState');
 
 /**
  * Card state component - tracks the state of a card on the board.
  */
 export interface CardStateComponent {
-  /** Whether the card is tapped (used this turn) */
-  tapped: boolean;
+    /** Whether the card is tapped (used this turn) */
+    tapped: boolean;
 
-  /** Whether the card has summoning sickness */
-  summoningSickness: boolean;
+    /** Whether the card has summoning sickness */
+    summoningSickness: boolean;
 
-  /** Number of times the card has attacked this turn */
-  attacksThisTurn: number;
+    /** Number of times the card has attacked this turn */
+    attacksThisTurn: number;
 }
 
 // ============================================================================
@@ -110,14 +136,15 @@ export interface CardStateComponent {
 /**
  * Component name for owner components.
  */
-export const OWNER_COMPONENT: ComponentName = createGlobalComponentName('Owner');
+export const OWNER_COMPONENT: ComponentName =
+    createGlobalComponentName('Owner');
 
 /**
  * Owner component - tracks which player owns an entity.
  */
 export interface OwnerComponent {
-  /** The player entity that owns this entity */
-  owner: Entity;
+    /** The player entity that owns this entity */
+    owner: Entity;
 }
 
 // GameStatusComponent is now exported from core/game-state.ts
@@ -129,15 +156,16 @@ export interface OwnerComponent {
 /**
  * Component name for turn state components.
  */
-export const TURN_STATE_COMPONENT: ComponentName = createGlobalComponentName('TurnState');
+export const TURN_STATE_COMPONENT: ComponentName =
+    createGlobalComponentName('TurnState');
 
 /**
  * Turn state component - tracks per-turn state for a player.
  * Attached to player entities.
  */
 export interface TurnStateComponent {
-  /** Whether the player has drawn a card this turn */
-  hasDrawnThisTurn: boolean;
+    /** Whether the player has drawn a card this turn */
+    hasDrawnThisTurn: boolean;
 }
 
 // ============================================================================
@@ -151,47 +179,49 @@ export interface TurnStateComponent {
  * @param coordinator - The ECS coordinator to register components with
  */
 export function registerCardGameComponents(coordinator: Coordinator): void {
-  // Check and register card component
-  if (coordinator.getComponentType(CARD_COMPONENT) === null) {
-    coordinator.registerComponent<CardComponent>(CARD_COMPONENT);
-  }
+    // Check and register card component
+    if (coordinator.getComponentType(CARD_COMPONENT) === null) {
+        coordinator.registerComponent<CardComponent>(CARD_COMPONENT);
+    }
 
-  // Check and register resource component
-  if (coordinator.getComponentType(RESOURCE_COMPONENT) === null) {
-    coordinator.registerComponent<ResourceComponent>(RESOURCE_COMPONENT);
-  }
+    // Check and register resource component
+    if (coordinator.getComponentType(RESOURCE_COMPONENT) === null) {
+        coordinator.registerComponent<ResourceComponent>(RESOURCE_COMPONENT);
+    }
 
-  // Check and register card state component
-  if (coordinator.getComponentType(CARD_STATE_COMPONENT) === null) {
-    coordinator.registerComponent<CardStateComponent>(CARD_STATE_COMPONENT);
-  }
+    // Check and register card state component
+    if (coordinator.getComponentType(CARD_STATE_COMPONENT) === null) {
+        coordinator.registerComponent<CardStateComponent>(CARD_STATE_COMPONENT);
+    }
 
-  // Check and register owner component
-  if (coordinator.getComponentType(OWNER_COMPONENT) === null) {
-    coordinator.registerComponent<OwnerComponent>(OWNER_COMPONENT);
-  }
+    // Check and register owner component
+    if (coordinator.getComponentType(OWNER_COMPONENT) === null) {
+        coordinator.registerComponent<OwnerComponent>(OWNER_COMPONENT);
+    }
 
-  // Check and register game status component
-  if (coordinator.getComponentType(GAME_STATUS_COMPONENT) === null) {
-    coordinator.registerComponent<GameStatusComponent>(GAME_STATUS_COMPONENT);
-  }
+    // Check and register game status component
+    if (coordinator.getComponentType(GAME_STATUS_COMPONENT) === null) {
+        coordinator.registerComponent<GameStatusComponent>(
+            GAME_STATUS_COMPONENT
+        );
+    }
 
-  // Check and register turn state component
-  if (coordinator.getComponentType(TURN_STATE_COMPONENT) === null) {
-    coordinator.registerComponent<TurnStateComponent>(TURN_STATE_COMPONENT);
-  }
+    // Check and register turn state component
+    if (coordinator.getComponentType(TURN_STATE_COMPONENT) === null) {
+        coordinator.registerComponent<TurnStateComponent>(TURN_STATE_COMPONENT);
+    }
 
-  // Check and register location component
-  if (coordinator.getComponentType(LOCATION_COMP) === null) {
-    coordinator.registerComponent<LocationComponent>(LOCATION_COMP);
-  }
+    // Check and register location component
+    if (coordinator.getComponentType(LOCATION_COMP) === null) {
+        coordinator.registerComponent<LocationComponent>(LOCATION_COMP);
+    }
 
-  // Check and register deck component
-  if (coordinator.getComponentType(DECK_COMP) === null) {
-    coordinator.registerComponent<DeckComponent>(DECK_COMP);
-  }
+    // Check and register deck component
+    if (coordinator.getComponentType(DECK_COMP) === null) {
+        coordinator.registerComponent<DeckComponent>(DECK_COMP);
+    }
 
-  // Player and Zone components are registered by GameState
+    // Player and Zone components are registered by GameState
 }
 
 // ============================================================================
@@ -206,7 +236,7 @@ export function registerCardGameComponents(coordinator: Coordinator): void {
  * @returns True if entity has a card component
  */
 export function isCard(coordinator: Coordinator, entity: Entity): boolean {
-  return coordinator.getComponentFromEntity(CARD_COMPONENT, entity) !== null;
+    return coordinator.getComponentFromEntity(CARD_COMPONENT, entity) !== null;
 }
 
 /**
@@ -217,7 +247,7 @@ export function isCard(coordinator: Coordinator, entity: Entity): boolean {
  * @returns True if entity has a player component
  */
 export function isPlayer(coordinator: Coordinator, entity: Entity): boolean {
-  return coordinator.getComponentFromEntity(PLAYER_COMP, entity) !== null;
+    return coordinator.getComponentFromEntity(PLAYER_COMP, entity) !== null;
 }
 
 /**
@@ -227,9 +257,15 @@ export function isPlayer(coordinator: Coordinator, entity: Entity): boolean {
  * @param entity - Entity to get owner of
  * @returns Owner entity or null if no owner
  */
-export function getOwner(coordinator: Coordinator, entity: Entity): Entity | null {
-  const ownerComp = coordinator.getComponentFromEntity<OwnerComponent>(OWNER_COMPONENT, entity);
-  return ownerComp ? ownerComp.owner : null;
+export function getOwner(
+    coordinator: Coordinator,
+    entity: Entity
+): Entity | null {
+    const ownerComp = coordinator.getComponentFromEntity<OwnerComponent>(
+        OWNER_COMPONENT,
+        entity
+    );
+    return ownerComp ? ownerComp.owner : null;
 }
 
 /**
@@ -242,24 +278,27 @@ export function getOwner(coordinator: Coordinator, entity: Entity): Entity | nul
  * @returns True if entity is in the zone
  */
 export function isInZone(
-  coordinator: Coordinator,
-  entity: Entity,
-  zoneName: string,
-  owner?: Entity
+    coordinator: Coordinator,
+    entity: Entity,
+    zoneName: string,
+    owner?: Entity
 ): boolean {
-  const locationComp = coordinator.getComponentFromEntity<LocationComponent>(
-    LOCATION_COMP,
-    entity
-  );
-  if (!locationComp) return false;
+    const locationComp = coordinator.getComponentFromEntity<LocationComponent>(
+        LOCATION_COMP,
+        entity
+    );
+    if (!locationComp) return false;
 
-  // Get the zone entity
-  const zoneEntity = locationComp.location;
-  const zoneComp = coordinator.getComponentFromEntity<ZoneComponentType>(ZONE_COMP, zoneEntity);
+    // Get the zone entity
+    const zoneEntity = locationComp.location;
+    const zoneComp = coordinator.getComponentFromEntity<ZoneComponentType>(
+        ZONE_COMP,
+        zoneEntity
+    );
 
-  if (!zoneComp || zoneComp.name !== zoneName) return false;
+    if (!zoneComp || zoneComp.name !== zoneName) return false;
 
-  if (owner !== undefined && zoneComp.owner !== owner) return false;
+    if (owner !== undefined && zoneComp.owner !== owner) return false;
 
-  return true;
+    return true;
 }

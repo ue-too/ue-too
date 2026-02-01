@@ -4,31 +4,30 @@
  * Provides abstract base classes for implementing preconditions that validate
  * whether an action can be executed.
  */
-
-import type { Precondition, ActionContext } from '../../core/types';
+import type { ActionContext, Precondition } from '../../core/types';
 
 /**
  * Abstract base class for all preconditions.
  * Provides structure for checking conditions and generating error messages.
  */
 export abstract class BasePrecondition implements Precondition {
-  /**
-   * Check if the precondition is satisfied.
-   * Must be implemented by subclasses.
-   *
-   * @param context - Action context containing state and entities
-   * @returns True if precondition passes, false otherwise
-   */
-  abstract check(context: ActionContext): boolean;
+    /**
+     * Check if the precondition is satisfied.
+     * Must be implemented by subclasses.
+     *
+     * @param context - Action context containing state and entities
+     * @returns True if precondition passes, false otherwise
+     */
+    abstract check(context: ActionContext): boolean;
 
-  /**
-   * Get error message when precondition fails.
-   * Must be implemented by subclasses.
-   *
-   * @param context - Action context
-   * @returns Error message describing why precondition failed
-   */
-  abstract getErrorMessage(context: ActionContext): string;
+    /**
+     * Get error message when precondition fails.
+     * Must be implemented by subclasses.
+     *
+     * @param context - Action context
+     * @returns Error message describing why precondition failed
+     */
+    abstract getErrorMessage(context: ActionContext): string;
 }
 
 /**
@@ -44,33 +43,37 @@ export abstract class BasePrecondition implements Precondition {
  * ```
  */
 export class AndPrecondition extends BasePrecondition {
-  constructor(private preconditions: Precondition[]) {
-    super();
-  }
-
-  check(context: ActionContext): boolean {
-    return this.preconditions.every((precondition) => precondition.check(context));
-  }
-
-  getErrorMessage(context: ActionContext): string {
-    const failedPreconditions = this.preconditions.filter(
-      (precondition) => !precondition.check(context)
-    );
-    if (failedPreconditions.length === 0) {
-      return 'All preconditions passed';
+    constructor(private preconditions: Precondition[]) {
+        super();
     }
-    const messages = failedPreconditions.map((p) => p.getErrorMessage(context));
-    return messages.join('; ');
-  }
 
-  /**
-   * Get all sub-preconditions.
-   *
-   * @returns Array of preconditions
-   */
-  getPreconditions(): Precondition[] {
-    return [...this.preconditions];
-  }
+    check(context: ActionContext): boolean {
+        return this.preconditions.every(precondition =>
+            precondition.check(context)
+        );
+    }
+
+    getErrorMessage(context: ActionContext): string {
+        const failedPreconditions = this.preconditions.filter(
+            precondition => !precondition.check(context)
+        );
+        if (failedPreconditions.length === 0) {
+            return 'All preconditions passed';
+        }
+        const messages = failedPreconditions.map(p =>
+            p.getErrorMessage(context)
+        );
+        return messages.join('; ');
+    }
+
+    /**
+     * Get all sub-preconditions.
+     *
+     * @returns Array of preconditions
+     */
+    getPreconditions(): Precondition[] {
+        return [...this.preconditions];
+    }
 }
 
 /**
@@ -85,31 +88,33 @@ export class AndPrecondition extends BasePrecondition {
  * ```
  */
 export class OrPrecondition extends BasePrecondition {
-  constructor(private preconditions: Precondition[]) {
-    super();
-  }
-
-  check(context: ActionContext): boolean {
-    return this.preconditions.some((precondition) => precondition.check(context));
-  }
-
-  getErrorMessage(context: ActionContext): string {
-    if (this.check(context)) {
-      return 'At least one precondition passed';
+    constructor(private preconditions: Precondition[]) {
+        super();
     }
-    return `None of the preconditions passed: ${this.preconditions
-      .map((p) => p.getErrorMessage(context))
-      .join(' OR ')}`;
-  }
 
-  /**
-   * Get all sub-preconditions.
-   *
-   * @returns Array of preconditions
-   */
-  getPreconditions(): Precondition[] {
-    return [...this.preconditions];
-  }
+    check(context: ActionContext): boolean {
+        return this.preconditions.some(precondition =>
+            precondition.check(context)
+        );
+    }
+
+    getErrorMessage(context: ActionContext): string {
+        if (this.check(context)) {
+            return 'At least one precondition passed';
+        }
+        return `None of the preconditions passed: ${this.preconditions
+            .map(p => p.getErrorMessage(context))
+            .join(' OR ')}`;
+    }
+
+    /**
+     * Get all sub-preconditions.
+     *
+     * @returns Array of preconditions
+     */
+    getPreconditions(): Precondition[] {
+        return [...this.preconditions];
+    }
 }
 
 /**
@@ -123,32 +128,32 @@ export class OrPrecondition extends BasePrecondition {
  * ```
  */
 export class NotPrecondition extends BasePrecondition {
-  constructor(
-    private precondition: Precondition,
-    private customMessage?: string
-  ) {
-    super();
-  }
-
-  check(context: ActionContext): boolean {
-    return !this.precondition.check(context);
-  }
-
-  getErrorMessage(context: ActionContext): string {
-    if (this.customMessage) {
-      return this.customMessage;
+    constructor(
+        private precondition: Precondition,
+        private customMessage?: string
+    ) {
+        super();
     }
-    return `NOT (${this.precondition.getErrorMessage(context)})`;
-  }
 
-  /**
-   * Get the wrapped precondition.
-   *
-   * @returns The precondition being inverted
-   */
-  getPrecondition(): Precondition {
-    return this.precondition;
-  }
+    check(context: ActionContext): boolean {
+        return !this.precondition.check(context);
+    }
+
+    getErrorMessage(context: ActionContext): string {
+        if (this.customMessage) {
+            return this.customMessage;
+        }
+        return `NOT (${this.precondition.getErrorMessage(context)})`;
+    }
+
+    /**
+     * Get the wrapped precondition.
+     *
+     * @returns The precondition being inverted
+     */
+    getPrecondition(): Precondition {
+        return this.precondition;
+    }
 }
 
 /**
@@ -156,13 +161,13 @@ export class NotPrecondition extends BasePrecondition {
  * Useful as a placeholder or for testing.
  */
 export class AlwaysTruePrecondition extends BasePrecondition {
-  check(context: ActionContext): boolean {
-    return true;
-  }
+    check(context: ActionContext): boolean {
+        return true;
+    }
 
-  getErrorMessage(context: ActionContext): string {
-    return 'This precondition always passes';
-  }
+    getErrorMessage(context: ActionContext): string {
+        return 'This precondition always passes';
+    }
 }
 
 /**
@@ -170,17 +175,17 @@ export class AlwaysTruePrecondition extends BasePrecondition {
  * Useful for disabling actions temporarily or for testing.
  */
 export class AlwaysFalsePrecondition extends BasePrecondition {
-  constructor(private message: string = 'This action is disabled') {
-    super();
-  }
+    constructor(private message: string = 'This action is disabled') {
+        super();
+    }
 
-  check(context: ActionContext): boolean {
-    return false;
-  }
+    check(context: ActionContext): boolean {
+        return false;
+    }
 
-  getErrorMessage(context: ActionContext): string {
-    return this.message;
-  }
+    getErrorMessage(context: ActionContext): string {
+        return this.message;
+    }
 }
 
 /**
@@ -199,21 +204,21 @@ export class AlwaysFalsePrecondition extends BasePrecondition {
  * ```
  */
 export class CustomPrecondition extends BasePrecondition {
-  constructor(
-    private checkFn: (context: ActionContext) => boolean,
-    private errorMessage: string | ((context: ActionContext) => string)
-  ) {
-    super();
-  }
-
-  check(context: ActionContext): boolean {
-    return this.checkFn(context);
-  }
-
-  getErrorMessage(context: ActionContext): string {
-    if (typeof this.errorMessage === 'function') {
-      return this.errorMessage(context);
+    constructor(
+        private checkFn: (context: ActionContext) => boolean,
+        private errorMessage: string | ((context: ActionContext) => string)
+    ) {
+        super();
     }
-    return this.errorMessage;
-  }
+
+    check(context: ActionContext): boolean {
+        return this.checkFn(context);
+    }
+
+    getErrorMessage(context: ActionContext): string {
+        if (typeof this.errorMessage === 'function') {
+            return this.errorMessage(context);
+        }
+        return this.errorMessage;
+    }
 }

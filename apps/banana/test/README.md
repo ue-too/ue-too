@@ -10,17 +10,20 @@ This directory contains unit tests for the `b-curve-exp` application.
 ## Running Tests
 
 ### Local Development
+
 ```bash
 cd apps/b-curve-exp
 pnpm test
 ```
 
 ### Through NX Workspace
+
 ```bash
 nx test b-curve-experiment
 ```
 
 ### Run Specific Test File
+
 ```bash
 cd apps/b-curve-exp
 pnpm test test/entity-manager.test.ts
@@ -29,6 +32,7 @@ pnpm test test/entity-manager.test.ts
 ## Test Coverage
 
 ### EntityManager Tests
+
 - **Constructor**: Initialization with different initial counts
 - **createEntity**: Entity creation, capacity expansion, ID reuse
 - **destroyEntity**: Entity destruction, error handling, state consistency
@@ -36,6 +40,7 @@ pnpm test test/entity-manager.test.ts
 - **State Consistency**: Maintaining invariants across operations
 
 ### NumberManager Tests
+
 - **Constructor**: Initialization with different initial counts
 - **createEntity**: Entity creation, capacity expansion, ID reuse
 - **destroyEntity**: Entity destruction, error handling, state consistency

@@ -34,7 +34,7 @@ npm install @ue-too/math
 ## Quick Start
 
 ```typescript
-import { PointCal, Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 
 // Vector addition
 const a: Point = { x: 1, y: 2 };
@@ -129,7 +129,7 @@ PointCal.getLineIntersection(line1Start, line1End, line2Start, line2End);
 ### Angle Utilities
 
 ```typescript
-import { normalizeAngleZero2TwoPI, angleSpan } from '@ue-too/math';
+import { angleSpan, normalizeAngleZero2TwoPI } from '@ue-too/math';
 
 // Normalize angle to [0, 2π)
 const normalized = normalizeAngleZero2TwoPI(Math.PI * 3); // π
@@ -141,7 +141,7 @@ const diff = angleSpan(fromAngle, toAngle); // Range: (-π, π]
 ### Comparison Functions
 
 ```typescript
-import { samePoint, sameDirection, approximatelyTheSame } from '@ue-too/math';
+import { approximatelyTheSame, sameDirection, samePoint } from '@ue-too/math';
 
 // Check if points are approximately equal
 samePoint(a, b); // Uses default precision (0.000001)
@@ -159,7 +159,7 @@ approximatelyTheSame(1.0, 1.0000001); // true
 ### Canvas Transformations
 
 ```typescript
-import { PointCal, Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 
 // Transform mouse coordinates to rotated canvas space
 const mousePos: Point = { x: 150, y: 200 };
@@ -167,16 +167,16 @@ const canvasCenter: Point = { x: 100, y: 100 };
 const canvasRotation = Math.PI / 4; // 45 degrees
 
 const transformedPos = PointCal.transformPointWRTAnchor(
-  mousePos,
-  canvasCenter,
-  -canvasRotation // Inverse rotation
+    mousePos,
+    canvasCenter,
+    -canvasRotation // Inverse rotation
 );
 ```
 
 ### Path Following
 
 ```typescript
-import { PointCal, Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 
 // Calculate direction from current position to target
 const current: Point = { x: 10, y: 20 };
@@ -187,15 +187,15 @@ const speed = 5;
 
 // Move toward target
 const newPosition = PointCal.addVector(
-  current,
-  PointCal.multiplyVectorByScalar(direction, speed)
+    current,
+    PointCal.multiplyVectorByScalar(direction, speed)
 );
 ```
 
 ### Smooth Interpolation
 
 ```typescript
-import { PointCal, Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 
 // Animate between two positions
 const start: Point = { x: 0, y: 0 };
@@ -208,6 +208,7 @@ const currentPos = PointCal.linearInterpolation(start, end, progress);
 ## API Reference
 
 For complete API documentation with detailed examples, see:
+
 - [Full TypeDoc Documentation](/math/) (generated from source)
 - [Source Code](https://github.com/ue-too/ue-too/blob/main/packages/math/src/index.ts) with inline JSDoc comments
 

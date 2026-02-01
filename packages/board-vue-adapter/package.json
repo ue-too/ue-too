@@ -1,41 +1,41 @@
 {
-  "name": "@ue-too/board-vue-adapter",
-  "type": "module",
-  "version": "0.14.0",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ue-too/ue-too.git"
-  },
-  "homepage": "https://github.com/ue-too/ue-too",
-  "scripts": {
-    "test": "jest",
-    "build": "vite build",
-    "build:legacy": "rm -rf dist && rollup -c rollup.config.js"
-  },
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+    "name": "@ue-too/board-vue-adapter",
+    "type": "module",
+    "version": "0.14.0",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ue-too/ue-too.git"
     },
-    "./package.json": "./package.json",
-    "./*": {
-      "types": "./src/*/index.ts",
-      "import": "./src/*/index.ts",
-      "default": "./src/*/index.ts"
-    }
-  },
-  "devDependencies": {
-    "vue": "^3.5.25"
-  },
-  "peerDependencies": {
-    "vue": "^3.5.25"
-  },
-  "dependencies": {
-    "@ue-too/board": "workspace:*"
-  },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "module": "./src/index.ts"
+    "homepage": "https://github.com/ue-too/ue-too",
+    "scripts": {
+        "test": "jest",
+        "build": "vite build",
+        "build:legacy": "rm -rf dist && rollup -c rollup.config.js"
+    },
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./package.json": "./package.json",
+        "./*": {
+            "types": "./src/*/index.ts",
+            "import": "./src/*/index.ts",
+            "default": "./src/*/index.ts"
+        }
+    },
+    "devDependencies": {
+        "vue": "^3.5.25"
+    },
+    "peerDependencies": {
+        "vue": "^3.5.25"
+    },
+    "dependencies": {
+        "@ue-too/board": "workspace:*"
+    },
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "module": "./src/index.ts"
 }

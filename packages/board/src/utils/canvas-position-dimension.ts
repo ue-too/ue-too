@@ -1,4 +1,8 @@
-import { Observer, SubscriptionOptions, SynchronousObservable } from "../utils/observable";
+import {
+    Observer,
+    SubscriptionOptions,
+    SynchronousObservable,
+} from '../utils/observable';
 
 /**
  * Monitors and publishes position and dimension changes for SVG elements.
@@ -34,13 +38,12 @@ import { Observer, SubscriptionOptions, SynchronousObservable } from "../utils/o
  * @category Canvas Position
  */
 export class SvgPositionDimensionPublisher {
-
     private lastRect?: DOMRect;
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
     private mutationObserver: MutationObserver;
-    private scrollHandler?: (() => void);
-    private resizeHandler?: (() => void);
+    private scrollHandler?: () => void;
+    private resizeHandler?: () => void;
     private _observers: SynchronousObservable<[DOMRect]>;
 
     /**
@@ -55,41 +58,51 @@ export class SvgPositionDimensionPublisher {
     constructor(canvas?: SVGSVGElement) {
         this._observers = new SynchronousObservable<[DOMRect]>();
 
-        this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
-            for (const entry of entries) {
-                const newRect = entry.target.getBoundingClientRect();
-                const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
-                if (rectChanged(this.lastRect, trueRect)) {
-                    this.publishPositionUpdate(trueRect);
-                    this.lastRect = trueRect;
-                }
-            }
-        }).bind(this));
-
-        this.intersectionObserver = new IntersectionObserver(((entries: IntersectionObserverEntry[]) => {
-            if(this.lastRect === undefined){
-                return;
-            }
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    const newRect = entry.boundingClientRect;
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
+        this.resizeObserver = new ResizeObserver(
+            ((entries: ResizeObserverEntry[]) => {
+                for (const entry of entries) {
+                    const newRect = entry.target.getBoundingClientRect();
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(entry.target)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
                 }
-            }
-        }).bind(this));
+            }).bind(this)
+        );
+
+        this.intersectionObserver = new IntersectionObserver(
+            ((entries: IntersectionObserverEntry[]) => {
+                if (this.lastRect === undefined) {
+                    return;
+                }
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        const newRect = entry.boundingClientRect;
+                        const trueRect = getTrueRect(
+                            newRect,
+                            window.getComputedStyle(entry.target)
+                        );
+                        if (rectChanged(this.lastRect, trueRect)) {
+                            this.publishPositionUpdate(trueRect);
+                            this.lastRect = trueRect;
+                        }
+                    }
+                }
+            }).bind(this)
+        );
 
         this.attributeCallBack = this.attributeCallBack.bind(this);
         this.mutationObserver = new MutationObserver(this.attributeCallBack);
 
-        if(canvas){
+        if (canvas) {
             this.attach(canvas);
         }
     }
-    
+
     /**
      * Cleans up all observers and event listeners.
      *
@@ -102,10 +115,10 @@ export class SvgPositionDimensionPublisher {
         this.resizeObserver.disconnect();
         this.intersectionObserver.disconnect();
         this.mutationObserver.disconnect();
-        if(this.scrollHandler){
+        if (this.scrollHandler) {
             window.removeEventListener('scroll', this.scrollHandler);
         }
-        if(this.resizeHandler){
+        if (this.resizeHandler) {
             window.removeEventListener('resize', this.resizeHandler);
         }
     }
@@ -128,36 +141,49 @@ export class SvgPositionDimensionPublisher {
         this.intersectionObserver.observe(canvas);
         this.mutationObserver.observe(canvas, {
             attributes: true,
-            attributeFilter: ["width", "height", "style"]
+            attributeFilter: ['width', 'height', 'style'],
         });
         const boundingRect = canvas.getBoundingClientRect();
-        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        const trueRect = getTrueRect(
+            boundingRect,
+            window.getComputedStyle(canvas)
+        );
         this.lastRect = trueRect;
 
         this.scrollHandler = (() => {
-            if(this.lastRect === undefined){
+            if (this.lastRect === undefined) {
                 return;
             }
             const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            const trueRect = getTrueRect(
+                newRect,
+                window.getComputedStyle(canvas)
+            );
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
         }).bind(this);
         this.resizeHandler = (() => {
-            if(this.lastRect === undefined){
+            if (this.lastRect === undefined) {
                 return;
             }
             const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            const trueRect = getTrueRect(
+                newRect,
+                window.getComputedStyle(canvas)
+            );
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
         }).bind(this);
-        window.addEventListener("scroll", this.scrollHandler, { passive: true });
-        window.addEventListener("resize", this.resizeHandler, { passive: true });
+        window.addEventListener('scroll', this.scrollHandler, {
+            passive: true,
+        });
+        window.addEventListener('resize', this.resizeHandler, {
+            passive: true,
+        });
     }
 
     private publishPositionUpdate(rect: DOMRect) {
@@ -186,33 +212,48 @@ export class SvgPositionDimensionPublisher {
      * unsubscribe();
      * ```
      */
-    onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
+    onPositionUpdate(
+        observer: Observer<[DOMRect]>,
+        options?: SubscriptionOptions
+    ) {
         return this._observers.subscribe(observer, options);
     }
 
-    private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
-        for(let mutation of mutationsList){
-            if(mutation.type === "attributes"){
-                if(mutation.attributeName === "width"){
+    private attributeCallBack(
+        mutationsList: MutationRecord[],
+        observer: MutationObserver
+    ) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'attributes') {
+                if (mutation.attributeName === 'width') {
                     const canvas = mutation.target as SVGSVGElement;
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
-                } else if(mutation.attributeName === "height"){
+                } else if (mutation.attributeName === 'height') {
                     const canvas = mutation.target as SVGSVGElement;
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
-                } else if (mutation.attributeName === "style"){
+                } else if (mutation.attributeName === 'style') {
                     const canvas = mutation.target as SVGSVGElement;
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
@@ -261,13 +302,12 @@ export class SvgPositionDimensionPublisher {
  * @see {@link SvgPositionDimensionPublisher} for SVG elements
  */
 export class CanvasPositionDimensionPublisher {
-
     private lastRect?: DOMRect;
     private resizeObserver: ResizeObserver;
     private intersectionObserver: IntersectionObserver;
     private mutationObserver: MutationObserver;
-    private scrollHandler?: (() => void);
-    private resizeHandler?: (() => void);
+    private scrollHandler?: () => void;
+    private resizeHandler?: () => void;
     private _observers: SynchronousObservable<[DOMRect]>;
 
     private lastDOMMatrix?: DOMMatrix;
@@ -288,41 +328,51 @@ export class CanvasPositionDimensionPublisher {
         this._pixelRatioAbortController = new AbortController();
         this._observers = new SynchronousObservable<[DOMRect]>();
 
-        this.resizeObserver = new ResizeObserver(((entries: ResizeObserverEntry[]) => {
-            for (const entry of entries) {
-                const newRect = entry.target.getBoundingClientRect();
-                const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
-                if (rectChanged(this.lastRect, trueRect)) {
-                    this.publishPositionUpdate(trueRect);
-                    this.lastRect = trueRect;
-                }
-            }
-        }).bind(this));
-
-        this.intersectionObserver = new IntersectionObserver(((entries: IntersectionObserverEntry[]) => {
-            if(this.lastRect === undefined){
-                return;
-            }
-            for (const entry of entries) {
-                if (entry.isIntersecting) {
-                    const newRect = entry.boundingClientRect;
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(entry.target));
+        this.resizeObserver = new ResizeObserver(
+            ((entries: ResizeObserverEntry[]) => {
+                for (const entry of entries) {
+                    const newRect = entry.target.getBoundingClientRect();
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(entry.target)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
                 }
-            }
-        }).bind(this));
+            }).bind(this)
+        );
+
+        this.intersectionObserver = new IntersectionObserver(
+            ((entries: IntersectionObserverEntry[]) => {
+                if (this.lastRect === undefined) {
+                    return;
+                }
+                for (const entry of entries) {
+                    if (entry.isIntersecting) {
+                        const newRect = entry.boundingClientRect;
+                        const trueRect = getTrueRect(
+                            newRect,
+                            window.getComputedStyle(entry.target)
+                        );
+                        if (rectChanged(this.lastRect, trueRect)) {
+                            this.publishPositionUpdate(trueRect);
+                            this.lastRect = trueRect;
+                        }
+                    }
+                }
+            }).bind(this)
+        );
 
         this.attributeCallBack = this.attributeCallBack.bind(this);
         this.mutationObserver = new MutationObserver(this.attributeCallBack);
 
-        if(canvas){
+        if (canvas) {
             this.attach(canvas);
         }
     }
-    
+
     /**
      * Cleans up all observers and event listeners.
      *
@@ -358,48 +408,68 @@ export class CanvasPositionDimensionPublisher {
         this.intersectionObserver.observe(canvas);
         this.mutationObserver.observe(canvas, {
             attributes: true,
-            attributeFilter: ["width", "height", "style"]
+            attributeFilter: ['width', 'height', 'style'],
         });
         const boundingRect = canvas.getBoundingClientRect();
-        const trueRect = getTrueRect(boundingRect, window.getComputedStyle(canvas));
+        const trueRect = getTrueRect(
+            boundingRect,
+            window.getComputedStyle(canvas)
+        );
         this.publishPositionUpdate(trueRect);
         this.lastRect = trueRect;
         this.scrollHandler = (() => {
-            if(this.lastRect === undefined){
+            if (this.lastRect === undefined) {
                 return;
             }
             const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            const trueRect = getTrueRect(
+                newRect,
+                window.getComputedStyle(canvas)
+            );
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
         }).bind(this);
         this.resizeHandler = (() => {
-            if(this.lastRect === undefined){
+            if (this.lastRect === undefined) {
                 return;
             }
             const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            const trueRect = getTrueRect(
+                newRect,
+                window.getComputedStyle(canvas)
+            );
             if (rectChanged(this.lastRect, trueRect)) {
                 this.publishPositionUpdate(trueRect);
                 this.lastRect = trueRect;
             }
         }).bind(this);
-        window.addEventListener("scroll", this.scrollHandler, { passive: true, signal: this._abortController.signal });
-        window.addEventListener("resize", this.resizeHandler, { passive: true, signal: this._abortController.signal });
-        
+        window.addEventListener('scroll', this.scrollHandler, {
+            passive: true,
+            signal: this._abortController.signal,
+        });
+        window.addEventListener('resize', this.resizeHandler, {
+            passive: true,
+            signal: this._abortController.signal,
+        });
+
         const updatePixelRatio = (() => {
             this._pixelRatioAbortController.abort();
             this._pixelRatioAbortController = new AbortController();
 
             const newRect = canvas.getBoundingClientRect();
-            const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+            const trueRect = getTrueRect(
+                newRect,
+                window.getComputedStyle(canvas)
+            );
             this.publishPositionUpdate(trueRect);
 
             const mqString = `(resolution: ${window.devicePixelRatio}dppx)`;
             const media = matchMedia(mqString);
-            media.addEventListener("change", updatePixelRatio, { signal: this._pixelRatioAbortController.signal });
+            media.addEventListener('change', updatePixelRatio, {
+                signal: this._pixelRatioAbortController.signal,
+            });
         }).bind(this);
         updatePixelRatio();
     }
@@ -420,7 +490,10 @@ export class CanvasPositionDimensionPublisher {
      * The DOMRect represents the actual content area (excluding padding and borders).
      * Canvas buffer dimensions are automatically adjusted for devicePixelRatio.
      */
-    onPositionUpdate(observer: Observer<[DOMRect]>, options?: SubscriptionOptions) {
+    onPositionUpdate(
+        observer: Observer<[DOMRect]>,
+        options?: SubscriptionOptions
+    ) {
         return this._observers.subscribe(observer, options);
     }
 
@@ -437,28 +510,37 @@ export class CanvasPositionDimensionPublisher {
      *
      * This ensures the canvas maintains proper resolution on all displays.
      */
-    private attributeCallBack(mutationsList: MutationRecord[], observer: MutationObserver){
-        for(let mutation of mutationsList){
-            if(mutation.type === "attributes"){
-                if(mutation.attributeName === "width"){
+    private attributeCallBack(
+        mutationsList: MutationRecord[],
+        observer: MutationObserver
+    ) {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'attributes') {
+                if (mutation.attributeName === 'width') {
                     const canvas = mutation.target as HTMLCanvasElement;
                     // canvas.style.width = canvas.width / window.devicePixelRatio + "px";
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
-                } else if(mutation.attributeName === "height"){
+                } else if (mutation.attributeName === 'height') {
                     const canvas = mutation.target as HTMLCanvasElement;
                     // canvas.style.height = canvas.height / window.devicePixelRatio + "px";
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
                     }
-                } else if (mutation.attributeName === "style"){
+                } else if (mutation.attributeName === 'style') {
                     const canvas = mutation.target as HTMLCanvasElement;
                     // const styleWidth = parseFloat(canvas.style.width);
                     // const styleHeight = parseFloat(canvas.style.height);
@@ -471,7 +553,10 @@ export class CanvasPositionDimensionPublisher {
                     //     canvas.height = newHeight;
                     // }
                     const newRect = canvas.getBoundingClientRect();
-                    const trueRect = getTrueRect(newRect, window.getComputedStyle(canvas));
+                    const trueRect = getTrueRect(
+                        newRect,
+                        window.getComputedStyle(canvas)
+                    );
                     if (rectChanged(this.lastRect, trueRect)) {
                         this.publishPositionUpdate(trueRect);
                         this.lastRect = trueRect;
@@ -524,8 +609,10 @@ export function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
 
     const trueLeft = rect.left + paddingLeft + borderLeft;
     const trueTop = rect.top + paddingTop + borderTop;
-    const trueWidth = rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
-    const trueHeight = rect.height - paddingTop - paddingBottom - borderTop - borderBottom;
+    const trueWidth =
+        rect.width - paddingLeft - paddingRight - borderLeft - borderRight;
+    const trueHeight =
+        rect.height - paddingTop - paddingBottom - borderTop - borderBottom;
     return new DOMRect(trueLeft, trueTop, trueWidth, trueHeight);
 }
 
@@ -543,11 +630,15 @@ export function getTrueRect(rect: DOMRect, computedStyle: CSSStyleDeclaration) {
  * Returns true if r1 is undefined (initial state always counts as "changed").
  */
 function rectChanged(r1: DOMRect | undefined, r2: DOMRect) {
-    if(r1 === undefined){
+    if (r1 === undefined) {
         return true;
     }
-    return r1.top !== r2.top || r1.left !== r2.left ||
-            r1.width !== r2.width || r1.height !== r2.height;
+    return (
+        r1.top !== r2.top ||
+        r1.left !== r2.left ||
+        r1.width !== r2.width ||
+        r1.height !== r2.height
+    );
 }
 
 /**
@@ -565,7 +656,7 @@ function rectChanged(r1: DOMRect | undefined, r2: DOMRect) {
  * @category Canvas Position
  */
 const methodsToFlip: Record<string, number[]> = {
-    fillRect: [1, 3],        // [yIndex] - indices of y-coordinates to flip
+    fillRect: [1, 3], // [yIndex] - indices of y-coordinates to flip
     strokeRect: [1, 3],
     fillText: [2],
     strokeText: [1],
@@ -574,7 +665,7 @@ const methodsToFlip: Record<string, number[]> = {
     quadraticCurveTo: [1, 3],
     bezierCurveTo: [1, 3, 5],
     arc: [1],
-    drawImage: [2],        // Base case for first two signatures
+    drawImage: [2], // Base case for first two signatures
     rect: [1, 3],
     roundRect: [1, 3],
 };
@@ -615,20 +706,31 @@ const methodsToFlip: Record<string, number[]> = {
  * @see {@link methodsToFlip} for list of intercepted methods
  * @see {@link invertYAxisForDrawImageWith9Args} for drawImage special handling
  */
-export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRenderingContext2D {
+export function reverseYAxis(
+    context: CanvasRenderingContext2D
+): CanvasRenderingContext2D {
     return new Proxy(context, {
-        get(target: CanvasRenderingContext2D, prop: string | symbol, receiver: any): any {
+        get(
+            target: CanvasRenderingContext2D,
+            prop: string | symbol,
+            receiver: any
+        ): any {
             const value = Reflect.get(target, prop, target);
-            
+
             // Check if this is a method that needs y-coordinate flipping
-            if (typeof prop === 'string' && prop in methodsToFlip && typeof value === 'function') {
-                return function(...args: any[]) {
+            if (
+                typeof prop === 'string' &&
+                prop in methodsToFlip &&
+                typeof value === 'function'
+            ) {
+                return function (...args: any[]) {
                     // Create a copy of the arguments
                     const newArgs = [...args];
-                    
+
                     // Special handling for drawImage with 9 arguments (third signature of drawImage)
                     if (prop === 'drawImage' && args.length === 9) {
-                        const convertedArgs = invertYAxisForDrawImageWith9Args(args);
+                        const convertedArgs =
+                            invertYAxisForDrawImageWith9Args(args);
                         return value.apply(target, convertedArgs);
                     } else {
                         // Flip the y-coordinates based on methodsToFlip configuration
@@ -639,28 +741,28 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
                             }
                         }
                         // Special handling for drawImage with 5 arguments (first signature of drawImage)
-                        if(prop === "drawImage" && args.length === 5){
+                        if (prop === 'drawImage' && args.length === 5) {
                             newArgs[2] -= newArgs[4];
                         }
                     }
-                    
+
                     // Call the original method with the modified arguments
                     return value.apply(target, newArgs);
                 };
             }
-            
+
             // Return the original value for properties and methods that don't need modification
             if (typeof value === 'function') {
-                return function(...args: any[]) {
+                return function (...args: any[]) {
                     return value.apply(target, args);
                 };
             }
-            
+
             return value;
         },
         set(target, prop, value): boolean {
             return Reflect.set(target, prop, value);
-        }
+        },
     });
 }
 
@@ -695,12 +797,12 @@ export function reverseYAxis(context: CanvasRenderingContext2D): CanvasRendering
  * @see {@link reverseYAxis} for the main y-axis flipping proxy
  */
 export function invertYAxisForDrawImageWith9Args(args: any[]): typeof args {
-    if(args.length !== 9){
+    if (args.length !== 9) {
         return args;
     }
     const newArgs = [...args];
     const imageHeight = args[0].height;
-    if(imageHeight !== undefined){
+    if (imageHeight !== undefined) {
         newArgs[2] = imageHeight - newArgs[2];
         newArgs[6] = -newArgs[6];
         newArgs[6] -= newArgs[8];

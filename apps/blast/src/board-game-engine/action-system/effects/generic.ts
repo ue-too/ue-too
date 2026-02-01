@@ -6,16 +6,27 @@
  *
  * @module generic-effects
  */
+import type { ComponentName, Entity } from '@ue-too/ecs';
 
-import type { Entity, ComponentName } from '@ue-too/ecs';
-import type { Effect, ActionContext, Event } from '../../core/types';
-import { ECSEffect, BaseEffect } from './base';
+import type { ActionContext, Effect, Event } from '../../core/types';
 import { generateEventId } from '../../event-system/event-utils';
-import type { EntityResolver, ZoneResolver, NumberResolver, ValueResolver } from '../resolvers';
+import type {
+    EntityResolver,
+    NumberResolver,
+    ValueResolver,
+    ZoneResolver,
+} from '../resolvers';
+import { BaseEffect, ECSEffect } from './base';
 
 // Re-export resolver types and helpers for convenience
 export type { EntityResolver, ZoneResolver, NumberResolver, ValueResolver };
-export { EntityResolvers, NumberResolvers, resolveEntity, resolveNumber, resolveValue } from '../resolvers';
+export {
+    EntityResolvers,
+    NumberResolvers,
+    resolveEntity,
+    resolveNumber,
+    resolveValue,
+} from '../resolvers';
 
 // ============================================================================
 // MoveEntity Effect
@@ -25,26 +36,29 @@ export { EntityResolvers, NumberResolvers, resolveEntity, resolveNumber, resolve
  * Configuration for MoveEntity effect.
  */
 export interface MoveEntityConfig {
-  /** Entity to move (resolver or fixed entity) */
-  entity: EntityResolver | Entity;
+    /** Entity to move (resolver or fixed entity) */
+    entity: EntityResolver | Entity;
 
-  /** Source zone (for validation, optional) */
-  fromZone?: ZoneResolver | Entity;
+    /** Source zone (for validation, optional) */
+    fromZone?: ZoneResolver | Entity;
 
-  /** Destination zone */
-  toZone: ZoneResolver | Entity;
+    /** Destination zone */
+    toZone: ZoneResolver | Entity;
 
-  /** Component name for location tracking */
-  locationComponent: ComponentName;
+    /** Component name for location tracking */
+    locationComponent: ComponentName;
 
-  /** Component name for zone entity lists (optional, for caching) */
-  zoneListComponent?: ComponentName;
+    /** Component name for zone entity lists (optional, for caching) */
+    zoneListComponent?: ComponentName;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 
-  /** Additional event data generator (optional) */
-  eventDataGenerator?: (context: ActionContext, entity: Entity) => Record<string, any>;
+    /** Additional event data generator (optional) */
+    eventDataGenerator?: (
+        context: ActionContext,
+        entity: Entity
+    ) => Record<string, any>;
 }
 
 /**
@@ -63,104 +77,105 @@ export interface MoveEntityConfig {
  * ```
  */
 export class MoveEntity extends ECSEffect {
-  private config: MoveEntityConfig;
+    private config: MoveEntityConfig;
 
-  constructor(config: MoveEntityConfig) {
-    super();
-    this.config = config;
-  }
+    constructor(config: MoveEntityConfig) {
+        super();
+        this.config = config;
+    }
 
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
 
-    // Resolve entity
-    const entity = this.resolveEntity(this.config.entity, context);
-    if (entity === null) return;
+        // Resolve entity
+        const entity = this.resolveEntity(this.config.entity, context);
+        if (entity === null) return;
 
-    // Resolve destination zone
-    const toZone = this.resolveEntity(this.config.toZone, context);
-    if (toZone === null) return;
+        // Resolve destination zone
+        const toZone = this.resolveEntity(this.config.toZone, context);
+        if (toZone === null) return;
 
-    // Get current location for removal from source zone cache
-    const locationComp = coordinator.getComponentFromEntity<{ location: Entity }>(
-      this.config.locationComponent,
-      entity
-    );
+        // Get current location for removal from source zone cache
+        const locationComp = coordinator.getComponentFromEntity<{
+            location: Entity;
+        }>(this.config.locationComponent, entity);
 
-    // Remove from source zone cache if configured
-    if (this.config.zoneListComponent && locationComp) {
-      const sourceZone = locationComp.location;
-      const sourceZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-        this.config.zoneListComponent,
-        sourceZone
-      );
-      if (sourceZoneList) {
-        const idx = sourceZoneList.cached.entities.indexOf(entity);
-        if (idx !== -1) {
-          sourceZoneList.cached.entities.splice(idx, 1);
+        // Remove from source zone cache if configured
+        if (this.config.zoneListComponent && locationComp) {
+            const sourceZone = locationComp.location;
+            const sourceZoneList = coordinator.getComponentFromEntity<{
+                cached: { entities: Entity[] };
+            }>(this.config.zoneListComponent, sourceZone);
+            if (sourceZoneList) {
+                const idx = sourceZoneList.cached.entities.indexOf(entity);
+                if (idx !== -1) {
+                    sourceZoneList.cached.entities.splice(idx, 1);
+                }
+            }
         }
-      }
+
+        // Update entity location
+        if (locationComp) {
+            locationComp.location = toZone;
+        } else {
+            coordinator.addComponentToEntity(
+                this.config.locationComponent,
+                entity,
+                {
+                    location: toZone,
+                    sortIndex: 0,
+                }
+            );
+        }
+
+        // Add to destination zone cache if configured
+        if (this.config.zoneListComponent) {
+            const destZoneList = coordinator.getComponentFromEntity<{
+                cached: { entities: Entity[] };
+            }>(this.config.zoneListComponent, toZone);
+            if (destZoneList) {
+                destZoneList.cached.entities.push(entity);
+            }
+        }
     }
 
-    // Update entity location
-    if (locationComp) {
-      locationComp.location = toZone;
-    } else {
-      coordinator.addComponentToEntity(this.config.locationComponent, entity, {
-        location: toZone,
-        sortIndex: 0,
-      });
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
     }
 
-    // Add to destination zone cache if configured
-    if (this.config.zoneListComponent) {
-      const destZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-        this.config.zoneListComponent,
-        toZone
-      );
-      if (destZoneList) {
-        destZoneList.cached.entities.push(entity);
-      }
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
+
+        const entity = this.resolveEntity(this.config.entity, context);
+        const toZone = this.resolveEntity(this.config.toZone, context);
+
+        const baseData = {
+            entityId: entity,
+            toZoneId: toZone,
+            actorId: context.actor,
+        };
+
+        const additionalData = this.config.eventDataGenerator
+            ? this.config.eventDataGenerator(context, entity!)
+            : {};
+
+        return {
+            type: this.config.eventType,
+            data: { ...baseData, ...additionalData },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
-
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
-
-    const entity = this.resolveEntity(this.config.entity, context);
-    const toZone = this.resolveEntity(this.config.toZone, context);
-
-    const baseData = {
-      entityId: entity,
-      toZoneId: toZone,
-      actorId: context.actor,
-    };
-
-    const additionalData = this.config.eventDataGenerator
-      ? this.config.eventDataGenerator(context, entity!)
-      : {};
-
-    return {
-      type: this.config.eventType,
-      data: { ...baseData, ...additionalData },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: EntityResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    private resolveEntity(
+        resolver: EntityResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
     }
-    return resolver;
-  }
 }
 
 // ============================================================================
@@ -171,29 +186,29 @@ export class MoveEntity extends ECSEffect {
  * Configuration for ModifyResource effect.
  */
 export interface ModifyResourceConfig {
-  /** Entity whose resource to modify */
-  entity: EntityResolver | Entity;
+    /** Entity whose resource to modify */
+    entity: EntityResolver | Entity;
 
-  /** Component containing the resource */
-  componentName: ComponentName;
+    /** Component containing the resource */
+    componentName: ComponentName;
 
-  /** Property name to modify */
-  property: string;
+    /** Property name to modify */
+    property: string;
 
-  /** Amount to add (negative for subtract) */
-  amount: NumberResolver | number;
+    /** Amount to add (negative for subtract) */
+    amount: NumberResolver | number;
 
-  /** Optional minimum value (clamp) */
-  min?: number;
+    /** Optional minimum value (clamp) */
+    min?: number;
 
-  /** Optional maximum value (clamp) */
-  max?: number;
+    /** Optional maximum value (clamp) */
+    max?: number;
 
-  /** Optional max property name (e.g., 'maxMana' for clamping 'mana') */
-  maxProperty?: string;
+    /** Optional max property name (e.g., 'maxMana' for clamping 'mana') */
+    maxProperty?: string;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 }
 
 /**
@@ -214,92 +229,97 @@ export interface ModifyResourceConfig {
  * ```
  */
 export class ModifyResource extends ECSEffect {
-  private config: ModifyResourceConfig;
+    private config: ModifyResourceConfig;
 
-  constructor(config: ModifyResourceConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Resolve entity
-    const entity = this.resolveEntity(this.config.entity, context);
-    if (entity === null) return;
-
-    // Get component
-    const component = coordinator.getComponentFromEntity<Record<string, any>>(
-      this.config.componentName,
-      entity
-    );
-    if (!component) return;
-
-    // Resolve amount
-    const amount = this.resolveNumber(this.config.amount, context);
-
-    // Get current value
-    const currentValue = component[this.config.property];
-    if (typeof currentValue !== 'number') return;
-
-    // Calculate new value
-    let newValue = currentValue + amount;
-
-    // Apply min clamp
-    if (this.config.min !== undefined) {
-      newValue = Math.max(newValue, this.config.min);
+    constructor(config: ModifyResourceConfig) {
+        super();
+        this.config = config;
     }
 
-    // Apply max clamp (from config or from another property)
-    if (this.config.max !== undefined) {
-      newValue = Math.min(newValue, this.config.max);
-    } else if (this.config.maxProperty && component[this.config.maxProperty] !== undefined) {
-      newValue = Math.min(newValue, component[this.config.maxProperty]);
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
+
+        // Resolve entity
+        const entity = this.resolveEntity(this.config.entity, context);
+        if (entity === null) return;
+
+        // Get component
+        const component = coordinator.getComponentFromEntity<
+            Record<string, any>
+        >(this.config.componentName, entity);
+        if (!component) return;
+
+        // Resolve amount
+        const amount = this.resolveNumber(this.config.amount, context);
+
+        // Get current value
+        const currentValue = component[this.config.property];
+        if (typeof currentValue !== 'number') return;
+
+        // Calculate new value
+        let newValue = currentValue + amount;
+
+        // Apply min clamp
+        if (this.config.min !== undefined) {
+            newValue = Math.max(newValue, this.config.min);
+        }
+
+        // Apply max clamp (from config or from another property)
+        if (this.config.max !== undefined) {
+            newValue = Math.min(newValue, this.config.max);
+        } else if (
+            this.config.maxProperty &&
+            component[this.config.maxProperty] !== undefined
+        ) {
+            newValue = Math.min(newValue, component[this.config.maxProperty]);
+        }
+
+        // Apply change
+        component[this.config.property] = newValue;
     }
 
-    // Apply change
-    component[this.config.property] = newValue;
-  }
-
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
-
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
-
-    const entity = this.resolveEntity(this.config.entity, context);
-    const amount = this.resolveNumber(this.config.amount, context);
-
-    return {
-      type: this.config.eventType,
-      data: {
-        entityId: entity,
-        property: this.config.property,
-        amount: amount,
-        actorId: context.actor,
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: EntityResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
     }
-    return resolver;
-  }
 
-  private resolveNumber(resolver: NumberResolver | number, context: ActionContext): number {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
+
+        const entity = this.resolveEntity(this.config.entity, context);
+        const amount = this.resolveNumber(this.config.amount, context);
+
+        return {
+            type: this.config.eventType,
+            data: {
+                entityId: entity,
+                property: this.config.property,
+                amount: amount,
+                actorId: context.actor,
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
     }
-    return resolver;
-  }
+
+    private resolveEntity(
+        resolver: EntityResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
+
+    private resolveNumber(
+        resolver: NumberResolver | number,
+        context: ActionContext
+    ): number {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -310,20 +330,20 @@ export class ModifyResource extends ECSEffect {
  * Configuration for SetComponentValue effect.
  */
 export interface SetComponentValueConfig {
-  /** Entity to modify */
-  entity: EntityResolver | Entity;
+    /** Entity to modify */
+    entity: EntityResolver | Entity;
 
-  /** Component name */
-  componentName: ComponentName;
+    /** Component name */
+    componentName: ComponentName;
 
-  /** Property to set */
-  property: string;
+    /** Property to set */
+    property: string;
 
-  /** Value to set (resolver or fixed value) */
-  value: ValueResolver<any> | any;
+    /** Value to set (resolver or fixed value) */
+    value: ValueResolver<any> | any;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 }
 
 /**
@@ -341,73 +361,75 @@ export interface SetComponentValueConfig {
  * ```
  */
 export class SetComponentValue extends ECSEffect {
-  private config: SetComponentValueConfig;
+    private config: SetComponentValueConfig;
 
-  constructor(config: SetComponentValueConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Resolve entity
-    const entity = this.resolveEntity(this.config.entity, context);
-    if (entity === null) return;
-
-    // Get component
-    const component = coordinator.getComponentFromEntity<Record<string, any>>(
-      this.config.componentName,
-      entity
-    );
-    if (!component) return;
-
-    // Resolve value
-    const value = this.resolveValue(this.config.value, context);
-
-    // Set property
-    component[this.config.property] = value;
-  }
-
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
-
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
-
-    const entity = this.resolveEntity(this.config.entity, context);
-    const value = this.resolveValue(this.config.value, context);
-
-    return {
-      type: this.config.eventType,
-      data: {
-        entityId: entity,
-        property: this.config.property,
-        value: value,
-        actorId: context.actor,
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: EntityResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    constructor(config: SetComponentValueConfig) {
+        super();
+        this.config = config;
     }
-    return resolver;
-  }
 
-  private resolveValue<T>(resolver: ValueResolver<T> | T, context: ActionContext): T {
-    if (typeof resolver === 'function') {
-      return (resolver as ValueResolver<T>)(context);
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
+
+        // Resolve entity
+        const entity = this.resolveEntity(this.config.entity, context);
+        if (entity === null) return;
+
+        // Get component
+        const component = coordinator.getComponentFromEntity<
+            Record<string, any>
+        >(this.config.componentName, entity);
+        if (!component) return;
+
+        // Resolve value
+        const value = this.resolveValue(this.config.value, context);
+
+        // Set property
+        component[this.config.property] = value;
     }
-    return resolver;
-  }
+
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
+    }
+
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
+
+        const entity = this.resolveEntity(this.config.entity, context);
+        const value = this.resolveValue(this.config.value, context);
+
+        return {
+            type: this.config.eventType,
+            data: {
+                entityId: entity,
+                property: this.config.property,
+                value: value,
+                actorId: context.actor,
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
+    }
+
+    private resolveEntity(
+        resolver: EntityResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
+
+    private resolveValue<T>(
+        resolver: ValueResolver<T> | T,
+        context: ActionContext
+    ): T {
+        if (typeof resolver === 'function') {
+            return (resolver as ValueResolver<T>)(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -418,23 +440,26 @@ export class SetComponentValue extends ECSEffect {
  * Configuration for DestroyEntity effect.
  */
 export interface DestroyEntityConfig {
-  /** Entity to destroy */
-  entity: EntityResolver | Entity;
+    /** Entity to destroy */
+    entity: EntityResolver | Entity;
 
-  /** Optional: Move to discard zone instead of destroying */
-  discardZone?: ZoneResolver | Entity;
+    /** Optional: Move to discard zone instead of destroying */
+    discardZone?: ZoneResolver | Entity;
 
-  /** Location component (required if using discardZone) */
-  locationComponent?: ComponentName;
+    /** Location component (required if using discardZone) */
+    locationComponent?: ComponentName;
 
-  /** Zone list component (for cache cleanup) */
-  zoneListComponent?: ComponentName;
+    /** Zone list component (for cache cleanup) */
+    zoneListComponent?: ComponentName;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 
-  /** Additional event data generator (optional) */
-  eventDataGenerator?: (context: ActionContext, entity: Entity) => Record<string, any>;
+    /** Additional event data generator (optional) */
+    eventDataGenerator?: (
+        context: ActionContext,
+        entity: Entity
+    ) => Record<string, any>;
 }
 
 /**
@@ -453,106 +478,105 @@ export interface DestroyEntityConfig {
  * ```
  */
 export class DestroyEntity extends ECSEffect {
-  private config: DestroyEntityConfig;
+    private config: DestroyEntityConfig;
 
-  constructor(config: DestroyEntityConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Resolve entity
-    const entity = this.resolveEntity(this.config.entity, context);
-    if (entity === null) return;
-
-    // Remove from current zone cache
-    if (this.config.zoneListComponent && this.config.locationComponent) {
-      const locationComp = coordinator.getComponentFromEntity<{ location: Entity }>(
-        this.config.locationComponent,
-        entity
-      );
-      if (locationComp) {
-        const sourceZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-          this.config.zoneListComponent,
-          locationComp.location
-        );
-        if (sourceZoneList) {
-          const idx = sourceZoneList.cached.entities.indexOf(entity);
-          if (idx !== -1) {
-            sourceZoneList.cached.entities.splice(idx, 1);
-          }
-        }
-      }
+    constructor(config: DestroyEntityConfig) {
+        super();
+        this.config = config;
     }
 
-    // Move to discard zone or destroy
-    if (this.config.discardZone && this.config.locationComponent) {
-      const discardZone = this.resolveEntity(this.config.discardZone, context);
-      if (discardZone) {
-        // Update location
-        const locationComp = coordinator.getComponentFromEntity<{ location: Entity }>(
-          this.config.locationComponent,
-          entity
-        );
-        if (locationComp) {
-          locationComp.location = discardZone;
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
+
+        // Resolve entity
+        const entity = this.resolveEntity(this.config.entity, context);
+        if (entity === null) return;
+
+        // Remove from current zone cache
+        if (this.config.zoneListComponent && this.config.locationComponent) {
+            const locationComp = coordinator.getComponentFromEntity<{
+                location: Entity;
+            }>(this.config.locationComponent, entity);
+            if (locationComp) {
+                const sourceZoneList = coordinator.getComponentFromEntity<{
+                    cached: { entities: Entity[] };
+                }>(this.config.zoneListComponent, locationComp.location);
+                if (sourceZoneList) {
+                    const idx = sourceZoneList.cached.entities.indexOf(entity);
+                    if (idx !== -1) {
+                        sourceZoneList.cached.entities.splice(idx, 1);
+                    }
+                }
+            }
         }
 
-        // Add to discard zone cache
-        if (this.config.zoneListComponent) {
-          const discardZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-            this.config.zoneListComponent,
-            discardZone
-          );
-          if (discardZoneList) {
-            discardZoneList.cached.entities.push(entity);
-          }
+        // Move to discard zone or destroy
+        if (this.config.discardZone && this.config.locationComponent) {
+            const discardZone = this.resolveEntity(
+                this.config.discardZone,
+                context
+            );
+            if (discardZone) {
+                // Update location
+                const locationComp = coordinator.getComponentFromEntity<{
+                    location: Entity;
+                }>(this.config.locationComponent, entity);
+                if (locationComp) {
+                    locationComp.location = discardZone;
+                }
+
+                // Add to discard zone cache
+                if (this.config.zoneListComponent) {
+                    const discardZoneList = coordinator.getComponentFromEntity<{
+                        cached: { entities: Entity[] };
+                    }>(this.config.zoneListComponent, discardZone);
+                    if (discardZoneList) {
+                        discardZoneList.cached.entities.push(entity);
+                    }
+                }
+            }
+        } else {
+            // Actually destroy the entity
+            coordinator.destroyEntity(entity);
         }
-      }
-    } else {
-      // Actually destroy the entity
-      coordinator.destroyEntity(entity);
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
-
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
-
-    const entity = this.resolveEntity(this.config.entity, context);
-
-    const baseData = {
-      entityId: entity,
-      actorId: context.actor,
-    };
-
-    const additionalData = this.config.eventDataGenerator
-      ? this.config.eventDataGenerator(context, entity!)
-      : {};
-
-    return {
-      type: this.config.eventType,
-      data: { ...baseData, ...additionalData },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: EntityResolver | Entity | undefined,
-    context: ActionContext
-  ): Entity | null {
-    if (resolver === undefined) return null;
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
     }
-    return resolver;
-  }
+
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
+
+        const entity = this.resolveEntity(this.config.entity, context);
+
+        const baseData = {
+            entityId: entity,
+            actorId: context.actor,
+        };
+
+        const additionalData = this.config.eventDataGenerator
+            ? this.config.eventDataGenerator(context, entity!)
+            : {};
+
+        return {
+            type: this.config.eventType,
+            data: { ...baseData, ...additionalData },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
+    }
+
+    private resolveEntity(
+        resolver: EntityResolver | Entity | undefined,
+        context: ActionContext
+    ): Entity | null {
+        if (resolver === undefined) return null;
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -563,34 +587,34 @@ export class DestroyEntity extends ECSEffect {
  * Component data to add to a created entity.
  */
 export interface ComponentData {
-  /** Component name */
-  name: ComponentName;
+    /** Component name */
+    name: ComponentName;
 
-  /** Component data (resolver or fixed value) */
-  data: ValueResolver<Record<string, any>> | Record<string, any>;
+    /** Component data (resolver or fixed value) */
+    data: ValueResolver<Record<string, any>> | Record<string, any>;
 }
 
 /**
  * Configuration for CreateEntity effect.
  */
 export interface CreateEntityConfig {
-  /** Components to add to the new entity */
-  components: ComponentData[];
+    /** Components to add to the new entity */
+    components: ComponentData[];
 
-  /** Zone to place the entity in */
-  zone?: ZoneResolver | Entity;
+    /** Zone to place the entity in */
+    zone?: ZoneResolver | Entity;
 
-  /** Location component (required if zone is specified) */
-  locationComponent?: ComponentName;
+    /** Location component (required if zone is specified) */
+    locationComponent?: ComponentName;
 
-  /** Zone list component (for cache) */
-  zoneListComponent?: ComponentName;
+    /** Zone list component (for cache) */
+    zoneListComponent?: ComponentName;
 
-  /** Store created entity ID in context parameters under this key */
-  storeAs?: string;
+    /** Store created entity ID in context parameters under this key */
+    storeAs?: string;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 }
 
 /**
@@ -612,89 +636,97 @@ export interface CreateEntityConfig {
  * ```
  */
 export class CreateEntity extends ECSEffect {
-  private config: CreateEntityConfig;
+    private config: CreateEntityConfig;
 
-  constructor(config: CreateEntityConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Create entity
-    const entity = coordinator.createEntity();
-
-    // Add components
-    for (const compData of this.config.components) {
-      const data = this.resolveValue(compData.data, context);
-      coordinator.addComponentToEntity(compData.name, entity, data);
+    constructor(config: CreateEntityConfig) {
+        super();
+        this.config = config;
     }
 
-    // Place in zone if specified
-    if (this.config.zone && this.config.locationComponent) {
-      const zone = this.resolveEntity(this.config.zone, context);
-      if (zone) {
-        coordinator.addComponentToEntity(this.config.locationComponent, entity, {
-          location: zone,
-          sortIndex: 0,
-        });
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
 
-        // Add to zone cache
-        if (this.config.zoneListComponent) {
-          const zoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-            this.config.zoneListComponent,
-            zone
-          );
-          if (zoneList) {
-            zoneList.cached.entities.push(entity);
-          }
+        // Create entity
+        const entity = coordinator.createEntity();
+
+        // Add components
+        for (const compData of this.config.components) {
+            const data = this.resolveValue(compData.data, context);
+            coordinator.addComponentToEntity(compData.name, entity, data);
         }
-      }
+
+        // Place in zone if specified
+        if (this.config.zone && this.config.locationComponent) {
+            const zone = this.resolveEntity(this.config.zone, context);
+            if (zone) {
+                coordinator.addComponentToEntity(
+                    this.config.locationComponent,
+                    entity,
+                    {
+                        location: zone,
+                        sortIndex: 0,
+                    }
+                );
+
+                // Add to zone cache
+                if (this.config.zoneListComponent) {
+                    const zoneList = coordinator.getComponentFromEntity<{
+                        cached: { entities: Entity[] };
+                    }>(this.config.zoneListComponent, zone);
+                    if (zoneList) {
+                        zoneList.cached.entities.push(entity);
+                    }
+                }
+            }
+        }
+
+        // Store entity ID in parameters for later use
+        if (this.config.storeAs) {
+            context.parameters[this.config.storeAs] = entity;
+        }
     }
 
-    // Store entity ID in parameters for later use
-    if (this.config.storeAs) {
-      context.parameters[this.config.storeAs] = entity;
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
 
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
+        const createdEntity = this.config.storeAs
+            ? context.parameters[this.config.storeAs]
+            : null;
 
-    const createdEntity = this.config.storeAs ? context.parameters[this.config.storeAs] : null;
-
-    return {
-      type: this.config.eventType,
-      data: {
-        entityId: createdEntity,
-        actorId: context.actor,
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: ZoneResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+        return {
+            type: this.config.eventType,
+            data: {
+                entityId: createdEntity,
+                actorId: context.actor,
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
     }
-    return resolver;
-  }
 
-  private resolveValue<T>(resolver: ValueResolver<T> | T, context: ActionContext): T {
-    if (typeof resolver === 'function') {
-      return (resolver as ValueResolver<T>)(context);
+    private resolveEntity(
+        resolver: ZoneResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
     }
-    return resolver;
-  }
+
+    private resolveValue<T>(
+        resolver: ValueResolver<T> | T,
+        context: ActionContext
+    ): T {
+        if (typeof resolver === 'function') {
+            return (resolver as ValueResolver<T>)(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -705,17 +737,17 @@ export class CreateEntity extends ECSEffect {
  * Configuration for ShuffleZone effect.
  */
 export interface ShuffleZoneConfig {
-  /** Zone to shuffle */
-  zone: ZoneResolver | Entity;
+    /** Zone to shuffle */
+    zone: ZoneResolver | Entity;
 
-  /** Zone list component containing entities */
-  zoneListComponent: ComponentName;
+    /** Zone list component containing entities */
+    zoneListComponent: ComponentName;
 
-  /** Optional random seed for deterministic shuffling */
-  seed?: number;
+    /** Optional random seed for deterministic shuffling */
+    seed?: number;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 }
 
 /**
@@ -732,64 +764,63 @@ export interface ShuffleZoneConfig {
  * ```
  */
 export class ShuffleZone extends ECSEffect {
-  private config: ShuffleZoneConfig;
+    private config: ShuffleZoneConfig;
 
-  constructor(config: ShuffleZoneConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Resolve zone
-    const zone = this.resolveEntity(this.config.zone, context);
-    if (zone === null) return;
-
-    // Get zone list
-    const zoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-      this.config.zoneListComponent,
-      zone
-    );
-    if (!zoneList) return;
-
-    // Fisher-Yates shuffle
-    const entities = zoneList.cached.entities;
-    for (let i = entities.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [entities[i], entities[j]] = [entities[j], entities[i]];
+    constructor(config: ShuffleZoneConfig) {
+        super();
+        this.config = config;
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
 
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
+        // Resolve zone
+        const zone = this.resolveEntity(this.config.zone, context);
+        if (zone === null) return;
 
-    const zone = this.resolveEntity(this.config.zone, context);
+        // Get zone list
+        const zoneList = coordinator.getComponentFromEntity<{
+            cached: { entities: Entity[] };
+        }>(this.config.zoneListComponent, zone);
+        if (!zoneList) return;
 
-    return {
-      type: this.config.eventType,
-      data: {
-        zoneId: zone,
-        actorId: context.actor,
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: ZoneResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+        // Fisher-Yates shuffle
+        const entities = zoneList.cached.entities;
+        for (let i = entities.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [entities[i], entities[j]] = [entities[j], entities[i]];
+        }
     }
-    return resolver;
-  }
+
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
+    }
+
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
+
+        const zone = this.resolveEntity(this.config.zone, context);
+
+        return {
+            type: this.config.eventType,
+            data: {
+                zoneId: zone,
+                actorId: context.actor,
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
+    }
+
+    private resolveEntity(
+        resolver: ZoneResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -800,29 +831,29 @@ export class ShuffleZone extends ECSEffect {
  * Configuration for TransferMultiple effect.
  */
 export interface TransferMultipleConfig {
-  /** Source zone */
-  fromZone: ZoneResolver | Entity;
+    /** Source zone */
+    fromZone: ZoneResolver | Entity;
 
-  /** Destination zone */
-  toZone: ZoneResolver | Entity;
+    /** Destination zone */
+    toZone: ZoneResolver | Entity;
 
-  /** Number of entities to transfer */
-  count: NumberResolver | number;
+    /** Number of entities to transfer */
+    count: NumberResolver | number;
 
-  /** 'top' = last in array (like drawing), 'bottom' = first, 'random' = random selection */
-  selection: 'top' | 'bottom' | 'random';
+    /** 'top' = last in array (like drawing), 'bottom' = first, 'random' = random selection */
+    selection: 'top' | 'bottom' | 'random';
 
-  /** Location component */
-  locationComponent: ComponentName;
+    /** Location component */
+    locationComponent: ComponentName;
 
-  /** Zone list component */
-  zoneListComponent: ComponentName;
+    /** Zone list component */
+    zoneListComponent: ComponentName;
 
-  /** Optional filter function to select specific entities */
-  filter?: (entity: Entity, context: ActionContext) => boolean;
+    /** Optional filter function to select specific entities */
+    filter?: (entity: Entity, context: ActionContext) => boolean;
 
-  /** Event type to emit (optional) */
-  eventType?: string;
+    /** Event type to emit (optional) */
+    eventType?: string;
 }
 
 /**
@@ -844,129 +875,129 @@ export interface TransferMultipleConfig {
  * ```
  */
 export class TransferMultiple extends ECSEffect {
-  private config: TransferMultipleConfig;
+    private config: TransferMultipleConfig;
 
-  constructor(config: TransferMultipleConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const coordinator = this.getCoordinator(context);
-
-    // Resolve zones
-    const fromZone = this.resolveEntity(this.config.fromZone, context);
-    const toZone = this.resolveEntity(this.config.toZone, context);
-    if (!fromZone || !toZone) return;
-
-    // Resolve count
-    const count = this.resolveNumber(this.config.count, context);
-
-    // Get source zone list
-    const fromZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-      this.config.zoneListComponent,
-      fromZone
-    );
-    if (!fromZoneList) return;
-
-    // Get destination zone list
-    const toZoneList = coordinator.getComponentFromEntity<{ cached: { entities: Entity[] } }>(
-      this.config.zoneListComponent,
-      toZone
-    );
-    if (!toZoneList) return;
-
-    // Get available entities (optionally filtered)
-    let available = [...fromZoneList.cached.entities];
-    if (this.config.filter) {
-      available = available.filter((e) => this.config.filter!(e, context));
+    constructor(config: TransferMultipleConfig) {
+        super();
+        this.config = config;
     }
 
-    // Select entities to transfer
-    const toTransfer: Entity[] = [];
-    const actualCount = Math.min(count, available.length);
+    apply(context: ActionContext): void {
+        const coordinator = this.getCoordinator(context);
 
-    for (let i = 0; i < actualCount; i++) {
-      let entity: Entity;
+        // Resolve zones
+        const fromZone = this.resolveEntity(this.config.fromZone, context);
+        const toZone = this.resolveEntity(this.config.toZone, context);
+        if (!fromZone || !toZone) return;
 
-      switch (this.config.selection) {
-        case 'top':
-          entity = available.pop()!;
-          break;
-        case 'bottom':
-          entity = available.shift()!;
-          break;
-        case 'random':
-          const idx = Math.floor(Math.random() * available.length);
-          entity = available.splice(idx, 1)[0];
-          break;
-      }
+        // Resolve count
+        const count = this.resolveNumber(this.config.count, context);
 
-      toTransfer.push(entity);
+        // Get source zone list
+        const fromZoneList = coordinator.getComponentFromEntity<{
+            cached: { entities: Entity[] };
+        }>(this.config.zoneListComponent, fromZone);
+        if (!fromZoneList) return;
+
+        // Get destination zone list
+        const toZoneList = coordinator.getComponentFromEntity<{
+            cached: { entities: Entity[] };
+        }>(this.config.zoneListComponent, toZone);
+        if (!toZoneList) return;
+
+        // Get available entities (optionally filtered)
+        let available = [...fromZoneList.cached.entities];
+        if (this.config.filter) {
+            available = available.filter(e => this.config.filter!(e, context));
+        }
+
+        // Select entities to transfer
+        const toTransfer: Entity[] = [];
+        const actualCount = Math.min(count, available.length);
+
+        for (let i = 0; i < actualCount; i++) {
+            let entity: Entity;
+
+            switch (this.config.selection) {
+                case 'top':
+                    entity = available.pop()!;
+                    break;
+                case 'bottom':
+                    entity = available.shift()!;
+                    break;
+                case 'random':
+                    const idx = Math.floor(Math.random() * available.length);
+                    entity = available.splice(idx, 1)[0];
+                    break;
+            }
+
+            toTransfer.push(entity);
+        }
+
+        // Transfer entities
+        for (const entity of toTransfer) {
+            // Remove from source
+            const sourceIdx = fromZoneList.cached.entities.indexOf(entity);
+            if (sourceIdx !== -1) {
+                fromZoneList.cached.entities.splice(sourceIdx, 1);
+            }
+
+            // Update location
+            const locationComp = coordinator.getComponentFromEntity<{
+                location: Entity;
+            }>(this.config.locationComponent, entity);
+            if (locationComp) {
+                locationComp.location = toZone;
+            }
+
+            // Add to destination
+            toZoneList.cached.entities.push(entity);
+        }
     }
 
-    // Transfer entities
-    for (const entity of toTransfer) {
-      // Remove from source
-      const sourceIdx = fromZoneList.cached.entities.indexOf(entity);
-      if (sourceIdx !== -1) {
-        fromZoneList.cached.entities.splice(sourceIdx, 1);
-      }
-
-      // Update location
-      const locationComp = coordinator.getComponentFromEntity<{ location: Entity }>(
-        this.config.locationComponent,
-        entity
-      );
-      if (locationComp) {
-        locationComp.location = toZone;
-      }
-
-      // Add to destination
-      toZoneList.cached.entities.push(entity);
+    generatesEvent(): boolean {
+        return this.config.eventType !== undefined;
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.eventType !== undefined;
-  }
+    createEvent(context: ActionContext): Event | null {
+        if (!this.config.eventType) return null;
 
-  createEvent(context: ActionContext): Event | null {
-    if (!this.config.eventType) return null;
+        const fromZone = this.resolveEntity(this.config.fromZone, context);
+        const toZone = this.resolveEntity(this.config.toZone, context);
+        const count = this.resolveNumber(this.config.count, context);
 
-    const fromZone = this.resolveEntity(this.config.fromZone, context);
-    const toZone = this.resolveEntity(this.config.toZone, context);
-    const count = this.resolveNumber(this.config.count, context);
-
-    return {
-      type: this.config.eventType,
-      data: {
-        fromZoneId: fromZone,
-        toZoneId: toZone,
-        count: count,
-        actorId: context.actor,
-      },
-      timestamp: Date.now(),
-      id: generateEventId(),
-    };
-  }
-
-  private resolveEntity(
-    resolver: ZoneResolver | Entity,
-    context: ActionContext
-  ): Entity | null {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+        return {
+            type: this.config.eventType,
+            data: {
+                fromZoneId: fromZone,
+                toZoneId: toZone,
+                count: count,
+                actorId: context.actor,
+            },
+            timestamp: Date.now(),
+            id: generateEventId(),
+        };
     }
-    return resolver;
-  }
 
-  private resolveNumber(resolver: NumberResolver | number, context: ActionContext): number {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+    private resolveEntity(
+        resolver: ZoneResolver | Entity,
+        context: ActionContext
+    ): Entity | null {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
     }
-    return resolver;
-  }
+
+    private resolveNumber(
+        resolver: NumberResolver | number,
+        context: ActionContext
+    ): number {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
 }
 
 // ============================================================================
@@ -977,14 +1008,14 @@ export class TransferMultiple extends ECSEffect {
  * Configuration for ConditionalEffect.
  */
 export interface ConditionalEffectConfig {
-  /** Condition that must be true for effect to apply */
-  condition: (context: ActionContext) => boolean;
+    /** Condition that must be true for effect to apply */
+    condition: (context: ActionContext) => boolean;
 
-  /** Effect to apply if condition is true */
-  thenEffect: Effect;
+    /** Effect to apply if condition is true */
+    thenEffect: Effect;
 
-  /** Optional effect to apply if condition is false */
-  elseEffect?: Effect;
+    /** Optional effect to apply if condition is false */
+    elseEffect?: Effect;
 }
 
 /**
@@ -1004,36 +1035,36 @@ export interface ConditionalEffectConfig {
  * ```
  */
 export class ConditionalEffect extends BaseEffect {
-  private config: ConditionalEffectConfig;
+    private config: ConditionalEffectConfig;
 
-  constructor(config: ConditionalEffectConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    if (this.config.condition(context)) {
-      this.config.thenEffect.apply(context);
-    } else if (this.config.elseEffect) {
-      this.config.elseEffect.apply(context);
+    constructor(config: ConditionalEffectConfig) {
+        super();
+        this.config = config;
     }
-  }
 
-  generatesEvent(): boolean {
-    return (
-      this.config.thenEffect.generatesEvent() ||
-      (this.config.elseEffect?.generatesEvent() ?? false)
-    );
-  }
-
-  createEvent(context: ActionContext): Event | null {
-    if (this.config.condition(context)) {
-      return this.config.thenEffect.createEvent(context);
-    } else if (this.config.elseEffect) {
-      return this.config.elseEffect.createEvent(context);
+    apply(context: ActionContext): void {
+        if (this.config.condition(context)) {
+            this.config.thenEffect.apply(context);
+        } else if (this.config.elseEffect) {
+            this.config.elseEffect.apply(context);
+        }
     }
-    return null;
-  }
+
+    generatesEvent(): boolean {
+        return (
+            this.config.thenEffect.generatesEvent() ||
+            (this.config.elseEffect?.generatesEvent() ?? false)
+        );
+    }
+
+    createEvent(context: ActionContext): Event | null {
+        if (this.config.condition(context)) {
+            return this.config.thenEffect.createEvent(context);
+        } else if (this.config.elseEffect) {
+            return this.config.elseEffect.createEvent(context);
+        }
+        return null;
+    }
 }
 
 // ============================================================================
@@ -1044,11 +1075,11 @@ export class ConditionalEffect extends BaseEffect {
  * Configuration for RepeatEffect.
  */
 export interface RepeatEffectConfig {
-  /** Effect to repeat */
-  effect: Effect;
+    /** Effect to repeat */
+    effect: Effect;
 
-  /** Number of times to repeat */
-  times: NumberResolver | number;
+    /** Number of times to repeat */
+    times: NumberResolver | number;
 }
 
 /**
@@ -1064,34 +1095,37 @@ export interface RepeatEffectConfig {
  * ```
  */
 export class RepeatEffect extends BaseEffect {
-  private config: RepeatEffectConfig;
+    private config: RepeatEffectConfig;
 
-  constructor(config: RepeatEffectConfig) {
-    super();
-    this.config = config;
-  }
-
-  apply(context: ActionContext): void {
-    const times = this.resolveNumber(this.config.times, context);
-
-    for (let i = 0; i < times; i++) {
-      this.config.effect.apply(context);
+    constructor(config: RepeatEffectConfig) {
+        super();
+        this.config = config;
     }
-  }
 
-  generatesEvent(): boolean {
-    return this.config.effect.generatesEvent();
-  }
+    apply(context: ActionContext): void {
+        const times = this.resolveNumber(this.config.times, context);
 
-  createEvent(context: ActionContext): Event | null {
-    // Only returns one event (the first iteration)
-    return this.config.effect.createEvent(context);
-  }
-
-  private resolveNumber(resolver: NumberResolver | number, context: ActionContext): number {
-    if (typeof resolver === 'function') {
-      return resolver(context);
+        for (let i = 0; i < times; i++) {
+            this.config.effect.apply(context);
+        }
     }
-    return resolver;
-  }
+
+    generatesEvent(): boolean {
+        return this.config.effect.generatesEvent();
+    }
+
+    createEvent(context: ActionContext): Event | null {
+        // Only returns one event (the first iteration)
+        return this.config.effect.createEvent(context);
+    }
+
+    private resolveNumber(
+        resolver: NumberResolver | number,
+        context: ActionContext
+    ): number {
+        if (typeof resolver === 'function') {
+            return resolver(context);
+        }
+        return resolver;
+    }
 }

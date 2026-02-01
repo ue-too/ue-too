@@ -1,12 +1,29 @@
+import { Point } from '@ue-too/math';
 
-import { CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput } from "../interface";
-import { Point } from "@ue-too/math";
-import { ObservableBoardCamera } from "../../interface";
-import { createDefaultPanControlStateMachine, PanControlStateMachine, PanControlOutputEvent } from "./pan-control-state-machine";
-import { createDefaultZoomControlStateMachine, ZoomControlStateMachine, ZoomControlOutputEvent } from "./zoom-control-state-machine";
-import { createDefaultRotateControlStateMachine, RotateControlStateMachine, RotateControlOutputEvent } from "./rotation-control-state-machine";
-import { CameraRig } from "../../camera-rig";
-import { createDefaultCameraRig } from "../../camera-rig";
+import { CameraRig } from '../../camera-rig';
+import { createDefaultCameraRig } from '../../camera-rig';
+import { ObservableBoardCamera } from '../../interface';
+import {
+    CameraMux,
+    CameraMuxPanOutput,
+    CameraMuxRotationOutput,
+    CameraMuxZoomOutput,
+} from '../interface';
+import {
+    PanControlOutputEvent,
+    PanControlStateMachine,
+    createDefaultPanControlStateMachine,
+} from './pan-control-state-machine';
+import {
+    RotateControlOutputEvent,
+    RotateControlStateMachine,
+    createDefaultRotateControlStateMachine,
+} from './rotation-control-state-machine';
+import {
+    ZoomControlOutputEvent,
+    ZoomControlStateMachine,
+    createDefaultZoomControlStateMachine,
+} from './zoom-control-state-machine';
 
 /**
  * Advanced camera input multiplexer with animation support and input locking via state machines.
@@ -60,7 +77,6 @@ import { createDefaultCameraRig } from "../../camera-rig";
  * @see {@link createCameraMuxWithAnimationAndLock} for factory function
  */
 export class CameraMuxWithAnimationAndLock implements CameraMux {
-
     private _panStateMachine: PanControlStateMachine;
     private _zoomStateMachine: ZoomControlStateMachine;
     private _rotateStateMachine: RotateControlStateMachine;
@@ -76,7 +92,11 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * Typically created via factory functions like {@link createCameraMuxWithAnimationAndLock}
      * rather than direct instantiation.
      */
-    constructor(panStateMachine: PanControlStateMachine, zoomStateMachine: ZoomControlStateMachine, rotateStateMachine: RotateControlStateMachine){
+    constructor(
+        panStateMachine: PanControlStateMachine,
+        zoomStateMachine: ZoomControlStateMachine,
+        rotateStateMachine: RotateControlStateMachine
+    ) {
         this._panStateMachine = panStateMachine;
         this._zoomStateMachine = zoomStateMachine;
         this._rotateStateMachine = rotateStateMachine;
@@ -106,10 +126,10 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
     notifyPanToAnimationInput(target: Point): CameraMuxPanOutput {
         const res = this._panStateMachine.notifyPanToAnimationInput(target);
 
-        if(res.handled) {
+        if (res.handled) {
             const output = res.output;
-            if(output !== undefined){
-                switch(output.type){
+            if (output !== undefined) {
+                switch (output.type) {
                     case 'panByViewPort':
                         return { allowPassThrough: true, delta: output.delta };
                     case 'panToWorld':
@@ -117,7 +137,6 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
                     default:
                         return { allowPassThrough: false };
                 }
-
             }
         }
         return { allowPassThrough: false };
@@ -146,10 +165,12 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * ```
      */
     notifyPanInput(delta: Point): CameraMuxPanOutput {
-        const result = this._panStateMachine.happens("userPanByInput", { diff: delta });
+        const result = this._panStateMachine.happens('userPanByInput', {
+            diff: delta,
+        });
         if (result.handled && 'output' in result && result.output) {
             const output = result.output as PanControlOutputEvent;
-            if (output.type !== "none") {
+            if (output.type !== 'none') {
                 return { allowPassThrough: true, delta: delta };
             }
         }
@@ -180,11 +201,18 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * ```
      */
     notifyZoomInput(delta: number, at: Point): CameraMuxZoomOutput {
-        const result = this._zoomStateMachine.happens("userZoomByAtInput", { deltaZoom: delta, anchorPoint: at });
+        const result = this._zoomStateMachine.happens('userZoomByAtInput', {
+            deltaZoom: delta,
+            anchorPoint: at,
+        });
         if (result.handled && 'output' in result && result.output) {
             const output = result.output as ZoomControlOutputEvent;
-            if (output.type !== "none") {
-                return { allowPassThrough: true, delta: delta, anchorPoint: at };
+            if (output.type !== 'none') {
+                return {
+                    allowPassThrough: true,
+                    delta: delta,
+                    anchorPoint: at,
+                };
             }
         }
         return { allowPassThrough: false };
@@ -229,7 +257,10 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * the anchor point stationary (zoom-to-cursor behavior).
      * User input will be blocked during the animation.
      */
-    notifyZoomInputAnimation(targetZoom: number, at: Point = {x: 0, y: 0}): void {
+    notifyZoomInputAnimation(
+        targetZoom: number,
+        at: Point = { x: 0, y: 0 }
+    ): void {
         this._zoomStateMachine.notifyZoomToAtCenterInput(targetZoom, at);
     }
 
@@ -243,7 +274,10 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * Similar to {@link notifyZoomInputAnimation} but accepts world-space coordinates
      * for the anchor point instead of viewport coordinates.
      */
-    notifyZoomInputAnimationWorld(targetZoom: number, at: Point = {x: 0, y: 0}): void {
+    notifyZoomInputAnimationWorld(
+        targetZoom: number,
+        at: Point = { x: 0, y: 0 }
+    ): void {
         this._zoomStateMachine.notifyZoomToAtWorldInput(targetZoom, at);
     }
 
@@ -269,10 +303,12 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
      * ```
      */
     notifyRotationInput(delta: number): CameraMuxRotationOutput {
-        const result = this._rotateStateMachine.happens("userRotateByInput", { diff: delta });
+        const result = this._rotateStateMachine.happens('userRotateByInput', {
+            diff: delta,
+        });
         if (result.handled && 'output' in result && result.output) {
             const output = result.output as RotateControlOutputEvent;
-            if (output.type !== "none") {
+            if (output.type !== 'none') {
                 return { allowPassThrough: true, delta: delta };
             }
         }
@@ -396,5 +432,9 @@ export function createCameraMuxWithAnimationAndLock(): CameraMux {
     const panStateMachine = createDefaultPanControlStateMachine();
     const zoomStateMachine = createDefaultZoomControlStateMachine();
     const rotateStateMachine = createDefaultRotateControlStateMachine();
-    return new CameraMuxWithAnimationAndLock(panStateMachine, zoomStateMachine, rotateStateMachine);
+    return new CameraMuxWithAnimationAndLock(
+        panStateMachine,
+        zoomStateMachine,
+        rotateStateMachine
+    );
 }

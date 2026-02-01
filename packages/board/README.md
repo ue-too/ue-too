@@ -34,6 +34,7 @@
 ## Overview
 
 ### What This Library Provides
+
 - Transforms HTML canvas into a near-infinite canvas with panning, zooming, and rotation capabilities
 - Provides utility functions that simplify the complex mathematics required for infinite canvas operations
 - Compatible with multiple canvas frameworks (vanilla, Pixi.js, Fabric.js, Konva) as the underlying mathematical principles remain consistent
@@ -41,6 +42,7 @@
 - Accomplishes the same goal as pixi-viewport but without pixi.js dependency
 
 ### What This Library Is Not
+
 - A complete drawing application like Excalidraw or tldraw
 - A full-featured package with built-in drawing tools and user interfaces
 
@@ -55,6 +57,7 @@ As you add these features, the code becomes increasingly complex, especially whe
 Even if you're not building a drawing app, `ue-too` is useful for any canvas that requires panning functionality. It works with various frameworks including pixi.js, fabric.js, Konva, vanilla JavaScript canvas API, and even headless canvas in Node.js.
 
 ## Quick Demo
+
 [Stackblitz example link](https://stackblitz.com/edit/vitejs-vite-jpxrtxzg?file=index.html): This example demonstrates the basic functionality shown in the [Quick Start](#quick-start-using-only-html-canvas) section.
 
 Additional examples in the [`devserver`](https://github.com/niuee/board/tree/main/devserver) directory show integration with pixi.js, fabric.js, and Konva (incomplete but providing general implementation guidance).
@@ -62,15 +65,17 @@ Additional examples in the [`devserver`](https://github.com/niuee/board/tree/mai
 ## Installation and Usage
 
 ### Installation
+
 ```bash
 npm install @ue-too/board
 ```
 
 ```javascript
-import { Board } from "@ue-too/board";
+import { Board } from '@ue-too/board';
 ```
 
 ## Key Features
+
 - Modularity: Use only the components you need (details in the [Under the Hood](#under-the-hood) section)
 - Comprehensive input support: touch, trackpad (macOS), keyboard, and mouse, with customizable behavior
 - Framework-agnostic: Works with HTML and JavaScript, and can be integrated with frontend frameworks/libraries
@@ -81,25 +86,26 @@ import { Board } from "@ue-too/board";
 This example is based on the MDN documentation for the [Canvas API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API). (turning the MDN example into an infinite canvas)
 
 HTML:
+
 ```html
 <canvas id="graph"></canvas>
 ```
 
 ```javascript
-import { Board } from "@ue-too/board";
+import { Board } from '@ue-too/board';
 
-const canvas = document.getElementById("graph");
+const canvas = document.getElementById('graph');
 
 const board = new Board(canvas);
 
 function draw(timestamp) {
-    // step the board 
+    // step the board
     board.step(timestamp);
 
     // add the rectangle back to the canvas, the drawing steps is the same as the MDN example but we're using the context from the board instance.
-    board.context.fillStyle = "green";
+    board.context.fillStyle = 'green';
     board.context.fillRect(10, 10, 150, 100);
-    
+
     // request the next frame
     requestAnimationFrame(draw);
 }
@@ -111,21 +117,25 @@ requestAnimationFrame(draw);
 ### Default Input Controls
 
 Pan:
+
 - Mouse + Keyboard: Drag while holding spacebar or use scroll wheel button
 - Trackpad: Two-finger swipe
 - Touch: Two-finger swipe
 
 Zoom:
+
 - Mouse + Keyboard: Ctrl + scroll wheel
 - Trackpad: Two-finger pinch
 - Touch: Two-finger pinch
 
 ### Important Notes
+
 - All drawing operations should be performed in the `requestAnimationFrame` callback after the `step` function
 - The `Board` class is designed for minimal setup but offers less flexibility
 - For more customization, refer to the [Under the Hood](#under-the-hood) section
 
 The `Board` class handles:
+
 - Input event interpretation
 - Automatic camera zoom boundary adjustments
 - And more...
@@ -145,16 +155,16 @@ Please refer to the [README](https://github.com/ue-too/ue-too/) in the root dire
 1. This package is within a monorepo, and is managed by nx and pnpm. I am not super familiar with nx or monorepo; this is kind of an experiment and a learning experience for me. (if you have any suggestions on how to improve the setup, please let me know!)
 2. Bundling the package is done through rollup and testing through jest.
 
-
 ## Under the Hood
 
-ue-too consists of 3 core components: 
+ue-too consists of 3 core components:
 
 - `Board Camera (viewport)`: This is the core of the cores xD; It's the class that holds the information about the viewport.
-- `Camera Input Multiplexer`: This is the part that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on. 
+- `Camera Input Multiplexer`: This is the part that determines which kind of input should be passed through based on the current condition. This is to support multiple input methods. For example, user input would take precedence over the transition animation input and so on.
 - `User Input Interpretation`: This is the part that handles the user input events from the canvas element (pointer, keyboard, touch, etc.), and based on the events determine what the user intentions are.
 
 To see detail of each component navigate to the respective readme in the subdirectories.
+
 - [Board Camera](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera)
 - [Camera Mux](https://github.com/ue-too/ue-too/tree/main/packages/board/src/camera/camera-mux)
 - [User Input Interpreter](https://github.com/ue-too/ue-too/tree/main/packages/board/src/input-interpretation)
@@ -210,7 +220,7 @@ flowchart TB
     IO -->|"always publish"| RIP
     RIP --> RIO
     IO -->|"ask permission"| CM
-    
+
     %% Camera Mux
     OCIS -->|"request input"| CM
     CM -->|"allowPassThrough?"| IO
@@ -222,6 +232,7 @@ flowchart TB
 ```
 
 **Key concepts:**
+
 - **Event Parsers**: Register listeners on canvas (should work with vanilla out of the box, pixi.js, fabric.js, konva with some modifications)
 - **Input State Machine**: Interprets raw events into camera intents (pan/zoom/rotate)
 - **Input Orchestrator**: Routes outputs in parallel — always publishes raw input, and asks CameraMux for permission to pass through the input to the camera rig.

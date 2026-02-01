@@ -24,7 +24,9 @@
     "scaffold:react": "node scripts/scaffold-react.mjs",
     "scaffold:vue": "node scripts/scaffold-vue.mjs",
     "scaffold:package": "bun scripts/scaffold-package.mjs",
-    "docs:build": "nx run-many --target=docs:build --projects=packages/* --parallel=true"
+    "docs:build": "nx run-many --target=docs:build --projects=packages/* --parallel=true",
+    "format": "bunx prettier --write .",
+    "format:check": "bunx prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -56,6 +58,7 @@
     "@swc/helpers": "~0.5.11",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.3.0",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/bun": "^1.3.4",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
@@ -72,7 +75,10 @@
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "nx": "^22.2.0",
-    "prettier": "^2.6.2",
+    "prettier": "3.8.1",
+    "prettier-plugin-sh": "^0.18.0",
+    "prettier-plugin-sort-json": "^4.2.0",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "rollup": "^4.53.2",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",

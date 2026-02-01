@@ -33,6 +33,7 @@ ue-too is organized into modular packages:
 - [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="package ecs's npm version" style="vertical-align: middle"></a>
 
 ## Install Individual Packages
+
 ```bash
 # Install specific packages you need
 npm install @ue-too/board @ue-too/math @ue-too/animate
@@ -45,6 +46,7 @@ A live website containing the examples is available [here](https://ue-too.github
 This monorepo includes comprehensive examples demonstrating various packages and integrations:
 
 ### Core Examples
+
 - [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport management functionality
 - [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Advanced navigation controls with keyboard shortcuts
 - [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement tools and overlays
@@ -52,11 +54,13 @@ This monorepo includes comprehensive examples demonstrating various packages and
 - [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Drawing an image on the pannable and zoomable canvas
 
 ### Framework Integrations
+
 - [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/)
 - [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/)
 - [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/)
 
 ### Advanced Features
+
 - [**Physics Example**](https://ue-too.github.io/ue-too/physics/) - 2D physics simulation (WIP)
 - [**Collision Example**](https://ue-too.github.io/ue-too/collision/) - Collision detection and response (WIP)
 
@@ -81,9 +85,11 @@ Then, visit `http://localhost:5173` to explore all examples.
 ## Development
 
 ### Prerequisites
+
 - Bun 1.3.4
 
 ### Setup
+
 ```bash
 # Clone and install
 git clone https://github.com/ue-too/ue-too.git
@@ -103,6 +109,7 @@ bun dev:examples
 Refer to the read me of each libary and application for more detail.
 
 ### Project Structure
+
 ```
 ue-too/
 ├── packages/           # Individual packages

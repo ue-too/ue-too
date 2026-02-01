@@ -1,197 +1,197 @@
-name:  Publish to NPM
+name: Publish to NPM
 permissions:
-  contents: write
-  id-token: write
+    contents: write
+    id-token: write
 
 on:
-  workflow_dispatch:
-    inputs:
-        version-type:
-          type: choice
-          description: Bump Version
-          options: 
-          - major
-          - minor
-          - patch
-        dry-run:
-          type: boolean
-          description: Perform a dry run without actually publishing
-          default: false
+    workflow_dispatch:
+        inputs:
+            version-type:
+                type: choice
+                description: Bump Version
+                options:
+                    - major
+                    - minor
+                    - patch
+            dry-run:
+                type: boolean
+                description: Perform a dry run without actually publishing
+                default: false
 
 jobs:
-  release-package:
-    runs-on: ubuntu-latest
-    name: Publish Package to npmjs
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true' || github.ref == 'refs/heads/test/release' || github.ref == 'refs/heads/feat/doc-deploy'
-    steps:
-      - name: Fail if branch is not main
-        if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')) && github.event.inputs.dry-run != 'true')
-        run: |
-          echo "This workflow should not be triggered with workflow_dispatch on a branch other than main or version except for dry-run"
-          exit 1
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT }}
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: '1.3.4'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@ue-too'
+    release-package:
+        runs-on: ubuntu-latest
+        name: Publish Package to npmjs
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/version') || github.event.inputs.dry-run == 'true' || github.ref == 'refs/heads/test/release' || github.ref == 'refs/heads/feat/doc-deploy'
+        steps:
+            - name: Fail if branch is not main
+              if: (github.event_name == 'workflow_dispatch' && (github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/heads/version')) && github.event.inputs.dry-run != 'true')
+              run: |
+                  echo "This workflow should not be triggered with workflow_dispatch on a branch other than main or version except for dry-run"
+                  exit 1
+            - uses: actions/checkout@v4
+              with:
+                  token: ${{ secrets.PAT }}
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: '1.3.4'
+                  registry-url: 'https://registry.npmjs.org'
+                  scope: '@ue-too'
 
-      - name: Install dependencies
-        run: |
-          bun ci
-      - name: Build packages
-        run: bun run build
+            - name: Install dependencies
+              run: |
+                  bun ci
+            - name: Build packages
+              run: bun run build
 
-      - name: Setup Node.js
-        id: setup-node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.19.0'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@ue-too'
-      - name: Setup git user
-        run: |
-          git config --global user.name "GitHub Actions Bot"
-          git config --global user.email "vntchang@gmail.com"
-      - name: Bump version
-        id: bump-version
-        run: |
-          if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
-            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
-          elif [[ ${{ github.event.inputs.version-type }} == 'minor' ]]; then
-            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier minor
-          elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
-            bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
-          fi
-      - name: Move package.json to dist
-        run: bun run move-packageJson
-      - name: Replace workspace deps
-        run: bun run replace-workspace-deps
-      - name: Update npm
-        run: npm install -g npm@latest
-      - name: Publish packages
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: npm run publish-packages -- ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        #   NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Log git log
-        run: git log -1 --pretty | cat
-      - name: Get version number
-        id: get-version
-        run: |
-          VERSION=$(node -p "require('./packages/math/package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-      # NOTE: if in the future we advanced to the major version, we need to update this to get the major version
-      - name: Get minor version
-        id: get-minor-version
-        run: |
-          VERSION="${{ steps.get-version.outputs.version }}"
-          MINOR_VERSION=$(echo "$VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+.*$/\1.x/')
-          echo "minor-version=$MINOR_VERSION" >> $GITHUB_OUTPUT
-      - name: List git tag
-        run: |
-          git tag -l ${{ steps.get-version.outputs.tag }}
-      - name: Push to branch
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: git push --follow-tags
-      - name: Add new release branch if release from main branch
-        if: github.event.inputs.dry-run != 'true' && github.ref == 'refs/heads/main'
-        run: |
-          git switch -c version/${{ steps.get-version.outputs.version }}
-          git push --set-upstream origin version/${{ steps.get-version.outputs.version }}
-      - name: Get current release branch
-        id: get-release-branch
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        run: |
-          echo "release-branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
-      # - name: Prepare release files
-      #   run: |
-      #     # Create a temporary directory for all renamed files in current directory
-      #     export RELEASE_FILES_DIR="./release-files-temp"
-      #     mkdir -p "$RELEASE_FILES_DIR"
-      #     echo "RELEASE_FILES_DIR=$RELEASE_FILES_DIR" >> $GITHUB_ENV
-      #     
-      #     # Process each package's dist files
-      #     for package_dir in ./packages/*/; do
-      #       # Skip board-game-engine package
-      #       if [[ "$package_dir" == *"board-game-engine"* ]]; then
-      #         echo "Skipping board-game-engine package"
-      #         continue
-      #       fi
-      #       
-      #       if [ -d "${package_dir}dist" ]; then
-      #         # Extract package name from package.json (remove trailing slash)
-      #         package_path="${package_dir%/}"
-      #         package_name=$(node -p "require('./${package_path}/package.json').name")
-      #         # Remove @ue-too/ prefix and any special characters for filename
-      #         clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
-      #         
-      #         # Copy and rename only .js and .js.map files to temp folder root
-      #         # Exclude browser bundle files (*.browser.js and *.browser.js.map)
-      #         for file in "${package_dir}dist"/*; do
-      #           if [ -f "$file" ]; then
-      #             filename=$(basename "$file")
-      #             # Skip browser bundle files
-      #             if [[ "$filename" == *".browser.js"* ]] || [[ "$filename" == *".browser.js.map"* ]]; then
-      #               continue
-      #             fi
-      #             if [ "$filename" = "index.js" ]; then
-      #               # Rename index.js to package-name.js
-      #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
-      #             elif [ "$filename" = "index.js.map" ]; then
-      #               # Rename index.js.map to package-name.js.map
-      #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
-      #             fi
-      #           fi
-      #         done
-      #       fi
-      #     done
-      #     
-      #     echo "Release files prepared in: $RELEASE_FILES_DIR"
-      #     ls -la "$RELEASE_FILES_DIR"
-      - name: Create release
-        if: ${{ github.event.inputs.dry-run != 'true' }}
-        env:
-          GH_TOKEN: ${{ secrets.PAT }}
-          tag: v${{ steps.get-version.outputs.version }}
-        run: |
-          gh release create "$tag" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
-              --target="${{ steps.get-release-branch.outputs.release-branch }}" \
-              --generate-notes
-              
-          # Upload all prepared files from the temporary directory
-          # cd "$RELEASE_FILES_DIR"
-          # find . -type f -exec gh release upload "$tag" {} --repo="$GITHUB_REPOSITORY" \;
-          # 
-          # Clean up temporary directory
-          # rm -rf "$RELEASE_FILES_DIR"
-      - name: Build documentation
-        run: |
-          bun run docs:build
-        # -- -- --version=${{ steps.get-minor-version.outputs.minor-version }}
-      
-      - name: Upload documentation artifacts
-        if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-docs
-          path: docs/
-          retention-days: 1
-      
-      - name: Open Documentation Update Pull Request
-        if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
-        uses: ./.github/actions/open-doc-pr
-        with:
-          doc-version: ${{ steps.get-version.outputs.version }}
-          target-repo: 'ue-too/documentation'
-          target-branch: 'main'
-          pr-branch: 'update-docs-v${{ steps.get-version.outputs.version }}'
-          pr-title: 'Update documentation for v${{ steps.get-version.outputs.version }}'
-          pr-body: 'Automated documentation update'
-          pat: ${{ secrets.PAT }}
+            - name: Setup Node.js
+              id: setup-node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '22.19.0'
+                  registry-url: 'https://registry.npmjs.org'
+                  scope: '@ue-too'
+            - name: Setup git user
+              run: |
+                  git config --global user.name "GitHub Actions Bot"
+                  git config --global user.email "vntchang@gmail.com"
+            - name: Bump version
+              id: bump-version
+              run: |
+                  if [[ ${{ github.event.inputs.version-type }} == 'patch' ]]; then
+                    bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier patch
+                  elif [[ ${{ github.event.inputs.version-type }} == 'minor' ]]; then
+                    bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier minor
+                  elif [[ ${{ github.event.inputs.version-type }} == 'major' ]]; then
+                    bun run bump-version ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }} --specifier major
+                  fi
+            - name: Move package.json to dist
+              run: bun run move-packageJson
+            - name: Replace workspace deps
+              run: bun run replace-workspace-deps
+            - name: Update npm
+              run: npm install -g npm@latest
+            - name: Publish packages
+              if: ${{ github.event.inputs.dry-run != 'true' }}
+              run: npm run publish-packages -- ${{ github.event.inputs.dry-run == 'true' && '--dry-run' || '' }}
+              # env:
+              #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+              #   NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Log git log
+              run: git log -1 --pretty | cat
+            - name: Get version number
+              id: get-version
+              run: |
+                  VERSION=$(node -p "require('./packages/math/package.json').version")
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+            # NOTE: if in the future we advanced to the major version, we need to update this to get the major version
+            - name: Get minor version
+              id: get-minor-version
+              run: |
+                  VERSION="${{ steps.get-version.outputs.version }}"
+                  MINOR_VERSION=$(echo "$VERSION" | sed -E 's/^([0-9]+\.[0-9]+)\.[0-9]+.*$/\1.x/')
+                  echo "minor-version=$MINOR_VERSION" >> $GITHUB_OUTPUT
+            - name: List git tag
+              run: |
+                  git tag -l ${{ steps.get-version.outputs.tag }}
+            - name: Push to branch
+              if: ${{ github.event.inputs.dry-run != 'true' }}
+              run: git push --follow-tags
+            - name: Add new release branch if release from main branch
+              if: github.event.inputs.dry-run != 'true' && github.ref == 'refs/heads/main'
+              run: |
+                  git switch -c version/${{ steps.get-version.outputs.version }}
+                  git push --set-upstream origin version/${{ steps.get-version.outputs.version }}
+            - name: Get current release branch
+              id: get-release-branch
+              if: ${{ github.event.inputs.dry-run != 'true' }}
+              run: |
+                  echo "release-branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+            # - name: Prepare release files
+            #   run: |
+            #     # Create a temporary directory for all renamed files in current directory
+            #     export RELEASE_FILES_DIR="./release-files-temp"
+            #     mkdir -p "$RELEASE_FILES_DIR"
+            #     echo "RELEASE_FILES_DIR=$RELEASE_FILES_DIR" >> $GITHUB_ENV
+            #
+            #     # Process each package's dist files
+            #     for package_dir in ./packages/*/; do
+            #       # Skip board-game-engine package
+            #       if [[ "$package_dir" == *"board-game-engine"* ]]; then
+            #         echo "Skipping board-game-engine package"
+            #         continue
+            #       fi
+            #
+            #       if [ -d "${package_dir}dist" ]; then
+            #         # Extract package name from package.json (remove trailing slash)
+            #         package_path="${package_dir%/}"
+            #         package_name=$(node -p "require('./${package_path}/package.json').name")
+            #         # Remove @ue-too/ prefix and any special characters for filename
+            #         clean_name=$(echo "$package_name" | sed 's/@ue-too\///g' | sed 's/[^a-zA-Z0-9_-]/-/g')
+            #
+            #         # Copy and rename only .js and .js.map files to temp folder root
+            #         # Exclude browser bundle files (*.browser.js and *.browser.js.map)
+            #         for file in "${package_dir}dist"/*; do
+            #           if [ -f "$file" ]; then
+            #             filename=$(basename "$file")
+            #             # Skip browser bundle files
+            #             if [[ "$filename" == *".browser.js"* ]] || [[ "$filename" == *".browser.js.map"* ]]; then
+            #               continue
+            #             fi
+            #             if [ "$filename" = "index.js" ]; then
+            #               # Rename index.js to package-name.js
+            #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js"
+            #             elif [ "$filename" = "index.js.map" ]; then
+            #               # Rename index.js.map to package-name.js.map
+            #               cp "$file" "$RELEASE_FILES_DIR/${clean_name}.js.map"
+            #             fi
+            #           fi
+            #         done
+            #       fi
+            #     done
+            #
+            #     echo "Release files prepared in: $RELEASE_FILES_DIR"
+            #     ls -la "$RELEASE_FILES_DIR"
+            - name: Create release
+              if: ${{ github.event.inputs.dry-run != 'true' }}
+              env:
+                  GH_TOKEN: ${{ secrets.PAT }}
+                  tag: v${{ steps.get-version.outputs.version }}
+              run: |
+                  gh release create "$tag" \
+                      --repo="$GITHUB_REPOSITORY" \
+                      --title="${GITHUB_REPOSITORY#*/} ${{ steps.get-version.outputs.version }}" \
+                      --target="${{ steps.get-release-branch.outputs.release-branch }}" \
+                      --generate-notes
+                      
+                  # Upload all prepared files from the temporary directory
+                  # cd "$RELEASE_FILES_DIR"
+                  # find . -type f -exec gh release upload "$tag" {} --repo="$GITHUB_REPOSITORY" \;
+                  # 
+                  # Clean up temporary directory
+                  # rm -rf "$RELEASE_FILES_DIR"
+            - name: Build documentation
+              run: |
+                  bun run docs:build
+              # -- -- --version=${{ steps.get-minor-version.outputs.minor-version }}
+
+            - name: Upload documentation artifacts
+              if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
+              uses: actions/upload-artifact@v4
+              with:
+                  name: built-docs
+                  path: docs/
+                  retention-days: 1
+
+            - name: Open Documentation Update Pull Request
+              if: github.event.inputs.dry-run != 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test/release' || startsWith(github.ref, 'refs/heads/version'))
+              uses: ./.github/actions/open-doc-pr
+              with:
+                  doc-version: ${{ steps.get-version.outputs.version }}
+                  target-repo: 'ue-too/documentation'
+                  target-branch: 'main'
+                  pr-branch: 'update-docs-v${{ steps.get-version.outputs.version }}'
+                  pr-title: 'Update documentation for v${{ steps.get-version.outputs.version }}'
+                  pr-body: 'Automated documentation update'
+                  pat: ${{ secrets.PAT }}

@@ -17,4 +17,4 @@
  * @module
  */
 
-export * from "./raw-input-publisher";
+export * from './raw-input-publisher';

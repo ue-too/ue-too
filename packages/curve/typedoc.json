@@ -1,17 +1,11 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
+    "categoryOrder": ["Core", "Utilities", "Types", "*"],
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/curve",
-    "name": "@ue-too/curve",
-    "readme": "./README.md",
+    "extends": "../../typedoc.json",
     "includeVersion": true,
-    "categoryOrder": [
-        "Core",
-        "Utilities",
-        "Types",
-        "*"
-    ],
+    "name": "@ue-too/curve",
+    "out": "../../docs/curve",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

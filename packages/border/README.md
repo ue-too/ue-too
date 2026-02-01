@@ -22,11 +22,13 @@ Geodesy and map projection library for TypeScript.
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/border
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/border
 ```
@@ -37,12 +39,12 @@ Here's a simple example calculating distance and bearing between two cities:
 
 ```typescript
 import {
-  greatCircleDistance,
-  initialBearingOfGreatCircle
+    greatCircleDistance,
+    initialBearingOfGreatCircle,
 } from '@ue-too/border';
 
 // New York to London
-const nyc = { latitude: 40.7128, longitude: -74.0060 };
+const nyc = { latitude: 40.7128, longitude: -74.006 };
 const london = { latitude: 51.5074, longitude: -0.1278 };
 
 // Calculate great circle distance (in meters)
@@ -86,17 +88,15 @@ Map projections transform spherical coordinates (latitude/longitude) to flat 2D 
 Calculate the great circle distance between two points.
 
 ```typescript
-function greatCircleDistance(
-  from: GeoCoord,
-  to: GeoCoord
-): number; // Returns distance in meters
+function greatCircleDistance(from: GeoCoord, to: GeoCoord): number; // Returns distance in meters
 ```
 
 **Example:**
+
 ```typescript
 const distance = greatCircleDistance(
-  { latitude: 51.5074, longitude: -0.1278 }, // London
-  { latitude: 48.8566, longitude: 2.3522 }   // Paris
+    { latitude: 51.5074, longitude: -0.1278 }, // London
+    { latitude: 48.8566, longitude: 2.3522 } // Paris
 );
 console.log(distance / 1000, 'km'); // ~344 km
 ```
@@ -106,17 +106,15 @@ console.log(distance / 1000, 'km'); // ~344 km
 Calculate the initial bearing (direction) for a great circle path.
 
 ```typescript
-function initialBearingOfGreatCircle(
-  from: GeoCoord,
-  to: GeoCoord
-): number; // Returns bearing in degrees (0-360)
+function initialBearingOfGreatCircle(from: GeoCoord, to: GeoCoord): number; // Returns bearing in degrees (0-360)
 ```
 
 **Example:**
+
 ```typescript
 const bearing = initialBearingOfGreatCircle(
-  { latitude: 40.7128, longitude: -74.0060 }, // NYC
-  { latitude: 51.5074, longitude: -0.1278 }   // London
+    { latitude: 40.7128, longitude: -74.006 }, // NYC
+    { latitude: 51.5074, longitude: -0.1278 } // London
 );
 console.log(bearing, '°'); // ~51.4° (northeast)
 ```
@@ -127,13 +125,14 @@ Find the destination point given origin, bearing, and distance.
 
 ```typescript
 function destinationFromOriginOnGreatCircle(
-  origin: GeoCoord,
-  bearing: number,  // Degrees
-  distance: number  // Meters
+    origin: GeoCoord,
+    bearing: number, // Degrees
+    distance: number // Meters
 ): GeoCoord;
 ```
 
 **Example:**
+
 ```typescript
 const start = { latitude: 51.5074, longitude: -0.1278 };
 const destination = destinationFromOriginOnGreatCircle(start, 90, 100000);
@@ -145,10 +144,7 @@ console.log('100km east:', destination);
 Find the midpoint along a great circle path.
 
 ```typescript
-function midpointOnGreatCircle(
-  from: GeoCoord,
-  to: GeoCoord
-): GeoCoord;
+function midpointOnGreatCircle(from: GeoCoord, to: GeoCoord): GeoCoord;
 ```
 
 #### `intermediatePointOnGreatCircle(from, to, fraction)`
@@ -157,13 +153,14 @@ Find a point at a given fraction along the great circle path.
 
 ```typescript
 function intermediatePointOnGreatCircle(
-  from: GeoCoord,
-  to: GeoCoord,
-  fraction: number  // 0.0 to 1.0
+    from: GeoCoord,
+    to: GeoCoord,
+    fraction: number // 0.0 to 1.0
 ): GeoCoord;
 ```
 
 **Example:**
+
 ```typescript
 // Find the point 25% of the way from NYC to London
 const point = intermediatePointOnGreatCircle(nyc, london, 0.25);
@@ -176,10 +173,7 @@ const point = intermediatePointOnGreatCircle(nyc, london, 0.25);
 Calculate the rhumb line distance (constant bearing path).
 
 ```typescript
-function rhumbDistance(
-  from: GeoCoord,
-  to: GeoCoord
-): number; // Returns distance in meters
+function rhumbDistance(from: GeoCoord, to: GeoCoord): number; // Returns distance in meters
 ```
 
 #### `rhumbBearing(from, to)`
@@ -187,10 +181,7 @@ function rhumbDistance(
 Calculate the constant bearing for a rhumb line.
 
 ```typescript
-function rhumbBearing(
-  from: GeoCoord,
-  to: GeoCoord
-): number; // Returns bearing in degrees (0-360)
+function rhumbBearing(from: GeoCoord, to: GeoCoord): number; // Returns bearing in degrees (0-360)
 ```
 
 #### `destinationFromOriginOnRhumbLine(origin, bearing, distance)`
@@ -199,9 +190,9 @@ Find the destination on a rhumb line given origin, bearing, and distance.
 
 ```typescript
 function destinationFromOriginOnRhumbLine(
-  origin: GeoCoord,
-  bearing: number,  // Degrees
-  distance: number  // Meters
+    origin: GeoCoord,
+    bearing: number, // Degrees
+    distance: number // Meters
 ): GeoCoord;
 ```
 
@@ -210,10 +201,7 @@ function destinationFromOriginOnRhumbLine(
 Find the midpoint along a rhumb line.
 
 ```typescript
-function midpointOnRhumbLine(
-  from: GeoCoord,
-  to: GeoCoord
-): GeoCoord;
+function midpointOnRhumbLine(from: GeoCoord, to: GeoCoord): GeoCoord;
 ```
 
 ### Map Projection Functions
@@ -223,12 +211,11 @@ function midpointOnRhumbLine(
 Convert geographic coordinates to Mercator projection.
 
 ```typescript
-function mercatorProjection(
-  coord: GeoCoord
-): Point; // Returns {x, y} in normalized coordinates
+function mercatorProjection(coord: GeoCoord): Point; // Returns {x, y} in normalized coordinates
 ```
 
 **Example:**
+
 ```typescript
 const point = mercatorProjection({ latitude: 51.5074, longitude: -0.1278 });
 console.log('Mercator coordinates:', point);
@@ -239,9 +226,7 @@ console.log('Mercator coordinates:', point);
 Convert Mercator coordinates back to geographic.
 
 ```typescript
-function inverseMercatorProjection(
-  point: Point
-): GeoCoord; // Returns {latitude, longitude}
+function inverseMercatorProjection(point: Point): GeoCoord; // Returns {latitude, longitude}
 ```
 
 #### `orthoProjection(coord, origin)`
@@ -250,24 +235,25 @@ Convert geographic coordinates to orthographic projection (hemisphere view).
 
 ```typescript
 function orthoProjection(
-  coord: GeoCoord,
-  origin: GeoCoord  // Center of projection
+    coord: GeoCoord,
+    origin: GeoCoord // Center of projection
 ): {
-  coord: Point;     // Projected point
-  clipped: boolean; // True if coord is on the back hemisphere
+    coord: Point; // Projected point
+    clipped: boolean; // True if coord is on the back hemisphere
 };
 ```
 
 **Example:**
+
 ```typescript
 // Project London as seen from the North Pole
 const result = orthoProjection(
-  { latitude: 51.5074, longitude: -0.1278 },
-  { latitude: 90, longitude: 0 }
+    { latitude: 51.5074, longitude: -0.1278 },
+    { latitude: 90, longitude: 0 }
 );
 
 if (!result.clipped) {
-  console.log('Visible at:', result.coord);
+    console.log('Visible at:', result.coord);
 }
 ```
 
@@ -275,13 +261,13 @@ if (!result.clipped) {
 
 ```typescript
 type GeoCoord = {
-  latitude: number;   // Degrees, -90 to 90
-  longitude: number;  // Degrees, -180 to 180
+    latitude: number; // Degrees, -90 to 90
+    longitude: number; // Degrees, -180 to 180
 };
 
 type Point = {
-  x: number;
-  y: number;
+    x: number;
+    y: number;
 };
 ```
 
@@ -291,13 +277,13 @@ type Point = {
 
 ```typescript
 import {
-  greatCircleDistance,
-  initialBearingOfGreatCircle,
-  intermediatePointOnGreatCircle
+    greatCircleDistance,
+    initialBearingOfGreatCircle,
+    intermediatePointOnGreatCircle,
 } from '@ue-too/border';
 
 const departure = { latitude: 40.6413, longitude: -73.7781 }; // JFK
-const arrival = { latitude: 51.4700, longitude: -0.4543 };    // LHR
+const arrival = { latitude: 51.47, longitude: -0.4543 }; // LHR
 
 // Total distance
 const distance = greatCircleDistance(departure, arrival);
@@ -318,30 +304,27 @@ console.log('Midpoint:', midpoint);
 import { mercatorProjection } from '@ue-too/border';
 
 const cities = [
-  { name: 'New York', latitude: 40.7128, longitude: -74.0060 },
-  { name: 'London', latitude: 51.5074, longitude: -0.1278 },
-  { name: 'Tokyo', latitude: 35.6762, longitude: 139.6503 }
+    { name: 'New York', latitude: 40.7128, longitude: -74.006 },
+    { name: 'London', latitude: 51.5074, longitude: -0.1278 },
+    { name: 'Tokyo', latitude: 35.6762, longitude: 139.6503 },
 ];
 
 // Project to screen coordinates
 cities.forEach(city => {
-  const point = mercatorProjection(city);
+    const point = mercatorProjection(city);
 
-  // Scale to canvas (assuming 1000x600 canvas)
-  const x = (point.x + 180) / 360 * 1000;
-  const y = (1 - (point.y + 90) / 180) * 600;
+    // Scale to canvas (assuming 1000x600 canvas)
+    const x = ((point.x + 180) / 360) * 1000;
+    const y = (1 - (point.y + 90) / 180) * 600;
 
-  drawCity(x, y, city.name);
+    drawCity(x, y, city.name);
 });
 ```
 
 ### Navigate with Constant Bearing
 
 ```typescript
-import {
-  rhumbBearing,
-  destinationFromOriginOnRhumbLine
-} from '@ue-too/border';
+import { destinationFromOriginOnRhumbLine, rhumbBearing } from '@ue-too/border';
 
 const start = { latitude: 50.0, longitude: -5.0 };
 const target = { latitude: 58.0, longitude: 3.0 };
@@ -355,12 +338,12 @@ const nauticalMileInMeters = 1852;
 let currentPos = start;
 
 for (let i = 1; i <= 10; i++) {
-  currentPos = destinationFromOriginOnRhumbLine(
-    currentPos,
-    bearing,
-    50 * nauticalMileInMeters
-  );
-  console.log(`Waypoint ${i}:`, currentPos);
+    currentPos = destinationFromOriginOnRhumbLine(
+        currentPos,
+        bearing,
+        50 * nauticalMileInMeters
+    );
+    console.log(`Waypoint ${i}:`, currentPos);
 }
 ```
 
@@ -372,20 +355,25 @@ import { greatCircleDistance } from '@ue-too/border';
 const userLocation = { latitude: 48.8566, longitude: 2.3522 }; // Paris
 
 const cities = [
-  { name: 'London', coord: { latitude: 51.5074, longitude: -0.1278 } },
-  { name: 'Berlin', coord: { latitude: 52.5200, longitude: 13.4050 } },
-  { name: 'Madrid', coord: { latitude: 40.4168, longitude: -3.7038 } },
-  { name: 'Rome', coord: { latitude: 41.9028, longitude: 12.4964 } }
+    { name: 'London', coord: { latitude: 51.5074, longitude: -0.1278 } },
+    { name: 'Berlin', coord: { latitude: 52.52, longitude: 13.405 } },
+    { name: 'Madrid', coord: { latitude: 40.4168, longitude: -3.7038 } },
+    { name: 'Rome', coord: { latitude: 41.9028, longitude: 12.4964 } },
 ];
 
 const distances = cities.map(city => ({
-  ...city,
-  distance: greatCircleDistance(userLocation, city.coord)
+    ...city,
+    distance: greatCircleDistance(userLocation, city.coord),
 }));
 
 distances.sort((a, b) => a.distance - b.distance);
-console.log('Nearest city:', distances[0].name,
-            '- ', (distances[0].distance / 1000).toFixed(0), 'km');
+console.log(
+    'Nearest city:',
+    distances[0].name,
+    '- ',
+    (distances[0].distance / 1000).toFixed(0),
+    'km'
+);
 ```
 
 ### Globe Visualization with Orthographic Projection
@@ -397,21 +385,21 @@ import { orthoProjection } from '@ue-too/border';
 const viewCenter = { latitude: 50, longitude: 10 };
 
 const cities = [
-  { name: 'London', coord: { latitude: 51.5074, longitude: -0.1278 } },
-  { name: 'Paris', coord: { latitude: 48.8566, longitude: 2.3522 } },
-  { name: 'Berlin', coord: { latitude: 52.5200, longitude: 13.4050 } }
+    { name: 'London', coord: { latitude: 51.5074, longitude: -0.1278 } },
+    { name: 'Paris', coord: { latitude: 48.8566, longitude: 2.3522 } },
+    { name: 'Berlin', coord: { latitude: 52.52, longitude: 13.405 } },
 ];
 
 cities.forEach(city => {
-  const result = orthoProjection(city.coord, viewCenter);
+    const result = orthoProjection(city.coord, viewCenter);
 
-  if (!result.clipped) {
-    // City is visible on this hemisphere
-    const screenX = result.coord.x * 400 + 400; // Scale to canvas
-    const screenY = result.coord.y * 400 + 400;
+    if (!result.clipped) {
+        // City is visible on this hemisphere
+        const screenX = result.coord.x * 400 + 400; // Scale to canvas
+        const screenY = result.coord.y * 400 + 400;
 
-    drawCityOnGlobe(screenX, screenY, city.name);
-  }
+        drawCityOnGlobe(screenX, screenY, city.name);
+    }
 });
 ```
 
@@ -453,6 +441,7 @@ This library follows these principles:
 - **Intermediate points**: O(1) - no iteration required
 
 **Performance Tips:**
+
 - Cache distance and bearing calculations if coordinates don't change
 - For many points, batch projection calculations
 - Use appropriate projection for your use case (Mercator for general mapping, orthographic for globes)

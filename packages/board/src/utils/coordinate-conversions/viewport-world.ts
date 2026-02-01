@@ -1,4 +1,4 @@
-import { Point, PointCal } from "@ue-too/math";
+import { Point, PointCal } from '@ue-too/math';
 
 /**
  * Converts a point from viewport space to world space.
@@ -47,13 +47,25 @@ import { Point, PointCal } from "@ue-too/math";
  * @category Coordinate Conversion
  * @see {@link convertFromWorld2Viewport} for inverse conversion
  */
-export function convertFromViewport2World(pointInViewport: Point, cameraPositionInWorldSpace: Point, cameraZoomLevel: number, cameraRotation: number, worldHasFlippedYAxis: boolean = false): Point {
-    const scaledBack = PointCal.multiplyVectorByScalar(pointInViewport, 1 / cameraZoomLevel);
+export function convertFromViewport2World(
+    pointInViewport: Point,
+    cameraPositionInWorldSpace: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number,
+    worldHasFlippedYAxis: boolean = false
+): Point {
+    const scaledBack = PointCal.multiplyVectorByScalar(
+        pointInViewport,
+        1 / cameraZoomLevel
+    );
     const rotatedBack = PointCal.rotatePoint(scaledBack, cameraRotation);
-    if(worldHasFlippedYAxis){
+    if (worldHasFlippedYAxis) {
         rotatedBack.y = -rotatedBack.y;
     }
-    const withOffset = PointCal.addVector(rotatedBack, cameraPositionInWorldSpace);
+    const withOffset = PointCal.addVector(
+        rotatedBack,
+        cameraPositionInWorldSpace
+    );
     return withOffset;
 }
 
@@ -108,9 +120,18 @@ export function convertFromViewport2World(pointInViewport: Point, cameraPosition
  * @category Coordinate Conversion
  * @see {@link convertFromViewport2World} for inverse conversion
  */
-export function convertFromWorld2Viewport(pointInWorld: Point, cameraPositionInWorldSpace: Point, cameraZoomLevel: number, cameraRotation: number, worldHasFlippedYAxis: boolean = false): Point {
-    const withOffset = PointCal.subVector(pointInWorld, cameraPositionInWorldSpace);
-    if(worldHasFlippedYAxis){
+export function convertFromWorld2Viewport(
+    pointInWorld: Point,
+    cameraPositionInWorldSpace: Point,
+    cameraZoomLevel: number,
+    cameraRotation: number,
+    worldHasFlippedYAxis: boolean = false
+): Point {
+    const withOffset = PointCal.subVector(
+        pointInWorld,
+        cameraPositionInWorldSpace
+    );
+    if (worldHasFlippedYAxis) {
         withOffset.y = -withOffset.y;
     }
     const scaled = PointCal.multiplyVectorByScalar(withOffset, cameraZoomLevel);

@@ -1,16 +1,11 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
+    "categoryOrder": ["Components", "Hooks", "*"],
     "entryPoints": ["src/index.ts"],
-    "out": "../../docs/board-react-adapter",
-    "name": "@ue-too/board-react-adapter",
-    "readme": "./README.md",
+    "extends": "../../typedoc.json",
     "includeVersion": true,
-    "categoryOrder": [
-        "Components",
-        "Hooks",
-        "*"
-    ],
+    "name": "@ue-too/board-react-adapter",
+    "out": "../../docs/board-react-adapter",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

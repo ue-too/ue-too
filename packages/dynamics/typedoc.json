@@ -1,11 +1,5 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
-    "entryPoints": ["src/index.ts"],
-    "out": "../../docs/dynamics",
-    "name": "@ue-too/dynamics",
-    "readme": "./README.md",
-    "includeVersion": true,
     "categoryOrder": [
         "Core",
         "Collision",
@@ -14,6 +8,11 @@
         "Types",
         "*"
     ],
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/dynamics",
+    "out": "../../docs/dynamics",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

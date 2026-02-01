@@ -1,7 +1,6 @@
-import { EntityManager } from "../src";
+import { EntityManager } from '../src';
 
 describe('EntityManager', () => {
-
     it('should be able to create an entity', () => {
         const entityManager = new EntityManager();
         const entity = entityManager.createEntity();
@@ -32,13 +31,13 @@ describe('EntityManager', () => {
         const entity1 = entityManager.createEntity();
         const entity2 = entityManager.createEntity();
         const entity3 = entityManager.createEntity();
-        
+
         const allEntities = entityManager.getAllLivingEntities();
         expect(allEntities.length).toBe(3);
         expect(allEntities).toContain(entity1);
         expect(allEntities).toContain(entity2);
         expect(allEntities).toContain(entity3);
-        
+
         entityManager.destroyEntity(entity2);
         const remainingEntities = entityManager.getAllLivingEntities();
         expect(remainingEntities.length).toBe(2);
@@ -52,5 +51,4 @@ describe('EntityManager', () => {
         const allEntities = entityManager.getAllLivingEntities();
         expect(allEntities).toEqual([]);
     });
-
 });

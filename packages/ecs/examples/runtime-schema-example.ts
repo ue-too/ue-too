@@ -1,22 +1,31 @@
 /**
  * Example: Runtime Component Schema Definition
- * 
+ *
  * This example demonstrates how to define component types at runtime,
  * which is useful for GUI-based component editors or dynamic game systems.
  */
-
-import { Coordinator, ComponentSchema, ComponentFieldType, ArrayElementType, ComponentFieldDefinition, ComponentName, createGlobalComponentName, serializeComponentSchema, deserializeComponentSchema } from '../src';
+import {
+    ArrayElementType,
+    ComponentFieldDefinition,
+    ComponentFieldType,
+    ComponentName,
+    ComponentSchema,
+    Coordinator,
+    createGlobalComponentName,
+    deserializeComponentSchema,
+    serializeComponentSchema,
+} from '../src';
 
 // Example: GUI-defined component schema
 // In a real GUI, this would be constructed from user input
 function createComponentSchemaFromGUI(
     componentName: ComponentName,
-    fields: Array<{ 
-        name: string; 
-        type: ComponentFieldType; 
+    fields: Array<{
+        name: string;
+        type: ComponentFieldType;
         arrayElementType?: ArrayElementType;
-        optional?: boolean; 
-        defaultValue?: unknown 
+        optional?: boolean;
+        defaultValue?: unknown;
     }>
 ): ComponentSchema {
     return {
@@ -25,25 +34,27 @@ function createComponentSchemaFromGUI(
             const baseField = {
                 name: f.name,
                 optional: f.optional ?? false,
-                defaultValue: f.defaultValue
+                defaultValue: f.defaultValue,
             };
-            
+
             if (f.type === 'array') {
                 if (!f.arrayElementType) {
-                    throw new Error(`Array field "${f.name}" must specify arrayElementType`);
+                    throw new Error(
+                        `Array field "${f.name}" must specify arrayElementType`
+                    );
                 }
                 return {
                     ...baseField,
                     type: 'array' as const,
-                    arrayElementType: f.arrayElementType
+                    arrayElementType: f.arrayElementType,
                 } as ComponentFieldDefinition;
             } else {
                 return {
                     ...baseField,
-                    type: f.type
+                    type: f.type,
                 } as ComponentFieldDefinition;
             }
-        })
+        }),
     };
 }
 
@@ -67,9 +78,19 @@ const playerStatsSchema = createComponentSchemaFromGUI(PLAYER_STATS, [
     { name: 'health', type: 'number', defaultValue: 100 },
     { name: 'name', type: 'string', defaultValue: 'Player' },
     { name: 'level', type: 'number', defaultValue: 1 },
-    { name: 'inventory', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' }, defaultValue: [] },
-    { name: 'ownedEntities', type: 'array', arrayElementType: { kind: 'builtin', type: 'entity' }, defaultValue: [] },
-    { name: 'metadata', type: 'object', optional: true }
+    {
+        name: 'inventory',
+        type: 'array',
+        arrayElementType: { kind: 'builtin', type: 'string' },
+        defaultValue: [],
+    },
+    {
+        name: 'ownedEntities',
+        type: 'array',
+        arrayElementType: { kind: 'builtin', type: 'entity' },
+        defaultValue: [],
+    },
+    { name: 'metadata', type: 'object', optional: true },
 ]);
 
 // Register the schema
@@ -79,20 +100,34 @@ coordinator.registerComponentWithSchema(playerStatsSchema);
 const player1 = coordinator.createEntity();
 const player1Component = coordinator.createComponentFromSchema(PLAYER_STATS, {
     name: 'Alice',
-    health: 150
+    health: 150,
 });
-coordinator.addComponentToEntityWithSchema(PLAYER_STATS, player1, player1Component);
+coordinator.addComponentToEntityWithSchema(
+    PLAYER_STATS,
+    player1,
+    player1Component
+);
 
 const player2 = coordinator.createEntity();
 const player2Component = coordinator.createComponentFromSchema(PLAYER_STATS, {
     name: 'Bob',
-    level: 5
+    level: 5,
 });
-coordinator.addComponentToEntityWithSchema(PLAYER_STATS, player2, player2Component);
+coordinator.addComponentToEntityWithSchema(
+    PLAYER_STATS,
+    player2,
+    player2Component
+);
 
 // Retrieve components
-const p1Stats = coordinator.getComponentFromEntity<Record<string, unknown>>(PLAYER_STATS, player1);
-const p2Stats = coordinator.getComponentFromEntity<Record<string, unknown>>(PLAYER_STATS, player2);
+const p1Stats = coordinator.getComponentFromEntity<Record<string, unknown>>(
+    PLAYER_STATS,
+    player1
+);
+const p2Stats = coordinator.getComponentFromEntity<Record<string, unknown>>(
+    PLAYER_STATS,
+    player2
+);
 
 console.log('Player 1:', p1Stats);
 // Output: { health: 150, name: 'Alice', level: 1, inventory: [] }
@@ -120,7 +155,7 @@ export function createEmptyField(): ComponentFieldDefinition {
     return {
         name: '',
         type: 'string',
-        optional: false
+        optional: false,
     };
 }
 
@@ -128,30 +163,48 @@ export function createEmptyField(): ComponentFieldDefinition {
 export function exampleTypedArrays() {
     const coordinator = new Coordinator();
     const INVENTORY = createGlobalComponentName('Inventory');
-    
+
     // Define a component with typed arrays
     const inventorySchema: ComponentSchema = {
         componentName: INVENTORY,
         fields: [
-            { name: 'items', type: 'array', arrayElementType: { kind: 'builtin', type: 'string' }, defaultValue: [] },
-            { name: 'quantities', type: 'array', arrayElementType: { kind: 'builtin', type: 'number' }, defaultValue: [] },
-            { name: 'ownedEntities', type: 'array', arrayElementType: { kind: 'builtin', type: 'entity' }, defaultValue: [] }
-        ]
+            {
+                name: 'items',
+                type: 'array',
+                arrayElementType: { kind: 'builtin', type: 'string' },
+                defaultValue: [],
+            },
+            {
+                name: 'quantities',
+                type: 'array',
+                arrayElementType: { kind: 'builtin', type: 'number' },
+                defaultValue: [],
+            },
+            {
+                name: 'ownedEntities',
+                type: 'array',
+                arrayElementType: { kind: 'builtin', type: 'entity' },
+                defaultValue: [],
+            },
+        ],
     };
-    
+
     coordinator.registerComponentWithSchema(inventorySchema);
-    
+
     const entity = coordinator.createEntity();
     const inventory = {
         items: ['sword', 'shield', 'potion'],
         quantities: [1, 1, 3],
-        ownedEntities: [10, 20, 30]
+        ownedEntities: [10, 20, 30],
     };
-    
+
     // This will validate that all array elements match their types
     coordinator.addComponentToEntityWithSchema(INVENTORY, entity, inventory);
-    
-    console.log('Inventory component:', coordinator.getComponentFromEntity(INVENTORY, entity));
+
+    console.log(
+        'Inventory component:',
+        coordinator.getComponentFromEntity(INVENTORY, entity)
+    );
 }
 
 // Example: Custom types in arrays
@@ -159,53 +212,64 @@ export function exampleCustomTypeArrays() {
     const coordinator = new Coordinator();
     const ITEM = createGlobalComponentName('Item');
     const INVENTORY = createGlobalComponentName('Inventory');
-    
+
     // First, define a custom component type (Item)
     const itemSchema: ComponentSchema = {
         componentName: ITEM,
         fields: [
             { name: 'name', type: 'string' },
             { name: 'value', type: 'number' },
-            { name: 'rarity', type: 'string', optional: true }
-        ]
+            { name: 'rarity', type: 'string', optional: true },
+        ],
     };
     coordinator.registerComponentWithSchema(itemSchema);
-    
+
     // Now create an inventory that contains an array of Items
     const inventorySchema: ComponentSchema = {
         componentName: INVENTORY,
         fields: [
-            { name: 'items', type: 'array', arrayElementType: { kind: 'custom', typeName: ITEM }, defaultValue: [] }
-        ]
+            {
+                name: 'items',
+                type: 'array',
+                arrayElementType: { kind: 'custom', typeName: ITEM },
+                defaultValue: [],
+            },
+        ],
     };
     coordinator.registerComponentWithSchema(inventorySchema);
-    
+
     const entity = coordinator.createEntity();
     const inventory = {
         items: [
             { name: 'Sword of Truth', value: 100, rarity: 'legendary' },
             { name: 'Shield of Protection', value: 50 },
-            { name: 'Health Potion', value: 10, rarity: 'common' }
-        ]
+            { name: 'Health Potion', value: 10, rarity: 'common' },
+        ],
     };
-    
+
     // This will validate that each item in the array matches the Item schema
     coordinator.addComponentToEntityWithSchema(INVENTORY, entity, inventory);
-    
-    console.log('Inventory with custom types:', coordinator.getComponentFromEntity(INVENTORY, entity));
+
+    console.log(
+        'Inventory with custom types:',
+        coordinator.getComponentFromEntity(INVENTORY, entity)
+    );
 }
 
-export function validateSchema(schema: ComponentSchema): { valid: boolean; errors: string[] } {
+export function validateSchema(schema: ComponentSchema): {
+    valid: boolean;
+    errors: string[];
+} {
     const errors: string[] = [];
-    
+
     if (!schema.componentName) {
         errors.push('Component name is required');
     }
-    
+
     if (!schema.fields || schema.fields.length === 0) {
         errors.push('At least one field is required');
     }
-    
+
     const fieldNames = new Set<string>();
     for (const field of schema.fields) {
         if (!field.name || field.name.trim() === '') {
@@ -216,10 +280,9 @@ export function validateSchema(schema: ComponentSchema): { valid: boolean; error
         }
         fieldNames.add(field.name);
     }
-    
+
     return {
         valid: errors.length === 0,
-        errors
+        errors,
     };
 }
-

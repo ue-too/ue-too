@@ -23,11 +23,13 @@ High-performance Entity Component System (ECS) architecture for TypeScript.
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/ecs
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/ecs
 ```
@@ -67,8 +69,8 @@ const playerPos = ecs.getComponentFromEntity<Position>('Position', player);
 const playerVel = ecs.getComponentFromEntity<Velocity>('Velocity', player);
 
 if (playerPos && playerVel) {
-  playerPos.x += playerVel.x;
-  playerPos.y += playerVel.y;
+    playerPos.x += playerVel.x;
+    playerPos.y += playerVel.y;
 }
 
 // 6. Clean up
@@ -103,10 +105,12 @@ const ecs = new Coordinator();
 ```
 
 **Entity Management:**
+
 - `createEntity(): Entity` - Creates a new entity, returns entity ID
 - `destroyEntity(entity: Entity): void` - Destroys entity and removes all components
 
 **Component Management:**
+
 - `registerComponent<T>(name: string): void` - Registers a component type
 - `addComponentToEntity<T>(name: string, entity: Entity, component: T): void` - Adds component to entity
 - `removeComponentFromEntity<T>(name: string, entity: Entity): void` - Removes component from entity
@@ -114,6 +118,7 @@ const ecs = new Coordinator();
 - `getComponentType(name: string): ComponentType | null` - Gets component type ID
 
 **System Management:**
+
 - `registerSystem(name: string, system: System): void` - Registers a system
 - `setSystemSignature(name: string, signature: ComponentSignature): void` - Sets which components a system requires
 
@@ -123,7 +128,7 @@ Systems maintain a set of entities that match their component signature:
 
 ```typescript
 interface System {
-  entities: Set<Entity>;
+    entities: Set<Entity>;
 }
 ```
 
@@ -132,9 +137,9 @@ interface System {
 Bit flags indicating which components an entity has:
 
 ```typescript
-type ComponentSignature = number;  // Bit field
-type ComponentType = number;       // Component type ID (0-31)
-type Entity = number;              // Entity ID
+type ComponentSignature = number; // Bit field
+type ComponentType = number; // Component type ID (0-31)
+type Entity = number; // Entity ID
 ```
 
 ## Common Use Cases
@@ -154,7 +159,7 @@ ecs.registerComponent<Velocity>('Velocity');
 
 // Create movement system
 const movementSystem: System = {
-  entities: new Set()
+    entities: new Set(),
 };
 
 ecs.registerSystem('Movement', movementSystem);
@@ -167,13 +172,13 @@ ecs.setSystemSignature('Movement', signature);
 
 // Update loop
 function update(deltaTime: number) {
-  movementSystem.entities.forEach(entity => {
-    const pos = ecs.getComponentFromEntity<Position>('Position', entity)!;
-    const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity)!;
+    movementSystem.entities.forEach(entity => {
+        const pos = ecs.getComponentFromEntity<Position>('Position', entity)!;
+        const vel = ecs.getComponentFromEntity<Velocity>('Velocity', entity)!;
 
-    pos.x += vel.x * deltaTime;
-    pos.y += vel.y * deltaTime;
-  });
+        pos.x += vel.x * deltaTime;
+        pos.y += vel.y * deltaTime;
+    });
 }
 
 // Game loop
@@ -200,20 +205,20 @@ const damageSignature = (1 << healthType) | (1 << damageType);
 ecs.setSystemSignature('Damage', damageSignature);
 
 function processDamage() {
-  damageSystem.entities.forEach(entity => {
-    const health = ecs.getComponentFromEntity<Health>('Health', entity)!;
-    const damage = ecs.getComponentFromEntity<Damage>('Damage', entity)!;
+    damageSystem.entities.forEach(entity => {
+        const health = ecs.getComponentFromEntity<Health>('Health', entity)!;
+        const damage = ecs.getComponentFromEntity<Damage>('Damage', entity)!;
 
-    health.current -= damage.amount;
+        health.current -= damage.amount;
 
-    if (health.current <= 0) {
-      console.log(`Entity ${entity} destroyed`);
-      ecs.destroyEntity(entity);
-    } else {
-      // Remove damage component after processing
-      ecs.removeComponentFromEntity<Damage>('Damage', entity);
-    }
-  });
+        if (health.current <= 0) {
+            console.log(`Entity ${entity} destroyed`);
+            ecs.destroyEntity(entity);
+        } else {
+            // Remove damage component after processing
+            ecs.removeComponentFromEntity<Damage>('Damage', entity);
+        }
+    });
 }
 ```
 
@@ -234,17 +239,17 @@ const renderSignature = (1 << posType) | (1 << spriteType);
 ecs.setSystemSignature('Render', renderSignature);
 
 function render(ctx: CanvasRenderingContext2D) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  renderSystem.entities.forEach(entity => {
-    const pos = ecs.getComponentFromEntity<Position>('Position', entity)!;
-    const sprite = ecs.getComponentFromEntity<Sprite>('Sprite', entity)!;
+    renderSystem.entities.forEach(entity => {
+        const pos = ecs.getComponentFromEntity<Position>('Position', entity)!;
+        const sprite = ecs.getComponentFromEntity<Sprite>('Sprite', entity)!;
 
-    // Draw sprite at position
-    const img = new Image();
-    img.src = sprite.imageSrc;
-    ctx.drawImage(img, pos.x, pos.y, sprite.width, sprite.height);
-  });
+        // Draw sprite at position
+        const img = new Image();
+        img.src = sprite.imageSrc;
+        ctx.drawImage(img, pos.x, pos.y, sprite.width, sprite.height);
+    });
 }
 ```
 
@@ -255,16 +260,16 @@ Build complex component requirements:
 ```typescript
 // Entities that have Position, Velocity, AND Sprite
 const movingRenderables =
-  (1 << ecs.getComponentType('Position')!) |
-  (1 << ecs.getComponentType('Velocity')!) |
-  (1 << ecs.getComponentType('Sprite')!);
+    (1 << ecs.getComponentType('Position')!) |
+    (1 << ecs.getComponentType('Velocity')!) |
+    (1 << ecs.getComponentType('Sprite')!);
 
 // Helper function for cleaner syntax
 function buildSignature(ecs: Coordinator, ...componentNames: string[]): number {
-  return componentNames.reduce((signature, name) => {
-    const type = ecs.getComponentType(name);
-    return type !== null ? signature | (1 << type) : signature;
-  }, 0);
+    return componentNames.reduce((signature, name) => {
+        const type = ecs.getComponentType(name);
+        return type !== null ? signature | (1 << type) : signature;
+    }, 0);
 }
 
 // Usage
@@ -277,8 +282,8 @@ ecs.setSystemSignature('MySystem', signature);
 The package provides configuration constants:
 
 ```typescript
-export const MAX_ENTITIES = 10000;    // Maximum simultaneous entities
-export const MAX_COMPONENTS = 32;      // Maximum component types (bit limit)
+export const MAX_ENTITIES = 10000; // Maximum simultaneous entities
+export const MAX_COMPONENTS = 32; // Maximum component types (bit limit)
 ```
 
 To customize, you can create your own EntityManager:
@@ -298,6 +303,9 @@ For complete API documentation with detailed type information, see the [TypeDoc-
 This package is written in TypeScript with complete type definitions:
 
 ```typescript
+// Generic component arrays
+import { ComponentArray } from '@ue-too/ecs';
+
 // Component types are fully typed
 type Position = { x: number; y: number };
 ecs.registerComponent<Position>('Position');
@@ -305,11 +313,9 @@ ecs.registerComponent<Position>('Position');
 // Type-safe component retrieval
 const pos = ecs.getComponentFromEntity<Position>('Position', entity);
 if (pos) {
-  pos.x += 10; // TypeScript knows pos has x and y properties
+    pos.x += 10; // TypeScript knows pos has x and y properties
 }
 
-// Generic component arrays
-import { ComponentArray } from '@ue-too/ecs';
 const positions = new ComponentArray<Position>(1000);
 ```
 
@@ -331,6 +337,7 @@ This ECS implementation follows these principles:
 - **Signature Matching**: O(m) where m is number of systems (typically small)
 
 **Performance Tips:**
+
 - Keep component data small and focused
 - Process components in batches (system-by-system) rather than entity-by-entity
 - Reuse entities when possible instead of create/destroy cycles

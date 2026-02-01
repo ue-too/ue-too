@@ -1,12 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/being.tsbuildinfo",
-    "declaration": true
-  },
-  "include": ["test/**/*"]
+    "compilerOptions": {
+        "baseUrl": ".",
+        "declaration": true,
+        "outDir": "dist",
+        "rootDir": "src",
+        "tsBuildInfoFile": "dist/being.tsbuildinfo"
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["test/**/*"]
 }
-  

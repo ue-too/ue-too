@@ -116,6 +116,6 @@
  * @see {@link rhumbLine} for rhumb line navigation
  */
 
-export * from "./projection";
-export * from "./greateCircle";
-export * from "./rhumbLine";
+export * from './projection';
+export * from './greateCircle';
+export * from './rhumbLine';

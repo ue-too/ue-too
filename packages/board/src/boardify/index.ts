@@ -1,20 +1,50 @@
-import { ObservableBoardCamera } from '../camera/interface';
-import DefaultBoardCamera from '../camera/default-camera';
-import { halfTranslationHeightOf, halfTranslationWidthOf } from '../camera/utils/position';
-import { KMTEventParser, VanillaKMTEventParser } from '../input-interpretation/raw-input-parser';
-import { TouchEventParser, VanillaTouchEventParser } from '../input-interpretation/raw-input-parser';
 import { Point } from '@ue-too/math';
-import { reverseYAxis } from '../utils';
 import { PointCal } from '@ue-too/math';
 
-import { CameraEventMap, CameraState, UnSubscribe } from '../camera/update-publisher';
-import { minZoomLevelBaseOnDimensions, minZoomLevelBaseOnWidth, zoomLevelBoundariesShouldUpdate } from '../utils';
-import { UnsubscribeToUserRawInput, RawUserInputEventMap, RawUserInputPublisher } from '../input-interpretation/raw-input-publisher';
-
-import { CameraMux, createCameraMuxWithAnimationAndLock } from '../camera/camera-mux';
+import {
+    CameraMux,
+    createCameraMuxWithAnimationAndLock,
+} from '../camera/camera-mux';
 import { CameraRig, DefaultCameraRig } from '../camera/camera-rig';
-import { CanvasDimensions, CanvasProxy, createKmtInputStateMachine, createTouchInputStateMachine, ObservableInputTracker, TouchInputTracker } from '../input-interpretation/input-state-machine';
+import DefaultBoardCamera from '../camera/default-camera';
+import { ObservableBoardCamera } from '../camera/interface';
+import {
+    CameraEventMap,
+    CameraState,
+    UnSubscribe,
+} from '../camera/update-publisher';
+import {
+    halfTranslationHeightOf,
+    halfTranslationWidthOf,
+} from '../camera/utils/position';
 import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
+import {
+    CanvasDimensions,
+    CanvasProxy,
+    ObservableInputTracker,
+    TouchInputTracker,
+    createKmtInputStateMachine,
+    createTouchInputStateMachine,
+} from '../input-interpretation/input-state-machine';
+import {
+    KMTEventParser,
+    VanillaKMTEventParser,
+} from '../input-interpretation/raw-input-parser';
+import {
+    TouchEventParser,
+    VanillaTouchEventParser,
+} from '../input-interpretation/raw-input-parser';
+import {
+    RawUserInputEventMap,
+    RawUserInputPublisher,
+    UnsubscribeToUserRawInput,
+} from '../input-interpretation/raw-input-publisher';
+import { reverseYAxis } from '../utils';
+import {
+    minZoomLevelBaseOnDimensions,
+    minZoomLevelBaseOnWidth,
+    zoomLevelBoundariesShouldUpdate,
+} from '../utils';
 
 /**
  * Main user-facing API class that provides an infinite canvas with pan, zoom, and rotate capabilities.
@@ -167,7 +197,6 @@ import { InputOrchestrator } from '../input-interpretation/input-orchestrator';
  * @see {@link CameraMux} for camera control coordination
  */
 export default class Board {
-    
     private _context?: CanvasRenderingContext2D;
     private _reversedContext?: CanvasRenderingContext2D;
     private _canvasProxy: CanvasProxy;
@@ -177,7 +206,7 @@ export default class Board {
 
     private _alignCoordinateSystem: boolean = true;
     private _fullScreen: boolean = false;
-    
+
     private cameraRig: CameraRig;
     private _cameraMux: CameraMux;
     private boardInputPublisher: RawUserInputPublisher;
@@ -271,57 +300,84 @@ export default class Board {
      * @see {@link attach} for attaching a canvas after construction
      * @see {@link tearDown} for cleanup when done with the board
      */
-    constructor(canvas?: HTMLCanvasElement, debug: boolean = false){
+    constructor(canvas?: HTMLCanvasElement, debug: boolean = false) {
         const camera = new DefaultBoardCamera();
         const bound = 50000;
-        camera.boundaries = {min: {x: -bound, y: -bound}, max: {x: bound, y: bound}};
+        camera.boundaries = {
+            min: { x: -bound, y: -bound },
+            max: { x: bound, y: bound },
+        };
 
         this.bindFunctions();
 
         this._canvasProxy = new CanvasProxy(canvas);
 
-        this._canvasProxy.subscribe((canvasDimensions)=>{
+        this._canvasProxy.subscribe(canvasDimensions => {
             this.syncViewPortDimensions(canvasDimensions);
             this.syncCameraZoomLevel(canvasDimensions);
         });
 
-        this.cameraRig = new DefaultCameraRig({
-            limitEntireViewPort: true,
-            restrictRelativeXTranslation: false,
-            restrictRelativeYTranslation: false,
-            restrictXTranslation: false,
-            restrictYTranslation: false,
-            restrictZoom: false,
-            clampTranslation: true,
-            clampZoom: true,
-        }, camera);
+        this.cameraRig = new DefaultCameraRig(
+            {
+                limitEntireViewPort: true,
+                restrictRelativeXTranslation: false,
+                restrictRelativeYTranslation: false,
+                restrictXTranslation: false,
+                restrictYTranslation: false,
+                restrictZoom: false,
+                clampTranslation: true,
+                clampZoom: true,
+            },
+            camera
+        );
 
         this._cameraMux = createCameraMuxWithAnimationAndLock();
         this.boardInputPublisher = new RawUserInputPublisher();
 
         // this._edgeAutoCameraInput = new EdgeAutoCameraInput(this._cameraMux);
-        this._observableInputTracker = new ObservableInputTracker(this._canvasProxy);
+        this._observableInputTracker = new ObservableInputTracker(
+            this._canvasProxy
+        );
         this._touchInputTracker = new TouchInputTracker(this._canvasProxy);
 
-        const kmtInputStateMachine = createKmtInputStateMachine(this._observableInputTracker);
-        const touchInputStateMachine = createTouchInputStateMachine(this._touchInputTracker);
+        const kmtInputStateMachine = createKmtInputStateMachine(
+            this._observableInputTracker
+        );
+        const touchInputStateMachine = createTouchInputStateMachine(
+            this._touchInputTracker
+        );
 
         // Create single orchestrator as the point of camera control for both KMT and touch inputs
         // Since both state machines output the same event types (pan, zoom), one orchestrator handles both
         // Orchestrator receives CameraRig to execute camera operations when CameraMux allows passthrough
-        this._inputOrchestrator = new InputOrchestrator(this._cameraMux, this.cameraRig, this.boardInputPublisher);
+        this._inputOrchestrator = new InputOrchestrator(
+            this._cameraMux,
+            this.cameraRig,
+            this.boardInputPublisher
+        );
 
         // Parsers have direct dependency on state machines, shared orchestrator processes outputs and controls camera
-        this._kmtParser = new VanillaKMTEventParser(kmtInputStateMachine, this._inputOrchestrator, canvas);
-        this._touchParser = new VanillaTouchEventParser(touchInputStateMachine, this._inputOrchestrator, canvas);
+        this._kmtParser = new VanillaKMTEventParser(
+            kmtInputStateMachine,
+            this._inputOrchestrator,
+            canvas
+        );
+        this._touchParser = new VanillaTouchEventParser(
+            touchInputStateMachine,
+            this._inputOrchestrator,
+            canvas
+        );
 
-        if(canvas != undefined){
+        if (canvas != undefined) {
             console.log('canvas exists on creation of board');
             this.attach(canvas, debug);
         }
     }
 
-    private syncViewPortDimensions(canvasDimensions: {width: number, height: number}){
+    private syncViewPortDimensions(canvasDimensions: {
+        width: number;
+        height: number;
+    }) {
         this.camera.viewPortHeight = canvasDimensions.height;
         this.camera.viewPortWidth = canvasDimensions.width;
     }
@@ -395,18 +451,20 @@ export default class Board {
      * @see {@link tearDown} for detaching and cleaning up
      * @see {@link context} for accessing the rendering context
      */
-    attach(canvas: HTMLCanvasElement, debug: boolean = false){
+    attach(canvas: HTMLCanvasElement, debug: boolean = false) {
         this._canvasElement = canvas;
-        const newContext = canvas.getContext('2d', {willReadFrequently: debug});
-        if(newContext == null){
-            console.error("new canvas context is null");
+        const newContext = canvas.getContext('2d', {
+            willReadFrequently: debug,
+        });
+        if (newContext == null) {
+            console.error('new canvas context is null');
             return;
         }
         this._kmtParser.attach(canvas);
         this._touchParser.attach(canvas);
         this._canvasProxy.attach(canvas);
 
-        if(this.limitEntireViewPort) {
+        if (this.limitEntireViewPort) {
             this.syncCameraZoomLevel(this._canvasProxy.dimensions);
         }
 
@@ -414,25 +472,25 @@ export default class Board {
         this._reversedContext = reverseYAxis(this._context);
     }
 
-    disableEventListeners(){
+    disableEventListeners() {
         this._kmtParser.tearDown();
         this._touchParser.tearDown();
     }
 
-    enableEventListeners(){
+    enableEventListeners() {
         this._kmtParser.setUp();
         this._touchParser.setUp();
     }
 
-    get inputOrchestrator(): InputOrchestrator{
+    get inputOrchestrator(): InputOrchestrator {
         return this._inputOrchestrator;
     }
 
     /**
      * @group LifeCycle
-     * @description This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer. 
+     * @description This function is used to clean up the board. It removes all the event listeners and disconnects the resize observer and the attribute observer.
      */
-    tearDown(){
+    tearDown() {
         this._kmtParser.tearDown();
         this._touchParser.tearDown();
         this._canvasProxy.tearDown();
@@ -441,7 +499,7 @@ export default class Board {
         this._reversedContext = undefined;
     }
 
-    private bindFunctions(){
+    private bindFunctions() {
         this.step = this.step.bind(this);
     }
 
@@ -458,18 +516,18 @@ export default class Board {
      * If you set this to true, the coordinate system will be aligned with the one of the HTML canvas element.
      * If you change this value during runtime, you should update the context to be aligned with the new coordinate system. (just call board.context again)
      */
-    set alignCoordinateSystem(align: boolean){
+    set alignCoordinateSystem(align: boolean) {
         this._alignCoordinateSystem = align;
         this._observableInputTracker.alignCoordinateSystem = align;
         this._touchInputTracker.alignCoordinateSystem = align;
     }
 
-    get alignCoordinateSystem(): boolean{
+    get alignCoordinateSystem(): boolean {
         return this._alignCoordinateSystem;
     }
 
     /**
-     * @description Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively, 
+     * @description Determines if the board should be full screen. If this is set to true, the width and height of the board will be set to the window's inner width and inner height respectively,
      * and the width and height of the board will resize with the window.
      */
     get fullScreen(): boolean {
@@ -478,7 +536,7 @@ export default class Board {
 
     set fullScreen(value: boolean) {
         this._fullScreen = value;
-        if(this._fullScreen){
+        if (this._fullScreen) {
             this._canvasProxy.setWidth(window.innerWidth);
             this._canvasProxy.setHeight(window.innerHeight);
         }
@@ -499,35 +557,35 @@ export default class Board {
      * @description Determines the behavior of the camera when the camera is at the edge of the boundaries. If set to true, the entire view port would not move beyond the boundaries.
      * If set to false, only the center of the camera is bounded by the boundaries.
      */
-    set limitEntireViewPort(value: boolean){
+    set limitEntireViewPort(value: boolean) {
         this.cameraRig.config.limitEntireViewPort = value;
-        if(this._canvasProxy.detached){
+        if (this._canvasProxy.detached) {
             return;
         }
-        if(value){
+        if (value) {
             this.syncCameraZoomLevel(this._canvasProxy.dimensions);
         }
     }
 
-    get limitEntireViewPort(): boolean{
+    get limitEntireViewPort(): boolean {
         return this.cameraRig.config.limitEntireViewPort;
     }
 
     /**
-     * @description The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy. 
+     * @description The strategy used to handle the keyboard, mouse events. The default strategy is the DefaultBoardKMTStrategy.
      * You can implement your own strategy by implementing the BoardKMTStrategy interface.
      */
-    set kmtParser(parser: KMTEventParser){
+    set kmtParser(parser: KMTEventParser) {
         this._kmtParser.tearDown();
         parser.tearDown();
-        if(this._canvasElement != undefined){
+        if (this._canvasElement != undefined) {
             parser.attach(this._canvasElement);
         }
         parser.setUp();
         this._kmtParser = parser;
     }
 
-    get kmtParser(): KMTEventParser{
+    get kmtParser(): KMTEventParser {
         return this._kmtParser;
     }
 
@@ -535,17 +593,17 @@ export default class Board {
      * @description The parser used to handle touch events. The default parser is the DefaultTouchParser.
      * You can have your own parser by implementing the BoardTouchParser interface.
      */
-    set touchParser(parser: TouchEventParser){
+    set touchParser(parser: TouchEventParser) {
         this._touchParser.tearDown();
         parser.tearDown();
-        if(this._canvasElement != undefined){
+        if (this._canvasElement != undefined) {
             parser.attach(this._canvasElement);
         }
         parser.setUp();
         this._touchParser = parser;
     }
 
-    get touchParser(): TouchEventParser{
+    get touchParser(): TouchEventParser {
         return this._touchParser;
     }
 
@@ -553,23 +611,25 @@ export default class Board {
      * @description The underlying camera of the board. The camera of the board can be switched.
      * The boundaries are based on camera meaning you can have cameras with different boundaries, and you can switch between them during runtime.
      */
-    get camera(): ObservableBoardCamera{
+    get camera(): ObservableBoardCamera {
         return this.cameraRig.camera;
     }
 
-    set camera(camera: ObservableBoardCamera){
-        if(!this._canvasProxy.detached){
-            camera.viewPortHeight = this._canvasProxy.height / window.devicePixelRatio;
-            camera.viewPortWidth = this._canvasProxy.width / window.devicePixelRatio;
+    set camera(camera: ObservableBoardCamera) {
+        if (!this._canvasProxy.detached) {
+            camera.viewPortHeight =
+                this._canvasProxy.height / window.devicePixelRatio;
+            camera.viewPortWidth =
+                this._canvasProxy.width / window.devicePixelRatio;
         }
         this.cameraRig.camera = camera;
     }
 
-    get cameraMux(): CameraMux{
+    get cameraMux(): CameraMux {
         return this._cameraMux;
     }
 
-    set cameraMux(cameraMux: CameraMux){
+    set cameraMux(cameraMux: CameraMux) {
         this._cameraMux = cameraMux;
         // Update all components that depend on cameraMux
         // Note: TouchInputTracker and Orchestrator would need to be recreated or have setter methods
@@ -580,10 +640,10 @@ export default class Board {
 
     /**
      * @description This is the step function that is called in the animation frame. This function is responsible for updating the canvas context and the camera state.
-     * @param timestamp 
+     * @param timestamp
      */
-    public step(timestamp: number){
-        if(this._canvasProxy.detached || this._context == undefined){
+    public step(timestamp: number) {
+        if (this._canvasProxy.detached || this._context == undefined) {
             return;
         }
 
@@ -593,27 +653,49 @@ export default class Board {
         deltaTime = deltaTime / 1000;
 
         this._context.reset();
-        this._context.clearRect(0, 0, this._canvasProxy.width * window.devicePixelRatio, this._canvasProxy.height * window.devicePixelRatio);
+        this._context.clearRect(
+            0,
+            0,
+            this._canvasProxy.width * window.devicePixelRatio,
+            this._canvasProxy.height * window.devicePixelRatio
+        );
 
-        if(this._cachedCanvasPixelRatio !== window.devicePixelRatio){
+        if (this._cachedCanvasPixelRatio !== window.devicePixelRatio) {
             this._cachedCanvasPixelRatio = window.devicePixelRatio;
             this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
             this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
         }
 
-        if(this._cachedCanvasHeight !== this._canvasProxy.height){
+        if (this._cachedCanvasHeight !== this._canvasProxy.height) {
             this._cachedCanvasHeight = this._canvasProxy.height;
             this._canvasProxy.setCanvasHeight(this._canvasProxy.height);
         }
-        if(this._cachedCanvasWidth !== this._canvasProxy.width){
+        if (this._cachedCanvasWidth !== this._canvasProxy.width) {
             this._cachedCanvasWidth = this._canvasProxy.width;
             this._canvasProxy.setCanvasWidth(this._canvasProxy.width);
         }
 
-        const transfromMatrix = this.camera.getTransform(window.devicePixelRatio, this._alignCoordinateSystem);
+        const transfromMatrix = this.camera.getTransform(
+            window.devicePixelRatio,
+            this._alignCoordinateSystem
+        );
         const currentTransform = this._context.getTransform();
-        if(currentTransform.a !== transfromMatrix.a || currentTransform.b !== transfromMatrix.b || currentTransform.c !== transfromMatrix.c || currentTransform.d !== transfromMatrix.d || currentTransform.e !== transfromMatrix.e || currentTransform.f !== transfromMatrix.f){
-            this._context.setTransform(transfromMatrix.a, transfromMatrix.b, transfromMatrix.c, transfromMatrix.d, transfromMatrix.e, transfromMatrix.f);
+        if (
+            currentTransform.a !== transfromMatrix.a ||
+            currentTransform.b !== transfromMatrix.b ||
+            currentTransform.c !== transfromMatrix.c ||
+            currentTransform.d !== transfromMatrix.d ||
+            currentTransform.e !== transfromMatrix.e ||
+            currentTransform.f !== transfromMatrix.f
+        ) {
+            this._context.setTransform(
+                transfromMatrix.a,
+                transfromMatrix.b,
+                transfromMatrix.c,
+                transfromMatrix.d,
+                transfromMatrix.e,
+                transfromMatrix.f
+            );
         }
     }
 
@@ -625,9 +707,15 @@ export default class Board {
      */
     convertWindowPoint2WorldCoord(clickPointInWindow: Point): Point {
         const boundingRect = this._canvasProxy.dimensions;
-        const cameraCenterInWindow = {x: boundingRect.position.x + boundingRect.width / 2, y: boundingRect.position.y + boundingRect.height / 2};
-        const pointInViewPort = PointCal.subVector(clickPointInWindow, cameraCenterInWindow);
-        if(!this._alignCoordinateSystem){
+        const cameraCenterInWindow = {
+            x: boundingRect.position.x + boundingRect.width / 2,
+            y: boundingRect.position.y + boundingRect.height / 2,
+        };
+        const pointInViewPort = PointCal.subVector(
+            clickPointInWindow,
+            cameraCenterInWindow
+        );
+        if (!this._alignCoordinateSystem) {
             pointInViewPort.y = -pointInViewPort.y;
         }
         return this.camera.convertFromViewPort2WorldSpace(pointInViewPort);
@@ -640,62 +728,57 @@ export default class Board {
      * @param callback The callback function to call when the event is triggered. The event provided to the callback is different for the different events.
      * @returns The converted point in world coordinates.
      */
-    on<K extends keyof CameraEventMap>(eventName: K, callback: (event: CameraEventMap[K], cameraState: CameraState)=>void): UnSubscribe {
+    on<K extends keyof CameraEventMap>(
+        eventName: K,
+        callback: (event: CameraEventMap[K], cameraState: CameraState) => void
+    ): UnSubscribe {
         return this.camera.on(eventName, callback);
     }
 
     /**
-     * @description Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events. 
+     * @description Add an input event listener. The events are "pan", "zoom", and "rotate". This is different from the camera event listener as this is for input events.
      * There's also an "all" event that will be triggered when any of the above events are triggered.
      * Input event does not necesarily mean that the camera will move. The input events are the events triggered when the user interacts with the board.
-     * @param eventName 
-     * @param callback 
-     * @returns 
+     * @param eventName
+     * @param callback
+     * @returns
      */
-    onInput<K extends keyof RawUserInputEventMap>(eventName: K, callback: (event: RawUserInputEventMap[K])=> void): UnsubscribeToUserRawInput {
+    onInput<K extends keyof RawUserInputEventMap>(
+        eventName: K,
+        callback: (event: RawUserInputEventMap[K]) => void
+    ): UnsubscribeToUserRawInput {
         return this.boardInputPublisher.on(eventName, callback);
     }
 
     /**
      * @description The max translation height of the camera. This is the maximum distance the camera can move in the vertical direction.
      */
-    get maxHalfTransHeight(): number | undefined{
+    get maxHalfTransHeight(): number | undefined {
         return halfTranslationHeightOf(this.camera.boundaries);
     }
 
     /**
      * @description The max translation width of the camera. This is the maximum distance the camera can move in the horizontal direction.
      */
-    get maxHalfTransWidth(): number | undefined{
+    get maxHalfTransWidth(): number | undefined {
         return halfTranslationWidthOf(this.camera.boundaries);
     }
 
-    private syncCameraZoomLevel(canvasDimensions: CanvasDimensions){
-        if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(this.camera.boundaries, canvasDimensions.width, canvasDimensions.height, this.camera.rotation);
-            if(targetMinZoomLevel != undefined && zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
-                this.camera.setMinZoomLevel(targetMinZoomLevel);
-            }
-        }
-
-    }
-
-    /**
-     * @group Helper Methods
-     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
-     */
-    setMaxTransWidthWithFixedMinBoundary(value: number){
-        const curBoundaries = this.camera.boundaries;
-        const curMin = curBoundaries == undefined ? undefined: curBoundaries.min;
-        const curHorizontalMin = curMin == undefined ? undefined: curMin.x;
-        if(curHorizontalMin == undefined){
-            this.camera.setHorizontalBoundaries(-value, value);
-        } else {
-            this.camera.setHorizontalBoundaries(curHorizontalMin, curHorizontalMin + value * 2);
-        }
-        if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
-            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+    private syncCameraZoomLevel(canvasDimensions: CanvasDimensions) {
+        if (this.limitEntireViewPort) {
+            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(
+                this.camera.boundaries,
+                canvasDimensions.width,
+                canvasDimensions.height,
+                this.camera.rotation
+            );
+            if (
+                targetMinZoomLevel != undefined &&
+                zoomLevelBoundariesShouldUpdate(
+                    this.camera.zoomBoundaries,
+                    targetMinZoomLevel
+                )
+            ) {
                 this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
@@ -705,93 +788,142 @@ export default class Board {
      * @group Helper Methods
      * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
      */
-    setMaxTransWidthWithFixedMaxBoundary(value: number){
+    setMaxTransWidthWithFixedMinBoundary(value: number) {
         const curBoundaries = this.camera.boundaries;
-        const curMax = curBoundaries == undefined ? undefined: curBoundaries.max;
-        const curHorizontalMax = curMax == undefined ? undefined: curMax.x;
-        if(curHorizontalMax == undefined){
+        const curMin =
+            curBoundaries == undefined ? undefined : curBoundaries.min;
+        const curHorizontalMin = curMin == undefined ? undefined : curMin.x;
+        if (curHorizontalMin == undefined) {
             this.camera.setHorizontalBoundaries(-value, value);
         } else {
-            this.camera.setHorizontalBoundaries(curHorizontalMax - value * 2, curHorizontalMax);
+            this.camera.setHorizontalBoundaries(
+                curHorizontalMin,
+                curHorizontalMin + value * 2
+            );
         }
-        if(this.limitEntireViewPort){
-            const targetMinZoomLevel = minZoomLevelBaseOnWidth(this.camera.boundaries, this.camera.viewPortWidth, this.camera.viewPortHeight, this.camera.rotation);
-            if(zoomLevelBoundariesShouldUpdate(this.camera.zoomBoundaries, targetMinZoomLevel)){
+        if (this.limitEntireViewPort) {
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(
+                this.camera.boundaries,
+                this.camera.viewPortWidth,
+                this.camera.viewPortHeight,
+                this.camera.rotation
+            );
+            if (
+                zoomLevelBoundariesShouldUpdate(
+                    this.camera.zoomBoundaries,
+                    targetMinZoomLevel
+                )
+            ) {
                 this.camera.setMinZoomLevel(targetMinZoomLevel);
             }
         }
     }
 
-    get restrictRelativeXTranslation(): boolean{
+    /**
+     * @group Helper Methods
+     * @description This function sets the max translation width of the camera while fixing the minimum x boundary.
+     */
+    setMaxTransWidthWithFixedMaxBoundary(value: number) {
+        const curBoundaries = this.camera.boundaries;
+        const curMax =
+            curBoundaries == undefined ? undefined : curBoundaries.max;
+        const curHorizontalMax = curMax == undefined ? undefined : curMax.x;
+        if (curHorizontalMax == undefined) {
+            this.camera.setHorizontalBoundaries(-value, value);
+        } else {
+            this.camera.setHorizontalBoundaries(
+                curHorizontalMax - value * 2,
+                curHorizontalMax
+            );
+        }
+        if (this.limitEntireViewPort) {
+            const targetMinZoomLevel = minZoomLevelBaseOnWidth(
+                this.camera.boundaries,
+                this.camera.viewPortWidth,
+                this.camera.viewPortHeight,
+                this.camera.rotation
+            );
+            if (
+                zoomLevelBoundariesShouldUpdate(
+                    this.camera.zoomBoundaries,
+                    targetMinZoomLevel
+                )
+            ) {
+                this.camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
+    }
+
+    get restrictRelativeXTranslation(): boolean {
         return this.cameraRig.config.restrictRelativeXTranslation;
     }
 
-    get restrictRelativeYTranslation(): boolean{
+    get restrictRelativeYTranslation(): boolean {
         return this.cameraRig.config.restrictRelativeYTranslation;
     }
 
-    get restrictXTranslation(): boolean{
+    get restrictXTranslation(): boolean {
         return this.cameraRig.config.restrictXTranslation;
     }
 
-    get restrictYTranslation(): boolean{
+    get restrictYTranslation(): boolean {
         return this.cameraRig.config.restrictYTranslation;
     }
-    
-    set restrictRelativeXTranslation(value: boolean){
+
+    set restrictRelativeXTranslation(value: boolean) {
         this.cameraRig.config.restrictRelativeXTranslation = value;
     }
 
-    set restrictRelativeYTranslation(value: boolean){
-        this.cameraRig.configure({restrictRelativeYTranslation: value});
+    set restrictRelativeYTranslation(value: boolean) {
+        this.cameraRig.configure({ restrictRelativeYTranslation: value });
     }
 
-    set restrictXTranslation(value: boolean){
-        this.cameraRig.configure({restrictXTranslation: value});
-    }
-    
-    set restrictYTranslation(value: boolean){
-        this.cameraRig.configure({restrictYTranslation: value});
+    set restrictXTranslation(value: boolean) {
+        this.cameraRig.configure({ restrictXTranslation: value });
     }
 
-    get restrictZoom(): boolean{
+    set restrictYTranslation(value: boolean) {
+        this.cameraRig.configure({ restrictYTranslation: value });
+    }
+
+    get restrictZoom(): boolean {
         return this.cameraRig.config.restrictZoom;
     }
 
-    set restrictZoom(value: boolean){
-        this.cameraRig.configure({restrictZoom: value});
+    set restrictZoom(value: boolean) {
+        this.cameraRig.configure({ restrictZoom: value });
     }
 
-    get restrictRotation(): boolean{
+    get restrictRotation(): boolean {
         return this.cameraRig.config.restrictRotation;
     }
 
-    set restrictRotation(value: boolean){
-        this.cameraRig.configure({restrictRotation: value});
+    set restrictRotation(value: boolean) {
+        this.cameraRig.configure({ restrictRotation: value });
     }
 
-    get clampTranslation(): boolean{
+    get clampTranslation(): boolean {
         return this.cameraRig.config.clampTranslation;
     }
 
-    set clampTranslation(value: boolean){
-        this.cameraRig.configure({clampTranslation: value});
+    set clampTranslation(value: boolean) {
+        this.cameraRig.configure({ clampTranslation: value });
     }
-    
-    get clampZoom(): boolean{
+
+    get clampZoom(): boolean {
         return this.cameraRig.config.clampZoom;
     }
 
-    set clampZoom(value: boolean){
-        this.cameraRig.configure({clampZoom: value});
+    set clampZoom(value: boolean) {
+        this.cameraRig.configure({ clampZoom: value });
     }
 
-    get clampRotation(): boolean{
+    get clampRotation(): boolean {
         return this.cameraRig.config.clampRotation;
     }
 
-    set clampRotation(value: boolean){
-        this.cameraRig.configure({clampRotation: value});
+    set clampRotation(value: boolean) {
+        this.cameraRig.configure({ clampRotation: value });
     }
 
     getCameraRig(): CameraRig {

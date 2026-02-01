@@ -1,66 +1,64 @@
 {
-  "name": "animate",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/animate/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/animate"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": ["math"],
+    "name": "animate",
+    "projectType": "library",
+    "sourceRoot": "packages/animate/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/animate"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["math"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
+                "cwd": "packages/animate"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/animate && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/animate"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/animate"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/animate/dist"
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/animate"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts --external @ue-too/math",
-        "cwd": "packages/animate"
-      },
-      "dependsOn": [
-        {
-          "projects": ["math"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/animate"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/animate"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "cwd": "packages/animate/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/animate && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/animate"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": [
-    "math"
-  ]
 }

@@ -4,30 +4,30 @@
 name: CI Test
 
 permissions:
-  contents: read
+    contents: read
 
 on:
-  pull_request:
-    branches: [ "main", "dev", "version/**" ]
-  workflow_dispatch:
+    pull_request:
+        branches: ['main', 'dev', 'version/**']
+    workflow_dispatch:
 
 jobs:
-  unit-test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup and Build
-      uses: ./.github/actions/setup-bun-env
-      with:
-        build: true
-        npm-token: ${{ secrets.NPM_TOKEN }}
-        pat: ${{ secrets.PAT }}
+    unit-test:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-    - name: Run unit tests
-      run: bun run test
-    - name: Test build
-      run: | 
-        bun run build
-        bun run build:apps
+            - name: Setup and Build
+              uses: ./.github/actions/setup-bun-env
+              with:
+                  build: true
+                  npm-token: ${{ secrets.NPM_TOKEN }}
+                  pat: ${{ secrets.PAT }}
+
+            - name: Run unit tests
+              run: bun run test
+            - name: Test build
+              run: |
+                  bun run build
+                  bun run build:apps

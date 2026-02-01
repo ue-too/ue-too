@@ -3,18 +3,18 @@
  *
  * Combines preconditions, costs, effects, and target/parameter generation.
  */
+import type { Entity } from '@ue-too/ecs';
 
 import type {
-  ActionDefinition as IActionDefinition,
-  Precondition,
-  Effect,
-  TargetSelector,
-  ParameterGenerator,
-  GameState,
-  Action,
-  Event,
+    Action,
+    Effect,
+    Event,
+    GameState,
+    ActionDefinition as IActionDefinition,
+    ParameterGenerator,
+    Precondition,
+    TargetSelector,
 } from '../core/types';
-import type { Entity } from '@ue-too/ecs';
 import { ActionContext } from './action-context';
 
 /**
@@ -33,125 +33,143 @@ import { ActionContext } from './action-context';
  * ```
  */
 export class ActionDefinition implements IActionDefinition {
-  public readonly name: string;
-  public readonly preconditions: Precondition[];
-  public readonly costs: Effect[];
-  public readonly effects: Effect[];
-  public readonly targetSelector?: TargetSelector;
-  public readonly parameterGenerator?: ParameterGenerator;
-  public readonly metadata?: {
-    displayName?: string;
-    description?: string;
-    iconUrl?: string;
-  };
-
-  constructor(config: {
-    name: string;
-    preconditions?: Precondition[];
-    costs?: Effect[];
-    effects: Effect[];
-    targetSelector?: TargetSelector;
-    parameterGenerator?: ParameterGenerator;
-    metadata?: {
-      displayName?: string;
-      description?: string;
-      iconUrl?: string;
+    public readonly name: string;
+    public readonly preconditions: Precondition[];
+    public readonly costs: Effect[];
+    public readonly effects: Effect[];
+    public readonly targetSelector?: TargetSelector;
+    public readonly parameterGenerator?: ParameterGenerator;
+    public readonly metadata?: {
+        displayName?: string;
+        description?: string;
+        iconUrl?: string;
     };
-  }) {
-    this.name = config.name;
-    this.preconditions = config.preconditions ?? [];
-    this.costs = config.costs ?? [];
-    this.effects = config.effects;
-    this.targetSelector = config.targetSelector;
-    this.parameterGenerator = config.parameterGenerator;
-    this.metadata = config.metadata;
-  }
 
-  /**
-   * Check if an action can be executed (validates all preconditions).
-   *
-   * @param state - Game state
-   * @param action - Action to validate
-   * @returns [isValid, errorMessage]
-   */
-  canExecute(state: GameState, action: Action): [boolean, string | null] {
-    // Resolve actor
-    const actor = action.actorId;
-
-    // Resolve targets
-    const targets: Entity[] = action.targetIds;
-
-    // Create context
-    const context = new ActionContext(state, action, actor, targets, action.parameters);
-
-    // Check all preconditions
-    for (const precondition of this.preconditions) {
-      if (!precondition.check(context)) {
-        return [false, precondition.getErrorMessage(context)];
-      }
+    constructor(config: {
+        name: string;
+        preconditions?: Precondition[];
+        costs?: Effect[];
+        effects: Effect[];
+        targetSelector?: TargetSelector;
+        parameterGenerator?: ParameterGenerator;
+        metadata?: {
+            displayName?: string;
+            description?: string;
+            iconUrl?: string;
+        };
+    }) {
+        this.name = config.name;
+        this.preconditions = config.preconditions ?? [];
+        this.costs = config.costs ?? [];
+        this.effects = config.effects;
+        this.targetSelector = config.targetSelector;
+        this.parameterGenerator = config.parameterGenerator;
+        this.metadata = config.metadata;
     }
 
-    return [true, null];
-  }
+    /**
+     * Check if an action can be executed (validates all preconditions).
+     *
+     * @param state - Game state
+     * @param action - Action to validate
+     * @returns [isValid, errorMessage]
+     */
+    canExecute(state: GameState, action: Action): [boolean, string | null] {
+        // Resolve actor
+        const actor = action.actorId;
 
-  /**
-   * Execute the action (apply costs and effects).
-   *
-   * @param state - Game state (will be mutated)
-   * @param action - Action to execute
-   * @returns Final game state after execution
-   */
-  execute(state: GameState, action: Action): GameState {
-    // Resolve actor and targets
-    const actor = action.actorId;
-    const targets: Entity[] = action.targetIds;
+        // Resolve targets
+        const targets: Entity[] = action.targetIds;
 
-    // Create context
-    const context = new ActionContext(state, action, actor, targets, action.parameters);
+        // Create context
+        const context = new ActionContext(
+            state,
+            action,
+            actor,
+            targets,
+            action.parameters
+        );
 
-    // Apply costs
-    for (const cost of this.costs) {
-      cost.apply(context);
+        // Check all preconditions
+        for (const precondition of this.preconditions) {
+            if (!precondition.check(context)) {
+                return [false, precondition.getErrorMessage(context)];
+            }
+        }
+
+        return [true, null];
     }
 
-    // Apply effects
-    for (const effect of this.effects) {
-      effect.apply(context);
+    /**
+     * Execute the action (apply costs and effects).
+     *
+     * @param state - Game state (will be mutated)
+     * @param action - Action to execute
+     * @returns Final game state after execution
+     */
+    execute(state: GameState, action: Action): GameState {
+        // Resolve actor and targets
+        const actor = action.actorId;
+        const targets: Entity[] = action.targetIds;
+
+        // Create context
+        const context = new ActionContext(
+            state,
+            action,
+            actor,
+            targets,
+            action.parameters
+        );
+
+        // Apply costs
+        for (const cost of this.costs) {
+            cost.apply(context);
+        }
+
+        // Apply effects
+        for (const effect of this.effects) {
+            effect.apply(context);
+        }
+
+        return state;
     }
 
-    return state;
-  }
+    /**
+     * Get all events generated by this action's execution.
+     *
+     * @param state - Game state
+     * @param action - Action being executed
+     * @returns Array of generated events
+     */
+    getGeneratedEvents(state: GameState, action: Action): Event[] {
+        const actor = action.actorId;
+        const targets: Entity[] = action.targetIds;
+        const context = new ActionContext(
+            state,
+            action,
+            actor,
+            targets,
+            action.parameters
+        );
 
-  /**
-   * Get all events generated by this action's execution.
-   *
-   * @param state - Game state
-   * @param action - Action being executed
-   * @returns Array of generated events
-   */
-  getGeneratedEvents(state: GameState, action: Action): Event[] {
-    const actor = action.actorId;
-    const targets: Entity[] = action.targetIds;
-    const context = new ActionContext(state, action, actor, targets, action.parameters);
+        const events: Event[] = [];
 
-    const events: Event[] = [];
+        // Collect events from costs
+        for (const cost of this.costs) {
+            if (cost.generatesEvent()) {
+                const event = cost.createEvent(context);
+                if (event) events.push(event);
+            }
+        }
 
-    // Collect events from costs
-    for (const cost of this.costs) {
-      if (cost.generatesEvent()) {
-        const event = cost.createEvent(context);
-        if (event) events.push(event);
-      }
+        // Collect events from effects
+        for (const effect of this.effects) {
+            if (effect.generatesEvent()) {
+                const event = effect.createEvent(context);
+                if (event) events.push(event);
+            }
+        }
+
+        return events;
     }
-
-    // Collect events from effects
-    for (const effect of this.effects) {
-      if (effect.generatesEvent()) {
-        const event = effect.createEvent(context);
-        if (event) events.push(event);
-      }
-    }
-
-    return events;
-  }
 }

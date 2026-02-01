@@ -124,15 +124,18 @@ export class AsyncObservable<T extends any[]> implements Observable<T> {
      * If an AbortSignal is provided and is already aborted, the observer
      * is not added and the returned unsubscribe function is a no-op.
      */
-    subscribe(observer: Observer<T>, options?: SubscriptionOptions): () => void {
+    subscribe(
+        observer: Observer<T>,
+        options?: SubscriptionOptions
+    ): () => void {
         this.observers.push(observer);
 
         // Handle AbortSignal
         if (options?.signal) {
             // If signal is already aborted, don't add the observer
             if (options.signal.aborted) {
-            this.observers = this.observers.filter(o => o !== observer);
-            return () => {};
+                this.observers = this.observers.filter(o => o !== observer);
+                return () => {};
             }
 
             // Add abort handler
@@ -160,7 +163,9 @@ export class AsyncObservable<T extends any[]> implements Observable<T> {
      * This method returns immediately; observers run later in the event loop.
      */
     notify(...data: T): void {
-        this.observers.forEach(observer => queueMicrotask(() => observer(...data)));
+        this.observers.forEach(observer =>
+            queueMicrotask(() => observer(...data))
+        );
     }
 }
 
@@ -216,15 +221,18 @@ export class SynchronousObservable<T extends any[]> implements Observable<T> {
      * If an AbortSignal is provided and is already aborted, the observer
      * is not added and the returned unsubscribe function is a no-op.
      */
-    subscribe(observer: Observer<T>, options?: SubscriptionOptions): () => void {
+    subscribe(
+        observer: Observer<T>,
+        options?: SubscriptionOptions
+    ): () => void {
         this.observers.push(observer);
 
         // Handle AbortSignal
         if (options?.signal) {
             // If signal is already aborted, don't add the observer
             if (options.signal.aborted) {
-            this.observers = this.observers.filter(o => o !== observer);
-            return () => {};
+                this.observers = this.observers.filter(o => o !== observer);
+                return () => {};
             }
 
             // Add abort handler

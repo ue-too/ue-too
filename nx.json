@@ -1,66 +1,66 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "plugins": [
-    {
-      "plugin": "@nx/js/typescript",
-      "options": {
-        "typecheck": {
-          "targetName": "typecheck"
-        },
-        "build": {
-          "targetName": "build",
-          "configName": "tsconfig.lib.json",
-          "buildDepsName": "build-deps",
-          "watchDepsName": "watch-deps"
+    "$schema": "./node_modules/nx/schemas/nx-schema.json",
+    "generators": {
+        "@nx/react": {
+            "application": {
+                "babel": true,
+                "bundler": "vite",
+                "linter": "none",
+                "style": "css"
+            },
+            "component": {
+                "style": "css"
+            },
+            "library": {
+                "linter": "none",
+                "style": "css"
+            }
         }
-      }
     },
-    {
-      "plugin": "@nx/vite/plugin",
-      "options": {
-        "buildTargetName": "vite:build",
-        "testTargetName": "test",
-        "serveTargetName": "serve",
-        "devTargetName": "vite:dev",
-        "previewTargetName": "vite:preview",
-        "serveStaticTargetName": "serve-static",
-        "typecheckTargetName": "vite:typecheck",
-        "buildDepsTargetName": "build-deps",
-        "watchDepsTargetName": "watch-deps"
-      }
-    },
-    {
-      "plugin": "@nx/playwright/plugin",
-      "options": {
-        "targetName": "e2e"
-      }
+    "plugins": [
+        {
+            "options": {
+                "build": {
+                    "buildDepsName": "build-deps",
+                    "configName": "tsconfig.lib.json",
+                    "targetName": "build",
+                    "watchDepsName": "watch-deps"
+                },
+                "typecheck": {
+                    "targetName": "typecheck"
+                }
+            },
+            "plugin": "@nx/js/typescript"
+        },
+        {
+            "options": {
+                "buildDepsTargetName": "build-deps",
+                "buildTargetName": "vite:build",
+                "devTargetName": "vite:dev",
+                "previewTargetName": "vite:preview",
+                "serveStaticTargetName": "serve-static",
+                "serveTargetName": "serve",
+                "testTargetName": "test",
+                "typecheckTargetName": "vite:typecheck",
+                "watchDepsTargetName": "watch-deps"
+            },
+            "plugin": "@nx/vite/plugin"
+        },
+        {
+            "options": {
+                "targetName": "e2e"
+            },
+            "plugin": "@nx/playwright/plugin"
+        }
+    ],
+    "release": {
+        "changelog": {
+            "automaticFromRef": true,
+            "workspaceChangelog": {
+                "renderer": "nx/release/changelog-renderer"
+            }
+        },
+        "projects": ["packages/*", "!board-game-engine"],
+        "releaseTagPattern": "v{version}"
     }
-  ],
-  "release": {
-    "releaseTagPattern": "v{version}",
-    "projects": ["packages/*", "!board-game-engine"],
-    "changelog": {
-      "automaticFromRef": true,
-      "workspaceChangelog": {
-        "renderer": "nx/release/changelog-renderer"
-      }
-    }
-  },
-  "generators": {
-    "@nx/react": {
-      "application": {
-        "babel": true,
-        "style": "css",
-        "linter": "none",
-        "bundler": "vite"
-      },
-      "component": {
-        "style": "css"
-      },
-      "library": {
-        "style": "css",
-        "linter": "none"
-      }
-    }
-  }
 }

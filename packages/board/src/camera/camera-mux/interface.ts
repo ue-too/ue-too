@@ -1,4 +1,4 @@
-import type { Point } from "@ue-too/math";
+import type { Point } from '@ue-too/math';
 
 /**
  * Discriminated union type for pan input results.
@@ -28,7 +28,7 @@ import type { Point } from "@ue-too/math";
  * @category Input Flow Control
  */
 export type CameraMuxPanOutput =
-    | { allowPassThrough: true, delta: Point }
+    | { allowPassThrough: true; delta: Point }
     | { allowPassThrough: false };
 
 /**
@@ -62,7 +62,7 @@ export type CameraMuxPanOutput =
  * @category Input Flow Control
  */
 export type CameraMuxZoomOutput =
-    | { allowPassThrough: true, delta: number, anchorPoint: Point }
+    | { allowPassThrough: true; delta: number; anchorPoint: Point }
     | { allowPassThrough: false };
 
 /**
@@ -85,7 +85,7 @@ export type CameraMuxZoomOutput =
  * @category Input Flow Control
  */
 export type CameraMuxRotationOutput =
-    | { allowPassThrough: true, delta: number }
+    | { allowPassThrough: true; delta: number }
     | { allowPassThrough: false };
 
 /**
@@ -152,7 +152,10 @@ export interface CameraMux {
      * @param anchorPoint - Point to zoom towards in viewport coordinates (typically cursor position)
      * @returns Output indicating if zoom is allowed and the parameters to apply
      */
-    notifyZoomInput(deltaZoomAmount: number, anchorPoint: Point): CameraMuxZoomOutput;
+    notifyZoomInput(
+        deltaZoomAmount: number,
+        anchorPoint: Point
+    ): CameraMuxZoomOutput;
 
     /**
      * Processes a rotation input request.

@@ -1,11 +1,16 @@
-import { Coordinator, createGlobalComponentName, ComponentName } from "@ue-too/ecs";
-import { 
-    OwnershipSystem, 
-    OwnershipComponent, 
+import {
+    ComponentName,
+    Coordinator,
+    createGlobalComponentName,
+} from '@ue-too/ecs';
+
+import {
     OWNERSHIP_COMPONENT,
+    OwnershipComponent,
+    OwnershipSystem,
+    removeFromOwner,
     setOwner,
-    removeFromOwner
-} from "../src/components/ownership";
+} from '../src/components/ownership';
 
 describe('OwnershipSystem', () => {
     let coordinator: Coordinator;
@@ -27,7 +32,8 @@ describe('OwnershipSystem', () => {
         it('should register OWNERSHIP_COMPONENT if not already registered', () => {
             const newCoordinator = new Coordinator();
             const newSystem = new OwnershipSystem(newCoordinator);
-            const componentType = newCoordinator.getComponentType(OWNERSHIP_COMPONENT);
+            const componentType =
+                newCoordinator.getComponentType(OWNERSHIP_COMPONENT);
             expect(componentType).not.toBeNull();
             expect(componentType).not.toBeUndefined();
         });
@@ -45,9 +51,13 @@ describe('OwnershipSystem', () => {
     describe('getOwnerShipComponentOf', () => {
         it('should return ownership component for entity with component', () => {
             const entity = coordinator.createEntity();
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: null,
+                }
+            );
             system.entities.add(entity);
 
             const component = system.getOwnerShipComponentOf(entity);
@@ -66,9 +76,13 @@ describe('OwnershipSystem', () => {
 
         it('should return null for entity not in system', () => {
             const entity = coordinator.createEntity();
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: null,
+                }
+            );
             // Entity not added to system.entities
 
             const component = system.getOwnerShipComponentOf(entity);
@@ -80,9 +94,13 @@ describe('OwnershipSystem', () => {
         it('should return owner for entity with owner', () => {
             const entity = coordinator.createEntity();
             const owner = coordinator.createEntity();
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: owner
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: owner,
+                }
+            );
             system.entities.add(entity);
 
             const result = system.getOwnerOf(entity);
@@ -91,9 +109,13 @@ describe('OwnershipSystem', () => {
 
         it('should return null for entity without owner', () => {
             const entity = coordinator.createEntity();
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: null,
+                }
+            );
             system.entities.add(entity);
 
             const result = system.getOwnerOf(entity);
@@ -117,15 +139,27 @@ describe('OwnershipSystem', () => {
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner1
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2, {
-                owner: owner1
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity3, {
-                owner: owner2
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner1,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity2,
+                {
+                    owner: owner1,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity3,
+                {
+                    owner: owner2,
+                }
+            );
 
             system.entities.add(entity1);
             system.entities.add(entity2);
@@ -142,9 +176,13 @@ describe('OwnershipSystem', () => {
             const owner = coordinator.createEntity();
             const entity = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: null,
+                }
+            );
             system.entities.add(entity);
 
             const owned = system.getOwnerEntities(owner);
@@ -155,9 +193,13 @@ describe('OwnershipSystem', () => {
             const nonExistentOwner = coordinator.createEntity();
             const entity = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: null,
+                }
+            );
             system.entities.add(entity);
 
             const owned = system.getOwnerEntities(nonExistentOwner);
@@ -166,7 +208,8 @@ describe('OwnershipSystem', () => {
     });
 
     describe('countEntitiesWithComponentByOwner', () => {
-        const TEST_COMPONENT: ComponentName = createGlobalComponentName("TestComponent");
+        const TEST_COMPONENT: ComponentName =
+            createGlobalComponentName('TestComponent');
         type TestComponent = { value: number };
 
         it('should count entities with specific component owned by owner', () => {
@@ -177,25 +220,52 @@ describe('OwnershipSystem', () => {
 
             coordinator.registerComponent<TestComponent>(TEST_COMPONENT);
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2, {
-                owner: owner
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity3, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity2,
+                {
+                    owner: owner,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity3,
+                {
+                    owner: null,
+                }
+            );
 
-            coordinator.addComponentToEntity<TestComponent>(TEST_COMPONENT, entity1, { value: 1 });
-            coordinator.addComponentToEntity<TestComponent>(TEST_COMPONENT, entity2, { value: 2 });
-            coordinator.addComponentToEntity<TestComponent>(TEST_COMPONENT, entity3, { value: 3 });
+            coordinator.addComponentToEntity<TestComponent>(
+                TEST_COMPONENT,
+                entity1,
+                { value: 1 }
+            );
+            coordinator.addComponentToEntity<TestComponent>(
+                TEST_COMPONENT,
+                entity2,
+                { value: 2 }
+            );
+            coordinator.addComponentToEntity<TestComponent>(
+                TEST_COMPONENT,
+                entity3,
+                { value: 3 }
+            );
 
             system.entities.add(entity1);
             system.entities.add(entity2);
             system.entities.add(entity3);
 
-            const count = system.countEntitiesWithComponentByOwner(TEST_COMPONENT, owner);
+            const count = system.countEntitiesWithComponentByOwner(
+                TEST_COMPONENT,
+                owner
+            );
             expect(count).toBe(2);
         });
 
@@ -205,14 +275,21 @@ describe('OwnershipSystem', () => {
 
             coordinator.registerComponent<TestComponent>(TEST_COMPONENT);
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-                owner: owner
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity,
+                {
+                    owner: owner,
+                }
+            );
             // Entity doesn't have TEST_COMPONENT
 
             system.entities.add(entity);
 
-            const count = system.countEntitiesWithComponentByOwner(TEST_COMPONENT, owner);
+            const count = system.countEntitiesWithComponentByOwner(
+                TEST_COMPONENT,
+                owner
+            );
             expect(count).toBe(0);
         });
 
@@ -222,24 +299,46 @@ describe('OwnershipSystem', () => {
             const entity2 = coordinator.createEntity();
 
             coordinator.registerComponent<TestComponent>(TEST_COMPONENT);
-            const COMPONENT_WITHOUT_VALUE: ComponentName = createGlobalComponentName("ComponentWithoutValue");
+            const COMPONENT_WITHOUT_VALUE: ComponentName =
+                createGlobalComponentName('ComponentWithoutValue');
             type ComponentWithoutValue = { other: string };
-            coordinator.registerComponent<ComponentWithoutValue>(COMPONENT_WITHOUT_VALUE);
+            coordinator.registerComponent<ComponentWithoutValue>(
+                COMPONENT_WITHOUT_VALUE
+            );
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2, {
-                owner: owner
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity2,
+                {
+                    owner: owner,
+                }
+            );
 
-            coordinator.addComponentToEntity<TestComponent>(TEST_COMPONENT, entity1, { value: 1 });
-            coordinator.addComponentToEntity<ComponentWithoutValue>(COMPONENT_WITHOUT_VALUE, entity2, { other: "test" });
+            coordinator.addComponentToEntity<TestComponent>(
+                TEST_COMPONENT,
+                entity1,
+                { value: 1 }
+            );
+            coordinator.addComponentToEntity<ComponentWithoutValue>(
+                COMPONENT_WITHOUT_VALUE,
+                entity2,
+                { other: 'test' }
+            );
 
             system.entities.add(entity1);
             system.entities.add(entity2);
 
-            const count = system.countEntitiesWithComponentByOwner(TEST_COMPONENT, owner);
+            const count = system.countEntitiesWithComponentByOwner(
+                TEST_COMPONENT,
+                owner
+            );
             expect(count).toBe(1);
         });
     });
@@ -251,15 +350,27 @@ describe('OwnershipSystem', () => {
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2, {
-                owner: owner
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity3, {
-                owner: null
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity2,
+                {
+                    owner: owner,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity3,
+                {
+                    owner: null,
+                }
+            );
 
             system.entities.add(entity1);
             system.entities.add(entity2);
@@ -267,9 +378,21 @@ describe('OwnershipSystem', () => {
 
             system.removeAllFromOwner(owner);
 
-            const component1 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1);
-            const component2 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2);
-            const component3 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity3);
+            const component1 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity1
+                );
+            const component2 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity2
+                );
+            const component3 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity3
+                );
 
             expect(component1?.owner).toBeNull();
             expect(component2?.owner).toBeNull();
@@ -282,20 +405,36 @@ describe('OwnershipSystem', () => {
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner1
-            });
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2, {
-                owner: owner2
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner1,
+                }
+            );
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity2,
+                {
+                    owner: owner2,
+                }
+            );
 
             system.entities.add(entity1);
             system.entities.add(entity2);
 
             system.removeAllFromOwner(owner1);
 
-            const component1 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1);
-            const component2 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity2);
+            const component1 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity1
+                );
+            const component2 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity2
+                );
 
             expect(component1?.owner).toBeNull();
             expect(component2?.owner).toBe(owner2);
@@ -306,9 +445,13 @@ describe('OwnershipSystem', () => {
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
 
-            coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1, {
-                owner: owner
-            });
+            coordinator.addComponentToEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity1,
+                {
+                    owner: owner,
+                }
+            );
             // entity2 doesn't have ownership component
 
             system.entities.add(entity1);
@@ -318,7 +461,11 @@ describe('OwnershipSystem', () => {
                 system.removeAllFromOwner(owner);
             }).not.toThrow();
 
-            const component1 = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity1);
+            const component1 =
+                coordinator.getComponentFromEntity<OwnershipComponent>(
+                    OWNERSHIP_COMPONENT,
+                    entity1
+                );
             expect(component1?.owner).toBeNull();
         });
     });
@@ -335,13 +482,21 @@ describe('setOwner', () => {
     it('should set owner for entity with ownership component', () => {
         const entity = coordinator.createEntity();
         const owner = coordinator.createEntity();
-        coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-            owner: null
-        });
+        coordinator.addComponentToEntity<OwnershipComponent>(
+            OWNERSHIP_COMPONENT,
+            entity,
+            {
+                owner: null,
+            }
+        );
 
         setOwner(entity, owner, coordinator);
 
-        const component = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
+        const component =
+            coordinator.getComponentFromEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity
+            );
         expect(component?.owner).toBe(owner);
     });
 
@@ -349,13 +504,21 @@ describe('setOwner', () => {
         const entity = coordinator.createEntity();
         const owner1 = coordinator.createEntity();
         const owner2 = coordinator.createEntity();
-        coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-            owner: owner1
-        });
+        coordinator.addComponentToEntity<OwnershipComponent>(
+            OWNERSHIP_COMPONENT,
+            entity,
+            {
+                owner: owner1,
+            }
+        );
 
         setOwner(entity, owner2, coordinator);
 
-        const component = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
+        const component =
+            coordinator.getComponentFromEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity
+            );
         expect(component?.owner).toBe(owner2);
     });
 
@@ -366,7 +529,9 @@ describe('setOwner', () => {
 
         expect(() => {
             setOwner(entity, owner, coordinator);
-        }).toThrow(`${entity} does not have a ownership component; it cannot be owned`);
+        }).toThrow(
+            `${entity} does not have a ownership component; it cannot be owned`
+        );
     });
 });
 
@@ -381,13 +546,21 @@ describe('removeFromOwner', () => {
     it('should remove entity from owner when owner matches', () => {
         const entity = coordinator.createEntity();
         const owner = coordinator.createEntity();
-        coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-            owner: owner
-        });
+        coordinator.addComponentToEntity<OwnershipComponent>(
+            OWNERSHIP_COMPONENT,
+            entity,
+            {
+                owner: owner,
+            }
+        );
 
         removeFromOwner(entity, owner, coordinator);
 
-        const component = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
+        const component =
+            coordinator.getComponentFromEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity
+            );
         expect(component?.owner).toBeNull();
     });
 
@@ -395,13 +568,21 @@ describe('removeFromOwner', () => {
         const entity = coordinator.createEntity();
         const owner1 = coordinator.createEntity();
         const owner2 = coordinator.createEntity();
-        coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-            owner: owner1
-        });
+        coordinator.addComponentToEntity<OwnershipComponent>(
+            OWNERSHIP_COMPONENT,
+            entity,
+            {
+                owner: owner1,
+            }
+        );
 
         removeFromOwner(entity, owner2, coordinator);
 
-        const component = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
+        const component =
+            coordinator.getComponentFromEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity
+            );
         expect(component?.owner).toBe(owner1);
     });
 
@@ -418,16 +599,23 @@ describe('removeFromOwner', () => {
     it('should handle entity with null owner gracefully', () => {
         const entity = coordinator.createEntity();
         const owner = coordinator.createEntity();
-        coordinator.addComponentToEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity, {
-            owner: null
-        });
+        coordinator.addComponentToEntity<OwnershipComponent>(
+            OWNERSHIP_COMPONENT,
+            entity,
+            {
+                owner: null,
+            }
+        );
 
         expect(() => {
             removeFromOwner(entity, owner, coordinator);
         }).not.toThrow();
 
-        const component = coordinator.getComponentFromEntity<OwnershipComponent>(OWNERSHIP_COMPONENT, entity);
+        const component =
+            coordinator.getComponentFromEntity<OwnershipComponent>(
+                OWNERSHIP_COMPONENT,
+                entity
+            );
         expect(component?.owner).toBeNull();
     });
 });
-

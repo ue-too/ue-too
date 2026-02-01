@@ -5,6 +5,7 @@
 ### Resource Management
 
 **Always use context managers**
+
 ```python
 # ❌ File might not be closed
 f = open('file.txt')
@@ -17,6 +18,7 @@ with open('file.txt') as f:
 ```
 
 **Database connections**
+
 ```python
 # ❌ Connection leak
 conn = get_db_connection()
@@ -32,6 +34,7 @@ with get_db_connection() as conn:
 ### Common Pitfalls
 
 **Mutable default arguments**
+
 ```python
 # ❌ Default list is shared across calls!
 def add_item(item, items=[]):
@@ -47,6 +50,7 @@ def add_item(item, items=None):
 ```
 
 **Late binding in closures**
+
 ```python
 # ❌ All functions reference same 'i'
 funcs = [lambda: i for i in range(3)]
@@ -58,6 +62,7 @@ funcs = [lambda x=i: x for i in range(3)]
 ```
 
 **String concatenation in loops**
+
 ```python
 # ❌ O(n²) - strings are immutable
 result = ""
@@ -69,6 +74,7 @@ result = "".join(str(item) for item in items)
 ```
 
 **Exception handling anti-patterns**
+
 ```python
 # ❌ Catches everything, even KeyboardInterrupt
 try:
@@ -86,6 +92,7 @@ except ValueError as e:
 ### Type Hints
 
 **Use type hints for function signatures**
+
 ```python
 # ❌ No type information
 def process(data, limit):
@@ -97,6 +104,7 @@ def process(data: list[str], limit: int) -> list[str]:
 ```
 
 **Use Optional for nullable values**
+
 ```python
 # ❌ Ambiguous
 def find_user(user_id: int) -> User:
@@ -108,6 +116,7 @@ def find_user(user_id: int) -> User | None:
 ```
 
 **Type hint complex structures**
+
 ```python
 # ❌ Generic dict loses information
 def process(config: dict) -> dict:
@@ -128,6 +137,7 @@ def process(config: Config) -> dict[str, Any]:
 ### Performance
 
 **Use list comprehensions appropriately**
+
 ```python
 # ❌ Slower
 result = []
@@ -146,6 +156,7 @@ for item in items:
 ```
 
 **Use generators for large datasets**
+
 ```python
 # ❌ Loads everything into memory
 def get_records():
@@ -158,6 +169,7 @@ def get_records():
 ```
 
 **Use appropriate data structures**
+
 ```python
 # ❌ O(n) lookups
 if item in items_list:  # Slow for large lists
@@ -176,6 +188,7 @@ value = dict_obj.get(key, default)
 ### Security
 
 **SQL Injection**
+
 ```python
 # ❌ Vulnerable to SQL injection
 query = f"SELECT * FROM users WHERE id = {user_id}"
@@ -187,6 +200,7 @@ cursor.execute(query, (user_id,))
 ```
 
 **Command Injection**
+
 ```python
 # ❌ Shell injection risk
 import os
@@ -198,6 +212,7 @@ subprocess.run(["rm", filename], check=True)
 ```
 
 **Pickle security**
+
 ```python
 # ❌ Arbitrary code execution risk
 import pickle
@@ -209,6 +224,7 @@ data = json.loads(untrusted_input)
 ```
 
 **Path traversal**
+
 ```python
 # ❌ Can access any file
 with open(f"/uploads/{user_filename}") as f:
@@ -227,6 +243,7 @@ if not file_path.is_relative_to(base_dir):
 ### Best Practices
 
 **Follow PEP 8**
+
 ```python
 # ❌ Poor naming
 def fn(x,y):
@@ -238,6 +255,7 @@ def calculate_sum(first_number: int, second_number: int) -> int:
 ```
 
 **Use enumerate instead of range(len())**
+
 ```python
 # ❌ Verbose and error-prone
 for i in range(len(items)):
@@ -249,6 +267,7 @@ for i, item in enumerate(items):
 ```
 
 **Use zip for parallel iteration**
+
 ```python
 # ❌ Manual indexing
 for i in range(len(names)):
@@ -260,6 +279,7 @@ for name, age in zip(names, ages):
 ```
 
 **Use dictionary get() with defaults**
+
 ```python
 # ❌ Verbose
 if key in config:
@@ -272,6 +292,7 @@ value = config.get(key, default_value)
 ```
 
 **Use 'is' for None checks**
+
 ```python
 # ❌ Uses __eq__
 if value == None:
@@ -283,6 +304,7 @@ if value is None:
 ```
 
 **Avoid bare except**
+
 ```python
 # ❌ Catches system exits, keyboard interrupt
 try:
@@ -300,6 +322,7 @@ except (ValueError, KeyError) as e:
 ### Async/Await
 
 **Don't forget await**
+
 ```python
 # ❌ Returns coroutine, doesn't execute
 async def get_data():
@@ -313,6 +336,7 @@ async def get_data():
 ```
 
 **Use asyncio.gather for parallel tasks**
+
 ```python
 # ❌ Sequential, slow
 async def fetch_all():
@@ -334,6 +358,7 @@ async def fetch_all():
 ### Django/Flask Specific
 
 **Django QuerySet optimization**
+
 ```python
 # ❌ N+1 queries
 for user in User.objects.all():
@@ -345,6 +370,7 @@ for user in User.objects.select_related('profile'):
 ```
 
 **Flask request handling**
+
 ```python
 # ❌ No validation
 @app.route('/user/<user_id>')
@@ -362,6 +388,7 @@ def get_user(user_id):
 ### Testing
 
 **Use fixtures properly**
+
 ```python
 # ❌ Setup in every test
 def test_user_creation():
@@ -384,6 +411,7 @@ def test_user_creation(db_session):
 ```
 
 **Test exceptions properly**
+
 ```python
 # ❌ Doesn't verify exception
 def test_error():

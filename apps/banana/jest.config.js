@@ -7,12 +7,15 @@ export default {
     moduleFileExtensions: ['ts', 'js'],
     extensionsToTreatAsEsm: ['.ts'],
     transform: {
-      '^.+\\.ts$': ['ts-jest', {
-        useESM: true,
-        tsconfig: 'tsconfig.spec.json'
-      }]
+        '^.+\\.ts$': [
+            'ts-jest',
+            {
+                useESM: true,
+                tsconfig: 'tsconfig.spec.json',
+            },
+        ],
     },
     moduleNameMapper: {
-      '^@ue-too/(.*)$': '<rootDir>/../../packages/$1/src'
-    }
+        '^@ue-too/(.*)$': '<rootDir>/../../packages/$1/src',
+    },
 };

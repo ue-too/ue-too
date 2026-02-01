@@ -11,6 +11,6 @@
  * @module
  */
 
-export * from "./useAnimationFrame";
-export * from "./useBoardify";
-export * from "./useCanvasProxy";
+export * from './useAnimationFrame';
+export * from './useBoardify';
+export * from './useCanvasProxy';

@@ -25,6 +25,7 @@ This skill provides best practices for documenting TypeScript projects using Typ
 Write documentation that adds value beyond what the code shows. Avoid stating the obvious.
 
 **Good:** Explains why, edge cases, usage constraints
+
 ```typescript
 /**
  * Validates user input against security rules and rate limits.
@@ -32,17 +33,18 @@ Write documentation that adds value beyond what the code shows. Avoid stating th
  * @param input - Raw user input (not sanitized)
  * @returns Sanitized input safe for database queries
  */
-function validateInput(input: string): string
+function validateInput(input: string): string;
 ```
 
 **Avoid:** Repeating what TypeScript types already show
+
 ```typescript
 /**
  * Validates input
  * @param input - The input
  * @returns A string
  */
-function validateInput(input: string): string
+function validateInput(input: string): string;
 ```
 
 ### Essential Tags
@@ -50,34 +52,38 @@ function validateInput(input: string): string
 Use these TypeDoc/JSDoc tags appropriately:
 
 **@param** - Document each parameter (required for functions)
+
 ```typescript
 /**
  * @param userId - Unique identifier from users table
  * @param options - Configuration overrides for query behavior
  */
-async function fetchUser(userId: string, options?: QueryOptions)
+async function fetchUser(userId: string, options?: QueryOptions);
 ```
 
 **@returns** - Explain what's returned and when (required for non-void functions)
+
 ```typescript
 /**
  * @returns User object if found, null if user doesn't exist
  * @throws DatabaseError if connection fails
  */
-async function fetchUser(userId: string): Promise<User | null>
+async function fetchUser(userId: string): Promise<User | null>;
 ```
 
 **@throws** - Document exceptions that callers should handle
+
 ```typescript
 /**
  * @throws {ValidationError} When email format is invalid
  * @throws {ConflictError} When email already exists
  */
-function registerUser(email: string, password: string)
+function registerUser(email: string, password: string);
 ```
 
 **@example** - Show realistic usage (highly valuable)
-```typescript
+
+````typescript
 /**
  * @example
  * ```typescript
@@ -87,17 +93,19 @@ function registerUser(email: string, password: string)
  * }
  * ```
  */
-```
+````
 
 **@deprecated** - Mark obsolete code with migration path
+
 ```typescript
 /**
  * @deprecated Use fetchUserById() instead. Will be removed in v3.0.
  */
-function getUser(id: string)
+function getUser(id: string);
 ```
 
 **@see** - Link to related functions or documentation
+
 ```typescript
 /**
  * @see {@link validateUser} for validation rules
@@ -106,6 +114,7 @@ function getUser(id: string)
 ```
 
 **@remarks** - Add detailed explanations or important notes
+
 ```typescript
 /**
  * @remarks
@@ -117,6 +126,7 @@ function getUser(id: string)
 ### What to Document
 
 **Always document:**
+
 - Public APIs and exported functions/classes
 - Complex business logic or algorithms
 - Non-obvious behavior or edge cases
@@ -124,11 +134,13 @@ function getUser(id: string)
 - Configuration objects with many options
 
 **Usually document:**
+
 - Interfaces and type aliases (brief description of purpose)
 - Class methods (especially public ones)
 - Callback parameters (explain when/how they're called)
 
 **Sometimes skip:**
+
 - Private implementation details (unless complex)
 - Self-explanatory getters/setters
 - Simple utility functions where name + types are sufficient
@@ -136,22 +148,24 @@ function getUser(id: string)
 ### Specific Patterns
 
 **Classes and Constructors**
+
 ```typescript
 /**
  * Manages WebSocket connections with automatic reconnection.
  * Handles connection pooling and implements exponential backoff.
  */
 class ConnectionManager {
-  /**
-   * @param config - Connection settings
-   * @param config.maxRetries - Maximum reconnection attempts (default: 5)
-   * @param config.timeout - Connection timeout in milliseconds
-   */
-  constructor(config: ConnectionConfig) {}
+    /**
+     * @param config - Connection settings
+     * @param config.maxRetries - Maximum reconnection attempts (default: 5)
+     * @param config.timeout - Connection timeout in milliseconds
+     */
+    constructor(config: ConnectionConfig) {}
 }
 ```
 
 **Interfaces and Types**
+
 ```typescript
 /**
  * Configuration for database connection pooling.
@@ -159,12 +173,13 @@ class ConnectionManager {
  * @property idleTimeout - Milliseconds before closing idle connections
  */
 interface PoolConfig {
-  maxConnections?: number;
-  idleTimeout: number;
+    maxConnections?: number;
+    idleTimeout: number;
 }
 ```
 
 **Generic Functions**
+
 ```typescript
 /**
  * Transforms array elements using provided mapper function.
@@ -174,10 +189,11 @@ interface PoolConfig {
  * @param mapper - Function to apply to each element
  * @returns New array with transformed elements
  */
-function map<T, R>(items: T[], mapper: (item: T) => R): R[]
+function map<T, R>(items: T[], mapper: (item: T) => R): R[];
 ```
 
 **Function Overloads**
+
 ```typescript
 /**
  * Fetches data from API with flexible input formats.
@@ -188,11 +204,12 @@ function fetch(url: string): Promise<Response>;
  */
 function fetch(config: RequestConfig): Promise<Response>;
 function fetch(urlOrConfig: string | RequestConfig): Promise<Response> {
-  // Implementation
+    // Implementation
 }
 ```
 
 **Async Functions**
+
 ```typescript
 /**
  * Fetches user data with automatic retry on transient failures.
@@ -201,21 +218,22 @@ function fetch(urlOrConfig: string | RequestConfig): Promise<Response> {
  * @throws {NotFoundError} When user doesn't exist
  * @throws {NetworkError} After 3 failed retry attempts
  */
-async function fetchUser(userId: string): Promise<User>
+async function fetchUser(userId: string): Promise<User>;
 ```
 
 **Enums**
+
 ```typescript
 /**
  * Authentication states for user sessions.
  */
 enum AuthState {
-  /** User not logged in */
-  Anonymous = 'ANONYMOUS',
-  /** User logged in with credentials */
-  Authenticated = 'AUTHENTICATED',
-  /** Session expired, reauth required */
-  Expired = 'EXPIRED'
+    /** User not logged in */
+    Anonymous = 'ANONYMOUS',
+    /** User logged in with credentials */
+    Authenticated = 'AUTHENTICATED',
+    /** Session expired, reauth required */
+    Expired = 'EXPIRED',
 }
 ```
 
@@ -227,35 +245,38 @@ Create `typedoc.json` in project root:
 
 ```json
 {
-  "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./src/index.ts"],
-  "out": "docs",
-  "plugin": [],
-  "excludePrivate": true,
-  "excludeProtected": false,
-  "excludeInternal": true,
-  "readme": "README.md",
-  "categorizeByGroup": true,
-  "navigation": {
-    "includeCategories": true,
-    "includeGroups": true
-  }
+    "$schema": "https://typedoc.org/schema.json",
+    "categorizeByGroup": true,
+    "entryPoints": ["./src/index.ts"],
+    "excludeInternal": true,
+    "excludePrivate": true,
+    "excludeProtected": false,
+    "navigation": {
+        "includeCategories": true,
+        "includeGroups": true
+    },
+    "out": "docs",
+    "plugin": [],
+    "readme": "README.md"
 }
 ```
 
 ### Common Configuration Options
 
 **entryPoints** - Starting files for documentation
+
 - Single entry: `["./src/index.ts"]`
 - Multiple modules: `["./src/api/index.ts", "./src/utils/index.ts"]`
 - Glob patterns: `["./src/**/*.ts"]`
 
 **excludePrivate/excludeProtected/excludeInternal** - Control visibility
+
 - `excludePrivate: true` - Hide private members (recommended)
 - `excludeInternal: true` - Hide `@internal` tagged items
 - Keep protected members visible for inheritance docs
 
 **categorizeByGroup** - Organize by `@group` tags
+
 ```typescript
 /**
  * @group Authentication
@@ -272,11 +293,11 @@ export function createUser() {}
 
 ```json
 {
-  "scripts": {
-    "docs": "typedoc",
-    "docs:watch": "typedoc --watch",
-    "docs:json": "typedoc --json docs.json"
-  }
+    "scripts": {
+        "docs": "typedoc",
+        "docs:json": "typedoc --json docs.json",
+        "docs:watch": "typedoc --watch"
+    }
 }
 ```
 
@@ -285,31 +306,33 @@ export function createUser() {}
 When auditing a codebase for documentation coverage:
 
 1. **Generate JSON output** to analyze programmatically:
+
 ```bash
 npx typedoc --json docs.json
 ```
 
 2. **Identify undocumented exports**:
-   - Look for exported functions/classes without comments
-   - Check for missing @param or @returns tags
-   - Find functions that throw errors without @throws
+    - Look for exported functions/classes without comments
+    - Check for missing @param or @returns tags
+    - Find functions that throw errors without @throws
 
 3. **Prioritize documentation**:
-   - Start with public API surface (exported items)
-   - Focus on complex functions with multiple parameters
-   - Document functions that throw errors or have side effects
+    - Start with public API surface (exported items)
+    - Focus on complex functions with multiple parameters
+    - Document functions that throw errors or have side effects
 
 4. **Common gaps to check**:
-   - Generic type parameters without @typeParam
-   - Callback parameters without explanation
-   - Optional parameters without default value explanation
-   - Return types that need context (e.g., null vs undefined)
+    - Generic type parameters without @typeParam
+    - Callback parameters without explanation
+    - Optional parameters without default value explanation
+    - Return types that need context (e.g., null vs undefined)
 
 ## Advanced Patterns
 
 ### Module Organization
 
 Use @module for file-level documentation:
+
 ```typescript
 /**
  * Utilities for data validation and sanitization.
@@ -321,46 +344,47 @@ Use @module for file-level documentation:
 ### Cross-References
 
 Link between related items:
+
 ```typescript
 /**
  * Creates a new user account.
  * @see {@link validateEmail} - Email validation rules
  * @see {@link User} - The returned user type
  */
-function createUser(email: string): User
+function createUser(email: string): User;
 ```
 
 ### Inline Type Documentation
 
 Document complex inline types:
+
 ```typescript
 /**
  * @param options - Query configuration
  * @param options.sort - Sort field and direction (e.g., "name:asc")
  * @param options.filter - Filter criteria as key-value pairs
  */
-function query(options: {
-  sort?: string;
-  filter?: Record<string, any>;
-})
+function query(options: { sort?: string; filter?: Record<string, any> });
 ```
 
 ### Custom Tags
 
 Define custom tags in typedoc.json for domain-specific needs:
+
 ```json
 {
-  "customTags": ["performance", "security"]
+    "customTags": ["performance", "security"]
 }
 ```
 
 Use in code:
+
 ```typescript
 /**
  * @performance O(n log n) time complexity
  * @security Sanitizes all user input
  */
-function processData(data: string[])
+function processData(data: string[]);
 ```
 
 ## Quality Guidelines
@@ -368,6 +392,7 @@ function processData(data: string[])
 ### Write for Developers
 
 Assume the reader knows TypeScript but not your domain:
+
 - Explain business logic and "why"
 - Document non-obvious behavior
 - Highlight edge cases and gotchas

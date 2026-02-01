@@ -1,17 +1,20 @@
-import { readFileSync, readdirSync } from "fs";
-import { join } from "path";
-import Ajv from "ajv";
-import { deserializeComponentSchema, SerializedComponentSchema } from "@ue-too/ecs";
+import {
+    SerializedComponentSchema,
+    deserializeComponentSchema,
+} from '@ue-too/ecs';
+import Ajv from 'ajv';
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
 
 /**
  * Creates an ajv validator instance with the component schema loaded.
  */
 function createValidator(schemaPath: string) {
     const ajv = new Ajv({ allErrors: true, strict: false });
-    
+
     const schemaJson = readFileSync(schemaPath, 'utf-8');
     const schema = JSON.parse(schemaJson);
-    
+
     return ajv.compile(schema);
 }
 
@@ -40,15 +43,20 @@ describe('Fixture JSON Schema Validation', () => {
     describe('Component schema fixtures', () => {
         // Get all JSON files in fixtures directory (excluding the schema file itself)
         const fixtureFiles = readdirSync(fixturesDir)
-            .filter(file => file.endsWith('.json') && file !== 'component-schema.schema.json')
+            .filter(
+                file =>
+                    file.endsWith('.json') &&
+                    file !== 'component-schema.schema.json'
+            )
             .map(file => join(fixturesDir, file));
 
         it('should have at least one component schema fixture', () => {
             expect(fixtureFiles.length).toBeGreaterThan(0);
         });
 
-        fixtureFiles.forEach((fixturePath) => {
-            const fixtureName = fixturePath.split('/').pop() || fixturePath.split('\\').pop();
+        fixtureFiles.forEach(fixturePath => {
+            const fixtureName =
+                fixturePath.split('/').pop() || fixturePath.split('\\').pop();
 
             describe(fixtureName || 'unknown', () => {
                 it('should be valid JSON', () => {
@@ -61,7 +69,11 @@ describe('Fixture JSON Schema Validation', () => {
                     const data: unknown = JSON.parse(json);
 
                     // Basic structure validation
-                    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                    if (
+                        !data ||
+                        typeof data !== 'object' ||
+                        Array.isArray(data)
+                    ) {
                         throw new Error('Root must be an object');
                     }
 
@@ -78,22 +90,31 @@ describe('Fixture JSON Schema Validation', () => {
 
                     const validate = createValidator(schemaPath);
                     const valid = validate(data);
-                    
+
                     expect(valid).toBe(true);
                     if (!valid && validate.errors) {
-                        const errorMessages = validate.errors.map(err => 
-                            `${err.instancePath || 'root'} ${err.message}`
-                        ).join('\n');
-                        console.error(`Validation errors for ${fixtureName}:\n`, errorMessages);
+                        const errorMessages = validate.errors
+                            .map(
+                                err =>
+                                    `${err.instancePath || 'root'} ${err.message}`
+                            )
+                            .join('\n');
+                        console.error(
+                            `Validation errors for ${fixtureName}:\n`,
+                            errorMessages
+                        );
                     }
                 });
 
                 it('should deserialize correctly', () => {
                     const json = readFileSync(fixturePath, 'utf-8');
-                    const serializedSchema: SerializedComponentSchema = JSON.parse(json);
+                    const serializedSchema: SerializedComponentSchema =
+                        JSON.parse(json);
 
-                    expect(() => deserializeComponentSchema(serializedSchema)).not.toThrow();
-                    
+                    expect(() =>
+                        deserializeComponentSchema(serializedSchema)
+                    ).not.toThrow();
+
                     const schema = deserializeComponentSchema(serializedSchema);
                     expect(schema.componentName).toBeDefined();
                     expect(Array.isArray(schema.fields)).toBe(true);
@@ -104,15 +125,29 @@ describe('Fixture JSON Schema Validation', () => {
                         expect(field.name).toBeDefined();
                         expect(typeof field.name).toBe('string');
                         expect(field.type).toBeDefined();
-                        
+
                         if (field.type === 'array') {
                             expect('arrayElementType' in field).toBe(true);
-                            const arrayField = field as { arrayElementType: { kind: string; type?: string; typeName?: string } };
-                            expect(['builtin', 'custom']).toContain(arrayField.arrayElementType.kind);
-                            if (arrayField.arrayElementType.kind === 'builtin') {
-                                expect(arrayField.arrayElementType.type).toBeDefined();
+                            const arrayField = field as {
+                                arrayElementType: {
+                                    kind: string;
+                                    type?: string;
+                                    typeName?: string;
+                                };
+                            };
+                            expect(['builtin', 'custom']).toContain(
+                                arrayField.arrayElementType.kind
+                            );
+                            if (
+                                arrayField.arrayElementType.kind === 'builtin'
+                            ) {
+                                expect(
+                                    arrayField.arrayElementType.type
+                                ).toBeDefined();
                             } else {
-                                expect(arrayField.arrayElementType.typeName).toBeDefined();
+                                expect(
+                                    arrayField.arrayElementType.typeName
+                                ).toBeDefined();
                             }
                         }
                     });
@@ -123,7 +158,7 @@ describe('Fixture JSON Schema Validation', () => {
                     const data = JSON.parse(json) as SerializedComponentSchema;
 
                     const fieldNames = new Set<string>();
-                    data.fields.forEach((field) => {
+                    data.fields.forEach(field => {
                         expect(fieldNames.has(field.name)).toBe(false);
                         fieldNames.add(field.name);
                     });

@@ -34,18 +34,18 @@
  * @category Drawing Utilities
  * @see {@link drawRuler} for usage in ruler drawing
  */
-export function calculateOrderOfMagnitude(value: number): number{
+export function calculateOrderOfMagnitude(value: number): number {
     if (value <= 0) return 0;
     let count = 0;
     if (value < 1) {
         let divisor = 1;
-        while (divisor > value){
+        while (divisor > value) {
             divisor /= 10;
             count--;
         }
     } else {
         let divisor = 1;
-        while (divisor * 10 <= value){
+        while (divisor * 10 <= value) {
             divisor *= 10;
             count++;
         }

@@ -1,4 +1,4 @@
-import { Point, PointCal } from "@ue-too/math";
+import { Point, PointCal } from '@ue-too/math';
 
 /**
  * Converts a point from canvas space to viewport space.
@@ -38,9 +38,13 @@ import { Point, PointCal } from "@ue-too/math";
  * @category Coordinate Conversion
  * @see {@link convertFromViewPort2Canvas} for inverse conversion
  */
-export function convertFromCanvas2ViewPort(pointInCanvas: Point, viewportOriginInCanvasSpace: Point = {x: 0, y: 0}, viewportHasFlippedYAxis: boolean = false): Point {
+export function convertFromCanvas2ViewPort(
+    pointInCanvas: Point,
+    viewportOriginInCanvasSpace: Point = { x: 0, y: 0 },
+    viewportHasFlippedYAxis: boolean = false
+): Point {
     const res = PointCal.subVector(pointInCanvas, viewportOriginInCanvasSpace);
-    if(viewportHasFlippedYAxis){
+    if (viewportHasFlippedYAxis) {
         res.y = -res.y;
     }
     return res;
@@ -84,8 +88,12 @@ export function convertFromCanvas2ViewPort(pointInCanvas: Point, viewportOriginI
  * @category Coordinate Conversion
  * @see {@link convertFromCanvas2ViewPort} for inverse conversion
  */
-export function convertFromViewPort2Canvas(pointInViewPort: Point, viewportOriginInCanvasSpace: Point = {x: 0, y: 0},viewportHasFlippedYAxis: boolean = false): Point {
-    if(viewportHasFlippedYAxis){
+export function convertFromViewPort2Canvas(
+    pointInViewPort: Point,
+    viewportOriginInCanvasSpace: Point = { x: 0, y: 0 },
+    viewportHasFlippedYAxis: boolean = false
+): Point {
+    if (viewportHasFlippedYAxis) {
         pointInViewPort.y = -pointInViewPort.y;
     }
     return PointCal.addVector(pointInViewPort, viewportOriginInCanvasSpace);

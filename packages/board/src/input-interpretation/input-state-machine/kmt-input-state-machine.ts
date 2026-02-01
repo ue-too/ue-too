@@ -1,9 +1,34 @@
-import { EventReactions, EventGuards, Guard, TemplateState, TemplateStateMachine, NO_OP, EventArgs, EventResult, CreateStateType } from "@ue-too/being";
-import type { Point } from "@ue-too/math";
-import { Canvas, CursorStyle, DummyKmtInputContext, KmtInputContext, ObservableInputTracker } from "./kmt-input-context";
-import { convertFromWindow2ViewPortWithCanvasOperator } from "../../utils/coorindate-conversion";
+import {
+    CreateStateType,
+    EventArgs,
+    EventGuards,
+    EventReactions,
+    EventResult,
+    Guard,
+    NO_OP,
+    TemplateState,
+    TemplateStateMachine,
+} from '@ue-too/being';
+import type { Point } from '@ue-too/math';
 
-const KMT_INPUT_STATES = ["IDLE", "READY_TO_PAN_VIA_SPACEBAR", "READY_TO_PAN_VIA_SCROLL_WHEEL", "PAN", "INITIAL_PAN", "PAN_VIA_SCROLL_WHEEL", "DISABLED"] as const;
+import { convertFromWindow2ViewPortWithCanvasOperator } from '../../utils/coorindate-conversion';
+import {
+    Canvas,
+    CursorStyle,
+    DummyKmtInputContext,
+    KmtInputContext,
+    ObservableInputTracker,
+} from './kmt-input-context';
+
+const KMT_INPUT_STATES = [
+    'IDLE',
+    'READY_TO_PAN_VIA_SPACEBAR',
+    'READY_TO_PAN_VIA_SCROLL_WHEEL',
+    'PAN',
+    'INITIAL_PAN',
+    'PAN_VIA_SCROLL_WHEEL',
+    'DISABLED',
+] as const;
 
 /**
  * Possible states of the Keyboard/Mouse/Trackpad input state machine.
@@ -33,7 +58,7 @@ export type KmtInputStates = CreateStateType<typeof KMT_INPUT_STATES>;
 export type PointerEventPayload = {
     x: number;
     y: number;
-}
+};
 
 /**
  * @internal
@@ -51,7 +76,7 @@ type EmptyPayload = {};
 export type ScrollEventPayload = {
     deltaX: number;
     deltaY: number;
-}
+};
 
 /**
  * Payload for scroll events combined with ctrl key (zoom gesture).
@@ -68,7 +93,7 @@ export type ScrollWithCtrlEventPayload = {
     deltaY: number;
     x: number;
     y: number;
-}
+};
 
 /**
  * Event mapping for the KMT input state machine.
@@ -103,13 +128,13 @@ export type KmtInputEventMapping = {
     disable: EmptyPayload;
     enable: EmptyPayload;
     pointerMove: PointerEventPayload;
-}
+};
 
 /**
  * @internal
  */
 type PanEventOutput = {
-    type: "pan";
+    type: 'pan';
     delta: Point;
 };
 
@@ -117,7 +142,7 @@ type PanEventOutput = {
  * @internal
  */
 type ZoomEventOutput = {
-    type: "zoom";
+    type: 'zoom';
     delta: number;
     anchorPoint: Point;
 };
@@ -143,11 +168,11 @@ type ZoomEventOutput = {
  * @category Input State Machine - KMT
  */
 export type KmtOutputEvent =
-    | { type: "pan", delta: Point }
-    | { type: "zoom", delta: number, anchorPointInViewPort: Point }
-    | { type: "rotate", deltaRotation: number }
-    | { type: "cursor", style: CursorStyle }
-    | { type: "none" };
+    | { type: 'pan'; delta: Point }
+    | { type: 'zoom'; delta: number; anchorPointInViewPort: Point }
+    | { type: 'rotate'; deltaRotation: number }
+    | { type: 'cursor'; style: CursorStyle }
+    | { type: 'none' };
 
 /**
  * Mapping of events to their output types.
@@ -160,17 +185,20 @@ export type KmtOutputEvent =
  * @category Input State Machine - KMT
  */
 export type KmtInputEventOutputMapping = {
-    spacebarDown: number;
     middlePointerMove: KmtOutputEvent;
     scroll: KmtOutputEvent;
     scrollWithCtrl: KmtOutputEvent;
     leftPointerMove: KmtOutputEvent;
-}
+};
 
 /**
  * @internal
  */
-export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEBAR" | "READY_TO_PAN_VIA_SCROLL_WHEEL" | "DISABLED";
+export type KmtIdleStatePossibleTargetStates =
+    | 'IDLE'
+    | 'READY_TO_PAN_VIA_SPACEBAR'
+    | 'READY_TO_PAN_VIA_SCROLL_WHEEL'
+    | 'DISABLED';
 
 /**
  * IDLE state - default state waiting for user input.
@@ -196,107 +224,150 @@ export type KmtIdleStatePossibleTargetStates = "IDLE" | "READY_TO_PAN_VIA_SPACEB
  *
  * @category Input State Machine - KMT
  */
-export class KmtIdleState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class KmtIdleState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
 
-    protected _guards: Guard<KmtInputContext, "isIdle"> = {
+    protected _guards: Guard<KmtInputContext, 'isIdle'> = {
         isIdle: () => true,
-    }
+    };
 
-    protected _eventGuards: Partial<EventGuards<KmtInputEventMapping, KmtInputStates, KmtInputContext, Guard<KmtInputContext>>> = {
-    }
+    protected _eventGuards: Partial<
+        EventGuards<
+            KmtInputEventMapping,
+            KmtInputStates,
+            KmtInputContext,
+            Guard<KmtInputContext>
+        >
+    > = {};
 
     // Arrow function properties must be defined before _eventReactions to ensure proper initialization order
-    scrollPan = (context: KmtInputContext, payload: ScrollEventPayload): KmtOutputEvent => {
-        const delta = {...payload}
-        if(!context.alignCoordinateSystem){
+    scrollPan = (
+        context: KmtInputContext,
+        payload: ScrollEventPayload
+    ): KmtOutputEvent => {
+        const delta = { ...payload };
+        if (!context.alignCoordinateSystem) {
             delta.deltaY = -delta.deltaY;
         }
         return {
-            type: "pan",
-            delta: {x: delta.deltaX, y: delta.deltaY}
+            type: 'pan',
+            delta: { x: delta.deltaX, y: delta.deltaY },
         };
-    }
+    };
 
-    scrollZoom = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
+    scrollZoom = (
+        context: KmtInputContext,
+        payload: ScrollWithCtrlEventPayload
+    ): KmtOutputEvent => {
         let scrollSensitivity = 0.005;
-        if(Math.abs(payload.deltaY) > 100){
+        if (Math.abs(payload.deltaY) > 100) {
             scrollSensitivity = 0.0005;
         }
         const zoomAmount = payload.deltaY * scrollSensitivity;
-        const cursorPosition = {x: payload.x, y: payload.y};
-        const anchorPointInViewPort = convertFromWindow2ViewPortWithCanvasOperator(cursorPosition, context.canvas, {x: context.canvas.width / 2, y: context.canvas.height / 2}, !context.alignCoordinateSystem);
+        const cursorPosition = { x: payload.x, y: payload.y };
+        const anchorPointInViewPort =
+            convertFromWindow2ViewPortWithCanvasOperator(
+                cursorPosition,
+                context.canvas,
+                { x: context.canvas.width / 2, y: context.canvas.height / 2 },
+                !context.alignCoordinateSystem
+            );
         return {
-            type: "zoom",
+            type: 'zoom',
             delta: -(zoomAmount * 5),
             anchorPointInViewPort,
         };
-    }
+    };
 
-    scrollHandler = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
-        if(payload.deltaX === 0 && payload.deltaY !== 0){
+    scrollHandler = (
+        context: KmtInputContext,
+        payload: ScrollWithCtrlEventPayload
+    ): KmtOutputEvent => {
+        if (payload.deltaX === 0 && payload.deltaY !== 0) {
             context.addKmtTrackpadTrackScore();
-        } else if (payload.deltaX !== 0 && payload.deltaY !== 0){
+        } else if (payload.deltaX !== 0 && payload.deltaY !== 0) {
             context.subtractKmtTrackpadTrackScore();
         }
-        if(context.mode === "kmt"){
+        if (context.mode === 'kmt') {
             return this.scrollZoom(context, payload);
         } else {
             return this.scrollPan(context, payload);
         }
-    }
+    };
 
-    scrollWithCtrlHandler = (context: KmtInputContext, payload: ScrollWithCtrlEventPayload): KmtOutputEvent => {
+    scrollWithCtrlHandler = (
+        context: KmtInputContext,
+        payload: ScrollWithCtrlEventPayload
+    ): KmtOutputEvent => {
         return this.scrollZoom(context, payload);
-    }
+    };
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        spacebarDown: {
-            action: this.spacebarDownHandler,
-            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
-        },
-        scroll: {
-            action: this.scrollHandler,
-            defaultTargetState: "IDLE",
-        },
-        scrollWithCtrl: {
-            action: this.scrollWithCtrlHandler,
-            defaultTargetState: "IDLE",
-        },
-        middlePointerDown: {
-            action: this.middlePointerDownHandler,
-            defaultTargetState: "READY_TO_PAN_VIA_SCROLL_WHEEL",
-        },
-        disable: {
-            action: NO_OP,
-            defaultTargetState: "DISABLED",
-        },
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            spacebarDown: {
+                action: this.spacebarDownHandler,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            scroll: {
+                action: this.scrollHandler,
+                defaultTargetState: 'IDLE',
+            },
+            scrollWithCtrl: {
+                action: this.scrollWithCtrlHandler,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerDown: {
+                action: this.middlePointerDownHandler,
+                defaultTargetState: 'READY_TO_PAN_VIA_SCROLL_WHEEL',
+            },
+            disable: {
+                action: NO_OP,
+                defaultTargetState: 'DISABLED',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
-    spacebarDownHandler(context: KmtInputContext, payload: EmptyPayload): number  {
+    spacebarDownHandler(
+        context: KmtInputContext,
+        payload: EmptyPayload
+    ): number {
         // context.canvas.setCursor(CursorStyle.GRAB);
         return 1;
     }
 
-    middlePointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
+    middlePointerDownHandler(
+        context: KmtInputContext,
+        payload: PointerEventPayload
+    ): void {
         // probably from kmt
         context.addKmtTrackpadTrackScore();
-        if(context.mode === "TBD") {
-            context.setMode("kmt");
+        if (context.mode === 'TBD') {
+            context.setMode('kmt');
         }
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.setInitialCursorPosition({ x: payload.x, y: payload.y });
     }
-
 }
 
-export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
+export class DisabledState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
@@ -310,124 +381,162 @@ export class DisabledState extends TemplateState<KmtInputEventMapping, KmtInputC
         // context.toggleOffEdgeAutoCameraInput();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        enable: {
-            action: NO_OP,
-            defaultTargetState: "IDLE",
-        },
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            enable: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+        };
 }
 
 /**
  * @description The ready to pan via space bar state of the keyboard mouse and trackpad input state machine.
- * 
+ *
  * @category Input State Machine
  */
-export class ReadyToPanViaSpaceBarState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class ReadyToPanViaSpaceBarState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        spacebarUp: {
-            action: NO_OP,
-            defaultTargetState: "IDLE",
-        },
-        leftPointerDown: {
-            action: this.leftPointerDownHandler,
-            defaultTargetState: "INITIAL_PAN",
-        },
-        disable: {
-            action: (context) => context.cancelCurrentAction(),
-            defaultTargetState: "DISABLED",
-        },
-        leftPointerMove: {
-            action: NO_OP,
-            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
-        }
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            spacebarUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            leftPointerDown: {
+                action: this.leftPointerDownHandler,
+                defaultTargetState: 'INITIAL_PAN',
+            },
+            disable: {
+                action: context => context.cancelCurrentAction(),
+                defaultTargetState: 'DISABLED',
+            },
+            leftPointerMove: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRAB);
     }
 
-    leftPointerDownHandler(context: KmtInputContext, payload: PointerEventPayload): void {
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+    leftPointerDownHandler(
+        context: KmtInputContext,
+        payload: PointerEventPayload
+    ): void {
+        context.setInitialCursorPosition({ x: payload.x, y: payload.y });
     }
 }
 
 /**
  * @description The initial pan state of the keyboard mouse and trackpad input state machine.
- * 
+ *
  * @category Input State Machine
  */
-export class InitialPanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class InitialPanState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        leftPointerUp: {
-            action: NO_OP,
-            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: "PAN",
-        },
-        spacebarUp: {
-            action: () => "IDLE",
-            defaultTargetState: "IDLE",
-        },
-        leftPointerDown: {
-            action: () => "PAN",
-            defaultTargetState: "PAN",
-        },
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            leftPointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            leftPointerMove: {
+                action: this.leftPointerMoveHandler,
+                defaultTargetState: 'PAN',
+            },
+            spacebarUp: {
+                action: () => 'IDLE',
+                defaultTargetState: 'IDLE',
+            },
+            leftPointerDown: {
+                action: () => 'PAN',
+                defaultTargetState: 'PAN',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
     }
 
-    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
+    leftPointerMoveHandler(
+        context: KmtInputContext,
+        payload: PointerEventPayload
+    ): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
         };
-        if(!context.alignCoordinateSystem){
+        if (!context.alignCoordinateSystem) {
             delta.y = -delta.y;
         }
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.setInitialCursorPosition({ x: payload.x, y: payload.y });
         return {
-            type: "pan",
-            delta: delta
+            type: 'pan',
+            delta: delta,
         };
     }
 }
 
 /**
  * @description The ready to pan via scroll wheel state of the keyboard mouse and trackpad input state machine.
- * 
+ *
  * @category Input State Machine
  */
-export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class ReadyToPanViaScrollWheelState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        middlePointerUp: {
-            action: NO_OP,
-            defaultTargetState: "IDLE",
-        },
-        middlePointerMove: {
-            action: NO_OP,
-            defaultTargetState: "PAN_VIA_SCROLL_WHEEL",
-        },
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            middlePointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerMove: {
+                action: NO_OP,
+                defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
@@ -436,29 +545,38 @@ export class ReadyToPanViaScrollWheelState extends TemplateState<KmtInputEventMa
 
 /**
  * @description The pan state of the keyboard mouse and trackpad input state machine.
- * 
+ *
  * @category Input State Machine
  */
-export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class PanState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        leftPointerUp: {
-            action: NO_OP,
-            defaultTargetState: "READY_TO_PAN_VIA_SPACEBAR",
-        },
-        leftPointerMove: {
-            action: this.leftPointerMoveHandler,
-            defaultTargetState: "PAN",
-        },
-        spacebarUp: {
-            action: NO_OP, 
-            defaultTargetState: "IDLE",
-        },
-    }
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            leftPointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'READY_TO_PAN_VIA_SPACEBAR',
+            },
+            leftPointerMove: {
+                action: this.leftPointerMoveHandler,
+                defaultTargetState: 'PAN',
+            },
+            spacebarUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+        };
 
     uponEnter(context: KmtInputContext): void {
         context.canvas.setCursor(CursorStyle.GRABBING);
@@ -468,51 +586,66 @@ export class PanState extends TemplateState<KmtInputEventMapping, KmtInputContex
         context.canvas.setCursor(CursorStyle.DEFAULT);
     }
 
-    leftPointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
+    leftPointerMoveHandler(
+        context: KmtInputContext,
+        payload: PointerEventPayload
+    ): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
         };
-        if(!context.alignCoordinateSystem){
+        if (!context.alignCoordinateSystem) {
             delta.y = -delta.y;
         }
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.setInitialCursorPosition({ x: payload.x, y: payload.y });
         return {
-            type: "pan",
-            delta: delta
+            type: 'pan',
+            delta: delta,
         };
     }
 }
 
 /**
  * @description The pan via scroll wheel state of the keyboard mouse and trackpad input state machine.
- * 
+ *
  * @category Input State Machine
  */
-export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
+export class PanViaScrollWheelState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
+    protected _eventReactions: EventReactions<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    > = {
+            middlePointerUp: {
+                action: NO_OP,
+                defaultTargetState: 'IDLE',
+            },
+            middlePointerMove: {
+                action: this.middlePointerMoveHandler,
+                defaultTargetState: 'PAN_VIA_SCROLL_WHEEL',
+            },
+        };
 
-    protected _eventReactions: EventReactions<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> = {
-        middlePointerUp: {
-            action: NO_OP,
-            defaultTargetState: "IDLE",
-        },
-        middlePointerMove: {
-            action: this.middlePointerMoveHandler,
-            defaultTargetState: "PAN_VIA_SCROLL_WHEEL",
-        },
-    }
-
-    middlePointerMoveHandler(context: KmtInputContext, payload: PointerEventPayload): KmtOutputEvent {
+    middlePointerMoveHandler(
+        context: KmtInputContext,
+        payload: PointerEventPayload
+    ): KmtOutputEvent {
         const delta = {
             x: context.initialCursorPosition.x - payload.x,
             y: context.initialCursorPosition.y - payload.y,
         };
-        if(!context.alignCoordinateSystem){
+        if (!context.alignCoordinateSystem) {
             delta.y = -delta.y;
         }
-        context.setInitialCursorPosition({x: payload.x, y: payload.y});
+        context.setInitialCursorPosition({ x: payload.x, y: payload.y });
         return {
-            type: "pan",
+            type: 'pan',
             delta: delta,
         };
     }
@@ -522,12 +655,15 @@ export class PanViaScrollWheelState extends TemplateState<KmtInputEventMapping, 
     }
 }
 
-export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class KmtEmptyState extends TemplateState<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     constructor() {
         super();
     }
-
 }
 
 /**
@@ -535,7 +671,12 @@ export class KmtEmptyState extends TemplateState<KmtInputEventMapping, KmtInputC
  *
  * @category Input State Machine - KMT
  */
-export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>;
+export type KmtInputStateMachine = TemplateStateMachine<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+>;
 
 /**
  * Creates a new KMT (Keyboard/Mouse/Trackpad) input state machine.
@@ -583,7 +724,9 @@ export type KmtInputStateMachine = TemplateStateMachine<KmtInputEventMapping, Km
  * }
  * ```
  */
-export function createKmtInputStateMachine(context: KmtInputContext): KmtInputStateMachine {
+export function createKmtInputStateMachine(
+    context: KmtInputContext
+): KmtInputStateMachine {
     const states = {
         IDLE: new KmtIdleState(),
         READY_TO_PAN_VIA_SPACEBAR: new ReadyToPanViaSpaceBarState(),
@@ -592,39 +735,59 @@ export function createKmtInputStateMachine(context: KmtInputContext): KmtInputSt
         READY_TO_PAN_VIA_SCROLL_WHEEL: new ReadyToPanViaScrollWheelState(),
         PAN_VIA_SCROLL_WHEEL: new PanViaScrollWheelState(),
         DISABLED: new DisabledState(),
-    }
-    return new TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>(states, "IDLE", context);
+    };
+    return new TemplateStateMachine<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    >(states, 'IDLE', context);
 }
 
-export function createKmtInputStateMachineWithCanvas(canvas: Canvas): KmtInputStateMachine {
+export function createKmtInputStateMachineWithCanvas(
+    canvas: Canvas
+): KmtInputStateMachine {
     const context = new ObservableInputTracker(canvas);
 
     return createKmtInputStateMachine(context);
 }
 
-export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping> {
-
+export class KmtInputStateMachineWebWorkerProxy extends TemplateStateMachine<
+    KmtInputEventMapping,
+    KmtInputContext,
+    KmtInputStates,
+    KmtInputEventOutputMapping
+> {
     private _webworker: Worker;
 
-    constructor(webworker: Worker){
-        super({
-            "IDLE": new KmtEmptyState(),
-            "READY_TO_PAN_VIA_SPACEBAR": new KmtEmptyState(),
-            "INITIAL_PAN": new KmtEmptyState(),
-            "PAN": new KmtEmptyState(),
-            "READY_TO_PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
-            "PAN_VIA_SCROLL_WHEEL": new KmtEmptyState(),
-            "DISABLED": new DisabledState(),
-        }, "IDLE", new DummyKmtInputContext());
+    constructor(webworker: Worker) {
+        super(
+            {
+                IDLE: new KmtEmptyState(),
+                READY_TO_PAN_VIA_SPACEBAR: new KmtEmptyState(),
+                INITIAL_PAN: new KmtEmptyState(),
+                PAN: new KmtEmptyState(),
+                READY_TO_PAN_VIA_SCROLL_WHEEL: new KmtEmptyState(),
+                PAN_VIA_SCROLL_WHEEL: new KmtEmptyState(),
+                DISABLED: new DisabledState(),
+            },
+            'IDLE',
+            new DummyKmtInputContext()
+        );
         this._webworker = webworker;
     }
 
-    happens(...args: EventArgs<KmtInputEventMapping, keyof KmtInputEventMapping | string>): EventResult<KmtInputStates> {        
+    happens(
+        ...args: EventArgs<
+            KmtInputEventMapping,
+            keyof KmtInputEventMapping | string
+        >
+    ): EventResult<KmtInputStates> {
         this._webworker.postMessage({
-            type: "kmtInputStateMachine",
+            type: 'kmtInputStateMachine',
             event: args[0],
             payload: args[1],
         });
-        return {handled: true, nextState: "IDLE"};
+        return { handled: true, nextState: 'IDLE' };
     }
 }

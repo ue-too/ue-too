@@ -1,5 +1,6 @@
-import { BaseContext } from "@ue-too/being";
-import { Canvas } from "./kmt-input-context";
+import { BaseContext } from '@ue-too/being';
+
+import { Canvas } from './kmt-input-context';
 
 /**
  * Represents a single touch point in window coordinates.
@@ -15,10 +16,10 @@ import { Canvas } from "./kmt-input-context";
  * @category Input State Machine - Touch
  */
 export type TouchPoints = {
-    ident: number,
-    x: number,
-    y: number,
-}
+    ident: number;
+    x: number;
+    y: number;
+};
 
 /**
  * Context interface for the touch input state machine.
@@ -43,7 +44,7 @@ export type TouchPoints = {
  *
  * @category Input State Machine - Touch
  */
-export interface TouchContext extends BaseContext{
+export interface TouchContext extends BaseContext {
     /** Adds new touch points to tracking */
     addTouchPoints: (points: TouchPoints[]) => void;
     /** Removes touch points from tracking by identifier */
@@ -96,8 +97,10 @@ export interface TouchContext extends BaseContext{
  * ```
  */
 export class TouchInputTracker implements TouchContext {
-
-    private _touchPointsMap: Map<number, TouchPoints> = new Map<number, TouchPoints>();
+    private _touchPointsMap: Map<number, TouchPoints> = new Map<
+        number,
+        TouchPoints
+    >();
     private _canvas: Canvas;
     private _alignCoordinateSystem: boolean;
 
@@ -107,14 +110,14 @@ export class TouchInputTracker implements TouchContext {
     }
 
     addTouchPoints(points: TouchPoints[]): void {
-        points.forEach((point)=>{
-            this._touchPointsMap.set(point.ident, {...point});
+        points.forEach(point => {
+            this._touchPointsMap.set(point.ident, { ...point });
         });
     }
 
     removeTouchPoints(identifiers: number[]): void {
-        identifiers.forEach((ident)=>{
-            if(this._touchPointsMap.has(ident)){
+        identifiers.forEach(ident => {
+            if (this._touchPointsMap.has(ident)) {
                 this._touchPointsMap.delete(ident);
             }
         });
@@ -126,21 +129,21 @@ export class TouchInputTracker implements TouchContext {
 
     getInitialTouchPointsPositions(idents: number[]): TouchPoints[] {
         const res: TouchPoints[] = [];
-        idents.forEach((ident)=>{
-            if(this._touchPointsMap.has(ident)){
+        idents.forEach(ident => {
+            if (this._touchPointsMap.has(ident)) {
                 const point = this._touchPointsMap.get(ident);
-                if(point){
+                if (point) {
                     res.push(point);
                 }
             }
         });
-        return res; 
+        return res;
     }
 
     updateTouchPoints(pointsMoved: TouchPoints[]): void {
-        pointsMoved.forEach((point)=>{
-            if(this._touchPointsMap.has(point.ident)){
-                this._touchPointsMap.set(point.ident, {...point});
+        pointsMoved.forEach(point => {
+            if (this._touchPointsMap.has(point.ident)) {
+                this._touchPointsMap.set(point.ident, { ...point });
             }
         });
     }
@@ -157,9 +160,7 @@ export class TouchInputTracker implements TouchContext {
         return this._canvas;
     }
 
-    cleanup(): void {
-    }
+    cleanup(): void {}
 
-    setup(): void {
-    }
+    setup(): void {}
 }

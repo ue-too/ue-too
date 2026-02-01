@@ -29,6 +29,7 @@ A component schema JSON file must have the following structure:
 #### Primitive Fields
 
 For non-array fields, use one of these types:
+
 - `"string"` - String values
 - `"number"` - Numeric values
 - `"boolean"` - Boolean values
@@ -36,11 +37,12 @@ For non-array fields, use one of these types:
 - `"entity"` - Entity references
 
 Example:
+
 ```json
 {
-  "name": "health",
-  "type": "number",
-  "defaultValue": 100
+    "defaultValue": 100,
+    "name": "health",
+    "type": "number"
 }
 ```
 
@@ -49,28 +51,30 @@ Example:
 For array fields, you must specify `"type": "array"` and provide an `arrayElementType`:
 
 **Built-in array element types:**
+
 ```json
 {
-  "name": "tags",
-  "type": "array",
-  "arrayElementType": {
-    "kind": "builtin",
-    "type": "string"
-  },
-  "defaultValue": []
+    "arrayElementType": {
+        "kind": "builtin",
+        "type": "string"
+    },
+    "defaultValue": [],
+    "name": "tags",
+    "type": "array"
 }
 ```
 
 **Custom component array element types:**
+
 ```json
 {
-  "name": "inventory",
-  "type": "array",
-  "arrayElementType": {
-    "kind": "custom",
-    "typeName": "ItemComponent"
-  },
-  "defaultValue": []
+    "arrayElementType": {
+        "kind": "custom",
+        "typeName": "ItemComponent"
+    },
+    "defaultValue": [],
+    "name": "inventory",
+    "type": "array"
 }
 ```
 
@@ -80,6 +84,7 @@ You can validate component schema JSON files against the JSON schema definition 
 
 ```typescript
 import Ajv from 'ajv';
+
 import schema from './component-schema.schema.json';
 import componentSchema from './player-stats-schema.json';
 
@@ -88,7 +93,7 @@ const validate = ajv.compile(schema);
 const valid = validate(componentSchema);
 
 if (!valid) {
-  console.error(validate.errors);
+    console.error(validate.errors);
 }
 ```
 

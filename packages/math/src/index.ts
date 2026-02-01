@@ -64,7 +64,7 @@ export type point = {
     y: number;
     /** Optional Z-coordinate for 3D operations */
     z?: number;
-}
+};
 
 /**
  * Represents a 2D or 3D point with optional z-coordinate.
@@ -89,8 +89,7 @@ export type Point = {
     y: number;
     /** Optional Z-coordinate for 3D operations */
     z?: number;
-}
-
+};
 
 /**
  * Utility class for point and vector calculations.
@@ -111,7 +110,6 @@ export type Point = {
  * ```
  */
 export class PointCal {
-
     /**
      * Adds two vectors together.
      *
@@ -138,12 +136,12 @@ export class PointCal {
      * @group Vector Arithmetic
      */
     static addVector(a: point, b: point): Point {
-        if (a.z == null && b.z == null) return {x: a.x + b.x, y: a.y + b.y};
+        if (a.z == null && b.z == null) return { x: a.x + b.x, y: a.y + b.y };
         if (a.z == null || b.z == null) {
             if (a.z == null) a.z = 0;
             if (b.z == null) b.z = 0;
         }
-        return {x: a.x + b.x, y: a.y + b.y, z: a.z + b.z}; 
+        return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
     }
 
     /**
@@ -166,12 +164,12 @@ export class PointCal {
      * @group Vector Arithmetic
      */
     static subVector(a: point, b: point): Point {
-        if (a.z == null && b.z == null) return {x: a.x - b.x, y: a.y - b.y};
+        if (a.z == null && b.z == null) return { x: a.x - b.x, y: a.y - b.y };
         if (a.z == null || b.z == null) {
             if (a.z == null) a.z = 0;
             if (b.z == null) b.z = 0;
         }
-        return {x: a.x - b.x, y: a.y - b.y, z: a.z - b.z};
+        return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
     }
 
     /**
@@ -190,8 +188,8 @@ export class PointCal {
      * @group Vector Arithmetic
      */
     static multiplyVectorByScalar(a: point, b: number): Point {
-        if (a.z == null) return {x: a.x * b, y: a.y * b};
-        return {x: a.x * b, y: a.y * b, z: a.z * b};
+        if (a.z == null) return { x: a.x * b, y: a.y * b };
+        return { x: a.x * b, y: a.y * b, z: a.z * b };
     }
 
     /**
@@ -213,9 +211,9 @@ export class PointCal {
      * @group Vector Arithmetic
      */
     static divideVectorByScalar(a: point, b: number): Point {
-        if (b == 0) return {x: a.x, y: a.y};
-        if (a.z == null) return {x: a.x / b, y: a.y / b};
-        return {x: a.x / b, y: a.y / b, z: a.z / b};
+        if (b == 0) return { x: a.x, y: a.y };
+        if (a.z == null) return { x: a.x / b, y: a.y / b };
+        return { x: a.x / b, y: a.y / b, z: a.z / b };
     }
 
     /**
@@ -266,7 +264,13 @@ export class PointCal {
      */
     static unitVector(a: point): Point {
         if (a.z == null) a.z = 0;
-        return this.magnitude(a) != 0 ? {x: a.x / this.magnitude(a), y: a.y / this.magnitude(a), z: a.z / this.magnitude(a)} : {x: 0, y: 0, z: 0};
+        return this.magnitude(a) != 0
+            ? {
+                  x: a.x / this.magnitude(a),
+                  y: a.y / this.magnitude(a),
+                  z: a.z / this.magnitude(a),
+              }
+            : { x: 0, y: 0, z: 0 };
     }
 
     /**
@@ -336,7 +340,11 @@ export class PointCal {
             if (a.z == null) a.z = 0;
             if (b.z == null) b.z = 0;
         }
-        return {x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x};
+        return {
+            x: a.y * b.z - a.z * b.y,
+            y: a.z * b.x - a.x * b.z,
+            z: a.x * b.y - a.y * b.x,
+        };
     }
 
     /**
@@ -386,7 +394,10 @@ export class PointCal {
      * @group Transformations
      */
     static rotatePoint(point: point, angle: number): Point {
-        return {x: point.x * Math.cos(angle) - point.y * Math.sin(angle), y: point.x * Math.sin(angle) + point.y * Math.cos(angle)};
+        return {
+            x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
+            y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
+        };
     }
 
     /**
@@ -409,9 +420,19 @@ export class PointCal {
      *
      * @group Transformations
      */
-    static transform2NewAxis(point: point, angleFromOriginalAxis2DestAxis: number): Point {
+    static transform2NewAxis(
+        point: point,
+        angleFromOriginalAxis2DestAxis: number
+    ): Point {
         // angle is the angle from the original axis to the destination axis ccw is positive as always
-        return {x: point.x * Math.cos(angleFromOriginalAxis2DestAxis) + point.y * Math.sin(angleFromOriginalAxis2DestAxis), y: -point.x * Math.sin(angleFromOriginalAxis2DestAxis) + point.y * Math.cos(angleFromOriginalAxis2DestAxis)};
+        return {
+            x:
+                point.x * Math.cos(angleFromOriginalAxis2DestAxis) +
+                point.y * Math.sin(angleFromOriginalAxis2DestAxis),
+            y:
+                -point.x * Math.sin(angleFromOriginalAxis2DestAxis) +
+                point.y * Math.cos(angleFromOriginalAxis2DestAxis),
+        };
     }
 
     /**
@@ -467,7 +488,11 @@ export class PointCal {
      *
      * @group Transformations
      */
-    static transformPointWRTAnchor(point: point, anchor: point, angle: number): Point {
+    static transformPointWRTAnchor(
+        point: point,
+        anchor: point,
+        angle: number
+    ): Point {
         // angle is in radians
         let newPoint = this.rotatePoint(this.subVector(point, anchor), angle);
         return this.addVector(newPoint, anchor);
@@ -514,8 +539,8 @@ export class PointCal {
      *
      * @group Transformations
      */
-    static flipYAxis(point: point): Point{
-        return {x: point.x, y: -point.y, z: point.z};
+    static flipYAxis(point: point): Point {
+        return { x: point.x, y: -point.y, z: point.z };
     }
 
     /**
@@ -544,11 +569,15 @@ export class PointCal {
      *
      * @group Geometric Calculations
      */
-    static linearInterpolation(a: point, b: point, t: number): point{
+    static linearInterpolation(a: point, b: point, t: number): point {
         if (a.z == null || b.z == null) {
-            return {x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t};
+            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
         } else {
-            return {x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t};
+            return {
+                x: a.x + (b.x - a.x) * t,
+                y: a.y + (b.y - a.y) * t,
+                z: a.z + (b.z - a.z) * t,
+            };
         }
     }
 
@@ -576,11 +605,11 @@ export class PointCal {
      *
      * @group Geometric Calculations
      */
-    static isEqual(a: point, b: point): boolean{
-        if (a.z == null){
+    static isEqual(a: point, b: point): boolean {
+        if (a.z == null) {
             a.z = 0;
         }
-        if (b.z == null){
+        if (b.z == null) {
             b.z = 0;
         }
         return a.x == b.x && a.y == b.y && a.z == b.z;
@@ -621,32 +650,43 @@ export class PointCal {
      *
      * @group Geometric Calculations
      */
-    static getLineIntersection(startPoint: Point, endPoint: Point, startPoint2: Point, endPoint2: Point):{
-        intersects: boolean,
-        intersection?: Point,
-        offset?: number
-    }{
-        const numerator = (endPoint2.x - startPoint2.x) * (startPoint.y - startPoint2.y) - (endPoint2.y - startPoint2.y) * (startPoint.x - startPoint2.x);
-        const denominator = (endPoint2.y - startPoint2.y) * (endPoint.x - startPoint.x) - (endPoint2.x - startPoint2.x) * (endPoint.y - startPoint.y);
-        
-        if (denominator === 0){
-            return {intersects: false};
+    static getLineIntersection(
+        startPoint: Point,
+        endPoint: Point,
+        startPoint2: Point,
+        endPoint2: Point
+    ): {
+        intersects: boolean;
+        intersection?: Point;
+        offset?: number;
+    } {
+        const numerator =
+            (endPoint2.x - startPoint2.x) * (startPoint.y - startPoint2.y) -
+            (endPoint2.y - startPoint2.y) * (startPoint.x - startPoint2.x);
+        const denominator =
+            (endPoint2.y - startPoint2.y) * (endPoint.x - startPoint.x) -
+            (endPoint2.x - startPoint2.x) * (endPoint.y - startPoint.y);
+
+        if (denominator === 0) {
+            return { intersects: false };
         }
         const t = numerator / denominator;
-        if (t >= 0 && t <= 1){
+        if (t >= 0 && t <= 1) {
             return {
-                intersects: true, 
-                intersection: PointCal.linearInterpolation(startPoint, endPoint, t),
-                offset: t
-            }
+                intersects: true,
+                intersection: PointCal.linearInterpolation(
+                    startPoint,
+                    endPoint,
+                    t
+                ),
+                offset: t,
+            };
         } else {
             return {
                 intersects: false,
-            }
+            };
         }
-    
     }
-    
 }
 
 /**
@@ -668,12 +708,12 @@ export class PointCal {
  *
  * @category Angle
  */
-export function normalizeAngleZero2TwoPI(angle: number){
-    // reduce the angle  
+export function normalizeAngleZero2TwoPI(angle: number) {
+    // reduce the angle
     angle = angle % (Math.PI * 2);
 
-    // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI 
-    angle = (angle + Math.PI * 2) % (Math.PI * 2); 
+    // force it to be the positive remainder, so that 0 <= angle < 2 * Math.PI
+    angle = (angle + Math.PI * 2) % (Math.PI * 2);
     return angle;
 }
 
@@ -702,18 +742,18 @@ export function normalizeAngleZero2TwoPI(angle: number){
  *
  * @category Angle
  */
-export function angleSpan(from: number, to: number): number{
+export function angleSpan(from: number, to: number): number {
     // in radians
     from = normalizeAngleZero2TwoPI(from);
     to = normalizeAngleZero2TwoPI(to);
     let angleDiff = to - from;
-    
-    if(angleDiff > Math.PI){
-        angleDiff = - (Math.PI * 2 - angleDiff);
+
+    if (angleDiff > Math.PI) {
+        angleDiff = -(Math.PI * 2 - angleDiff);
     }
 
-    if(angleDiff < -Math.PI){
-        angleDiff += (Math.PI * 2);
+    if (angleDiff < -Math.PI) {
+        angleDiff += Math.PI * 2;
     }
     return angleDiff;
 }
@@ -738,8 +778,12 @@ export function angleSpan(from: number, to: number): number{
  *
  * @category Comparison
  */
-export function approximatelyTheSame(a: number, b: number, precision?: number): boolean {
-    const epsilon = 0.000001
+export function approximatelyTheSame(
+    a: number,
+    b: number,
+    precision?: number
+): boolean {
+    const epsilon = 0.000001;
     return Math.abs(a - b) <= (precision || epsilon);
 }
 
@@ -767,10 +811,14 @@ export function approximatelyTheSame(a: number, b: number, precision?: number): 
  *
  * @category Comparison
  */
-export function sameDirection(a: Point, b: Point, precision: number = 0.001): boolean{
-   const aNormalized = PointCal.unitVector(a);
-   const bNormalized = PointCal.unitVector(b);
-   return samePoint(aNormalized, bNormalized, precision);
+export function sameDirection(
+    a: Point,
+    b: Point,
+    precision: number = 0.001
+): boolean {
+    const aNormalized = PointCal.unitVector(a);
+    const bNormalized = PointCal.unitVector(b);
+    return samePoint(aNormalized, bNormalized, precision);
 }
 
 /**
@@ -796,13 +844,20 @@ export function sameDirection(a: Point, b: Point, precision: number = 0.001): bo
  *
  * @category Comparison
  */
-export function directionAlignedToTangent(direction: Point, tangent: Point): boolean {
-   const directionNormalized = PointCal.unitVector(direction);
-   const tangentNormalized = PointCal.unitVector(tangent);
-   const reversedTangent = {x: -tangent.x, y: -tangent.y, z: tangent.z};
-   const angle = PointCal.angleFromA2B(directionNormalized, tangentNormalized);
-   const angle2 = PointCal.angleFromA2B(directionNormalized, reversedTangent);
-   return (angle < Math.PI / 2 && angle > -Math.PI / 2) && (angle2 > Math.PI / 2 || angle2 < -Math.PI / 2);
+export function directionAlignedToTangent(
+    direction: Point,
+    tangent: Point
+): boolean {
+    const directionNormalized = PointCal.unitVector(direction);
+    const tangentNormalized = PointCal.unitVector(tangent);
+    const reversedTangent = { x: -tangent.x, y: -tangent.y, z: tangent.z };
+    const angle = PointCal.angleFromA2B(directionNormalized, tangentNormalized);
+    const angle2 = PointCal.angleFromA2B(directionNormalized, reversedTangent);
+    return (
+        angle < Math.PI / 2 &&
+        angle > -Math.PI / 2 &&
+        (angle2 > Math.PI / 2 || angle2 < -Math.PI / 2)
+    );
 }
 
 /**
@@ -830,7 +885,10 @@ export function directionAlignedToTangent(direction: Point, tangent: Point): boo
  * @category Comparison
  */
 export function samePoint(a: Point, b: Point, precision?: number): boolean {
-    if(approximatelyTheSame(a.x, b.x, precision) && approximatelyTheSame(a.y, b.y, precision)){
+    if (
+        approximatelyTheSame(a.x, b.x, precision) &&
+        approximatelyTheSame(a.y, b.y, precision)
+    ) {
         return true;
     }
     return false;

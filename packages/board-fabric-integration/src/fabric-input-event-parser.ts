@@ -1,9 +1,12 @@
-import { InputOrchestrator, KmtInputEventMapping, KmtInputStateMachine } from "@ue-too/board";
-import { StaticCanvas, TPointerEventInfo } from "fabric";
-import { EventArgs } from "@ue-too/being";
+import { EventArgs } from '@ue-too/being';
+import {
+    InputOrchestrator,
+    KmtInputEventMapping,
+    KmtInputStateMachine,
+} from '@ue-too/board';
+import { StaticCanvas, TPointerEventInfo } from 'fabric';
 
 export class FabricInputEventParser {
-
     private _fabricCanvas: StaticCanvas;
     private _kmtInputStateMachine: KmtInputStateMachine;
     private _inputOrchestrator: InputOrchestrator;
@@ -11,7 +14,11 @@ export class FabricInputEventParser {
     private _abortController: AbortController;
     private _disabled: boolean = false;
 
-    constructor(fabricCanvas: StaticCanvas, kmtInputStateMachine: KmtInputStateMachine, inputOrchestrator: InputOrchestrator) {
+    constructor(
+        fabricCanvas: StaticCanvas,
+        kmtInputStateMachine: KmtInputStateMachine,
+        inputOrchestrator: InputOrchestrator
+    ) {
         this._fabricCanvas = fabricCanvas;
         this._kmtInputStateMachine = kmtInputStateMachine;
         this._inputOrchestrator = inputOrchestrator;
@@ -20,7 +27,7 @@ export class FabricInputEventParser {
         this._abortController = new AbortController();
     }
 
-    bindFunctions(){
+    bindFunctions() {
         this.pointerDownHandler = this.pointerDownHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
@@ -29,20 +36,24 @@ export class FabricInputEventParser {
         this.keyupHandler = this.keyupHandler.bind(this);
     }
 
-    setUp(){
-        this._fabricCanvas.on("mouse:down", this.pointerDownHandler);
-        this._fabricCanvas.on("mouse:up", this.pointerUpHandler);
-        this._fabricCanvas.on("mouse:move", this.pointerMoveHandler);
-        this._fabricCanvas.on("mouse:wheel", this.scrollHandler);
-        window.addEventListener("keydown", this.keydownHandler, {signal: this._abortController.signal});
-        window.addEventListener("keyup", this.keyupHandler, {signal: this._abortController.signal});
+    setUp() {
+        this._fabricCanvas.on('mouse:down', this.pointerDownHandler);
+        this._fabricCanvas.on('mouse:up', this.pointerUpHandler);
+        this._fabricCanvas.on('mouse:move', this.pointerMoveHandler);
+        this._fabricCanvas.on('mouse:wheel', this.scrollHandler);
+        window.addEventListener('keydown', this.keydownHandler, {
+            signal: this._abortController.signal,
+        });
+        window.addEventListener('keyup', this.keyupHandler, {
+            signal: this._abortController.signal,
+        });
     }
 
-    tearDown(){
-        this._fabricCanvas.off("mouse:down", this.pointerDownHandler);
-        this._fabricCanvas.off("mouse:up", this.pointerUpHandler);
-        this._fabricCanvas.off("mouse:move", this.pointerMoveHandler);
-        this._fabricCanvas.off("mouse:wheel", this.scrollHandler);
+    tearDown() {
+        this._fabricCanvas.off('mouse:down', this.pointerDownHandler);
+        this._fabricCanvas.off('mouse:up', this.pointerUpHandler);
+        this._fabricCanvas.off('mouse:move', this.pointerMoveHandler);
+        this._fabricCanvas.off('mouse:wheel', this.scrollHandler);
         this._abortController.abort();
         this._abortController = new AbortController();
     }
@@ -51,34 +62,42 @@ export class FabricInputEventParser {
         ...args: EventArgs<KmtInputEventMapping, K>
     ): void {
         const result = this._kmtInputStateMachine.happens(...args);
-        if (result.handled && "output" in result) {
+        if (result.handled && 'output' in result) {
             this._inputOrchestrator.processInputEventOutput(result.output);
         }
     }
 
-    pointerDownHandler(event: TPointerEventInfo & { alreadySelected: boolean }){
-        console.log("pointerDownHandler", event);
+    pointerDownHandler(
+        event: TPointerEventInfo & { alreadySelected: boolean }
+    ) {
+        console.log('pointerDownHandler', event);
         event.e.preventDefault();
         const nativeEvent = event.e;
         // Only handle mouse events, not touch events
-        if(!(nativeEvent instanceof MouseEvent)){
+        if (!(nativeEvent instanceof MouseEvent)) {
             return;
         }
-        if(nativeEvent.button === 0){
-            this.processEvent("leftPointerDown", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.button === 0) {
+            this.processEvent('leftPointerDown', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
-        if(nativeEvent.button === 1){
-            this.processEvent("middlePointerDown", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.button === 1) {
+            this.processEvent('middlePointerDown', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
     }
 
-    disable(){
+    disable() {
         this._disabled = true;
     }
 
-    enable(){
+    enable() {
         this._disabled = false;
     }
 
@@ -86,79 +105,104 @@ export class FabricInputEventParser {
         return this._disabled;
     }
 
-    pointerUpHandler(event: TPointerEventInfo & { isClick: boolean }){
-        if(this._disabled){
+    pointerUpHandler(event: TPointerEventInfo & { isClick: boolean }) {
+        if (this._disabled) {
             return;
         }
         const nativeEvent = event.e;
         // Only handle mouse events, not touch events
-        if(!(nativeEvent instanceof MouseEvent)){
+        if (!(nativeEvent instanceof MouseEvent)) {
             return;
         }
-        if(nativeEvent.button === 0){
-            this.processEvent("leftPointerUp", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.button === 0) {
+            this.processEvent('leftPointerUp', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
-        if(nativeEvent.button === 1){
-            this.processEvent("middlePointerUp", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.button === 1) {
+            this.processEvent('middlePointerUp', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
     }
 
-    pointerMoveHandler(event: TPointerEventInfo){
-        if(this._disabled){
+    pointerMoveHandler(event: TPointerEventInfo) {
+        if (this._disabled) {
             return;
         }
         const nativeEvent = event.e;
         // Only handle mouse events, not touch events
-        if(!(nativeEvent instanceof MouseEvent)){
+        if (!(nativeEvent instanceof MouseEvent)) {
             return;
         }
-        if(nativeEvent.buttons === 1){
-            this.processEvent("leftPointerMove", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.buttons === 1) {
+            this.processEvent('leftPointerMove', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
-        if(nativeEvent.buttons === 4){
-            this.processEvent("middlePointerMove", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        if (nativeEvent.buttons === 4) {
+            this.processEvent('middlePointerMove', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+            });
             return;
         }
-        this.processEvent("pointerMove", {x: nativeEvent.clientX, y: nativeEvent.clientY});
+        this.processEvent('pointerMove', {
+            x: nativeEvent.clientX,
+            y: nativeEvent.clientY,
+        });
     }
 
-    scrollHandler(event: TPointerEventInfo<WheelEvent>){
-        if(this._disabled){
+    scrollHandler(event: TPointerEventInfo<WheelEvent>) {
+        if (this._disabled) {
             return;
         }
         const nativeEvent = event.e;
-        if(nativeEvent.ctrlKey){
-            this.processEvent("scrollWithCtrl", {x: nativeEvent.clientX, y: nativeEvent.clientY, deltaX: nativeEvent.deltaX, deltaY: nativeEvent.deltaY});
+        if (nativeEvent.ctrlKey) {
+            this.processEvent('scrollWithCtrl', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+                deltaX: nativeEvent.deltaX,
+                deltaY: nativeEvent.deltaY,
+            });
         } else {
-            this.processEvent("scroll", {x: nativeEvent.clientX, y: nativeEvent.clientY, deltaX: nativeEvent.deltaX, deltaY: nativeEvent.deltaY});
+            this.processEvent('scroll', {
+                x: nativeEvent.clientX,
+                y: nativeEvent.clientY,
+                deltaX: nativeEvent.deltaX,
+                deltaY: nativeEvent.deltaY,
+            });
         }
     }
 
-    keydownHandler(event: KeyboardEvent){
-        if(this._disabled){
+    keydownHandler(event: KeyboardEvent) {
+        if (this._disabled) {
             return;
         }
-        if(this._keyfirstPressed.has(event.key)){
+        if (this._keyfirstPressed.has(event.key)) {
             return;
         }
         this._keyfirstPressed.set(event.key, true);
-        if(event.key === " "){
-            this.processEvent("spacebarDown");
+        if (event.key === ' ') {
+            this.processEvent('spacebarDown');
         }
     }
 
-    keyupHandler(event: KeyboardEvent){
-        if(this._disabled){
+    keyupHandler(event: KeyboardEvent) {
+        if (this._disabled) {
             return;
         }
-        if(this._keyfirstPressed.has(event.key)){
+        if (this._keyfirstPressed.has(event.key)) {
             this._keyfirstPressed.delete(event.key);
         }
-        if(event.key === " "){
-            this.processEvent("spacebarUp");
+        if (event.key === ' ') {
+            this.processEvent('spacebarUp');
         }
     }
 }

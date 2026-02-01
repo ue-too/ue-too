@@ -1,64 +1,64 @@
 {
-  "name": "board-game-engine",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/board-game-engine/src",
-  "projectType": "library",
-  "targets": {
-    "build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/board-game-engine"
-      },
-      "dependsOn": [
-        {
-          "projects": ["ecs"],
-          "target": "build"
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "implicitDependencies": [],
+    "name": "board-game-engine",
+    "projectType": "library",
+    "sourceRoot": "packages/board-game-engine/src",
+    "tags": [],
+    "targets": {
+        "build": {
+            "dependsOn": [
+                {
+                    "projects": ["ecs"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/board-game-engine"
+            }
+        },
+        "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["ecs"],
+                    "target": "build"
+                }
+            ],
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "cwd": "packages/board-game-engine"
+            }
+        },
+        "docs:build": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "rm -rf ../../docs/board-game-engine && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "cwd": "packages/board-game-engine"
+            }
+        },
+        "move-package": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../scripts/move-package.mjs",
+                "cwd": "packages/board-game-engine"
+            }
+        },
+        "nx-release-publish": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "node ../../../scripts/publish-package.mjs",
+                "cwd": "packages/board-game-engine/dist"
+            }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun test",
+                "cwd": "packages/board-game-engine"
+            }
         }
-      ]
-    },
-    "build:bun": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf dist && bun run ../../scripts/build.ts",
-        "cwd": "packages/board-game-engine"
-      },
-      "dependsOn": [
-        {
-          "projects": ["ecs"],
-          "target": "build"
-        }
-      ]
-    },
-    "move-package": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../scripts/move-package.mjs",
-        "cwd": "packages/board-game-engine"
-      }
-    },
-    "test": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "bun test",
-        "cwd": "packages/board-game-engine"
-      }
-    },
-    "nx-release-publish": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ../../../scripts/publish-package.mjs",
-        "cwd": "packages/board-game-engine/dist"
-      }
-    },
-    "docs:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "rm -rf ../../docs/board-game-engine && bun run typedoc --options typedoc.json --skipErrorChecking",
-        "cwd": "packages/board-game-engine"
-      }
     }
-  },
-  "tags": [],
-  "implicitDependencies": []
 }

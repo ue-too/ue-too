@@ -24,11 +24,13 @@ Keyframe-based animation library for TypeScript canvas applications.
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/animate
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/animate
 ```
@@ -44,13 +46,15 @@ let opacity = 0;
 
 // Create fade-in animation
 const fadeIn = new Animation(
-  [
-    { percentage: 0, value: 0 },     // Start at 0% with value 0
-    { percentage: 1, value: 1 }      // End at 100% with value 1
-  ],
-  (value) => { opacity = value; },   // Apply function updates the value
-  numberHelperFunctions,             // Number interpolation helper
-  1000                               // Duration in milliseconds
+    [
+        { percentage: 0, value: 0 }, // Start at 0% with value 0
+        { percentage: 1, value: 1 }, // End at 100% with value 1
+    ],
+    value => {
+        opacity = value;
+    }, // Apply function updates the value
+    numberHelperFunctions, // Number interpolation helper
+    1000 // Duration in milliseconds
 );
 
 // Start the animation
@@ -58,9 +62,9 @@ fadeIn.start();
 
 // In your animation loop (e.g., requestAnimationFrame)
 function gameLoop(deltaTime: number) {
-  fadeIn.animate(deltaTime);  // Update animation with elapsed time
-  console.log('Opacity:', opacity);
-  requestAnimationFrame(() => gameLoop(16)); // ~60 FPS
+    fadeIn.animate(deltaTime); // Update animation with elapsed time
+    console.log('Opacity:', opacity);
+    requestAnimationFrame(() => gameLoop(16)); // ~60 FPS
 }
 ```
 
@@ -72,18 +76,19 @@ Keyframes define values at specific points in an animation's progress:
 
 ```typescript
 type Keyframe<T> = {
-  percentage: number;      // 0.0 (start) to 1.0 (end)
-  value: T;                // Value at this point
-  easingFn?: (t: number) => number;  // Optional easing for this segment
+    percentage: number; // 0.0 (start) to 1.0 (end)
+    value: T; // Value at this point
+    easingFn?: (t: number) => number; // Optional easing for this segment
 };
 ```
 
 **Example with easing:**
+
 ```typescript
 const keyframes = [
-  { percentage: 0, value: 0 },
-  { percentage: 0.5, value: 100, easingFn: (t) => t * t },  // Ease-in quadratic
-  { percentage: 1, value: 200 }
+    { percentage: 0, value: 0 },
+    { percentage: 0.5, value: 100, easingFn: t => t * t }, // Ease-in quadratic
+    { percentage: 1, value: 200 },
 ];
 ```
 
@@ -93,7 +98,7 @@ Helpers provide type-specific interpolation logic:
 
 ```typescript
 interface AnimatableAttributeHelper<T> {
-  lerp(ratio: number, start: Keyframe<T>, end: Keyframe<T>): T;
+    lerp(ratio: number, start: Keyframe<T>, end: Keyframe<T>): T;
 }
 ```
 
@@ -113,6 +118,7 @@ const animation = new Animation<T>(
 ```
 
 **Methods:**
+
 - `start()`: Start the animation
 - `stop()`: Stop and reset the animation
 - `pause()`: Pause at current position
@@ -124,6 +130,7 @@ const animation = new Animation<T>(
 - `tearDown()`: Clean up animation state
 
 **Properties:**
+
 - `loops: boolean`: Whether animation loops
 - `maxLoopCount?: number`: Maximum number of loops (undefined = infinite)
 - `duration: number`: Animation duration in milliseconds
@@ -146,6 +153,7 @@ const composite = new CompositeAnimation(
 ```
 
 **Methods:**
+
 - `addAnimation(name: string, animator: Animator, startTime: number)`: Add animation at specific time
 - `addAnimationAfter(name: string, animator: Animator, after: string)`: Add after another animation
 - `addAnimationBefore(name: string, animator: Animator, before: string)`: Add before another animation
@@ -164,13 +172,15 @@ import { Animation, numberHelperFunctions } from '@ue-too/animate';
 
 let scale = 1;
 const scaleAnimation = new Animation(
-  [
-    { percentage: 0, value: 1 },
-    { percentage: 1, value: 2 }
-  ],
-  (value) => { scale = value; },
-  numberHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 1 },
+        { percentage: 1, value: 2 },
+    ],
+    value => {
+        scale = value;
+    },
+    numberHelperFunctions,
+    500
 );
 ```
 
@@ -185,13 +195,15 @@ import { Point } from '@ue-too/math';
 let position: Point = { x: 0, y: 0 };
 
 const moveAnimation = new Animation(
-  [
-    { percentage: 0, value: { x: 0, y: 0 } },
-    { percentage: 1, value: { x: 100, y: 100 } }
-  ],
-  (value) => { position = value; },
-  pointHelperFunctions,
-  1000
+    [
+        { percentage: 0, value: { x: 0, y: 0 } },
+        { percentage: 1, value: { x: 100, y: 100 } },
+    ],
+    value => {
+        position = value;
+    },
+    pointHelperFunctions,
+    1000
 );
 ```
 
@@ -200,19 +212,21 @@ const moveAnimation = new Animation(
 Interpolate RGB colors:
 
 ```typescript
-import { Animation, rgbHelperFunctions, RGB } from '@ue-too/animate';
+import { Animation, RGB, rgbHelperFunctions } from '@ue-too/animate';
 
 let color: RGB = { r: 255, g: 0, b: 0 };
 
 const colorAnimation = new Animation(
-  [
-    { percentage: 0, value: { r: 255, g: 0, b: 0 } },    // Red
-    { percentage: 0.5, value: { r: 255, g: 255, b: 0 } }, // Yellow
-    { percentage: 1, value: { r: 0, g: 255, b: 0 } }     // Green
-  ],
-  (value) => { color = value; },
-  rgbHelperFunctions,
-  2000
+    [
+        { percentage: 0, value: { r: 255, g: 0, b: 0 } }, // Red
+        { percentage: 0.5, value: { r: 255, g: 255, b: 0 } }, // Yellow
+        { percentage: 1, value: { r: 0, g: 255, b: 0 } }, // Green
+    ],
+    value => {
+        color = value;
+    },
+    rgbHelperFunctions,
+    2000
 );
 ```
 
@@ -226,13 +240,15 @@ import { Animation, stringHelperFunctions } from '@ue-too/animate';
 let state = 'idle';
 
 const stateAnimation = new Animation(
-  [
-    { percentage: 0, value: 'idle' },
-    { percentage: 1, value: 'active' }
-  ],
-  (value) => { state = value; },
-  stringHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 'idle' },
+        { percentage: 1, value: 'active' },
+    ],
+    value => {
+        state = value;
+    },
+    stringHelperFunctions,
+    500
 );
 ```
 
@@ -246,15 +262,17 @@ import { Animation, integerHelperFunctions } from '@ue-too/animate';
 let frameIndex = 0;
 
 const frameAnimation = new Animation(
-  [
-    { percentage: 0, value: 0 },
-    { percentage: 0.33, value: 1 },
-    { percentage: 0.66, value: 2 },
-    { percentage: 1, value: 3 }
-  ],
-  (value) => { frameIndex = value; },
-  integerHelperFunctions,
-  400
+    [
+        { percentage: 0, value: 0 },
+        { percentage: 0.33, value: 1 },
+        { percentage: 0.66, value: 2 },
+        { percentage: 1, value: 3 },
+    ],
+    value => {
+        frameIndex = value;
+    },
+    integerHelperFunctions,
+    400
 );
 ```
 
@@ -268,23 +286,27 @@ import { Animation, numberHelperFunctions } from '@ue-too/animate';
 let opacity = 0;
 
 const fadeIn = new Animation(
-  [
-    { percentage: 0, value: 0 },
-    { percentage: 1, value: 1, easingFn: (t) => t * t } // Ease-in
-  ],
-  (value) => { opacity = value; },
-  numberHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 0 },
+        { percentage: 1, value: 1, easingFn: t => t * t }, // Ease-in
+    ],
+    value => {
+        opacity = value;
+    },
+    numberHelperFunctions,
+    500
 );
 
 const fadeOut = new Animation(
-  [
-    { percentage: 0, value: 1 },
-    { percentage: 1, value: 0, easingFn: (t) => 1 - (1 - t) * (1 - t) } // Ease-out
-  ],
-  (value) => { opacity = value; },
-  numberHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 1 },
+        { percentage: 1, value: 0, easingFn: t => 1 - (1 - t) * (1 - t) }, // Ease-out
+    ],
+    value => {
+        opacity = value;
+    },
+    numberHelperFunctions,
+    500
 );
 ```
 
@@ -297,14 +319,20 @@ import { Point } from '@ue-too/math';
 let spritePosition: Point = { x: 0, y: 0 };
 
 const bounce = new Animation(
-  [
-    { percentage: 0, value: { x: 0, y: 0 } },
-    { percentage: 0.5, value: { x: 0, y: -50 }, easingFn: (t) => 1 - Math.pow(1 - t, 3) }, // Ease-out up
-    { percentage: 1, value: { x: 0, y: 0 }, easingFn: (t) => t * t * t } // Ease-in down
-  ],
-  (value) => { spritePosition = value; },
-  pointHelperFunctions,
-  1000
+    [
+        { percentage: 0, value: { x: 0, y: 0 } },
+        {
+            percentage: 0.5,
+            value: { x: 0, y: -50 },
+            easingFn: t => 1 - Math.pow(1 - t, 3),
+        }, // Ease-out up
+        { percentage: 1, value: { x: 0, y: 0 }, easingFn: t => t * t * t }, // Ease-in down
+    ],
+    value => {
+        spritePosition = value;
+    },
+    pointHelperFunctions,
+    1000
 );
 
 bounce.loops = true; // Loop forever
@@ -313,30 +341,52 @@ bounce.loops = true; // Loop forever
 ### Sequential Animation Sequence
 
 ```typescript
-import { Animation, CompositeAnimation, numberHelperFunctions, pointHelperFunctions } from '@ue-too/animate';
+import {
+    Animation,
+    CompositeAnimation,
+    numberHelperFunctions,
+    pointHelperFunctions,
+} from '@ue-too/animate';
 
-let x = 0, y = 0, opacity = 0;
+let x = 0,
+    y = 0,
+    opacity = 0;
 
 // Create individual animations
 const fadeIn = new Animation(
-  [{ percentage: 0, value: 0 }, { percentage: 1, value: 1 }],
-  (value) => { opacity = value; },
-  numberHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 0 },
+        { percentage: 1, value: 1 },
+    ],
+    value => {
+        opacity = value;
+    },
+    numberHelperFunctions,
+    500
 );
 
 const slideRight = new Animation(
-  [{ percentage: 0, value: 0 }, { percentage: 1, value: 100 }],
-  (value) => { x = value; },
-  numberHelperFunctions,
-  500
+    [
+        { percentage: 0, value: 0 },
+        { percentage: 1, value: 100 },
+    ],
+    value => {
+        x = value;
+    },
+    numberHelperFunctions,
+    500
 );
 
 const slideDown = new Animation(
-  [{ percentage: 0, value: 0 }, { percentage: 1, value: 50 }],
-  (value) => { y = value; },
-  numberHelperFunctions,
-  300
+    [
+        { percentage: 0, value: 0 },
+        { percentage: 1, value: 50 },
+    ],
+    value => {
+        y = value;
+    },
+    numberHelperFunctions,
+    300
 );
 
 // Create sequence: fade in, then slide right, then slide down
@@ -349,9 +399,9 @@ sequence.start();
 
 // Update in game loop
 function update(deltaTime: number) {
-  sequence.animate(deltaTime);
-  // Render sprite at (x, y) with opacity
-  requestAnimationFrame(() => update(16));
+    sequence.animate(deltaTime);
+    // Render sprite at (x, y) with opacity
+    requestAnimationFrame(() => update(16));
 }
 ```
 
@@ -376,12 +426,12 @@ sequence.addAnimationAfter('scale', scaleAnimation, 'fadeIn');
 const animation = new Animation(/* ... */);
 
 animation.onStart(() => {
-  console.log('Animation started!');
+    console.log('Animation started!');
 });
 
 animation.onEnd(() => {
-  console.log('Animation completed!');
-  // Trigger next action
+    console.log('Animation completed!');
+    // Trigger next action
 });
 
 animation.start();
@@ -410,20 +460,23 @@ const easeOut = (t: number) => 1 - (1 - t) * (1 - t);
 
 // Ease-in-out quadratic
 const easeInOut = (t: number) =>
-  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 // Elastic ease-out
 const elasticOut = (t: number) => {
-  const c4 = (2 * Math.PI) / 3;
-  return t === 0 ? 0 : t === 1 ? 1
-    : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    const c4 = (2 * Math.PI) / 3;
+    return t === 0
+        ? 0
+        : t === 1
+          ? 1
+          : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
 };
 
 // Use in keyframe
 const keyframe = {
-  percentage: 1,
-  value: 100,
-  easingFn: easeInOut
+    percentage: 1,
+    value: 100,
+    easingFn: easeInOut,
 };
 ```
 
@@ -440,18 +493,20 @@ This package is written in TypeScript with complete type definitions:
 type Position = { x: number; y: number };
 
 const posAnimation: Animation<Position> = new Animation(
-  [{ percentage: 0, value: { x: 0, y: 0 } }],
-  (value: Position) => { /* ... */ },
-  pointHelperFunctions,
-  1000
+    [{ percentage: 0, value: { x: 0, y: 0 } }],
+    (value: Position) => {
+        /* ... */
+    },
+    pointHelperFunctions,
+    1000
 );
 
 // Custom helper functions are type-safe
 const myHelper: AnimatableAttributeHelper<number> = {
-  lerp: (ratio, start, end) => {
-    // TypeScript knows start.value and end.value are numbers
-    return start.value + ratio * (end.value - start.value);
-  }
+    lerp: (ratio, start, end) => {
+        // TypeScript knows start.value and end.value are numbers
+        return start.value + ratio * (end.value - start.value);
+    },
 };
 ```
 
@@ -473,6 +528,7 @@ This animation library follows these principles:
 - **Memory**: Each animation retains keyframe data and callbacks
 
 **Performance Tips:**
+
 - Reuse animation instances when possible
 - Use composite animations to group related animations
 - Unsubscribe from callbacks (`onStart`, `onEnd`) when no longer needed

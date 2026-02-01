@@ -7,5 +7,5 @@
  * @module
  */
 
-export * from "./Board";
-export { default as Board } from "./Board";
+export * from './Board';
+export { default as Board } from './Board';

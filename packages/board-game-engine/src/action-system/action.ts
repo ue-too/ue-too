@@ -1,12 +1,12 @@
-import { Entity } from "@ue-too/ecs";
-import { Precondition } from "./precondition";
-import { Effect } from "./effect";
-import { Event } from "../event-system/event";
+import { Entity } from '@ue-too/ecs';
+
+import { Event } from '../event-system/event';
+import { Effect } from './effect';
+import { Precondition } from './precondition';
 
 export interface Action {
     type: string;
 }
-
 
 export class GenericAction implements Action {
     type: string;
@@ -18,7 +18,15 @@ export class GenericAction implements Action {
     effects: Effect[] = [];
     private _events: Event[] = [];
 
-    constructor(type: string, actor: Entity, targets: Entity[], parameters: Record<string, unknown>, preconditions: Precondition[], costs: Effect[], effects: Effect[]) {
+    constructor(
+        type: string,
+        actor: Entity,
+        targets: Entity[],
+        parameters: Record<string, unknown>,
+        preconditions: Precondition[],
+        costs: Effect[],
+        effects: Effect[]
+    ) {
         this.type = type;
         this.actor = actor;
         this.targets = targets;
@@ -28,16 +36,13 @@ export class GenericAction implements Action {
         this.effects = effects;
     }
 
-    canExecute(): boolean{
+    canExecute(): boolean {
         return this.preconditions.every(precondition => precondition.check());
     }
 
-    execute(): Event[]{
+    execute(): Event[] {
         this.costs.forEach(cost => cost.apply());
         this.effects.forEach(effect => effect.apply());
         return this._events;
     }
 }
-
-
-

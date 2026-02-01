@@ -1,17 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "baseUrl": ".",
-    "outDir": "dist",
-    "tsBuildInfoFile": "dist/being.tsbuildinfo",
-    "declaration": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "composite": true,
-    "strict": true,
-    "types": []
-  },
-  "include": ["src/**/*"]
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "tsBuildInfoFile": "dist/being.tsbuildinfo",
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"]
 }
-  

@@ -1,4 +1,4 @@
-import { PointCal, Point } from "@ue-too/math";
+import { Point, PointCal } from '@ue-too/math';
 
 /**
  * Represents a keyframe in an animation timeline.
@@ -29,7 +29,7 @@ export type Keyframe<T> = {
     value: T;
     /** Optional easing function for interpolation to next keyframe */
     easingFn?: (percentage: number) => number;
-}
+};
 
 /**
  * Interface for type-specific interpolation helpers.
@@ -78,33 +78,47 @@ export interface AnimatableAttributeHelper<T> {
  * @category Helpers
  */
 export const pointHelperFunctions: AnimatableAttributeHelper<Point> = {
-    lerp: (ratio: number, start: Keyframe<Point>, end: Keyframe<Point>): Point => {
-        const inbetweenRatio = (ratio - start.percentage) / (end.percentage - start.percentage);
+    lerp: (
+        ratio: number,
+        start: Keyframe<Point>,
+        end: Keyframe<Point>
+    ): Point => {
+        const inbetweenRatio =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
         let transformed = inbetweenRatio;
-        if(start.easingFn){
+        if (start.easingFn) {
             transformed = start.easingFn(inbetweenRatio);
         }
-        const res = PointCal.addVector(start.value, PointCal.multiplyVectorByScalar(PointCal.subVector(end.value, start.value), transformed));
+        const res = PointCal.addVector(
+            start.value,
+            PointCal.multiplyVectorByScalar(
+                PointCal.subVector(end.value, start.value),
+                transformed
+            )
+        );
         return res;
-    }
+    },
 };
 
 export class PointAnimationHelper implements AnimatableAttributeHelper<Point> {
-
-    constructor(){
-
-    }
+    constructor() {}
 
     lerp(ratio: number, start: Keyframe<Point>, end: Keyframe<Point>): Point {
-        const inbetweenRatio = (ratio - start.percentage) / (end.percentage - start.percentage);
+        const inbetweenRatio =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
         let transformed = inbetweenRatio;
-        if(start.easingFn){
+        if (start.easingFn) {
             transformed = start.easingFn(inbetweenRatio);
         }
-        const res = PointCal.addVector(start.value, PointCal.multiplyVectorByScalar(PointCal.subVector(end.value, start.value), transformed));
+        const res = PointCal.addVector(
+            start.value,
+            PointCal.multiplyVectorByScalar(
+                PointCal.subVector(end.value, start.value),
+                transformed
+            )
+        );
         return res;
     }
-
 }
 
 /**
@@ -116,27 +130,34 @@ export class PointAnimationHelper implements AnimatableAttributeHelper<Point> {
  * @category Helpers
  */
 export const numberHelperFunctions: AnimatableAttributeHelper<number> = {
-    lerp: (ratio: number, start: Keyframe<number>, end: Keyframe<number>): number => {
-        const inbetweenRatio = (ratio - start.percentage) / (end.percentage - start.percentage);
+    lerp: (
+        ratio: number,
+        start: Keyframe<number>,
+        end: Keyframe<number>
+    ): number => {
+        const inbetweenRatio =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
         let transformed = inbetweenRatio;
-        if(start.easingFn){
+        if (start.easingFn) {
             transformed = start.easingFn(inbetweenRatio);
         }
         const res = start.value + transformed * (end.value - start.value);
         return res;
-    }
-}
+    },
+};
 
-export class NumberAnimationHelper implements AnimatableAttributeHelper<number>{
+export class NumberAnimationHelper implements AnimatableAttributeHelper<number> {
+    constructor() {}
 
-    constructor(){
-
-    }
-
-    lerp(ratio: number, start: Keyframe<number>, end: Keyframe<number>): number {
-        const inbetweenRatio = (ratio - start.percentage) / (end.percentage - start.percentage);
+    lerp(
+        ratio: number,
+        start: Keyframe<number>,
+        end: Keyframe<number>
+    ): number {
+        const inbetweenRatio =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
         let transformed = inbetweenRatio;
-        if(start.easingFn){
+        if (start.easingFn) {
             transformed = start.easingFn(inbetweenRatio);
         }
         const res = start.value + transformed * (end.value - start.value);
@@ -154,26 +175,38 @@ export class NumberAnimationHelper implements AnimatableAttributeHelper<number>{
  * @category Helpers
  */
 export const stringHelperFunctions: AnimatableAttributeHelper<string> = {
-    lerp: (ratio: number, start: Keyframe<string>, end: Keyframe<string>): string => {
-        const percentageScale = (ratio - start.percentage) / (end.percentage - start.percentage)
-        // if percentageScale is negative that means it's before the start value just return start value 
+    lerp: (
+        ratio: number,
+        start: Keyframe<string>,
+        end: Keyframe<string>
+    ): string => {
+        const percentageScale =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
+        // if percentageScale is negative that means it's before the start value just return start value
         // if percentageScale is more than 1 that means it's after the end value just return the end value
         // if percentageScale is less than 0.5 return the start value else return the end value
-        return percentageScale < 0 || percentageScale < 0.5 ? start.value : end.value;
-    }
-}
+        return percentageScale < 0 || percentageScale < 0.5
+            ? start.value
+            : end.value;
+    },
+};
 
-export class StringAnimationHelper implements AnimatableAttributeHelper<string>{
-    constructor(){
+export class StringAnimationHelper implements AnimatableAttributeHelper<string> {
+    constructor() {}
 
-    }
-    
-    lerp(ratio: number, start: Keyframe<string>, end: Keyframe<string>): string {
-        const percentageScale = (ratio - start.percentage) / (end.percentage - start.percentage)
-        // if percentageScale is negative that means it's before the start value just return start value 
+    lerp(
+        ratio: number,
+        start: Keyframe<string>,
+        end: Keyframe<string>
+    ): string {
+        const percentageScale =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
+        // if percentageScale is negative that means it's before the start value just return start value
         // if percentageScale is more than 1 that means it's after the end value just return the end value
         // if percentageScale is less than 0.5 return the start value else return the end value
-        return percentageScale < 0 || percentageScale < 0.5 ? start.value : end.value;
+        return percentageScale < 0 || percentageScale < 0.5
+            ? start.value
+            : end.value;
     }
 }
 
@@ -187,26 +220,38 @@ export class StringAnimationHelper implements AnimatableAttributeHelper<string>{
  * @category Helpers
  */
 export const integerHelperFunctions: AnimatableAttributeHelper<number> = {
-    lerp: (ratio: number, start: Keyframe<number>, end: Keyframe<number>): number => {
-        const percentageScale = (ratio - start.percentage) / (end.percentage - start.percentage)
-        // if percentageScale is negative that means it's before the start value just return start value 
+    lerp: (
+        ratio: number,
+        start: Keyframe<number>,
+        end: Keyframe<number>
+    ): number => {
+        const percentageScale =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
+        // if percentageScale is negative that means it's before the start value just return start value
         // if percentageScale is more than 1 that means it's after the end value just return the end value
         // if percentageScale is less than 0.5 return the start value else return the end value
-        return percentageScale < 0 || percentageScale < 0.5 ? start.value : end.value;
-    }
-}
+        return percentageScale < 0 || percentageScale < 0.5
+            ? start.value
+            : end.value;
+    },
+};
 
-export class IntegerAnimationHelper implements AnimatableAttributeHelper<number>{
-    constructor(){
+export class IntegerAnimationHelper implements AnimatableAttributeHelper<number> {
+    constructor() {}
 
-    }
-
-    lerp(ratio: number, start: Keyframe<number>, end: Keyframe<number>): number {
-        const percentageScale = (ratio - start.percentage) / (end.percentage - start.percentage)
-        // if percentageScale is negative that means it's before the start value just return start value 
+    lerp(
+        ratio: number,
+        start: Keyframe<number>,
+        end: Keyframe<number>
+    ): number {
+        const percentageScale =
+            (ratio - start.percentage) / (end.percentage - start.percentage);
+        // if percentageScale is negative that means it's before the start value just return start value
         // if percentageScale is more than 1 that means it's after the end value just return the end value
         // if percentageScale is less than 0.5 return the start value else return the end value
-        return percentageScale < 0 || percentageScale < 0.5 ? start.value : end.value;
+        return percentageScale < 0 || percentageScale < 0.5
+            ? start.value
+            : end.value;
     }
 }
 
@@ -218,7 +263,7 @@ export class IntegerAnimationHelper implements AnimatableAttributeHelper<number>
  *
  * @category Types
  */
-export type RGB = {r: number, g: number, b: number};
+export type RGB = { r: number; g: number; b: number };
 
 /**
  * Built-in interpolation helper for animating RGB color values.
@@ -231,25 +276,47 @@ export type RGB = {r: number, g: number, b: number};
 export const rgbHelperFunctions: AnimatableAttributeHelper<RGB> = {
     lerp: (ratio: number, start: Keyframe<RGB>, end: Keyframe<RGB>): RGB => {
         const res = {
-            r: start.value.r + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.r - start.value.r),
-            g: start.value.g + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.g - start.value.g),
-            b: start.value.b + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.b - start.value.b),
-        }
+            r:
+                start.value.r +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.r - start.value.r),
+            g:
+                start.value.g +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.g - start.value.g),
+            b:
+                start.value.b +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.b - start.value.b),
+        };
         return res;
-    }
-}
+    },
+};
 
 export class RGBAnimationHelper implements AnimatableAttributeHelper<RGB> {
-    constructor(){
-
-    }
+    constructor() {}
 
     lerp(ratio: number, start: Keyframe<RGB>, end: Keyframe<RGB>): RGB {
         const res = {
-            r: start.value.r + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.r - start.value.r),
-            g: start.value.g + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.g - start.value.g),
-            b: start.value.b + ((ratio - start.percentage) / (end.percentage - start.percentage)) * (end.value.b - start.value.b),
-        }
+            r:
+                start.value.r +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.r - start.value.r),
+            g:
+                start.value.g +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.g - start.value.g),
+            b:
+                start.value.b +
+                ((ratio - start.percentage) /
+                    (end.percentage - start.percentage)) *
+                    (end.value.b - start.value.b),
+        };
         return res;
     }
 }

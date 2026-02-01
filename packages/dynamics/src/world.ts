@@ -1,12 +1,13 @@
-import { RigidBody } from "./rigidbody";
-import * as Collision from "./collision";
-import { RectangleBound, QuadTree} from "./quadtree"
-import { DynamicTree, SpatialIndex, SweepAndPrune } from "./dynamic-tree";
-import { Point } from "@ue-too/math";
-import { Constraint } from "./constraint";
-import { PinJointConstraint } from "./constraint";
-import { PairManager, PairEvents } from "./pair-manager";
-import { canCollide } from "./collision-filter";
+import { Point } from '@ue-too/math';
+
+import * as Collision from './collision';
+import { canCollide } from './collision-filter';
+import { Constraint } from './constraint';
+import { PinJointConstraint } from './constraint';
+import { DynamicTree, SpatialIndex, SweepAndPrune } from './dynamic-tree';
+import { PairEvents, PairManager } from './pair-manager';
+import { QuadTree, RectangleBound } from './quadtree';
+import { RigidBody } from './rigidbody';
 
 /**
  * Spatial indexing algorithm types.
@@ -76,12 +77,20 @@ export class World {
     private enableSleeping: boolean = true;
     _context: CanvasRenderingContext2D | null = null;
 
-    constructor(maxTransWidth: number, maxTransHeight: number, spatialIndexType: SpatialIndexType = 'dynamictree'){
+    constructor(
+        maxTransWidth: number,
+        maxTransHeight: number,
+        spatialIndexType: SpatialIndexType = 'dynamictree'
+    ) {
         this.maxTransHeight = maxTransHeight;
         this.maxTransWidth = maxTransWidth;
         this.spatialIndexType = spatialIndexType;
-        this.bound = new RectangleBound({x: -this.maxTransWidth, y: -this.maxTransHeight}, 2 * this.maxTransWidth, 2 * this.maxTransHeight);
-        
+        this.bound = new RectangleBound(
+            { x: -this.maxTransWidth, y: -this.maxTransHeight },
+            2 * this.maxTransWidth,
+            2 * this.maxTransHeight
+        );
+
         // Initialize spatial index based on type
         if (spatialIndexType === 'dynamictree') {
             this.spatialIndex = new DynamicTree<RigidBody>();
@@ -90,7 +99,7 @@ export class World {
         } else {
             this.spatialIndex = new QuadTree(0, this.bound);
         }
-        
+
         this.rigidBodyList = [];
         this.rigidBodyMap = new Map<string, RigidBody>();
         this._resolveCollision = true;
@@ -98,26 +107,30 @@ export class World {
         this.pairManager = new PairManager();
     }
 
-    addRigidBody(ident: string, body: RigidBody): void{
+    addRigidBody(ident: string, body: RigidBody): void {
         this.rigidBodyList.push(body);
         this.rigidBodyMap.set(ident, body);
-        
+
         // Add to spatial index immediately for sweep-and-prune
         if (this.spatialIndexType === 'sap') {
             this.spatialIndex.insert(body);
         }
     }
 
-    removeRigidBody(ident: string): void{
+    removeRigidBody(ident: string): void {
         if (this.rigidBodyMap.has(ident)) {
             const body = this.rigidBodyMap.get(ident);
             this.rigidBodyMap.delete(ident);
-            
+
             // Remove from spatial index for sweep-and-prune
-            if (body && this.spatialIndexType === 'sap' && this.spatialIndex instanceof SweepAndPrune) {
+            if (
+                body &&
+                this.spatialIndexType === 'sap' &&
+                this.spatialIndex instanceof SweepAndPrune
+            ) {
                 (this.spatialIndex as SweepAndPrune<RigidBody>).remove(body);
             }
-            
+
             // Remove from rigidBodyList as well
             const index = this.rigidBodyList.findIndex(b => b === body);
             if (index !== -1) {
@@ -126,7 +139,7 @@ export class World {
         }
     }
 
-    step(deltaTime: number): void{
+    step(deltaTime: number): void {
         // Update sleeping states first
         if (this.enableSleeping) {
             this.getRigidBodyList().forEach(rigidBody => {
@@ -134,7 +147,7 @@ export class World {
             });
         }
 
-        if(this._resolveCollision){
+        if (this._resolveCollision) {
             const contactPoints = this.resolveCollisionPhase();
         }
         // if(this._context != null){
@@ -157,39 +170,50 @@ export class World {
         });
     }
 
-    resolveCollisionPhase(): Point[]{
+    resolveCollisionPhase(): Point[] {
         let rigidBodyList: RigidBody[] = [];
-        
+
         // Use incremental updates for sweep-and-prune, full rebuild for others
         if (this.spatialIndexType === 'sap') {
             // For sweep-and-prune: use incremental updates for better performance
-            this.rigidBodyMap.forEach((body) => {
+            this.rigidBodyMap.forEach(body => {
                 if (!this.enableSleeping || !body.isSleeping) {
                     rigidBodyList.push(body);
                     // Update existing objects in spatial index
                     if (this.spatialIndex instanceof SweepAndPrune) {
-                        (this.spatialIndex as SweepAndPrune<RigidBody>).update(body);
+                        (this.spatialIndex as SweepAndPrune<RigidBody>).update(
+                            body
+                        );
                     }
                 }
             });
         } else {
             // For QuadTree and DynamicTree: rebuild each frame (existing behavior)
             this.spatialIndex.clear();
-            this.rigidBodyMap.forEach((body) => {
+            this.rigidBodyMap.forEach(body => {
                 if (!this.enableSleeping || !body.isSleeping) {
                     rigidBodyList.push(body);
                     this.spatialIndex.insert(body);
                 }
             });
         }
-        
+
         // console.log("spatial index size: ", this.spatialIndex);
-        let possibleCombinations = Collision.broadPhaseWithSpatialIndexFiltered(this.spatialIndex, rigidBodyList);
-        let collisionResults = Collision.narrowPhaseWithRigidBodyAndPairs(rigidBodyList, possibleCombinations, this._resolveCollision);
-        
+        let possibleCombinations = Collision.broadPhaseWithSpatialIndexFiltered(
+            this.spatialIndex,
+            rigidBodyList
+        );
+        let collisionResults = Collision.narrowPhaseWithRigidBodyAndPairs(
+            rigidBodyList,
+            possibleCombinations,
+            this._resolveCollision
+        );
+
         // Update pair manager with new collisions
-        const pairEvents = this.pairManager.updatePairs(collisionResults.collisions);
-        
+        const pairEvents = this.pairManager.updatePairs(
+            collisionResults.collisions
+        );
+
         // Wake up bodies that start colliding
         if (this.enableSleeping) {
             pairEvents.created.forEach(pair => {
@@ -197,47 +221,52 @@ export class World {
                 if (pair.bodyB.isSleeping) pair.bodyB.setSleeping(false);
             });
         }
-        
+
         return collisionResults.contactPoints;
     }
 
-    get resolveCollision(): boolean{
+    get resolveCollision(): boolean {
         return this._resolveCollision;
     }
 
-    set resolveCollision(resolveCollision: boolean){
+    set resolveCollision(resolveCollision: boolean) {
         this._resolveCollision = resolveCollision;
     }
 
-    getRigidBodyList(){
-        let rigidBodyList:RigidBody[] = [];
-        this.rigidBodyMap.forEach((body) => {
+    getRigidBodyList() {
+        let rigidBodyList: RigidBody[] = [];
+        this.rigidBodyMap.forEach(body => {
             rigidBodyList.push(body);
-        })
+        });
         return rigidBodyList;
     }
 
-    getRigidBodyMap(): Map<string, RigidBody>{
+    getRigidBodyMap(): Map<string, RigidBody> {
         return this.rigidBodyMap;
     }
 
-    setMaxTransHeight(height: number){
+    setMaxTransHeight(height: number) {
         this.maxTransHeight = height;
     }
 
-    setMaxTransWidth(width: number){
+    setMaxTransWidth(width: number) {
         this.maxTransWidth = width;
     }
 
-    addConstraint(constraint: Constraint): void{
+    addConstraint(constraint: Constraint): void {
         this.constraints.push(constraint);
     }
 
-    getConstraints(): Constraint[]{
+    getConstraints(): Constraint[] {
         return this.constraints;
     }
 
-    addPinJoint(bodyA: RigidBody, bodyB: RigidBody, anchorA: Point, anchorB: Point) {
+    addPinJoint(
+        bodyA: RigidBody,
+        bodyB: RigidBody,
+        anchorA: Point,
+        anchorB: Point
+    ) {
         this.pinJoints.push({ bodyA, bodyB, anchorA, anchorB });
     }
 
@@ -247,7 +276,7 @@ export class World {
 
     setSpatialIndexType(type: SpatialIndexType): void {
         if (type === this.spatialIndexType) return;
-        
+
         this.spatialIndexType = type;
         if (type === 'dynamictree') {
             this.spatialIndex = new DynamicTree<RigidBody>();
@@ -264,7 +293,7 @@ export class World {
         } else if (this.spatialIndex instanceof SweepAndPrune) {
             return {
                 type: this.spatialIndexType,
-                ...(this.spatialIndex as SweepAndPrune<RigidBody>).getStats()
+                ...(this.spatialIndex as SweepAndPrune<RigidBody>).getStats(),
             };
         }
         return { type: this.spatialIndexType, objects: this.rigidBodyMap.size };
@@ -296,8 +325,10 @@ export class World {
     getCollisionStats() {
         return {
             ...this.pairManager.getStats(),
-            sleepingBodies: Array.from(this.rigidBodyMap.values()).filter(body => body.isSleeping).length,
-            totalBodies: this.rigidBodyMap.size
+            sleepingBodies: Array.from(this.rigidBodyMap.values()).filter(
+                body => body.isSleeping
+            ).length,
+            totalBodies: this.rigidBodyMap.size,
         };
     }
 }

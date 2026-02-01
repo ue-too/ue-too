@@ -1,20 +1,20 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "jsx": "preserve",
-    "jsxImportSource": "vue",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true
-  },
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ],
-  "extends": "../../tsconfig.base.json"
+    "compilerOptions": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": false,
+        "jsx": "preserve",
+        "jsxImportSource": "vue",
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "strict": true
+    },
+    "extends": "../../tsconfig.base.json",
+    "files": [],
+    "include": [],
+    "references": [
+        {
+            "path": "./tsconfig.app.json"
+        }
+    ]
 }

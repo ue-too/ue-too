@@ -1,5 +1,12 @@
-import { Coordinator, Entity } from "@ue-too/ecs";
-import { LocationSystem, LocationComponent, ZoneComponent, LOCATION_COMPONENT, ZONE_COMPONENT } from "../src/zone-system/zone-component";
+import { Coordinator, Entity } from '@ue-too/ecs';
+
+import {
+    LOCATION_COMPONENT,
+    LocationComponent,
+    LocationSystem,
+    ZONE_COMPONENT,
+    ZoneComponent,
+} from '../src/zone-system/zone-component';
 
 describe('LocationSystem', () => {
     let coordinator: Coordinator;
@@ -12,7 +19,7 @@ describe('LocationSystem', () => {
         coordinator.registerComponent<LocationComponent>(LOCATION_COMPONENT);
         coordinator.registerComponent<ZoneComponent>(ZONE_COMPONENT);
         locationSystem = new LocationSystem(coordinator);
-        
+
         zoneEntity = coordinator.createEntity();
         otherZoneEntity = coordinator.createEntity();
     });
@@ -31,10 +38,17 @@ describe('LocationSystem', () => {
 
         it('should automatically add entities with LocationComponent to system', () => {
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
-            
+            const location: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
+
             expect(locationSystem.entities.has(entity)).toBe(true);
             expect(locationSystem.entities.size).toBe(1);
         });
@@ -42,7 +56,7 @@ describe('LocationSystem', () => {
         it('should not add entities without LocationComponent to system', () => {
             const entity = coordinator.createEntity();
             // Don't add LocationComponent
-            
+
             expect(locationSystem.entities.has(entity)).toBe(false);
             expect(locationSystem.entities.size).toBe(0);
         });
@@ -66,9 +80,13 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
             expect(result).toEqual([]);
@@ -79,21 +97,46 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 2 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 3 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 2,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 3,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
             expect(result).toHaveLength(3);
@@ -107,21 +150,46 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 3 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 2 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 3,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 2,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
             expect(result).toHaveLength(3);
@@ -135,28 +203,57 @@ describe('LocationSystem', () => {
                 zone: 'zone-1',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
             const zoneComponent2: ZoneComponent = {
                 zone: 'zone-2',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent1);
-            coordinator.addComponentToEntity(ZONE_COMPONENT, otherZoneEntity, zoneComponent2);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent1
+            );
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                otherZoneEntity,
+                zoneComponent2
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 0 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
             expect(result).toHaveLength(2);
@@ -170,20 +267,38 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
             // entity2 has no LocationComponent
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 0 };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
             // entity2 has no LocationComponent, so it won't be in the system
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
@@ -200,21 +315,46 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 1 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             const result = locationSystem.getEntitiesInZone(zoneEntity);
             expect(result).toHaveLength(3);
@@ -244,9 +384,13 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             expect(() => {
                 locationSystem.shuffleZone(zoneEntity);
@@ -258,9 +402,13 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
@@ -268,28 +416,69 @@ describe('LocationSystem', () => {
             const entity4 = coordinator.createEntity();
             const entity5 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 2 };
-            const location4: LocationComponent = { location: zoneEntity, sortIndex: 3 };
-            const location5: LocationComponent = { location: zoneEntity, sortIndex: 4 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 2,
+            };
+            const location4: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 3,
+            };
+            const location5: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 4,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity4, location4);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity5, location5);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity4,
+                location4
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity5,
+                location5
+            );
 
             // Get original order
             const originalOrder = locationSystem.getEntitiesInZone(zoneEntity);
-            expect(originalOrder).toEqual([entity1, entity2, entity3, entity4, entity5]);
+            expect(originalOrder).toEqual([
+                entity1,
+                entity2,
+                entity3,
+                entity4,
+                entity5,
+            ]);
 
             // Shuffle multiple times to increase chance of different order
             let shuffled = false;
             for (let i = 0; i < 10; i++) {
                 locationSystem.shuffleZone(zoneEntity);
                 const newOrder = locationSystem.getEntitiesInZone(zoneEntity);
-                
+
                 // Check that all entities are still present
                 expect(newOrder).toHaveLength(5);
                 expect(newOrder).toContain(entity1);
@@ -300,12 +489,18 @@ describe('LocationSystem', () => {
 
                 // Check that sortIndex values are updated correctly
                 newOrder.forEach((entity, index) => {
-                    const location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+                    const location =
+                        coordinator.getComponentFromEntity<LocationComponent>(
+                            LOCATION_COMPONENT,
+                            entity
+                        );
                     expect(location?.sortIndex).toBe(index);
                 });
 
                 // If order changed, mark as shuffled
-                if (JSON.stringify(newOrder) !== JSON.stringify(originalOrder)) {
+                if (
+                    JSON.stringify(newOrder) !== JSON.stringify(originalOrder)
+                ) {
                     shuffled = true;
                 }
             }
@@ -320,21 +515,46 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 2 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 2,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             const beforeShuffle = locationSystem.getEntitiesInZone(zoneEntity);
             expect(beforeShuffle).toHaveLength(3);
@@ -353,20 +573,38 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
             // entity2 has no LocationComponent
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 2 };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 2,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
             // entity2 has no LocationComponent, so it won't be in the system
 
             locationSystem.shuffleZone(zoneEntity);
@@ -379,7 +617,11 @@ describe('LocationSystem', () => {
 
             // Check sortIndex values are updated correctly
             result.forEach((entity, index) => {
-                const location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+                const location =
+                    coordinator.getComponentFromEntity<LocationComponent>(
+                        LOCATION_COMPONENT,
+                        entity
+                    );
                 expect(location?.sortIndex).toBe(index);
             });
         });
@@ -389,40 +631,77 @@ describe('LocationSystem', () => {
                 zone: 'zone-1',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
             const zoneComponent2: ZoneComponent = {
                 zone: 'zone-2',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent1);
-            coordinator.addComponentToEntity(ZONE_COMPONENT, otherZoneEntity, zoneComponent2);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent1
+            );
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                otherZoneEntity,
+                zoneComponent2
+            );
 
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            const location3: LocationComponent = { location: zoneEntity, sortIndex: 1 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            const location3: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             // Shuffle zoneEntity
             locationSystem.shuffleZone(zoneEntity);
 
             // Check that entity2's sortIndex is unchanged
-            const location2After = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity2);
+            const location2After =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity2
+                );
             expect(location2After?.sortIndex).toBe(0);
 
             // Check that entities in zoneEntity have updated sortIndex
             const zone1Entities = locationSystem.getEntitiesInZone(zoneEntity);
             zone1Entities.forEach((entity, index) => {
-                const location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+                const location =
+                    coordinator.getComponentFromEntity<LocationComponent>(
+                        LOCATION_COMPONENT,
+                        entity
+                    );
                 expect(location?.sortIndex).toBe(index);
             });
         });
@@ -432,14 +711,25 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity1 = coordinator.createEntity();
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 5 };
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 5,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
 
             locationSystem.shuffleZone(zoneEntity);
 
@@ -447,7 +737,11 @@ describe('LocationSystem', () => {
             expect(result).toHaveLength(1);
             expect(result[0]).toBe(entity1);
 
-            const location = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity1);
+            const location =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity1
+                );
             expect(location?.sortIndex).toBe(0);
         });
     });
@@ -455,15 +749,30 @@ describe('LocationSystem', () => {
     describe('addEntityToZone', () => {
         it('should do nothing if zone entity does not have ZoneComponent', () => {
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
+            const location: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
 
-            const originalLocation = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const originalLocation =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(originalLocation?.location).toBe(otherZoneEntity);
 
             locationSystem.addEntityToZone(zoneEntity, entity, 'top');
 
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(locationAfter?.location).toBe(otherZoneEntity); // Unchanged
         });
 
@@ -472,9 +781,13 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity = coordinator.createEntity();
             // Don't add LocationComponent
@@ -489,17 +802,32 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: false
+                ordered: false,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: otherZoneEntity, sortIndex: 5 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
+            const location: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 5,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
 
             locationSystem.addEntityToZone(zoneEntity, entity, 'top');
 
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             expect(locationAfter?.sortIndex).toBe(0);
         });
@@ -509,33 +837,70 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             // Add some existing entities to the zone
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
 
             // Add new entity at top
             const newEntity = coordinator.createEntity();
-            const newLocation: LocationComponent = { location: otherZoneEntity, sortIndex: 10 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, newEntity, newLocation);
+            const newLocation: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 10,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                newEntity,
+                newLocation
+            );
 
             locationSystem.addEntityToZone(zoneEntity, newEntity, 'top');
 
             // Verify new entity is at top
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, newEntity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    newEntity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             expect(locationAfter?.sortIndex).toBe(0);
 
             // Verify existing entities were shifted
-            const location1After = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity1);
-            const location2After = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity2);
+            const location1After =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity1
+                );
+            const location2After =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity2
+                );
             expect(location1After?.sortIndex).toBe(1);
             expect(location2After?.sortIndex).toBe(2);
 
@@ -552,33 +917,70 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             // Add some existing entities to the zone
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
 
             // Add new entity at bottom
             const newEntity = coordinator.createEntity();
-            const newLocation: LocationComponent = { location: otherZoneEntity, sortIndex: 10 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, newEntity, newLocation);
+            const newLocation: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 10,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                newEntity,
+                newLocation
+            );
 
             locationSystem.addEntityToZone(zoneEntity, newEntity, 'bottom');
 
             // Verify new entity is at bottom
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, newEntity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    newEntity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             expect(locationAfter?.sortIndex).toBe(2);
 
             // Verify existing entities were not shifted
-            const location1After = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity1);
-            const location2After = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity2);
+            const location1After =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity1
+                );
+            const location2After =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity2
+                );
             expect(location1After?.sortIndex).toBe(0);
             expect(location2After?.sortIndex).toBe(1);
 
@@ -595,17 +997,32 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: otherZoneEntity, sortIndex: 5 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
+            const location: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 5,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
 
             locationSystem.addEntityToZone(zoneEntity, entity, 'top');
 
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             expect(locationAfter?.sortIndex).toBe(0);
 
@@ -619,17 +1036,32 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: otherZoneEntity, sortIndex: 5 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
+            const location: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 5,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
 
             locationSystem.addEntityToZone(zoneEntity, entity, 'bottom');
 
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             expect(locationAfter?.sortIndex).toBe(0);
 
@@ -643,22 +1075,47 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             // Add entities one by one
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
             const entity3 = coordinator.createEntity();
 
-            const location1: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            const location2: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            const location3: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
+            const location1: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            const location2: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            const location3: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
 
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity3, location3);
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity3,
+                location3
+            );
 
             // Add at top
             locationSystem.addEntityToZone(zoneEntity, entity1, 'top');
@@ -672,9 +1129,18 @@ describe('LocationSystem', () => {
             expect(entities[2]).toBe(entity1); // First added at top
 
             // Verify sortIndex values
-            const loc1 = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity1);
-            const loc2 = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity2);
-            const loc3 = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity3);
+            const loc1 = coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity1
+            );
+            const loc2 = coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity2
+            );
+            const loc3 = coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity3
+            );
             expect(loc1?.sortIndex).toBe(2);
             expect(loc2?.sortIndex).toBe(1);
             expect(loc3?.sortIndex).toBe(0);
@@ -685,18 +1151,33 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             const entity = coordinator.createEntity();
-            const location: LocationComponent = { location: zoneEntity, sortIndex: 1 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity, location);
+            const location: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 1,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity,
+                location
+            );
 
             // Add entity again - should do nothing if already in zone
             locationSystem.addEntityToZone(zoneEntity, entity, 'top');
 
-            const locationAfter = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
+            const locationAfter =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
             expect(locationAfter?.location).toBe(zoneEntity);
             // sortIndex should remain unchanged since entity is already in zone
             expect(locationAfter?.sortIndex).toBe(1);
@@ -711,33 +1192,68 @@ describe('LocationSystem', () => {
                 zone: 'test-zone',
                 owner: null,
                 visibility: 'public',
-                ordered: true
+                ordered: true,
             };
-            coordinator.addComponentToEntity(ZONE_COMPONENT, zoneEntity, zoneComponent);
+            coordinator.addComponentToEntity(
+                ZONE_COMPONENT,
+                zoneEntity,
+                zoneComponent
+            );
 
             // Add entities with non-sequential sortIndex
             const entity1 = coordinator.createEntity();
             const entity2 = coordinator.createEntity();
-            const location1: LocationComponent = { location: zoneEntity, sortIndex: 5 };
-            const location2: LocationComponent = { location: zoneEntity, sortIndex: 10 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity1, location1);
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, entity2, location2);
+            const location1: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 5,
+            };
+            const location2: LocationComponent = {
+                location: zoneEntity,
+                sortIndex: 10,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity1,
+                location1
+            );
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                entity2,
+                location2
+            );
 
             // Add new entity at bottom
             const newEntity = coordinator.createEntity();
-            const newLocation: LocationComponent = { location: otherZoneEntity, sortIndex: 0 };
-            coordinator.addComponentToEntity(LOCATION_COMPONENT, newEntity, newLocation);
+            const newLocation: LocationComponent = {
+                location: otherZoneEntity,
+                sortIndex: 0,
+            };
+            coordinator.addComponentToEntity(
+                LOCATION_COMPONENT,
+                newEntity,
+                newLocation
+            );
 
             locationSystem.addEntityToZone(zoneEntity, newEntity, 'bottom');
 
             // Verify zone was organized (sortIndex should be sequential)
             const entities = locationSystem.getEntitiesInZone(zoneEntity);
             expect(entities).toHaveLength(3);
-            
-            const loc1 = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity1);
-            const loc2 = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity2);
-            const locNew = coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, newEntity);
-            
+
+            const loc1 = coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity1
+            );
+            const loc2 = coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity2
+            );
+            const locNew =
+                coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    newEntity
+                );
+
             expect(loc1?.sortIndex).toBe(0);
             expect(loc2?.sortIndex).toBe(1);
             expect(locNew?.sortIndex).toBe(2);

@@ -1,5 +1,7 @@
 # NOT IN USE FOR THE CURRENT BUILD SETUP
+
 build -> bump-version -> move-packageJson -> replace workspace deps -> publish
+
 # Changesets Workflow for uē-tôo Monorepo
 
 This document describes how to use Changesets for versioning and releasing packages in the uē-tôo monorepo.
@@ -7,6 +9,7 @@ This document describes how to use Changesets for versioning and releasing packa
 ## Setup
 
 Changesets has been configured with:
+
 - **Version Management**: Automatic version bumping based on changeset types
 - **Dist-based Publishing**: Source packages keep `workspace:*` dependencies, dist packages get actual versions
 - **Changelog Generation**: Automatic changelog creation
@@ -22,6 +25,7 @@ pnpm changeset
 ```
 
 This will:
+
 - Show you all packages in the monorepo
 - Let you select which packages were affected
 - Ask for the type of change (major, minor, patch)
@@ -36,6 +40,7 @@ pnpm version-packages
 ```
 
 This command will:
+
 - ✅ Bump package versions in source `package.json` files
 - ✅ Build all packages to their `dist` folders using Nx
 - ✅ Replace `workspace:*` dependencies with actual version numbers in `dist/package.json` files
@@ -45,6 +50,7 @@ This command will:
 ### 3. Review Changes
 
 Check what was changed:
+
 ```bash
 git status
 git diff
@@ -67,22 +73,24 @@ pnpm release
 ## Package Structure
 
 ### Source Packages (Development)
+
 ```json
 {
-  "dependencies": {
-    "@ue-too/math": "workspace:*",
-    "@ue-too/being": "workspace:*"
-  }
+    "dependencies": {
+        "@ue-too/being": "workspace:*",
+        "@ue-too/math": "workspace:*"
+    }
 }
 ```
 
 ### Dist Packages (Publishing)
+
 ```json
 {
-  "dependencies": {
-    "@ue-too/math": "^0.6.1",
-    "@ue-too/being": "^0.6.0"
-  }
+    "dependencies": {
+        "@ue-too/being": "^0.6.0",
+        "@ue-too/math": "^0.6.1"
+    }
 }
 ```
 
@@ -97,6 +105,7 @@ pnpm release
 ## Configuration
 
 The Changesets configuration is in `.changeset/config.json`:
+
 - `updateInternalDependencies: "patch"` - Updates internal dependencies when they change
 - `access: "restricted"` - Packages are published as private by default
 
@@ -107,4 +116,4 @@ The Changesets configuration is in `.changeset/config.json`:
 3. **Automatic Versioning**: No manual version management
 4. **Dependency Tracking**: Internal dependencies are automatically updated
 5. **Changelog Generation**: Automatic changelog creation
-6. **Consistent Releases**: Standardized release process across all packages 
+6. **Consistent Releases**: Standardized release process across all packages

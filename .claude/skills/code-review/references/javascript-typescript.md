@@ -5,29 +5,32 @@
 ### Type Safety (TypeScript)
 
 **Avoid `any`**
+
 ```typescript
 // ❌ Loses all type safety
-function process(data: any) { }
+function process(data: any) {}
 
 // ✅ Use proper types
-function process(data: UserData) { }
+function process(data: UserData) {}
 
 // ✅ Or use generics
-function process<T extends Record<string, unknown>>(data: T) { }
+function process<T extends Record<string, unknown>>(data: T) {}
 ```
 
 **Avoid type assertions without good reason**
+
 ```typescript
 // ❌ Unsafe assertion
 const user = data as User;
 
 // ✅ Validate first
 if (isUser(data)) {
-  const user = data;
+    const user = data;
 }
 ```
 
 **Don't use non-null assertion carelessly**
+
 ```typescript
 // ❌ Could crash
 const name = user!.profile!.name;
@@ -39,95 +42,106 @@ const name = user?.profile?.name;
 ### Async/Await
 
 **Don't forget await**
+
 ```typescript
 // ❌ Returns Promise, doesn't wait
 async function getData() {
-  const result = fetchData(); // Missing await!
-  return result;
+    const result = fetchData(); // Missing await!
+    return result;
 }
 
 // ✅ Actually waits
 async function getData() {
-  const result = await fetchData();
-  return result;
+    const result = await fetchData();
+    return result;
 }
 ```
 
 **Don't mix callbacks and promises**
+
 ```typescript
 // ❌ Confusing mix
 function loadData(callback) {
-  return fetch('/api/data')
-    .then(r => r.json())
-    .then(data => callback(null, data));
+    return fetch('/api/data')
+        .then(r => r.json())
+        .then(data => callback(null, data));
 }
 
 // ✅ Pick one approach
 async function loadData() {
-  const response = await fetch('/api/data');
-  return response.json();
+    const response = await fetch('/api/data');
+    return response.json();
 }
 ```
 
 **Handle promise rejections**
+
 ```typescript
 // ❌ Unhandled rejection
 async function main() {
-  await riskyOperation();
+    await riskyOperation();
 }
 
 // ✅ Handle errors
 async function main() {
-  try {
-    await riskyOperation();
-  } catch (error) {
-    logger.error('Operation failed', error);
-    throw error;
-  }
+    try {
+        await riskyOperation();
+    } catch (error) {
+        logger.error('Operation failed', error);
+        throw error;
+    }
 }
 ```
 
 ### Common Pitfalls
 
 **== vs ===**
+
 ```typescript
 // ❌ Type coercion surprises
-if (x == null) { } // Matches null AND undefined
-if ('' == 0) { }    // true!
+if (x == null) {
+} // Matches null AND undefined
+if ('' == 0) {
+} // true!
 
 // ✅ Explicit comparison
-if (x === null || x === undefined) { }
-if (x === 0) { }
+if (x === null || x === undefined) {
+}
+if (x === 0) {
+}
 ```
 
 **Variable scoping with var**
+
 ```typescript
 // ❌ Function-scoped, hoisted
 for (var i = 0; i < 3; i++) {
-  setTimeout(() => console.log(i)); // Prints 3, 3, 3
+    setTimeout(() => console.log(i)); // Prints 3, 3, 3
 }
 
 // ✅ Block-scoped
 for (let i = 0; i < 3; i++) {
-  setTimeout(() => console.log(i)); // Prints 0, 1, 2
+    setTimeout(() => console.log(i)); // Prints 0, 1, 2
 }
 ```
 
 **Array mutation**
+
 ```typescript
 // ❌ Mutates original
 function addItem(items, item) {
-  items.push(item);
-  return items;
+    items.push(item);
+    return items;
 }
 
 // ✅ Returns new array
 function addItem(items, item) {
-  return [...items, item];
+    return [...items, item];
 }
 ```
 
 **Object property access**
+
 ```typescript
 // ❌ Can crash if user is null
 const name = user.name;
@@ -142,6 +156,7 @@ const name = user?.name ?? 'Anonymous';
 ### Performance
 
 **Avoid unnecessary re-renders (React)**
+
 ```typescript
 // ❌ Creates new object every render
 <Component config={{ theme: 'dark' }} />
@@ -152,6 +167,7 @@ const CONFIG = { theme: 'dark' };
 ```
 
 **Debounce expensive operations**
+
 ```typescript
 // ❌ Fires on every keystroke
 <input onChange={(e) => searchAPI(e.target.value)} />
@@ -162,26 +178,30 @@ const debouncedSearch = debounce(searchAPI, 300);
 ```
 
 **Avoid array methods in loops**
+
 ```typescript
 // ❌ O(n²) complexity
 for (const item of items) {
-  if (validIds.includes(item.id)) { // includes is O(n)
-    // ...
-  }
+    if (validIds.includes(item.id)) {
+        // includes is O(n)
+        // ...
+    }
 }
 
 // ✅ O(n) with Set
 const validIdSet = new Set(validIds);
 for (const item of items) {
-  if (validIdSet.has(item.id)) { // O(1) lookup
-    // ...
-  }
+    if (validIdSet.has(item.id)) {
+        // O(1) lookup
+        // ...
+    }
 }
 ```
 
 ### Security
 
 **Avoid eval and Function constructor**
+
 ```typescript
 // ❌ Dangerous code execution
 eval(userInput);
@@ -192,6 +212,7 @@ JSON.parse(userInput); // For data only
 ```
 
 **Sanitize HTML**
+
 ```typescript
 // ❌ XSS vulnerability
 div.innerHTML = userInput;
@@ -204,12 +225,13 @@ div.innerHTML = DOMPurify.sanitize(userInput);
 ```
 
 **Don't trust client-side validation**
+
 ```typescript
 // ❌ Client-side only
 function submitForm(data) {
-  if (isValid(data)) {
-    api.post('/submit', data);
-  }
+    if (isValid(data)) {
+        api.post('/submit', data);
+    }
 }
 
 // ✅ Server validates too
@@ -220,36 +242,39 @@ function submitForm(data) {
 ### Memory Leaks
 
 **Clean up event listeners**
+
 ```typescript
 // ❌ Listener persists after component unmount
 useEffect(() => {
-  window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
 }, []);
 
 // ✅ Clean up
 useEffect(() => {
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
 }, []);
 ```
 
 **Clear timers**
+
 ```typescript
 // ❌ Timer continues after component unmount
 useEffect(() => {
-  setInterval(() => updateData(), 1000);
+    setInterval(() => updateData(), 1000);
 }, []);
 
 // ✅ Clear on cleanup
 useEffect(() => {
-  const timer = setInterval(() => updateData(), 1000);
-  return () => clearInterval(timer);
+    const timer = setInterval(() => updateData(), 1000);
+    return () => clearInterval(timer);
 }, []);
 ```
 
 ### Best Practices
 
 **Use optional chaining**
+
 ```typescript
 // ❌ Verbose and error-prone
 const city = user && user.address && user.address.city;
@@ -259,6 +284,7 @@ const city = user?.address?.city;
 ```
 
 **Use nullish coalescing**
+
 ```typescript
 // ❌ 0, '', false treated as missing
 const count = value || 10; // 0 becomes 10!
@@ -268,6 +294,7 @@ const count = value ?? 10; // 0 stays 0
 ```
 
 **Prefer const for objects and arrays**
+
 ```typescript
 // ❌ Can be reassigned
 let config = { theme: 'dark' };
@@ -280,6 +307,7 @@ config = {}; // Error
 ```
 
 **Use template literals**
+
 ```typescript
 // ❌ Hard to read
 const msg = 'Hello ' + name + ', you have ' + count + ' messages';
@@ -291,21 +319,23 @@ const msg = `Hello ${name}, you have ${count} messages`;
 ### Testing Red Flags
 
 **Missing error case tests**
+
 ```typescript
 // ❌ Only happy path
 test('fetches user', async () => {
-  const user = await fetchUser('123');
-  expect(user.name).toBe('Alice');
+    const user = await fetchUser('123');
+    expect(user.name).toBe('Alice');
 });
 
 // ✅ Test errors too
 test('handles fetch errors', async () => {
-  mockFetch.mockRejectedValue(new Error('Network error'));
-  await expect(fetchUser('123')).rejects.toThrow('Network error');
+    mockFetch.mockRejectedValue(new Error('Network error'));
+    await expect(fetchUser('123')).rejects.toThrow('Network error');
 });
 ```
 
 **Brittle snapshot tests**
+
 ```typescript
 // ❌ Breaks on any change
 expect(component).toMatchSnapshot();

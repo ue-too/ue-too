@@ -1,11 +1,5 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
-    "entryPoints": ["src/index.ts"],
-    "out": "../../docs/math",
-    "name": "@ue-too/math",
-    "readme": "./README.md",
-    "includeVersion": true,
     "categoryOrder": [
         "Vector Arithmetic",
         "Vector Operations",
@@ -15,6 +9,11 @@
         "Comparison",
         "*"
     ],
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/math",
+    "out": "../../docs/math",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

@@ -4,5 +4,4 @@
  */
 
 // Export your package's public API here
-export * from "./konva-input-event-parser";
-
+export * from './konva-input-event-parser';

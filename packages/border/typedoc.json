@@ -1,11 +1,5 @@
 {
     "$schema": "https://typedoc.org/schema.json",
-    "extends": "../../typedoc.json",
-    "entryPoints": ["src/index.ts"],
-    "out": "../../docs/border",
-    "name": "@ue-too/border",
-    "readme": "./README.md",
-    "includeVersion": true,
     "categoryOrder": [
         "Types",
         "Great Circle",
@@ -13,6 +7,11 @@
         "Projections",
         "*"
     ],
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/border",
+    "out": "../../docs/border",
+    "readme": "./README.md",
     "sort": ["kind", "static-first", "alphabetical"]
 }
-

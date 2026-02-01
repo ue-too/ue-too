@@ -1,4 +1,9 @@
-import { TemplateStateMachine, TemplateState, BaseContext, EventReactions } from "./interface";
+import {
+    BaseContext,
+    EventReactions,
+    TemplateState,
+    TemplateStateMachine,
+} from './interface';
 
 type VendingMachineEvents = {
     insertBills: {};
@@ -6,132 +11,190 @@ type VendingMachineEvents = {
     selectRedBull: {};
     selectWater: {};
     cancelTransaction: {};
+};
+
+type VendingMachineStates =
+    | 'IDLE'
+    | 'ONE_DOLLAR_INSERTED'
+    | 'TWO_DOLLARS_INSERTED'
+    | 'THREE_DOLLARS_INSERTED';
+
+class IdleState extends TemplateState<
+    VendingMachineEvents,
+    BaseContext,
+    VendingMachineStates
+> {
+    protected _eventReactions: EventReactions<
+        VendingMachineEvents,
+        BaseContext,
+        VendingMachineStates
+    > = {
+        insertBills: {
+            action: (context, event, stateMachine) => {
+                console.log('inserted bills');
+            },
+            defaultTargetState: 'ONE_DOLLAR_INSERTED',
+        },
+    };
 }
 
-type VendingMachineStates = "IDLE" | "ONE_DOLLAR_INSERTED" | "TWO_DOLLARS_INSERTED" | "THREE_DOLLARS_INSERTED";
-
-class IdleState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
-        "insertBills": {
+class OneDollarInsertedState extends TemplateState<
+    VendingMachineEvents,
+    BaseContext,
+    VendingMachineStates
+> {
+    protected _eventReactions: EventReactions<
+        VendingMachineEvents,
+        BaseContext,
+        VendingMachineStates
+    > = {
+        insertBills: {
             action: (context, event, stateMachine) => {
-                console.log("inserted bills");
+                console.log('inserted bills');
             },
-            defaultTargetState: "ONE_DOLLAR_INSERTED"
+            defaultTargetState: 'TWO_DOLLARS_INSERTED',
         },
-    }
+        selectCoke: {
+            action: (context, event, stateMachine) => {
+                console.log('selected coke; thank you for your purchase');
+            },
+            defaultTargetState: 'IDLE',
+        },
+        selectRedBull: {
+            action: (context, event, stateMachine) => {
+                console.log(
+                    'selected red bull; not enough money, 1 dollar short, please insert more money'
+                );
+            },
+        },
+        selectWater: {
+            action: (context, event, stateMachine) => {
+                console.log(
+                    'selected water; not enough money, 2 dollars short, please insert more money'
+                );
+            },
+        },
+        cancelTransaction: {
+            action: (context, event, stateMachine) => {
+                console.log(
+                    'cancelled transaction; refunding 1 dollar; please take your money'
+                );
+            },
+            defaultTargetState: 'IDLE',
+        },
+    };
 }
 
-class OneDollarInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
-        "insertBills": {
+class TwoDollarsInsertedState extends TemplateState<
+    VendingMachineEvents,
+    BaseContext,
+    VendingMachineStates
+> {
+    protected _eventReactions: EventReactions<
+        VendingMachineEvents,
+        BaseContext,
+        VendingMachineStates
+    > = {
+        insertBills: {
             action: (context, event, stateMachine) => {
-                console.log("inserted bills");
+                console.log('inserted bills');
             },
-            defaultTargetState: "TWO_DOLLARS_INSERTED"
+            defaultTargetState: 'THREE_DOLLARS_INSERTED',
         },
-        "selectCoke": {
+        selectCoke: {
             action: (context, event, stateMachine) => {
-                console.log("selected coke; thank you for your purchase");
+                console.log('selected coke; thank you for your purchase');
             },
-            defaultTargetState: "IDLE"
+            defaultTargetState: 'IDLE',
         },
-        "selectRedBull": {
-            action: (context, event, stateMachine) => {
-                console.log("selected red bull; not enough money, 1 dollar short, please insert more money");
-            },
-        },
-        "selectWater": {
-            action: (context, event, stateMachine) => {
-                console.log("selected water; not enough money, 2 dollars short, please insert more money");
-            },
-        },
-        "cancelTransaction": {
-            action: (context, event, stateMachine) => {
-                console.log('cancelled transaction; refunding 1 dollar; please take your money');
-            },
-            defaultTargetState: "IDLE"
-        }
-    }
-}
-
-class TwoDollarsInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
-        "insertBills": {
-            action: (context, event, stateMachine) => {
-                console.log("inserted bills");
-            },
-            defaultTargetState: "THREE_DOLLARS_INSERTED"
-        },
-        "selectCoke": {
-            action: (context, event, stateMachine) => {
-                console.log("selected coke; thank you for your purchase");
-            },
-            defaultTargetState: "IDLE"
-        },
-        "selectRedBull": {
+        selectRedBull: {
             action: (context, event, stateMachine) => {
                 console.log('selected red bull; thank you for your purchase');
             },
-            defaultTargetState: "IDLE"
+            defaultTargetState: 'IDLE',
         },
-        "selectWater": {
+        selectWater: {
             action: (context, event, stateMachine) => {
-                console.log('selected water; not enough money, 1 dollars short, please insert more money');
+                console.log(
+                    'selected water; not enough money, 1 dollars short, please insert more money'
+                );
             },
         },
-        "cancelTransaction": {
+        cancelTransaction: {
             action: (context, event, stateMachine) => {
-                console.log('cancelled transaction; refunding 2 dollars; please take your money');
+                console.log(
+                    'cancelled transaction; refunding 2 dollars; please take your money'
+                );
             },
-            defaultTargetState: "IDLE"
-        }
-    }
+            defaultTargetState: 'IDLE',
+        },
+    };
 }
 
-class ThreeDollarsInsertedState extends TemplateState<VendingMachineEvents, BaseContext, VendingMachineStates> {
-    protected _eventReactions: EventReactions<VendingMachineEvents, BaseContext, VendingMachineStates> = {
-        "insertBills": {
+class ThreeDollarsInsertedState extends TemplateState<
+    VendingMachineEvents,
+    BaseContext,
+    VendingMachineStates
+> {
+    protected _eventReactions: EventReactions<
+        VendingMachineEvents,
+        BaseContext,
+        VendingMachineStates
+    > = {
+        insertBills: {
             action: (context, event, stateMachine) => {
-                console.log('not taking more bills; returning the inserted bills');
+                console.log(
+                    'not taking more bills; returning the inserted bills'
+                );
             },
         },
-        "selectCoke": {
+        selectCoke: {
             action: (context, event, stateMachine) => {
-                console.log("selected coke; change: 1 dollar");
+                console.log('selected coke; change: 1 dollar');
             },
-            defaultTargetState: "IDLE"
+            defaultTargetState: 'IDLE',
         },
-        "selectRedBull": {
+        selectRedBull: {
             action: (context, event, stateMachine) => {
                 console.log('selected red bull; change: 2 dollars');
             },
-            defaultTargetState: "IDLE"
+            defaultTargetState: 'IDLE',
         },
-        "selectWater": {
+        selectWater: {
             action: (context, event, stateMachine) => {
                 console.log('selected water; no change');
             },
         },
-        "cancelTransaction": {
+        cancelTransaction: {
             action: (context, event, stateMachine) => {
-                console.log('cancelled transaction; refunding 3 dollars; please take your money');
+                console.log(
+                    'cancelled transaction; refunding 3 dollars; please take your money'
+                );
             },
-            defaultTargetState: "IDLE"
-        }
-    }
+            defaultTargetState: 'IDLE',
+        },
+    };
 }
 
 const context: BaseContext = {
     setup: () => {},
     cleanup: () => {},
-}
+};
 
-export const createVendingMachine = () => new TemplateStateMachine<VendingMachineEvents, BaseContext, VendingMachineStates>({
-    "IDLE": new IdleState(),
-    "ONE_DOLLAR_INSERTED": new OneDollarInsertedState(),
-    "TWO_DOLLARS_INSERTED": new TwoDollarsInsertedState(),
-    "THREE_DOLLARS_INSERTED": new ThreeDollarsInsertedState(),
-}, "IDLE", context);
+export const createVendingMachine = () =>
+    new TemplateStateMachine<
+        VendingMachineEvents,
+        BaseContext,
+        VendingMachineStates
+    >(
+        {
+            IDLE: new IdleState(),
+            ONE_DOLLAR_INSERTED: new OneDollarInsertedState(),
+            TWO_DOLLARS_INSERTED: new TwoDollarsInsertedState(),
+            THREE_DOLLARS_INSERTED: new ThreeDollarsInsertedState(),
+        },
+        'IDLE',
+        context
+    );
 
 console.log('test');
-

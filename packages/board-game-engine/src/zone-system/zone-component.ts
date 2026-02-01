@@ -1,29 +1,43 @@
-import { ComponentName, ComponentSchema, Coordinator, createGlobalComponentName, Entity, System, ComponentFieldDefinition, ArrayElementType, SystemName, createGlobalSystemName } from "@ue-too/ecs";
+import {
+    ArrayElementType,
+    ComponentFieldDefinition,
+    ComponentName,
+    ComponentSchema,
+    Coordinator,
+    Entity,
+    System,
+    SystemName,
+    createGlobalComponentName,
+    createGlobalSystemName,
+} from '@ue-too/ecs';
 
-export const ZONE_COMPONENT: ComponentName = createGlobalComponentName("ZoneComponent");
-export const LOCATION_COMPONENT: ComponentName = createGlobalComponentName("LocationComponent");
+export const ZONE_COMPONENT: ComponentName =
+    createGlobalComponentName('ZoneComponent');
+export const LOCATION_COMPONENT: ComponentName =
+    createGlobalComponentName('LocationComponent');
 
-export const LOCATION_SYSTEM: SystemName = createGlobalSystemName("LocationSystem");
+export const LOCATION_SYSTEM: SystemName =
+    createGlobalSystemName('LocationSystem');
 
 export type LocationComponent = {
     location: Entity;
     sortIndex: number;
-}
+};
 
 export const LocationComponentSchema: ComponentSchema = {
     componentName: LOCATION_COMPONENT,
     fields: [
         { name: 'location', type: 'entity' },
-        { name: 'sortIndex', type: 'number' }
-    ]
+        { name: 'sortIndex', type: 'number' },
+    ],
 };
 
 export type ZoneComponent = {
     zone: string;
     owner: Entity | null;
     visibility: 'public' | 'private' | 'owner-only';
-    ordered: boolean; // should be true if you want the order to be stable other wise may change; false suitable for obscure zones 
-}
+    ordered: boolean; // should be true if you want the order to be stable other wise may change; false suitable for obscure zones
+};
 
 export const ZoneComponentSchema: ComponentSchema = {
     componentName: ZONE_COMPONENT,
@@ -31,8 +45,8 @@ export const ZoneComponentSchema: ComponentSchema = {
         { name: 'zone', type: 'string' },
         { name: 'owner', type: 'entity' },
         { name: 'visibility', type: 'string' },
-        { name: 'ordered', type: 'boolean' }
-    ]
+        { name: 'ordered', type: 'boolean' },
+    ],
 };
 
 export function shuffle(tokens: number[]): number[] {
@@ -51,34 +65,51 @@ export class LocationSystem implements System {
     constructor(coordinator: Coordinator) {
         this.coordinator = coordinator;
         this.entities = new Set();
-        
+
         this.coordinator.registerComponentWithSchema(LocationComponentSchema);
 
-        const locationComponentType = this.coordinator.getComponentType(LOCATION_COMPONENT);
-        if(locationComponentType === null) {
-            throw new Error('LocationComponent not registered with coordinator');
+        const locationComponentType =
+            this.coordinator.getComponentType(LOCATION_COMPONENT);
+        if (locationComponentType === null) {
+            throw new Error(
+                'LocationComponent not registered with coordinator'
+            );
         }
 
         this.coordinator.registerSystem(LOCATION_SYSTEM, this);
-        this.coordinator.setSystemSignature(LOCATION_SYSTEM, 1 << locationComponentType);
+        this.coordinator.setSystemSignature(
+            LOCATION_SYSTEM,
+            1 << locationComponentType
+        );
     }
 
     getEntitiesInZone(zoneEntity: Entity): Entity[] {
-        const zoneComponent = this.coordinator.getComponentFromEntity<ZoneComponent>(ZONE_COMPONENT, zoneEntity);
-        if(!zoneComponent) {
+        const zoneComponent =
+            this.coordinator.getComponentFromEntity<ZoneComponent>(
+                ZONE_COMPONENT,
+                zoneEntity
+            );
+        if (!zoneComponent) {
             return [];
         }
-        const tempArray: {entity: Entity, sortIndex: number}[] = [];
-        for(const entity of this.entities) {
-            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
-            if(!locationComponent) {
+        const tempArray: { entity: Entity; sortIndex: number }[] = [];
+        for (const entity of this.entities) {
+            const locationComponent =
+                this.coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entity
+                );
+            if (!locationComponent) {
                 continue;
             }
-            if(locationComponent.location === zoneEntity) {
-                tempArray.push({entity, sortIndex: locationComponent.sortIndex});
+            if (locationComponent.location === zoneEntity) {
+                tempArray.push({
+                    entity,
+                    sortIndex: locationComponent.sortIndex,
+                });
             }
         }
-        if(zoneComponent.ordered) {
+        if (zoneComponent.ordered) {
             tempArray.sort((a, b) => {
                 return a.sortIndex - b.sortIndex;
             });
@@ -89,9 +120,13 @@ export class LocationSystem implements System {
     offsetZoneSortIndex(zoneEntity: Entity, offset: number): void {
         this.organizeZoneSortIndex(zoneEntity);
         const entities = this.getEntitiesInZone(zoneEntity);
-        for(let i = 0; i < entities.length; i++) {
-            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entities[i]);
-            if(!locationComponent) {
+        for (let i = 0; i < entities.length; i++) {
+            const locationComponent =
+                this.coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entities[i]
+                );
+            if (!locationComponent) {
                 continue;
             }
             locationComponent.sortIndex += offset;
@@ -101,9 +136,13 @@ export class LocationSystem implements System {
     organizeZoneSortIndex(zoneEntity: Entity): number {
         const entities = this.getEntitiesInZone(zoneEntity);
         let lastSortIndex = 0;
-        for(let i = 0; i < entities.length; i++) {
-            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entities[i]);
-            if(!locationComponent) {
+        for (let i = 0; i < entities.length; i++) {
+            const locationComponent =
+                this.coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    entities[i]
+                );
+            if (!locationComponent) {
                 continue;
             }
             locationComponent.sortIndex = lastSortIndex;
@@ -113,40 +152,60 @@ export class LocationSystem implements System {
     }
 
     shuffleZone(zoneEntity: Entity): void {
-        const zoneComponent = this.coordinator.getComponentFromEntity<ZoneComponent>(ZONE_COMPONENT, zoneEntity);
-        if(!zoneComponent) {
+        const zoneComponent =
+            this.coordinator.getComponentFromEntity<ZoneComponent>(
+                ZONE_COMPONENT,
+                zoneEntity
+            );
+        if (!zoneComponent) {
             return;
         }
         const entities = this.getEntitiesInZone(zoneEntity);
         const shuffledEntities = shuffle(entities);
-        for(let i = 0; i < shuffledEntities.length; i++) {
-            const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, shuffledEntities[i]);
-            if(!locationComponent) {
+        for (let i = 0; i < shuffledEntities.length; i++) {
+            const locationComponent =
+                this.coordinator.getComponentFromEntity<LocationComponent>(
+                    LOCATION_COMPONENT,
+                    shuffledEntities[i]
+                );
+            if (!locationComponent) {
                 continue;
             }
             locationComponent.sortIndex = i;
         }
     }
 
-    addEntityToZone(zoneEntity: Entity, entity: Entity, direction: 'top' | 'bottom'): void {
-        const zoneComponent = this.coordinator.getComponentFromEntity<ZoneComponent>(ZONE_COMPONENT, zoneEntity);
-        if(!zoneComponent) {
+    addEntityToZone(
+        zoneEntity: Entity,
+        entity: Entity,
+        direction: 'top' | 'bottom'
+    ): void {
+        const zoneComponent =
+            this.coordinator.getComponentFromEntity<ZoneComponent>(
+                ZONE_COMPONENT,
+                zoneEntity
+            );
+        if (!zoneComponent) {
             return;
         }
-        const locationComponent = this.coordinator.getComponentFromEntity<LocationComponent>(LOCATION_COMPONENT, entity);
-        if(!locationComponent) {
+        const locationComponent =
+            this.coordinator.getComponentFromEntity<LocationComponent>(
+                LOCATION_COMPONENT,
+                entity
+            );
+        if (!locationComponent) {
             return;
         }
-        if(locationComponent.location === zoneEntity) {
+        if (locationComponent.location === zoneEntity) {
             return;
         }
-        if(!zoneComponent.ordered) {
+        if (!zoneComponent.ordered) {
             locationComponent.location = zoneEntity;
             locationComponent.sortIndex = 0;
             return;
         }
         const lastSortIndex = this.organizeZoneSortIndex(zoneEntity);
-        if(direction === 'top') {
+        if (direction === 'top') {
             this.offsetZoneSortIndex(zoneEntity, 1);
             locationComponent.sortIndex = 0;
         } else {

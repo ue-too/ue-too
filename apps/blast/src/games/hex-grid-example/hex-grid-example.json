@@ -1,161 +1,160 @@
 {
-  "$schema": "../../board-game-engine/schema/json-schema/game-definition.schema.json",
-  "name": "Hex Grid Example",
-  "version": "1.0.0",
-  "metadata": {
-    "author": "ue-too",
-    "description": "Example game demonstrating hexagonal grid positioning",
-    "minPlayers": 2,
-    "maxPlayers": 2,
-    "complexity": "simple",
-    "tags": ["hexagonal", "grid", "example"]
-  },
+    "$schema": "../../board-game-engine/schema/json-schema/game-definition.schema.json",
+    "actions": [
+        {
+            "description": "Place a token on a hexagonal cell",
+            "displayName": "Place Token",
+            "effects": [
+                {
+                    "components": {
+                        "GridLocation": {
+                            "column": null,
+                            "grid": null,
+                            "q": "$component.$target.0.GridLocation.q",
+                            "r": "$component.$target.0.GridLocation.r",
+                            "row": null
+                        },
+                        "Token": {
+                            "color": "$param.tokenColor",
+                            "playerIndex": "$param.playerIndex"
+                        }
+                    },
+                    "storeAs": "newToken",
+                    "type": "createEntity",
+                    "zone": "board"
+                },
+                {
+                    "condition": {
+                        "component": "Player",
+                        "entity": "$actor",
+                        "property": "playerNumber",
+                        "type": "componentValueCheck",
+                        "value": 2
+                    },
+                    "then": [
+                        {
+                            "component": "Token",
+                            "entity": "$newToken",
+                            "type": "setComponentValue",
+                            "values": {
+                                "color": "blue",
+                                "playerIndex": 1
+                            }
+                        }
+                    ],
+                    "type": "conditional"
+                },
+                {
+                    "type": "switchActivePlayer"
+                }
+            ],
+            "id": "PlaceToken",
+            "name": "PlaceToken",
+            "preconditions": [
+                {
+                    "type": "isPlayerTurn"
+                },
+                {
+                    "component": "GridLocation",
+                    "entity": "$target.0",
+                    "errorMessage": "Target must be a hexagonal cell",
+                    "operator": "!=",
+                    "property": "q",
+                    "type": "componentValueCheck",
+                    "value": null
+                }
+            ],
+            "targetCount": 1,
+            "targeting": {
+                "count": 1,
+                "validTargets": {
+                    "hasComponent": ["GridLocation"],
+                    "owner": "any",
+                    "zone": "board"
+                }
+            }
+        }
+    ],
 
-  "components": {
-    "Token": {
-      "properties": {
-        "color": { "type": "string", "default": "red" },
-        "playerIndex": { "type": "number", "default": 0 }
-      }
-    },
-    "GridLocation": {
-      "properties": {
-        "grid": { "type": "entity", "default": null },
-        "row": { "type": "number", "default": null },
-        "column": { "type": "number", "default": null },
-        "q": { "type": "number", "default": null },
-        "r": { "type": "number", "default": null }
-      }
-    }
-  },
-
-  "zones": {
-    "board": {
-      "visibility": "public",
-      "ordered": false,
-      "shared": true,
-      "maxCapacity": 50
-    }
-  },
-
-  "entityTemplates": {
-    "HexCell": {
-      "components": {
+    "components": {
         "GridLocation": {
-          "grid": null,
-          "row": null,
-          "column": null,
-          "q": 0,
-          "r": 0
-        }
-      }
-    },
-    "Player": {
-      "components": {}
-    }
-  },
-
-  "actions": [
-    {
-      "id": "PlaceToken",
-      "name": "PlaceToken",
-      "displayName": "Place Token",
-      "description": "Place a token on a hexagonal cell",
-      "targetCount": 1,
-      "targeting": {
-        "count": 1,
-        "validTargets": {
-          "zone": "board",
-          "owner": "any",
-          "hasComponent": ["GridLocation"]
-        }
-      },
-      "preconditions": [
-        {
-          "type": "isPlayerTurn"
-        },
-        {
-          "type": "componentValueCheck",
-          "entity": "$target.0",
-          "component": "GridLocation",
-          "property": "q",
-          "value": null,
-          "operator": "!=",
-          "errorMessage": "Target must be a hexagonal cell"
-        }
-      ],
-      "effects": [
-        {
-          "type": "createEntity",
-          "components": {
-            "Token": {
-              "color": "$param.tokenColor",
-              "playerIndex": "$param.playerIndex"
-            },
-            "GridLocation": {
-              "grid": null,
-              "row": null,
-              "column": null,
-              "q": "$component.$target.0.GridLocation.q",
-              "r": "$component.$target.0.GridLocation.r"
+            "properties": {
+                "column": { "default": null, "type": "number" },
+                "grid": { "default": null, "type": "entity" },
+                "q": { "default": null, "type": "number" },
+                "r": { "default": null, "type": "number" },
+                "row": { "default": null, "type": "number" }
             }
-          },
-          "zone": "board",
-          "storeAs": "newToken"
         },
+        "Token": {
+            "properties": {
+                "color": { "default": "red", "type": "string" },
+                "playerIndex": { "default": 0, "type": "number" }
+            }
+        }
+    },
+
+    "entityTemplates": {
+        "HexCell": {
+            "components": {
+                "GridLocation": {
+                    "column": null,
+                    "grid": null,
+                    "q": 0,
+                    "r": 0,
+                    "row": null
+                }
+            }
+        },
+        "Player": {
+            "components": {}
+        }
+    },
+
+    "metadata": {
+        "author": "ue-too",
+        "complexity": "simple",
+        "description": "Example game demonstrating hexagonal grid positioning",
+        "maxPlayers": 2,
+        "minPlayers": 2,
+        "tags": ["hexagonal", "grid", "example"]
+    },
+
+    "name": "Hex Grid Example",
+    "phases": [
         {
-          "type": "conditional",
-          "condition": {
-            "type": "componentValueCheck",
-            "entity": "$actor",
-            "component": "Player",
-            "property": "playerNumber",
-            "value": 2
-          },
-          "then": [
+            "allowedActions": ["PlaceToken"],
+            "autoAdvance": false,
+            "name": "Play"
+        }
+    ],
+
+    "rules": [],
+
+    "setup": {
+        "initialPhase": "Play",
+        "perPlayer": {
+            "template": "Player",
+            "zones": []
+        },
+        "playerCount": { "max": 2, "min": 2 },
+        "sharedZoneEntities": [
             {
-              "type": "setComponentValue",
-              "entity": "$newToken",
-              "component": "Token",
-              "values": {
-                "color": "blue",
-                "playerIndex": 1
-              }
+                "count": 19,
+                "template": "HexCell",
+                "zone": "board"
             }
-          ]
-        },
-        {
-          "type": "switchActivePlayer"
-        }
-      ]
-    }
-  ],
-
-  "phases": [
-    {
-      "name": "Play",
-      "allowedActions": ["PlaceToken"],
-      "autoAdvance": false
-    }
-  ],
-
-  "rules": [],
-
-  "setup": {
-    "playerCount": { "min": 2, "max": 2 },
-    "initialPhase": "Play",
-    "perPlayer": {
-      "template": "Player",
-      "zones": []
+        ]
     },
-    "sharedZoneEntities": [
-      {
-        "template": "HexCell",
-        "zone": "board",
-        "count": 19
-      }
-    ]
-  },
 
-  "winConditions": []
+    "version": "1.0.0",
+    "winConditions": [],
+    "zones": {
+        "board": {
+            "maxCapacity": 50,
+            "ordered": false,
+            "shared": true,
+            "visibility": "public"
+        }
+    }
 }

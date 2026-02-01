@@ -27,7 +27,7 @@ function generateConditionSource(node) {
 
 function getReturnValue(node, imports) {
     if (!node) return null;
-    
+
     switch (node.type) {
         case 'StringLiteral':
             return node.value;
@@ -54,17 +54,16 @@ async function analyzeFile(filePath) {
     }
 }
 
-
 function analyzeConditionalReturns(code, filePath = 'anonymous.ts') {
     const ast = parse(code, {
         sourceType: 'module',
         plugins: ['typescript', 'classProperties'],
-        sourceFilename: filePath
+        sourceFilename: filePath,
     });
 
     const results = {
         file: filePath,
-        methods: new Map()
+        methods: new Map(),
     };
 
     const imports = {}; // Store imported types
@@ -90,13 +89,17 @@ function analyzeConditionalReturns(code, filePath = 'anonymous.ts') {
                         returns.push({
                             line: returnNode.loc.start.line,
                             type: 'ternary',
-                            condition: generateConditionSource(returnNode.argument.test),
+                            condition: generateConditionSource(
+                                returnNode.argument.test
+                            ),
                             whenTrue: returnNode.argument.consequent.value,
                             whenFalse: returnNode.argument.alternate.value,
-                            sourceFile: filePath
+                            sourceFile: filePath,
                         });
-                    } else if (parentPath.type === 'BlockStatement' && 
-                             parentPath.parentPath.type === 'IfStatement') {
+                    } else if (
+                        parentPath.type === 'BlockStatement' &&
+                        parentPath.parentPath.type === 'IfStatement'
+                    ) {
                         // Return within if statement - already handled by IfStatement visitor
                     } else {
                         // Direct return (not in a condition)
@@ -104,21 +107,21 @@ function analyzeConditionalReturns(code, filePath = 'anonymous.ts') {
                             line: returnNode.loc.start.line,
                             type: 'direct',
                             value: getReturnValue(returnNode.argument, imports), // Pass imports
-                            sourceFile: filePath
+                            sourceFile: filePath,
                         });
                     }
                 },
 
                 IfStatement(ifPath) {
                     const ifNode = ifPath.node;
-                    console.log("If Node:", ifNode);
-                    console.log("If Node Test:", ifNode.test);
+                    console.log('If Node:', ifNode);
+                    console.log('If Node Test:', ifNode.test);
                     const returnInfo = {
                         line: ifNode.loc.start.line,
                         type: 'if',
                         condition: generateConditionSource(ifNode.test),
                         returns: [],
-                        sourceFile: filePath
+                        sourceFile: filePath,
                     };
 
                     ifPath.traverse({
@@ -126,58 +129,61 @@ function analyzeConditionalReturns(code, filePath = 'anonymous.ts') {
                             const returnValue = returnPath.node.argument;
 
                             // Debugging: Log the return value node
-                            console.log("Return Value Node:", returnValue);
+                            console.log('Return Value Node:', returnValue);
 
                             if (returnValue.type === 'CallExpression') {
                                 returnInfo.returns.push({
                                     state: getReturnValue(returnValue, imports),
-                                    condition: returnInfo.condition
+                                    condition: returnInfo.condition,
                                 });
                             } else {
                                 returnInfo.returns.push({
                                     state: getReturnValue(returnValue, imports),
-                                    condition: returnInfo.condition
+                                    condition: returnInfo.condition,
                                 });
                             }
-                        }
+                        },
                     });
 
                     // Debugging: Log the return info
-                    console.log("Return Info:", returnInfo);
+                    console.log('Return Info:', returnInfo);
 
                     returns.push(returnInfo);
                 },
 
                 SwitchStatement(switchPath) {
-                    console.log("switch statement");
+                    console.log('switch statement');
                     const switchNode = switchPath.node;
                     const returnInfo = {
                         line: switchNode.loc.start.line,
                         type: 'switch',
                         cases: [],
-                        sourceFile: filePath
+                        sourceFile: filePath,
                     };
 
                     switchPath.traverse({
                         ReturnStatement(returnPath) {
-                            console.log("return statement in switch");
+                            console.log('return statement in switch');
                             returnInfo.cases.push({
-                                state: getReturnValue(returnPath.node.argument, imports), // Pass imports
-                                condition: returnInfo.condition
+                                state: getReturnValue(
+                                    returnPath.node.argument,
+                                    imports
+                                ), // Pass imports
+                                condition: returnInfo.condition,
                             });
-                        }
+                        },
                     });
 
                     // Store the switch return information
-                    console.log("returnInfo", returnInfo);
+                    console.log('returnInfo', returnInfo);
                     returns.push(returnInfo);
-                }
+                },
             });
 
             if (returns.length > 0) {
                 results.methods.set(methodName, returns);
             }
-        }
+        },
     });
 
     return results;
@@ -186,10 +192,10 @@ function analyzeConditionalReturns(code, filePath = 'anonymous.ts') {
 function printAnalysis(results) {
     console.log(`\nAnalysis for file: ${results.file}`);
     console.log('----------------------------------------');
-    
+
     for (const [method, returns] of results.methods) {
         console.log(`\nMethod: ${method}`);
-        returns.forEach((ret) => {
+        returns.forEach(ret => {
             console.log(`  Line ${ret.line}:`);
             switch (ret.type) {
                 case 'ternary':
@@ -202,7 +208,9 @@ function printAnalysis(results) {
                     console.log(`    Type: If Statement`);
                     console.log(`    Condition: ${ret.condition}`);
                     ret.returns.forEach(r => {
-                        console.log(`    Returns "${r.state}" when: ${r.condition}`);
+                        console.log(
+                            `    Returns "${r.state}" when: ${r.condition}`
+                        );
                     });
                     break;
                 case 'direct':
@@ -217,7 +225,9 @@ function printAnalysis(results) {
 // Example usage
 async function main() {
     try {
-        const results = await analyzeFile('./src/input-state-machine/touch-state-machine.ts');
+        const results = await analyzeFile(
+            './src/input-state-machine/touch-state-machine.ts'
+        );
         printAnalysis(results);
     } catch (error) {
         console.error('Analysis failed:', error.message);

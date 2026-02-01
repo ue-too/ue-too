@@ -109,7 +109,7 @@
  * @see {@link TemplateState} for creating state implementations
  */
 
-export * from "./interface";
-export * from "./schema-factory";
+export * from './interface';
+export * from './schema-factory';
 // Hierarchical state machine POC - experimental
-export * from "./hierarchical";
+export * from './hierarchical';

@@ -1,9 +1,15 @@
-import type {Point} from "@ue-too/math";
-import {KmtOutputEvent} from "./input-state-machine/kmt-input-state-machine";
-import {TouchOutputEvent} from "./input-state-machine/touch-input-state-machine";
-import {UserInputPublisher} from "./raw-input-publisher/raw-input-publisher";
-import {CameraMux, CameraMuxPanOutput, CameraMuxZoomOutput, CameraMuxRotationOutput} from "../camera/camera-mux";
-import {CameraRig} from "../camera/camera-rig";
+import type { Point } from '@ue-too/math';
+
+import {
+    CameraMux,
+    CameraMuxPanOutput,
+    CameraMuxRotationOutput,
+    CameraMuxZoomOutput,
+} from '../camera/camera-mux';
+import { CameraRig } from '../camera/camera-rig';
+import { KmtOutputEvent } from './input-state-machine/kmt-input-state-machine';
+import { TouchOutputEvent } from './input-state-machine/touch-input-state-machine';
+import { UserInputPublisher } from './raw-input-publisher/raw-input-publisher';
 
 /**
  * Union type of all output events from state machines.
@@ -82,7 +88,11 @@ export class InputOrchestrator {
      * The publisher parameter is optional to support scenarios where event broadcasting is not needed.
      * When provided, all input events are broadcast in parallel to camera control execution.
      */
-    constructor(cameraMux: CameraMux, cameraRig: CameraRig, publisher?: UserInputPublisher) {
+    constructor(
+        cameraMux: CameraMux,
+        cameraRig: CameraRig,
+        publisher?: UserInputPublisher
+    ) {
         this._cameraMux = cameraMux;
         this._cameraRig = cameraRig;
         this._publisher = publisher;
@@ -168,32 +178,40 @@ export class InputOrchestrator {
      */
     private handleStateMachineOutput(event: OutputEvent): void {
         switch (event.type) {
-            case "pan":
+            case 'pan':
                 // Publish to observers (parallel path)
                 this._publisher?.notifyPan(event.delta);
                 // Ask CameraMux for permission and process its output
                 const panOutput = this._cameraMux.notifyPanInput(event.delta);
                 this.processPanMuxOutput(panOutput);
                 break;
-            case "zoom":
+            case 'zoom':
                 // Publish to observers (parallel path)
-                this._publisher?.notifyZoom(event.delta, event.anchorPointInViewPort);
+                this._publisher?.notifyZoom(
+                    event.delta,
+                    event.anchorPointInViewPort
+                );
                 // Ask CameraMux for permission and process its output
-                const zoomOutput = this._cameraMux.notifyZoomInput(event.delta, event.anchorPointInViewPort);
+                const zoomOutput = this._cameraMux.notifyZoomInput(
+                    event.delta,
+                    event.anchorPointInViewPort
+                );
                 this.processZoomMuxOutput(zoomOutput);
                 break;
-            case "rotate":
+            case 'rotate':
                 // Publish to observers (parallel path)
                 this._publisher?.notifyRotate(event.deltaRotation);
                 // Ask CameraMux for permission and process its output
-                const rotateOutput = this._cameraMux.notifyRotationInput(event.deltaRotation);
+                const rotateOutput = this._cameraMux.notifyRotationInput(
+                    event.deltaRotation
+                );
                 this.processRotateMuxOutput(rotateOutput);
                 break;
-            case "cursor":
+            case 'cursor':
                 // Cursor changes are handled by the state machine's uponEnter/beforeExit methods
                 // This case is here for future extension
                 break;
-            case "none":
+            case 'none':
                 // No action needed
                 break;
         }
@@ -275,7 +293,7 @@ export class InputOrchestrator {
      * @remarks
      * Allows dynamic reconfiguration of camera permission logic at runtime.
      */
-    set cameraMux(cameraMux: CameraMux){
+    set cameraMux(cameraMux: CameraMux) {
         this._cameraMux = cameraMux;
     }
 }

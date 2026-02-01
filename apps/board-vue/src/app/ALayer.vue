@@ -1,10 +1,9 @@
 <script setup lang="ts">
-    import { provideBoard } from "@ue-too/board-vue-adapter";
-    import BLayer from "./BLayer.vue";
+import { provideBoard } from '@ue-too/board-vue-adapter';
 
-    provideBoard();
+import BLayer from './BLayer.vue';
 
-
+provideBoard();
 </script>
 
 <template>

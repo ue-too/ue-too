@@ -1,9 +1,8 @@
 /**
  * PhaseCheck precondition - checks if current phase is in allowed list.
  */
-
-import { BasePrecondition } from './base';
 import type { ActionContext } from '../../core/types';
+import { BasePrecondition } from './base';
 
 /**
  * Precondition that checks if the current phase is in the allowed list.
@@ -18,24 +17,24 @@ import type { ActionContext } from '../../core/types';
  * ```
  */
 export class PhaseCheck extends BasePrecondition {
-  constructor(private allowedPhases: string[]) {
-    super();
-  }
+    constructor(private allowedPhases: string[]) {
+        super();
+    }
 
-  check(context: ActionContext): boolean {
-    return this.allowedPhases.includes(context.state.currentPhase);
-  }
+    check(context: ActionContext): boolean {
+        return this.allowedPhases.includes(context.state.currentPhase);
+    }
 
-  getErrorMessage(context: ActionContext): string {
-    return `Action not allowed in ${context.state.currentPhase} phase (allowed: ${this.allowedPhases.join(', ')})`;
-  }
+    getErrorMessage(context: ActionContext): string {
+        return `Action not allowed in ${context.state.currentPhase} phase (allowed: ${this.allowedPhases.join(', ')})`;
+    }
 
-  /**
-   * Get the list of allowed phases.
-   *
-   * @returns Array of phase names
-   */
-  getAllowedPhases(): string[] {
-    return [...this.allowedPhases];
-  }
+    /**
+     * Get the list of allowed phases.
+     *
+     * @returns Array of phase names
+     */
+    getAllowedPhases(): string[] {
+        return [...this.allowedPhases];
+    }
 }

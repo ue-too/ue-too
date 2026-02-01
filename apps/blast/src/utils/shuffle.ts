@@ -1,4 +1,4 @@
-import { Token } from "../token";
+import { Token } from '../token';
 
 export function shuffle(tokens: number[]): number[] {
     const shuffled = [...tokens];

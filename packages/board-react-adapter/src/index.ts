@@ -90,5 +90,5 @@
  * @see {@link Board} for the main component
  */
 
-export * from "./components/Board";
-export * from "./hooks";
+export * from './components/Board';
+export * from './hooks';

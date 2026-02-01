@@ -1,43 +1,43 @@
 {
-  "name": "@ue-too/blast",
-  "type": "module",
-  "version": "0.5.0",
-  "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "import": "./src/index.ts",
-      "default": "./src/index.ts"
+    "name": "@ue-too/blast",
+    "type": "module",
+    "version": "0.5.0",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./package.json": "./package.json"
     },
-    "./package.json": "./package.json"
-  },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "module": "./src/index.ts",
-  "dependencies": {
-    "@ue-too/being": "workspace:*",
-    "@ue-too/ecs": "workspace:*",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "vue": "^3.5.25"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "jest"
-  },
-  "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
-    "@testing-library/user-event": "^14.5.2",
-    "@types/jest": "^30.0.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "@vitejs/plugin-vue": "^6.0.2",
-    "identity-obj-proxy": "^3.0.0",
-    "jest": "^30.2.0",
-    "jest-environment-jsdom": "^30.2.0",
-    "ts-jest": "^29.4.5"
-  }
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "module": "./src/index.ts",
+    "dependencies": {
+        "@ue-too/being": "workspace:*",
+        "@ue-too/ecs": "workspace:*",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "vue": "^3.5.25"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "test": "jest"
+    },
+    "devDependencies": {
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.1.0",
+        "@testing-library/user-event": "^14.5.2",
+        "@types/jest": "^30.0.0",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
+        "@vitejs/plugin-react": "^4.3.4",
+        "@vitejs/plugin-vue": "^6.0.2",
+        "identity-obj-proxy": "^3.0.0",
+        "jest": "^30.2.0",
+        "jest-environment-jsdom": "^30.2.0",
+        "ts-jest": "^29.4.5"
+    }
 }

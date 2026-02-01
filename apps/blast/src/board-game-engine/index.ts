@@ -8,15 +8,18 @@
 export * from './core';
 
 // Grid System
-export { GRID_LOCATION_COMPONENT, type GridLocationComponent } from './core/grid';
 export {
-  getGridType,
-  getSquareNeighbors,
-  getHexNeighbors,
-  getSquareDistance,
-  getHexDistance,
-  hexAxialToCube,
-  hexCubeToAxial,
+    GRID_LOCATION_COMPONENT,
+    type GridLocationComponent,
+} from './core/grid';
+export {
+    getGridType,
+    getSquareNeighbors,
+    getHexNeighbors,
+    getSquareDistance,
+    getHexDistance,
+    hexAxialToCube,
+    hexCubeToAxial,
 } from './core/grid';
 
 // Main engine
@@ -36,24 +39,24 @@ export { PhaseManager } from './phase-system/phase-manager';
 
 // Re-export preconditions and effects
 export {
-  BasePrecondition,
-  AndPrecondition,
-  OrPrecondition,
-  NotPrecondition,
-  AlwaysTruePrecondition,
-  AlwaysFalsePrecondition,
-  CustomPrecondition,
-  IsPlayerTurn,
-  HasComponent,
-  PhaseCheck,
+    BasePrecondition,
+    AndPrecondition,
+    OrPrecondition,
+    NotPrecondition,
+    AlwaysTruePrecondition,
+    AlwaysFalsePrecondition,
+    CustomPrecondition,
+    IsPlayerTurn,
+    HasComponent,
+    PhaseCheck,
 } from './action-system/preconditions';
 export {
-  BaseEffect,
-  ECSEffect,
-  CompositeEffect,
-  NoOpEffect,
-  CustomEffect,
-  EmitEvent,
+    BaseEffect,
+    ECSEffect,
+    CompositeEffect,
+    NoOpEffect,
+    CustomEffect,
+    EmitEvent,
 } from './action-system/effects';
 
 // Schema (JSON game definitions)
