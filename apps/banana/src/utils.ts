@@ -548,7 +548,7 @@ export const shadows = (
         if (elevationAtPoint > 0) {
             // Shadow length scales with elevation
             // elevationAtPoint is in world units (e.g., 10, 20, 30 for ABOVE_1, ABOVE_2, ABOVE_3)
-            shadowLength = baseShadowLength * (elevationAtPoint / 10);
+            shadowLength = baseShadowLength * (elevationAtPoint / 100);
         }
 
         // Calculate shadow offset direction (sun direction)
