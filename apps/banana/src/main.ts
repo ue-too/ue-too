@@ -17,6 +17,7 @@ import {
     TrainPlacementEngine,
     TrainPlacementStateMachine,
 } from './train-kmt-state-machine';
+import { shadows } from './utils';
 
 const elevationText = document.getElementById(
     'elevation'
@@ -496,6 +497,25 @@ function step(timestamp: number) {
         if (board.context === undefined) {
             return;
         }
+
+
+        const shadowPoints = shadows(drawData, 135);
+
+        board.context.save();
+        board.context.beginPath();
+        board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+        for(let i = 1; i < shadowPoints.positive.length; i++) {
+            board.context.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+        }
+
+        board.context.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+        for(let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+            board.context.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+        }
+        board.context.closePath();
+        board.context.fillStyle = 'rgba(51, 51, 51, 0.5)';
+        board.context.fill();
+        board.context.restore();
 
         const cps = drawData.curve.getControlPoints();
 

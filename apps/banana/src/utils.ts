@@ -1,5 +1,7 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
+import { TrackSegmentDrawData } from './track';
+import { offset2 } from '@ue-too/curve';
 
 /**
  * Creates a cubic Bézier curve connecting two points with specified tangent directions and curvatures
@@ -439,3 +441,82 @@ export class GenericEntityManager<T> {
         this._liveCount--;
     }
 }
+
+/**
+ * Calculate shadow points for an elevated track segment.
+ * The shadow is projected from the track edges in the sun direction.
+ * 
+ * @param trackSegment - The track segment draw data
+ * @param sunAngle - Sun angle in degrees (0 = right, 90 = up, 180 = left, 270 = down)
+ * @param baseShadowLength - Base shadow length multiplier (default: 20)
+ * @returns Object with positive and negative shadow edge points
+ */
+export const shadows = (trackSegment: TrackSegmentDrawData, sunAngle: number, baseShadowLength: number = 20) => {
+    const steps = 10;
+    const positive: Point[] = [];
+    const negative: Point[] = [];
+    
+    // Convert sun angle from degrees to radians
+    const sunAngleRad = (sunAngle * Math.PI) / 180;
+    
+    // Track gauge (standard gauge width)
+    const trackGauge = 1.067;
+    const trackHalfWidth = trackGauge / 2;
+
+    for(let t = 0; t <= 1; t += 1 / steps) {
+        const point = trackSegment.curve.getPointbyPercentage(t);
+        const elevationAtPoint = trackSegment.elevation.from + (trackSegment.elevation.to - trackSegment.elevation.from) * t;
+        
+        // Get the tangent direction at this point on the curve
+        const tangent = PointCal.unitVector(trackSegment.curve.derivative(t));
+        
+        // Calculate perpendicular direction (orthogonal to track, pointing to the sides)
+        const orthogonalDirection = PointCal.unitVector({
+            x: -tangent.y,
+            y: tangent.x,
+        });
+
+        // Calculate track edge points (left and right sides of the track)
+        const positiveEdge = {
+            x: point.x + orthogonalDirection.x * trackHalfWidth,
+            y: point.y + orthogonalDirection.y * trackHalfWidth,
+        };
+        
+        const negativeEdge = {
+            x: point.x - orthogonalDirection.x * trackHalfWidth,
+            y: point.y - orthogonalDirection.y * trackHalfWidth,
+        };
+        
+        // Calculate shadow length based on elevation
+        // Higher elevation = longer shadow, but only for elevated tracks
+        let shadowLength = 0;
+        if (elevationAtPoint > 0) {
+            // Shadow length scales with elevation
+            // elevationAtPoint is in world units (e.g., 10, 20, 30 for ABOVE_1, ABOVE_2, ABOVE_3)
+            shadowLength = baseShadowLength * (elevationAtPoint / 100);
+        }
+
+        // Calculate shadow offset direction (sun direction)
+        const shadowOffsetX = Math.cos(sunAngleRad) * shadowLength;
+        const shadowOffsetY = Math.sin(sunAngleRad) * shadowLength;
+
+        // Project track edges in the sun direction to get shadow points
+        const positiveShadowPoint = {
+            x: positiveEdge.x + shadowOffsetX,
+            y: positiveEdge.y + shadowOffsetY,
+        };
+
+        const negativeShadowPoint = {
+            x: negativeEdge.x + shadowOffsetX,
+            y: negativeEdge.y + shadowOffsetY,
+        };
+
+        positive.push(positiveShadowPoint);
+        negative.push(negativeShadowPoint);
+    }
+
+    return {
+        positive,
+        negative,
+    };
+};

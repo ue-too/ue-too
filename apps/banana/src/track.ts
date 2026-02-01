@@ -8,7 +8,8 @@ import {
 } from '@ue-too/math';
 
 import { RTree, Rectangle } from './r-tree';
-import { GenericEntityManager } from './utils';
+import { GenericEntityManager, shadows } from './utils';
+import { Rss } from 'lucide-react';
 
 const VERTICAL_CLEARANCE = 3;
 
@@ -78,6 +79,11 @@ export type TrackSegmentDrawData = {
         to: ELEVATION;
     };
     excludeSegmentsForCollisionCheck: Set<number>;
+};
+
+export type TrackSegmentShadow = {
+    positive: Point[];
+    negative: Point[];
 };
 
 export type TrackSegmentWithCollisionAndNumber = TrackSegmentWithCollision & {
