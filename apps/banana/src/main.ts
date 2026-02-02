@@ -502,6 +502,20 @@ function step(timestamp: number) {
         const shadowPoints = shadows(drawData, 135);
 
         board.context.save();
+        board.context.fillStyle = 'rgba(0, 0, 0, 1)';
+        board.context.beginPath();
+        board.context.arc(shadowPoints.startPoint.x, shadowPoints.startPoint.y, 1.067 / 2, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
+        board.context.save();
+        board.context.fillStyle = 'rgba(0, 0, 0, 1)';
+        board.context.beginPath();
+        board.context.arc(shadowPoints.endPoint.x, shadowPoints.endPoint.y, 1.067 / 2, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+
+        board.context.save();
         board.context.beginPath();
         board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
         for(let i = 1; i < shadowPoints.positive.length; i++) {

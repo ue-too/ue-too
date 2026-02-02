@@ -214,6 +214,61 @@ export class BCurve {
             : this.get((low + 1) / points.length);
     }
 
+    /**
+     * Gets the derivative (tangent vector) at a given percentage of the curve length.
+     *
+     * @param percentage - Percentage of the curve length (0 to 1), where 0 is the start and 1 is the end
+     * @returns The derivative vector at the specified percentage along the curve
+     *
+     * @remarks
+     * This method calculates the derivative at a point specified by percentage of arc length,
+     * not by the parameter t. This is useful when you want to sample the curve uniformly
+     * by distance rather than by parameter value.
+     *
+     * @example
+     * ```typescript
+     * const curve = new BCurve([...]);
+     * const tangent = curve.derivativeByPercentage(0.5); // Derivative at midpoint
+     * const normalized = PointCal.unitVector(tangent); // Normalize for direction
+     * ```
+     */
+    public derivativeByPercentage(percentage: number): Point {
+        // this is the percentage of the curve length, not the t value
+        // this leaves room for optimization
+        let controlPointsChangedSinceLastArcLengthLUT =
+            this.arcLengthLUT.controlPoints.length != this.controlPoints.length;
+        controlPointsChangedSinceLastArcLengthLUT =
+            controlPointsChangedSinceLastArcLengthLUT ||
+            this.arcLengthLUT.controlPoints.reduce((prevVal, curVal, index) => {
+                return (
+                    prevVal ||
+                    !PointCal.isEqual(curVal, this.controlPoints[index])
+                );
+            }, false);
+        let points: number[] = [];
+        if (controlPointsChangedSinceLastArcLengthLUT) {
+            this.arcLengthLUT = this.getArcLengthLUT(1000);
+        }
+        points = [...this.arcLengthLUT.arcLengthLUT.map(item => item.length)];
+        let targetLength = percentage * this.fullLength;
+        let low = 0;
+        let high = points.length - 1;
+        let tVal: number;
+        while (low <= high) {
+            let mid = Math.floor((low + high) / 2);
+            if (points[mid] == targetLength) {
+                tVal = (mid + 1) / points.length;
+                return this.derivative(tVal);
+            } else if (points[mid] < targetLength) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        tVal = low >= points.length ? 1 : (low + 1) / points.length;
+        return this.derivative(tVal);
+    }
+
     public getDerivativeControlPoints(controlPoints: Point[]): Point[] {
         const derivativeControlPoints: Point[] = [];
         for (let index = 1; index < controlPoints.length; index++) {

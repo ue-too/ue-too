@@ -453,6 +453,8 @@ type ShadowCacheKey = string;
 type ShadowCacheEntry = {
     positive: Point[];
     negative: Point[];
+    startPoint: Point;
+    endPoint: Point;
 };
 
 /**
@@ -496,7 +498,7 @@ export const shadows = (
     trackSegment: TrackSegmentDrawData,
     sunAngle: number,
     baseShadowLength: number = 20
-): { positive: Point[]; negative: Point[] } => {
+): ShadowCacheEntry => {
     // Check cache first
     const cacheKey = getShadowCacheKey(trackSegment, sunAngle, baseShadowLength);
     const cached = shadowCache.get(cacheKey);
@@ -516,6 +518,26 @@ export const shadows = (
     const trackGauge = 1.067;
     const trackHalfWidth = trackGauge / 2;
 
+    let startPoint = trackSegment.curve.getPointbyPercentage(0);
+    let endPoint = trackSegment.curve.getPointbyPercentage(1);
+
+    let startElevation = trackSegment.elevation.from;
+    let endElevation = trackSegment.elevation.to;
+
+    const shadowOffsetXStart = Math.cos(sunAngleRad) * baseShadowLength * (startElevation / 100);;
+    const shadowOffsetYStart = Math.sin(sunAngleRad) * baseShadowLength * (startElevation / 100);;
+    const shadowOffsetXEnd = Math.cos(sunAngleRad) * baseShadowLength * (endElevation / 100);;
+    const shadowOffsetYEnd = Math.sin(sunAngleRad) * baseShadowLength * (endElevation / 100);;
+
+    startPoint = {
+        x: startPoint.x + shadowOffsetXStart,
+        y: startPoint.y + shadowOffsetYStart,
+    };
+    endPoint = {
+        x: endPoint.x + shadowOffsetXEnd,
+        y: endPoint.y + shadowOffsetYEnd,
+    };
+
     // Iterate from 0 to steps (inclusive) to ensure t=0 and t=1 are both included
     for(let i = 0; i <= steps; i++) {
         const t = i / steps; // This guarantees t=0 and t=1 exactly
@@ -523,7 +545,7 @@ export const shadows = (
         const elevationAtPoint = trackSegment.elevation.from + (trackSegment.elevation.to - trackSegment.elevation.from) * t;
         
         // Get the tangent direction at this point on the curve
-        const tangent = PointCal.unitVector(trackSegment.curve.derivative(t));
+        const tangent = PointCal.unitVector(trackSegment.curve.derivativeByPercentage(t));
         
         // Calculate perpendicular direction (orthogonal to track, pointing to the sides)
         const orthogonalDirection = PointCal.unitVector({
@@ -573,10 +595,17 @@ export const shadows = (
     const result = {
         positive,
         negative,
+        startPoint,
+        endPoint,
     };
 
     // Store in cache
-    shadowCache.set(cacheKey, result);
+    shadowCache.set(cacheKey, {
+        positive,
+        negative,
+        startPoint,
+        endPoint,
+    });
 
     return result;
 };
