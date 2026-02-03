@@ -1,6 +1,5 @@
 import { Board, drawArrow, drawRuler } from '@ue-too/board';
 import { mercatorProjection } from '@ue-too/border';
-import { BCurve } from '@ue-too/curve';
 import { PointCal } from '@ue-too/math';
 import { Point } from '@ue-too/math';
 import Stats from 'stats.js';
@@ -11,7 +10,6 @@ import {
     createLayoutStateMachine,
 } from './kmt-state-machine';
 import './media';
-import { PreviewCurveCalculator } from './new-joint';
 import { ELEVATION } from './track';
 import {
     TrainPlacementEngine,
@@ -518,12 +516,12 @@ function step(timestamp: number) {
         board.context.save();
         board.context.beginPath();
         board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
-        for(let i = 1; i < shadowPoints.positive.length; i++) {
+        for (let i = 1; i < shadowPoints.positive.length; i++) {
             board.context.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
         }
 
         board.context.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
-        for(let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+        for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
             board.context.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
         }
         board.context.closePath();
@@ -780,31 +778,31 @@ function step(timestamp: number) {
 
     const topLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const topRightCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const bottomLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        };
 
     const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
         topLeftCornerInViewPort
@@ -833,8 +831,6 @@ window.requestAnimationFrame(step);
 
 // Initialize GeoJSON data
 initializeGeoJSON();
-
-const curveCalculator = new PreviewCurveCalculator();
 
 utilButton.addEventListener('click', () => {
     // NOTE check track draw order

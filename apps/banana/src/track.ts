@@ -1,4 +1,4 @@
-import { AABBIntersects, BCurve, offset, offset2 } from '@ue-too/curve';
+import { AABBIntersects, BCurve, offset2 } from '@ue-too/curve';
 import {
     Point,
     PointCal,
@@ -8,8 +8,7 @@ import {
 } from '@ue-too/math';
 
 import { RTree, Rectangle } from './r-tree';
-import { GenericEntityManager, shadows } from './utils';
-import { Rss } from 'lucide-react';
+import { GenericEntityManager } from './utils';
 
 const VERTICAL_CLEARANCE = 3;
 
@@ -1289,7 +1288,7 @@ export class TrackGraph {
                 console.log(
                     'tangent + reverse tangent count',
                     joint.direction.tangent.size +
-                        joint.direction.reverseTangent.size
+                    joint.direction.reverseTangent.size
                 );
                 console.log('for tangent direction: ');
                 joint.direction.tangent.forEach(destinationJointNumber => {

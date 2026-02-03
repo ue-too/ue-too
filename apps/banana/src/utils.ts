@@ -269,9 +269,9 @@ function getQuadraticTangentCurvature(
     const unitTangent =
         tangentMagnitude > 0.001
             ? {
-                  x: tangentVector.x / tangentMagnitude,
-                  y: tangentVector.y / tangentMagnitude,
-              }
+                x: tangentVector.x / tangentMagnitude,
+                y: tangentVector.y / tangentMagnitude,
+            }
             : { x: 1, y: 0 };
 
     return {
@@ -510,10 +510,10 @@ export const shadows = (
     const steps = 10;
     const positive: Point[] = [];
     const negative: Point[] = [];
-    
+
     // Convert sun angle from degrees to radians
     const sunAngleRad = (sunAngle * Math.PI) / 180;
-    
+
     // Track gauge (standard gauge width)
     const trackGauge = 1.067;
     const trackHalfWidth = trackGauge / 2;
@@ -524,10 +524,10 @@ export const shadows = (
     let startElevation = trackSegment.elevation.from;
     let endElevation = trackSegment.elevation.to;
 
-    const shadowOffsetXStart = Math.cos(sunAngleRad) * baseShadowLength * (startElevation / 100);;
-    const shadowOffsetYStart = Math.sin(sunAngleRad) * baseShadowLength * (startElevation / 100);;
-    const shadowOffsetXEnd = Math.cos(sunAngleRad) * baseShadowLength * (endElevation / 100);;
-    const shadowOffsetYEnd = Math.sin(sunAngleRad) * baseShadowLength * (endElevation / 100);;
+    const shadowOffsetXStart = Math.cos(sunAngleRad) * baseShadowLength * (startElevation / 100);
+    const shadowOffsetYStart = Math.sin(sunAngleRad) * baseShadowLength * (startElevation / 100);
+    const shadowOffsetXEnd = Math.cos(sunAngleRad) * baseShadowLength * (endElevation / 100);
+    const shadowOffsetYEnd = Math.sin(sunAngleRad) * baseShadowLength * (endElevation / 100);
 
     startPoint = {
         x: startPoint.x + shadowOffsetXStart,
@@ -539,14 +539,14 @@ export const shadows = (
     };
 
     // Iterate from 0 to steps (inclusive) to ensure t=0 and t=1 are both included
-    for(let i = 0; i <= steps; i++) {
+    for (let i = 0; i <= steps; i++) {
         const t = i / steps; // This guarantees t=0 and t=1 exactly
         const point = trackSegment.curve.getPointbyPercentage(t);
         const elevationAtPoint = trackSegment.elevation.from + (trackSegment.elevation.to - trackSegment.elevation.from) * t;
-        
+
         // Get the tangent direction at this point on the curve
         const tangent = PointCal.unitVector(trackSegment.curve.derivativeByPercentage(t));
-        
+
         // Calculate perpendicular direction (orthogonal to track, pointing to the sides)
         const orthogonalDirection = PointCal.unitVector({
             x: -tangent.y,
@@ -558,12 +558,12 @@ export const shadows = (
             x: point.x + orthogonalDirection.x * trackHalfWidth,
             y: point.y + orthogonalDirection.y * trackHalfWidth,
         };
-        
+
         const negativeEdge = {
             x: point.x - orthogonalDirection.x * trackHalfWidth,
             y: point.y - orthogonalDirection.y * trackHalfWidth,
         };
-        
+
         // Calculate shadow length based on elevation
         // Higher elevation = longer shadow, but only for elevated tracks
         let shadowLength = 0;
