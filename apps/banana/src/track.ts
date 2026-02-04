@@ -1926,7 +1926,7 @@ export class TrackCurveManager {
             console.warn('track segment tree entry not found');
             return;
         }
-        this._internalRTree.remove(rectangle, trackSegmentTreeEntry);
+        this._internalRTree.removeByData(trackSegmentTreeEntry);
         this._internalTrackCurveManager.destroyEntity(curveNumber);
         this._drawDataDirty = true;
     }
