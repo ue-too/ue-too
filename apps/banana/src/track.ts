@@ -12,7 +12,7 @@ import { GenericEntityManager } from './utils';
 
 const VERTICAL_CLEARANCE = 3;
 
-const LEVEL_HEIGHT = 10;
+export const LEVEL_HEIGHT = 10;
 
 export type TrackSegment = {
     t0Joint: number;
