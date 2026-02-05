@@ -6,6 +6,7 @@ import { PixiCanvasProvider, usePixiCanvas } from '@/contexts/pixi';
 import { useInitializePixiApp } from '@/hooks/pixi';
 import { useBoardCameraState } from '@/hooks/pixi/camera';
 import { useCanvasSize, useViewportScrollBar } from '@/hooks/pixi/utils';
+import { initApp } from '@/utils/pixi';
 
 import { appIsReady } from '../utils/pixi';
 import { ScrollBarDisplay } from './canvas/scrollbar';
@@ -21,7 +22,7 @@ import { Toolbar } from '.';
 export const PixiCanvas = (
     option: { fullScreen: boolean } = { fullScreen: true }
 ): React.ReactNode => {
-    const { canvasRef } = useInitializePixiApp(option);
+    const { canvasRef } = useInitializePixiApp(option, initApp);
 
     return <canvas ref={canvasRef} id="graph" />;
 };

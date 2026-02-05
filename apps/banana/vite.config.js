@@ -33,7 +33,6 @@ export default defineConfig({
         '**/*.webp',
     ],
     server: {
-        host: true,
         strictPort: false,
     },
 });
