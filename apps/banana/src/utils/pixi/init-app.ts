@@ -27,10 +27,6 @@ export const initApp = async (
     const pixiGrid = new PixiGrid(grid);
     baseComponents.app.stage.addChild(pixiGrid);
 
-    baseComponents.camera.on('zoom', (_, cameraState) => {
-        pixiGrid.update(cameraState.zoomLevel);
-    });
-
     const expandedInputTracker = new ExpandedInputTracker(baseComponents.canvasProxy, pixiGrid, baseComponents.camera);
     const kmtInputStateMachine = createKmtInputStateMachineExpansion(expandedInputTracker);
     baseComponents.kmtParser.stateMachine = kmtInputStateMachine;

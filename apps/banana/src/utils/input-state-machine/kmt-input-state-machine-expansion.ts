@@ -44,39 +44,6 @@ export type KmtInputStateMachineExpansionStates = KmtInputStates | CreateStateTy
 
 export type KmtExpandedStateMachine = StateMachine<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
 
-/**
- * Type helper that safely adapts a state with original generics to work with expanded generics.
- * 
- * @remarks
- * Since the expansion types are supersets of the original types, states typed with
- * the original generics can safely be used with the expanded generics. This type
- * assertion is safe because:
- * - Expanded context extends original context (all original properties are present)
- * - Expanded event mapping extends original event mapping (all original events are present)
- * - Expanded states include original states (all original states are present)
- * - Expanded output mapping extends original output mapping (all original outputs are present)
- * 
- * This helper function provides a type-safe way to use original states in the expansion.
- */
-function adaptStateToExpansion<
-    T extends State<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>
->(
-    state: T
-): State<
-    KmtInputStateMachineExpansionEventMapping,
-    KmtInputStateMachineExpansionContext,
-    KmtInputStateMachineExpansionStates,
-    KmtInputStateMachineExpansionEventOutputMapping
-> {
-    // Type assertion is safe because expansion types are supersets
-    return state as unknown as State<
-        KmtInputStateMachineExpansionEventMapping,
-        KmtInputStateMachineExpansionContext,
-        KmtInputStateMachineExpansionStates,
-        KmtInputStateMachineExpansionEventOutputMapping
-    >;
-}
-
 export const createAdaptedStateToExpansionFunc = <OldState extends State<any, any, any, any>, NewState extends State<any, any, any, any>>() => {
     return (state: OldState): NewState => {
         return state as unknown as NewState;
