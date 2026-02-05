@@ -28,7 +28,7 @@ export function Toolbar() {
                 <Redo />
             </Button>
 
-            <Separator orientation="vertical" className="mx-1 !h-6" />
+            <Separator orientation="vertical" className="mx-1 h-6!" />
 
             {/* Text Formatting */}
             <Button variant="ghost" size="icon-sm" aria-label="Bold">
@@ -41,7 +41,7 @@ export function Toolbar() {
                 <Underline />
             </Button>
 
-            <Separator orientation="vertical" className="mx-1 !h-6" />
+            <Separator orientation="vertical" className="mx-1 h-6!" />
 
             {/* Alignment */}
             <Button variant="ghost" size="icon-sm" aria-label="Align left">
@@ -54,7 +54,7 @@ export function Toolbar() {
                 <AlignRight />
             </Button>
 
-            <Separator orientation="vertical" className="mx-1 !h-6" />
+            <Separator orientation="vertical" className="mx-1 h-6!" />
 
             {/* Lists */}
             <Button variant="ghost" size="icon-sm" aria-label="Bullet list">
@@ -64,7 +64,7 @@ export function Toolbar() {
                 <ListOrdered />
             </Button>
 
-            <Separator orientation="vertical" className="mx-1 !h-6" />
+            <Separator orientation="vertical" className="mx-1 h-6!" />
 
             {/* Insert */}
             <Button variant="ghost" size="sm" className="gap-1.5">
