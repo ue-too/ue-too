@@ -18,10 +18,10 @@
     "include": ["src/**/*", "assets/*.json"],
     "references": [
         {
-            "path": "../../packages/ecs"
+            "path": "../../packages/math"
         },
         {
-            "path": "../../packages/border"
+            "path": "../../packages/ecs"
         },
         {
             "path": "../../packages/dynamics"
@@ -30,16 +30,19 @@
             "path": "../../packages/curve"
         },
         {
+            "path": "../../packages/border"
+        },
+        {
+            "path": "../../packages/board-pixi-integration"
+        },
+        {
+            "path": "../../packages/board"
+        },
+        {
             "path": "../../packages/being"
         },
         {
             "path": "../../packages/animate"
-        },
-        {
-            "path": "../../packages/math"
-        },
-        {
-            "path": "../../packages/board"
         }
     ]
 }
