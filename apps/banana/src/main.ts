@@ -16,7 +16,6 @@ import {
     TrainPlacementStateMachine,
 } from './train-kmt-state-machine';
 import { shadows } from './utils';
-import { BCurve } from '@ue-too/curve';
 
 const elevationText = document.getElementById(
     'elevation'
@@ -551,39 +550,6 @@ function step(timestamp: number) {
             drawElevationCurves(drawData, board.context);
             elevationCurvesMap = [];
         }
-
-        // const cps = drawData.curve.getControlPoints();
-
-        // board.context.save();
-        // board.context.strokeStyle = createGradient(
-        //     board.context,
-        //     drawData.originalElevation.from,
-        //     drawData.originalElevation.to,
-        //     drawData.originalTrackSegment.startJointPosition,
-        //     drawData.originalTrackSegment.endJointPosition
-        // );
-        // board.context.lineWidth = 1.067;
-        // board.context.beginPath();
-        // board.context.moveTo(cps[0].x, cps[0].y);
-        // if (cps.length === 3) {
-        //     board.context.quadraticCurveTo(
-        //         cps[1].x,
-        //         cps[1].y,
-        //         cps[2].x,
-        //         cps[2].y
-        //     );
-        // } else {
-        //     board.context.bezierCurveTo(
-        //         cps[1].x,
-        //         cps[1].y,
-        //         cps[2].x,
-        //         cps[2].y,
-        //         cps[3].x,
-        //         cps[3].y
-        //     );
-        // }
-        // board.context.stroke();
-        // board.context.restore();
     });
 
     // offset as line segments
@@ -1002,7 +968,7 @@ function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRend
         drawData.originalTrackSegment.startJointPosition,
         drawData.originalTrackSegment.endJointPosition
     );
-    context.lineWidth = 1.067;
+    context.lineWidth = drawData.gauge;
     context.beginPath();
     context.moveTo(cps[0].x, cps[0].y);
     if (cps.length === 3) {

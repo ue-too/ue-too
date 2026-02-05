@@ -69,6 +69,7 @@ export type TrackSegmentDrawData = {
             end: number;
         };
     };
+    gauge: number; // track gauge in meters
     elevation: {
         from: number;
         to: number;
@@ -1496,6 +1497,7 @@ export class TrackCurveManager {
                             drawIndex
                         );
                     }).bind(this),
+                    gauge: trackSegment.segment.gauge,
                 };
                 res.push(drawData);
             });

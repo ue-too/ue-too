@@ -4,9 +4,10 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { usePixiCanvas } from '@/contexts/pixi';
 
 import { PixiAppComponents, initApp } from '../../utils/pixi';
+import { InitAppOptions } from '@/utils/pixi/init-app';
 
-export const useInitializePixiApp = (
-    option: { fullScreen: boolean } = { fullScreen: true }
+export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
+    option: Partial<T>
 ) => {
     const { setResult } = usePixiCanvas();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);

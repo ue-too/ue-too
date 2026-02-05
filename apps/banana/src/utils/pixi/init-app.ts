@@ -9,6 +9,8 @@ import {
     VanillaTouchEventParser,
     createDefaultCameraRig,
     createTouchInputStateMachine,
+    minZoomLevelBaseOnDimensions,
+    zoomLevelBoundariesShouldUpdate,
 } from '@ue-too/board';
 import { RawUserInputPublisher } from '@ue-too/board';
 import {
@@ -29,7 +31,7 @@ import { createKmtInputStateMachineExpansion, ExpandedInputTracker } from '../in
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
 
-export type PixiAppComponents = {
+export type BaseAppComponents = {
     app: Application;
     camera: DefaultBoardCamera;
     canvasProxy: CanvasProxy;
@@ -39,15 +41,77 @@ export type PixiAppComponents = {
     kmtInputStateMachine: StateMachine;
     kmtParser: VanillaKMTEventParser;
     touchParser: TouchEventParser;
-    pixiGrid: PixiGrid;
     cleanup: () => void;
     cleanups: (() => void)[];
+}
+
+export type PixiAppComponents = BaseAppComponents & {
+    pixiGrid: PixiGrid;
+};
+
+export type InitAppOptions = {
+    fullScreen: boolean;
+    limitEntireViewPort: boolean;
 };
 
 export const initApp = async (
     canvasElement: HTMLCanvasElement,
-    option: { fullScreen: boolean } = { fullScreen: true }
+    option: Partial<InitAppOptions> = { fullScreen: true, limitEntireViewPort: true }
 ): Promise<PixiAppComponents> => {
+
+    // Intialize the application.
+    const baseComponents = await baseInitApp(canvasElement, option);
+
+    const grid = new Grid(10, 10);
+    const pixiGrid = new PixiGrid(grid);
+    baseComponents.app.stage.addChild(pixiGrid);
+
+    baseComponents.camera.on('zoom', (_, cameraState) => {
+        pixiGrid.update(cameraState.zoomLevel);
+    });
+
+    const expandedInputTracker = new ExpandedInputTracker(baseComponents.canvasProxy, pixiGrid, baseComponents.camera);
+    const kmtInputStateMachine = createKmtInputStateMachineExpansion(expandedInputTracker);
+    baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
+    baseComponents.kmtInputStateMachine = kmtInputStateMachine;
+
+
+    // Load the bunny texture.
+    const imageUrl = new URL('../../../assets/bala.png', import.meta.url).href;
+    const texture = await Assets.load(imageUrl);
+    // Create a new Sprite from an image path.
+    const bala = new Sprite(texture);
+
+    baseComponents.app.stage.addChild(bala);
+
+    // Center the sprite's anchor point.
+    bala.anchor.set(0.5);
+
+    // Move the sprite to the center of the screen.
+    bala.x = 0;
+    bala.y = 0;
+
+    // Add an animation loop callback to the application's ticker.
+
+    return {
+        ...baseComponents,
+        pixiGrid,
+    };
+};
+
+export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application, components: PixiAppComponents } => {
+    if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
+        return { ready: false };
+    }
+    return { ready: true, app: result.components.app, components: result.components };
+};
+
+export const baseInitApp = async (
+    canvasElement: HTMLCanvasElement,
+    option: Partial<InitAppOptions> = { fullScreen: true, limitEntireViewPort: true }
+): Promise<BaseAppComponents> => {
+
+    const { fullScreen = true, limitEntireViewPort = true } = option;
     // Create a PixiJS application.
     console.log('canvasElement', canvasElement);
     const app = new Application();
@@ -84,7 +148,7 @@ export const initApp = async (
         canvas: canvasElement,
         antialias: true,
         backgroundAlpha: 0,
-        resizeTo: option.fullScreen ? window : undefined,
+        resizeTo: fullScreen ? window : undefined,
     });
 
     camera.viewPortHeight = app.renderer.height;
@@ -94,22 +158,28 @@ export const initApp = async (
     app.renderer.on('resize', (width: number, height: number) => {
         camera.viewPortWidth = width;
         camera.viewPortHeight = height;
+        if (limitEntireViewPort) {
+            const targetMinZoomLevel = minZoomLevelBaseOnDimensions(
+                camera.boundaries,
+                width,
+                height,
+                camera.rotation
+            );
+            if (
+                targetMinZoomLevel != undefined &&
+                zoomLevelBoundariesShouldUpdate(
+                    camera.zoomBoundaries,
+                    targetMinZoomLevel
+                )
+            ) {
+                camera.setMinZoomLevel(targetMinZoomLevel);
+            }
+        }
     });
 
-    const grid = new Grid(10, 10);
-    const pixiGrid = new PixiGrid(grid);
-    app.stage.addChild(pixiGrid);
-
-    camera.on('zoom', (_, cameraState) => {
-        pixiGrid.update(cameraState.zoomLevel);
-    });
-
-    const expandedInputTracker = new ExpandedInputTracker(canvasProxy, pixiGrid, camera);
-    // const kmtInputStateMachine = createKmtInputStateMachine(
-    //     observableInputTracker
-    // );
-    const kmtInputStateMachine = createKmtInputStateMachineExpansion(expandedInputTracker);
-
+    const kmtInputStateMachine = createKmtInputStateMachine(
+        observableInputTracker
+    );
 
     const kmtParser = new VanillaKMTEventParser(
         kmtInputStateMachine,
@@ -163,11 +233,11 @@ export const initApp = async (
     // app.stage.addChild(bala);
 
     // Center the sprite's anchor point.
-    bala.anchor.set(0.5);
+    // bala.anchor.set(0.5);
 
     // Move the sprite to the center of the screen.
-    bala.x = 0;
-    bala.y = 0;
+    // bala.x = 0;
+    // bala.y = 0;
 
     // Add an animation loop callback to the application's ticker.
     app.ticker.add(time => {
@@ -195,9 +265,7 @@ export const initApp = async (
         }
     });
 
-
     const cleanup = () => {
-        // pixiInputParser.tearDown();
         kmtParser.tearDown();
         canvasProxy.tearDown();
         touchParser.tearDown();
@@ -215,13 +283,6 @@ export const initApp = async (
         touchParser,
         cleanup,
         cleanups,
-        pixiGrid,
     };
 };
 
-export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application, components: PixiAppComponents } => {
-    if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
-        return { ready: false };
-    }
-    return { ready: true, app: result.components.app, components: result.components };
-};
