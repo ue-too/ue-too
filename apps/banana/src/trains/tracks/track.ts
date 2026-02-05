@@ -7,8 +7,8 @@ import {
     sameDirection,
 } from '@ue-too/math';
 
-import { RTree, Rectangle } from './r-tree';
-import { GenericEntityManager } from './utils';
+import { RTree, Rectangle } from '../r-tree';
+import { GenericEntityManager } from '../../utils';
 
 const VERTICAL_CLEARANCE = 3;
 

@@ -8,13 +8,13 @@ import {
     CurveCreationEngine,
     NewJointType,
     createLayoutStateMachine,
-} from './kmt-state-machine';
+} from './trains/kmt-state-machine';
 import './media';
-import { ELEVATION, LEVEL_HEIGHT, TrackSegmentDrawData } from './track';
+import { ELEVATION, LEVEL_HEIGHT, TrackSegmentDrawData } from './trains/tracks/track';
 import {
     TrainPlacementEngine,
     TrainPlacementStateMachine,
-} from './train-kmt-state-machine';
+} from './trains';
 import { shadows } from './utils';
 
 const elevationText = document.getElementById(

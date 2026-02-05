@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 import { usePixiCanvas } from '@/contexts/pixi';
 
-import { PixiAppComponents, initApp } from '../../utils/pixi';
+import { PixiAppComponents } from '../../utils/pixi';
 import { InitAppOptions } from '@/utils/pixi/init-app';
 
 export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions, C extends PixiAppComponents = PixiAppComponents>(

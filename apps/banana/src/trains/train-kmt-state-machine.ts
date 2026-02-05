@@ -5,11 +5,10 @@ import {
     TemplateState,
     TemplateStateMachine,
 } from '@ue-too/being';
-import { approximately } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 
-import { TrackGraph } from './track';
-import { Train, TrainPosition } from './trains/formation';
+import { TrackGraph } from './tracks/track';
+import { Train, TrainPosition } from './formation';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
@@ -141,7 +140,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
                     ) {
                         const lastOccupiedTrack =
                             occupiedTrackSegments[
-                                occupiedTrackSegments.length - 1
+                            occupiedTrackSegments.length - 1
                             ];
                         const lastOccupiedTrackSegment =
                             this._trackGraph.getTrackSegmentWithJoints(
@@ -214,65 +213,6 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
         };
     }
 }
-
-const THROTTLE_STEPS_KEYS = [
-    'er',
-    'b7',
-    'b6',
-    'b5',
-    'b4',
-    'b3',
-    'b2',
-    'b1',
-    'N',
-    'p1',
-    'p2',
-    'p3',
-    'p4',
-    'p5',
-] as const;
-
-export type ThrottleStepValues<T extends readonly string[]> = {
-    [K in T[number]]: number;
-};
-
-type CreateStateType<ArrayLiteral extends readonly string[]> =
-    ArrayLiteral[number];
-
-export type ThrottleSteps = CreateStateType<typeof THROTTLE_STEPS_KEYS>;
-
-/**
- * Utility type that creates an object type mapping each key from a string union type to a value type.
- * @template Keys - The string union type to use as keys
- * @template Value - The type to map each key to (defaults to number)
- *
- * @example
- * type MyKeys = "a" | "b" | "c";
- * type MyMap = MapStringUnionToValue<MyKeys, number>;
- * // Results in: { a: number; b: number; c: number; }
- */
-export type MapStringUnionToValue<Keys extends string, Value = number> = {
-    [K in Keys]: Value;
-};
-
-export type ThrottleAccelerationMap = MapStringUnionToValue<ThrottleSteps>;
-
-export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
-    er: -1.3,
-    b7: -1.2,
-    b6: -1.0,
-    b5: -0.7,
-    b4: -0.5,
-    b3: -0.3,
-    b2: -0.2,
-    b1: -0.1,
-    N: 0,
-    p1: 0.1,
-    p2: 0.2,
-    p3: 0.3,
-    p4: 0.5,
-    p5: 0.7,
-};
 
 export class TrainPlacementEngine implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
@@ -392,11 +332,11 @@ export class TrainPlacementIDLEState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-        startPlacement: {
-            action: NO_OP,
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-    };
+            startPlacement: {
+                action: NO_OP,
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
+            },
+        };
 }
 
 export class TrainPlacementHoverForPlacementState extends TemplateState<
@@ -409,35 +349,35 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-        endPlacement: {
-            action: context => {
-                context.cancelCurrentTrainPlacement();
+            endPlacement: {
+                action: context => {
+                    context.cancelCurrentTrainPlacement();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        pointerup: {
-            action: (context, event) => {
-                context.placeTrain(event.position);
+            pointerup: {
+                action: (context, event) => {
+                    context.placeTrain(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-        pointermove: {
-            action: (context, event) => {
-                context.hoverForPlacement(event.position);
+            pointermove: {
+                action: (context, event) => {
+                    context.hoverForPlacement(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-        escapeKey: {
-            action: context => {
-                context.cancelCurrentTrainPlacement();
+            escapeKey: {
+                action: context => {
+                    context.cancelCurrentTrainPlacement();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        flipTrainDirection: {
-            action: context => {
-                context.flipTrainDirection();
+            flipTrainDirection: {
+                action: context => {
+                    context.flipTrainDirection();
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-    };
+        };
 }

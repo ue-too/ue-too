@@ -14,7 +14,7 @@ import {
 } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
 
-import { PreviewCurveCalculator } from './new-joint';
+import { PreviewCurveCalculator } from './tracks/new-joint';
 import {
     ELEVATION,
     ProjectionCurveResult,
@@ -23,7 +23,7 @@ import {
     ProjectionPositiveResult,
     ProjectionResult,
     TrackGraph,
-} from './track';
+} from './tracks/track';
 
 export type LayoutStates =
     | 'IDLE'
