@@ -15,5 +15,5 @@
         "types": []
     },
     "extends": "../../tsconfig.base.json",
-    "include": ["src/**/*"]
+    "include": ["src/**/*", "routes/**/*", "routeTree.gen.ts"]
 }
