@@ -9,17 +9,30 @@
         "test": "jest"
     },
     "dependencies": {
+        "@lexical/code": "^0.40.0",
+        "@lexical/link": "^0.40.0",
+        "@lexical/list": "^0.40.0",
+        "@lexical/react": "^0.40.0",
         "@tailwindcss/vite": "^4.1.18",
+        "@tanstack/react-router": "^1.158.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "lexical": "^0.40.0",
         "lucide-react": "^0.563.0",
         "radix-ui": "^1.4.3",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
         "tailwind-merge": "^3.4.0",
-        "tailwindcss": "^4.1.18"
+        "tailwindcss": "^4.1.18",
+        "pixi.js": "8.14.0",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
+        "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board": "workspace:*",
+        "@ue-too/math": "workspace:*",
+        "@ue-too/being": "workspace:*"
     },
     "devDependencies": {
+        "@tanstack/router-plugin": "^1.158.1",
         "@types/react": "^19.2.9",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.2",

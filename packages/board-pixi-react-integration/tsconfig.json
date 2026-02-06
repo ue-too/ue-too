@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "composite": true,
+        "declaration": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "dist",
+        "rootDir": "src",
+        "strict": true,
+        "tsBuildInfoFile": "dist/board-pixi-react-integration.tsbuildinfo",
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../board"
+        },
+        {
+            "path": "../board-pixi-integration"
+        }
+    ]
+}

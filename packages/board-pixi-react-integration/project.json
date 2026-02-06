@@ -1,0 +1,52 @@
+{
+  "name": "board-pixi-react-integration",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/board-pixi-react-integration/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts --external pixi.js --external react --external react-dom --external @ue-too/board-pixi-integration --external @ue-too/board",
+        "cwd": "packages/board-pixi-react-integration"
+      }
+    },
+    "build:bun": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf dist && bun run ../../scripts/build.ts",
+        "cwd": "packages/board-pixi-react-integration"
+      }
+    },
+    "move-package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../scripts/move-package.mjs",
+        "cwd": "packages/board-pixi-react-integration"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bun test",
+        "cwd": "packages/board-pixi-react-integration"
+      }
+    },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../../scripts/publish-package.mjs",
+        "cwd": "packages/board-pixi-react-integration/dist"
+      }
+    },
+    "docs:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf ../../docs/board-pixi-react-integration && bun run typedoc --options typedoc.json --skipErrorChecking",
+        "cwd": "packages/board-pixi-react-integration"
+      }
+    }
+  },
+  "tags": [],
+  "implicitDependencies": []
+}

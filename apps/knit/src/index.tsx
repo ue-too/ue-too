@@ -1,12 +1,42 @@
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+// e.g. in apps/knit/src/board-pixi-react-integration.d.ts
+import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
+import type { PixiCanvasRegistry } from '@ue-too/board-pixi-react-integration';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { routeTree } from '../routeTree.gen';
+import type { PixiGrid } from './knit-grid/grid-pixi';
 import './style.css';
-import App from './App';
+
+export type KnitAppComponents = BaseAppComponents & {
+    pixiGrid: PixiGrid;
+};
+
+declare module '@ue-too/board-pixi-react-integration' {
+    interface PixiCanvasRegistry {
+        components: BaseAppComponents;
+    }
+}
+
+/**
+ * Router instance. The route tree is generated from routes/ by @tanstack/router-plugin.
+ */
+const router = createRouter({
+    routeTree,
+    defaultPreload: 'intent',
+    scrollRestoration: true,
+});
+
+declare module '@tanstack/react-router' {
+    interface Register {
+        router: typeof router;
+    }
+}
 
 /**
  * React application entry point.
- * Mounts the App component to the root element.
+ * Mounts the router to the root element.
  */
 const rootElement = document.getElementById('root');
 
@@ -20,6 +50,6 @@ const root = createRoot(rootElement);
 
 root.render(
     <StrictMode>
-        <App />
+        <RouterProvider router={router} />
     </StrictMode>
 );

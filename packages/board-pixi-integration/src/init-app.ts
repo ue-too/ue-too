@@ -23,7 +23,7 @@ import {
 } from '@ue-too/board';
 import { Application, Matrix } from 'pixi.js';
 
-export type BaseAppComponents = {
+export interface BaseAppComponents {
     app: Application;
     camera: DefaultBoardCamera;
     canvasProxy: CanvasProxy;
@@ -49,7 +49,6 @@ export const baseInitApp = async (
 
     const { fullScreen = true, limitEntireViewPort = true } = option;
     // Create a PixiJS application.
-    console.log('canvasElement', canvasElement);
     const app = new Application();
 
     const cleanups: (() => void)[] = [];
