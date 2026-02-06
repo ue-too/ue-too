@@ -1,11 +1,8 @@
-import { translationHeightOf, translationWidthOf } from '@ue-too/board';
-import { convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
-import { useCallback, useMemo, useRef } from 'react';
-
 import { PixiCanvasProvider, usePixiCanvas } from '@/contexts/pixi';
 import { useInitializePixiApp } from '@/hooks/pixi';
 import { useBoardCameraState } from '@/hooks/pixi/camera';
-import { useCanvasSize, useViewportScrollBar } from '@/hooks/pixi/utils';
+import { useCanvasSize } from '@/hooks/pixi/utils';
+import { initApp } from '@/utils/pixi';
 
 import { appIsReady } from '../utils/pixi';
 import { ScrollBarDisplay } from './canvas/scrollbar';
@@ -21,7 +18,7 @@ import { Toolbar } from '.';
 export const PixiCanvas = (
     option: { fullScreen: boolean } = { fullScreen: true }
 ): React.ReactNode => {
-    const { canvasRef } = useInitializePixiApp(option);
+    const { canvasRef } = useInitializePixiApp(option, initApp);
 
     return <canvas ref={canvasRef} id="graph" />;
 };
@@ -71,7 +68,7 @@ export const TestDiv = () => {
     const { width, height } = useCanvasSize();
 
     return (
-        <div>
+        <div className="absolute top-50 left-50">
             Canvas Size: width: {width}, height: {height}
         </div>
     );

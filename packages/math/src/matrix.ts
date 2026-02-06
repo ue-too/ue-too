@@ -1,4 +1,4 @@
-import { Point } from 'src';
+import type { Point } from './2dVector';
 
 export class Matrix {
     private _inverse: Matrix3x3 | null = null;

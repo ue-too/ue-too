@@ -1,16 +1,16 @@
-import { Application } from 'pixi.js';
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { usePixiCanvas } from '@/contexts/pixi';
 
-import { PixiAppComponents, initApp } from '../../utils/pixi';
+import { PixiAppComponents } from '../../utils/pixi';
+import { InitAppOptions } from '@/utils/pixi/init-app';
 
-export const useInitializePixiApp = (
-    option: { fullScreen: boolean } = { fullScreen: true }
+export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions, C extends PixiAppComponents = PixiAppComponents>(
+    option: Partial<T>, initFunction: (canvas: HTMLCanvasElement, option: Partial<T>) => Promise<C>
 ) => {
     const { setResult } = usePixiCanvas();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const appComponentsRef = useRef<PixiAppComponents | null>(null);
+    const appComponentsRef = useRef<C | null>(null);
     const isInitializingRef = useRef(false);
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export const useInitializePixiApp = (
 
                 // console.log('initialize pixi');
 
-                const appComponents = await initApp(canvas, option);
+                const appComponents = await initFunction(canvas, option);
 
                 if (!isMounted) {
                     setResult({ initialized: true, success: false });

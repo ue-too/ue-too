@@ -31,7 +31,7 @@ export class PixiGrid extends Container {
             this._grid.cellWidth,
             this._grid.cellHeight
         );
-        cellWall.stroke({ color: 0x000000, width: this._lineWidth });
+        cellWall.stroke({ color: 0x000000, pixelLine: true });
         cell.addChild(cellWall);
         if (cellType == 'knit') {
             const knit = new Graphics();
@@ -72,7 +72,7 @@ export class PixiGrid extends Container {
             this._grid.cellWidth * this._grid.columns,
             this._grid.cellHeight * this._grid.rows
         );
-        rect.stroke({ color: 0x000000, width: lineWidth });
+        rect.stroke({ color: 0x000000, pixelLine: true });
         container.addChild(rect);
 
         const cells = new Container();
@@ -89,7 +89,7 @@ export class PixiGrid extends Container {
                     this._grid.cellWidth,
                     this._grid.cellHeight
                 );
-                cellWall.stroke({ color: 0x000000, width: lineWidth });
+                cellWall.stroke({ color: 0x000000, pixelLine: true });
                 cell.addChild(cellWall);
                 cells.addChild(cell);
             }

@@ -1,3 +1,4 @@
+import type { Point } from './2dVector';
 /**
  * @packageDocumentation
  * Mathematical utilities for 2D and 3D point operations, vector calculations, and transformations.
@@ -58,31 +59,6 @@
  * @deprecated Use {@link Point} instead for better TypeScript conventions.
  */
 export type point = {
-    /** X-coordinate */
-    x: number;
-    /** Y-coordinate */
-    y: number;
-    /** Optional Z-coordinate for 3D operations */
-    z?: number;
-};
-
-/**
- * Represents a 2D or 3D point with optional z-coordinate.
- *
- * @remarks
- * When z is undefined, operations treat the point as 2D (z = 0).
- * This type is used throughout the library for all point and vector operations.
- *
- * @example
- * ```typescript
- * // 2D point
- * const p2d: Point = { x: 10, y: 20 };
- *
- * // 3D point
- * const p3d: Point = { x: 10, y: 20, z: 30 };
- * ```
- */
-export type Point = {
     /** X-coordinate */
     x: number;
     /** Y-coordinate */
@@ -266,10 +242,10 @@ export class PointCal {
         if (a.z == null) a.z = 0;
         return this.magnitude(a) != 0
             ? {
-                  x: a.x / this.magnitude(a),
-                  y: a.y / this.magnitude(a),
-                  z: a.z / this.magnitude(a),
-              }
+                x: a.x / this.magnitude(a),
+                y: a.y / this.magnitude(a),
+                z: a.z / this.magnitude(a),
+            }
             : { x: 0, y: 0, z: 0 };
     }
 
@@ -895,3 +871,4 @@ export function samePoint(a: Point, b: Point, precision?: number): boolean {
 }
 
 export * from './matrix';
+export * from './2dVector';

@@ -1,6 +1,5 @@
 import { Board, drawArrow, drawRuler } from '@ue-too/board';
 import { mercatorProjection } from '@ue-too/border';
-import { BCurve } from '@ue-too/curve';
 import { PointCal } from '@ue-too/math';
 import { Point } from '@ue-too/math';
 import Stats from 'stats.js';
@@ -9,14 +8,14 @@ import {
     CurveCreationEngine,
     NewJointType,
     createLayoutStateMachine,
-} from './kmt-state-machine';
+} from './trains/kmt-state-machine';
 import './media';
-import { PreviewCurveCalculator } from './new-joint';
-import { ELEVATION } from './track';
+import { ELEVATION, LEVEL_HEIGHT, TrackSegmentDrawData } from './trains/tracks/track';
 import {
     TrainPlacementEngine,
     TrainPlacementStateMachine,
-} from './train-kmt-state-machine';
+} from './trains';
+import { shadows } from './utils';
 
 const elevationText = document.getElementById(
     'elevation'
@@ -490,45 +489,67 @@ function step(timestamp: number) {
 
     // NOTE with draw order sorted by elevation
     const viewportAABB = board.camera.viewPortAABB();
-    const drawData = curveEngine.trackGraph.getDrawData(viewportAABB);
+    const drawDataList = curveEngine.trackGraph.getDrawData(viewportAABB);
 
-    drawData.forEach(drawData => {
+    let elevationCurvesMap: TrackSegmentDrawData[] = [];
+    let pendingElevation: ELEVATION | null = null;
+
+    drawDataList.forEach((drawData, index) => {
         if (board.context === undefined) {
             return;
         }
-
-        const cps = drawData.curve.getControlPoints();
+        /** shadow section */
+        const shadowPoints = shadows(drawData, 135);
 
         board.context.save();
-        board.context.strokeStyle = createGradient(
-            board.context,
-            drawData.originalElevation.from,
-            drawData.originalElevation.to,
-            drawData.originalTrackSegment.startJointPosition,
-            drawData.originalTrackSegment.endJointPosition
-        );
-        board.context.lineWidth = 1.067;
         board.context.beginPath();
-        board.context.moveTo(cps[0].x, cps[0].y);
-        if (cps.length === 3) {
-            board.context.quadraticCurveTo(
-                cps[1].x,
-                cps[1].y,
-                cps[2].x,
-                cps[2].y
-            );
-        } else {
-            board.context.bezierCurveTo(
-                cps[1].x,
-                cps[1].y,
-                cps[2].x,
-                cps[2].y,
-                cps[3].x,
-                cps[3].y
-            );
+        board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+        for (let i = 1; i < shadowPoints.positive.length; i++) {
+            board.context.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
         }
-        board.context.stroke();
+
+        board.context.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+        for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+            board.context.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+        }
+        board.context.closePath();
+        board.context.fillStyle = 'rgba(51, 51, 51, 0.5)';
+        board.context.fill();
         board.context.restore();
+
+        /** end of shadow section */
+
+        if (drawData.originalElevation.from === drawData.originalElevation.to) {
+            // flat track
+            const curElevation = drawData.originalElevation.from;
+            if (pendingElevation === null || curElevation <= pendingElevation) {
+                // still in the same elevation queue the draw data until reaching the next elevation
+                elevationCurvesMap.push(drawData);
+            } else {
+                // clear the draw data queue
+                for (let i = 0; i < elevationCurvesMap.length; i++) {
+                    drawElevationCurves(elevationCurvesMap[i], board.context);
+                }
+                elevationCurvesMap = [];
+                elevationCurvesMap.push(drawData);
+                pendingElevation = curElevation;
+            }
+        } else {
+            // sloped track
+            elevationCurvesMap.push(drawData);
+            if (elevationConnectToFlat(drawData)) {
+                pendingElevation = Math.max(drawData.originalElevation.from, drawData.originalElevation.to);
+            }
+        }
+
+        if (index === drawDataList.length - 1) {
+            // clear the draw data queue
+            for (let i = 0; i < elevationCurvesMap.length; i++) {
+                drawElevationCurves(elevationCurvesMap[i], board.context);
+            }
+            drawElevationCurves(drawData, board.context);
+            elevationCurvesMap = [];
+        }
     });
 
     // offset as line segments
@@ -746,31 +767,31 @@ function step(timestamp: number) {
 
     const topLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const topRightCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const bottomLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        };
 
     const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
         topLeftCornerInViewPort
@@ -799,8 +820,6 @@ window.requestAnimationFrame(step);
 
 // Initialize GeoJSON data
 initializeGeoJSON();
-
-const curveCalculator = new PreviewCurveCalculator();
 
 utilButton.addEventListener('click', () => {
     // NOTE check track draw order
@@ -936,3 +955,44 @@ function createGradient(
 
     return gradient;
 }
+
+function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRenderingContext2D) {
+
+    const cps = drawData.curve.getControlPoints();
+
+    context.save();
+    context.strokeStyle = createGradient(
+        context,
+        drawData.originalElevation.from,
+        drawData.originalElevation.to,
+        drawData.originalTrackSegment.startJointPosition,
+        drawData.originalTrackSegment.endJointPosition
+    );
+    context.lineWidth = drawData.gauge;
+    context.beginPath();
+    context.moveTo(cps[0].x, cps[0].y);
+    if (cps.length === 3) {
+        context.quadraticCurveTo(
+            cps[1].x,
+            cps[1].y,
+            cps[2].x,
+            cps[2].y
+        );
+    } else {
+        context.bezierCurveTo(
+            cps[1].x,
+            cps[1].y,
+            cps[2].x,
+            cps[2].y,
+            cps[3].x,
+            cps[3].y
+        );
+    }
+    context.stroke();
+    context.restore();
+}
+
+function elevationConnectToFlat(drawData: TrackSegmentDrawData) {
+    return drawData.elevation.from % LEVEL_HEIGHT === 0 || drawData.elevation.to % LEVEL_HEIGHT === 0;
+}
+

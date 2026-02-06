@@ -1,4 +1,4 @@
-import { AABBIntersects, BCurve, offset, offset2 } from '@ue-too/curve';
+import { AABBIntersects, BCurve, offset2 } from '@ue-too/curve';
 import {
     Point,
     PointCal,
@@ -7,12 +7,12 @@ import {
     sameDirection,
 } from '@ue-too/math';
 
-import { RTree, Rectangle } from './r-tree';
-import { GenericEntityManager } from './utils';
+import { RTree, Rectangle } from '../r-tree';
+import { GenericEntityManager } from '../../utils';
 
 const VERTICAL_CLEARANCE = 3;
 
-const LEVEL_HEIGHT = 10;
+export const LEVEL_HEIGHT = 10;
 
 export type TrackSegment = {
     t0Joint: number;
@@ -69,6 +69,7 @@ export type TrackSegmentDrawData = {
             end: number;
         };
     };
+    gauge: number; // track gauge in meters
     elevation: {
         from: number;
         to: number;
@@ -78,6 +79,11 @@ export type TrackSegmentDrawData = {
         to: ELEVATION;
     };
     excludeSegmentsForCollisionCheck: Set<number>;
+};
+
+export type TrackSegmentShadow = {
+    positive: Point[];
+    negative: Point[];
 };
 
 export type TrackSegmentWithCollisionAndNumber = TrackSegmentWithCollision & {
@@ -1283,7 +1289,7 @@ export class TrackGraph {
                 console.log(
                     'tangent + reverse tangent count',
                     joint.direction.tangent.size +
-                        joint.direction.reverseTangent.size
+                    joint.direction.reverseTangent.size
                 );
                 console.log('for tangent direction: ');
                 joint.direction.tangent.forEach(destinationJointNumber => {
@@ -1491,6 +1497,7 @@ export class TrackCurveManager {
                             drawIndex
                         );
                     }).bind(this),
+                    gauge: trackSegment.segment.gauge,
                 };
                 res.push(drawData);
             });
@@ -1921,7 +1928,7 @@ export class TrackCurveManager {
             console.warn('track segment tree entry not found');
             return;
         }
-        this._internalRTree.remove(rectangle, trackSegmentTreeEntry);
+        this._internalRTree.removeByData(trackSegmentTreeEntry);
         this._internalTrackCurveManager.destroyEntity(curveNumber);
         this._drawDataDirty = true;
     }
