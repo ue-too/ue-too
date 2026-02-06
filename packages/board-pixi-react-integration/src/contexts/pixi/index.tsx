@@ -92,14 +92,10 @@ export const PixiCanvasProvider = ({
             !validatedResult.initialized
         ) {
             // The validated result was reset but state wasn't, so update it
-            console.log(
-                'PixiCanvasProvider: Updating state after detecting destroyed app'
-            );
             setResult({ initialized: false });
         }
     }, [result, validatedResult]);
 
-    console.log('PixiCanvasProvider rendered', validatedResult);
     return (
         <PixiCanvasContext.Provider
             value={{ setResult, result: validatedResult }}

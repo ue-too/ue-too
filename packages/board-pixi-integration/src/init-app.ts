@@ -49,7 +49,6 @@ export const baseInitApp = async (
 
     const { fullScreen = true, limitEntireViewPort = true } = option;
     // Create a PixiJS application.
-    console.log('canvasElement', canvasElement);
     const app = new Application();
 
     const cleanups: (() => void)[] = [];

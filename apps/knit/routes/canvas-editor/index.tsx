@@ -9,11 +9,8 @@ export const Route = createFileRoute('/canvas-editor/')({
 
 function CanvasEditorComponent() {
     return (
-        <>
-            <div>test</div>
-            <Wrapper option={{ fullScreen: true }} initFunction={initApp}>
-                <h1>Canvas Editor</h1>
-            </Wrapper>
-        </>
+        <Wrapper option={{ fullScreen: true }} initFunction={initApp}>
+            <h1>Canvas Editor</h1>
+        </Wrapper>
     );
 }
