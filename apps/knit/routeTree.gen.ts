@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIndexRouteImport } from './routes/editor/index'
 import { Route as CanvasEditorIndexRouteImport } from './routes/canvas-editor/index'
+import { Route as EditorDemoRouteImport } from './routes/editor/demo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +29,42 @@ const CanvasEditorIndexRoute = CanvasEditorIndexRouteImport.update({
   path: '/canvas-editor/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditorDemoRoute = EditorDemoRouteImport.update({
+  id: '/editor/demo',
+  path: '/editor/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/editor/demo': typeof EditorDemoRoute
   '/canvas-editor/': typeof CanvasEditorIndexRoute
   '/editor/': typeof EditorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/editor/demo': typeof EditorDemoRoute
   '/canvas-editor': typeof CanvasEditorIndexRoute
   '/editor': typeof EditorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/editor/demo': typeof EditorDemoRoute
   '/canvas-editor/': typeof CanvasEditorIndexRoute
   '/editor/': typeof EditorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/canvas-editor/' | '/editor/'
+  fullPaths: '/' | '/editor/demo' | '/canvas-editor/' | '/editor/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/canvas-editor' | '/editor'
-  id: '__root__' | '/' | '/canvas-editor/' | '/editor/'
+  to: '/' | '/editor/demo' | '/canvas-editor' | '/editor'
+  id: '__root__' | '/' | '/editor/demo' | '/canvas-editor/' | '/editor/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EditorDemoRoute: typeof EditorDemoRoute
   CanvasEditorIndexRoute: typeof CanvasEditorIndexRoute
   EditorIndexRoute: typeof EditorIndexRoute
 }
@@ -82,11 +92,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CanvasEditorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editor/demo': {
+      id: '/editor/demo'
+      path: '/editor/demo'
+      fullPath: '/editor/demo'
+      preLoaderRoute: typeof EditorDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EditorDemoRoute: EditorDemoRoute,
   CanvasEditorIndexRoute: CanvasEditorIndexRoute,
   EditorIndexRoute: EditorIndexRoute,
 }

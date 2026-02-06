@@ -9,10 +9,15 @@
         "test": "jest"
     },
     "dependencies": {
+        "@lexical/code": "^0.40.0",
+        "@lexical/link": "^0.40.0",
+        "@lexical/list": "^0.40.0",
+        "@lexical/react": "^0.40.0",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-router": "^1.158.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "lexical": "^0.40.0",
         "lucide-react": "^0.563.0",
         "radix-ui": "^1.4.3",
         "react": "^19.2.3",
