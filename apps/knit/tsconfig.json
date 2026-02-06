@@ -15,5 +15,16 @@
         "types": []
     },
     "extends": "../../tsconfig.base.json",
-    "include": ["src/**/*", "routes/**/*", "routeTree.gen.ts"]
+    "include": ["src/**/*", "routes/**/*", "routeTree.gen.ts"],
+    "references": [
+        {
+            "path": "../../packages/board"
+        },
+        {
+            "path": "../../packages/board-pixi-integration"
+        },
+        {
+            "path": "../../packages/board-pixi-react-integration"
+        }
+    ]
 }

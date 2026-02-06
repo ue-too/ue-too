@@ -1,4 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Wrapper } from '@ue-too/board-pixi-react-integration';
+
+import { initApp } from '@/hooks/init-app';
 
 export const Route = createFileRoute('/canvas-editor/')({
     component: CanvasEditorComponent,
@@ -6,8 +9,11 @@ export const Route = createFileRoute('/canvas-editor/')({
 
 function CanvasEditorComponent() {
     return (
-        <div>
-            <h1>Canvas Editor</h1>
-        </div>
+        <>
+            <div>test</div>
+            <Wrapper option={{ fullScreen: true }} initFunction={initApp}>
+                <h1>Canvas Editor</h1>
+            </Wrapper>
+        </>
     );
 }

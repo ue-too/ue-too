@@ -179,10 +179,16 @@
         "@lexical/react": "^0.40.0",
         "@tailwindcss/vite": "^4.1.18",
         "@tanstack/react-router": "^1.158.1",
+        "@ue-too/being": "workspace:*",
+        "@ue-too/board": "workspace:*",
+        "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
+        "@ue-too/math": "workspace:*",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lexical": "^0.40.0",
         "lucide-react": "^0.563.0",
+        "pixi.js": "8.14.0",
         "radix-ui": "^1.4.3",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
@@ -270,6 +276,23 @@
       },
       "peerDependencies": {
         "pixi.js": "8.14.0",
+      },
+    },
+    "packages/board-pixi-react-integration": {
+      "name": "@ue-too/board-pixi-react-integration",
+      "version": "0.14.0",
+      "dependencies": {
+        "@ue-too/board": "workspace:*",
+        "@ue-too/board-pixi-integration": "workspace:*",
+      },
+      "devDependencies": {
+        "pixi.js": "8.14.0",
+        "react": "^19.0.1",
+        "react-dom": "^19.0.1",
+      },
+      "peerDependencies": {
+        "pixi.js": "8.14.0",
+        "react": "^19.0.1",
       },
     },
     "packages/board-react-adapter": {
@@ -1431,6 +1454,8 @@
     "@ue-too/board-konva-integration": ["@ue-too/board-konva-integration@workspace:packages/board-konva-integration"],
 
     "@ue-too/board-pixi-integration": ["@ue-too/board-pixi-integration@workspace:packages/board-pixi-integration"],
+
+    "@ue-too/board-pixi-react-integration": ["@ue-too/board-pixi-react-integration@workspace:packages/board-pixi-react-integration"],
 
     "@ue-too/board-react": ["@ue-too/board-react@workspace:apps/board-react"],
 
@@ -3401,6 +3426,10 @@
     "@ue-too/banana/react": ["react@19.2.3", "", {}, "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA=="],
 
     "@ue-too/banana/react-dom": ["react-dom@19.2.3", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.3" } }, "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="],
+
+    "@ue-too/board-pixi-react-integration/react": ["react@19.2.3", "", {}, "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA=="],
+
+    "@ue-too/board-pixi-react-integration/react-dom": ["react-dom@19.2.3", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.3" } }, "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="],
 
     "@ue-too/board-react/pixi.js": ["pixi.js@8.14.3", "", { "dependencies": { "@pixi/colord": "^2.9.6", "@types/css-font-loading-module": "^0.0.12", "@types/earcut": "^3.0.0", "@webgpu/types": "^0.1.40", "@xmldom/xmldom": "^0.8.10", "earcut": "^3.0.2", "eventemitter3": "^5.0.1", "gifuct-js": "^2.1.2", "ismobilejs": "^1.1.1", "parse-svg-path": "^0.1.2", "tiny-lru": "^11.4.5" } }, "sha512-6xGYARV8D9E/fO1c2NmYn+k2dQ5oZldVm5tNlLQJ8obTlOQXdL5QpMc217qTpRyHVDFaw5eoFCLF1gr6p5ZcjQ=="],
 

@@ -23,7 +23,13 @@
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
         "tailwind-merge": "^3.4.0",
-        "tailwindcss": "^4.1.18"
+        "tailwindcss": "^4.1.18",
+        "pixi.js": "8.14.0",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
+        "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board": "workspace:*",
+        "@ue-too/math": "workspace:*",
+        "@ue-too/being": "workspace:*"
     },
     "devDependencies": {
         "@tanstack/router-plugin": "^1.158.1",

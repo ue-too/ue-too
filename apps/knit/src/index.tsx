@@ -1,23 +1,37 @@
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+// e.g. in apps/knit/src/board-pixi-react-integration.d.ts
+import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
+import type { PixiCanvasRegistry } from '@ue-too/board-pixi-react-integration';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createRouter, RouterProvider } from '@tanstack/react-router';
 
 import { routeTree } from '../routeTree.gen';
+import type { PixiGrid } from './knit-grid/grid-pixi';
 import './style.css';
+
+export type KnitAppComponents = BaseAppComponents & {
+    pixiGrid: PixiGrid;
+};
+
+declare module '@ue-too/board-pixi-react-integration' {
+    interface PixiCanvasRegistry {
+        components: BaseAppComponents;
+    }
+}
 
 /**
  * Router instance. The route tree is generated from routes/ by @tanstack/router-plugin.
  */
 const router = createRouter({
-  routeTree,
-  defaultPreload: 'intent',
-  scrollRestoration: true,
+    routeTree,
+    defaultPreload: 'intent',
+    scrollRestoration: true,
 });
 
 declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router;
-  }
+    interface Register {
+        router: typeof router;
+    }
 }
 
 /**
@@ -27,15 +41,15 @@ declare module '@tanstack/react-router' {
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error(
-    'Root element not found. Make sure there is a <div id="root"></div> in your HTML.'
-  );
+    throw new Error(
+        'Root element not found. Make sure there is a <div id="root"></div> in your HTML.'
+    );
 }
 
 const root = createRoot(rootElement);
 
 root.render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>
+    <StrictMode>
+        <RouterProvider router={router} />
+    </StrictMode>
 );

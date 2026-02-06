@@ -23,7 +23,7 @@ import {
 } from '@ue-too/board';
 import { Application, Matrix } from 'pixi.js';
 
-export type BaseAppComponents = {
+export interface BaseAppComponents {
     app: Application;
     camera: DefaultBoardCamera;
     canvasProxy: CanvasProxy;

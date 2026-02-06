@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "extends": "../../typedoc.json",
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "out": "../../docs/board-pixi-react-integration",
+  "name": "@ue-too/board-pixi-react-integration",
+  "readme": "./README.md",
+  "includeVersion": true,
+  "categoryOrder": [
+    "Core",
+    "Helpers",
+    "Types",
+    "*"
+  ],
+  "sort": [
+    "static-first",
+    "alphabetical"
+  ]
+}
