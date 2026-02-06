@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "baseUrl": ".",
+        "declaration": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "../../dist",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "resolveJsonModule": true,
+        "strict": true,
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"]
+}
