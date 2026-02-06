@@ -1,3 +1,9 @@
 {
-    "installCommand": "bun install --ignore-scripts"
+    "installCommand": "bun install --ignore-scripts",
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }
