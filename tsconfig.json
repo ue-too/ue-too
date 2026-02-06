@@ -1,62 +1,65 @@
 {
     "files": [],
     "references": [
-        {
-            "path": "./packages/math"
-        },
-        {
-            "path": "./packages/board"
-        },
-        {
-            "path": "./packages/being"
-        },
-        {
-            "path": "./apps/examples"
-        },
-        {
-            "path": "./packages/dynamics"
-        },
-        {
-            "path": "./packages/animate"
-        },
-        {
-            "path": "./packages/border"
-        },
-        {
-            "path": "./packages/curve"
-        },
-        {
-            "path": "./apps/banana"
-        },
-        {
-            "path": "./packages/ecs"
-        },
-        {
-            "path": "./packages/board-fabric-integration"
-        },
-        {
-            "path": "./packages/board-konva-integration"
-        },
-        {
-            "path": "./packages/board-pixi-integration"
-        },
-        {
-            "path": "./packages/board-react-adapter"
-        },
-        {
-            "path": "./packages/board-vue-adapter"
-        },
-        {
-            "path": "./apps/board-react"
-        },
-        {
-            "path": "./apps/board-vue"
-        },
-        {
-            "path": "./apps/blast"
-        },
-        {
-            "path": "./packages/board-game-engine"
-        }
+      {
+        "path": "./packages/math"
+      },
+      {
+        "path": "./packages/board"
+      },
+      {
+        "path": "./packages/being"
+      },
+      {
+        "path": "./apps/examples"
+      },
+      {
+        "path": "./packages/dynamics"
+      },
+      {
+        "path": "./packages/animate"
+      },
+      {
+        "path": "./packages/border"
+      },
+      {
+        "path": "./packages/curve"
+      },
+      {
+        "path": "./apps/banana"
+      },
+      {
+        "path": "./packages/ecs"
+      },
+      {
+        "path": "./packages/board-fabric-integration"
+      },
+      {
+        "path": "./packages/board-konva-integration"
+      },
+      {
+        "path": "./packages/board-pixi-integration"
+      },
+      {
+        "path": "./packages/board-react-adapter"
+      },
+      {
+        "path": "./packages/board-vue-adapter"
+      },
+      {
+        "path": "./apps/board-react"
+      },
+      {
+        "path": "./apps/board-vue"
+      },
+      {
+        "path": "./apps/blast"
+      },
+      {
+        "path": "./packages/board-game-engine"
+      },
+      {
+        "path": "./apps/knit"
+      }
     ]
 }
