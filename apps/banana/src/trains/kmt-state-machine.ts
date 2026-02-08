@@ -22,8 +22,8 @@ import {
     ProjectionJointResult,
     ProjectionPositiveResult,
     ProjectionResult,
-    TrackGraph,
-} from './tracks/track';
+} from './tracks/types';
+import { TrackGraph } from './tracks/track';
 
 export type LayoutStates =
     | 'IDLE'

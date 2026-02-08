@@ -10,7 +10,8 @@ import {
     createLayoutStateMachine,
 } from './trains/kmt-state-machine';
 import './media';
-import { ELEVATION, LEVEL_HEIGHT, TrackSegmentDrawData } from './trains/tracks/track';
+import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
+import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import {
     TrainPlacementEngine,
     TrainPlacementStateMachine,
