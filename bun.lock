@@ -79,6 +79,7 @@
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
         "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
         "@ue-too/border": "workspace:*",
         "@ue-too/curve": "workspace:*",
         "@ue-too/dynamics": "workspace:*",

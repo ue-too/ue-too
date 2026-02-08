@@ -1,24 +1,15 @@
-import { baseInitApp } from '@ue-too/board-pixi-integration';
-import { Application, Assets, Sprite } from 'pixi.js';
-import { PixiCanvasResult } from '@/contexts/pixi';
-import { createKmtInputStateMachineExpansion, ExpandedInputTracker } from '../input-state-machine';
+import { InitAppOptions, baseInitApp } from '@ue-too/board-pixi-integration';
+import { KnitAppComponents } from '..';
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
-import { BaseAppComponents } from '@ue-too/board-pixi-integration';
-
-export type PixiAppComponents = BaseAppComponents & {
-    pixiGrid: PixiGrid;
-};
-
-export type InitAppOptions = {
-    fullScreen: boolean;
-    limitEntireViewPort: boolean;
-};
+import { Assets, Sprite } from 'pixi.js';
+import { ExpandedInputTracker } from '@/utils/input-state-machine';
+import { createKmtInputStateMachineExpansion } from '@/utils/input-state-machine';
 
 export const initApp = async (
     canvasElement: HTMLCanvasElement,
     option: Partial<InitAppOptions> = { fullScreen: true, limitEntireViewPort: true }
-): Promise<PixiAppComponents> => {
+): Promise<KnitAppComponents> => {
 
     // Intialize the application.
     const baseComponents = await baseInitApp(canvasElement, option);
@@ -33,8 +24,8 @@ export const initApp = async (
     baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
 
-    // Load the bunny texture.
-    const imageUrl = new URL('../../../assets/bala.png', import.meta.url).href;
+    // Load the image from app root assets/ (served via public/assets -> ../assets).
+    const imageUrl = new URL('/assets/bala.png', import.meta.url).href;
     const texture = await Assets.load(imageUrl);
     // Create a new Sprite from an image path.
     const bala = new Sprite(texture);
@@ -56,9 +47,3 @@ export const initApp = async (
     };
 };
 
-export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application, components: PixiAppComponents } => {
-    if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
-        return { ready: false };
-    }
-    return { ready: true, app: result.components.app, components: result.components };
-};
