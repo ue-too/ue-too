@@ -7,8 +7,8 @@ import {
 } from '@ue-too/being';
 import { Point, PointCal } from '@ue-too/math';
 
-import { TrackGraph } from './tracks/track';
-import { Train, TrainPosition } from './formation';
+import { TrackGraph } from '../tracks/track';
+import { Train, TrainPosition } from '../formation';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
