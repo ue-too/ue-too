@@ -22,6 +22,7 @@ import {
     ProjectionJointResult,
     ProjectionPositiveResult,
     ProjectionResult,
+    TrackSegmentDrawData,
 } from '../tracks/types';
 import { TrackGraph } from '../tracks/track';
 
@@ -366,7 +367,10 @@ export class CurveCreationEngine implements LayoutContext {
             from: ELEVATION;
             to: ELEVATION;
         };
+        gauge: number;
     } | null = null;
+
+    private _previewCurveGauge: number = 1.067;
 
     private _lastCurveSuccess: boolean = false;
 
@@ -379,6 +383,9 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _previewCurveCalculator: PreviewCurveCalculator =
         new PreviewCurveCalculator();
+
+    private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]> =
+        new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]>();
 
     constructor() {
         this._trackGraph = new TrackGraph();
@@ -572,7 +579,7 @@ export class CurveCreationEngine implements LayoutContext {
         }
     }
 
-    hoverForStartingPoint(position: Point) {
+    hoverForStartingPoint(position: Point, gauge: number = 1.067) {
         const res = this._trackGraph.project(position);
         const elevation =
             this._currentJointElevation != null
@@ -588,6 +595,8 @@ export class CurveCreationEngine implements LayoutContext {
         } else {
             this._previewStartProjection = null;
         }
+
+        this._previewCurveGauge = gauge;
     }
 
     flipStartTangent() {
@@ -622,6 +631,7 @@ export class CurveCreationEngine implements LayoutContext {
                         from: startJoint.elevation,
                         to: endJoint.elevation,
                     },
+                gauge: this._previewCurveGauge,
             };
         } else {
             this._previewCurve.curve.setControlPoints(newPreviewCurve.cps);
@@ -637,6 +647,17 @@ export class CurveCreationEngine implements LayoutContext {
                     to: endJoint.elevation,
                 };
         }
+
+        const previewCurve = this._previewCurve.curve;
+        const startElevation = this._previewCurve.elevation.from;
+        const endElevation = this._previewCurve.elevation.to;
+        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(previewCurve, startElevation, endElevation, this._previewCurve.gauge);
+
+        this._previewDrawDataObservable.notify(drawData);
+    }
+
+    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]>) {
+        this._previewDrawDataObservable.subscribe(observer);
     }
 
     flipEndTangent() {
@@ -927,6 +948,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewStartProjection = null;
         this._previewEndProjection = null;
         this._previewCurve = null;
+        this._previewDrawDataObservable.notify(undefined);
         this._newStartJoint = null;
         this._newEndJoint = null;
     }
