@@ -783,7 +783,8 @@ export class TrackCurveManager {
             const positiveOffsets = offset2(split.curve, gauge / 2).points;
             const negativeOffsets = offset2(split.curve, -gauge / 2).points;
             return {
-                index: trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit),
+                // index: trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit),
+                index: -1,
                 drawData: drawDataForSplit,
                 positiveOffsets,
                 negativeOffsets,
