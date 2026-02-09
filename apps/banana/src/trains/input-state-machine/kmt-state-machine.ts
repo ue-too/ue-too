@@ -381,8 +381,8 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewCurveCalculator: PreviewCurveCalculator =
         new PreviewCurveCalculator();
 
-    private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]> =
-        new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]>();
+    private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]> =
+        new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>();
 
     constructor() {
         this._trackGraph = new TrackGraph();
@@ -653,7 +653,7 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewDrawDataObservable.notify(drawData);
     }
 
-    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData }[] | undefined]>) {
+    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>) {
         this._previewDrawDataObservable.subscribe(observer);
     }
 

@@ -1,5 +1,5 @@
 import { Point } from "@ue-too/math";
-import { AABBIntersects } from "@ue-too/curve";
+import { AABBIntersects, offset2 } from "@ue-too/curve";
 import { LEVEL_HEIGHT, VERTICAL_CLEARANCE } from "./constants";
 import { TrackJointManager } from "./trackjoint-manager";
 import { ELEVATION, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithElevation } from "./types";
@@ -206,7 +206,9 @@ export const trackSegmentDrawDataInsertIndex = (drawDataList: TrackSegmentDrawDa
     return left;
 };
 
-export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, originalTrackSegment: TrackSegmentWithCollision, trackSegmentNumber: number): TrackSegmentDrawData => {
+export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, originalTrackSegment: TrackSegmentWithCollision, trackSegmentNumber: number): TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } => {
+    const positiveOffsets = offset2(split.curve, originalTrackSegment.gauge / 2).points;
+    const negativeOffsets = offset2(split.curve, -originalTrackSegment.gauge / 2).points;
     return {
         curve: split.curve,
         elevation: split.elevation,
@@ -219,5 +221,7 @@ export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, orig
             startJointPosition: originalTrackSegment.curve.getControlPoints()[0],
             endJointPosition: originalTrackSegment.curve.getControlPoints()[originalTrackSegment.curve.getControlPoints().length - 1],
         },
+        positiveOffsets,
+        negativeOffsets,
     }
 };
