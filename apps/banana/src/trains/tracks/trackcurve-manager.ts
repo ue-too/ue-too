@@ -32,11 +32,13 @@ export class TrackCurveManager {
 
     private _persistedDrawData: (TrackSegmentDrawData & {
         callback(index: number): void;
+        positiveOffsets: Point[];
+        negativeOffsets: Point[];
     })[] = [];
     private _persistedDrawDataMap: Map<string, number> = new Map();
 
     private _deleteObservable: Observable<[string]> = new SynchronousObservable<[string]>();
-    private _addObservable: Observable<[number, TrackSegmentDrawData]> = new SynchronousObservable<[number, TrackSegmentDrawData]>();
+    private _addObservable: Observable<[number, TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }]> = new SynchronousObservable<[number, TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }]>();
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
@@ -592,7 +594,7 @@ export class TrackCurveManager {
         t1Elevation: ELEVATION,
         gauge: number = 1.067,
         excludeSegmentsForCollisionCheck: Set<number> = new Set()
-    ): { index: number, drawData: TrackSegmentDrawData }[] {
+    ): { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
         const aabb = curve.AABB;
@@ -778,9 +780,13 @@ export class TrackCurveManager {
 
         const drawDataForSplits = splits.map(split => {
             const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, -1);
+            const positiveOffsets = offset2(split.curve, gauge / 2).points;
+            const negativeOffsets = offset2(split.curve, -gauge / 2).points;
             return {
                 index: trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit),
                 drawData: drawDataForSplit,
+                positiveOffsets,
+                negativeOffsets,
             };
         });
 
@@ -791,7 +797,7 @@ export class TrackCurveManager {
         return this._deleteObservable.subscribe(callback);
     }
 
-    onAdd(callback: (index: number, drawData: TrackSegmentDrawData) => void) {
+    onAdd(callback: (index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }) => void) {
         return this._addObservable.subscribe(callback);
     }
 
