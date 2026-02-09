@@ -1,6 +1,6 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
-import type { TrackSegmentDrawData } from './trains/tracks/track';
+import type { TrackSegmentDrawData } from './trains/tracks/types';
 
 
 export class GenericEntityManager<T> {

@@ -468,7 +468,7 @@ export class BCurve {
         // Check if we need to recompute the LUT
         const controlPointsChanged =
             this.arcLengthLUT.controlPoints.length !==
-                this.controlPoints.length ||
+            this.controlPoints.length ||
             this.arcLengthLUT.controlPoints.some(
                 (cp, index) => !PointCal.isEqual(cp, this.controlPoints[index])
             );
@@ -894,8 +894,8 @@ export class BCurve {
             (-1 / 2) * (this.determinant3by3(M13) / this.determinant3by3(M11));
         const radius = Math.sqrt(
             centerX * centerX +
-                centerY * centerY +
-                this.determinant3by3(M14) / this.determinant3by3(M11)
+            centerY * centerY +
+            this.determinant3by3(M14) / this.determinant3by3(M11)
         );
         return {
             exists: true,
@@ -1312,7 +1312,7 @@ export class BCurve {
 
             const segmentLength = Math.sqrt(
                 Math.pow(nextPoint.x - currentPoint.x, 2) +
-                    Math.pow(nextPoint.y - currentPoint.y, 2)
+                Math.pow(nextPoint.y - currentPoint.y, 2)
             );
 
             if (segmentLength >= remainingDistance) {
@@ -1346,7 +1346,7 @@ export class BCurve {
         epsilon = 0.01
     ) {
         let q: { point: Point; tVal: number; distance: number } | undefined =
-                LUT[i],
+            LUT[i],
             count = 1,
             distance = Number.MAX_SAFE_INTEGER;
 
@@ -1365,7 +1365,7 @@ export class BCurve {
                 let n = curve.get(t1 + j * step);
                 let nDistance = Math.abs(
                     PointCal.distanceBetweenPoints(n, { x: x, y: y }) -
-                        targetDistance
+                    targetDistance
                 );
                 if (nDistance < distance) {
                     distance = nDistance;
@@ -1612,7 +1612,7 @@ export function offset(curve: BCurve, t: number, d?: number | undefined) {
  * Alternative offset implementation using LUT-based approach.
  * @category Utilities
  */
-export function offset2(curve: BCurve, d: number): Point[] {
+export function offset2(curve: BCurve, d: number): { points: Point[], aabb: { min: Point; max: Point } } {
     const lut = curve.getLUTWithTVal(100);
 
     const res = lut.map(item => {
@@ -1625,7 +1625,27 @@ export function offset2(curve: BCurve, d: number): Point[] {
         return offsetPoint;
     });
 
-    return res;
+    const aabb: { min: Point; max: Point } = {
+        min: { x: res[0].x, y: res[0].y },
+        max: { x: res[0].x, y: res[0].y },
+    };
+
+    res.forEach(offsetPoint => {
+        if (offsetPoint.x < aabb.min.x) {
+            aabb.min.x = offsetPoint.x;
+        }
+        if (offsetPoint.x > aabb.max.x) {
+            aabb.max.x = offsetPoint.x;
+        }
+        if (offsetPoint.y < aabb.min.y) {
+            aabb.min.y = offsetPoint.y;
+        }
+        if (offsetPoint.y > aabb.max.y) {
+            aabb.max.y = offsetPoint.y;
+        }
+    });
+
+    return { points: res, aabb: aabb };
 }
 
 // Helper function for line-line intersection (ported from bezier-js utils)
@@ -1941,11 +1961,11 @@ export function getIntersectionsBetweenCurves(
         curve1: { curve: BCurve; startTVal: number; endTVal: number };
         curve2: { curve: BCurve; startTVal: number; endTVal: number };
     }[] = [
-        {
-            curve1: { curve: curve, startTVal: 0, endTVal: 1 },
-            curve2: { curve: curve2, startTVal: 0, endTVal: 1 },
-        },
-    ];
+            {
+                curve1: { curve: curve, startTVal: 0, endTVal: 1 },
+                curve2: { curve: curve2, startTVal: 0, endTVal: 1 },
+            },
+        ];
     const finalRes = [];
     while (pairs.length > 0) {
         let curLength = pairs.length;
