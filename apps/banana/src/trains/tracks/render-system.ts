@@ -1,6 +1,4 @@
 import { Container, Graphics } from 'pixi.js';
-import { TrackSegmentDrawData } from './types';
-import { TrackGraph } from './track';
 import { TrackCurveManager } from './trackcurve-manager';
 
 export class TrackRenderSystem {
@@ -36,6 +34,7 @@ export class TrackRenderSystem {
             this._container.sortChildren();
         });
 
+
         this._trackCurveManager.onAdd((index, drawData) => {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const graphics = new Graphics();
@@ -61,5 +60,14 @@ export class TrackRenderSystem {
             });
             this._container.sortChildren();
         });
+    }
+
+    getZIndexOf(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number {
+        const key = JSON.stringify(drawDataIdentifier);
+        const drawData = this._drawDataMap.get(key);
+        if (drawData === undefined) {
+            return 0;
+        }
+        return drawData.zIndex;
     }
 }

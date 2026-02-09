@@ -15,6 +15,7 @@ export type TrackSegment = {
     t1Joint: number;
     curve: BCurve;
     gauge: number;
+    gauges?: number[];
     splits: number[];
     splitCurves: {
         curve: BCurve;
