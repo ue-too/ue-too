@@ -648,7 +648,40 @@ export class CurveCreationEngine implements LayoutContext {
         const previewCurve = this._previewCurve.curve;
         const startElevation = this._previewCurve.elevation.from;
         const endElevation = this._previewCurve.elevation.to;
-        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(previewCurve, startElevation, endElevation, this._previewCurve.gauge);
+
+        const excludeSegmentsForCollisionCheck = new Set<number>();
+
+        if (startJoint.type === 'branchCurve') {
+            excludeSegmentsForCollisionCheck.add(startJoint.constraint.curve);
+        }
+
+        if (startJoint.type === 'branchJoint' || startJoint.type === 'extendingTrack') {
+            const startJointNumber = startJoint.constraint.jointNumber;
+            const startTrackJoint = this._trackGraph.getJoint(startJointNumber);
+            if (startTrackJoint !== null) {
+                const connections = startTrackJoint.connections;
+                connections.forEach((_, trackSegmentNumber) => {
+                    excludeSegmentsForCollisionCheck.add(trackSegmentNumber);
+                });
+            }
+        }
+
+        if (endJoint.type === 'branchCurve') {
+            excludeSegmentsForCollisionCheck.add(endJoint.constraint.curve);
+        }
+
+        if (endJoint.type === 'branchJoint' || endJoint.type === 'extendingTrack') {
+            const endJointNumber = endJoint.constraint.jointNumber;
+            const endTrackJoint = this._trackGraph.getJoint(endJointNumber);
+            if (endTrackJoint !== null) {
+                const connections = endTrackJoint.connections;
+                connections.forEach((_, trackSegmentNumber) => {
+                    excludeSegmentsForCollisionCheck.add(trackSegmentNumber);
+                });
+            }
+        }
+
+        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(previewCurve, startElevation, endElevation, this._previewCurve.gauge, excludeSegmentsForCollisionCheck);
 
         this._previewDrawDataObservable.notify(drawData);
     }
