@@ -356,7 +356,9 @@ export class CurveCreationEngine implements LayoutContext {
     private _newEndJoint: NewJointType | null = null;
 
     private _previewStartProjection: ProjectionPositiveResult | null = null;
+    private _previewStartProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
     private _previewEndProjection: ProjectionPositiveResult | null = null;
+    private _previewEndProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
 
     private _previewCurve: {
         curve: BCurve;
@@ -595,6 +597,7 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         this._previewCurveGauge = gauge;
+        this._previewStartProjectionObservable.notify(res.hit ? res : null);
     }
 
     flipStartTangent() {
@@ -735,7 +738,17 @@ export class CurveCreationEngine implements LayoutContext {
             this._previewEndProjection = null;
         }
 
+        this._previewEndProjectionObservable.notify(res.hit ? res : null);
+
         this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    onPreviewStartProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+        this._previewStartProjectionObservable.subscribe(observer, options);
+    }
+
+    onPreviewEndProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+        this._previewEndProjectionObservable.subscribe(observer, options);
     }
 
     get previewCurve(): {
