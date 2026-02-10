@@ -3,7 +3,7 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION } from './types';
+import { ELEVATION, TrackSegmentDrawData } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { trackSegmentDrawDataInsertIndex } from './utils';
 
@@ -14,6 +14,8 @@ export class TrackRenderSystem {
     private _drawDataMap: Map<string, Container> = new Map();
 
     private _previewGraphics: Container[] = [];
+
+    private _abortController: AbortController = new AbortController();
 
     get container(): Container {
         return this._container;
@@ -42,8 +44,14 @@ export class TrackRenderSystem {
             this._container.sortChildren();
         });
 
+        this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
 
-        this._trackCurveManager.onAdd((index, drawData) => {
+        curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+    }
+
+    private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {
+
+        drawDataList.forEach((drawData) => {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const positiveOffsets = drawData.positiveOffsets;
             const negativeOffsets = drawData.negativeOffsets;
@@ -78,67 +86,67 @@ export class TrackRenderSystem {
             segmentsContainer.addChild(negativeOffsetsGraphics);
             this._drawDataMap.set(key, segmentsContainer);
             this._container.addChild(segmentsContainer);
-
-            const drawDataOrder = this._trackCurveManager.persistedDrawData;
-
-            drawDataOrder.forEach((drawData, index) => {
-                const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-                const segmentsContainer = this._drawDataMap.get(key);
-                if (segmentsContainer !== undefined) {
-                    segmentsContainer.zIndex = index;
-                }
-            });
-            this._container.sortChildren();
         });
 
-        curveCreationEngine.onPreviewDrawDataChange(drawDataList => {
-            this._previewGraphics.forEach(container => {
-                this._container.removeChild(container);
-                container.destroy({ children: true });
-            });
-            this._previewGraphics = [];
+        const drawDataOrder = this._trackCurveManager.persistedDrawData;
 
-            if (drawDataList == undefined) {
-                return;
+        drawDataOrder.forEach((drawData, index) => {
+            const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
+            const segmentsContainer = this._drawDataMap.get(key);
+            if (segmentsContainer !== undefined) {
+                segmentsContainer.zIndex = index;
             }
+        });
+        this._container.sortChildren();
+    }
 
-            drawDataList.forEach(({ drawData }) => {
-                const segmentsContainer = new Container();
-                const graphics = new Graphics();
-                const positiveOffsetsGraphics = new Graphics();
-                const negativeOffsetsGraphics = new Graphics();
+    private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {
+        this._previewGraphics.forEach(container => {
+            this._container.removeChild(container);
+            container.destroy({ children: true });
+        });
+        this._previewGraphics = [];
 
-                const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
-                const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
+        if (drawDataList == undefined) {
+            return;
+        }
 
-                graphics.moveTo(segments[0].point.x, segments[0].point.y);
-                for (let i = 1; i < segments.length; i++) {
-                    graphics.lineTo(segments[i].point.x, segments[i].point.y);
-                }
-                graphics.stroke({ color: 0x000000, pixelLine: true });
+        drawDataList.forEach(({ drawData }) => {
+            const segmentsContainer = new Container();
+            const graphics = new Graphics();
+            const positiveOffsetsGraphics = new Graphics();
+            const negativeOffsetsGraphics = new Graphics();
 
-                const positiveOffsets = drawData.positiveOffsets;
-                const negativeOffsets = drawData.negativeOffsets;
+            const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
+            const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
 
-                positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
-                for (let i = 1; i < positiveOffsets.length; i++) {
-                    positiveOffsetsGraphics.lineTo(positiveOffsets[i].x, positiveOffsets[i].y);
-                }
-                positiveOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+            graphics.moveTo(segments[0].point.x, segments[0].point.y);
+            for (let i = 1; i < segments.length; i++) {
+                graphics.lineTo(segments[i].point.x, segments[i].point.y);
+            }
+            graphics.stroke({ color: 0x000000, pixelLine: true });
 
-                negativeOffsetsGraphics.moveTo(negativeOffsets[0].x, negativeOffsets[0].y);
-                for (let i = 1; i < negativeOffsets.length; i++) {
-                    negativeOffsetsGraphics.lineTo(negativeOffsets[i].x, negativeOffsets[i].y);
-                }
-                negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+            const positiveOffsets = drawData.positiveOffsets;
+            const negativeOffsets = drawData.negativeOffsets;
 
-                segmentsContainer.addChild(graphics);
-                segmentsContainer.addChild(positiveOffsetsGraphics);
-                segmentsContainer.addChild(negativeOffsetsGraphics);
-                segmentsContainer.zIndex = zIndex;
-                this._container.addChild(segmentsContainer);
-                this._previewGraphics.push(segmentsContainer);
-            });
+            positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
+            for (let i = 1; i < positiveOffsets.length; i++) {
+                positiveOffsetsGraphics.lineTo(positiveOffsets[i].x, positiveOffsets[i].y);
+            }
+            positiveOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+
+            negativeOffsetsGraphics.moveTo(negativeOffsets[0].x, negativeOffsets[0].y);
+            for (let i = 1; i < negativeOffsets.length; i++) {
+                negativeOffsetsGraphics.lineTo(negativeOffsets[i].x, negativeOffsets[i].y);
+            }
+            negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+
+            segmentsContainer.addChild(graphics);
+            segmentsContainer.addChild(positiveOffsetsGraphics);
+            segmentsContainer.addChild(negativeOffsetsGraphics);
+            segmentsContainer.zIndex = zIndex;
+            this._container.addChild(segmentsContainer);
+            this._previewGraphics.push(segmentsContainer);
         });
     }
 

@@ -6,7 +6,7 @@ import type {
     StateMachine,
 } from '@ue-too/being';
 import { NO_OP, TemplateState } from '@ue-too/being';
-import { Observable, Observer, SynchronousObservable } from '@ue-too/board';
+import { Observable, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
 import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
@@ -339,6 +339,7 @@ export type ExtendingTrackJoint = {
 export type BranchCurveJoint = {
     type: 'branchCurve';
     constraint: ProjectionCurveResult;
+    curveIsSloped: boolean;
 } & BaseJoint;
 
 export type NewJointType =
@@ -686,8 +687,8 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewDrawDataObservable.notify(drawData);
     }
 
-    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>) {
-        this._previewDrawDataObservable.subscribe(observer);
+    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>, options?: SubscriptionOptions) {
+        this._previewDrawDataObservable.subscribe(observer, options);
     }
 
     flipEndTangent() {
@@ -865,8 +866,29 @@ export class CurveCreationEngine implements LayoutContext {
             this._newEndJoint.type == 'branchCurve' ||
             this._newEndJoint.type == 'branchJoint'
         ) {
+            console.log('checking if branching curve can be sloped');
+            console.log('start joint elevation', this._newStartJoint.elevation);
+            console.log('end joint elevation', this._newEndJoint.elevation);
             if (this._newStartJoint.elevation != this._newEndJoint.elevation) {
+                console.warn('branching curve can not be sloped');
+                this.cancelCurrentCurve();
                 return null;
+            }
+
+            if (this._newStartJoint.type == 'branchCurve') {
+                if (this._newStartJoint.curveIsSloped) {
+                    console.warn('branching curve can not be sloped');
+                    this.cancelCurrentCurve();
+                    return null;
+                }
+            }
+
+            if (this._newEndJoint.type == 'branchCurve') {
+                if (this._newEndJoint.curveIsSloped) {
+                    console.warn('branching curve can not be sloped');
+                    this.cancelCurrentCurve();
+                    return null;
+                }
             }
         }
 
@@ -938,6 +960,8 @@ export class CurveCreationEngine implements LayoutContext {
                     trackSegmentNumber,
                     constraint.atT
                 );
+
+            console.log('end joint number', endJointNumber);
         } else {
             res = this._newEndJoint.position;
             endJointNumber = this._newEndJoint.constraint.jointNumber;
@@ -1035,6 +1059,7 @@ export class CurveCreationEngine implements LayoutContext {
                     position: projection.projectionPoint,
                     constraint: projection,
                     elevation: elevation,
+                    curveIsSloped: projection.curveIsSloped,
                 };
             case 'edge':
                 return {

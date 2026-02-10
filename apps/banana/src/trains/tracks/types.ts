@@ -101,6 +101,7 @@ export type ProjectionInfo = {
     projectionPoint: Point;
     tangent: Point;
     curvature: number;
+    curveIsSloped: boolean;
 };
 
 export type ProjectionResult = ProjectionFalseResult | ProjectionPositiveResult;
