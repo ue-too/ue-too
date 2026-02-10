@@ -101,7 +101,17 @@ export type ProjectionInfo = {
     projectionPoint: Point;
     tangent: Point;
     curvature: number;
-    curveIsSloped: boolean;
+    elevation: SlopedElevation | FlatElevation;
+};
+
+export type SlopedElevation = {
+    curveIsSloped: true;
+    elevation: number;
+};
+
+export type FlatElevation = {
+    curveIsSloped: false;
+    elevation: ELEVATION;
 };
 
 export type ProjectionResult = ProjectionFalseResult | ProjectionPositiveResult;

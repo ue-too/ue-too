@@ -17,11 +17,13 @@ import { PointCal } from '@ue-too/math';
 import { PreviewCurveCalculator } from '../tracks/new-joint';
 import {
     ELEVATION,
+    FlatElevation,
     ProjectionCurveResult,
     ProjectionEdgeResult,
     ProjectionJointResult,
     ProjectionPositiveResult,
     ProjectionResult,
+    SlopedElevation,
     TrackSegmentDrawData,
 } from '../tracks/types';
 import { TrackGraph } from '../tracks/track';
@@ -342,7 +344,7 @@ export type ExtendingTrackJoint = {
 export type BranchCurveJoint = {
     type: 'branchCurve';
     constraint: ProjectionCurveResult;
-    curveIsSloped: boolean;
+    curveElevation: SlopedElevation | FlatElevation;
 } & BaseJoint;
 
 export type NewJointType =
@@ -892,7 +894,7 @@ export class CurveCreationEngine implements LayoutContext {
             }
 
             if (this._newStartJoint.type == 'branchCurve') {
-                if (this._newStartJoint.curveIsSloped) {
+                if (this._newStartJoint.curveElevation.curveIsSloped) {
                     console.warn('branching curve can not be sloped');
                     this.cancelCurrentCurve();
                     return null;
@@ -900,7 +902,7 @@ export class CurveCreationEngine implements LayoutContext {
             }
 
             if (this._newEndJoint.type == 'branchCurve') {
-                if (this._newEndJoint.curveIsSloped) {
+                if (this._newEndJoint.curveElevation.curveIsSloped) {
                     console.warn('branching curve can not be sloped');
                     this.cancelCurrentCurve();
                     return null;
@@ -1017,6 +1019,8 @@ export class CurveCreationEngine implements LayoutContext {
     cancelCurrentCurve() {
         this._previewStartProjection = null;
         this._previewEndProjection = null;
+        this._previewStartProjectionObservable.notify(null);
+        this._previewEndProjectionObservable.notify(null);
         this._previewCurve = null;
         this._previewDrawDataObservable.notify(undefined);
         this._newStartJoint = null;
@@ -1074,8 +1078,8 @@ export class CurveCreationEngine implements LayoutContext {
                     type: 'branchCurve',
                     position: projection.projectionPoint,
                     constraint: projection,
-                    elevation: elevation,
-                    curveIsSloped: projection.curveIsSloped,
+                    elevation: projection.elevation.elevation,
+                    curveElevation: projection.elevation,
                 };
             case 'edge':
                 return {
