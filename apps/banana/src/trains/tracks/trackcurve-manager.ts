@@ -247,6 +247,13 @@ export class TrackCurveManager {
                         )
                     );
                     if (projectionInfo === null) {
+                        const curveIsSloped = trackSegment.elevation.from !== trackSegment.elevation.to;
+                        const elevation = curveIsSloped ? getElevationAtT(res.tVal, {
+                            elevation: {
+                                from: trackSegment.elevation.from * LEVEL_HEIGHT,
+                                to: trackSegment.elevation.to * LEVEL_HEIGHT,
+                            },
+                        }) : trackSegment.elevation.from;
                         projectionInfo = {
                             curve: trackSegment.trackSegmentNumber,
                             atT: res.tVal,
@@ -255,7 +262,10 @@ export class TrackCurveManager {
                             t1Joint: trackSegment.t1Joint,
                             tangent,
                             curvature,
-                            curveIsSloped: trackSegment.elevation.from !== trackSegment.elevation.to
+                            elevation: {
+                                curveIsSloped: curveIsSloped,
+                                elevation: elevation,
+                            },
                         };
                         return;
                     }
@@ -297,6 +307,13 @@ export class TrackCurveManager {
                 if (distance < minDistance) {
                     minDistance = distance;
                     if (projectionInfo === null) {
+                        const curveIsSloped = trackSegment.elevation.from !== trackSegment.elevation.to;
+                        const elevation = curveIsSloped ? getElevationAtT(res.tVal, {
+                            elevation: {
+                                from: trackSegment.elevation.from * LEVEL_HEIGHT,
+                                to: trackSegment.elevation.to * LEVEL_HEIGHT,
+                            },
+                        }) : trackSegment.elevation.from;
                         projectionInfo = {
                             curve: trackSegment.trackSegmentNumber,
                             atT: res.tVal,
@@ -305,7 +322,10 @@ export class TrackCurveManager {
                             t1Joint: trackSegment.t1Joint,
                             tangent,
                             curvature,
-                            curveIsSloped: trackSegment.elevation.from !== trackSegment.elevation.to
+                            elevation: {
+                                curveIsSloped: curveIsSloped,
+                                elevation: elevation,
+                            },
                         };
                         return;
                     }
