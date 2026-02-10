@@ -61,6 +61,7 @@ export class TrackGraph {
         }
 
         if (t0Joint.elevation !== t1Joint.elevation) {
+            console.warn('t0Joint and t1Joint for track segment being inserted into (number: ', trackSegmentNumber, ') have different elevations');
             return null;
         }
 

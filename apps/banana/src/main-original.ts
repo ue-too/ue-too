@@ -9,7 +9,7 @@ import {
     NewJointType,
 } from './trains/input-state-machine/kmt-state-machine';
 import { createLayoutStateMachine } from './trains/input-state-machine/utils';
-import './media';
+// import './media';
 import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import {
@@ -168,7 +168,7 @@ const layoutDeleteToggleButton = document.getElementById(
 ) as HTMLButtonElement;
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
-const pixiCanvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
+// const pixiCanvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
 const stats = new Stats();
 stats.showPanel(0);
 const statsContainer = document.getElementById('stats') as HTMLDivElement;
@@ -191,12 +191,12 @@ console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 const curveEngine = new CurveCreationEngine();
 const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurveManager, curveEngine);
 
-const res = await baseInitApp(pixiCanvas, {
-    camera: board.camera as DefaultBoardCamera,
-    fullScreen: false,
-});
+// const res = await baseInitApp(pixiCanvas, {
+//     camera: board.camera as DefaultBoardCamera,
+//     fullScreen: false,
+// });
 
-res.app.stage.addChild(trackRenderSystem.container);
+// res.app.stage.addChild(trackRenderSystem.container);
 
 
 curveEngine.onElevationChange(elevation => {

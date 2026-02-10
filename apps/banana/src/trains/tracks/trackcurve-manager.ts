@@ -9,7 +9,7 @@ import { GenericEntityManager } from '../../utils';
 import { ELEVATION, ProjectionInfo, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { getElevationAtT, makeTrackSegmentDrawDataFromSplit, orderTest, trackSegmentDrawDataInsertIndex } from './utils';
-import { Observable, SynchronousObservable } from '@ue-too/board';
+import { Observable, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
 
 export class TrackCurveManager {
     private _internalTrackCurveManager: GenericEntityManager<{
@@ -38,7 +38,7 @@ export class TrackCurveManager {
     private _persistedDrawDataMap: Map<string, number> = new Map();
 
     private _deleteObservable: Observable<[string]> = new SynchronousObservable<[string]>();
-    private _addObservable: Observable<[number, TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }]> = new SynchronousObservable<[number, TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }]>();
+    private _addObservable: Observable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]> = new SynchronousObservable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]>();
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
@@ -255,6 +255,7 @@ export class TrackCurveManager {
                             t1Joint: trackSegment.t1Joint,
                             tangent,
                             curvature,
+                            curveIsSloped: trackSegment.elevation.from !== trackSegment.elevation.to
                         };
                         return;
                     }
@@ -304,6 +305,7 @@ export class TrackCurveManager {
                             t1Joint: trackSegment.t1Joint,
                             tangent,
                             curvature,
+                            curveIsSloped: trackSegment.elevation.from !== trackSegment.elevation.to
                         };
                         return;
                     }
@@ -525,6 +527,8 @@ export class TrackCurveManager {
             trackSegmentNumber: curveNumber,
         };
 
+        const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
+
         splits.forEach(split => {
             const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber);
             const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
@@ -538,8 +542,10 @@ export class TrackCurveManager {
                 }).bind(this),
             });
             this._persistedDrawDataMap.set(JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }), insertIndex);
-            this._addObservable.notify(insertIndex, drawDataForSplit);
+            drawDataForSplits.push(drawDataForSplit);
         });
+
+        this._addObservable.notify(-1, drawDataForSplits);
 
         this._internalRTree.insert(aabbRectangle, trackSegmentTreeEntry);
         this._drawDataDirty = true;
@@ -798,8 +804,8 @@ export class TrackCurveManager {
         return this._deleteObservable.subscribe(callback);
     }
 
-    onAdd(callback: (index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }) => void) {
-        return this._addObservable.subscribe(callback);
+    onAdd(callback: (index: number, drawData: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) => void, options?: SubscriptionOptions) {
+        return this._addObservable.subscribe(callback, options);
     }
 
     get livingEntities(): number[] {

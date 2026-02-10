@@ -6,7 +6,7 @@ import { ELEVATION, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCol
 
 export function getElevationAtT(
     t: number,
-    trackSegment: { elevation: { from: number; to: number } }
+    trackSegment: { elevation: { from: number; to: number } } // this is the elevation height evaluated using the LEVEL_HEIGHT constant and the ELEVATION enum
 ): number {
     const startElevationLevel = trackSegment.elevation.from;
     const endElevationLevel = trackSegment.elevation.to;
