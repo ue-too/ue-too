@@ -3,7 +3,7 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, TrackSegmentDrawData } from './types';
+import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { trackSegmentDrawDataInsertIndex } from './utils';
 
@@ -15,6 +15,9 @@ export class TrackRenderSystem {
 
     private _previewGraphics: Container[] = [];
 
+    private _previewStartProjection: Graphics = new Graphics();
+    private _previewEndProjection: Graphics = new Graphics();
+
     private _abortController: AbortController = new AbortController();
 
     get container(): Container {
@@ -24,29 +27,79 @@ export class TrackRenderSystem {
     constructor(trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
         this._container = new Container();
         this._trackCurveManager = trackCurveManager;
-        this._trackCurveManager.onDelete((key) => {
+
+        this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
+        this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
+        curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+
+        this._previewStartProjection.visible = false;
+        this._previewEndProjection.visible = false;
+
+        this._previewStartProjection.arc(0, 0, 1, 0, 2 * Math.PI);
+        this._previewStartProjection.pivot.set(this._previewStartProjection.width / 2, this._previewStartProjection.height / 2);
+        this._previewStartProjection.fill({ color: 0x000000 });
+        this._previewStartProjection.zIndex = -1;
+        this._container.addChild(this._previewStartProjection);
+
+        curveCreationEngine.onPreviewStartProjectionChange(this._onPreviewStartChange.bind(this), { signal: this._abortController.signal });
+    }
+
+    private _onPreviewStartChange(projection: ProjectionPositiveResult | null) {
+        if (projection === null) {
+            this._previewStartProjection.visible = false;
+            return;
+        }
+
+        const type = projection.hitType;
+
+        const position = projection.projectionPoint;
+
+        if (!this._previewStartProjection.visible) {
+            this._previewStartProjection.visible = true;
+        }
+
+        this._previewStartProjection.position.set(position.x, position.y);
+        const color = getProjectionTypeColor(type);
+        console.log('color', color);
+        this._previewStartProjection.tint = color;
+    }
+
+    cleanup() {
+        this._abortController.abort();
+        this._previewGraphics.forEach(container => {
+            this._container.removeChild(container);
+            container.destroy({ children: true });
+        });
+        this._previewGraphics = [];
+        this._drawDataMap.forEach(container => {
+            this._container.removeChild(container);
+            container.destroy({ children: true });
+            this._drawDataMap.delete(container.name);
+        });
+        this._drawDataMap.clear();
+        this._container.destroy({ children: true });
+        this._previewStartProjection.destroy();
+        this._previewEndProjection.destroy();
+    }
+
+    private _onDelete(key: string) {
+        const segmentsContainer = this._drawDataMap.get(key);
+        if (segmentsContainer !== undefined) {
+            segmentsContainer.destroy({ children: true });
+            this._drawDataMap.delete(key);
+            this._container.removeChild(segmentsContainer);
+        }
+
+        const drawDataOrder = this._trackCurveManager.persistedDrawData;
+
+        drawDataOrder.forEach((drawData, index) => {
+            const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const segmentsContainer = this._drawDataMap.get(key);
             if (segmentsContainer !== undefined) {
-                segmentsContainer.destroy({ children: true });
-                this._drawDataMap.delete(key);
-                this._container.removeChild(segmentsContainer);
+                segmentsContainer.zIndex = index;
             }
-
-            const drawDataOrder = this._trackCurveManager.persistedDrawData;
-
-            drawDataOrder.forEach((drawData, index) => {
-                const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-                const segmentsContainer = this._drawDataMap.get(key);
-                if (segmentsContainer !== undefined) {
-                    segmentsContainer.zIndex = index;
-                }
-            });
-            this._container.sortChildren();
         });
-
-        this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
-
-        curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+        this._container.sortChildren();
     }
 
     private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {
@@ -263,5 +316,16 @@ export const getElevationColorRgb = (elevation: ELEVATION): Rgb => {
             return { r: 0, g: 0, b: 255 };
         default:
             return { r: 128, g: 128, b: 128 };
+    }
+};
+
+const getProjectionTypeColor = (type: ProjectionPositiveResult['hitType']): number => {
+    switch (type) {
+        case 'joint':
+            return 0x3BA429;
+        case 'curve':
+            return 0xB23737;
+        case 'edge':
+            return 0x2711EE;
     }
 };

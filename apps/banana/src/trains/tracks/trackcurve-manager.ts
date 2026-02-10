@@ -800,8 +800,8 @@ export class TrackCurveManager {
         return drawDataForSplits;
     }
 
-    onDelete(callback: (key: string) => void) {
-        return this._deleteObservable.subscribe(callback);
+    onDelete(callback: (key: string) => void, options?: SubscriptionOptions) {
+        return this._deleteObservable.subscribe(callback, options);
     }
 
     onAdd(callback: (index: number, drawData: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) => void, options?: SubscriptionOptions) {
