@@ -5,6 +5,7 @@ import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
 import { ELEVATION } from './types';
 import { LEVEL_HEIGHT } from './constants';
+import { trackSegmentDrawDataInsertIndex } from './utils';
 
 export class TrackRenderSystem {
 
@@ -97,15 +98,19 @@ export class TrackRenderSystem {
             });
             this._previewGraphics = [];
 
-            drawDataList?.forEach(({ index, drawData }) => {
+            if (drawDataList == undefined) {
+                return;
+            }
+
+            drawDataList.forEach(({ drawData }) => {
                 const segmentsContainer = new Container();
                 const graphics = new Graphics();
                 const positiveOffsetsGraphics = new Graphics();
                 const negativeOffsetsGraphics = new Graphics();
 
-                segmentsContainer.zIndex = index;
-
                 const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
+                const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
+
                 graphics.moveTo(segments[0].point.x, segments[0].point.y);
                 for (let i = 1; i < segments.length; i++) {
                     graphics.lineTo(segments[i].point.x, segments[i].point.y);
@@ -130,6 +135,7 @@ export class TrackRenderSystem {
                 segmentsContainer.addChild(graphics);
                 segmentsContainer.addChild(positiveOffsetsGraphics);
                 segmentsContainer.addChild(negativeOffsetsGraphics);
+                segmentsContainer.zIndex = zIndex;
                 this._container.addChild(segmentsContainer);
                 this._previewGraphics.push(segmentsContainer);
             });
@@ -251,5 +257,3 @@ export const getElevationColorRgb = (elevation: ELEVATION): Rgb => {
             return { r: 128, g: 128, b: 128 };
     }
 };
-
-const getElevationColor = (elevation: ELEVATION): number => rgbToHex(getElevationColorRgb(elevation));

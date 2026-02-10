@@ -94,7 +94,7 @@ export type TrackSegmentWithCollisionAndNumber = TrackSegmentWithCollision & {
 };
 
 export type ProjectionInfo = {
-    curve: number;
+    curve: number; // this is the track segment number
     t0Joint: number;
     t1Joint: number;
     atT: number;
