@@ -40,6 +40,9 @@ export class TrackCurveManager {
     private _deleteObservable: Observable<[string]> = new SynchronousObservable<[string]>();
     private _addObservable: Observable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]> = new SynchronousObservable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]>();
 
+    private _addTrackSegmentObservable: Observable<[number, TrackSegmentWithCollision]> = new SynchronousObservable<[number, TrackSegmentWithCollision]>();
+    private _removeTrackSegmentObservable: Observable<[number]> = new SynchronousObservable<[number]>();
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
             segment: TrackSegmentWithCollision;
@@ -569,6 +572,7 @@ export class TrackCurveManager {
 
         this._internalRTree.insert(aabbRectangle, trackSegmentTreeEntry);
         this._drawDataDirty = true;
+        this._addTrackSegmentObservable.notify(curveNumber, trackSegmentEntry);
         return curveNumber;
     }
 
@@ -612,6 +616,7 @@ export class TrackCurveManager {
                 this._deleteObservable.notify(key);
             }
         });
+        this._removeTrackSegmentObservable.notify(curveNumber);
     }
 
     getPreviewDrawData(
@@ -826,6 +831,14 @@ export class TrackCurveManager {
 
     onAdd(callback: (index: number, drawData: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) => void, options?: SubscriptionOptions) {
         return this._addObservable.subscribe(callback, options);
+    }
+
+    onAddTrackSegment(callback: (curveNumber: number, trackSegment: TrackSegmentWithCollision) => void, options?: SubscriptionOptions) {
+        return this._addTrackSegmentObservable.subscribe(callback, options);
+    }
+
+    onRemoveTrackSegment(callback: (curveNumber: number) => void, options?: SubscriptionOptions) {
+        return this._removeTrackSegmentObservable.subscribe(callback, options);
     }
 
     get livingEntities(): number[] {
