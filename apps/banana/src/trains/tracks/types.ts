@@ -10,6 +10,15 @@ export enum ELEVATION {
     ABOVE_3,
 }
 
+/** Sorted numeric values of ELEVATION (min first). Derived at runtime so new enum members (e.g. SUB_4 = -4) are included. */
+export const ELEVATION_VALUES: number[] = (Object.values(ELEVATION).filter((v): v is number => typeof v === 'number') as ELEVATION[]).sort((a, b) => a - b);
+
+/** Minimum ELEVATION value. Use this instead of hardcoding so adding lower levels (e.g. SUB_4) stays correct. */
+export const ELEVATION_MIN: ELEVATION = (ELEVATION_VALUES[0] ?? ELEVATION.SUB_3) as ELEVATION;
+
+/** Maximum ELEVATION value. Use this instead of hardcoding so adding higher levels stays correct. */
+export const ELEVATION_MAX: ELEVATION = (ELEVATION_VALUES[ELEVATION_VALUES.length - 1] ?? ELEVATION.ABOVE_3) as ELEVATION;
+
 export type TrackSegment = {
     t0Joint: number;
     t1Joint: number;
