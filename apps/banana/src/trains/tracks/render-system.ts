@@ -1,11 +1,29 @@
-import { Container, FillGradient, Graphics } from 'pixi.js';
+import { Container, Ellipse, FillGradient, Graphics } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
 import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
+import { ELEVATION, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { LEVEL_HEIGHT } from './constants';
-import { trackSegmentDrawDataInsertIndex } from './utils';
+import { shadows } from '@/utils';
+
+/** zIndex range per elevation so shadow at elevation E draws after segments at elevations < E. */
+const LAYERS_PER_ELEVATION = 1000;
+
+const getElevationIndex = (elevation: ELEVATION): number => {
+  const i = ELEVATION_VALUES.indexOf(elevation);
+  return i >= 0 ? i : 0;
+};
+
+/** Elevation layer for draw order: use upper bound when between levels so higher-elevation shadow draws on top of lower-elevation gradient. */
+const getElevationForLayer = (
+  interval: { interval: [ELEVATION, ELEVATION]; ratio: number } | null
+): ELEVATION =>
+  interval
+    ? interval.ratio > 0
+      ? interval.interval[1]
+      : interval.interval[0]
+    : ELEVATION.GROUND;
 
 export class TrackRenderSystem {
 
@@ -15,6 +33,8 @@ export class TrackRenderSystem {
     private _trackCurveManager: TrackCurveManager;
     private _drawDataSplitsMap: Map<string, Container> = new Map();
     private _offsetGraphicsMap: Map<number, Container> = new Map();
+    private _shadowGraphicsMap: Map<string, { graphics: Graphics, elevation: ELEVATION }> = new Map();
+    private _shadowGraphicsContainerMap: Map<ELEVATION, Container> = new Map();
 
     private _previewGraphics: Container[] = [];
 
@@ -30,6 +50,7 @@ export class TrackRenderSystem {
     constructor(trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
         this._mainContainer = new Container();
         this._trackDrawDataContainer = new Container();
+        this._trackDrawDataContainer.sortableChildren = true;
         this._trackOffsetContainer = new Container();
         this._mainContainer.addChild(this._trackDrawDataContainer);
         this._mainContainer.addChild(this._trackOffsetContainer);
@@ -52,6 +73,14 @@ export class TrackRenderSystem {
 
         this._trackCurveManager.onAddTrackSegment(this._onAddTrackSegment.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
+
+        // Shadow at elevation E gets zIndex E*LAYERS_PER_ELEVATION so it draws after segments at lower elevations
+        ELEVATION_VALUES.forEach((elevation, i) => {
+            const container = new Container();
+            container.zIndex = i * LAYERS_PER_ELEVATION;
+            this._trackDrawDataContainer.addChild(container);
+            this._shadowGraphicsContainerMap.set(elevation, container);
+        });
     }
 
     private _onPreviewStartChange(projection: ProjectionPositiveResult | null) {
@@ -101,13 +130,26 @@ export class TrackRenderSystem {
             this._trackDrawDataContainer.removeChild(segmentsContainer);
         }
 
-        const drawDataOrder = this._trackCurveManager.persistedDrawData;
+        const shadowGraphics = this._shadowGraphicsMap.get(key);
+        if (shadowGraphics !== undefined) {
+            shadowGraphics.graphics.destroy({ children: true });
+            this._shadowGraphicsContainerMap.get(shadowGraphics.elevation)?.removeChild(shadowGraphics.graphics);
+            this._shadowGraphicsMap.delete(key);
+        }
 
-        drawDataOrder.forEach((drawData, index) => {
+        const drawDataOrder = this._trackCurveManager.persistedDrawData;
+        const orderInElevation = new Map<number, number>();
+
+        drawDataOrder.forEach((drawData) => {
+            const interval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
+            const elevationForSegment = getElevationForLayer(interval);
+            const elevationIndex = getElevationIndex(elevationForSegment);
+            const n = orderInElevation.get(elevationIndex) ?? 0;
+            orderInElevation.set(elevationIndex, n + 1);
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const segmentsContainer = this._drawDataSplitsMap.get(key);
             if (segmentsContainer !== undefined) {
-                segmentsContainer.zIndex = index;
+                segmentsContainer.zIndex = elevationIndex * LAYERS_PER_ELEVATION + 1 + n;
             }
         });
         this._trackDrawDataContainer.sortChildren();
@@ -170,31 +212,48 @@ export class TrackRenderSystem {
                 segmentsContainer.addChild(graphics);
             }
 
-            const positiveOffsetsGraphics = new Graphics();
-            positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
-            for (let i = 1; i < positiveOffsets.length; i++) {
-                positiveOffsetsGraphics.lineTo(positiveOffsets[i].x, positiveOffsets[i].y);
-            }
-            positiveOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+            const shadowGraphics = new Graphics();
 
-            const negativeOffsetsGraphics = new Graphics();
-            negativeOffsetsGraphics.moveTo(negativeOffsets[0].x, negativeOffsets[0].y);
-            for (let i = 1; i < negativeOffsets.length; i++) {
-                negativeOffsetsGraphics.lineTo(negativeOffsets[i].x, negativeOffsets[i].y);
-            }
-            negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+            const shadowPoints = shadows(drawData, 135, 10);
 
+            shadowGraphics.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+            for (let i = 1; i < shadowPoints.positive.length; i++) {
+                shadowGraphics.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+            }
+            shadowGraphics.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+            for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+                shadowGraphics.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+            }
+            shadowGraphics.closePath();
+
+            shadowGraphics.fill({ color: 0x000000 });
+
+            const elevationInterval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
+            const elevationForLayer = getElevationForLayer(elevationInterval);
+
+            const shadowGraphicsContainer = this._shadowGraphicsContainerMap.get(elevationForLayer);
+            if (shadowGraphicsContainer !== undefined) {
+                shadowGraphicsContainer.addChild(shadowGraphics);
+            }
+
+            this._shadowGraphicsMap.set(key, { graphics: shadowGraphics, elevation: elevationForLayer });
             this._drawDataSplitsMap.set(key, segmentsContainer);
             this._trackDrawDataContainer.addChild(segmentsContainer);
         });
 
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
+        const orderInElevation = new Map<number, number>();
 
-        drawDataOrder.forEach((drawData, index) => {
+        drawDataOrder.forEach((drawData) => {
+            const interval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
+            const elevationForSegment = getElevationForLayer(interval);
+            const elevationIndex = getElevationIndex(elevationForSegment);
+            const n = orderInElevation.get(elevationIndex) ?? 0;
+            orderInElevation.set(elevationIndex, n + 1);
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const segmentsContainer = this._drawDataSplitsMap.get(key);
             if (segmentsContainer !== undefined) {
-                segmentsContainer.zIndex = index;
+                segmentsContainer.zIndex = elevationIndex * LAYERS_PER_ELEVATION + 1 + n;
             }
         });
         this._trackDrawDataContainer.sortChildren();
