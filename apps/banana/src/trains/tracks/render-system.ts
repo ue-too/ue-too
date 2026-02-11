@@ -11,25 +11,26 @@ import { shadows } from '@/utils';
 const LAYERS_PER_ELEVATION = 1000;
 
 const getElevationIndex = (elevation: ELEVATION): number => {
-  const i = ELEVATION_VALUES.indexOf(elevation);
-  return i >= 0 ? i : 0;
+    const i = ELEVATION_VALUES.indexOf(elevation);
+    return i >= 0 ? i : 0;
 };
 
 /** Elevation layer for draw order: use upper bound when between levels so higher-elevation shadow draws on top of lower-elevation gradient. */
 const getElevationForLayer = (
-  interval: { interval: [ELEVATION, ELEVATION]; ratio: number } | null
+    interval: { interval: [ELEVATION, ELEVATION]; ratio: number } | null
 ): ELEVATION =>
-  interval
-    ? interval.ratio > 0
-      ? interval.interval[1]
-      : interval.interval[0]
-    : ELEVATION.GROUND;
+    interval
+        ? interval.ratio > 0
+            ? interval.interval[1]
+            : interval.interval[0]
+        : ELEVATION.GROUND;
 
 export class TrackRenderSystem {
 
     private _mainContainer: Container;
     private _trackDrawDataContainer: Container;
     private _trackOffsetContainer: Container;
+    private _topLevelContainer: Container;
     private _trackCurveManager: TrackCurveManager;
     private _drawDataSplitsMap: Map<string, Container> = new Map();
     private _offsetGraphicsMap: Map<number, Container> = new Map();
@@ -49,27 +50,41 @@ export class TrackRenderSystem {
 
     constructor(trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
         this._mainContainer = new Container();
+        this._topLevelContainer = new Container();
         this._trackDrawDataContainer = new Container();
         this._trackDrawDataContainer.sortableChildren = true;
         this._trackOffsetContainer = new Container();
         this._mainContainer.addChild(this._trackDrawDataContainer);
         this._mainContainer.addChild(this._trackOffsetContainer);
+        this._mainContainer.addChild(this._topLevelContainer);
         this._trackCurveManager = trackCurveManager;
 
         this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
         curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
 
+        /** start projection point */
         this._previewStartProjection.visible = false;
         this._previewEndProjection.visible = false;
 
         this._previewStartProjection.arc(0, 0, 1, 0, 2 * Math.PI);
         this._previewStartProjection.pivot.set(this._previewStartProjection.width / 2, this._previewStartProjection.height / 2);
-        this._previewStartProjection.fill({ color: 0x000000 });
-        this._previewStartProjection.zIndex = -1;
-        this._trackDrawDataContainer.addChild(this._previewStartProjection);
+        this._previewStartProjection.fill({ color: 0xFFFFFF });
+        this._topLevelContainer.addChild(this._previewStartProjection);
 
         curveCreationEngine.onPreviewStartProjectionChange(this._onPreviewStartChange.bind(this), { signal: this._abortController.signal });
+        /** start projection point */
+
+        /** end projection point */
+        this._previewEndProjection.visible = false;
+        this._previewEndProjection.arc(0, 0, 1, 0, 2 * Math.PI);
+        this._previewEndProjection.pivot.set(this._previewEndProjection.width / 2, this._previewEndProjection.height / 2);
+        this._previewEndProjection.fill({ color: 0xFFFFFF });
+        this._topLevelContainer.addChild(this._previewEndProjection);
+
+        curveCreationEngine.onPreviewEndProjectionChange(this._onPreviewEndChange.bind(this), { signal: this._abortController.signal });
+        /** end projection point */
+
 
         this._trackCurveManager.onAddTrackSegment(this._onAddTrackSegment.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
@@ -99,8 +114,26 @@ export class TrackRenderSystem {
 
         this._previewStartProjection.position.set(position.x, position.y);
         const color = getProjectionTypeColor(type);
-        console.log('color', color);
         this._previewStartProjection.tint = color;
+    }
+
+    private _onPreviewEndChange(projection: ProjectionPositiveResult | null) {
+        if (projection === null) {
+            this._previewEndProjection.visible = false;
+            return;
+        }
+
+        const type = projection.hitType;
+
+        const position = projection.projectionPoint;
+
+        if (!this._previewEndProjection.visible) {
+            this._previewEndProjection.visible = true;
+        }
+
+        this._previewEndProjection.position.set(position.x, position.y);
+        const color = getProjectionTypeColor(type);
+        this._previewEndProjection.tint = color;
     }
 
     cleanup() {
@@ -119,7 +152,7 @@ export class TrackRenderSystem {
         this._previewStartProjection.destroy();
         this._previewEndProjection.destroy();
         this._trackOffsetContainer.destroy({ children: true });
-        this._mainContainer.destroy();
+        this._mainContainer.destroy({ children: true });
     }
 
     private _onDelete(key: string) {
