@@ -1,17 +1,20 @@
 import { Container, FillGradient, Graphics } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
-import { BCurve } from '@ue-too/curve';
+import { BCurve, offset2 } from '@ue-too/curve';
 import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData } from './types';
+import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { trackSegmentDrawDataInsertIndex } from './utils';
 
 export class TrackRenderSystem {
 
-    private _container: Container;
+    private _mainContainer: Container;
+    private _trackDrawDataContainer: Container;
+    private _trackOffsetContainer: Container;
     private _trackCurveManager: TrackCurveManager;
-    private _drawDataMap: Map<string, Container> = new Map();
+    private _drawDataSplitsMap: Map<string, Container> = new Map();
+    private _offsetGraphicsMap: Map<number, Container> = new Map();
 
     private _previewGraphics: Container[] = [];
 
@@ -21,11 +24,15 @@ export class TrackRenderSystem {
     private _abortController: AbortController = new AbortController();
 
     get container(): Container {
-        return this._container;
+        return this._mainContainer;
     }
 
     constructor(trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
-        this._container = new Container();
+        this._mainContainer = new Container();
+        this._trackDrawDataContainer = new Container();
+        this._trackOffsetContainer = new Container();
+        this._mainContainer.addChild(this._trackDrawDataContainer);
+        this._mainContainer.addChild(this._trackOffsetContainer);
         this._trackCurveManager = trackCurveManager;
 
         this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
@@ -39,9 +46,12 @@ export class TrackRenderSystem {
         this._previewStartProjection.pivot.set(this._previewStartProjection.width / 2, this._previewStartProjection.height / 2);
         this._previewStartProjection.fill({ color: 0x000000 });
         this._previewStartProjection.zIndex = -1;
-        this._container.addChild(this._previewStartProjection);
+        this._trackDrawDataContainer.addChild(this._previewStartProjection);
 
         curveCreationEngine.onPreviewStartProjectionChange(this._onPreviewStartChange.bind(this), { signal: this._abortController.signal });
+
+        this._trackCurveManager.onAddTrackSegment(this._onAddTrackSegment.bind(this), { signal: this._abortController.signal });
+        this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
     }
 
     private _onPreviewStartChange(projection: ProjectionPositiveResult | null) {
@@ -67,39 +77,78 @@ export class TrackRenderSystem {
     cleanup() {
         this._abortController.abort();
         this._previewGraphics.forEach(container => {
-            this._container.removeChild(container);
+            this._trackDrawDataContainer.removeChild(container);
             container.destroy({ children: true });
         });
         this._previewGraphics = [];
-        this._drawDataMap.forEach(container => {
-            this._container.removeChild(container);
+        this._drawDataSplitsMap.forEach(container => {
+            this._trackDrawDataContainer.removeChild(container);
             container.destroy({ children: true });
-            this._drawDataMap.delete(container.name);
         });
-        this._drawDataMap.clear();
-        this._container.destroy({ children: true });
+        this._drawDataSplitsMap.clear();
+        this._trackDrawDataContainer.destroy({ children: true });
         this._previewStartProjection.destroy();
         this._previewEndProjection.destroy();
+        this._trackOffsetContainer.destroy({ children: true });
+        this._mainContainer.destroy();
     }
 
     private _onDelete(key: string) {
-        const segmentsContainer = this._drawDataMap.get(key);
+        const segmentsContainer = this._drawDataSplitsMap.get(key);
         if (segmentsContainer !== undefined) {
             segmentsContainer.destroy({ children: true });
-            this._drawDataMap.delete(key);
-            this._container.removeChild(segmentsContainer);
+            this._drawDataSplitsMap.delete(key);
+            this._trackDrawDataContainer.removeChild(segmentsContainer);
         }
 
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
 
         drawDataOrder.forEach((drawData, index) => {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const segmentsContainer = this._drawDataMap.get(key);
+            const segmentsContainer = this._drawDataSplitsMap.get(key);
             if (segmentsContainer !== undefined) {
                 segmentsContainer.zIndex = index;
             }
         });
-        this._container.sortChildren();
+        this._trackDrawDataContainer.sortChildren();
+    }
+
+    private _onRemoveTrackSegment(curveNumber: number) {
+        const segmentsContainer = this._offsetGraphicsMap.get(curveNumber);
+        if (segmentsContainer !== undefined) {
+            this._trackOffsetContainer.removeChild(segmentsContainer);
+            segmentsContainer.destroy({ children: true });
+            this._offsetGraphicsMap.delete(curveNumber);
+        }
+    }
+
+    private _onAddTrackSegment(curveNumber: number, trackSegment: TrackSegmentWithCollision) {
+        const positiveOffsets = offset2(trackSegment.curve, trackSegment.gauge / 2).points;
+        const negativeOffsets = offset2(trackSegment.curve, -trackSegment.gauge / 2).points;
+
+        const segmentsContainer = new Container();
+
+        const positiveOffsetsGraphics = new Graphics();
+        const negativeOffsetsGraphics = new Graphics();
+
+        positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
+        for (let i = 1; i < positiveOffsets.length; i++) {
+            positiveOffsetsGraphics.lineTo(positiveOffsets[i].x, positiveOffsets[i].y);
+        }
+        positiveOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+
+        negativeOffsetsGraphics.moveTo(negativeOffsets[0].x, negativeOffsets[0].y);
+        for (let i = 1; i < negativeOffsets.length; i++) {
+            negativeOffsetsGraphics.lineTo(negativeOffsets[i].x, negativeOffsets[i].y);
+        }
+        negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
+
+        segmentsContainer.addChild(positiveOffsetsGraphics);
+        segmentsContainer.addChild(negativeOffsetsGraphics);
+
+        this._offsetGraphicsMap.set(curveNumber, segmentsContainer);
+
+        this._trackOffsetContainer.addChild(segmentsContainer);
     }
 
     private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {
@@ -117,7 +166,7 @@ export class TrackRenderSystem {
                 graphics.moveTo(segments[i].point.x, segments[i].point.y);
                 graphics.lineTo(segments[i + 1].point.x, segments[i + 1].point.y);
                 const gradient = strokeGradientForElevation(segments[i].point, segments[i + 1].point, segments[i].elevation, segments[i + 1].elevation);
-                graphics.stroke({ fill: gradient, pixelLine: true });
+                graphics.stroke({ fill: gradient, width: drawData.gauge });
                 segmentsContainer.addChild(graphics);
             }
 
@@ -135,27 +184,25 @@ export class TrackRenderSystem {
             }
             negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
 
-            segmentsContainer.addChild(positiveOffsetsGraphics);
-            segmentsContainer.addChild(negativeOffsetsGraphics);
-            this._drawDataMap.set(key, segmentsContainer);
-            this._container.addChild(segmentsContainer);
+            this._drawDataSplitsMap.set(key, segmentsContainer);
+            this._trackDrawDataContainer.addChild(segmentsContainer);
         });
 
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
 
         drawDataOrder.forEach((drawData, index) => {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const segmentsContainer = this._drawDataMap.get(key);
+            const segmentsContainer = this._drawDataSplitsMap.get(key);
             if (segmentsContainer !== undefined) {
                 segmentsContainer.zIndex = index;
             }
         });
-        this._container.sortChildren();
+        this._trackDrawDataContainer.sortChildren();
     }
 
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {
         this._previewGraphics.forEach(container => {
-            this._container.removeChild(container);
+            this._trackDrawDataContainer.removeChild(container);
             container.destroy({ children: true });
         });
         this._previewGraphics = [];
@@ -164,14 +211,14 @@ export class TrackRenderSystem {
             return;
         }
 
-        drawDataList.forEach(({ drawData }) => {
+        drawDataList.forEach(({ drawData, index }) => {
             const segmentsContainer = new Container();
             const graphics = new Graphics();
             const positiveOffsetsGraphics = new Graphics();
             const negativeOffsetsGraphics = new Graphics();
 
             const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
-            const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
+            // const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
 
             graphics.moveTo(segments[0].point.x, segments[0].point.y);
             for (let i = 1; i < segments.length; i++) {
@@ -197,15 +244,15 @@ export class TrackRenderSystem {
             segmentsContainer.addChild(graphics);
             segmentsContainer.addChild(positiveOffsetsGraphics);
             segmentsContainer.addChild(negativeOffsetsGraphics);
-            segmentsContainer.zIndex = zIndex;
-            this._container.addChild(segmentsContainer);
+            segmentsContainer.zIndex = index;
+            this._trackDrawDataContainer.addChild(segmentsContainer);
             this._previewGraphics.push(segmentsContainer);
         });
     }
 
     getZIndexOf(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number {
         const key = JSON.stringify(drawDataIdentifier);
-        const drawData = this._drawDataMap.get(key);
+        const drawData = this._drawDataSplitsMap.get(key);
         if (drawData === undefined) {
             return 0;
         }
