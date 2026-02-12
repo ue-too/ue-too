@@ -268,6 +268,17 @@ export const shadows = (
         y: endPoint.y + shadowOffsetYEnd,
     };
 
+    if (startElevation == 0 && endElevation == 0) {
+        const cacheEntry = {
+            positive: [],
+            negative: [],
+            startPoint,
+            endPoint,
+        };
+        shadowCache.set(cacheKey, cacheEntry);
+        return cacheEntry;
+    }
+
     // Iterate from 0 to steps (inclusive) to ensure t=0 and t=1 are both included
     for (let i = 0; i <= steps; i++) {
         const t = i / steps; // This guarantees t=0 and t=1 exactly
