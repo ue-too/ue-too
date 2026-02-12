@@ -249,17 +249,21 @@ export class TrackRenderSystem {
 
             const shadowPoints = shadows(drawData, 135, 10);
 
-            shadowGraphics.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
-            for (let i = 1; i < shadowPoints.positive.length; i++) {
-                shadowGraphics.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
-            }
-            shadowGraphics.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
-            for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
-                shadowGraphics.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
-            }
-            shadowGraphics.closePath();
+            if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
+                shadowGraphics.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+                for (let i = 1; i < shadowPoints.positive.length; i++) {
+                    shadowGraphics.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+                }
+                shadowGraphics.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+                for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+                    shadowGraphics.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+                }
+                shadowGraphics.closePath();
 
-            shadowGraphics.fill({ color: 0x000000 });
+                shadowGraphics.fill({ color: 0x000000 });
+
+            }
+
 
             const elevationInterval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
             const elevationForLayer = getElevationForLayer(elevationInterval);
