@@ -79,6 +79,9 @@ export const ScrollerWithTranslate = () => {
     const half = Math.floor(VISIBLE_COUNT / 2);
     const [centerIndex, setCenterIndex] = useState(0);
     const [startIndex, setStartIndex] = useState(0);
+    const [section, setSection] = useState<'first' | 'second' | 'third'>(
+        'first'
+    );
 
     const indices = useMemo(() => {
         return createLoopingIndices(startIndex, options.length);
@@ -100,9 +103,6 @@ export const ScrollerWithTranslate = () => {
 
     const translateAmount = -(centerIndex - half) * ITEM_HEIGHT;
     const translate = `translateY(${translateAmount}px)`;
-    const translateAmountWithEndIndex =
-        -(centerIndex - half - options.length) * ITEM_HEIGHT;
-    const translateWithEndIndex = `translateY(${translateAmountWithEndIndex}px)`;
 
     return (
         <div className="flex h-full flex-col items-center justify-center">
@@ -113,9 +113,10 @@ export const ScrollerWithTranslate = () => {
             >
                 <div
                     style={{
-                        height: VISIBLE_COUNT * ITEM_HEIGHT,
+                        height: options.length * ITEM_HEIGHT,
                         transform: translate,
                         transition: 'transform 0.25s ease-out',
+                        visibility: 'hidden',
                     }}
                 >
                     {indicesWithEndIndex.map((index, i) => {
