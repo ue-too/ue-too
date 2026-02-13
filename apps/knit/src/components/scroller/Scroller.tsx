@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -76,47 +76,113 @@ const smallerDistBetweenIndices = (
 };
 
 export const ScrollerWithTranslate = () => {
-    const half = Math.floor(VISIBLE_COUNT / 2);
     const [centerIndex, setCenterIndex] = useState(0);
     const [startIndex, setStartIndex] = useState(0);
+
+    const [sectionOnTop, setSectionOnTop] = useState<'first' | 'second'>(
+        'first'
+    );
+
+    const [firstSectionOffset, setFirstSectionOffset] = useState(0);
+
+    const secondSectionOffset = useMemo(() => {
+        if (sectionOnTop === 'first') {
+            return firstSectionOffset;
+        } else {
+            return firstSectionOffset - 2 * options.length;
+        }
+    }, [firstSectionOffset, sectionOnTop, options.length]);
 
     const indices = useMemo(() => {
         return createLoopingIndices(startIndex, options.length);
     }, [centerIndex, options.length]);
 
-    const translateAmount = -(centerIndex - half) * ITEM_HEIGHT;
-    const translate = `translateY(${translateAmount}px)`;
+    const firstSectionOffsetTranslate = `translateY(${firstSectionOffset * ITEM_HEIGHT}px)`;
+    const secondSectionOffsetTranslate = `translateY(${secondSectionOffset * ITEM_HEIGHT}px)`;
 
-    if (centerIndex <= half) {
-        console.log('should trigger section change');
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === 'ArrowUp') {
-            setCenterIndex(prevCenter => {
-                const newCenter = prevCenter - 1;
-                const normalizedNewCenter = normalizeIndex(
-                    newCenter,
-                    options.length
-                );
-                return normalizedNewCenter;
-            });
-        } else if (event.key === 'ArrowDown') {
-            setCenterIndex(prevCenter => {
-                const newCenter = prevCenter + 1;
-                const normalizedNewCenter = normalizeIndex(
-                    newCenter,
-                    options.length
-                );
-                return normalizedNewCenter;
-            });
+    const closeToTop = useMemo(() => {
+        if (sectionOnTop === 'first') {
+            return Math.abs(firstSectionOffset) <= VISIBLE_COUNT;
+        } else {
+            return (
+                Math.abs(secondSectionOffset + options.length) <= VISIBLE_COUNT
+            );
         }
-    };
+    }, [firstSectionOffset, options.length, sectionOnTop]);
+
+    const closeToBottom = useMemo(() => {
+        if (sectionOnTop === 'first') {
+            return (
+                Math.abs(
+                    firstSectionOffset - VISIBLE_COUNT + 2 * options.length
+                ) <= VISIBLE_COUNT
+            );
+        } else {
+            return (
+                Math.abs(firstSectionOffset + options.length - VISIBLE_COUNT) <=
+                VISIBLE_COUNT
+            );
+        }
+    }, [firstSectionOffset, options.length, sectionOnTop]);
+
+    const showFirstSection = useMemo(() => {
+        const lessThanHorizon = firstSectionOffset <= -options.length;
+        const moreThanVisibleCount = firstSectionOffset >= VISIBLE_COUNT;
+        return !lessThanHorizon && !moreThanVisibleCount;
+    }, [firstSectionOffset, options.length, VISIBLE_COUNT]);
+
+    const showSecondSection = useMemo(() => {
+        const windowBottom =
+            secondSectionOffset <= -options.length + VISIBLE_COUNT;
+        const windowTop = secondSectionOffset >= -2 * options.length;
+        return windowBottom && windowTop;
+    }, [secondSectionOffset, options.length, VISIBLE_COUNT]);
+
+    const advanceItem = useCallback(() => {
+        if (closeToBottom) {
+            setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
+            if (sectionOnTop === 'first') {
+                setFirstSectionOffset(
+                    prevOffset => prevOffset - 1 + 2 * options.length
+                );
+            } else {
+                setFirstSectionOffset(prevOffset => prevOffset - 1);
+            }
+        } else {
+            setFirstSectionOffset(prevOffset => prevOffset - 1);
+        }
+    }, [closeToBottom, sectionOnTop]);
+
+    const retreatItem = useCallback(() => {
+        if (closeToTop) {
+            setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
+            if (sectionOnTop === 'second') {
+                setFirstSectionOffset(
+                    prevOffset => prevOffset + 1 - 2 * options.length
+                );
+            } else {
+                setFirstSectionOffset(prevOffset => prevOffset + 1);
+            }
+        } else {
+            setFirstSectionOffset(prevOffset => prevOffset + 1);
+        }
+    }, [closeToTop, sectionOnTop]);
+
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            if (event.key === 'ArrowUp') {
+                retreatItem();
+            } else if (event.key === 'ArrowDown') {
+                advanceItem();
+            }
+        },
+        [advanceItem, retreatItem]
+    );
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [handleKeyDown]);
 
     return (
         <div className="flex h-full flex-col items-center justify-center">
@@ -128,15 +194,19 @@ export const ScrollerWithTranslate = () => {
                 <div
                     style={{
                         height: options.length * ITEM_HEIGHT,
-                        transform: translate,
-                        transition: 'transform 0.25s ease-out',
+                        transform: firstSectionOffsetTranslate,
+                        transition: showFirstSection
+                            ? 'transform 0.25s ease-out'
+                            : 'none',
+                        visibility: showFirstSection ? 'visible' : 'hidden',
                     }}
                 >
-                    {options.map((option, i) => {
-                        if (i === centerIndex) {
+                    {indices.map((index, i) => {
+                        const option = options[index];
+                        if (index === centerIndex) {
                             return (
                                 <div
-                                    key={`${i}-${option}-top-section`}
+                                    key={`${index}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center bg-amber-100 text-red-500 select-none"
                                     style={{ height: ITEM_HEIGHT }}
                                     onClick={() => setCenterIndex(i)}
@@ -147,7 +217,7 @@ export const ScrollerWithTranslate = () => {
                         } else {
                             return (
                                 <div
-                                    key={`${i}-${option}-top-section`}
+                                    key={`${index}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center select-none"
                                     style={{ height: ITEM_HEIGHT }}
                                     onClick={() => setCenterIndex(i)}
@@ -161,8 +231,11 @@ export const ScrollerWithTranslate = () => {
                 <div
                     style={{
                         height: options.length * ITEM_HEIGHT,
-                        transform: translate,
-                        transition: 'transform 0.25s ease-out',
+                        transform: secondSectionOffsetTranslate,
+                        transition: showSecondSection
+                            ? 'transform 0.25s ease-out'
+                            : 'none',
+                        visibility: showSecondSection ? 'visible' : 'hidden',
                     }}
                 >
                     {options.map((option, i) => {
@@ -194,29 +267,17 @@ export const ScrollerWithTranslate = () => {
             </div>
             <Button
                 onClick={() => {
-                    setCenterIndex(prevCenter => {
-                        const normalizedNewCenter = normalizeIndex(
-                            prevCenter + 1,
-                            options.length
-                        );
-                        return normalizedNewCenter;
-                    });
+                    retreatItem();
                 }}
             >
-                Next
+                Previous Item
             </Button>
             <Button
                 onClick={() => {
-                    setCenterIndex(prevCenter => {
-                        const normalizedNewCenter = normalizeIndex(
-                            prevCenter - 1,
-                            options.length
-                        );
-                        return normalizedNewCenter;
-                    });
+                    advanceItem();
                 }}
             >
-                Previous
+                Next Item
             </Button>
         </div>
     );
