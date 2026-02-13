@@ -79,30 +79,44 @@ export const ScrollerWithTranslate = () => {
     const half = Math.floor(VISIBLE_COUNT / 2);
     const [centerIndex, setCenterIndex] = useState(0);
     const [startIndex, setStartIndex] = useState(0);
-    const [section, setSection] = useState<'first' | 'second' | 'third'>(
-        'first'
-    );
 
     const indices = useMemo(() => {
         return createLoopingIndices(startIndex, options.length);
     }, [centerIndex, options.length]);
 
-    const indicesWithEndIndex = useMemo(() => {
-        return createLoopingIndicesWithEndIndex(startIndex - 1, options.length);
-    }, [centerIndex, options.length]);
-
-    const smallerDist = smallerDistBetweenIndices(
-        normalizeIndex(centerIndex - half, options.length),
-        startIndex,
-        options.length
-    );
-
-    console.log('startIndex', startIndex);
-    console.log('centerIndex', centerIndex);
-    console.log(indices);
-
     const translateAmount = -(centerIndex - half) * ITEM_HEIGHT;
     const translate = `translateY(${translateAmount}px)`;
+
+    if (centerIndex <= half) {
+        console.log('should trigger section change');
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'ArrowUp') {
+            setCenterIndex(prevCenter => {
+                const newCenter = prevCenter - 1;
+                const normalizedNewCenter = normalizeIndex(
+                    newCenter,
+                    options.length
+                );
+                return normalizedNewCenter;
+            });
+        } else if (event.key === 'ArrowDown') {
+            setCenterIndex(prevCenter => {
+                const newCenter = prevCenter + 1;
+                const normalizedNewCenter = normalizeIndex(
+                    newCenter,
+                    options.length
+                );
+                return normalizedNewCenter;
+            });
+        }
+    };
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     return (
         <div className="flex h-full flex-col items-center justify-center">
@@ -116,18 +130,16 @@ export const ScrollerWithTranslate = () => {
                         height: options.length * ITEM_HEIGHT,
                         transform: translate,
                         transition: 'transform 0.25s ease-out',
-                        visibility: 'hidden',
                     }}
                 >
-                    {indicesWithEndIndex.map((index, i) => {
-                        const option = options[index];
-                        if (index === centerIndex) {
+                    {options.map((option, i) => {
+                        if (i === centerIndex) {
                             return (
                                 <div
-                                    key={`${i}-${option}-${index}-with-end-index`}
+                                    key={`${i}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center bg-amber-100 text-red-500 select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(index)}
+                                    onClick={() => setCenterIndex(i)}
                                 >
                                     {option}
                                 </div>
@@ -135,10 +147,10 @@ export const ScrollerWithTranslate = () => {
                         } else {
                             return (
                                 <div
-                                    key={`${i}-${option}-${index}-with-end-index`}
+                                    key={`${i}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(index)}
+                                    onClick={() => setCenterIndex(i)}
                                 >
                                     {option}
                                 </div>
@@ -148,20 +160,19 @@ export const ScrollerWithTranslate = () => {
                 </div>
                 <div
                     style={{
-                        height: VISIBLE_COUNT * ITEM_HEIGHT,
+                        height: options.length * ITEM_HEIGHT,
                         transform: translate,
                         transition: 'transform 0.25s ease-out',
                     }}
                 >
-                    {indices.map((index, i) => {
-                        const option = options[index];
-                        if (index === centerIndex) {
+                    {options.map((option, i) => {
+                        if (i === centerIndex) {
                             return (
                                 <div
-                                    key={`${i}-${option}-${index}`}
+                                    key={`${i}-${option}-bottom-section`}
                                     className="flex shrink-0 items-center justify-center bg-amber-100 text-red-500 select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(index)}
+                                    onClick={() => setCenterIndex(i)}
                                 >
                                     {option}
                                 </div>
@@ -169,10 +180,10 @@ export const ScrollerWithTranslate = () => {
                         } else {
                             return (
                                 <div
-                                    key={`${i}-${option}-${index}`}
+                                    key={`${i}-${option}-bottom-section`}
                                     className="flex shrink-0 items-center justify-center select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(index)}
+                                    onClick={() => setCenterIndex(i)}
                                 >
                                     {option}
                                 </div>

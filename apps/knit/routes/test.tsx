@@ -12,7 +12,7 @@ export const Route = createFileRoute('/test')({
 type ScrollerType = 'translate' | 'scroll';
 
 function TestComponent() {
-    const [scrollerType, setScrollerType] = useState<ScrollerType>('scroll');
+    const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
     return (
         <>
