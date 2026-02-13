@@ -83,7 +83,9 @@ export const ScrollerWithTranslate = () => {
         'first'
     );
 
-    const [firstSectionOffset, setFirstSectionOffset] = useState(0);
+    const [firstSectionOffset, setFirstSectionOffset] = useState(
+        -options.length + Math.floor(VISIBLE_COUNT / 2)
+    );
 
     const secondSectionOffset = useMemo(() => {
         if (sectionOnTop === 'first') {
@@ -95,7 +97,7 @@ export const ScrollerWithTranslate = () => {
 
     const indices = useMemo(() => {
         return createLoopingIndices(startIndex, options.length);
-    }, [centerIndex, options.length]);
+    }, [startIndex, options.length]);
 
     const firstSectionOffsetTranslate = `translateY(${firstSectionOffset * ITEM_HEIGHT}px)`;
     const secondSectionOffsetTranslate = `translateY(${secondSectionOffset * ITEM_HEIGHT}px)`;
@@ -137,6 +139,22 @@ export const ScrollerWithTranslate = () => {
         const windowTop = secondSectionOffset >= -2 * options.length;
         return windowBottom && windowTop;
     }, [secondSectionOffset, options.length, VISIBLE_COUNT]);
+
+    const currentIndex = useMemo(() => {
+        if (sectionOnTop === 'first') {
+            return normalizeIndex(
+                -firstSectionOffset + Math.floor(VISIBLE_COUNT / 2),
+                options.length
+            );
+        } else {
+            return normalizeIndex(
+                -options.length -
+                    secondSectionOffset +
+                    Math.floor(VISIBLE_COUNT / 2),
+                options.length
+            );
+        }
+    }, [sectionOnTop, firstSectionOffset, secondSectionOffset]);
 
     const advanceItem = useCallback(() => {
         if (closeToBottom) {
@@ -185,7 +203,7 @@ export const ScrollerWithTranslate = () => {
     }, [handleKeyDown]);
 
     return (
-        <div className="flex h-full flex-col items-center justify-center">
+        <div className="flex h-full flex-col items-center justify-center gap-3">
             <h1>Scroller with translate</h1>
             <div
                 className={`flex flex-col overflow-hidden`}
@@ -203,7 +221,7 @@ export const ScrollerWithTranslate = () => {
                 >
                     {indices.map((index, i) => {
                         const option = options[index];
-                        if (index === centerIndex) {
+                        if (i === currentIndex) {
                             return (
                                 <div
                                     key={`${index}-${option}-top-section`}
@@ -238,8 +256,9 @@ export const ScrollerWithTranslate = () => {
                         visibility: showSecondSection ? 'visible' : 'hidden',
                     }}
                 >
-                    {options.map((option, i) => {
-                        if (i === centerIndex) {
+                    {indices.map((index, i) => {
+                        const option = options[index];
+                        if (i === currentIndex) {
                             return (
                                 <div
                                     key={`${i}-${option}-bottom-section`}
@@ -278,6 +297,13 @@ export const ScrollerWithTranslate = () => {
                 }}
             >
                 Next Item
+            </Button>
+            <Button
+                onClick={() => {
+                    setStartIndex(prevStartIndex => prevStartIndex + 1);
+                }}
+            >
+                Next Start Index
             </Button>
         </div>
     );
