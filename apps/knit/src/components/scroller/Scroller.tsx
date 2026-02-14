@@ -75,6 +75,39 @@ const smallerDistBetweenIndices = (
     return Math.min(dist1, dist2);
 };
 
+const isCloseToTop = (
+    sectionOnTop: 'first' | 'second',
+    firstSectionOffset: number,
+    secondSectionOffset: number,
+    length: number
+) => {
+    if (sectionOnTop === 'first') {
+        return Math.abs(firstSectionOffset) <= VISIBLE_COUNT;
+    } else {
+        return (
+            Math.abs(firstSectionOffset - 2 * length + length) <= VISIBLE_COUNT
+        );
+    }
+};
+
+const isCloseToBottom = (
+    sectionOnTop: 'first' | 'second',
+    firstSectionOffset: number,
+    length: number
+) => {
+    if (sectionOnTop === 'first') {
+        return (
+            Math.abs(firstSectionOffset - VISIBLE_COUNT + 2 * length) <=
+            VISIBLE_COUNT
+        );
+    } else {
+        return (
+            Math.abs(firstSectionOffset + length - VISIBLE_COUNT) <=
+            VISIBLE_COUNT
+        );
+    }
+};
+
 export const ScrollerWithTranslate = <T,>({
     value,
     options,
@@ -109,29 +142,21 @@ export const ScrollerWithTranslate = <T,>({
     const secondSectionOffsetTranslate = `translateY(${secondSectionOffset * ITEM_HEIGHT}px)`;
 
     const closeToTop = useMemo(() => {
-        if (sectionOnTop === 'first') {
-            return Math.abs(firstSectionOffset) <= VISIBLE_COUNT;
-        } else {
-            return (
-                Math.abs(secondSectionOffset + options.length) <= VISIBLE_COUNT
-            );
-        }
-    }, [firstSectionOffset, options.length, sectionOnTop]);
+        return isCloseToTop(
+            sectionOnTop,
+            firstSectionOffset,
+            secondSectionOffset,
+            options.length
+        );
+    }, [firstSectionOffset, secondSectionOffset, options, sectionOnTop]);
 
     const closeToBottom = useMemo(() => {
-        if (sectionOnTop === 'first') {
-            return (
-                Math.abs(
-                    firstSectionOffset - VISIBLE_COUNT + 2 * options.length
-                ) <= VISIBLE_COUNT
-            );
-        } else {
-            return (
-                Math.abs(firstSectionOffset + options.length - VISIBLE_COUNT) <=
-                VISIBLE_COUNT
-            );
-        }
-    }, [firstSectionOffset, options.length, sectionOnTop]);
+        return isCloseToBottom(
+            sectionOnTop,
+            firstSectionOffset,
+            options.length
+        );
+    }, [firstSectionOffset, options, sectionOnTop]);
 
     const showFirstSection = useMemo(() => {
         const lessThanHorizon = firstSectionOffset <= -options.length;
@@ -162,20 +187,24 @@ export const ScrollerWithTranslate = <T,>({
         }
     }, [sectionOnTop, firstSectionOffset, secondSectionOffset]);
 
-    const advanceItem = useCallback(() => {
-        if (closeToBottom) {
-            setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
-            if (sectionOnTop === 'first') {
-                setFirstSectionOffset(
-                    prevOffset => prevOffset - 1 + 2 * options.length
-                );
+    const advanceItem = useCallback(
+        (steps: number = 1) => {
+            const normalizedSteps = normalizeIndex(steps, options.length);
+            if (closeToBottom) {
+                setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
+                if (sectionOnTop === 'first') {
+                    setFirstSectionOffset(
+                        prevOffset => prevOffset - 1 + 2 * options.length
+                    );
+                } else {
+                    setFirstSectionOffset(prevOffset => prevOffset - 1);
+                }
             } else {
                 setFirstSectionOffset(prevOffset => prevOffset - 1);
             }
-        } else {
-            setFirstSectionOffset(prevOffset => prevOffset - 1);
-        }
-    }, [closeToBottom, sectionOnTop]);
+        },
+        [closeToBottom, sectionOnTop]
+    );
 
     const retreatItem = useCallback(() => {
         if (closeToTop) {
