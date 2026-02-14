@@ -11,6 +11,23 @@ export const Route = createFileRoute('/test')({
 
 type ScrollerType = 'translate' | 'scroll';
 
+const MONTHS = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+] as const;
+
+type Month = (typeof MONTHS)[number];
+
 function TestComponent() {
     const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
@@ -18,7 +35,9 @@ function TestComponent() {
         <>
             <div className="flex w-full items-center justify-center gap-4">
                 {scrollerType === 'scroll' && <Scroller />}
-                {scrollerType === 'translate' && <ScrollerWithTranslate />}
+                {scrollerType === 'translate' && (
+                    <ScrollerWithTranslate value={MONTHS[0]} options={MONTHS} />
+                )}
             </div>
             <div className="flex justify-center">
                 <Button

@@ -75,7 +75,13 @@ const smallerDistBetweenIndices = (
     return Math.min(dist1, dist2);
 };
 
-export const ScrollerWithTranslate = () => {
+export const ScrollerWithTranslate = <T,>({
+    value,
+    options,
+}: {
+    value: T;
+    options: readonly T[];
+}) => {
     const [centerIndex, setCenterIndex] = useState(0);
     const [startIndex, setStartIndex] = useState(0);
 
@@ -227,9 +233,8 @@ export const ScrollerWithTranslate = () => {
                                     key={`${index}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center bg-amber-100 text-red-500 select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(i)}
                                 >
-                                    {option}
+                                    {option as string}
                                 </div>
                             );
                         } else {
@@ -238,9 +243,8 @@ export const ScrollerWithTranslate = () => {
                                     key={`${index}-${option}-top-section`}
                                     className="flex shrink-0 items-center justify-center select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(i)}
                                 >
-                                    {option}
+                                    {option as string}
                                 </div>
                             );
                         }
@@ -264,9 +268,8 @@ export const ScrollerWithTranslate = () => {
                                     key={`${i}-${option}-bottom-section`}
                                     className="flex shrink-0 items-center justify-center bg-amber-100 text-red-500 select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(i)}
                                 >
-                                    {option}
+                                    {option as string}
                                 </div>
                             );
                         } else {
@@ -275,9 +278,8 @@ export const ScrollerWithTranslate = () => {
                                     key={`${i}-${option}-bottom-section`}
                                     className="flex shrink-0 items-center justify-center select-none"
                                     style={{ height: ITEM_HEIGHT }}
-                                    onClick={() => setCenterIndex(i)}
                                 >
-                                    {option}
+                                    {option as string}
                                 </div>
                             );
                         }
