@@ -6,8 +6,8 @@ import { usePixiCanvas } from '@/contexts/pixi';
 type StateToEventKey<K extends keyof CameraState> = K extends 'position'
     ? 'pan'
     : K extends 'zoomLevel'
-    ? 'zoom'
-    : 'rotate';
+      ? 'zoom'
+      : 'rotate';
 
 export function useAllBoardCameraState() {
     const { result } = usePixiCanvas();
@@ -21,7 +21,7 @@ export function useAllBoardCameraState() {
     return useSyncExternalStore(
         cb => {
             if (result.initialized == false || result.success == false) {
-                return () => { };
+                return () => {};
             }
             return result.components.camera.on('all', cb);
         },
@@ -90,7 +90,7 @@ export const useBoardCameraState = <K extends keyof CameraState>(
                 result.success == false ||
                 result.components.camera == null
             ) {
-                return () => { };
+                return () => {};
             }
             return result.components.camera.on(stateKey, cb);
         },

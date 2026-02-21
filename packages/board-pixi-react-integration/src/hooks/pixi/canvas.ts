@@ -27,18 +27,21 @@ export const useAppTicker = (
 export const useToggleKmtInput = () => {
     const { result } = usePixiCanvas();
 
-    return useCallback((enable: boolean) => {
-        const check = appIsReady(result);
-        if (!check.ready) {
-            return;
-        }
+    return useCallback(
+        (enable: boolean) => {
+            const check = appIsReady(result);
+            if (!check.ready) {
+                return;
+            }
 
-        if (enable) {
-            check.components.kmtParser.enable();
-        } else {
-            check.components.kmtParser.disable();
-        }
-    }, [result]);
+            if (enable) {
+                check.components.kmtParser.enable();
+            } else {
+                check.components.kmtParser.disable();
+            }
+        },
+        [result]
+    );
 };
 
 export const useCanvasPointerDown = (

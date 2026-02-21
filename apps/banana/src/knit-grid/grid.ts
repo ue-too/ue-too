@@ -52,7 +52,11 @@ export class Grid {
         if (at == undefined) {
             at = this._rows;
         }
-        this._cells.splice(at, 0, new Array(this._columns).fill({ type: 'empty' }));
+        this._cells.splice(
+            at,
+            0,
+            new Array(this._columns).fill({ type: 'empty' })
+        );
     }
 
     removeRow(at: number): void {
@@ -70,7 +74,11 @@ export class Grid {
             throw new Error('Row or column out of bounds');
         }
         this._cells[row][column].type = cellType;
-        this._changeObservable.notify({ row, column, cell: { type: cellType } });
+        this._changeObservable.notify({
+            row,
+            column,
+            cell: { type: cellType },
+        });
     }
 
     onCellChange(

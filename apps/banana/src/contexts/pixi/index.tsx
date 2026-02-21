@@ -56,11 +56,7 @@ export const PixiCanvasProvider = ({
     // may be destroyed before useEffect cleanup runs
     const validatedResult = useMemo(() => {
         // Check if we have a successful result but the app is destroyed
-        if (
-            result.initialized &&
-            result.success &&
-            result.components
-        ) {
+        if (result.initialized && result.success && result.components) {
             const app = result.components.app;
             // Check if the app or renderer is destroyed/null
             // app.renderer is null when the app is destroyed
@@ -92,7 +88,9 @@ export const PixiCanvasProvider = ({
 
     console.log('PixiCanvasProvider rendered', validatedResult);
     return (
-        <PixiCanvasContext.Provider value={{ setResult, result: validatedResult }}>
+        <PixiCanvasContext.Provider
+            value={{ setResult, result: validatedResult }}
+        >
             {children}
         </PixiCanvasContext.Provider>
     );

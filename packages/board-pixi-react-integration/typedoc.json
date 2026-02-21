@@ -1,21 +1,11 @@
 {
-  "$schema": "https://typedoc.org/schema.json",
-  "extends": "../../typedoc.json",
-  "entryPoints": [
-    "src/index.ts"
-  ],
-  "out": "../../docs/board-pixi-react-integration",
-  "name": "@ue-too/board-pixi-react-integration",
-  "readme": "./README.md",
-  "includeVersion": true,
-  "categoryOrder": [
-    "Core",
-    "Helpers",
-    "Types",
-    "*"
-  ],
-  "sort": [
-    "static-first",
-    "alphabetical"
-  ]
+    "$schema": "https://typedoc.org/schema.json",
+    "categoryOrder": ["Core", "Helpers", "Types", "*"],
+    "entryPoints": ["src/index.ts"],
+    "extends": "../../typedoc.json",
+    "includeVersion": true,
+    "name": "@ue-too/board-pixi-react-integration",
+    "out": "../../docs/board-pixi-react-integration",
+    "readme": "./README.md",
+    "sort": ["static-first", "alphabetical"]
 }

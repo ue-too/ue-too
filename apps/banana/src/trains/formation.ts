@@ -168,19 +168,19 @@ export class Train {
             accuOffset += this._offsets[index];
             const bogiePosition = !preview
                 ? getPosition(
-                    accuOffset,
-                    { ...position, direction: expandDirection },
-                    this._trackGraph,
-                    this._jointDirectionManager,
-                    this._occupiedJointNumbers,
-                    this._occupiedTrackSegments
-                )
+                      accuOffset,
+                      { ...position, direction: expandDirection },
+                      this._trackGraph,
+                      this._jointDirectionManager,
+                      this._occupiedJointNumbers,
+                      this._occupiedTrackSegments
+                  )
                 : getPosition(
-                    accuOffset,
-                    { ...position, direction: expandDirection },
-                    this._trackGraph,
-                    this._jointDirectionManager
-                );
+                      accuOffset,
+                      { ...position, direction: expandDirection },
+                      this._trackGraph,
+                      this._jointDirectionManager
+                  );
             if (bogiePosition === null || bogiePosition.stop) {
                 // console.warn('cannot put the whole train at the current position');
                 return null;
@@ -314,10 +314,10 @@ export class Train {
         if (
             this._previewPositionCache !== null &&
             this._previewPositionCache.direction ===
-            previewPosition.direction &&
+                previewPosition.direction &&
             this._previewPositionCache.tValue === previewPosition.tValue &&
             this._previewPositionCache.trackSegment ===
-            previewPosition.trackSegment
+                previewPosition.trackSegment
         ) {
             return this._previewPositions;
         }
@@ -563,15 +563,15 @@ export function getPosition(
             nextPosition.type === 'withinCurve'
                 ? nextPosition.tVal
                 : nextDirection.direction === 'tangent'
-                    ? 1
-                    : 0;
+                  ? 1
+                  : 0;
     }
     xTValue =
         nextPosition.type === 'withinCurve'
             ? nextPosition.tVal
             : xDirection === 'tangent'
-                ? 1
-                : 0;
+              ? 1
+              : 0;
 
     return {
         stop: false,

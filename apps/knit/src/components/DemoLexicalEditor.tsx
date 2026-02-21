@@ -41,7 +41,14 @@ import {
     Underline,
     Undo,
 } from 'lucide-react';
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -181,14 +188,14 @@ function LexicalToolbar(): React.ReactElement {
         );
     }, [editor]);
 
-  const toggleLink = useCallback(() => {
-    const url = window.prompt('Enter URL:', 'https://');
-    if (url == null) return;
-    editor.dispatchCommand(TOGGLE_LINK_COMMAND, url === '' ? null : url);
-  }, [editor]);
+    const toggleLink = useCallback(() => {
+        const url = window.prompt('Enter URL:', 'https://');
+        if (url == null) return;
+        editor.dispatchCommand(TOGGLE_LINK_COMMAND, url === '' ? null : url);
+    }, [editor]);
 
     return (
-        <Card className="pointer-events-auto flex flex-row flex-wrap items-center gap-1 px-2 py-1.5 min-h-[40px] w-fit shadow-md border">
+        <Card className="pointer-events-auto flex min-h-[40px] w-fit flex-row flex-wrap items-center gap-1 border px-2 py-1.5 shadow-md">
             <Button
                 variant="ghost"
                 size="icon-sm"
@@ -309,14 +316,20 @@ const MIN_EDITOR_HEIGHT = 160;
 const DEFAULT_EDITOR_WIDTH = 480;
 const DEFAULT_EDITOR_HEIGHT = 280;
 
-const EditorEmptyRefContext = createContext<React.MutableRefObject<boolean> | null>(null);
+const EditorEmptyRefContext =
+    createContext<React.MutableRefObject<boolean> | null>(null);
 
 function isEditorEmpty(editor: LexicalEditor): boolean {
     let empty = true;
     editor.getEditorState().read(() => {
         const root = $getRoot();
         const first = root.getFirstChild();
-        empty = root.getChildrenSize() === 1 && first != null && 'isEmpty' in first && typeof first.isEmpty === 'function' && first.isEmpty();
+        empty =
+            root.getChildrenSize() === 1 &&
+            first != null &&
+            'isEmpty' in first &&
+            typeof first.isEmpty === 'function' &&
+            first.isEmpty();
     });
     return empty;
 }
@@ -354,14 +367,26 @@ export function DemoLexicalEditor(): React.ReactElement {
     const [isSelected, setIsSelected] = useState(false);
     const boxRef = useRef<HTMLDivElement>(null);
     const contentAreaRef = useRef<HTMLDivElement>(null);
-    const dragRef = useRef<{ startX: number; startY: number; startBoxX: number; startBoxY: number } | null>(null);
-    const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number } | null>(null);
+    const dragRef = useRef<{
+        startX: number;
+        startY: number;
+        startBoxX: number;
+        startBoxY: number;
+    } | null>(null);
+    const resizeRef = useRef<{
+        startX: number;
+        startY: number;
+        startW: number;
+        startH: number;
+    } | null>(null);
 
     /** When empty: first click goes straight to edit. When not empty: first click selects, second click edits. */
     const handleContentAreaMouseDown = useCallback(
         (e: React.MouseEvent) => {
             if (e.button !== 0) return;
-            const editable = contentAreaRef.current?.querySelector<HTMLElement>('[contenteditable="true"]');
+            const editable = contentAreaRef.current?.querySelector<HTMLElement>(
+                '[contenteditable="true"]'
+            );
             if (!isSelected) {
                 if (editorEmptyRef.current) {
                     setIsSelected(true);
@@ -388,7 +413,8 @@ export function DemoLexicalEditor(): React.ReactElement {
             }
         };
         document.addEventListener('mousedown', onDocumentMouseDown);
-        return () => document.removeEventListener('mousedown', onDocumentMouseDown);
+        return () =>
+            document.removeEventListener('mousedown', onDocumentMouseDown);
     }, []);
 
     const handleDragStart = useCallback(
@@ -434,15 +460,21 @@ export function DemoLexicalEditor(): React.ReactElement {
             if (resizeRef.current != null) {
                 const dx = e.clientX - resizeRef.current.startX;
                 const dy = e.clientY - resizeRef.current.startY;
-                setBox((prev) => ({
+                setBox(prev => ({
                     ...prev,
-                    width: Math.max(MIN_EDITOR_WIDTH, resizeRef.current!.startW + dx),
-                    height: Math.max(MIN_EDITOR_HEIGHT, resizeRef.current!.startH + dy),
+                    width: Math.max(
+                        MIN_EDITOR_WIDTH,
+                        resizeRef.current!.startW + dx
+                    ),
+                    height: Math.max(
+                        MIN_EDITOR_HEIGHT,
+                        resizeRef.current!.startH + dy
+                    ),
                 }));
             } else if (dragRef.current != null) {
                 const dx = e.clientX - dragRef.current.startX;
                 const dy = e.clientY - dragRef.current.startY;
-                setBox((prev) => ({
+                setBox(prev => ({
                     ...prev,
                     x: dragRef.current!.startBoxX + dx,
                     y: dragRef.current!.startBoxY + dy,
@@ -479,7 +511,7 @@ export function DemoLexicalEditor(): React.ReactElement {
                     <EditorEmptyRefSync />
                     <div
                         ref={boxRef}
-                        className={`group absolute rounded-lg outline-none transition-shadow ${isSelected ? 'ring-2 ring-neutral-400 ring-offset-2' : ''}`}
+                        className={`group absolute rounded-lg transition-shadow outline-none ${isSelected ? 'ring-2 ring-neutral-400 ring-offset-2' : ''}`}
                         style={{
                             left: box.x,
                             top: box.y,
@@ -487,67 +519,68 @@ export function DemoLexicalEditor(): React.ReactElement {
                             height: box.height,
                         }}
                     >
-                    {/* Drag handle: top bar */}
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Drag to move editor"
-                        className="flex cursor-grab items-center justify-center border-b border-neutral-200 bg-neutral-50 py-1.5 text-neutral-500 active:cursor-grabbing"
-                        onMouseDown={handleDragStart}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
-                        }}
-                    >
-                        <GripVertical className="size-4" />
-                    </div>
-                    {/* Floating toolbar */}
-                    <div
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-h-[40px] w-fit opacity-0 pointer-events-none transition-opacity duration-200 group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
-                    >
-                        <LexicalToolbar />
-                    </div>
-                    {/* Editor content area: first click selects box, second click enters edit mode */}
-                    <div
-                        ref={contentAreaRef}
-                        className="relative flex h-[calc(100%-2.25rem)] flex-col overflow-hidden rounded-b border-x border-b border-neutral-200 bg-white focus-within:ring-2 focus-within:ring-neutral-400 focus-within:ring-inset cursor-text"
-                        onMouseDown={handleContentAreaMouseDown}
-                    >
-                        <RichTextPlugin
-                            contentEditable={
-                                <ContentEditable className="min-h-0 flex-1 outline-none p-3" />
-                            }
-                            placeholder={
-                                <div className="pointer-events-none absolute top-3 left-3 text-neutral-400">
-                                    {isSelected ? 'Click again to type...' : 'Click to select'}
-                                </div>
-                            }
-                            ErrorBoundary={LexicalErrorBoundary}
-                        />
-                        <ListPlugin />
-                        <LinkPlugin />
-                        <HistoryPlugin />
-                    </div>
-                    {/* Resize handle: bottom-right corner */}
-                    <div
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Drag to resize editor"
-                        className="absolute bottom-0 right-0 z-10 cursor-se-resize p-2"
-                        style={{ margin: '-4px -4px 0 0' }}
-                        onMouseDown={handleResizeStart}
-                    >
-                        <svg
-                            className="size-4 text-neutral-400"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
+                        {/* Drag handle: top bar */}
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Drag to move editor"
+                            className="flex cursor-grab items-center justify-center border-b border-neutral-200 bg-neutral-50 py-1.5 text-neutral-500 active:cursor-grabbing"
+                            onMouseDown={handleDragStart}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter' || e.key === ' ')
+                                    e.preventDefault();
+                            }}
                         >
-                            <path d="M15 9v6h-6M21 15v4a2 2 0 0 1-2 2h-4M15 21h6" />
-                        </svg>
+                            <GripVertical className="size-4" />
+                        </div>
+                        {/* Floating toolbar */}
+                        <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 min-h-[40px] w-fit -translate-x-1/2 opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                            <LexicalToolbar />
+                        </div>
+                        {/* Editor content area: first click selects box, second click enters edit mode */}
+                        <div
+                            ref={contentAreaRef}
+                            className="relative flex h-[calc(100%-2.25rem)] cursor-text flex-col overflow-hidden rounded-b border-x border-b border-neutral-200 bg-white focus-within:ring-2 focus-within:ring-neutral-400 focus-within:ring-inset"
+                            onMouseDown={handleContentAreaMouseDown}
+                        >
+                            <RichTextPlugin
+                                contentEditable={
+                                    <ContentEditable className="min-h-0 flex-1 p-3 outline-none" />
+                                }
+                                placeholder={
+                                    <div className="pointer-events-none absolute top-3 left-3 text-neutral-400">
+                                        {isSelected
+                                            ? 'Click again to type...'
+                                            : 'Click to select'}
+                                    </div>
+                                }
+                                ErrorBoundary={LexicalErrorBoundary}
+                            />
+                            <ListPlugin />
+                            <LinkPlugin />
+                            <HistoryPlugin />
+                        </div>
+                        {/* Resize handle: bottom-right corner */}
+                        <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Drag to resize editor"
+                            className="absolute right-0 bottom-0 z-10 cursor-se-resize p-2"
+                            style={{ margin: '-4px -4px 0 0' }}
+                            onMouseDown={handleResizeStart}
+                        >
+                            <svg
+                                className="size-4 text-neutral-400"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            >
+                                <path d="M15 9v6h-6M21 15v4a2 2 0 0 1-2 2h-4M15 21h6" />
+                            </svg>
+                        </div>
                     </div>
-                </div>
                 </LexicalComposer>
             </EditorEmptyRefContext.Provider>
         </div>

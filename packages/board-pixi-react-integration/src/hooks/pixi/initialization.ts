@@ -1,11 +1,15 @@
-import { useEffect, useRef } from 'react';
 import { InitAppOptions } from '@ue-too/board-pixi-integration';
+import { useEffect, useRef } from 'react';
 
 import { ResolvedComponents, usePixiCanvas } from '../../contexts/pixi';
 
-
 export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
-    option: Partial<T>, initFunction: (canvas: HTMLCanvasElement, option: Partial<T>) => Promise<ResolvedComponents>) => {
+    option: Partial<T>,
+    initFunction: (
+        canvas: HTMLCanvasElement,
+        option: Partial<T>
+    ) => Promise<ResolvedComponents>
+) => {
     const { setResult } = usePixiCanvas();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const appComponentsRef = useRef<ResolvedComponents | null>(null);
@@ -24,7 +28,9 @@ export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
                 if (appComponentsRef.current) {
                     setResult({ initialized: false });
                     appComponentsRef.current.cleanup();
-                    appComponentsRef.current.cleanups.forEach(cleanup => cleanup());
+                    appComponentsRef.current.cleanups.forEach(cleanup =>
+                        cleanup()
+                    );
                     appComponentsRef.current.app.destroy(false);
                     appComponentsRef.current = null;
                 }
@@ -56,7 +62,9 @@ export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
             } catch (error) {
                 setResult({ initialized: true, success: false });
                 console.error('Failed to initialize PixiJS:', error);
-                appComponentsRef.current?.cleanups.forEach(cleanup => cleanup());
+                appComponentsRef.current?.cleanups.forEach(cleanup =>
+                    cleanup()
+                );
                 appComponentsRef.current?.cleanup();
             } finally {
                 isInitializingRef.current = false;

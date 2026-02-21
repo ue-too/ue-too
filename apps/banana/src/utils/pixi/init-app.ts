@@ -1,10 +1,15 @@
 import { baseInitApp } from '@ue-too/board-pixi-integration';
+import { BaseAppComponents } from '@ue-too/board-pixi-integration';
 import { Application, Assets, Sprite } from 'pixi.js';
+
 import { PixiCanvasResult } from '@/contexts/pixi';
-import { createKmtInputStateMachineExpansion, ExpandedInputTracker } from '../input-state-machine';
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
-import { BaseAppComponents } from '@ue-too/board-pixi-integration';
+
+import {
+    ExpandedInputTracker,
+    createKmtInputStateMachineExpansion,
+} from '../input-state-machine';
 
 export type PixiAppComponents = BaseAppComponents & {
     pixiGrid: PixiGrid;
@@ -17,9 +22,11 @@ export type InitAppOptions = {
 
 export const initApp = async (
     canvasElement: HTMLCanvasElement,
-    option: Partial<InitAppOptions> = { fullScreen: true, limitEntireViewPort: true }
+    option: Partial<InitAppOptions> = {
+        fullScreen: true,
+        limitEntireViewPort: true,
+    }
 ): Promise<PixiAppComponents> => {
-
     // Intialize the application.
     const baseComponents = await baseInitApp(canvasElement, option);
 
@@ -27,11 +34,15 @@ export const initApp = async (
     const pixiGrid = new PixiGrid(grid);
     baseComponents.app.stage.addChild(pixiGrid);
 
-    const expandedInputTracker = new ExpandedInputTracker(baseComponents.canvasProxy, pixiGrid, baseComponents.camera);
-    const kmtInputStateMachine = createKmtInputStateMachineExpansion(expandedInputTracker);
+    const expandedInputTracker = new ExpandedInputTracker(
+        baseComponents.canvasProxy,
+        pixiGrid,
+        baseComponents.camera
+    );
+    const kmtInputStateMachine =
+        createKmtInputStateMachineExpansion(expandedInputTracker);
     baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
     baseComponents.kmtInputStateMachine = kmtInputStateMachine;
-
 
     // Load the bunny texture.
     const imageUrl = new URL('../../../assets/bala.png', import.meta.url).href;
@@ -56,9 +67,21 @@ export const initApp = async (
     };
 };
 
-export const appIsReady = (result: PixiCanvasResult): { ready: false } | { ready: true, app: Application, components: PixiAppComponents } => {
-    if (result.initialized == false || result.success == false || result.components.app.renderer == null) {
+export const appIsReady = (
+    result: PixiCanvasResult
+):
+    | { ready: false }
+    | { ready: true; app: Application; components: PixiAppComponents } => {
+    if (
+        result.initialized == false ||
+        result.success == false ||
+        result.components.app.renderer == null
+    ) {
         return { ready: false };
     }
-    return { ready: true, app: result.components.app, components: result.components };
+    return {
+        ready: true,
+        app: result.components.app,
+        components: result.components,
+    };
 };

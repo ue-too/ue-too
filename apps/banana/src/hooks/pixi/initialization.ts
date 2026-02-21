@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react';
 
 import { usePixiCanvas } from '@/contexts/pixi';
-
-import { PixiAppComponents } from '../../utils/pixi';
 import { InitAppOptions } from '@/utils/pixi/init-app';
 
-export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions, C extends PixiAppComponents = PixiAppComponents>(
-    option: Partial<T>, initFunction: (canvas: HTMLCanvasElement, option: Partial<T>) => Promise<C>
+import { PixiAppComponents } from '../../utils/pixi';
+
+export const useInitializePixiApp = <
+    T extends InitAppOptions = InitAppOptions,
+    C extends PixiAppComponents = PixiAppComponents,
+>(
+    option: Partial<T>,
+    initFunction: (canvas: HTMLCanvasElement, option: Partial<T>) => Promise<C>
 ) => {
     const { setResult } = usePixiCanvas();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -26,7 +30,9 @@ export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions, 
                 if (appComponentsRef.current) {
                     setResult({ initialized: false });
                     appComponentsRef.current.cleanup();
-                    appComponentsRef.current.cleanups.forEach(cleanup => cleanup());
+                    appComponentsRef.current.cleanups.forEach(cleanup =>
+                        cleanup()
+                    );
                     appComponentsRef.current.app.destroy(false);
                     appComponentsRef.current = null;
                 }
@@ -58,7 +64,9 @@ export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions, 
             } catch (error) {
                 setResult({ initialized: true, success: false });
                 console.error('Failed to initialize PixiJS:', error);
-                appComponentsRef.current?.cleanups.forEach(cleanup => cleanup());
+                appComponentsRef.current?.cleanups.forEach(cleanup =>
+                    cleanup()
+                );
                 appComponentsRef.current?.cleanup();
             } finally {
                 isInitializingRef.current = false;

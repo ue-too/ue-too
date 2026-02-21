@@ -7,8 +7,8 @@ import {
     sameDirection,
 } from '@ue-too/math';
 
-import { RTree, Rectangle } from '../r-tree';
 import { GenericEntityManager } from '../../utils';
+import { RTree, Rectangle } from '../r-tree';
 
 const VERTICAL_CLEARANCE = 3;
 
@@ -1289,7 +1289,7 @@ export class TrackGraph {
                 console.log(
                     'tangent + reverse tangent count',
                     joint.direction.tangent.size +
-                    joint.direction.reverseTangent.size
+                        joint.direction.reverseTangent.size
                 );
                 console.log('for tangent direction: ');
                 joint.direction.tangent.forEach(destinationJointNumber => {

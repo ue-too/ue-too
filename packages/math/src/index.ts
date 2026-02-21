@@ -1,4 +1,5 @@
 import type { Point } from './2dVector';
+
 /**
  * @packageDocumentation
  * Mathematical utilities for 2D and 3D point operations, vector calculations, and transformations.
@@ -242,10 +243,10 @@ export class PointCal {
         if (a.z == null) a.z = 0;
         return this.magnitude(a) != 0
             ? {
-                x: a.x / this.magnitude(a),
-                y: a.y / this.magnitude(a),
-                z: a.z / this.magnitude(a),
-            }
+                  x: a.x / this.magnitude(a),
+                  y: a.y / this.magnitude(a),
+                  z: a.z / this.magnitude(a),
+              }
             : { x: 0, y: 0, z: 0 };
     }
 
