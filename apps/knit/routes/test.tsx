@@ -100,9 +100,9 @@ function TestComponent() {
                 {scrollerType === 'scroll' && <Scroller />}
                 {scrollerType === 'translate' && (
                     <Alt
-                        value={selectedMonth}
                         options={days}
                         onSelect={setSelectedMonth}
+                        visibleCount={3}
                     />
                 )}
             </div>
