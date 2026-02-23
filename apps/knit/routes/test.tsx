@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import { Scroller } from '@/components';
+import Alt from '@/components/scroller/Alt';
 import TranslateScroller from '@/components/scroller/TranslateScroller';
 import { Button } from '@/components/ui/button';
 
@@ -98,7 +99,7 @@ function TestComponent() {
             <div className="flex w-full items-center justify-center gap-4">
                 {scrollerType === 'scroll' && <Scroller />}
                 {scrollerType === 'translate' && (
-                    <TranslateScroller
+                    <Alt
                         value={selectedMonth}
                         options={days}
                         onSelect={setSelectedMonth}
