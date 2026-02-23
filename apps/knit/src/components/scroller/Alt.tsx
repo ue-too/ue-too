@@ -3,6 +3,7 @@ import {
     useEffect,
     useLayoutEffect,
     useMemo,
+    useRef,
     useState,
 } from 'react';
 
@@ -17,9 +18,10 @@ const normalizeIndex = (index: number, length: number) => {
     return index;
 };
 
-const VISIBLE_COUNT = 3;
+const VISIBLE_COUNT = 5;
 const ITEM_HEIGHT = 40; // px
-const BUFFER_COUNT = 5;
+const BUFFER_COUNT = 3;
+const WHEEL_THROTTLE_MS = 80;
 
 const keyMap = new Map<string, boolean>([
     ['ArrowUp', false],
@@ -49,30 +51,27 @@ const createLoopingIndices = (
 
 const ScrollerWithTranslate = <T,>({
     options,
-    onSelect,
     visibleCount = VISIBLE_COUNT,
+    index,
+    setIndex,
 }: {
     options: readonly T[];
-    onSelect: (value: T) => void;
     visibleCount: number;
+    index: number;
+    setIndex: (index: number | ((prev: number) => number)) => void;
 }) => {
-    const [index, setIndex] = useState(0);
-
-    // Clamp to valid range during render so transform/highlight are correct immediately (no transition)
-    const displayIndex =
-        options.length === 0 ? 0 : Math.min(index, options.length - 1);
-
-    useEffect(() => {
-        if (index > options.length - 1) {
-            const newIndex = options.length - 1;
-            onSelect(options[newIndex]);
-            setIndex(newIndex);
-        }
-    }, [options.length]); // only run when length changes; sync state after displayIndex already rendered correctly
-
     const startIndex = normalizeIndex(
-        displayIndex - Math.floor(visibleCount / 2) - BUFFER_COUNT,
+        index - Math.floor(visibleCount / 2) - BUFFER_COUNT,
         options.length
+    );
+
+    const keyMap = useMemo(
+        () =>
+            new Map<string, boolean>([
+                ['ArrowUp', false],
+                ['ArrowDown', false],
+            ]),
+        []
     );
 
     const indices = createLoopingIndices(
@@ -81,70 +80,55 @@ const ScrollerWithTranslate = <T,>({
         visibleCount + BUFFER_COUNT + 1
     );
 
+    const lastWheelRef = useRef(0);
+
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
             if (event.key === 'ArrowUp' && !keyMap.get('ArrowUp')) {
                 keyMap.set('ArrowUp', true);
-                const newIndex = normalizeIndex(
-                    displayIndex - 1,
-                    options.length
-                );
-                onSelect(options[newIndex]);
-                setIndex(newIndex);
+                setIndex(prev => normalizeIndex(prev - 1, options.length));
             } else if (event.key === 'ArrowDown' && !keyMap.get('ArrowDown')) {
                 keyMap.set('ArrowDown', true);
-                const newIndex = normalizeIndex(
-                    displayIndex + 1,
-                    options.length
-                );
-                onSelect(options[newIndex]);
-                setIndex(newIndex);
+                setIndex(prev => normalizeIndex(prev + 1, options.length));
             }
         },
-        [displayIndex, options, onSelect]
+        [options, setIndex, keyMap]
     );
 
     const handleWheel = useCallback(
-        (event: WheelEvent) => {
+        (event: React.WheelEvent<HTMLDivElement>) => {
+            // event.preventDefault();
+            const now = Date.now();
+            if (now - lastWheelRef.current < WHEEL_THROTTLE_MS) return;
+            lastWheelRef.current = now;
             if (event.deltaY > 0) {
-                const newIndex = normalizeIndex(
-                    displayIndex + 1,
-                    options.length
-                );
-                onSelect(options[newIndex]);
-                setIndex(newIndex);
+                setIndex(prev => normalizeIndex(prev + 1, options.length));
             } else {
-                const newIndex = normalizeIndex(
-                    displayIndex - 1,
-                    options.length
-                );
-                onSelect(options[newIndex]);
-                setIndex(newIndex);
+                setIndex(prev => normalizeIndex(prev - 1, options.length));
             }
         },
-        [displayIndex, options, onSelect]
+        [options, setIndex]
     );
 
-    const handleKeyUp = useCallback((event: KeyboardEvent) => {
-        if (event.key === 'ArrowUp') {
-            keyMap.set('ArrowUp', false);
-        } else if (event.key === 'ArrowDown') {
-            keyMap.set('ArrowDown', false);
-        }
-    }, []);
+    const handleKeyUp = useCallback(
+        (event: KeyboardEvent) => {
+            if (event.key === 'ArrowUp') {
+                keyMap.set('ArrowUp', false);
+            } else if (event.key === 'ArrowDown') {
+                keyMap.set('ArrowDown', false);
+            }
+        },
+        [keyMap]
+    );
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
         document.addEventListener('keyup', handleKeyUp);
-        document.addEventListener('wheel', handleWheel);
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', handleKeyUp);
-            document.removeEventListener('wheel', handleWheel);
         };
     }, [handleKeyDown, handleKeyUp, handleWheel]);
-
-    console.log(indices);
 
     return (
         <div className="flex h-full flex-col items-center justify-center">
@@ -155,9 +139,7 @@ const ScrollerWithTranslate = <T,>({
                     height: visibleCount * ITEM_HEIGHT,
                     width: '100%',
                 }}
-                onPointerDown={e => {
-                    console.log('pointer down', e);
-                }}
+                onWheel={handleWheel}
             >
                 <div
                     style={{
@@ -183,11 +165,10 @@ const ScrollerWithTranslate = <T,>({
                                     'flex shrink-0 items-center justify-center select-none',
                                     {
                                         'bg-amber-100 text-red-500':
-                                            idx === displayIndex,
+                                            idx === index,
                                     }
                                 )}
                                 onClick={() => {
-                                    onSelect(option);
                                     setIndex(idx);
                                 }}
                             >
@@ -199,24 +180,14 @@ const ScrollerWithTranslate = <T,>({
             </div>
             <Button
                 onClick={() => {
-                    const newIndex = normalizeIndex(
-                        displayIndex - 1,
-                        options.length
-                    );
-                    onSelect(options[newIndex]);
-                    setIndex(newIndex);
+                    setIndex(prev => normalizeIndex(prev - 1, options.length));
                 }}
             >
                 Previous Item
             </Button>
             <Button
                 onClick={() => {
-                    const newIndex = normalizeIndex(
-                        displayIndex + 1,
-                        options.length
-                    );
-                    onSelect(options[newIndex]);
-                    setIndex(newIndex);
+                    setIndex(prev => normalizeIndex(prev + 1, options.length));
                 }}
             >
                 Next Item

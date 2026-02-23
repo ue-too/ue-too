@@ -13,37 +13,18 @@ export const Route = createFileRoute('/test')({
 type ScrollerType = 'translate' | 'scroll';
 
 const MONTHS = [
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-    '10',
-    '11',
-    '12',
-    '13',
-    '14',
-    '15',
-    '16',
-    '17',
-    '18',
-    '19',
-    '20',
-    '21',
-    '22',
-    '23',
-    '24',
-    '25',
-    '26',
-    '27',
-    '28',
-    '29',
-    '30',
-    '31',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
 ] as const;
 
 const DAYS = [
@@ -80,6 +61,8 @@ const DAYS = [
     '31',
 ] as const;
 
+const thirtyDays = DAYS.slice(0, 30);
+
 const twoNineDays = DAYS.slice(0, 29);
 
 type Month = (typeof MONTHS)[number];
@@ -92,7 +75,21 @@ function TestComponent() {
 
     const [days, setDays] = useState<readonly Day[]>(DAYS);
 
-    console.log('selectedMonth', selectedMonth);
+    const [index, setIndex] = useState(0);
+    const [monthIndex, setMonthIndex] = useState(0);
+
+    const [daysLength, setDaysLength] = useState(days.length);
+
+    // Derive so when days shrinks and selected is out of range we show the clamped value immediately (no one-frame lag)
+    if (daysLength !== days.length) {
+        if (index > days.length - 1) {
+            setIndex(days.length - 1);
+        }
+        setDaysLength(days.length);
+    }
+
+    console.log('selectedMonth', MONTHS[monthIndex]);
+    console.log('selectedDay', days[index]);
 
     return (
         <>
@@ -100,11 +97,18 @@ function TestComponent() {
                 {scrollerType === 'scroll' && <Scroller />}
                 {scrollerType === 'translate' && (
                     <Alt
-                        options={days}
-                        onSelect={setSelectedMonth}
-                        visibleCount={3}
+                        index={monthIndex}
+                        setIndex={setMonthIndex}
+                        options={MONTHS}
+                        visibleCount={5}
                     />
                 )}
+                <Alt
+                    index={index}
+                    setIndex={setIndex}
+                    options={days}
+                    visibleCount={5}
+                />
             </div>
             <div className="flex justify-center">
                 <Button
@@ -120,6 +124,16 @@ function TestComponent() {
                     Switch to 29 days
                 </Button>
                 <Button onClick={() => setDays(DAYS)}>Switch to 31 days</Button>
+                <Button onClick={() => setDays(thirtyDays)}>
+                    Switch to 30 days
+                </Button>
+                <Button
+                    onClick={() =>
+                        console.log('submitting with day', days[index])
+                    }
+                >
+                    Submit
+                </Button>
             </div>
         </>
     );
