@@ -1,4 +1,4 @@
-export const getOffset = (firstSectionOffset: number, numberOfRepeat: number, optionsLength: number, sectionOnTop: number): number[] => {
+export const getOffsets = (firstSectionOffset: number, numberOfRepeat: number, optionsLength: number, sectionOnTop: number): number[] => {
     if (sectionOnTop > numberOfRepeat || sectionOnTop < 0) {
         return [];
     }
@@ -15,6 +15,24 @@ export const getOffset = (firstSectionOffset: number, numberOfRepeat: number, op
 
     return offsets;
 };
+
+export const getOffset = (firstSectionOffset: number, section: number, numberOfRepeat: number, optionsLength: number, sectionOnTop: number): number => {
+    if (sectionOnTop > numberOfRepeat || sectionOnTop < 0) {
+        return 0;
+    }
+
+    if (sectionOnTop === 1) {
+        return firstSectionOffset;
+    }
+
+    if (section >= sectionOnTop && section <= numberOfRepeat) {
+        return firstSectionOffset - optionsLength * numberOfRepeat;
+    }
+
+    return firstSectionOffset;
+}
+
+
 
 
 
