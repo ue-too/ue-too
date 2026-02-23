@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { cn } from '@/lib/utils';
-
 import { Button } from '../ui/button';
 
 const options: string[] = [
@@ -108,12 +106,38 @@ const isCloseToBottom = (
     }
 };
 
+const getCurrentIndex = (
+    sectionOnTop: 'first' | 'second',
+    firstSectionOffset: number,
+    optionsLength: number
+) => {
+    const secondSectionOffset =
+        sectionOnTop === 'first'
+            ? firstSectionOffset
+            : firstSectionOffset - 2 * optionsLength;
+    if (sectionOnTop === 'first') {
+        return normalizeIndex(
+            -firstSectionOffset + Math.floor(VISIBLE_COUNT / 2),
+            optionsLength
+        );
+    } else {
+        return normalizeIndex(
+            -optionsLength -
+                secondSectionOffset +
+                Math.floor(VISIBLE_COUNT / 2),
+            optionsLength
+        );
+    }
+};
+
 export const ScrollerWithTranslate = <T,>({
     value,
     options,
+    onSelect,
 }: {
     value: T;
     options: readonly T[];
+    onSelect: (value: T) => void;
 }) => {
     const [centerIndex, setCenterIndex] = useState(0);
     const [startIndex, setStartIndex] = useState(0);
@@ -172,25 +196,22 @@ export const ScrollerWithTranslate = <T,>({
     }, [secondSectionOffset, options.length, VISIBLE_COUNT]);
 
     const currentIndex = useMemo(() => {
-        if (sectionOnTop === 'first') {
-            return normalizeIndex(
-                -firstSectionOffset + Math.floor(VISIBLE_COUNT / 2),
-                options.length
-            );
-        } else {
-            return normalizeIndex(
-                -options.length -
-                    secondSectionOffset +
-                    Math.floor(VISIBLE_COUNT / 2),
-                options.length
-            );
-        }
-    }, [sectionOnTop, firstSectionOffset, secondSectionOffset]);
+        return getCurrentIndex(
+            sectionOnTop,
+            firstSectionOffset,
+            options.length
+        );
+    }, [sectionOnTop, firstSectionOffset, options]);
 
     const advanceItem = useCallback(
         (steps: number = 1) => {
-            const normalizedSteps = normalizeIndex(steps, options.length);
             if (closeToBottom) {
+                const normalizedIndex = normalizeIndex(
+                    currentIndex + steps,
+                    options.length
+                );
+                const nextValue = options[normalizedIndex];
+                onSelect(nextValue);
                 setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
                 if (sectionOnTop === 'first') {
                     setFirstSectionOffset(
@@ -200,14 +221,26 @@ export const ScrollerWithTranslate = <T,>({
                     setFirstSectionOffset(prevOffset => prevOffset - 1);
                 }
             } else {
+                const normalizedIndex = normalizeIndex(
+                    currentIndex + steps,
+                    options.length
+                );
+                const nextValue = options[normalizedIndex];
+                onSelect(nextValue);
                 setFirstSectionOffset(prevOffset => prevOffset - 1);
             }
         },
-        [closeToBottom, sectionOnTop]
+        [closeToBottom, sectionOnTop, options, currentIndex, onSelect]
     );
 
     const retreatItem = useCallback(() => {
         if (closeToTop) {
+            const normalizedIndex = normalizeIndex(
+                currentIndex - 1,
+                options.length
+            );
+            const nextValue = options[normalizedIndex];
+            onSelect(nextValue);
             setSectionOnTop(sectionOnTop === 'first' ? 'second' : 'first');
             if (sectionOnTop === 'second') {
                 setFirstSectionOffset(
@@ -217,9 +250,15 @@ export const ScrollerWithTranslate = <T,>({
                 setFirstSectionOffset(prevOffset => prevOffset + 1);
             }
         } else {
+            const normalizedIndex = normalizeIndex(
+                currentIndex - 1,
+                options.length
+            );
+            const nextValue = options[normalizedIndex];
+            onSelect(nextValue);
             setFirstSectionOffset(prevOffset => prevOffset + 1);
         }
-    }, [closeToTop, sectionOnTop]);
+    }, [closeToTop, sectionOnTop, options, currentIndex, onSelect]);
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -256,7 +295,7 @@ export const ScrollerWithTranslate = <T,>({
                 >
                     {indices.map((index, i) => {
                         const option = options[index];
-                        if (i === currentIndex) {
+                        if (i === currentIndex && showFirstSection) {
                             return (
                                 <div
                                     key={`${index}-${option}-top-section`}
@@ -291,7 +330,7 @@ export const ScrollerWithTranslate = <T,>({
                 >
                     {indices.map((index, i) => {
                         const option = options[index];
-                        if (i === currentIndex) {
+                        if (i === currentIndex && showSecondSection) {
                             return (
                                 <div
                                     key={`${i}-${option}-bottom-section`}
@@ -331,7 +370,9 @@ export const ScrollerWithTranslate = <T,>({
             </Button>
             <Button
                 onClick={() => {
-                    setStartIndex(prevStartIndex => prevStartIndex + 1);
+                    setStartIndex(prevStartIndex =>
+                        normalizeIndex(prevStartIndex + 1, options.length)
+                    );
                 }}
             >
                 Next Start Index

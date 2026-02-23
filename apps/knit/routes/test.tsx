@@ -31,12 +31,20 @@ type Month = (typeof MONTHS)[number];
 function TestComponent() {
     const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
+    const [selectedMonth, setSelectedMonth] = useState<Month>(MONTHS[0]);
+
+    console.log('selectedMonth', selectedMonth);
+
     return (
         <>
             <div className="flex w-full items-center justify-center gap-4">
                 {scrollerType === 'scroll' && <Scroller />}
                 {scrollerType === 'translate' && (
-                    <ScrollerWithTranslate value={MONTHS[0]} options={MONTHS} />
+                    <ScrollerWithTranslate
+                        value={selectedMonth}
+                        options={MONTHS}
+                        onSelect={setSelectedMonth}
+                    />
                 )}
             </div>
             <div className="flex justify-center">
