@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Scroller } from '@/components';
 import Alt from '@/components/scroller/Alt';
 import TranslateScroller from '@/components/scroller/TranslateScroller';
+import { normalizeIndex } from '@/components/scroller/utils';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/test')({
@@ -61,9 +62,29 @@ const DAYS = [
     '31',
 ] as const;
 
-const thirtyDays = DAYS.slice(0, 30);
+/** Number of days in each month (non-leap year). February is 28. */
+const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
 
-const twoNineDays = DAYS.slice(0, 29);
+/**
+ * Returns whether the given year is a leap year.
+ */
+function isLeapYear(year: number): boolean {
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+/**
+ * Returns the days options array for the given month (0–11) and year.
+ * Used for February leap-year handling.
+ */
+function getDaysForMonth(monthIndex: number, year: number): readonly Day[] {
+    const count =
+        monthIndex === 1
+            ? isLeapYear(year)
+                ? 29
+                : 28
+            : DAYS_PER_MONTH[monthIndex];
+    return DAYS.slice(0, count);
+}
 
 type Month = (typeof MONTHS)[number];
 type Day = (typeof DAYS)[number];
@@ -71,14 +92,73 @@ type Day = (typeof DAYS)[number];
 function TestComponent() {
     const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
-    const [selectedMonth, setSelectedMonth] = useState<Day>(DAYS[0]);
-
-    const [days, setDays] = useState<readonly Day[]>(DAYS);
+    const [year] = useState(() => new Date().getFullYear());
 
     const [index, setIndex] = useState(0);
     const [monthIndex, setMonthIndex] = useState(0);
 
+    const days = useMemo(
+        () => getDaysForMonth(monthIndex, year),
+        [monthIndex, year]
+    );
+
     const [daysLength, setDaysLength] = useState(days.length);
+
+    const [focusedScrollerId, setFocusedScrollerId] = useState<
+        'month' | 'days' | null
+    >(null);
+
+    const keyMapRef = useRef(
+        new Map<string, boolean>([
+            ['ArrowUp', false],
+            ['ArrowDown', false],
+        ])
+    );
+
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            if (focusedScrollerId === null) return;
+            if (event.key === 'ArrowUp') {
+                if (keyMapRef.current.get('ArrowUp')) return;
+                keyMapRef.current.set('ArrowUp', true);
+                if (focusedScrollerId === 'month') {
+                    setMonthIndex(prev =>
+                        normalizeIndex(prev - 1, MONTHS.length)
+                    );
+                } else {
+                    setIndex(prev => normalizeIndex(prev - 1, days.length));
+                }
+            } else if (event.key === 'ArrowDown') {
+                if (keyMapRef.current.get('ArrowDown')) return;
+                keyMapRef.current.set('ArrowDown', true);
+                if (focusedScrollerId === 'month') {
+                    setMonthIndex(prev =>
+                        normalizeIndex(prev + 1, MONTHS.length)
+                    );
+                } else {
+                    setIndex(prev => normalizeIndex(prev + 1, days.length));
+                }
+            }
+        },
+        [focusedScrollerId, days.length]
+    );
+
+    const handleKeyUp = useCallback((event: KeyboardEvent) => {
+        if (event.key === 'ArrowUp') {
+            keyMapRef.current.set('ArrowUp', false);
+        } else if (event.key === 'ArrowDown') {
+            keyMapRef.current.set('ArrowDown', false);
+        }
+    }, []);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [handleKeyDown, handleKeyUp]);
 
     // Derive so when days shrinks and selected is out of range we show the clamped value immediately (no one-frame lag)
     if (daysLength !== days.length) {
@@ -101,6 +181,9 @@ function TestComponent() {
                         setIndex={setMonthIndex}
                         options={MONTHS}
                         visibleCount={5}
+                        focused={focusedScrollerId === 'month'}
+                        onFocus={() => setFocusedScrollerId('month')}
+                        onBlur={() => setFocusedScrollerId(null)}
                     />
                 )}
                 <Alt
@@ -108,6 +191,9 @@ function TestComponent() {
                     setIndex={setIndex}
                     options={days}
                     visibleCount={5}
+                    focused={focusedScrollerId === 'days'}
+                    onFocus={() => setFocusedScrollerId('days')}
+                    onBlur={() => setFocusedScrollerId(null)}
                 />
             </div>
             <div className="flex justify-center">
@@ -119,13 +205,6 @@ function TestComponent() {
                     }
                 >
                     {scrollerType === 'scroll' ? 'Translate' : 'Scroll'}
-                </Button>
-                <Button onClick={() => setDays(twoNineDays)}>
-                    Switch to 29 days
-                </Button>
-                <Button onClick={() => setDays(DAYS)}>Switch to 31 days</Button>
-                <Button onClick={() => setDays(thirtyDays)}>
-                    Switch to 30 days
                 </Button>
                 <Button
                     onClick={() =>

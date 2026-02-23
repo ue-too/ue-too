@@ -1,3 +1,9 @@
+export const normalizeIndex = (index: number, length: number): number => {
+    index = index % length;
+    index = (index + length) % length;
+    return index;
+};
+
 export const getOffsets = (firstSectionOffset: number, numberOfRepeat: number, optionsLength: number, sectionOnTop: number): number[] => {
     if (sectionOnTop > numberOfRepeat || sectionOnTop < 0) {
         return [];

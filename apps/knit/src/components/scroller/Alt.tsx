@@ -1,32 +1,14 @@
-import {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
 import { Button } from '../ui/button';
-
-const normalizeIndex = (index: number, length: number) => {
-    index = index % length;
-
-    index = (index + length) % length;
-    return index;
-};
+import { normalizeIndex } from './utils';
 
 const VISIBLE_COUNT = 5;
 const ITEM_HEIGHT = 40; // px
 const BUFFER_COUNT = 3;
 const WHEEL_THROTTLE_MS = 80;
-
-const keyMap = new Map<string, boolean>([
-    ['ArrowUp', false],
-    ['ArrowDown', false],
-]);
 
 const createLoopingIndices = (
     startIndex: number,
@@ -54,24 +36,21 @@ const ScrollerWithTranslate = <T,>({
     visibleCount = VISIBLE_COUNT,
     index,
     setIndex,
+    onFocus,
+    onBlur,
+    focused,
 }: {
     options: readonly T[];
     visibleCount: number;
     index: number;
     setIndex: (index: number | ((prev: number) => number)) => void;
+    focused: boolean;
+    onFocus?: () => void;
+    onBlur?: () => void;
 }) => {
     const startIndex = normalizeIndex(
         index - Math.floor(visibleCount / 2) - BUFFER_COUNT,
         options.length
-    );
-
-    const keyMap = useMemo(
-        () =>
-            new Map<string, boolean>([
-                ['ArrowUp', false],
-                ['ArrowDown', false],
-            ]),
-        []
     );
 
     const indices = createLoopingIndices(
@@ -81,19 +60,6 @@ const ScrollerWithTranslate = <T,>({
     );
 
     const lastWheelRef = useRef(0);
-
-    const handleKeyDown = useCallback(
-        (event: KeyboardEvent) => {
-            if (event.key === 'ArrowUp' && !keyMap.get('ArrowUp')) {
-                keyMap.set('ArrowUp', true);
-                setIndex(prev => normalizeIndex(prev - 1, options.length));
-            } else if (event.key === 'ArrowDown' && !keyMap.get('ArrowDown')) {
-                keyMap.set('ArrowDown', true);
-                setIndex(prev => normalizeIndex(prev + 1, options.length));
-            }
-        },
-        [options, setIndex, keyMap]
-    );
 
     const handleWheel = useCallback(
         (event: React.WheelEvent<HTMLDivElement>) => {
@@ -110,26 +76,6 @@ const ScrollerWithTranslate = <T,>({
         [options, setIndex]
     );
 
-    const handleKeyUp = useCallback(
-        (event: KeyboardEvent) => {
-            if (event.key === 'ArrowUp') {
-                keyMap.set('ArrowUp', false);
-            } else if (event.key === 'ArrowDown') {
-                keyMap.set('ArrowDown', false);
-            }
-        },
-        [keyMap]
-    );
-
-    useEffect(() => {
-        document.addEventListener('keydown', handleKeyDown);
-        document.addEventListener('keyup', handleKeyUp);
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-            document.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [handleKeyDown, handleKeyUp, handleWheel]);
-
     return (
         <div className="flex h-full flex-col items-center justify-center">
             <h1>Scroller with translate</h1>
@@ -139,6 +85,9 @@ const ScrollerWithTranslate = <T,>({
                     height: visibleCount * ITEM_HEIGHT,
                     width: '100%',
                 }}
+                tabIndex={0}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 onWheel={handleWheel}
             >
                 <div
@@ -165,7 +114,7 @@ const ScrollerWithTranslate = <T,>({
                                     'flex shrink-0 items-center justify-center select-none',
                                     {
                                         'bg-amber-100 text-red-500':
-                                            idx === index,
+                                            idx === index && focused,
                                     }
                                 )}
                                 onClick={() => {
