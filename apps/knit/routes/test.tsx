@@ -3,12 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Scroller } from '@/components';
 import Alt from '@/components/scroller/Alt';
-import TranslateScroller from '@/components/scroller/TranslateScroller';
 import { normalizeIndex } from '@/components/scroller/utils';
 import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/test')({
-    component: TestComponent,
+    component: () => <TestComponent date={new Date()} />,
 });
 
 type ScrollerType = 'translate' | 'scroll';
@@ -29,15 +28,15 @@ const MONTHS = [
 ] as const;
 
 const DAYS = [
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
+    '01',
+    '02',
+    '03',
+    '04',
+    '05',
+    '06',
+    '07',
+    '08',
+    '09',
     '10',
     '11',
     '12',
@@ -63,49 +62,74 @@ const DAYS = [
 ] as const;
 
 /** Number of days in each month (non-leap year). February is 28. */
-const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const;
+const DAYS_PER_MONTH = [
+    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+] as const;
+
+const createYears = (startYear: number, endYear: number): readonly string[] => {
+    const years: string[] = [];
+    for (let year = startYear; year <= endYear; year++) {
+        years.push(year.toString());
+    }
+    return years;
+};
+
+const START_YEAR = 2020;
+
+const YEARS = createYears(START_YEAR, START_YEAR + 100);
 
 /**
  * Returns whether the given year is a leap year.
  */
-function isLeapYear(year: number): boolean {
+const isLeapYear = (year: number): boolean => {
     return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
+};
 
 /**
  * Returns the days options array for the given month (0–11) and year.
  * Used for February leap-year handling.
  */
-function getDaysForMonth(monthIndex: number, year: number): readonly Day[] {
+const getDaysForMonth = (
+    monthIndex: number,
+    yearIndex: number
+): readonly Day[] => {
     const count =
         monthIndex === 1
-            ? isLeapYear(year)
+            ? isLeapYear(parseInt(YEARS[yearIndex]))
                 ? 29
                 : 28
             : DAYS_PER_MONTH[monthIndex];
     return DAYS.slice(0, count);
-}
+};
 
 type Month = (typeof MONTHS)[number];
 type Day = (typeof DAYS)[number];
 
-function TestComponent() {
+const TestComponent = ({ date }: { date: Date }) => {
     const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
-    const [year] = useState(() => new Date().getFullYear());
+    const [yearIndex, setYearIndex] = useState(() => date.getFullYear() - 2020);
 
-    const [index, setIndex] = useState(0);
-    const [monthIndex, setMonthIndex] = useState(0);
+    const [index, setIndex] = useState(date.getDate() - 1);
+    const [monthIndex, setMonthIndex] = useState(date.getMonth());
 
     const days = useMemo(
-        () => getDaysForMonth(monthIndex, year),
-        [monthIndex, year]
+        () => getDaysForMonth(monthIndex, yearIndex),
+        [monthIndex, yearIndex]
     );
 
     const [daysLength, setDaysLength] = useState(days.length);
 
+    // Derive so when days shrinks and selected is out of range we show the clamped value immediately (no one-frame lag)
+    if (daysLength !== days.length) {
+        if (index > days.length - 1) {
+            setIndex(days.length - 1);
+        }
+        setDaysLength(days.length);
+    }
+
     const [focusedScrollerId, setFocusedScrollerId] = useState<
-        'month' | 'days' | null
+        'month' | 'days' | 'year' | null
     >(null);
 
     const keyMapRef = useRef(
@@ -125,8 +149,12 @@ function TestComponent() {
                     setMonthIndex(prev =>
                         normalizeIndex(prev - 1, MONTHS.length)
                     );
-                } else {
+                } else if (focusedScrollerId === 'days') {
                     setIndex(prev => normalizeIndex(prev - 1, days.length));
+                } else if (focusedScrollerId === 'year') {
+                    setYearIndex(prev =>
+                        normalizeIndex(prev - 1, YEARS.length)
+                    );
                 }
             } else if (event.key === 'ArrowDown') {
                 if (keyMapRef.current.get('ArrowDown')) return;
@@ -135,8 +163,12 @@ function TestComponent() {
                     setMonthIndex(prev =>
                         normalizeIndex(prev + 1, MONTHS.length)
                     );
-                } else {
+                } else if (focusedScrollerId === 'days') {
                     setIndex(prev => normalizeIndex(prev + 1, days.length));
+                } else if (focusedScrollerId === 'year') {
+                    setYearIndex(prev =>
+                        normalizeIndex(prev + 1, YEARS.length)
+                    );
                 }
             }
         },
@@ -160,41 +192,41 @@ function TestComponent() {
         };
     }, [handleKeyDown, handleKeyUp]);
 
-    // Derive so when days shrinks and selected is out of range we show the clamped value immediately (no one-frame lag)
-    if (daysLength !== days.length) {
-        if (index > days.length - 1) {
-            setIndex(days.length - 1);
-        }
-        setDaysLength(days.length);
-    }
-
-    console.log('selectedMonth', MONTHS[monthIndex]);
-    console.log('selectedDay', days[index]);
-
     return (
         <>
             <div className="flex w-full items-center justify-center gap-4">
                 {scrollerType === 'scroll' && <Scroller />}
                 {scrollerType === 'translate' && (
-                    <Alt
-                        index={monthIndex}
-                        setIndex={setMonthIndex}
-                        options={MONTHS}
-                        visibleCount={5}
-                        focused={focusedScrollerId === 'month'}
-                        onFocus={() => setFocusedScrollerId('month')}
-                        onBlur={() => setFocusedScrollerId(null)}
-                    />
+                    <div className="flex gap-4">
+                        <Alt
+                            index={yearIndex}
+                            setIndex={setYearIndex}
+                            options={YEARS}
+                            visibleCount={5}
+                            focused={focusedScrollerId === 'year'}
+                            onFocus={() => setFocusedScrollerId('year')}
+                            onBlur={() => setFocusedScrollerId(null)}
+                        />
+                        <Alt
+                            index={monthIndex}
+                            setIndex={setMonthIndex}
+                            options={MONTHS}
+                            visibleCount={5}
+                            focused={focusedScrollerId === 'month'}
+                            onFocus={() => setFocusedScrollerId('month')}
+                            onBlur={() => setFocusedScrollerId(null)}
+                        />
+                        <Alt
+                            index={index}
+                            setIndex={setIndex}
+                            options={days}
+                            visibleCount={5}
+                            focused={focusedScrollerId === 'days'}
+                            onFocus={() => setFocusedScrollerId('days')}
+                            onBlur={() => setFocusedScrollerId(null)}
+                        />
+                    </div>
                 )}
-                <Alt
-                    index={index}
-                    setIndex={setIndex}
-                    options={days}
-                    visibleCount={5}
-                    focused={focusedScrollerId === 'days'}
-                    onFocus={() => setFocusedScrollerId('days')}
-                    onBlur={() => setFocusedScrollerId(null)}
-                />
             </div>
             <div className="flex justify-center">
                 <Button
@@ -208,7 +240,10 @@ function TestComponent() {
                 </Button>
                 <Button
                     onClick={() =>
-                        console.log('submitting with day', days[index])
+                        console.log(
+                            'submitting with date',
+                            `${MONTHS[monthIndex]} ${days[index]} ${YEARS[yearIndex]}`
+                        )
                     }
                 >
                     Submit
@@ -216,4 +251,4 @@ function TestComponent() {
             </div>
         </>
     );
-}
+};

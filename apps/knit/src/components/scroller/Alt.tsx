@@ -80,7 +80,7 @@ const ScrollerWithTranslate = <T,>({
         <div className="flex h-full flex-col items-center justify-center">
             <h1>Scroller with translate</h1>
             <div
-                className={`flex flex-col overflow-hidden`}
+                className="flex flex-col overflow-hidden outline-none focus:outline-none"
                 style={{
                     height: visibleCount * ITEM_HEIGHT,
                     width: '100%',
@@ -127,20 +127,6 @@ const ScrollerWithTranslate = <T,>({
                     })}
                 </div>
             </div>
-            <Button
-                onClick={() => {
-                    setIndex(prev => normalizeIndex(prev - 1, options.length));
-                }}
-            >
-                Previous Item
-            </Button>
-            <Button
-                onClick={() => {
-                    setIndex(prev => normalizeIndex(prev + 1, options.length));
-                }}
-            >
-                Next Item
-            </Button>
         </div>
     );
 };
