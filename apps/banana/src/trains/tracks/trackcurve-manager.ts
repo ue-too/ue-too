@@ -6,9 +6,10 @@ import {
 
 import { RTree, Rectangle } from '../r-tree';
 import { GenericEntityManager } from '../../utils';
-import { ELEVATION, ProjectionInfo, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
+import { ELEVATION, ProjectionInfo, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
 import { LEVEL_HEIGHT } from './constants';
-import { getElevationAtT } from './utils';
+import { getElevationAtT, makeTrackSegmentDrawDataFromSplit, orderTest, trackSegmentDrawDataInsertIndex } from './utils';
+import { Observable, SynchronousObservable } from '@ue-too/board';
 
 export class TrackCurveManager {
     private _internalTrackCurveManager: GenericEntityManager<{
@@ -29,6 +30,14 @@ export class TrackCurveManager {
 
     private _trackOrderMap: Map<string, number> = new Map();
 
+    private _persistedDrawData: (TrackSegmentDrawData & {
+        callback(index: number): void;
+    })[] = [];
+    private _persistedDrawDataMap: Map<string, number> = new Map();
+
+    private _deleteObservable: Observable<[string]> = new SynchronousObservable<[string]>();
+    private _addObservable: Observable<[number, TrackSegmentDrawData]> = new SynchronousObservable<[number, TrackSegmentDrawData]>();
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
             segment: TrackSegmentWithCollision;
@@ -37,6 +46,12 @@ export class TrackCurveManager {
                 negative: Point[];
             };
         }>(initialCount);
+    }
+
+    get persistedDrawData(): (TrackSegmentDrawData & {
+        callback(index: number): void;
+    })[] {
+        return this._persistedDrawData;
     }
 
     getTrackSegment(segmentNumber: number): BCurve | null {
@@ -121,6 +136,9 @@ export class TrackCurveManager {
                 res.push(drawData);
             });
         });
+        console.time('sort');
+        res.sort(orderTest);
+        console.timeEnd('sort');
         this._internalDrawData = res;
         this._drawDataDirty = false;
         return res;
@@ -391,14 +409,7 @@ export class TrackCurveManager {
 
         startT = 0;
 
-        console.log('collisionT', collisionT);
-        console.log('insertionT', insertionT);
-
-        const splits: {
-            curve: BCurve;
-            elevation: { from: number; to: number };
-            tValInterval: { start: number; end: number };
-        }[] = [];
+        const splits: TrackSegmentSplit[] = [];
 
         if (insertionT.length === 0) {
             splits.push({
@@ -434,16 +445,8 @@ export class TrackCurveManager {
             for (let i = 0; i < insertionT.length - 1; i++) {
                 const tVal = insertionT[i];
                 const nextTVal = insertionT[i + 1];
-                const [firstCurve, secondCurve, thirdCurve] =
+                const [_, secondCurve] =
                     curve.splitIn3Curves(tVal, nextTVal);
-                const [firstCurve1, secondCurve1] =
-                    curve.splitIntoCurves(nextTVal);
-                // console.log('firstCurve', firstCurve);
-                // console.log('secondCurve', secondCurve);
-                // console.log('thirdCurve', thirdCurve);
-
-                // console.log('firstCurve1', firstCurve1);
-                // console.log('secondCurve1', secondCurve1);
                 const startElevation = getElevationAtT(tVal, {
                     elevation: {
                         from: t0Elevation * LEVEL_HEIGHT,
@@ -493,8 +496,6 @@ export class TrackCurveManager {
             }
         }
 
-        console.log('splits', splits);
-
         const trackSegmentEntry: TrackSegmentWithCollision = {
             curve: curve,
             t0Joint: t0Joint,
@@ -512,8 +513,8 @@ export class TrackCurveManager {
         const curveNumber = this._internalTrackCurveManager.createEntity({
             segment: trackSegmentEntry,
             offsets: {
-                positive: experimentPositiveOffsets,
-                negative: experimentNegativeOffsets,
+                positive: experimentPositiveOffsets.points,
+                negative: experimentNegativeOffsets.points,
             },
         });
 
@@ -521,6 +522,22 @@ export class TrackCurveManager {
             ...trackSegmentEntry,
             trackSegmentNumber: curveNumber,
         };
+
+        splits.forEach(split => {
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber);
+            const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
+            this._persistedDrawData.splice(insertIndex, 0, {
+                ...drawDataForSplit,
+                callback: ((index: number) => {
+                    this._trackOrderMap.set(
+                        JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }),
+                        index
+                    );
+                }).bind(this),
+            });
+            this._persistedDrawDataMap.set(JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }), insertIndex);
+            this._addObservable.notify(insertIndex, drawDataForSplit);
+        });
 
         this._internalRTree.insert(aabbRectangle, trackSegmentTreeEntry);
         this._drawDataDirty = true;
@@ -534,6 +551,7 @@ export class TrackCurveManager {
             console.warn('track segment not found');
             return;
         }
+        const splits = trackSegment.segment.splitCurves;
         const rectangle = new Rectangle(
             trackSegment.segment.curve.AABB.min.x,
             trackSegment.segment.curve.AABB.min.y,
@@ -550,6 +568,30 @@ export class TrackCurveManager {
         this._internalRTree.removeByData(trackSegmentTreeEntry);
         this._internalTrackCurveManager.destroyEntity(curveNumber);
         this._drawDataDirty = true;
+
+        let minIndex = this._persistedDrawData.length - 1;
+        const deletedSet: Set<string> = new Set();
+        splits.forEach(split => {
+            const key = JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval });
+            deletedSet.add(key);
+            const index = this._persistedDrawDataMap.get(key);
+            if (index !== undefined) {
+                if (index < minIndex) {
+                    minIndex = index;
+                }
+                this._persistedDrawData.splice(index, 1);
+                this._persistedDrawDataMap.delete(key);
+                this._deleteObservable.notify(key);
+            }
+        });
+    }
+
+    onDelete(callback: (key: string) => void) {
+        return this._deleteObservable.subscribe(callback);
+    }
+
+    onAdd(callback: (index: number, drawData: TrackSegmentDrawData) => void) {
+        return this._addObservable.subscribe(callback);
     }
 
     get livingEntities(): number[] {

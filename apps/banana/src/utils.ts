@@ -1,7 +1,7 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
+import type { TrackSegmentDrawData } from './trains/tracks/types';
 
-import type { TrackSegmentDrawData } from './trains/tracks/track';
 
 export class GenericEntityManager<T> {
     private _availableEntities: number[] = [];

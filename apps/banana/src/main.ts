@@ -1,4 +1,4 @@
-import { Board, drawArrow, drawRuler } from '@ue-too/board';
+import { Board, DefaultBoardCamera, drawArrow, drawRuler } from '@ue-too/board';
 import { mercatorProjection } from '@ue-too/border';
 import { PointCal } from '@ue-too/math';
 import { Point } from '@ue-too/math';
@@ -20,6 +20,8 @@ import {
     TrackSegmentDrawData,
 } from './trains/tracks/track';
 import { shadows } from './utils';
+import { TrackRenderSystem } from './trains/tracks/render-system';
+import { baseInitApp } from '@ue-too/board-pixi-integration';
 
 const elevationText = document.getElementById(
     'elevation'
@@ -169,6 +171,7 @@ const layoutDeleteToggleButton = document.getElementById(
 ) as HTMLButtonElement;
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
+const pixiCanvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
 const stats = new Stats();
 stats.showPanel(0);
 const statsContainer = document.getElementById('stats') as HTMLDivElement;
@@ -189,6 +192,15 @@ board.camera.setMaxZoomLevel(10000);
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 
 const curveEngine = new CurveCreationEngine();
+const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurveManager);
+
+const res = await baseInitApp(pixiCanvas, {
+    camera: board.camera as DefaultBoardCamera,
+});
+
+res.app.stage.addChild(trackRenderSystem.container);
+
+
 curveEngine.onElevationChange(elevation => {
     if (elevation != null) {
         elevationText.textContent = `Elevation: ${elevation}`;

@@ -61,8 +61,8 @@ export type TrackSegmentDrawData = {
         startJointPosition: Point;
         endJointPosition: Point;
         tValInterval: {
-            start: number;
-            end: number;
+            start: number; // tVal interval start for the draw data split segment
+            end: number; // tVal interval end for the draw data split segment
         };
     };
     gauge: number; // track gauge in meters
@@ -75,6 +75,12 @@ export type TrackSegmentDrawData = {
         to: ELEVATION;
     };
     excludeSegmentsForCollisionCheck: Set<number>;
+};
+
+export type TrackSegmentSplit = {
+    curve: BCurve;
+    elevation: { from: number; to: number }; // the elevation is evaluated using the LEVEL_HEIGHT constant and the ELEVATION enum
+    tValInterval: { start: number; end: number }; // the tVal interval for the split segment in the original track segment curve
 };
 
 export type TrackSegmentShadow = {

@@ -10,8 +10,8 @@ import {
 import { LEVEL_HEIGHT } from './constants';
 import { ELEVATION, ProjectionInfo, ProjectionJointResult, ProjectionResult, TrackJoint, TrackJointWithElevation, TrackSegment, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithElevation } from './types';
 import { TrackCurveManager } from './trackcurve-manager';
-import { TrackJointManager } from './trackjoin-manager';
-import { elevationIntervalOverlaps, getElevationAtT, trackIsSloped } from './utils';
+import { TrackJointManager } from './trackjoint-manager';
+import { elevationIntervalOverlaps, getElevationAtT, orderTest, trackIsSloped } from './utils';
 
 export class TrackGraph {
     private _jointManager: TrackJointManager = new TrackJointManager(10);
@@ -924,78 +924,27 @@ export class TrackGraph {
         });
     }
 
-    getDrawData(viewportAABB: {
+    getDrawData(viewportAABB?: {
         min: Point;
         max: Point;
     }): TrackSegmentDrawData[] {
-        const segments = this._trackCurveManager.experimental();
         if (!this._drawDataDirty) {
-            const res = this._drawData.filter(segment => {
+            const res = viewportAABB ? this._drawData.filter(segment => {
                 const aabb = segment.curve.AABB;
                 return AABBIntersects(viewportAABB, aabb);
-            });
+            }) : this._drawData;
             this._trackCurveManager.clearInternalDrawDataOrderMap();
             res.forEach((segment, index) => {
                 segment.callback(index);
             });
             return res;
         }
-        console.time('sort');
-        this._drawData = segments.sort((a, b) => {
-            if (!trackIsSloped(a) && !trackIsSloped(b)) {
-                return a.elevation.from - b.elevation.from;
-            }
-
-            const overlaps = elevationIntervalOverlaps(a, b);
-            const aMax = Math.max(a.elevation.from, a.elevation.to);
-            const bMax = Math.max(b.elevation.from, b.elevation.to);
-            if (!overlaps) {
-                return aMax - bMax;
-            }
-            if (
-                a.excludeSegmentsForCollisionCheck.has(
-                    b.originalTrackSegment.trackSegmentNumber
-                ) ||
-                b.excludeSegmentsForCollisionCheck.has(
-                    a.originalTrackSegment.trackSegmentNumber
-                )
-            ) {
-                return 0;
-            }
-            const broad = AABBIntersects(a.curve.AABB, b.curve.AABB);
-            if (!broad) {
-                return aMax - bMax;
-            }
-            const collision = a.curve.getCurveIntersections(b.curve);
-            if (collision.length === 0) {
-                return aMax - bMax;
-            }
-            if (collision.length !== 1) {
-                console.warn(
-                    'something wrong in the sorting of track segments draw order'
-                );
-                // return 0;
-            }
-            const aElevation = getElevationAtT(collision[0].selfT, {
-                elevation: {
-                    from: a.elevation.from * LEVEL_HEIGHT,
-                    to: a.elevation.to * LEVEL_HEIGHT,
-                },
-            });
-            const bElevation = getElevationAtT(collision[0].otherT, {
-                elevation: {
-                    from: b.elevation.from * LEVEL_HEIGHT,
-                    to: b.elevation.to * LEVEL_HEIGHT,
-                },
-            });
-            return aElevation - bElevation;
-        });
-        console.timeEnd('sort');
+        this._drawData = this._trackCurveManager.experimental();
         this._drawDataDirty = false;
-        const res = this._drawData.filter(segment => {
+        const res = viewportAABB ? this._drawData.filter(segment => {
             const aabb = segment.curve.AABB;
             return AABBIntersects(viewportAABB, aabb);
-        });
+        }) : this._drawData;
         res.forEach((segment, index) => {
             segment.callback(index);
         });
@@ -1141,4 +1090,9 @@ export class TrackGraph {
     get experimentTrackOffsets(): { positive: Point[]; negative: Point[] }[] {
         return this._trackCurveManager.trackOffsets;
     }
+
+    get trackCurveManager(): TrackCurveManager {
+        return this._trackCurveManager;
+    }
 }
+
