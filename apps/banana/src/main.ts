@@ -9,8 +9,8 @@ import { TrainPlacementEngine, TrainPlacementStateMachine } from './trains';
 import {
     CurveCreationEngine,
     NewJointType,
-    createLayoutStateMachine,
-} from './trains/kmt-state-machine';
+} from './trains/input-state-machine/kmt-state-machine';
+import { createLayoutStateMachine } from './trains/input-state-machine/utils';
 import './media';
 import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';

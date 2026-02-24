@@ -7,8 +7,8 @@ import {
 } from '@ue-too/being';
 import { Point, PointCal } from '@ue-too/math';
 
-import { Train, TrainPosition } from './formation';
-import { TrackGraph } from './tracks/track';
+import { TrackGraph } from '../tracks/track';
+import { Train, TrainPosition } from '../formation';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
@@ -140,7 +140,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
                     ) {
                         const lastOccupiedTrack =
                             occupiedTrackSegments[
-                                occupiedTrackSegments.length - 1
+                            occupiedTrackSegments.length - 1
                             ];
                         const lastOccupiedTrackSegment =
                             this._trackGraph.getTrackSegmentWithJoints(
@@ -332,11 +332,11 @@ export class TrainPlacementIDLEState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-        startPlacement: {
-            action: NO_OP,
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-    };
+            startPlacement: {
+                action: NO_OP,
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
+            },
+        };
 }
 
 export class TrainPlacementHoverForPlacementState extends TemplateState<
@@ -349,35 +349,35 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-        endPlacement: {
-            action: context => {
-                context.cancelCurrentTrainPlacement();
+            endPlacement: {
+                action: context => {
+                    context.cancelCurrentTrainPlacement();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        pointerup: {
-            action: (context, event) => {
-                context.placeTrain(event.position);
+            pointerup: {
+                action: (context, event) => {
+                    context.placeTrain(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-        pointermove: {
-            action: (context, event) => {
-                context.hoverForPlacement(event.position);
+            pointermove: {
+                action: (context, event) => {
+                    context.hoverForPlacement(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-        escapeKey: {
-            action: context => {
-                context.cancelCurrentTrainPlacement();
+            escapeKey: {
+                action: context => {
+                    context.cancelCurrentTrainPlacement();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        flipTrainDirection: {
-            action: context => {
-                context.flipTrainDirection();
+            flipTrainDirection: {
+                action: context => {
+                    context.flipTrainDirection();
+                },
+                defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            defaultTargetState: 'HOVER_FOR_PLACEMENT',
-        },
-    };
+        };
 }

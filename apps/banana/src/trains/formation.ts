@@ -4,7 +4,7 @@ import { TrackGraph } from './tracks/track';
 import {
     JointDirectionManager,
     flipDirection,
-} from './train-kmt-state-machine';
+} from './input-state-machine/train-kmt-state-machine';
 
 export type Car = {
     id: number;

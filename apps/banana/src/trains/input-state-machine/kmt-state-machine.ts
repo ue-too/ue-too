@@ -5,13 +5,13 @@ import type {
     Guard,
     StateMachine,
 } from '@ue-too/being';
-import { NO_OP, TemplateState, TemplateStateMachine } from '@ue-too/being';
+import { NO_OP, TemplateState } from '@ue-too/being';
 import { Observable, Observer, SynchronousObservable } from '@ue-too/board';
 import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
 
-import { PreviewCurveCalculator } from './tracks/new-joint';
+import { PreviewCurveCalculator } from '../tracks/new-joint';
 import {
     ELEVATION,
     ProjectionCurveResult,
@@ -19,8 +19,8 @@ import {
     ProjectionJointResult,
     ProjectionPositiveResult,
     ProjectionResult,
-} from './tracks/types';
-import { TrackGraph } from './tracks/track';
+} from '../tracks/types';
+import { TrackGraph } from '../tracks/track';
 
 export type LayoutStates =
     | 'IDLE'
@@ -83,7 +83,7 @@ export interface LayoutContext extends BaseContext {
     lastCurveSuccess: boolean;
 }
 
-class LayoutIDLEState extends TemplateState<
+export class LayoutIDLEState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -108,7 +108,7 @@ class LayoutIDLEState extends TemplateState<
     };
 }
 
-class LayoutHoverForCurveDeletionState extends TemplateState<
+export class LayoutHoverForCurveDeletionState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -143,7 +143,7 @@ class LayoutHoverForCurveDeletionState extends TemplateState<
     };
 }
 
-class LayoutHoverForStartingPointState extends TemplateState<
+export class LayoutHoverForStartingPointState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -211,7 +211,7 @@ class LayoutHoverForStartingPointState extends TemplateState<
     };
 }
 
-class LayoutHoverForEndingPointState extends TemplateState<
+export class LayoutHoverForEndingPointState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -309,25 +309,7 @@ class LayoutHoverForEndingPointState extends TemplateState<
     };
 }
 
-export function createLayoutStateMachine(
-    context: LayoutContext
-): StateMachine<LayoutEvents, LayoutContext, LayoutStates> {
-    const stateMachine = new TemplateStateMachine<
-        LayoutEvents,
-        LayoutContext,
-        LayoutStates
-    >(
-        {
-            IDLE: new LayoutIDLEState(),
-            HOVER_FOR_STARTING_POINT: new LayoutHoverForStartingPointState(),
-            HOVER_FOR_ENDING_POINT: new LayoutHoverForEndingPointState(),
-            HOVER_FOR_CURVE_DELETION: new LayoutHoverForCurveDeletionState(),
-        },
-        'IDLE',
-        context
-    );
-    return stateMachine;
-}
+export type LayoutStateMachine = StateMachine<LayoutEvents, LayoutContext, LayoutStates>;
 
 export type BrandNewJoint = {
     type: 'new';
