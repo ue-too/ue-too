@@ -196,6 +196,7 @@ const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurv
 
 const res = await baseInitApp(pixiCanvas, {
     camera: board.camera as DefaultBoardCamera,
+    fullScreen: false,
 });
 
 res.app.stage.addChild(trackRenderSystem.container);

@@ -603,4 +603,27 @@ export class TrackCurveManager {
             .getLivingEntities()
             .map(entity => entity.offsets);
     }
+
+    onWhichDrawData(position: { trackSegmentNumber: number, tVal: number }): { trackSegmentNumber: number, tValInterval: { start: number, end: number } } | null {
+        const trackSegment = this._internalTrackCurveManager.getEntity(position.trackSegmentNumber);
+        if (trackSegment == null) {
+            return null;
+        }
+        const splits = trackSegment.segment.splitCurves;
+        let left = 0;
+        let right = splits.length - 1;
+
+        while (left <= right) {
+            const mid = left + Math.floor((right - left) / 2);
+            const midSplit = splits[mid];
+            if (position.tVal >= midSplit.tValInterval.start && position.tVal <= midSplit.tValInterval.end) {
+                return { trackSegmentNumber: position.trackSegmentNumber, tValInterval: midSplit.tValInterval };
+            } else if (position.tVal < midSplit.tValInterval.start) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
+        return null;
+    }
 }
