@@ -1,13 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { throttle } from 'throttle-debounce';
 
 import { Scroller } from '@/components';
 import Alt from '@/components/scroller/Alt';
 import { normalizeIndex } from '@/components/scroller/utils';
 import { Button } from '@/components/ui/button';
 
+/** Throttle delay (ms) for arrow key repeat to avoid animation jitter. */
+const ARROW_THROTTLE_MS = 300;
+
 export const Route = createFileRoute('/test')({
-    component: () => <TestComponent date={new Date()} />,
+    component: () => <TestComponent date={new Date()} withTransition={false} />,
 });
 
 type ScrollerType = 'translate' | 'scroll';
@@ -76,7 +80,7 @@ const createYears = (startYear: number, endYear: number): readonly string[] => {
 
 const START_YEAR = 2020;
 
-const YEARS = createYears(START_YEAR, START_YEAR + 100);
+const YEARS = createYears(START_YEAR, START_YEAR + 30);
 
 /**
  * Returns whether the given year is a leap year.
@@ -105,7 +109,13 @@ const getDaysForMonth = (
 type Month = (typeof MONTHS)[number];
 type Day = (typeof DAYS)[number];
 
-const TestComponent = ({ date }: { date: Date }) => {
+const TestComponent = ({
+    date,
+    withTransition = true,
+}: {
+    date: Date;
+    withTransition: boolean;
+}) => {
     const [scrollerType, setScrollerType] = useState<ScrollerType>('translate');
 
     const [yearIndex, setYearIndex] = useState(() => date.getFullYear() - 2020);
@@ -139,46 +149,79 @@ const TestComponent = ({ date }: { date: Date }) => {
         ])
     );
 
+    const focusedScrollerIdRef = useRef(focusedScrollerId);
+    const daysLengthRef = useRef(days.length);
+    const withTransitionRef = useRef(withTransition);
+    focusedScrollerIdRef.current = focusedScrollerId;
+    daysLengthRef.current = days.length;
+    withTransitionRef.current = withTransition;
+
+    const runStepUpRef = useRef(() => {
+        const id = focusedScrollerIdRef.current;
+        if (id === null) return;
+        const len = daysLengthRef.current;
+        if (id === 'month') {
+            setMonthIndex(prev => normalizeIndex(prev - 1, MONTHS.length));
+        } else if (id === 'days') {
+            setIndex(prev => normalizeIndex(prev - 1, len));
+        } else if (id === 'year') {
+            setYearIndex(prev => (prev - 1 >= 0 ? prev - 1 : 0));
+        }
+    });
+    const runStepDownRef = useRef(() => {
+        const id = focusedScrollerIdRef.current;
+        if (id === null) return;
+        const len = daysLengthRef.current;
+        if (id === 'month') {
+            setMonthIndex(prev => normalizeIndex(prev + 1, MONTHS.length));
+        } else if (id === 'days') {
+            setIndex(prev => normalizeIndex(prev + 1, len));
+        } else if (id === 'year') {
+            setYearIndex(prev =>
+                prev + 1 < YEARS.length ? prev + 1 : YEARS.length - 1
+            );
+        }
+    });
+
+    const stepUpThrottledRef = useRef(
+        throttle(ARROW_THROTTLE_MS, () => runStepUpRef.current())
+    );
+    const stepDownThrottledRef = useRef(
+        throttle(ARROW_THROTTLE_MS, () => runStepDownRef.current())
+    );
+
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
             if (focusedScrollerId === null) return;
             if (event.key === 'ArrowUp') {
+                event.preventDefault();
                 if (keyMapRef.current.get('ArrowUp')) return;
                 keyMapRef.current.set('ArrowUp', true);
-                if (focusedScrollerId === 'month') {
-                    setMonthIndex(prev =>
-                        normalizeIndex(prev - 1, MONTHS.length)
-                    );
-                } else if (focusedScrollerId === 'days') {
-                    setIndex(prev => normalizeIndex(prev - 1, days.length));
-                } else if (focusedScrollerId === 'year') {
-                    setYearIndex(prev =>
-                        normalizeIndex(prev - 1, YEARS.length)
-                    );
+                if (withTransitionRef.current) {
+                    stepUpThrottledRef.current();
+                } else {
+                    runStepUpRef.current();
                 }
             } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
                 if (keyMapRef.current.get('ArrowDown')) return;
                 keyMapRef.current.set('ArrowDown', true);
-                if (focusedScrollerId === 'month') {
-                    setMonthIndex(prev =>
-                        normalizeIndex(prev + 1, MONTHS.length)
-                    );
-                } else if (focusedScrollerId === 'days') {
-                    setIndex(prev => normalizeIndex(prev + 1, days.length));
-                } else if (focusedScrollerId === 'year') {
-                    setYearIndex(prev =>
-                        normalizeIndex(prev + 1, YEARS.length)
-                    );
+                if (withTransitionRef.current) {
+                    stepDownThrottledRef.current();
+                } else {
+                    runStepDownRef.current();
                 }
             }
         },
-        [focusedScrollerId, days.length]
+        [focusedScrollerId]
     );
 
     const handleKeyUp = useCallback((event: KeyboardEvent) => {
         if (event.key === 'ArrowUp') {
+            event.preventDefault();
             keyMapRef.current.set('ArrowUp', false);
         } else if (event.key === 'ArrowDown') {
+            event.preventDefault();
             keyMapRef.current.set('ArrowDown', false);
         }
     }, []);
@@ -206,6 +249,8 @@ const TestComponent = ({ date }: { date: Date }) => {
                             focused={focusedScrollerId === 'year'}
                             onFocus={() => setFocusedScrollerId('year')}
                             onBlur={() => setFocusedScrollerId(null)}
+                            wrap={false}
+                            withTransition={withTransition}
                         />
                         <Alt
                             index={monthIndex}
@@ -215,6 +260,7 @@ const TestComponent = ({ date }: { date: Date }) => {
                             focused={focusedScrollerId === 'month'}
                             onFocus={() => setFocusedScrollerId('month')}
                             onBlur={() => setFocusedScrollerId(null)}
+                            withTransition={withTransition}
                         />
                         <Alt
                             index={index}
@@ -224,6 +270,7 @@ const TestComponent = ({ date }: { date: Date }) => {
                             focused={focusedScrollerId === 'days'}
                             onFocus={() => setFocusedScrollerId('days')}
                             onBlur={() => setFocusedScrollerId(null)}
+                            withTransition={withTransition}
                         />
                     </div>
                 )}

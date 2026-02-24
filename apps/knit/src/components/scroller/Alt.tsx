@@ -2,7 +2,6 @@ import { useCallback, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
-import { Button } from '../ui/button';
 import { normalizeIndex } from './utils';
 
 const VISIBLE_COUNT = 5;
@@ -31,6 +30,21 @@ const createLoopingIndices = (
     return indices;
 };
 
+const createIndicesWithoutLooping = (
+    startIndex: number,
+    length: number,
+    count: number
+) => {
+    const indices: number[] = [];
+    const stop = Math.min(startIndex + count, length - 1);
+
+    for (let i = startIndex; i <= stop; i++) {
+        indices.push(i);
+    }
+
+    return indices;
+};
+
 const ScrollerWithTranslate = <T,>({
     options,
     visibleCount = VISIBLE_COUNT,
@@ -39,6 +53,8 @@ const ScrollerWithTranslate = <T,>({
     onFocus,
     onBlur,
     focused,
+    wrap = true,
+    withTransition = true,
 }: {
     options: readonly T[];
     visibleCount: number;
@@ -47,17 +63,41 @@ const ScrollerWithTranslate = <T,>({
     focused: boolean;
     onFocus?: () => void;
     onBlur?: () => void;
+    wrap?: boolean;
+    withTransition?: boolean;
 }) => {
-    const startIndex = normalizeIndex(
-        index - Math.floor(visibleCount / 2) - BUFFER_COUNT,
-        options.length
-    );
+    const startIndex = wrap
+        ? normalizeIndex(
+              index - Math.floor(visibleCount / 2) - BUFFER_COUNT,
+              options.length
+          )
+        : Math.max(0, index - Math.floor(visibleCount / 2) - BUFFER_COUNT);
 
-    const indices = createLoopingIndices(
-        startIndex,
-        options.length,
-        visibleCount + BUFFER_COUNT + 1
-    );
+    const shouldTransformContainer = !wrap
+        ? index - startIndex < Math.floor(visibleCount / 2) + BUFFER_COUNT
+        : false;
+
+    const containerOffset = shouldTransformContainer
+        ? Math.floor(visibleCount / 2) + BUFFER_COUNT - (index - startIndex)
+        : 0;
+
+    const indices = wrap
+        ? createLoopingIndices(
+              startIndex,
+              options.length,
+              (Math.floor(visibleCount / 2) + BUFFER_COUNT) * 2
+          )
+        : createIndicesWithoutLooping(
+              startIndex,
+              options.length,
+              (Math.floor(visibleCount / 2) + BUFFER_COUNT) * 2
+          );
+
+    // console.log('shouldTransformContainer', shouldTransformContainer);
+    // console.log('containerOffset', containerOffset);
+    // console.log('index', index);
+    // console.log('startIndex', startIndex);
+    // console.log('indices', indices);
 
     const lastWheelRef = useRef(0);
 
@@ -68,9 +108,21 @@ const ScrollerWithTranslate = <T,>({
             if (now - lastWheelRef.current < WHEEL_THROTTLE_MS) return;
             lastWheelRef.current = now;
             if (event.deltaY > 0) {
-                setIndex(prev => normalizeIndex(prev + 1, options.length));
+                setIndex(prev =>
+                    wrap
+                        ? normalizeIndex(prev + 1, options.length)
+                        : prev + 1 < options.length
+                          ? prev + 1
+                          : options.length - 1
+                );
             } else {
-                setIndex(prev => normalizeIndex(prev - 1, options.length));
+                setIndex(prev =>
+                    wrap
+                        ? normalizeIndex(prev - 1, options.length)
+                        : prev - 1 >= 0
+                          ? prev - 1
+                          : 0
+                );
             }
         },
         [options, setIndex]
@@ -106,15 +158,19 @@ const ScrollerWithTranslate = <T,>({
                                     height: ITEM_HEIGHT,
                                     position: 'absolute',
                                     top: 0,
-                                    transform: `translateY(${(i - BUFFER_COUNT) * ITEM_HEIGHT}px)`,
-                                    transition: 'transform 0.25s ease-out',
+                                    transform: `translateY(${(i - BUFFER_COUNT + containerOffset) * ITEM_HEIGHT}px)`,
+                                    transition: withTransition
+                                        ? 'transform 0.15s linear'
+                                        : 'none',
+                                    width: '100%',
                                 }}
                                 key={`${options.length}-${option}`}
                                 className={cn(
                                     'flex shrink-0 items-center justify-center select-none',
                                     {
-                                        'bg-amber-100 text-red-500':
+                                        'bg-amber-100':
                                             idx === index && focused,
+                                        'text-red-500': idx === index,
                                     }
                                 )}
                                 onClick={() => {
