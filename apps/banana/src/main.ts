@@ -14,11 +14,6 @@ import { createLayoutStateMachine } from './trains/input-state-machine/utils';
 import './media';
 import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
-import {
-    ELEVATION,
-    LEVEL_HEIGHT,
-    TrackSegmentDrawData,
-} from './trains/tracks/track';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
