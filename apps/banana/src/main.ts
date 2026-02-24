@@ -11,6 +11,9 @@ import {
     NewJointType,
     createLayoutStateMachine,
 } from './trains/kmt-state-machine';
+import './media';
+import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
+import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import {
     ELEVATION,
     LEVEL_HEIGHT,
@@ -783,31 +786,31 @@ function step(timestamp: number) {
 
     const topLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const topRightCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          }
+            x: board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
         : {
-              x: board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          };
+            x: board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
     const bottomLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-              x: -board.camera.viewPortWidth / 2,
-              y: board.camera.viewPortHeight / 2,
-          }
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        }
         : {
-              x: -board.camera.viewPortWidth / 2,
-              y: -board.camera.viewPortHeight / 2,
-          };
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        };
 
     const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
         topLeftCornerInViewPort

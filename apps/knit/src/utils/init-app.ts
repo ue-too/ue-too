@@ -5,6 +5,7 @@ import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
 import { ExpandedInputTracker } from '@/utils/input-state-machine';
 import { createKmtInputStateMachineExpansion } from '@/utils/input-state-machine';
+import { KnitAppComponents } from '..';
 
 export const initApp = async (
     canvasElement: HTMLCanvasElement,
