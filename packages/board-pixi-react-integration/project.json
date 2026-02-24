@@ -7,6 +7,12 @@
     "tags": [],
     "targets": {
         "build": {
+            "dependsOn": [
+                {
+                    "projects": ["board", "board-pixi-integration"],
+                    "target": "build"
+                }
+            ],
             "executor": "nx:run-commands",
             "options": {
                 "command": "rm -rf dist && bun run ../../scripts/build.ts --external pixi.js --external react --external react-dom --external @ue-too/board-pixi-integration --external @ue-too/board",
@@ -14,6 +20,12 @@
             }
         },
         "build:bun": {
+            "dependsOn": [
+                {
+                    "projects": ["board", "board-pixi-integration"],
+                    "target": "build"
+                }
+            ],
             "executor": "nx:run-commands",
             "options": {
                 "command": "rm -rf dist && bun run ../../scripts/build.ts",

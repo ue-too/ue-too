@@ -5,22 +5,25 @@ import type {
     Guard,
     StateMachine,
 } from '@ue-too/being';
-import { NO_OP, TemplateState, TemplateStateMachine } from '@ue-too/being';
-import { Observable, Observer, SynchronousObservable } from '@ue-too/board';
+import { NO_OP, TemplateState } from '@ue-too/being';
+import { Observable, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
 import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
 
-import { PreviewCurveCalculator } from './tracks/new-joint';
+import { PreviewCurveCalculator } from '../tracks/new-joint';
 import {
     ELEVATION,
+    FlatElevation,
     ProjectionCurveResult,
     ProjectionEdgeResult,
     ProjectionJointResult,
     ProjectionPositiveResult,
     ProjectionResult,
-    TrackGraph,
-} from './tracks/track';
+    SlopedElevation,
+    TrackSegmentDrawData,
+} from '../tracks/types';
+import { TrackGraph } from '../tracks/track';
 
 export type LayoutStates =
     | 'IDLE'
@@ -83,7 +86,7 @@ export interface LayoutContext extends BaseContext {
     lastCurveSuccess: boolean;
 }
 
-class LayoutIDLEState extends TemplateState<
+export class LayoutIDLEState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -97,18 +100,18 @@ class LayoutIDLEState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-        startLayout: {
-            action: NO_OP,
-            defaultTargetState: 'HOVER_FOR_STARTING_POINT',
-        },
-        startDeletion: {
-            action: NO_OP,
-            defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
-        },
-    };
+            startLayout: {
+                action: NO_OP,
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
+            },
+            startDeletion: {
+                action: NO_OP,
+                defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
+            },
+        };
 }
 
-class LayoutHoverForCurveDeletionState extends TemplateState<
+export class LayoutHoverForCurveDeletionState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -122,28 +125,28 @@ class LayoutHoverForCurveDeletionState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-        pointermove: {
-            action: (context, event) => {
-                context.hoverForCurveDeletion(event.position);
+            pointermove: {
+                action: (context, event) => {
+                    context.hoverForCurveDeletion(event.position);
+                },
             },
-        },
-        pointerup: {
-            action: (context, event) => {
-                // context.deleteCurrentCurve();
-                context.deleteCurrentCurve();
+            pointerup: {
+                action: (context, event) => {
+                    // context.deleteCurrentCurve();
+                    context.deleteCurrentCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
             },
-            defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
-        },
-        endDeletion: {
-            action: (context, event) => {
-                context.cancelCurrentDeletion();
+            endDeletion: {
+                action: (context, event) => {
+                    context.cancelCurrentDeletion();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-    };
+        };
 }
 
-class LayoutHoverForStartingPointState extends TemplateState<
+export class LayoutHoverForStartingPointState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -157,61 +160,61 @@ class LayoutHoverForStartingPointState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-        pointerup: {
-            action: (context, event) => {
-                context.startCurve();
+            pointerup: {
+                action: (context, event) => {
+                    context.startCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_ENDING_POINT',
-        },
-        pointermove: {
-            action: (context, event) => {
-                context.hoverForStartingPoint(event.position);
+            pointermove: {
+                action: (context, event) => {
+                    context.hoverForStartingPoint(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_STARTING_POINT',
-        },
-        endLayout: {
-            action: (context, event) => {
-                context.cancelCurrentCurve();
+            endLayout: {
+                action: (context, event) => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        escapeKey: {
-            action: (context, event) => {
-                context.cancelCurrentCurve();
+            escapeKey: {
+                action: (context, event) => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        flipEndTangent: {
-            action: (context, event) => {
-                context.flipEndTangent();
+            flipEndTangent: {
+                action: (context, event) => {
+                    context.flipEndTangent();
+                },
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_STARTING_POINT',
-        },
-        flipStartTangent: {
-            action: (context, event) => {
-                context.flipStartTangent();
+            flipStartTangent: {
+                action: (context, event) => {
+                    context.flipStartTangent();
+                },
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_STARTING_POINT',
-        },
-        startDeletion: {
-            action: (context, event) => {
-                context.cancelCurrentCurve();
+            startDeletion: {
+                action: (context, event) => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
             },
-            defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
-        },
-        scroll: {
-            action: (context, event) => {
-                if (event.positive) {
-                    context.bumpStartJointElevation();
-                } else {
-                    context.lowerStartJointElevation();
-                }
+            scroll: {
+                action: (context, event) => {
+                    if (event.positive) {
+                        context.bumpStartJointElevation();
+                    } else {
+                        context.lowerStartJointElevation();
+                    }
+                },
             },
-        },
-    };
+        };
 }
 
-class LayoutHoverForEndingPointState extends TemplateState<
+export class LayoutHoverForEndingPointState extends TemplateState<
     LayoutEvents,
     LayoutContext,
     LayoutStates
@@ -225,66 +228,66 @@ class LayoutHoverForEndingPointState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-        pointerup: {
-            action: (context, event) => {
-                const res = context.endCurve();
-                if (res == null) {
-                    return;
-                }
-                context.hoverForStartingPoint(res);
-                context.startCurve();
+            pointerup: {
+                action: (context, event) => {
+                    const res = context.endCurve();
+                    if (res == null) {
+                        return;
+                    }
+                    context.hoverForStartingPoint(res);
+                    context.startCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_ENDING_POINT',
-        },
-        pointermove: {
-            action: (context, event) => {
-                context.hoveringForEndJoint(event.position);
+            pointermove: {
+                action: (context, event) => {
+                    context.hoveringForEndJoint(event.position);
+                },
+                defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_ENDING_POINT',
-        },
-        endLayout: {
-            action: (context, event) => {
-                context.cancelCurrentCurve();
+            endLayout: {
+                action: (context, event) => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-        escapeKey: {
-            action: context => {
-                context.cancelCurrentCurve();
+            escapeKey: {
+                action: context => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            defaultTargetState: 'HOVER_FOR_STARTING_POINT',
-        },
-        flipEndTangent: {
-            action: (context, event) => {
-                context.flipEndTangent();
+            flipEndTangent: {
+                action: (context, event) => {
+                    context.flipEndTangent();
+                },
             },
-        },
-        flipStartTangent: {
-            action: (context, event) => {
-                context.flipStartTangent();
+            flipStartTangent: {
+                action: (context, event) => {
+                    context.flipStartTangent();
+                },
             },
-        },
-        toggleStraightLine: {
-            action: (context, event) => {
-                context.toggleStraightLine();
+            toggleStraightLine: {
+                action: (context, event) => {
+                    context.toggleStraightLine();
+                },
             },
-        },
-        startDeletion: {
-            action: (context, event) => {
-                context.cancelCurrentCurve();
+            startDeletion: {
+                action: (context, event) => {
+                    context.cancelCurrentCurve();
+                },
+                defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
             },
-            defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
-        },
-        scroll: {
-            action: (context, event) => {
-                if (event.positive) {
-                    context.bumpEndJointElevation();
-                } else {
-                    context.lowerEndJointElevation();
-                }
+            scroll: {
+                action: (context, event) => {
+                    if (event.positive) {
+                        context.bumpEndJointElevation();
+                    } else {
+                        context.lowerEndJointElevation();
+                    }
+                },
             },
-        },
-    };
+        };
 
     protected _guards: Guard<LayoutContext, string> = {
         lastCurveNotSuccess: context => {
@@ -300,34 +303,16 @@ class LayoutHoverForEndingPointState extends TemplateState<
             Guard<LayoutContext, string>
         >
     > = {
-        pointerup: [
-            {
-                guard: 'lastCurveNotSuccess',
-                target: 'HOVER_FOR_STARTING_POINT',
-            },
-        ],
-    };
+            pointerup: [
+                {
+                    guard: 'lastCurveNotSuccess',
+                    target: 'HOVER_FOR_STARTING_POINT',
+                },
+            ],
+        };
 }
 
-export function createLayoutStateMachine(
-    context: LayoutContext
-): StateMachine<LayoutEvents, LayoutContext, LayoutStates> {
-    const stateMachine = new TemplateStateMachine<
-        LayoutEvents,
-        LayoutContext,
-        LayoutStates
-    >(
-        {
-            IDLE: new LayoutIDLEState(),
-            HOVER_FOR_STARTING_POINT: new LayoutHoverForStartingPointState(),
-            HOVER_FOR_ENDING_POINT: new LayoutHoverForEndingPointState(),
-            HOVER_FOR_CURVE_DELETION: new LayoutHoverForCurveDeletionState(),
-        },
-        'IDLE',
-        context
-    );
-    return stateMachine;
-}
+export type LayoutStateMachine = StateMachine<LayoutEvents, LayoutContext, LayoutStates>;
 
 export type BrandNewJoint = {
     type: 'new';
@@ -356,6 +341,7 @@ export type ExtendingTrackJoint = {
 export type BranchCurveJoint = {
     type: 'branchCurve';
     constraint: ProjectionCurveResult;
+    curveElevation: SlopedElevation | FlatElevation;
 } & BaseJoint;
 
 export type NewJointType =
@@ -372,7 +358,9 @@ export class CurveCreationEngine implements LayoutContext {
     private _newEndJoint: NewJointType | null = null;
 
     private _previewStartProjection: ProjectionPositiveResult | null = null;
+    private _previewStartProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
     private _previewEndProjection: ProjectionPositiveResult | null = null;
+    private _previewEndProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
 
     private _previewCurve: {
         curve: BCurve;
@@ -381,7 +369,10 @@ export class CurveCreationEngine implements LayoutContext {
             from: ELEVATION;
             to: ELEVATION;
         };
+        gauge: number;
     } | null = null;
+
+    private _previewCurveGauge: number = 1.067;
 
     private _lastCurveSuccess: boolean = false;
 
@@ -394,6 +385,9 @@ export class CurveCreationEngine implements LayoutContext {
 
     private _previewCurveCalculator: PreviewCurveCalculator =
         new PreviewCurveCalculator();
+
+    private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]> =
+        new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>();
 
     constructor() {
         this._trackGraph = new TrackGraph();
@@ -411,8 +405,8 @@ export class CurveCreationEngine implements LayoutContext {
         const res =
             this._previewCurveForDeletion !== null
                 ? this._trackGraph.getTrackSegmentCurve(
-                      this._previewCurveForDeletion
-                  )
+                    this._previewCurveForDeletion
+                )
                 : null;
         return res;
     }
@@ -587,7 +581,7 @@ export class CurveCreationEngine implements LayoutContext {
         }
     }
 
-    hoverForStartingPoint(position: Point) {
+    hoverForStartingPoint(position: Point, gauge: number = 1.067) {
         const res = this._trackGraph.project(position);
         const elevation =
             this._currentJointElevation != null
@@ -603,6 +597,9 @@ export class CurveCreationEngine implements LayoutContext {
         } else {
             this._previewStartProjection = null;
         }
+
+        this._previewCurveGauge = gauge;
+        this._previewStartProjectionObservable.notify(res.hit ? res : null);
     }
 
     flipStartTangent() {
@@ -630,13 +627,14 @@ export class CurveCreationEngine implements LayoutContext {
                 previewStartAndEndSwitched: newPreviewCurve.startAndEndSwitched,
                 elevation: newPreviewCurve.startAndEndSwitched
                     ? {
-                          from: endJoint.elevation,
-                          to: startJoint.elevation,
-                      }
+                        from: endJoint.elevation,
+                        to: startJoint.elevation,
+                    }
                     : {
-                          from: startJoint.elevation,
-                          to: endJoint.elevation,
-                      },
+                        from: startJoint.elevation,
+                        to: endJoint.elevation,
+                    },
+                gauge: this._previewCurveGauge,
             };
         } else {
             this._previewCurve.curve.setControlPoints(newPreviewCurve.cps);
@@ -644,14 +642,58 @@ export class CurveCreationEngine implements LayoutContext {
                 newPreviewCurve.startAndEndSwitched;
             this._previewCurve.elevation = newPreviewCurve.startAndEndSwitched
                 ? {
-                      from: endJoint.elevation,
-                      to: startJoint.elevation,
-                  }
+                    from: endJoint.elevation,
+                    to: startJoint.elevation,
+                }
                 : {
-                      from: startJoint.elevation,
-                      to: endJoint.elevation,
-                  };
+                    from: startJoint.elevation,
+                    to: endJoint.elevation,
+                };
         }
+
+        const previewCurve = this._previewCurve.curve;
+        const startElevation = this._previewCurve.elevation.from;
+        const endElevation = this._previewCurve.elevation.to;
+
+        const excludeSegmentsForCollisionCheck = new Set<number>();
+
+        if (startJoint.type === 'branchCurve') {
+            excludeSegmentsForCollisionCheck.add(startJoint.constraint.curve);
+        }
+
+        if (startJoint.type === 'branchJoint' || startJoint.type === 'extendingTrack') {
+            const startJointNumber = startJoint.constraint.jointNumber;
+            const startTrackJoint = this._trackGraph.getJoint(startJointNumber);
+            if (startTrackJoint !== null) {
+                const connections = startTrackJoint.connections;
+                connections.forEach((_, trackSegmentNumber) => {
+                    excludeSegmentsForCollisionCheck.add(trackSegmentNumber);
+                });
+            }
+        }
+
+        if (endJoint.type === 'branchCurve') {
+            excludeSegmentsForCollisionCheck.add(endJoint.constraint.curve);
+        }
+
+        if (endJoint.type === 'branchJoint' || endJoint.type === 'extendingTrack') {
+            const endJointNumber = endJoint.constraint.jointNumber;
+            const endTrackJoint = this._trackGraph.getJoint(endJointNumber);
+            if (endTrackJoint !== null) {
+                const connections = endTrackJoint.connections;
+                connections.forEach((_, trackSegmentNumber) => {
+                    excludeSegmentsForCollisionCheck.add(trackSegmentNumber);
+                });
+            }
+        }
+
+        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(previewCurve, startElevation, endElevation, this._previewCurve.gauge, excludeSegmentsForCollisionCheck);
+
+        this._previewDrawDataObservable.notify(drawData);
+    }
+
+    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>, options?: SubscriptionOptions) {
+        this._previewDrawDataObservable.subscribe(observer, options);
     }
 
     flipEndTangent() {
@@ -698,7 +740,17 @@ export class CurveCreationEngine implements LayoutContext {
             this._previewEndProjection = null;
         }
 
+        this._previewEndProjectionObservable.notify(res.hit ? res : null);
+
         this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    onPreviewStartProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+        this._previewStartProjectionObservable.subscribe(observer, options);
+    }
+
+    onPreviewEndProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+        this._previewEndProjectionObservable.subscribe(observer, options);
     }
 
     get previewCurve(): {
@@ -806,9 +858,9 @@ export class CurveCreationEngine implements LayoutContext {
                 ._previewCurve.previewStartAndEndSwitched
                 ? this._previewCurve.curve.derivative(0)
                 : PointCal.multiplyVectorByScalar(
-                      this._previewCurve.curve.derivative(1),
-                      -1
-                  );
+                    this._previewCurve.curve.derivative(1),
+                    -1
+                );
             if (
                 !extendTrackIsPossible(
                     startJointNumber,
@@ -829,8 +881,29 @@ export class CurveCreationEngine implements LayoutContext {
             this._newEndJoint.type == 'branchCurve' ||
             this._newEndJoint.type == 'branchJoint'
         ) {
+            console.log('checking if branching curve can be sloped');
+            console.log('start joint elevation', this._newStartJoint.elevation);
+            console.log('end joint elevation', this._newEndJoint.elevation);
             if (this._newStartJoint.elevation != this._newEndJoint.elevation) {
+                console.warn('branching curve can not be sloped');
+                this.cancelCurrentCurve();
                 return null;
+            }
+
+            if (this._newStartJoint.type == 'branchCurve') {
+                if (this._newStartJoint.curveElevation.curveIsSloped) {
+                    console.warn('branching curve can not be sloped');
+                    this.cancelCurrentCurve();
+                    return null;
+                }
+            }
+
+            if (this._newEndJoint.type == 'branchCurve') {
+                if (this._newEndJoint.curveElevation.curveIsSloped) {
+                    console.warn('branching curve can not be sloped');
+                    this.cancelCurrentCurve();
+                    return null;
+                }
             }
         }
 
@@ -869,11 +942,11 @@ export class CurveCreationEngine implements LayoutContext {
                     this._previewCurve.previewStartAndEndSwitched;
                 const endTangent = previewCurveStartAndEndSwitched
                     ? PointCal.unitVector(
-                          this._previewCurve.curve.derivative(0)
-                      )
+                        this._previewCurve.curve.derivative(0)
+                    )
                     : PointCal.unitVector(
-                          this._previewCurve.curve.derivative(1)
-                      );
+                        this._previewCurve.curve.derivative(1)
+                    );
                 const previewCurveCPs =
                     this._previewCurve.curve.getControlPoints();
                 const endPosition = previewCurveStartAndEndSwitched
@@ -902,6 +975,8 @@ export class CurveCreationEngine implements LayoutContext {
                     trackSegmentNumber,
                     constraint.atT
                 );
+
+            console.log('end joint number', endJointNumber);
         } else {
             res = this._newEndJoint.position;
             endJointNumber = this._newEndJoint.constraint.jointNumber;
@@ -941,7 +1016,10 @@ export class CurveCreationEngine implements LayoutContext {
     cancelCurrentCurve() {
         this._previewStartProjection = null;
         this._previewEndProjection = null;
+        this._previewStartProjectionObservable.notify(null);
+        this._previewEndProjectionObservable.notify(null);
         this._previewCurve = null;
+        this._previewDrawDataObservable.notify(undefined);
         this._newStartJoint = null;
         this._newEndJoint = null;
     }
@@ -950,9 +1028,9 @@ export class CurveCreationEngine implements LayoutContext {
         this._previewCurveForDeletion = null;
     }
 
-    setup() {}
+    setup() { }
 
-    cleanup() {}
+    cleanup() { }
 
     get trackGraph(): TrackGraph {
         return this._trackGraph;
@@ -997,7 +1075,8 @@ export class CurveCreationEngine implements LayoutContext {
                     type: 'branchCurve',
                     position: projection.projectionPoint,
                     constraint: projection,
-                    elevation: elevation,
+                    elevation: projection.elevation.elevation,
+                    curveElevation: projection.elevation,
                 };
             case 'edge':
                 return {

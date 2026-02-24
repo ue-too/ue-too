@@ -19,7 +19,7 @@ const downloadButtonImg = document.getElementById(
 recordButton.onclick = toggleRecording;
 downloadButton.onclick = download;
 
-const canvas = document.getElementById('graph') as HTMLCanvasElement;
+const canvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
 const stream = canvas.captureStream(); // frames per second
 
 downloadButtonImg.onclick = function () {
@@ -92,8 +92,8 @@ function startRecording() {
             } catch (e2) {
                 alert(
                     'MediaRecorder is not supported by this browser.\n\n' +
-                        'Try Firefox 29 or later, or Chrome 47 or later, ' +
-                        'with Enable experimental Web Platform features enabled from chrome://flags.'
+                    'Try Firefox 29 or later, or Chrome 47 or later, ' +
+                    'with Enable experimental Web Platform features enabled from chrome://flags.'
                 );
                 console.error('Exception while creating MediaRecorder:', e2);
                 return;

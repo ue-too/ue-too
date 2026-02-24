@@ -1,7 +1,9 @@
 import {
+    BoardCamera,
     CameraRig,
     DefaultBoardCamera,
     InputOrchestrator,
+    ObservableBoardCamera,
     StateMachine,
     TouchEventParser,
     TouchInputTracker,
@@ -40,29 +42,30 @@ export interface BaseAppComponents {
 export type InitAppOptions = {
     fullScreen: boolean;
     limitEntireViewPort: boolean;
+    camera: DefaultBoardCamera;
 };
 
 export const baseInitApp = async (
     canvasElement: HTMLCanvasElement,
-    option: Partial<InitAppOptions> = {
-        fullScreen: true,
-        limitEntireViewPort: true,
-    }
+    option: Partial<InitAppOptions>
 ): Promise<BaseAppComponents> => {
-    const { fullScreen = true, limitEntireViewPort = true } = option;
+
+    const {
+        fullScreen = true,
+        limitEntireViewPort = true,
+        camera = new DefaultBoardCamera({
+            viewPortWidth: canvasElement.width,
+            viewPortHeight: canvasElement.height,
+            position: { x: 0, y: 0 },
+            rotation: 0,
+            zoomLevel: 1,
+            boundaries: { min: { x: -1000, y: -1000 }, max: { x: 1000, y: 1000 } },
+        })
+    } = option;
     // Create a PixiJS application.
     const app = new Application();
 
     const cleanups: (() => void)[] = [];
-
-    const camera = new DefaultBoardCamera({
-        viewPortWidth: canvasElement.width,
-        viewPortHeight: canvasElement.height,
-        position: { x: 0, y: 0 },
-        rotation: 0,
-        zoomLevel: 1,
-        boundaries: { min: { x: -1000, y: -1000 }, max: { x: 1000, y: 1000 } },
-    });
 
     const canvasProxy = new CanvasProxy(canvasElement);
     const cameraRig = createDefaultCameraRig(camera);

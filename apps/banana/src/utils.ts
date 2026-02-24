@@ -1,7 +1,7 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
+import type { TrackSegmentDrawData } from './trains/tracks/types';
 
-import type { TrackSegmentDrawData } from './trains/tracks/track';
 
 export class GenericEntityManager<T> {
     private _availableEntities: number[] = [];
@@ -267,6 +267,17 @@ export const shadows = (
         x: endPoint.x + shadowOffsetXEnd,
         y: endPoint.y + shadowOffsetYEnd,
     };
+
+    if (startElevation == 0 && endElevation == 0) {
+        const cacheEntry = {
+            positive: [],
+            negative: [],
+            startPoint,
+            endPoint,
+        };
+        shadowCache.set(cacheKey, cacheEntry);
+        return cacheEntry;
+    }
 
     // Iterate from 0 to steps (inclusive) to ensure t=0 and t=1 are both included
     for (let i = 0; i <= steps; i++) {

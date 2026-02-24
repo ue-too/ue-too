@@ -22,6 +22,7 @@
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
         "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
         "@ue-too/border": "workspace:*",
         "@ue-too/curve": "workspace:*",
         "@ue-too/dynamics": "workspace:*",
@@ -34,6 +35,7 @@
         "pixi.js": "8.14.0",
         "react": "^19.2.3",
         "react-dom": "^19.2.3",
+        "react-router": "^7.13.0",
         "stats.js": "^0.17.0",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.18"

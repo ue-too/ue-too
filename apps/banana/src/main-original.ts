@@ -1,19 +1,21 @@
-import { Board, convertFromCanvas2ViewPort, convertFromViewport2World, convertFromWindow2Canvas, DefaultBoardCamera, drawArrow, drawRuler } from '@ue-too/board';
+import { Board, DefaultBoardCamera, drawArrow, drawRuler } from '@ue-too/board';
 import { mercatorProjection } from '@ue-too/border';
 import { PointCal } from '@ue-too/math';
 import { Point } from '@ue-too/math';
 import Stats from 'stats.js';
 
-import './media';
-import { TrainPlacementEngine, TrainPlacementStateMachine } from './trains';
 import {
     CurveCreationEngine,
     NewJointType,
 } from './trains/input-state-machine/kmt-state-machine';
 import { createLayoutStateMachine } from './trains/input-state-machine/utils';
-import './media';
+// import './media';
 import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
+import {
+    TrainPlacementEngine,
+    TrainPlacementStateMachine,
+} from './trains';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
@@ -165,8 +167,8 @@ const layoutDeleteToggleButton = document.getElementById(
     'layout-delete-toggle'
 ) as HTMLButtonElement;
 
-// const canvas = document.getElementById('graph') as HTMLCanvasElement;
-const pixiCanvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
+const canvas = document.getElementById('graph') as HTMLCanvasElement;
+// const pixiCanvas = document.getElementById('pixi-graph') as HTMLCanvasElement;
 const stats = new Stats();
 stats.showPanel(0);
 const statsContainer = document.getElementById('stats') as HTMLDivElement;
@@ -177,15 +179,25 @@ stats.dom.style.position = 'absolute';
 stats.dom.style.top = '0px';
 stats.dom.style.left = '0px';
 
+const board = new Board(canvas, true);
+console.log('view port in world space', board.camera.viewPortInWorldSpace());
+console.log('camera zoom boundaries', board.camera.zoomBoundaries);
+console.log('camera boundaries', board.camera.boundaries);
+
+board.camera.setMaxZoomLevel(10000);
+
+console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 
 const curveEngine = new CurveCreationEngine();
 const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurveManager, curveEngine);
 
-const res = await baseInitApp(pixiCanvas, {
-    fullScreen: false,
-});
+// const res = await baseInitApp(pixiCanvas, {
+//     camera: board.camera as DefaultBoardCamera,
+//     fullScreen: false,
+// });
 
-res.app.stage.addChild(trackRenderSystem.container);
+// res.app.stage.addChild(trackRenderSystem.container);
+
 
 curveEngine.onElevationChange(elevation => {
     if (elevation != null) {
@@ -211,6 +223,43 @@ let worldVillageFeatures: Array<{
 // Visibility toggles
 let showDistricts = true;
 let showVillages = true;
+
+// Function to render GeoJSON polygons
+function renderGeoJSONPolygons(
+    features: Array<{
+        coordinates: number[][];
+        properties: Record<string, any>;
+    }>,
+    color: string = 'rgba(0, 0, 255, 0.3)',
+    strokeColor: string = 'blue'
+) {
+    if (board.context === undefined) return;
+
+    board.context.save();
+    board.context.fillStyle = color;
+    board.context.strokeStyle = strokeColor;
+    board.context.lineWidth = 1 / board.camera.zoomLevel;
+
+    features.forEach(feature => {
+        feature.coordinates.forEach(ring => {
+            board.context!.beginPath();
+            for (let i = 0; i < ring.length; i += 2) {
+                const x = ring[i];
+                const y = ring[i + 1];
+                if (i === 0) {
+                    board.context!.moveTo(x, y);
+                } else {
+                    board.context!.lineTo(x, y);
+                }
+            }
+            board.context!.closePath();
+            board.context!.fill();
+            board.context!.stroke();
+        });
+    });
+
+    board.context.restore();
+}
 
 // Initialize GeoJSON data
 async function initializeGeoJSON() {
@@ -289,24 +338,15 @@ const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
 const train = trainPlacementEngine.train;
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
-pixiCanvas.addEventListener('pointerdown', event => {
+canvas.addEventListener('pointerdown', event => {
     if (event.button !== 0) {
         return;
     }
 
-    const rawPoint = {
+    const worldPosition = board.convertWindowPoint2WorldCoord({
         x: event.clientX,
         y: event.clientY,
-    }
-
-    const pointInCanvas = convertFromWindow2Canvas(rawPoint, res.canvasProxy);
-
-    const viewportPosition = convertFromCanvas2ViewPort(pointInCanvas, {
-        x: res.canvasProxy.width / 2,
-        y: res.canvasProxy.height / 2,
     });
-
-    const worldPosition = convertFromViewport2World(viewportPosition, res.camera.position, res.camera.zoomLevel, res.camera.rotation);
 
     stateMachine.happens('pointerdown', {
         position: worldPosition,
@@ -318,31 +358,21 @@ pixiCanvas.addEventListener('pointerdown', event => {
     });
 });
 
-pixiCanvas.addEventListener('wheel', event => {
+canvas.addEventListener('wheel', event => {
     stateMachine.happens('scroll', {
         positive: event.deltaY > 0,
     });
 });
 
-pixiCanvas.addEventListener('pointerup', event => {
+canvas.addEventListener('pointerup', event => {
     if (event.button !== 0) {
         return;
     }
 
-    const rawPoint = {
+    const worldPosition = board.convertWindowPoint2WorldCoord({
         x: event.clientX,
         y: event.clientY,
-    }
-
-    const pointInCanvas = convertFromWindow2Canvas(rawPoint, res.canvasProxy);
-
-    const viewportPosition = convertFromCanvas2ViewPort(pointInCanvas, {
-        x: res.canvasProxy.width / 2,
-        y: res.canvasProxy.height / 2,
     });
-
-    const worldPosition = convertFromViewport2World(viewportPosition, res.camera.position, res.camera.zoomLevel, res.camera.rotation);
-
 
     stateMachine.happens('pointerup', {
         pointerId: event.pointerId,
@@ -368,20 +398,11 @@ window.addEventListener('keydown', event => {
     }
 });
 
-pixiCanvas.addEventListener('pointermove', event => {
-    const rawPoint = {
+canvas.addEventListener('pointermove', event => {
+    const worldPosition = board.convertWindowPoint2WorldCoord({
         x: event.clientX,
         y: event.clientY,
-    }
-
-    const pointInCanvas = convertFromWindow2Canvas(rawPoint, res.canvasProxy);
-
-    const viewportPosition = convertFromCanvas2ViewPort(pointInCanvas, {
-        x: res.canvasProxy.width / 2,
-        y: res.canvasProxy.height / 2,
     });
-
-    const worldPosition = convertFromViewport2World(viewportPosition, res.camera.position, res.camera.zoomLevel, res.camera.rotation);
 
     stateMachine.happens('pointermove', {
         pointerId: event.pointerId,
@@ -397,13 +418,13 @@ layoutToggleButton.addEventListener('click', () => {
     if (layoutToggleButton.textContent === 'Start Layout') {
         stateMachine.happens('startLayout');
         console.log('start layout');
-        res.kmtParser.disable();
+        board.kmtParser.disable();
         layoutToggleButton.textContent = 'End Layout';
         trainPlacementToggleButton.textContent = 'Start Train Placement';
         trainStateMachine.happens('endPlacement');
     } else {
         stateMachine.happens('endLayout');
-        res.kmtParser.enable();
+        board.kmtParser.enable();
         layoutToggleButton.textContent = 'Start Layout';
         trainPlacementToggleButton.disabled = false;
     }
@@ -413,13 +434,13 @@ trainPlacementToggleButton.addEventListener('click', () => {
     if (trainPlacementToggleButton.textContent === 'Start Train Placement') {
         trainStateMachine.happens('startPlacement');
         stateMachine.happens('endLayout');
-        res.kmtParser.disable();
+        board.kmtParser.disable();
         trainPlacementToggleButton.textContent = 'End Train Placement';
         layoutToggleButton.disabled = true;
         layoutToggleButton.textContent = 'Start Layout';
     } else {
         trainStateMachine.happens('endPlacement');
-        res.kmtParser.enable();
+        board.kmtParser.enable();
         trainPlacementToggleButton.textContent = 'Start Train Placement';
         layoutToggleButton.disabled = false;
     }
@@ -433,6 +454,383 @@ let lastTimestamp = 0;
 
 let capture = false;
 
+function step(timestamp: number) {
+    stats.begin();
+    board.step(timestamp);
+
+    const deltaTime = timestamp - lastTimestamp; // in milliseconds
+    train.update(deltaTime);
+
+    lastTimestamp = timestamp;
+
+    if (board.context === undefined) {
+        return;
+    }
+
+    if (curveEngine.previewCurve !== null) {
+        const cps = curveEngine.previewCurve.curve.getControlPoints();
+        board.context.save();
+        board.context.strokeStyle = createGradient(
+            board.context,
+            curveEngine.previewCurve.elevation.from,
+            curveEngine.previewCurve.elevation.to,
+            cps[0],
+            cps[1]
+        );
+        board.context.lineWidth = 5 / board.camera.zoomLevel;
+        board.context.beginPath();
+        board.context.moveTo(cps[0].x, cps[0].y);
+        if (cps.length === 3) {
+            board.context.quadraticCurveTo(
+                cps[1].x,
+                cps[1].y,
+                cps[2].x,
+                cps[2].y
+            );
+        } else {
+            board.context.bezierCurveTo(
+                cps[1].x,
+                cps[1].y,
+                cps[2].x,
+                cps[2].y,
+                cps[3].x,
+                cps[3].y
+            );
+        }
+        board.context.stroke();
+        board.context.restore();
+    }
+
+    // NOTE with draw order sorted by elevation
+    const viewportAABB = board.camera.viewPortAABB();
+    const drawDataList = curveEngine.trackGraph.getDrawData(viewportAABB);
+
+    let elevationCurvesMap: TrackSegmentDrawData[] = [];
+    let pendingElevation: ELEVATION | null = null;
+
+    drawDataList.forEach((drawData, index) => {
+        if (board.context === undefined) {
+            return;
+        }
+        /** shadow section */
+        const shadowPoints = shadows(drawData, 135);
+
+        board.context.save();
+        board.context.beginPath();
+        board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+        for (let i = 1; i < shadowPoints.positive.length; i++) {
+            board.context.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+        }
+
+        board.context.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+        for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
+            board.context.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+        }
+        board.context.closePath();
+        board.context.fillStyle = 'rgba(51, 51, 51, 0.5)';
+        board.context.fill();
+        board.context.restore();
+
+        /** end of shadow section */
+
+        if (drawData.originalElevation.from === drawData.originalElevation.to) {
+            // flat track
+            const curElevation = drawData.originalElevation.from;
+            if (pendingElevation === null || curElevation <= pendingElevation) {
+                // still in the same elevation queue the draw data until reaching the next elevation
+                elevationCurvesMap.push(drawData);
+            } else {
+                // clear the draw data queue
+                for (let i = 0; i < elevationCurvesMap.length; i++) {
+                    drawElevationCurves(elevationCurvesMap[i], board.context);
+                }
+                elevationCurvesMap = [];
+                elevationCurvesMap.push(drawData);
+                pendingElevation = curElevation;
+            }
+        } else {
+            // sloped track
+            elevationCurvesMap.push(drawData);
+            if (elevationConnectToFlat(drawData)) {
+                pendingElevation = Math.max(drawData.originalElevation.from, drawData.originalElevation.to);
+            }
+        }
+
+        if (index === drawDataList.length - 1) {
+            // clear the draw data queue
+            for (let i = 0; i < elevationCurvesMap.length; i++) {
+                drawElevationCurves(elevationCurvesMap[i], board.context);
+            }
+            drawElevationCurves(drawData, board.context);
+            elevationCurvesMap = [];
+        }
+    });
+
+    // offset as line segments
+    board.context.save();
+    board.context.lineWidth = 1 / board.camera.zoomLevel;
+    curveEngine.trackGraph.experimentTrackOffsets.forEach(offset => {
+        if (board.context === undefined) {
+            return;
+        }
+        board.context.beginPath();
+        board.context.moveTo(offset.positive[0].x, offset.positive[0].y);
+        for (let i = 1; i < offset.positive.length; i++) {
+            board.context.lineTo(offset.positive[i].x, offset.positive[i].y);
+        }
+        board.context.stroke();
+        board.context.beginPath();
+        board.context.moveTo(offset.negative[0].x, offset.negative[0].y);
+        for (let i = 1; i < offset.negative.length; i++) {
+            board.context.lineTo(offset.negative[i].x, offset.negative[i].y);
+        }
+        board.context.stroke();
+    });
+    board.context.restore();
+
+    // Render GeoJSON polygons
+    if (showDistricts && worldDistrictFeatures.length > 0) {
+        renderGeoJSONPolygons(
+            worldDistrictFeatures,
+            'rgba(0, 100, 255, 0.2)',
+            'rgba(0, 100, 255, 0.8)'
+        );
+    }
+    if (showVillages && worldVillageFeatures.length > 0) {
+        renderGeoJSONPolygons(
+            worldVillageFeatures,
+            'rgba(255, 100, 0, 0.1)',
+            'rgba(255, 100, 0, 0.6)'
+        );
+    }
+
+    if (curveEngine.previewCurveForDeletion !== null) {
+        const cps = curveEngine.previewCurveForDeletion.getControlPoints();
+        board.context.save();
+        board.context.lineWidth = 10 / board.camera.zoomLevel;
+        board.context.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+        board.context.beginPath();
+        board.context.moveTo(cps[0].x, cps[0].y);
+        if (cps.length === 3) {
+            board.context.quadraticCurveTo(
+                cps[1].x,
+                cps[1].y,
+                cps[2].x,
+                cps[2].y
+            );
+        } else {
+            board.context.bezierCurveTo(
+                cps[1].x,
+                cps[1].y,
+                cps[2].x,
+                cps[2].y,
+                cps[3].x,
+                cps[3].y
+            );
+        }
+        board.context.stroke();
+        board.context.restore();
+    }
+
+    curveEngine.trackGraph.getJoints().forEach(({ joint, jointNumber }) => {
+        if (board.context === undefined) {
+            return;
+        }
+        board.context.save();
+        board.context.lineWidth = 1 / board.camera.zoomLevel;
+        board.context.strokeStyle = 'blue';
+        board.context.beginPath();
+        board.context.arc(
+            joint.position.x,
+            joint.position.y,
+            5 / board.camera.zoomLevel,
+            0,
+            2 * Math.PI
+        );
+        board.context.stroke();
+        board.context.font = `${12 / board.camera.zoomLevel}px Arial`;
+        board.context.textAlign = 'center';
+        board.context.textBaseline = 'middle';
+        drawArrow(
+            board.context,
+            board.camera.zoomLevel,
+            joint.position,
+            PointCal.addVector(
+                PointCal.multiplyVectorByScalar(joint.tangent, 10),
+                joint.position
+            )
+        );
+        board.context.fillText(
+            jointNumber.toString(),
+            joint.position.x,
+            joint.position.y
+        );
+        board.context.restore();
+    });
+
+    if (curveEngine.previewStartProjection != null) {
+        board.context.save();
+        board.context.fillStyle = 'red';
+        const point = curveEngine.previewStartProjection.projectionPoint;
+        board.context.beginPath();
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if (curveEngine.previewEndProjection != null) {
+        board.context.save();
+        board.context.fillStyle = 'green';
+        const point = curveEngine.previewEndProjection.projectionPoint;
+        board.context.beginPath();
+        board.context.arc(point.x, point.y, 1.067 / 2, 0, 2 * Math.PI);
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if (curveEngine.newStartJointType != null) {
+        board.context.save();
+        board.context.fillStyle = colorForJoint(curveEngine.newStartJointType);
+        board.context.beginPath();
+        board.context.arc(
+            curveEngine.newStartJointType.position.x,
+            curveEngine.newStartJointType.position.y,
+            1.067 / 2,
+            0,
+            2 * Math.PI
+        );
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if (curveEngine.newEndJointType != null) {
+        board.context.save();
+        board.context.fillStyle = colorForJoint(curveEngine.newEndJointType);
+        board.context.beginPath();
+        board.context.arc(
+            curveEngine.newEndJointType.position.x,
+            curveEngine.newEndJointType.position.y,
+            1.067 / 2,
+            0,
+            2 * Math.PI
+        );
+        board.context.fill();
+        board.context.restore();
+    }
+
+    if (train.previewBogiePositions !== null) {
+        for (const bogiePosition of train.previewBogiePositions) {
+            board.context.save();
+            board.context.fillStyle = 'green';
+            board.context.beginPath();
+            board.context.arc(
+                bogiePosition.point.x,
+                bogiePosition.point.y,
+                1.067 / 2,
+                0,
+                2 * Math.PI
+            );
+            board.context.fill();
+            board.context.restore();
+        }
+    }
+
+    const bogiePositions = train.getBogiePositions();
+    if (bogiePositions !== null) {
+        board.context.save();
+        board.context.fillStyle = 'blue';
+        const colors = [
+            'red',
+            'green',
+            'blue',
+            'yellow',
+            'purple',
+            'orange',
+            'pink',
+            'brown',
+            'gray',
+            'black',
+            'white',
+        ];
+        for (let i = 0; i < bogiePositions.length; i++) {
+            const bogiePosition = bogiePositions[i];
+            board.context.fillStyle = colors[i % colors.length];
+            board.context.beginPath();
+            board.context.arc(
+                bogiePosition.point.x,
+                bogiePosition.point.y,
+                1.067 / 2,
+                0,
+                2 * Math.PI
+            );
+            board.context.fill();
+        }
+        board.context.restore();
+    }
+
+    if (capture) {
+        const imageData = board.context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+        downloadImageDataAsPNG(imageData);
+        capture = false;
+    }
+
+    const topLeftCornerInViewPort = board.alignCoordinateSystem
+        ? {
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
+        : {
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
+    const topRightCornerInViewPort = board.alignCoordinateSystem
+        ? {
+            x: board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        }
+        : {
+            x: board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        };
+    const bottomLeftCornerInViewPort = board.alignCoordinateSystem
+        ? {
+            x: -board.camera.viewPortWidth / 2,
+            y: board.camera.viewPortHeight / 2,
+        }
+        : {
+            x: -board.camera.viewPortWidth / 2,
+            y: -board.camera.viewPortHeight / 2,
+        };
+
+    const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
+        topLeftCornerInViewPort
+    );
+    const topRightCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
+        topRightCornerInViewPort
+    );
+    const bottomLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
+        bottomLeftCornerInViewPort
+    );
+
+    drawRuler(
+        board.context,
+        topLeftCornerInWorld,
+        topRightCornerInWorld,
+        bottomLeftCornerInWorld,
+        board.alignCoordinateSystem,
+        board.camera.zoomLevel
+    );
+
+    stats.end();
+    window.requestAnimationFrame(step);
+}
+
+window.requestAnimationFrame(step);
 
 // Initialize GeoJSON data
 initializeGeoJSON();
@@ -446,7 +844,7 @@ utilButton.addEventListener('click', () => {
         tVal
     );
     const totalCount = curveEngine.trackGraph.getDrawData(
-        res.camera.viewPortAABB()
+        board.camera.viewPortAABB()
     ).length;
     console.log('totalCount', totalCount);
     console.log('order', order);
@@ -454,7 +852,7 @@ utilButton.addEventListener('click', () => {
     console.log('occupied joint numbers', train.occupiedJointNumbers);
     console.log('occupied track segments', train.occupiedTrackSegments);
 
-    console.log('viewport aabb', res.camera.viewPortAABB());
+    console.log('viewport aabb', board.camera.viewPortAABB());
 });
 
 const p1Button = document.getElementById('p1') as HTMLButtonElement;
@@ -572,10 +970,8 @@ function createGradient(
     return gradient;
 }
 
-function drawElevationCurves(
-    drawData: TrackSegmentDrawData,
-    context: CanvasRenderingContext2D
-) {
+function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRenderingContext2D) {
+
     const cps = drawData.curve.getControlPoints();
 
     context.save();
@@ -590,7 +986,12 @@ function drawElevationCurves(
     context.beginPath();
     context.moveTo(cps[0].x, cps[0].y);
     if (cps.length === 3) {
-        context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
+        context.quadraticCurveTo(
+            cps[1].x,
+            cps[1].y,
+            cps[2].x,
+            cps[2].y
+        );
     } else {
         context.bezierCurveTo(
             cps[1].x,
@@ -606,8 +1007,6 @@ function drawElevationCurves(
 }
 
 function elevationConnectToFlat(drawData: TrackSegmentDrawData) {
-    return (
-        drawData.elevation.from % LEVEL_HEIGHT === 0 ||
-        drawData.elevation.to % LEVEL_HEIGHT === 0
-    );
+    return drawData.elevation.from % LEVEL_HEIGHT === 0 || drawData.elevation.to % LEVEL_HEIGHT === 0;
 }
+

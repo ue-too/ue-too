@@ -15,7 +15,7 @@ export type KnitAppComponents = BaseAppComponents & {
 
 declare module '@ue-too/board-pixi-react-integration' {
     interface PixiCanvasRegistry {
-        components: BaseAppComponents;
+        components: KnitAppComponents;
     }
 }
 
