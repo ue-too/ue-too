@@ -136,6 +136,56 @@ export const orderTest = (a: TrackSegmentDrawData, b: TrackSegmentDrawData) => {
     return aElevation - bElevation;
 };
 
+export const orderTestWithoutCollisionCheck = (a: TrackSegmentDrawData, b: TrackSegmentDrawData) => {
+    if (!trackIsSloped(a) && !trackIsSloped(b)) {
+        return a.elevation.from - b.elevation.from;
+    }
+
+    const overlaps = elevationIntervalOverlaps(a, b);
+    const aMax = Math.max(a.elevation.from, a.elevation.to);
+    const bMax = Math.max(b.elevation.from, b.elevation.to);
+    if (!overlaps) {
+        return aMax - bMax;
+    }
+    if (
+        a.excludeSegmentsForCollisionCheck.has(
+            b.originalTrackSegment.trackSegmentNumber
+        ) ||
+        b.excludeSegmentsForCollisionCheck.has(
+            a.originalTrackSegment.trackSegmentNumber
+        )
+    ) {
+        return 0;
+    }
+    const broad = AABBIntersects(a.curve.AABB, b.curve.AABB);
+    if (!broad) {
+        return aMax - bMax;
+    }
+    const collision = a.curve.getCurveIntersections(b.curve);
+    if (collision.length === 0) {
+        return aMax - bMax;
+    }
+    if (collision.length !== 1) {
+        console.warn(
+            'something wrong in the sorting of track segments draw order'
+        );
+        // return 0;
+    }
+    const aElevation = getElevationAtT(collision[0].selfT, {
+        elevation: {
+            from: a.elevation.from * LEVEL_HEIGHT,
+            to: a.elevation.to * LEVEL_HEIGHT,
+        },
+    });
+    const bElevation = getElevationAtT(collision[0].otherT, {
+        elevation: {
+            from: b.elevation.from * LEVEL_HEIGHT,
+            to: b.elevation.to * LEVEL_HEIGHT,
+        },
+    });
+    return aElevation - bElevation;
+};
+
 export const trackSegmentDrawDataInsertIndex = (drawDataList: TrackSegmentDrawData[], drawData: TrackSegmentDrawData) => {
     let left = 0;
     let right = drawDataList.length - 1;
