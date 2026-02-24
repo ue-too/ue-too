@@ -62,10 +62,10 @@ const unitVector = (a: Point): Point => {
     const mag = magnitude(a);
     return mag != 0
         ? {
-            x: a.x / mag,
-            y: a.y / mag,
-            z: a.z / mag,
-        }
+              x: a.x / mag,
+              y: a.y / mag,
+              z: a.z / mag,
+          }
         : { x: 0, y: 0, z: 0 };
 };
 
@@ -184,11 +184,7 @@ const getLineIntersection = (
     if (t >= 0 && t <= 1) {
         return {
             intersects: true,
-            intersection: linearInterpolation(
-                startPoint,
-                endPoint,
-                t
-            ),
+            intersection: linearInterpolation(startPoint, endPoint, t),
             offset: t,
         };
     } else {

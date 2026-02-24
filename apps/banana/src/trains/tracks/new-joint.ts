@@ -53,7 +53,7 @@ export class PreviewCurveCalculator {
 
     private _extendAsStraightLine: boolean = false;
 
-    constructor() { }
+    constructor() {}
 
     toggleStraightLine() {
         this._extendAsStraightLine = !this._extendAsStraightLine;
@@ -231,9 +231,9 @@ function getStraightLinePreviewCurve(
             startJoint.type !== 'new'
                 ? startJoint.constraint.tangent
                 : PointCal.unitVectorFromA2B(
-                    startJoint.position,
-                    endJoint.position
-                ),
+                      startJoint.position,
+                      endJoint.position
+                  ),
             startJoint.position,
             endJoint.position
         );

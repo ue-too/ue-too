@@ -5,6 +5,7 @@ import { usePixiCanvas } from '@/contexts/pixi';
 import { Grid } from '@/knit-grid/grid';
 import { PixiGrid } from '@/knit-grid/grid-pixi';
 import { appIsReady } from '@/utils/pixi';
+
 import { useAllBoardCameraState, useBoardCameraState } from './camera';
 
 export const useAppTicker = (
@@ -31,10 +32,7 @@ export const useToggleKmtInput = (enable: boolean) => {
     const { result } = usePixiCanvas();
 
     useEffect(() => {
-        if (
-            result.initialized == false ||
-            result.success == false
-        ) {
+        if (result.initialized == false || result.success == false) {
             return;
         }
 

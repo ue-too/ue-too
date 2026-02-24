@@ -18,13 +18,19 @@
     "include": ["src/**/*", "routes/**/*", "routeTree.gen.ts"],
     "references": [
         {
-            "path": "../../packages/board"
+            "path": "../../packages/math"
+        },
+        {
+            "path": "../../packages/board-pixi-react-integration"
         },
         {
             "path": "../../packages/board-pixi-integration"
         },
         {
-            "path": "../../packages/board-pixi-react-integration"
+            "path": "../../packages/board"
+        },
+        {
+            "path": "../../packages/being"
         }
     ]
 }

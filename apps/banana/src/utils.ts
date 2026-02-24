@@ -1,7 +1,7 @@
 import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
-import type { TrackSegmentDrawData } from './trains/tracks/track';
 
+import type { TrackSegmentDrawData } from './trains/tracks/track';
 
 export class GenericEntityManager<T> {
     private _availableEntities: number[] = [];
@@ -210,7 +210,7 @@ function getShadowCacheKey(
  * Calculate shadow points for an elevated track segment.
  * The shadow is projected from the track edges in the sun direction.
  * Results are memoized based on sun angle and track segment properties.
- * 
+ *
  * @param trackSegment - The track segment draw data
  * @param sunAngle - Sun angle in degrees (0 = right, 90 = up, 180 = left, 270 = down)
  * @param baseShadowLength - Base shadow length multiplier (default: 20)
@@ -222,7 +222,11 @@ export const shadows = (
     baseShadowLength: number = 20
 ): ShadowCacheEntry => {
     // Check cache first
-    const cacheKey = getShadowCacheKey(trackSegment, sunAngle, baseShadowLength);
+    const cacheKey = getShadowCacheKey(
+        trackSegment,
+        sunAngle,
+        baseShadowLength
+    );
     const cached = shadowCache.get(cacheKey);
     if (cached !== undefined) {
         return cached;
@@ -246,10 +250,14 @@ export const shadows = (
     let startElevation = trackSegment.elevation.from;
     let endElevation = trackSegment.elevation.to;
 
-    const shadowOffsetXStart = Math.cos(sunAngleRad) * baseShadowLength * (startElevation / 100);
-    const shadowOffsetYStart = Math.sin(sunAngleRad) * baseShadowLength * (startElevation / 100);
-    const shadowOffsetXEnd = Math.cos(sunAngleRad) * baseShadowLength * (endElevation / 100);
-    const shadowOffsetYEnd = Math.sin(sunAngleRad) * baseShadowLength * (endElevation / 100);
+    const shadowOffsetXStart =
+        Math.cos(sunAngleRad) * baseShadowLength * (startElevation / 100);
+    const shadowOffsetYStart =
+        Math.sin(sunAngleRad) * baseShadowLength * (startElevation / 100);
+    const shadowOffsetXEnd =
+        Math.cos(sunAngleRad) * baseShadowLength * (endElevation / 100);
+    const shadowOffsetYEnd =
+        Math.sin(sunAngleRad) * baseShadowLength * (endElevation / 100);
 
     startPoint = {
         x: startPoint.x + shadowOffsetXStart,
@@ -264,10 +272,14 @@ export const shadows = (
     for (let i = 0; i <= steps; i++) {
         const t = i / steps; // This guarantees t=0 and t=1 exactly
         const point = trackSegment.curve.getPointbyPercentage(t);
-        const elevationAtPoint = trackSegment.elevation.from + (trackSegment.elevation.to - trackSegment.elevation.from) * t;
+        const elevationAtPoint =
+            trackSegment.elevation.from +
+            (trackSegment.elevation.to - trackSegment.elevation.from) * t;
 
         // Get the tangent direction at this point on the curve
-        const tangent = PointCal.unitVector(trackSegment.curve.derivativeByPercentage(t));
+        const tangent = PointCal.unitVector(
+            trackSegment.curve.derivativeByPercentage(t)
+        );
 
         // Calculate perpendicular direction (orthogonal to track, pointing to the sides)
         const orthogonalDirection = PointCal.unitVector({

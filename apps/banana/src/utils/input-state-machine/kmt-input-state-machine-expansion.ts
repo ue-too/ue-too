@@ -1,75 +1,118 @@
-import { Cell } from "@/knit-grid/grid";
-import { PixiGrid } from "@/knit-grid/grid-pixi";
-import { CreateStateType, EventReactions, Guard, State, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import {
+    CreateStateType,
+    EventReactions,
+    Guard,
+    State,
+    StateMachine,
+    TemplateState,
+    TemplateStateMachine,
+} from '@ue-too/being';
+import {
+    Canvas,
+    DefaultBoardCamera,
+    DisabledState,
+    InitialPanState,
     KmtIdleState,
-    KmtInputStates,
     KmtInputContext,
     KmtInputEventMapping,
     KmtInputEventOutputMapping,
-    DisabledState,
-    PanViaScrollWheelState,
-    PanState,
-    InitialPanState,
-    ReadyToPanViaSpaceBarState,
-    ReadyToPanViaScrollWheelState,
+    KmtInputStates,
     ObservableInputTracker,
-    Canvas,
-    DefaultBoardCamera,
-    convertFromWindow2Canvas,
+    PanState,
+    PanViaScrollWheelState,
+    PointerEventPayload,
+    ReadyToPanViaScrollWheelState,
+    ReadyToPanViaSpaceBarState,
     convertFromCanvas2ViewPort,
-    PointerEventPayload
-} from "@ue-too/board";
-import { Point } from "@ue-too/math";
+    convertFromWindow2Canvas,
+} from '@ue-too/board';
+import { Point } from '@ue-too/math';
+
+import { Cell } from '@/knit-grid/grid';
+import { PixiGrid } from '@/knit-grid/grid-pixi';
 
 export type KmtInputStateMachineExpansionContext = KmtInputContext & {
-    isAtCell: (point: Point) => { row: number; column: number; cell: Cell } | null;
+    isAtCell: (
+        point: Point
+    ) => { row: number; column: number; cell: Cell } | null;
     setAt: (row: number, column: number, cellType: string) => void;
 };
 
-export type KmtInputStateMachineExpansionEventMapping = KmtInputEventMapping & {
-};
+export type KmtInputStateMachineExpansionEventMapping =
+    KmtInputEventMapping & {};
 
-export type KmtInputStateMachineExpansionEventOutputMapping = KmtInputEventOutputMapping & {
-    leftPointerDown: void;
-    leftPointerUp: {
-        type: 'checkPlacement';
-        point: Point;
+export type KmtInputStateMachineExpansionEventOutputMapping =
+    KmtInputEventOutputMapping & {
+        leftPointerDown: void;
+        leftPointerUp: {
+            type: 'checkPlacement';
+            point: Point;
+        };
     };
-};
 
 export const KMT_INPUT_STATE_MACHINE_EXPANSION_STATES = ['PLACEMENT'] as const;
 
-export type KmtInputStateMachineExpansionStates = KmtInputStates | CreateStateType<typeof KMT_INPUT_STATE_MACHINE_EXPANSION_STATES>;
+export type KmtInputStateMachineExpansionStates =
+    | KmtInputStates
+    | CreateStateType<typeof KMT_INPUT_STATE_MACHINE_EXPANSION_STATES>;
 
-export type KmtExpandedStateMachine = StateMachine<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
+export type KmtExpandedStateMachine = StateMachine<
+    KmtInputStateMachineExpansionEventMapping,
+    KmtInputStateMachineExpansionContext,
+    KmtInputStateMachineExpansionStates,
+    KmtInputStateMachineExpansionEventOutputMapping
+>;
 
-export const createAdaptedStateToExpansionFunc = <OldState extends State<any, any, any, any>, NewState extends State<any, any, any, any>>() => {
+export const createAdaptedStateToExpansionFunc = <
+    OldState extends State<any, any, any, any>,
+    NewState extends State<any, any, any, any>,
+>() => {
     return (state: OldState): NewState => {
         return state as unknown as NewState;
-    }
-}
+    };
+};
 
-const expandState = createAdaptedStateToExpansionFunc<State<KmtInputEventMapping, KmtInputContext, KmtInputStates, KmtInputEventOutputMapping>, State<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>>();
+const expandState = createAdaptedStateToExpansionFunc<
+    State<
+        KmtInputEventMapping,
+        KmtInputContext,
+        KmtInputStates,
+        KmtInputEventOutputMapping
+    >,
+    State<
+        KmtInputStateMachineExpansionEventMapping,
+        KmtInputStateMachineExpansionContext,
+        KmtInputStateMachineExpansionStates,
+        KmtInputStateMachineExpansionEventOutputMapping
+    >
+>();
 
 /**
  * Extended IDLE state that adds additional event reactions while preserving
  * all existing handlers from KmtIdleState.
- * 
+ *
  * @remarks
  * This class extends KmtIdleState and merges event reactions, so you don't need
  * to manually delegate existing handlers. New event handlers are added to the
  * existing ones, and you can override specific handlers if needed.
- * 
+ *
  * @example
  * ```typescript
  * const extendedIdleState = new KmtExtendedIdleState();
  * // Now handles all original events PLUS any new ones you add
  * ```
  */
-export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> {
-
-    private _originalEventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping> = {};
+export class KmtExtendedIdleState extends TemplateState<
+    KmtInputStateMachineExpansionEventMapping,
+    KmtInputStateMachineExpansionContext,
+    KmtInputStateMachineExpansionStates
+> {
+    private _originalEventReactions: EventReactions<
+        KmtInputStateMachineExpansionEventMapping,
+        KmtInputStateMachineExpansionContext,
+        KmtInputStateMachineExpansionStates,
+        KmtInputStateMachineExpansionEventOutputMapping
+    > = {};
 
     constructor() {
         super();
@@ -77,15 +120,24 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
         const originalIdleState = new KmtIdleState();
         // Get parent's event reactions (typed with original generics)
         // Cast to expanded type - safe because expansion types are supersets
-        const parentReactions = originalIdleState.eventReactions as unknown as EventReactions<
-            KmtInputStateMachineExpansionEventMapping,
-            KmtInputStateMachineExpansionContext,
-            KmtInputStateMachineExpansionStates,
-            KmtInputStateMachineExpansionEventOutputMapping
-        >;
+        const parentReactions =
+            originalIdleState.eventReactions as unknown as EventReactions<
+                KmtInputStateMachineExpansionEventMapping,
+                KmtInputStateMachineExpansionContext,
+                KmtInputStateMachineExpansionStates,
+                KmtInputStateMachineExpansionEventOutputMapping
+            >;
 
-        this.uponEnter = originalIdleState.uponEnter as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, from: KmtInputStateMachineExpansionStates | 'INITIAL') => void;
-        this.beforeExit = originalIdleState.beforeExit as unknown as (context: KmtInputStateMachineExpansionContext, stateMachine: KmtExpandedStateMachine, to: KmtInputStateMachineExpansionStates | 'TERMINAL') => void;
+        this.uponEnter = originalIdleState.uponEnter as unknown as (
+            context: KmtInputStateMachineExpansionContext,
+            stateMachine: KmtExpandedStateMachine,
+            from: KmtInputStateMachineExpansionStates | 'INITIAL'
+        ) => void;
+        this.beforeExit = originalIdleState.beforeExit as unknown as (
+            context: KmtInputStateMachineExpansionContext,
+            stateMachine: KmtExpandedStateMachine,
+            to: KmtInputStateMachineExpansionStates | 'TERMINAL'
+        ) => void;
 
         // NOTE if you want to expand the original event reactions instead of just overriding them, you can keep a reference to the original event reactions and merge them with the new ones.
         this._originalEventReactions = parentReactions;
@@ -103,9 +155,14 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             // },
             leftPointerDown: {
                 action: this.leftPointerDown.bind(this),
-                defaultTargetState: "PLACEMENT",
+                defaultTargetState: 'PLACEMENT',
             },
-        } as EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping>;
+        } as EventReactions<
+            KmtInputStateMachineExpansionEventMapping,
+            KmtInputStateMachineExpansionContext,
+            KmtInputStateMachineExpansionStates,
+            KmtInputStateMachineExpansionEventOutputMapping
+        >;
 
         this._guards = {
             ...originalIdleState.guards,
@@ -113,7 +170,6 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
             // Example:
             // hasEnoughMoney: (context) => context.balance >= context.itemPrice,
         } as Guard<KmtInputStateMachineExpansionContext>;
-
     }
 
     // Example: Add a custom handler for a new event or override an existing one
@@ -125,23 +181,43 @@ export class KmtExtendedIdleState extends TemplateState<KmtInputStateMachineExpa
     //     // You can still call the parent's handler if needed:
     //     // super.middlePointerDownHandler(context, payload);
     // }
-    leftPointerDown(context: KmtInputStateMachineExpansionContext, eventPayload: PointerEventPayload, stateMachine: KmtExpandedStateMachine): void {
-        const res = this._originalEventReactions['leftPointerDown']?.action(context, eventPayload, stateMachine);
+    leftPointerDown(
+        context: KmtInputStateMachineExpansionContext,
+        eventPayload: PointerEventPayload,
+        stateMachine: KmtExpandedStateMachine
+    ): void {
+        const res = this._originalEventReactions['leftPointerDown']?.action(
+            context,
+            eventPayload,
+            stateMachine
+        );
 
         console.log('leftPointerDown', eventPayload);
     }
 }
 
-export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates> {
+export class KmtPlacementState extends TemplateState<
+    KmtInputStateMachineExpansionEventMapping,
+    KmtInputStateMachineExpansionContext,
+    KmtInputStateMachineExpansionStates
+> {
     constructor() {
         super();
     }
 
-    protected _eventReactions: EventReactions<KmtInputStateMachineExpansionEventMapping, KmtInputStateMachineExpansionContext, KmtInputStateMachineExpansionStates, KmtInputStateMachineExpansionEventOutputMapping> = {
-        'leftPointerUp': {
+    protected _eventReactions: EventReactions<
+        KmtInputStateMachineExpansionEventMapping,
+        KmtInputStateMachineExpansionContext,
+        KmtInputStateMachineExpansionStates,
+        KmtInputStateMachineExpansionEventOutputMapping
+    > = {
+        leftPointerUp: {
             action: (context, eventPayload, stateMachine) => {
                 // console.log('leftPointerUp', eventPayload);
-                const cell = context.isAtCell({ x: eventPayload.x, y: eventPayload.y });
+                const cell = context.isAtCell({
+                    x: eventPayload.x,
+                    y: eventPayload.y,
+                });
                 if (cell != null) {
                     context.setAt(cell.row, cell.column, 'knit');
                 }
@@ -151,10 +227,10 @@ export class KmtPlacementState extends TemplateState<KmtInputStateMachineExpansi
                         x: eventPayload.x,
                         y: eventPayload.y,
                     },
-                }
+                };
             },
             defaultTargetState: 'IDLE',
-        }
+        },
     };
 }
 
@@ -163,10 +239,14 @@ export function createKmtInputStateMachineExpansion(
 ): KmtExpandedStateMachine {
     const states = {
         IDLE: new KmtExtendedIdleState(),
-        READY_TO_PAN_VIA_SPACEBAR: expandState(new ReadyToPanViaSpaceBarState()),
+        READY_TO_PAN_VIA_SPACEBAR: expandState(
+            new ReadyToPanViaSpaceBarState()
+        ),
         INITIAL_PAN: expandState(new InitialPanState()),
         PAN: expandState(new PanState()),
-        READY_TO_PAN_VIA_SCROLL_WHEEL: expandState(new ReadyToPanViaScrollWheelState()),
+        READY_TO_PAN_VIA_SCROLL_WHEEL: expandState(
+            new ReadyToPanViaScrollWheelState()
+        ),
         PAN_VIA_SCROLL_WHEEL: expandState(new PanViaScrollWheelState()),
         DISABLED: expandState(new DisabledState()),
         PLACEMENT: new KmtPlacementState(),
@@ -179,7 +259,10 @@ export function createKmtInputStateMachineExpansion(
     >(states, 'IDLE', context);
 }
 
-export class ExpandedInputTracker extends ObservableInputTracker implements KmtInputStateMachineExpansionContext {
+export class ExpandedInputTracker
+    extends ObservableInputTracker
+    implements KmtInputStateMachineExpansionContext
+{
     private _grid: PixiGrid;
     private _camera: DefaultBoardCamera;
 
@@ -191,8 +274,12 @@ export class ExpandedInputTracker extends ObservableInputTracker implements KmtI
 
     isAtCell(point: Point): { row: number; column: number; cell: Cell } | null {
         const canvasPoint = convertFromWindow2Canvas(point, this.canvas);
-        const viewportPoint = convertFromCanvas2ViewPort(canvasPoint, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
-        const worldPoint = this._camera.convertFromViewPort2WorldSpace(viewportPoint);
+        const viewportPoint = convertFromCanvas2ViewPort(canvasPoint, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+        });
+        const worldPoint =
+            this._camera.convertFromViewPort2WorldSpace(viewportPoint);
         const cell = this._grid.getCell(worldPoint);
         return cell;
     }

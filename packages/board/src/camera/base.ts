@@ -80,31 +80,31 @@ export default class BaseCamera implements BoardCamera {
 
     private currentCachedTransform:
         | {
-            transform: {
-                a: number;
-                b: number;
-                c: number;
-                d: number;
-                e: number;
-                f: number;
-            };
-            position: Point;
-            rotation: number;
-            zoomLevel: number;
-            alignCoorindate: boolean;
-            devicePixelRatio: number;
-            viewPortWidth: number;
-            viewPortHeight: number;
-        }
+              transform: {
+                  a: number;
+                  b: number;
+                  c: number;
+                  d: number;
+                  e: number;
+                  f: number;
+              };
+              position: Point;
+              rotation: number;
+              zoomLevel: number;
+              alignCoorindate: boolean;
+              devicePixelRatio: number;
+              viewPortWidth: number;
+              viewPortHeight: number;
+          }
         | undefined;
 
     private currentCachedTRS:
         | {
-            scale: { x: number; y: number };
-            rotation: number;
-            translation: { x: number; y: number };
-            transformMatrix: TransformationMatrix;
-        }
+              scale: { x: number; y: number };
+              rotation: number;
+              translation: { x: number; y: number };
+              transformMatrix: TransformationMatrix;
+          }
         | undefined;
 
     private _viewPortWidth: number;
@@ -397,7 +397,7 @@ export default class BaseCamera implements BoardCamera {
             this._zoomBoundaries !== undefined &&
             this._zoomBoundaries.max !== undefined &&
             clampZoomLevel(zoomLevel, this._zoomBoundaries) ==
-            this._zoomBoundaries.max &&
+                this._zoomBoundaries.max &&
             this._zoomLevel == this._zoomBoundaries.max
         ) {
             return false;
@@ -406,7 +406,7 @@ export default class BaseCamera implements BoardCamera {
             this._zoomBoundaries !== undefined &&
             this._zoomBoundaries.min !== undefined &&
             clampZoomLevel(zoomLevel, this._zoomBoundaries) ==
-            this._zoomBoundaries.min &&
+                this._zoomBoundaries.min &&
             this._zoomLevel == this._zoomBoundaries.min
         ) {
             return false;
@@ -643,7 +643,7 @@ export default class BaseCamera implements BoardCamera {
             this._rotationBoundaries !== undefined &&
             this._rotationBoundaries.end !== undefined &&
             clampRotation(rotation, this._rotationBoundaries) ==
-            this._rotationBoundaries.end &&
+                this._rotationBoundaries.end &&
             this._rotation == this._rotationBoundaries.end
         ) {
             return false;
@@ -652,7 +652,7 @@ export default class BaseCamera implements BoardCamera {
             this._rotationBoundaries !== undefined &&
             this._rotationBoundaries.start !== undefined &&
             clampRotation(rotation, this._rotationBoundaries) ==
-            this._rotationBoundaries.start &&
+                this._rotationBoundaries.start &&
             this._rotation == this._rotationBoundaries.start
         ) {
             return false;

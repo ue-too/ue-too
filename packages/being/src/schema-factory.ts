@@ -51,8 +51,8 @@ export type ActionFunction<
         EventOutputMapping
     >
 ) => EventName extends keyof EventOutputMapping
-        ? EventOutputMapping[EventName] | void
-        : void | unknown;
+    ? EventOutputMapping[EventName] | void
+    : void | unknown;
 
 /**
  * Guard function that evaluates whether a transition should occur.
@@ -201,14 +201,14 @@ export interface StateDefinition<
  */
 export type ExtractStateNames<StatesArray> =
     StatesArray extends readonly (infer S)[]
-    ? S extends string
-    ? S
-    : string
-    : StatesArray extends (infer S)[]
-    ? S extends string
-    ? S
-    : string
-    : string;
+        ? S extends string
+            ? S
+            : string
+        : StatesArray extends (infer S)[]
+          ? S extends string
+              ? S
+              : string
+          : string;
 
 /**
  * Helper type to infer StateNames from a StateMachineSchema.
@@ -216,10 +216,10 @@ export type ExtractStateNames<StatesArray> =
  */
 type InferStateNamesFromSchema<Schema> =
     Schema extends StateMachineSchema<any, any, infer SN, any>
-    ? SN
-    : Schema extends { states: infer S }
-    ? ExtractStateNames<S>
-    : string;
+        ? SN
+        : Schema extends { states: infer S }
+          ? ExtractStateNames<S>
+          : string;
 
 /**
  * Helper function to create a typed state machine schema with inferred state names.
@@ -414,8 +414,8 @@ export function createStateMachineFromSchema<
     // Extract types from schema for internal use
     type SchemaContext =
         Schema extends StateMachineSchema<infer C, any, any, any>
-        ? C
-        : BaseContext;
+            ? C
+            : BaseContext;
     type SchemaEventPayloadMapping =
         Schema extends StateMachineSchema<any, infer EPM, any, any> ? EPM : any;
     type SchemaEventOutputMapping =

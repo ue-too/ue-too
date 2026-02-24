@@ -44,9 +44,11 @@ export type InitAppOptions = {
 
 export const baseInitApp = async (
     canvasElement: HTMLCanvasElement,
-    option: Partial<InitAppOptions> = { fullScreen: true, limitEntireViewPort: true }
+    option: Partial<InitAppOptions> = {
+        fullScreen: true,
+        limitEntireViewPort: true,
+    }
 ): Promise<BaseAppComponents> => {
-
     const { fullScreen = true, limitEntireViewPort = true } = option;
     // Create a PixiJS application.
     const app = new Application();
@@ -190,7 +192,6 @@ export const baseInitApp = async (
                     transform.f
                 )
             );
-
         }
     });
 

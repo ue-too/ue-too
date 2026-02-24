@@ -12,11 +12,13 @@ TODO: Add package overview
 ## Installation
 
 Using Bun:
+
 ```bash
 bun add @ue-too/board-pixi-react-integration
 ```
 
 Using npm:
+
 ```bash
 npm install @ue-too/board-pixi-react-integration
 ```

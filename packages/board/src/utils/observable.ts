@@ -135,7 +135,7 @@ export class AsyncObservable<T extends any[]> implements Observable<T> {
             // If signal is already aborted, don't add the observer
             if (options.signal.aborted) {
                 this.observers = this.observers.filter(o => o !== observer);
-                return () => {};
+                return () => { };
             }
 
             // Add abort handler
@@ -232,7 +232,7 @@ export class SynchronousObservable<T extends any[]> implements Observable<T> {
             // If signal is already aborted, don't add the observer
             if (options.signal.aborted) {
                 this.observers = this.observers.filter(o => o !== observer);
-                return () => {};
+                return () => { };
             }
 
             // Add abort handler

@@ -1,13 +1,12 @@
+import { CameraState } from '@ue-too/board';
 import { Point } from '@ue-too/math';
 import { Container, Graphics, Rectangle } from 'pixi.js';
 
 import { Cell, Grid } from './grid';
-import { CameraState } from '@ue-too/board';
 
 export class PixiGrid extends Container {
     private _cells: Container;
     private _lineWidth: number = 1;
-
 
     constructor(private _grid: Grid) {
         super();
@@ -25,22 +24,23 @@ export class PixiGrid extends Container {
         cell.destroy({ children: true });
         cell = new Container();
         const cellWall = new Graphics();
-        cellWall.rect(
-            0,
-            0,
-            this._grid.cellWidth,
-            this._grid.cellHeight
-        );
+        cellWall.rect(0, 0, this._grid.cellWidth, this._grid.cellHeight);
         cellWall.stroke({ color: 0x000000, pixelLine: true });
         cell.addChild(cellWall);
         if (cellType == 'knit') {
             const knit = new Graphics();
             knit.arc(0, 0, this._grid.cellWidth / 4, 0, 2 * Math.PI);
             knit.fill({ color: 0x000000 });
-            knit.position.set(this._grid.cellWidth / 2, this._grid.cellHeight / 2);
+            knit.position.set(
+                this._grid.cellWidth / 2,
+                this._grid.cellHeight / 2
+            );
             cell.addChild(knit);
         }
-        cell.position.set(column * this._grid.cellWidth, row * this._grid.cellHeight);
+        cell.position.set(
+            column * this._grid.cellWidth,
+            row * this._grid.cellHeight
+        );
         this._cells.children[1].addChildAt(cell, index);
     }
 

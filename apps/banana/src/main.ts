@@ -4,17 +4,18 @@ import { PointCal } from '@ue-too/math';
 import { Point } from '@ue-too/math';
 import Stats from 'stats.js';
 
+import './media';
+import { TrainPlacementEngine, TrainPlacementStateMachine } from './trains';
 import {
     CurveCreationEngine,
     NewJointType,
     createLayoutStateMachine,
 } from './trains/kmt-state-machine';
-import './media';
-import { ELEVATION, LEVEL_HEIGHT, TrackSegmentDrawData } from './trains/tracks/track';
 import {
-    TrainPlacementEngine,
-    TrainPlacementStateMachine,
-} from './trains';
+    ELEVATION,
+    LEVEL_HEIGHT,
+    TrackSegmentDrawData,
+} from './trains/tracks/track';
 import { shadows } from './utils';
 
 const elevationText = document.getElementById(
@@ -503,14 +504,26 @@ function step(timestamp: number) {
 
         board.context.save();
         board.context.beginPath();
-        board.context.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
+        board.context.moveTo(
+            shadowPoints.positive[0].x,
+            shadowPoints.positive[0].y
+        );
         for (let i = 1; i < shadowPoints.positive.length; i++) {
-            board.context.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+            board.context.lineTo(
+                shadowPoints.positive[i].x,
+                shadowPoints.positive[i].y
+            );
         }
 
-        board.context.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
+        board.context.lineTo(
+            shadowPoints.negative[shadowPoints.negative.length - 1].x,
+            shadowPoints.negative[shadowPoints.negative.length - 1].y
+        );
         for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
-            board.context.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
+            board.context.lineTo(
+                shadowPoints.negative[i].x,
+                shadowPoints.negative[i].y
+            );
         }
         board.context.closePath();
         board.context.fillStyle = 'rgba(51, 51, 51, 0.5)';
@@ -538,7 +551,10 @@ function step(timestamp: number) {
             // sloped track
             elevationCurvesMap.push(drawData);
             if (elevationConnectToFlat(drawData)) {
-                pendingElevation = Math.max(drawData.originalElevation.from, drawData.originalElevation.to);
+                pendingElevation = Math.max(
+                    drawData.originalElevation.from,
+                    drawData.originalElevation.to
+                );
             }
         }
 
@@ -767,31 +783,31 @@ function step(timestamp: number) {
 
     const topLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-            x: -board.camera.viewPortWidth / 2,
-            y: -board.camera.viewPortHeight / 2,
-        }
+              x: -board.camera.viewPortWidth / 2,
+              y: -board.camera.viewPortHeight / 2,
+          }
         : {
-            x: -board.camera.viewPortWidth / 2,
-            y: board.camera.viewPortHeight / 2,
-        };
+              x: -board.camera.viewPortWidth / 2,
+              y: board.camera.viewPortHeight / 2,
+          };
     const topRightCornerInViewPort = board.alignCoordinateSystem
         ? {
-            x: board.camera.viewPortWidth / 2,
-            y: -board.camera.viewPortHeight / 2,
-        }
+              x: board.camera.viewPortWidth / 2,
+              y: -board.camera.viewPortHeight / 2,
+          }
         : {
-            x: board.camera.viewPortWidth / 2,
-            y: board.camera.viewPortHeight / 2,
-        };
+              x: board.camera.viewPortWidth / 2,
+              y: board.camera.viewPortHeight / 2,
+          };
     const bottomLeftCornerInViewPort = board.alignCoordinateSystem
         ? {
-            x: -board.camera.viewPortWidth / 2,
-            y: board.camera.viewPortHeight / 2,
-        }
+              x: -board.camera.viewPortWidth / 2,
+              y: board.camera.viewPortHeight / 2,
+          }
         : {
-            x: -board.camera.viewPortWidth / 2,
-            y: -board.camera.viewPortHeight / 2,
-        };
+              x: -board.camera.viewPortWidth / 2,
+              y: -board.camera.viewPortHeight / 2,
+          };
 
     const topLeftCornerInWorld = board.camera.convertFromViewPort2WorldSpace(
         topLeftCornerInViewPort
@@ -956,8 +972,10 @@ function createGradient(
     return gradient;
 }
 
-function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRenderingContext2D) {
-
+function drawElevationCurves(
+    drawData: TrackSegmentDrawData,
+    context: CanvasRenderingContext2D
+) {
     const cps = drawData.curve.getControlPoints();
 
     context.save();
@@ -972,12 +990,7 @@ function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRend
     context.beginPath();
     context.moveTo(cps[0].x, cps[0].y);
     if (cps.length === 3) {
-        context.quadraticCurveTo(
-            cps[1].x,
-            cps[1].y,
-            cps[2].x,
-            cps[2].y
-        );
+        context.quadraticCurveTo(cps[1].x, cps[1].y, cps[2].x, cps[2].y);
     } else {
         context.bezierCurveTo(
             cps[1].x,
@@ -993,6 +1006,8 @@ function drawElevationCurves(drawData: TrackSegmentDrawData, context: CanvasRend
 }
 
 function elevationConnectToFlat(drawData: TrackSegmentDrawData) {
-    return drawData.elevation.from % LEVEL_HEIGHT === 0 || drawData.elevation.to % LEVEL_HEIGHT === 0;
+    return (
+        drawData.elevation.from % LEVEL_HEIGHT === 0 ||
+        drawData.elevation.to % LEVEL_HEIGHT === 0
+    );
 }
-

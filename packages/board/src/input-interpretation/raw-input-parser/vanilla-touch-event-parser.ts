@@ -177,7 +177,11 @@ export class VanillaTouchEventParser implements TouchEventParser {
         ...args: EventArgs<TouchEventMapping, K>
     ): void {
         const result = this._stateMachine.happens(...args);
-        if (result.handled && 'output' in result && result.output !== undefined) {
+        if (
+            result.handled &&
+            'output' in result &&
+            result.output !== undefined
+        ) {
             this._orchestrator.processInputEventOutput(result.output);
         }
     }
