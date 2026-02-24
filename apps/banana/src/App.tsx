@@ -1,5 +1,10 @@
+import { baseInitApp } from '@ue-too/board-pixi-integration';
+import {
+    ScrollBarDisplay,
+    Wrapper,
+} from '@ue-too/board-pixi-react-integration';
+
 import './App.css';
-import { Wrapper } from './components/PixiCanvas';
 
 /**
  * Main React App Component
@@ -9,7 +14,9 @@ import { Wrapper } from './components/PixiCanvas';
 const App = (): React.ReactNode => {
     return (
         <div className="app">
-            <Wrapper fullScreen={true} />
+            <Wrapper option={{ fullScreen: true }} initFunction={baseInitApp}>
+                <ScrollBarDisplay />
+            </Wrapper>
         </div>
     );
 };
