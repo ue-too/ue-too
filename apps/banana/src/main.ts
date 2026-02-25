@@ -22,6 +22,8 @@ import { baseInitApp } from '@ue-too/board-pixi-integration';
 const elevationText = document.getElementById(
     'elevation'
 ) as HTMLParagraphElement;
+const sunAngleSlider = document.getElementById('sun-angle-slider') as HTMLInputElement;
+const sunAngleValue = document.getElementById('sun-angle-value') as HTMLSpanElement;
 
 // Function to download ImageData as PNG
 function downloadImageDataAsPNG(
@@ -182,6 +184,12 @@ stats.dom.style.left = '0px';
 const curveEngine = new CurveCreationEngine();
 const worldRenderSystem = new WorldRenderSystem();
 const trackRenderSystem = new TrackRenderSystem(worldRenderSystem, curveEngine.trackGraph.trackCurveManager, curveEngine);
+
+sunAngleSlider.addEventListener('input', () => {
+    const angle = Number(sunAngleSlider.value);
+    sunAngleValue.textContent = `${angle}°`;
+    trackRenderSystem.sunAngle = angle;
+});
 
 const res = await baseInitApp(pixiCanvas, {
     fullScreen: false,
