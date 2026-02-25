@@ -1,7 +1,7 @@
 import { Container, FillGradient, Graphics } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
-import { Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
 import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { shadows, clearShadowCache } from '@/utils';
@@ -28,9 +28,13 @@ export class TrackRenderSystem {
     private _baseShadowLength: number = 10;
 
     /**
-     * Per-key draw data retained for shadow reconstruction when the sun angle changes.
+     * Per-key shadow state retained for efficient sun-angle updates.
+     *
+     * - `constantElevation` shadows (from === to, elevation > 0) only need a
+     *   position update because the polygon shape is angle-independent.
+     * - Varying-elevation shadows must be cleared and redrawn.
      */
-    private _shadowDrawDataMap: Map<string, TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] }> = new Map();
+    private _shadowRecords: Map<string, ShadowRecord> = new Map();
 
     private _abortController: AbortController = new AbortController();
 
@@ -81,32 +85,28 @@ export class TrackRenderSystem {
     }
 
     /**
-     * Rebuild every shadow graphic using the current sun angle.
+     * Update every shadow for the current sun angle.
+     *
+     * Constant-elevation shadows only need a position update (cheap).
+     * Varying-elevation shadows are cleared and redrawn in-place (no
+     * destroy/create overhead).
      */
     private _rebuildAllShadows(): void {
-        for (const [key, drawData] of this._shadowDrawDataMap) {
-            this._worldRenderSystem.removeShadow(key);
+        const sunAngleRad = (this._sunAngle * Math.PI) / 180;
 
-            const shadowGraphics = new Graphics();
-            const shadowPoints = shadows(drawData, this._sunAngle, this._baseShadowLength);
-
-            if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
-                shadowGraphics.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
-                for (let i = 1; i < shadowPoints.positive.length; i++) {
-                    shadowGraphics.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+        for (const [, record] of this._shadowRecords) {
+            if (record.constantElevation) {
+                record.graphics.position.set(
+                    Math.cos(sunAngleRad) * record.shadowLength,
+                    Math.sin(sunAngleRad) * record.shadowLength,
+                );
+            } else {
+                record.graphics.clear();
+                const shadowPoints = shadows(record.drawData, this._sunAngle, this._baseShadowLength);
+                if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
+                    drawShadowPolygon(record.graphics, shadowPoints);
                 }
-                shadowGraphics.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
-                for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
-                    shadowGraphics.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
-                }
-                shadowGraphics.closePath();
-                shadowGraphics.fill({ color: 0x000000 });
             }
-
-            const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
-                Math.max(drawData.elevation.from, drawData.elevation.to)
-            );
-            this._worldRenderSystem.addShadow(key, shadowGraphics, shadowElevation);
         }
     }
 
@@ -161,7 +161,7 @@ export class TrackRenderSystem {
             this._worldRenderSystem.removeShadow(key);
         });
         this._drawableKeys.clear();
-        this._shadowDrawDataMap.clear();
+        this._shadowRecords.clear();
 
         this._previewStartProjection.destroy();
         this._previewEndProjection.destroy();
@@ -183,7 +183,7 @@ export class TrackRenderSystem {
         }
 
         this._worldRenderSystem.removeShadow(key);
-        this._shadowDrawDataMap.delete(key);
+        this._shadowRecords.delete(key);
 
         this._reindexDrawData();
     }
@@ -243,22 +243,40 @@ export class TrackRenderSystem {
                 segmentsContainer.addChild(graphics);
             }
 
-            this._shadowDrawDataMap.set(key, drawData);
-
             const shadowGraphics = new Graphics();
-            const shadowPoints = shadows(drawData, this._sunAngle, this._baseShadowLength);
+            const isConstant = drawData.elevation.from === drawData.elevation.to;
+            const hasPositiveElevation =
+                drawData.elevation.from > 0 || drawData.elevation.to > 0;
 
-            if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
-                shadowGraphics.moveTo(shadowPoints.positive[0].x, shadowPoints.positive[0].y);
-                for (let i = 1; i < shadowPoints.positive.length; i++) {
-                    shadowGraphics.lineTo(shadowPoints.positive[i].x, shadowPoints.positive[i].y);
+            if (isConstant && hasPositiveElevation) {
+                const edgePoints = computeShadowEdgePolygon(drawData);
+                drawShadowPolygon(shadowGraphics, edgePoints);
+
+                const shadowLen = this._baseShadowLength * (drawData.elevation.from / 100);
+                const sunAngleRad = (this._sunAngle * Math.PI) / 180;
+                shadowGraphics.position.set(
+                    Math.cos(sunAngleRad) * shadowLen,
+                    Math.sin(sunAngleRad) * shadowLen,
+                );
+
+                this._shadowRecords.set(key, {
+                    drawData,
+                    graphics: shadowGraphics,
+                    constantElevation: true,
+                    shadowLength: shadowLen,
+                });
+            } else {
+                const shadowPoints = shadows(drawData, this._sunAngle, this._baseShadowLength);
+                if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
+                    drawShadowPolygon(shadowGraphics, shadowPoints);
                 }
-                shadowGraphics.lineTo(shadowPoints.negative[shadowPoints.negative.length - 1].x, shadowPoints.negative[shadowPoints.negative.length - 1].y);
-                for (let i = shadowPoints.negative.length - 2; i >= 0; i--) {
-                    shadowGraphics.lineTo(shadowPoints.negative[i].x, shadowPoints.negative[i].y);
-                }
-                shadowGraphics.closePath();
-                shadowGraphics.fill({ color: 0x000000 });
+
+                this._shadowRecords.set(key, {
+                    drawData,
+                    graphics: shadowGraphics,
+                    constantElevation: false,
+                    shadowLength: 0,
+                });
             }
 
             const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
@@ -349,6 +367,73 @@ export class TrackRenderSystem {
         return this._worldRenderSystem.getDrawableZIndex(key);
     }
 }
+
+type ShadowRecord = {
+    drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] };
+    graphics: Graphics;
+    /** True when from === to and elevation > 0 — position-only update is sufficient. */
+    constantElevation: boolean;
+    /** For constant-elevation entries, the pre-computed shadow length used with the position offset. */
+    shadowLength: number;
+};
+
+/**
+ * Draw a closed shadow polygon from positive and negative edge arrays.
+ * Traces the positive edge forward, then the negative edge in reverse.
+ */
+const drawShadowPolygon = (
+    graphics: Graphics,
+    points: { positive: Point[]; negative: Point[] },
+): void => {
+    graphics.moveTo(points.positive[0].x, points.positive[0].y);
+    for (let i = 1; i < points.positive.length; i++) {
+        graphics.lineTo(points.positive[i].x, points.positive[i].y);
+    }
+    graphics.lineTo(
+        points.negative[points.negative.length - 1].x,
+        points.negative[points.negative.length - 1].y,
+    );
+    for (let i = points.negative.length - 2; i >= 0; i--) {
+        graphics.lineTo(points.negative[i].x, points.negative[i].y);
+    }
+    graphics.closePath();
+    graphics.fill({ color: 0x000000 });
+};
+
+/**
+ * Compute the shadow edge polygon (track edges offset by half the standard
+ * gauge) **without** any sun-angle translation. The caller applies the
+ * sun offset via `graphics.position`, so the polygon shape is reusable
+ * across angle changes.
+ */
+const computeShadowEdgePolygon = (
+    trackSegment: TrackSegmentDrawData,
+    steps: number = 10,
+): { positive: Point[]; negative: Point[] } => {
+    const trackHalfWidth = 1.067 / 2;
+    const positive: Point[] = [];
+    const negative: Point[] = [];
+
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const point = trackSegment.curve.getPointbyPercentage(t);
+        const tangent = PointCal.unitVector(
+            trackSegment.curve.derivativeByPercentage(t),
+        );
+        const ortho: Point = { x: -tangent.y, y: tangent.x };
+
+        positive.push({
+            x: point.x + ortho.x * trackHalfWidth,
+            y: point.y + ortho.y * trackHalfWidth,
+        });
+        negative.push({
+            x: point.x - ortho.x * trackHalfWidth,
+            y: point.y - ortho.y * trackHalfWidth,
+        });
+    }
+
+    return { positive, negative };
+};
 
 const cutBezierCurveIntoEqualSegments = (curve: BCurve, segmentElevation: { from: number, to: number }, length: number) => {
     const segments: { point: Point, elevation: number }[] = [];
