@@ -18,6 +18,7 @@ import {
 } from './trains';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
+import { WorldRenderSystem } from './world-render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
 
 const elevationText = document.getElementById(
@@ -189,14 +190,15 @@ board.camera.setMaxZoomLevel(10000);
 console.log('camera zoom boundaries', board.camera.zoomBoundaries);
 
 const curveEngine = new CurveCreationEngine();
-const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurveManager, curveEngine);
+const worldRenderSystem = new WorldRenderSystem();
+const trackRenderSystem = new TrackRenderSystem(worldRenderSystem, curveEngine.trackGraph.trackCurveManager, curveEngine);
 
 // const res = await baseInitApp(pixiCanvas, {
 //     camera: board.camera as DefaultBoardCamera,
 //     fullScreen: false,
 // });
 
-// res.app.stage.addChild(trackRenderSystem.container);
+// res.app.stage.addChild(worldRenderSystem.container);
 
 
 curveEngine.onElevationChange(elevation => {

@@ -16,6 +16,7 @@ import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
+import { WorldRenderSystem } from './world-render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
 
 const elevationText = document.getElementById(
@@ -179,13 +180,14 @@ stats.dom.style.left = '0px';
 
 
 const curveEngine = new CurveCreationEngine();
-const trackRenderSystem = new TrackRenderSystem(curveEngine.trackGraph.trackCurveManager, curveEngine);
+const worldRenderSystem = new WorldRenderSystem();
+const trackRenderSystem = new TrackRenderSystem(worldRenderSystem, curveEngine.trackGraph.trackCurveManager, curveEngine);
 
 const res = await baseInitApp(pixiCanvas, {
     fullScreen: false,
 });
 
-res.app.stage.addChild(trackRenderSystem.container);
+res.app.stage.addChild(worldRenderSystem.container);
 
 curveEngine.onElevationChange(elevation => {
     if (elevation != null) {

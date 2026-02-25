@@ -1,69 +1,45 @@
-import { Container, Ellipse, FillGradient, Graphics } from 'pixi.js';
+import { Container, FillGradient, Graphics } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
 import { Point } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
-import { LEVEL_HEIGHT } from './constants';
+import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { shadows } from '@/utils';
-
-/** zIndex range per elevation so shadow at elevation E draws after segments at elevations < E. */
-const LAYERS_PER_ELEVATION = 1000;
-
-const getElevationIndex = (elevation: ELEVATION): number => {
-    const i = ELEVATION_VALUES.indexOf(elevation);
-    return i >= 0 ? i : 0;
-};
-
-/** Elevation layer for draw order: use upper bound when between levels so higher-elevation shadow draws on top of lower-elevation gradient. */
-const getElevationForLayer = (
-    interval: { interval: [ELEVATION, ELEVATION]; ratio: number } | null
-): ELEVATION =>
-    interval
-        ? interval.ratio > 0
-            ? interval.interval[1]
-            : interval.interval[0]
-        : ELEVATION.GROUND;
+import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
 
 export class TrackRenderSystem {
 
-    private _mainContainer: Container;
-    private _trackDrawDataContainer: Container;
+    private _worldRenderSystem: WorldRenderSystem;
     private _trackOffsetContainer: Container;
     private _topLevelContainer: Container;
     private _trackCurveManager: TrackCurveManager;
-    private _drawDataSplitsMap: Map<string, Container> = new Map();
     private _offsetGraphicsMap: Map<number, Container> = new Map();
-    private _shadowGraphicsMap: Map<string, { graphics: Graphics, elevation: ELEVATION }> = new Map();
-    private _shadowGraphicsContainerMap: Map<ELEVATION, Container> = new Map();
 
-    private _previewGraphics: Container[] = [];
+    /** Keys of drawables registered with the WorldRenderSystem by this renderer. */
+    private _drawableKeys: Set<string> = new Set();
+
+    /** Keys of preview drawables (ephemeral, re-created on each preview change). */
+    private _previewKeys: string[] = [];
 
     private _previewStartProjection: Graphics = new Graphics();
     private _previewEndProjection: Graphics = new Graphics();
 
     private _abortController: AbortController = new AbortController();
 
-    get container(): Container {
-        return this._mainContainer;
-    }
-
-    constructor(trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
-        this._mainContainer = new Container();
+    constructor(worldRenderSystem: WorldRenderSystem, trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
+        this._worldRenderSystem = worldRenderSystem;
         this._topLevelContainer = new Container();
-        this._trackDrawDataContainer = new Container();
-        this._trackDrawDataContainer.sortableChildren = true;
         this._trackOffsetContainer = new Container();
-        this._mainContainer.addChild(this._trackDrawDataContainer);
-        this._mainContainer.addChild(this._trackOffsetContainer);
-        this._mainContainer.addChild(this._topLevelContainer);
+
+        worldRenderSystem.addOverlayContainer(this._trackOffsetContainer);
+        worldRenderSystem.addOverlayContainer(this._topLevelContainer);
+
         this._trackCurveManager = trackCurveManager;
 
         this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
         curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
 
-        /** start projection point */
         this._previewStartProjection.visible = false;
         this._previewEndProjection.visible = false;
 
@@ -73,29 +49,16 @@ export class TrackRenderSystem {
         this._topLevelContainer.addChild(this._previewStartProjection);
 
         curveCreationEngine.onPreviewStartProjectionChange(this._onPreviewStartChange.bind(this), { signal: this._abortController.signal });
-        /** start projection point */
 
-        /** end projection point */
-        this._previewEndProjection.visible = false;
         this._previewEndProjection.arc(0, 0, 1, 0, 2 * Math.PI);
         this._previewEndProjection.pivot.set(this._previewEndProjection.width / 2, this._previewEndProjection.height / 2);
         this._previewEndProjection.fill({ color: 0xFFFFFF });
         this._topLevelContainer.addChild(this._previewEndProjection);
 
         curveCreationEngine.onPreviewEndProjectionChange(this._onPreviewEndChange.bind(this), { signal: this._abortController.signal });
-        /** end projection point */
-
 
         this._trackCurveManager.onAddTrackSegment(this._onAddTrackSegment.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
-
-        // Shadow at elevation E gets zIndex E*LAYERS_PER_ELEVATION so it draws after segments at lower elevations
-        ELEVATION_VALUES.forEach((elevation, i) => {
-            const container = new Container();
-            container.zIndex = i * LAYERS_PER_ELEVATION;
-            this._trackDrawDataContainer.addChild(container);
-            this._shadowGraphicsContainerMap.set(elevation, container);
-        });
     }
 
     private _onPreviewStartChange(projection: ProjectionPositiveResult | null) {
@@ -105,7 +68,6 @@ export class TrackRenderSystem {
         }
 
         const type = projection.hitType;
-
         const position = projection.projectionPoint;
 
         if (!this._previewStartProjection.visible) {
@@ -124,7 +86,6 @@ export class TrackRenderSystem {
         }
 
         const type = projection.hitType;
-
         const position = projection.projectionPoint;
 
         if (!this._previewEndProjection.visible) {
@@ -138,54 +99,42 @@ export class TrackRenderSystem {
 
     cleanup() {
         this._abortController.abort();
-        this._previewGraphics.forEach(container => {
-            this._trackDrawDataContainer.removeChild(container);
-            container.destroy({ children: true });
+
+        this._previewKeys.forEach(key => {
+            const container = this._worldRenderSystem.removeDrawable(key);
+            container?.destroy({ children: true });
         });
-        this._previewGraphics = [];
-        this._drawDataSplitsMap.forEach(container => {
-            this._trackDrawDataContainer.removeChild(container);
-            container.destroy({ children: true });
+        this._previewKeys = [];
+
+        this._drawableKeys.forEach(key => {
+            const container = this._worldRenderSystem.removeDrawable(key);
+            container?.destroy({ children: true });
+            this._worldRenderSystem.removeShadow(key);
         });
-        this._drawDataSplitsMap.clear();
-        this._trackDrawDataContainer.destroy({ children: true });
+        this._drawableKeys.clear();
+
         this._previewStartProjection.destroy();
         this._previewEndProjection.destroy();
+
+        this._worldRenderSystem.removeOverlayContainer(this._trackOffsetContainer);
         this._trackOffsetContainer.destroy({ children: true });
-        this._mainContainer.destroy({ children: true });
+
+        this._worldRenderSystem.removeOverlayContainer(this._topLevelContainer);
+        this._topLevelContainer.destroy({ children: true });
+
+        this._offsetGraphicsMap.clear();
     }
 
     private _onDelete(key: string) {
-        const segmentsContainer = this._drawDataSplitsMap.get(key);
-        if (segmentsContainer !== undefined) {
-            segmentsContainer.destroy({ children: true });
-            this._drawDataSplitsMap.delete(key);
-            this._trackDrawDataContainer.removeChild(segmentsContainer);
+        const container = this._worldRenderSystem.removeDrawable(key);
+        if (container !== undefined) {
+            container.destroy({ children: true });
+            this._drawableKeys.delete(key);
         }
 
-        const shadowGraphics = this._shadowGraphicsMap.get(key);
-        if (shadowGraphics !== undefined) {
-            shadowGraphics.graphics.destroy({ children: true });
-            this._shadowGraphicsContainerMap.get(shadowGraphics.elevation)?.removeChild(shadowGraphics.graphics);
-            this._shadowGraphicsMap.delete(key);
-        }
+        this._worldRenderSystem.removeShadow(key);
 
-        const drawDataOrder = this._trackCurveManager.persistedDrawData;
-        const orderInElevation = new Map<number, number>();
-
-        drawDataOrder.forEach((drawData) => {
-            const interval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
-            const elevationForSegment = getElevationForLayer(interval);
-            const elevationIndex = getElevationIndex(elevationForSegment);
-            const n = orderInElevation.get(elevationIndex) ?? 0;
-            orderInElevation.set(elevationIndex, n + 1);
-            const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const segmentsContainer = this._drawDataSplitsMap.get(key);
-            if (segmentsContainer !== undefined) {
-                segmentsContainer.zIndex = elevationIndex * LAYERS_PER_ELEVATION + 1 + n;
-            }
-        });
-        this._trackDrawDataContainer.sortChildren();
+        this._reindexDrawData();
     }
 
     private _onRemoveTrackSegment(curveNumber: number) {
@@ -230,8 +179,6 @@ export class TrackRenderSystem {
 
         drawDataList.forEach((drawData) => {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const positiveOffsets = drawData.positiveOffsets;
-            const negativeOffsets = drawData.negativeOffsets;
 
             const segmentsContainer = new Container();
 
@@ -264,57 +211,57 @@ export class TrackRenderSystem {
 
             }
 
+            const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
+                Math.max(drawData.elevation.from, drawData.elevation.to)
+            );
+            this._worldRenderSystem.addShadow(key, shadowGraphics, shadowElevation);
 
-            const elevationInterval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
-            const elevationForLayer = getElevationForLayer(elevationInterval);
-
-            const shadowGraphicsContainer = this._shadowGraphicsContainerMap.get(elevationForLayer);
-            if (shadowGraphicsContainer !== undefined) {
-                shadowGraphicsContainer.addChild(shadowGraphics);
-            }
-
-            this._shadowGraphicsMap.set(key, { graphics: shadowGraphics, elevation: elevationForLayer });
-            this._drawDataSplitsMap.set(key, segmentsContainer);
-            this._trackDrawDataContainer.addChild(segmentsContainer);
+            this._drawableKeys.add(key);
+            this._worldRenderSystem.addDrawable(key, segmentsContainer);
         });
 
+        this._reindexDrawData();
+    }
+
+    /**
+     * Recompute z-indices for all persisted track drawables based on the
+     * current draw order from the track curve manager.
+     */
+    private _reindexDrawData() {
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
         const orderInElevation = new Map<number, number>();
 
         drawDataOrder.forEach((drawData) => {
-            const interval = findElevationInterval(Math.max(drawData.elevation.from, drawData.elevation.to));
-            const elevationForSegment = getElevationForLayer(interval);
-            const elevationIndex = getElevationIndex(elevationForSegment);
-            const n = orderInElevation.get(elevationIndex) ?? 0;
-            orderInElevation.set(elevationIndex, n + 1);
+            const rawElevation = Math.max(drawData.elevation.from, drawData.elevation.to);
+            const bandIndex = this._worldRenderSystem.getElevationBandIndex(rawElevation);
+            const n = orderInElevation.get(bandIndex) ?? 0;
+            orderInElevation.set(bandIndex, n + 1);
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const segmentsContainer = this._drawDataSplitsMap.get(key);
-            if (segmentsContainer !== undefined) {
-                segmentsContainer.zIndex = elevationIndex * LAYERS_PER_ELEVATION + 1 + n;
-            }
+            const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, n);
+            this._worldRenderSystem.setDrawableZIndex(key, zIndex);
         });
-        this._trackDrawDataContainer.sortChildren();
+        this._worldRenderSystem.sortChildren();
     }
 
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {
-        this._previewGraphics.forEach(container => {
-            this._trackDrawDataContainer.removeChild(container);
-            container.destroy({ children: true });
+        this._previewKeys.forEach(key => {
+            const container = this._worldRenderSystem.removeDrawable(key);
+            container?.destroy({ children: true });
         });
-        this._previewGraphics = [];
+        this._previewKeys = [];
 
         if (drawDataList == undefined) {
             return;
         }
 
-        drawDataList.forEach(({ drawData, index }) => {
+        drawDataList.forEach(({ drawData, index }, i) => {
+            const key = `__preview__${i}`;
             const segmentsContainer = new Container();
             const graphics = new Graphics();
             const positiveOffsetsGraphics = new Graphics();
             const negativeOffsetsGraphics = new Graphics();
 
             const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
-            // const zIndex = trackSegmentDrawDataInsertIndex(this._trackCurveManager.persistedDrawData, drawData);
 
             graphics.moveTo(segments[0].point.x, segments[0].point.y);
             for (let i = 1; i < segments.length; i++) {
@@ -340,19 +287,16 @@ export class TrackRenderSystem {
             segmentsContainer.addChild(graphics);
             segmentsContainer.addChild(positiveOffsetsGraphics);
             segmentsContainer.addChild(negativeOffsetsGraphics);
-            segmentsContainer.zIndex = index;
-            this._trackDrawDataContainer.addChild(segmentsContainer);
-            this._previewGraphics.push(segmentsContainer);
+
+            this._worldRenderSystem.addDrawable(key, segmentsContainer);
+            this._worldRenderSystem.setDrawableZIndex(key, index);
+            this._previewKeys.push(key);
         });
     }
 
     getZIndexOf(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number {
         const key = JSON.stringify(drawDataIdentifier);
-        const drawData = this._drawDataSplitsMap.get(key);
-        if (drawData === undefined) {
-            return 0;
-        }
-        return drawData.zIndex;
+        return this._worldRenderSystem.getDrawableZIndex(key);
     }
 }
 
@@ -412,24 +356,6 @@ export const interpolateRgb = (a: Rgb, b: Rgb, t: number): Rgb => ({
     g: a.g + (b.g - a.g) * t,
     b: a.b + (b.b - a.b) * t,
 });
-
-const findElevationInterval = (elevation: number): { interval: [ELEVATION, ELEVATION], ratio: number } | null => {
-    const elevations = Object.values(ELEVATION).filter((v): v is number => typeof v === "number");
-    let left = 0;
-    let right = elevations.length - 1;
-    while (left <= right) {
-        const mid = left + Math.floor((right - left) / 2);
-        const midValue = elevations[mid];
-        if (midValue * LEVEL_HEIGHT <= elevation && mid + 1 < elevations.length && elevations[mid + 1] * LEVEL_HEIGHT >= elevation) {
-            return { interval: [elevations[mid], elevations[mid + 1]], ratio: (elevation - midValue * LEVEL_HEIGHT) / (elevations[mid + 1] * LEVEL_HEIGHT - midValue * LEVEL_HEIGHT) };
-        } else if (elevation < midValue * LEVEL_HEIGHT) {
-            right = mid - 1;
-        } else {
-            left = mid + 1;
-        }
-    }
-    return null;
-};
 
 const findElevationColorStop = (elevation: number): Rgb => {
     const interval = findElevationInterval(elevation);
