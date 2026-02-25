@@ -18,12 +18,19 @@ import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
 import { WorldRenderSystem } from './world-render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
+import { BuildingManager, BuildingRenderSystem, type BuildingPreset } from './buildings';
 
 const elevationText = document.getElementById(
     'elevation'
 ) as HTMLParagraphElement;
 const sunAngleSlider = document.getElementById('sun-angle-slider') as HTMLInputElement;
 const sunAngleValue = document.getElementById('sun-angle-value') as HTMLSpanElement;
+const buildingPlacementToggle = document.getElementById('building-placement-toggle') as HTMLButtonElement;
+const buildingDeleteToggle = document.getElementById('building-delete-toggle') as HTMLButtonElement;
+const buildingPresetSelect = document.getElementById('building-preset-select') as HTMLSelectElement;
+const buildingElevationSelect = document.getElementById('building-elevation-select') as HTMLSelectElement;
+const buildingHeightSlider = document.getElementById('building-height-slider') as HTMLInputElement;
+const buildingHeightValue = document.getElementById('building-height-value') as HTMLSpanElement;
 
 // Function to download ImageData as PNG
 function downloadImageDataAsPNG(
@@ -184,11 +191,25 @@ stats.dom.style.left = '0px';
 const curveEngine = new CurveCreationEngine();
 const worldRenderSystem = new WorldRenderSystem();
 const trackRenderSystem = new TrackRenderSystem(worldRenderSystem, curveEngine.trackGraph.trackCurveManager, curveEngine);
+const buildingManager = new BuildingManager();
+const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);
+
+let buildingMode: 'none' | 'placing' | 'deleting' = 'none';
+let selectedBuildingId: number | null = null;
+
+buildingHeightSlider.addEventListener('input', () => {
+    const h = Number(buildingHeightSlider.value);
+    buildingHeightValue.textContent = `${h} lv`;
+    if (selectedBuildingId !== null) {
+        buildingManager.updateBuildingHeight(selectedBuildingId, h);
+    }
+});
 
 sunAngleSlider.addEventListener('input', () => {
     const angle = Number(sunAngleSlider.value);
     sunAngleValue.textContent = `${angle}°`;
     trackRenderSystem.sunAngle = angle;
+    buildingRenderSystem.sunAngle = angle;
 });
 
 const res = await baseInitApp(pixiCanvas, {
@@ -318,6 +339,32 @@ pixiCanvas.addEventListener('pointerdown', event => {
 
     const worldPosition = convertFromViewport2World(viewportPosition, res.camera.position, res.camera.zoomLevel, res.camera.rotation);
 
+    if (buildingMode === 'placing') {
+        const existingHit = buildingManager.getBuildingAt(worldPosition);
+        if (existingHit !== null) {
+            selectedBuildingId = existingHit;
+            const existing = buildingManager.getBuilding(existingHit);
+            if (existing) {
+                buildingHeightSlider.value = String(existing.height);
+                buildingHeightValue.textContent = `${existing.height} lv`;
+            }
+        } else {
+            const preset = buildingPresetSelect.value as BuildingPreset;
+            const elevation = Number(buildingElevationSelect.value) as ELEVATION;
+            const height = Number(buildingHeightSlider.value);
+            const id = buildingManager.addBuilding(worldPosition, preset, elevation, height);
+            selectedBuildingId = id;
+        }
+    } else if (buildingMode === 'deleting') {
+        const hit = buildingManager.getBuildingAt(worldPosition);
+        if (hit !== null) {
+            if (selectedBuildingId === hit) {
+                selectedBuildingId = null;
+            }
+            buildingManager.removeBuilding(hit);
+        }
+    }
+
     stateMachine.happens('pointerdown', {
         position: worldPosition,
         pointerId: event.pointerId,
@@ -405,34 +452,98 @@ pixiCanvas.addEventListener('pointermove', event => {
 
 layoutToggleButton.addEventListener('click', () => {
     if (layoutToggleButton.textContent === 'Start Layout') {
+        exitBuildingMode();
         stateMachine.happens('startLayout');
         console.log('start layout');
         res.kmtParser.disable();
         layoutToggleButton.textContent = 'End Layout';
         trainPlacementToggleButton.textContent = 'Start Train Placement';
         trainStateMachine.happens('endPlacement');
+        buildingPlacementToggle.disabled = true;
+        buildingDeleteToggle.disabled = true;
     } else {
         stateMachine.happens('endLayout');
         res.kmtParser.enable();
         layoutToggleButton.textContent = 'Start Layout';
         trainPlacementToggleButton.disabled = false;
+        buildingPlacementToggle.disabled = false;
+        buildingDeleteToggle.disabled = false;
     }
 });
 
 trainPlacementToggleButton.addEventListener('click', () => {
     if (trainPlacementToggleButton.textContent === 'Start Train Placement') {
+        exitBuildingMode();
         trainStateMachine.happens('startPlacement');
         stateMachine.happens('endLayout');
         res.kmtParser.disable();
         trainPlacementToggleButton.textContent = 'End Train Placement';
         layoutToggleButton.disabled = true;
         layoutToggleButton.textContent = 'Start Layout';
+        buildingPlacementToggle.disabled = true;
+        buildingDeleteToggle.disabled = true;
     } else {
         trainStateMachine.happens('endPlacement');
         res.kmtParser.enable();
         trainPlacementToggleButton.textContent = 'Start Train Placement';
         layoutToggleButton.disabled = false;
+        buildingPlacementToggle.disabled = false;
+        buildingDeleteToggle.disabled = false;
     }
+});
+
+function exitBuildingMode() {
+    if (buildingMode === 'none') return;
+    buildingMode = 'none';
+    selectedBuildingId = null;
+    buildingPlacementToggle.textContent = 'Place Building';
+    buildingDeleteToggle.textContent = 'Delete Building';
+    buildingDeleteToggle.disabled = false;
+    buildingPlacementToggle.disabled = false;
+    layoutToggleButton.disabled = false;
+    layoutDeleteToggleButton.disabled = false;
+    trainPlacementToggleButton.disabled = false;
+    res.kmtParser.enable();
+}
+
+buildingPlacementToggle.addEventListener('click', () => {
+    if (buildingMode === 'placing') {
+        exitBuildingMode();
+        return;
+    }
+
+    stateMachine.happens('endLayout');
+    trainStateMachine.happens('endPlacement');
+    buildingMode = 'placing';
+    res.kmtParser.disable();
+
+    buildingPlacementToggle.textContent = 'End Placement';
+    buildingDeleteToggle.disabled = true;
+    layoutToggleButton.textContent = 'Start Layout';
+    layoutToggleButton.disabled = true;
+    layoutDeleteToggleButton.disabled = true;
+    trainPlacementToggleButton.textContent = 'Start Train Placement';
+    trainPlacementToggleButton.disabled = true;
+});
+
+buildingDeleteToggle.addEventListener('click', () => {
+    if (buildingMode === 'deleting') {
+        exitBuildingMode();
+        return;
+    }
+
+    stateMachine.happens('endLayout');
+    trainStateMachine.happens('endPlacement');
+    buildingMode = 'deleting';
+    res.kmtParser.disable();
+
+    buildingDeleteToggle.textContent = 'End Deletion';
+    buildingPlacementToggle.disabled = true;
+    layoutToggleButton.textContent = 'Start Layout';
+    layoutToggleButton.disabled = true;
+    layoutDeleteToggleButton.disabled = true;
+    trainPlacementToggleButton.textContent = 'Start Train Placement';
+    trainPlacementToggleButton.disabled = true;
 });
 
 stateMachine.onStateChange((currentState, nextState) => {

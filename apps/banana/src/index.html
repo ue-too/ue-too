@@ -43,6 +43,25 @@
             <button id="download">下載影片</button>
             <button id="capture">截取</button>
             <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <button id="building-placement-toggle">Place Building</button>
+                <button id="building-delete-toggle">Delete Building</button>
+                <select id="building-preset-select">
+                    <option value="small">Small</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="large">Large</option>
+                    <option value="l-shape">L-Shape</option>
+                </select>
+                <select id="building-elevation-select">
+                    <option value="0">Ground</option>
+                    <option value="1" selected>Above 1</option>
+                    <option value="2">Above 2</option>
+                    <option value="3">Above 3</option>
+                </select>
+                <label for="building-height-slider">Height:</label>
+                <input id="building-height-slider" type="range" min="0.5" max="5" value="1" step="0.5" style="width: 120px;" />
+                <span id="building-height-value">1 lv</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                 <label for="sun-angle-slider">Sun Angle:</label>
                 <input id="sun-angle-slider" type="range" min="0" max="360" value="135" step="1" style="width: 200px;" />
                 <span id="sun-angle-value">135°</span>
