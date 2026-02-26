@@ -33,7 +33,7 @@ const result = await Bun.build({
     entrypoints: values.entrypoints || ['./src/index.ts'],
     outdir: './dist',
     sourcemap: 'external',
-    minify: true,
+    // minify: true,
     external: external,
 });
 
