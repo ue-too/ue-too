@@ -182,7 +182,17 @@ export class Train {
                     this._jointDirectionManager
                 );
             if (bogiePosition === null || bogiePosition.stop) {
-                // console.warn('cannot put the whole train at the current position');
+                console.warn(
+                    '[_getBogiePositions] bogie failed',
+                    { bogieIndex: index, accuOffset, preview,
+                      headSegment: position.trackSegment,
+                      headT: position.tValue,
+                      headDirection: position.direction,
+                      expandDirection,
+                      stop: bogiePosition?.stop ?? 'null',
+                      stopSegment: bogiePosition?.trackSegment,
+                      stopT: bogiePosition?.tValue }
+                );
                 return null;
             }
             if (!preview) {
@@ -352,8 +362,10 @@ export class Train {
             this._position.trackSegment
         );
         if (trackSegment === null) {
-            // console.log('this._position', this._position);
-            // console.warn('track segment where the train is on is not found');
+            console.warn(
+                '[Train.update] track segment not found!',
+                { trackSegment: this._position.trackSegment, tValue: this._position.tValue }
+            );
             this._speed = 0;
             this._throttle = 'N';
             return;
@@ -451,6 +463,7 @@ export class Train {
         const { oldSegmentNumber, splitT, firstNewSegment, secondNewSegment } = info;
 
         if (this._position !== null && this._position.trackSegment === oldSegmentNumber) {
+            const origT = this._position.tValue;
             if (this._position.tValue <= splitT) {
                 this._position.trackSegment = firstNewSegment;
                 this._position.tValue = splitT > 0
@@ -463,9 +476,29 @@ export class Train {
                     : 1;
             }
 
-            this._position.point = this._trackGraph
-                .getTrackSegmentWithJoints(this._position.trackSegment)
-                ?.curve.get(this._position.tValue) ?? this._position.point;
+            const seg = this._trackGraph
+                .getTrackSegmentWithJoints(this._position.trackSegment);
+            if (seg === null) {
+                console.warn(
+                    '[remapOnSegmentSplit] new segment not found!',
+                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
+                );
+            }
+            this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
+
+            console.log(
+                '[remapOnSegmentSplit] remapped',
+                { oldSegmentNumber, splitT, origT,
+                  newSegment: this._position.trackSegment,
+                  newT: this._position.tValue,
+                  direction: this._position.direction,
+                  point: this._position.point }
+            );
+        } else {
+            console.log(
+                '[remapOnSegmentSplit] position not on split segment',
+                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
+            );
         }
 
         this._occupiedTrackSegments = [];
@@ -546,7 +579,12 @@ export function getPosition(
         );
 
         if (nextDirection === null) {
-            // console.warn("end of the track");
+            console.warn(
+                '[getPosition] end of track at joint',
+                { enteringJointNumber, nextJointDirection,
+                  segment: xTrackSegment, direction: xDirection,
+                  remainLength: nextPosition.remainLength }
+            );
 
             xTValue = xDirection === 'tangent' ? 1 : 0;
             return {

@@ -52,6 +52,10 @@ export const initApp = async (
   const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
 
+  curveEngine.trackGraph.onSegmentSplit((info) => {
+    trainPlacementEngine.train.remapOnSegmentSplit(info);
+  });
+
   baseComponents.app.stage.addChild(worldRenderSystem.container);
 
   baseComponents.app.ticker.add((ticker) => {
