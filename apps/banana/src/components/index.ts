@@ -1,1 +1,1 @@
-export * from './toolbar';
+export { BananaToolbar } from './toolbar';

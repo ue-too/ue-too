@@ -1,78 +1,12 @@
-<!-- src/index.html -->
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>Dev Server</title>
-    </head>
-    <body style="margin: 0; overflow: hidden">
-        <!-- Add any necessary HTML markup here -->
-
-        <div
-            style="
-                display: flex;
-                justify-content: center;
-                flex-direction: column;
-                align-items: center;
-                height: 100vh;
-            "
-        >
-            <div style="position: relative; display: flex; flex-direction: row;">
-                <div
-                    id="stats"
-                    style="position: absolute; top: 0; left: 0"
-                ></div>
-                <canvas
-                    id="pixi-graph"
-                    width="800"
-                    height="600"
-                    style="border: 1px solid black; background-color: white"
-                ></canvas>
-            </div>
-            <button id="util">Util</button>
-            <button id="layout-toggle">Start Layout</button>
-            <button id="layout-delete-toggle">Start Layout Deletion</button>
-            <button id="train-placement-toggle">Start Train Placement</button>
-            <button id="p1">p1</button>
-            <button id="neutral">Neutral</button>
-            <button id="switch-direction">Switch Direction</button>
-            <button id="toggle-districts">Toggle Districts</button>
-            <button id="toggle-villages">Toggle Villages</button>
-            <button id="download-img-btn">下載圖片</button>
-            <button id="record">錄製</button>
-            <button id="download">下載影片</button>
-            <button id="capture">截取</button>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                <button id="building-placement-toggle">Place Building</button>
-                <button id="building-delete-toggle">Delete Building</button>
-                <select id="building-preset-select">
-                    <option value="small">Small</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="large">Large</option>
-                    <option value="l-shape">L-Shape</option>
-                </select>
-                <select id="building-elevation-select">
-                    <option value="0">Ground</option>
-                    <option value="1" selected>Above 1</option>
-                    <option value="2">Above 2</option>
-                    <option value="3">Above 3</option>
-                </select>
-                <label for="building-height-slider">Height:</label>
-                <input id="building-height-slider" type="range" min="0.5" max="5" value="1" step="0.5" style="width: 120px;" />
-                <span id="building-height-value">1 lv</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                <label for="sun-angle-slider">Sun Angle:</label>
-                <input id="sun-angle-slider" type="range" min="0" max="360" value="135" step="1" style="width: 200px;" />
-                <span id="sun-angle-value">135°</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                <button id="export-tracks">Export Tracks</button>
-                <button id="import-tracks">Import Tracks</button>
-            </div>
-            <p id="elevation">Elevation: 0</p>
-        </div>
-
-        <script type="module" src="main.ts"></script>
-    </body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banana - PixiJS Canvas</title>
+  </head>
+  <body style="margin: 0; overflow: hidden">
+    <div id="root"></div>
+    <script type="module" src="main-react.tsx"></script>
+  </body>
 </html>
