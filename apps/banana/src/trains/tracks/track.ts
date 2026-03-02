@@ -8,7 +8,7 @@ import {
 } from '@ue-too/math';
 
 import { LEVEL_HEIGHT } from './constants';
-import { ELEVATION, ProjectionInfo, ProjectionJointResult, ProjectionResult, TrackJoint, TrackJointWithElevation, TrackSegment, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithElevation } from './types';
+import { ELEVATION, ProjectionInfo, ProjectionJointResult, ProjectionResult, SerializedTrackJoint, SerializedTrackSegment, TrackJoint, TrackJointWithElevation, TrackSegment, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithElevation } from './types';
 import { TrackCurveManager } from './trackcurve-manager';
 import { TrackJointManager } from './trackjoint-manager';
 import { elevationIntervalOverlaps, getElevationAtT, orderTest, trackIsSloped } from './utils';
@@ -1094,6 +1094,68 @@ export class TrackGraph {
 
     get trackCurveManager(): TrackCurveManager {
         return this._trackCurveManager;
+    }
+
+    get jointManager(): TrackJointManager {
+        return this._jointManager;
+    }
+
+    /**
+     * Serializes the entire track graph (joints + segments) into a
+     * JSON-safe object suitable for `JSON.stringify`.
+     */
+    serialize(): { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] } {
+        return {
+            joints: this._jointManager.serialize(),
+            segments: this._trackCurveManager.serialize(),
+        };
+    }
+
+    /**
+     * Replaces the current track graph state with data from a serialized payload.
+     * All existing tracks and joints are destroyed first (firing observer
+     * notifications so the render system can clean up), then the new data
+     * is loaded in, again with notifications so the render system rebuilds.
+     */
+    loadFromSerializedData(data: { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] }): void {
+        const existingSegmentIds = [...this._trackCurveManager.livingEntities];
+        for (const segId of existingSegmentIds) {
+            this._trackCurveManager.destroyCurve(segId);
+        }
+
+        const existingJoints = this._jointManager.getJoints();
+        for (const { jointNumber } of existingJoints) {
+            this._jointManager.destroyJoint(jointNumber);
+        }
+
+        for (const joint of data.joints) {
+            this._jointManager.createJointWithId(joint.jointNumber, {
+                position: joint.position,
+                connections: new Map(joint.connections),
+                tangent: joint.tangent,
+                direction: {
+                    tangent: new Set(joint.direction.tangent),
+                    reverseTangent: new Set(joint.direction.reverseTangent),
+                },
+                elevation: joint.elevation,
+            });
+        }
+
+        for (const segment of data.segments) {
+            const curve = new BCurve(segment.controlPoints);
+            this._trackCurveManager.loadSegmentWithId(
+                segment.segmentNumber,
+                curve,
+                segment.t0Joint,
+                segment.t1Joint,
+                segment.elevation.from,
+                segment.elevation.to,
+                segment.gauge,
+                segment.splits
+            );
+        }
+
+        this._drawDataDirty = true;
     }
 }
 

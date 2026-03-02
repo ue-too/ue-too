@@ -6,7 +6,7 @@ import {
 
 import { RTree, Rectangle } from '../r-tree';
 import { GenericEntityManager } from '../../utils';
-import { ELEVATION, ProjectionInfo, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
+import { ELEVATION, ProjectionInfo, SerializedTrackSegment, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { getElevationAtT, makeTrackSegmentDrawDataFromSplit, orderTest, trackSegmentDrawDataInsertIndex } from './utils';
 import { Observable, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
@@ -872,5 +872,217 @@ export class TrackCurveManager {
             }
         }
         return null;
+    }
+
+    /**
+     * Serializes all living track segments into a JSON-safe format.
+     * BCurves are stored as control point arrays; derived state (offsets,
+     * collisions, RTree entries, draw data) is recomputed during deserialization.
+     */
+    serialize(): SerializedTrackSegment[] {
+        return this._internalTrackCurveManager
+            .getLivingEntitiesWithIndex()
+            .map(({ index, entity }) => ({
+                segmentNumber: index,
+                controlPoints: entity.segment.curve.getControlPoints().map(p => ({ x: p.x, y: p.y })),
+                t0Joint: entity.segment.t0Joint,
+                t1Joint: entity.segment.t1Joint,
+                elevation: {
+                    from: entity.segment.elevation.from,
+                    to: entity.segment.elevation.to,
+                },
+                gauge: entity.segment.gauge,
+                splits: [...entity.segment.splits],
+            }));
+    }
+
+    /**
+     * Loads a segment with a specific ID, rebuilding all derived state
+     * (offsets, split curves, RTree entry, draw data) from the stored essentials.
+     * Fires add observers so that render systems are notified.
+     */
+    loadSegmentWithId(
+        segmentNumber: number,
+        curve: BCurve,
+        t0Joint: number,
+        t1Joint: number,
+        t0Elevation: ELEVATION,
+        t1Elevation: ELEVATION,
+        gauge: number,
+        splitTValues: number[]
+    ): void {
+        const experimentPositiveOffsets = offset2(curve, gauge / 2);
+        const experimentNegativeOffsets = offset2(curve, -gauge / 2);
+        const aabb = curve.AABB;
+        const aabbRectangle = new Rectangle(
+            aabb.min.x,
+            aabb.min.y,
+            aabb.max.x,
+            aabb.max.y
+        );
+
+        const splits: TrackSegmentSplit[] = [];
+
+        if (splitTValues.length === 0) {
+            splits.push({
+                curve: curve,
+                elevation: {
+                    from: t0Elevation * LEVEL_HEIGHT,
+                    to: t1Elevation * LEVEL_HEIGHT,
+                },
+                tValInterval: { start: 0, end: 1 },
+            });
+        } else {
+            {
+                const [startingCurve, _] = curve.splitIntoCurves(splitTValues[0]);
+                const startElevation = getElevationAtT(0, {
+                    elevation: {
+                        from: t0Elevation * LEVEL_HEIGHT,
+                        to: t1Elevation * LEVEL_HEIGHT,
+                    },
+                });
+                const endElevation = getElevationAtT(splitTValues[0], {
+                    elevation: {
+                        from: t0Elevation * LEVEL_HEIGHT,
+                        to: t1Elevation * LEVEL_HEIGHT,
+                    },
+                });
+                splits.push({
+                    curve: startingCurve,
+                    elevation: { from: startElevation, to: endElevation },
+                    tValInterval: { start: 0, end: splitTValues[0] },
+                });
+            }
+
+            for (let i = 0; i < splitTValues.length - 1; i++) {
+                const tVal = splitTValues[i];
+                const nextTVal = splitTValues[i + 1];
+                const [_, secondCurve] = curve.splitIn3Curves(tVal, nextTVal);
+                const startElevation = getElevationAtT(tVal, {
+                    elevation: {
+                        from: t0Elevation * LEVEL_HEIGHT,
+                        to: t1Elevation * LEVEL_HEIGHT,
+                    },
+                });
+                const endElevation = getElevationAtT(nextTVal, {
+                    elevation: {
+                        from: t0Elevation * LEVEL_HEIGHT,
+                        to: t1Elevation * LEVEL_HEIGHT,
+                    },
+                });
+                splits.push({
+                    curve: secondCurve,
+                    elevation: { from: startElevation, to: endElevation },
+                    tValInterval: { start: tVal, end: nextTVal },
+                });
+            }
+
+            {
+                const [_, endingCurve] = curve.splitIntoCurves(
+                    splitTValues[splitTValues.length - 1]
+                );
+                const startElevation = getElevationAtT(
+                    splitTValues[splitTValues.length - 1],
+                    {
+                        elevation: {
+                            from: t0Elevation * LEVEL_HEIGHT,
+                            to: t1Elevation * LEVEL_HEIGHT,
+                        },
+                    }
+                );
+                const endElevation = getElevationAtT(1, {
+                    elevation: {
+                        from: t0Elevation * LEVEL_HEIGHT,
+                        to: t1Elevation * LEVEL_HEIGHT,
+                    },
+                });
+                splits.push({
+                    curve: endingCurve,
+                    elevation: { from: startElevation, to: endElevation },
+                    tValInterval: {
+                        start: splitTValues[splitTValues.length - 1],
+                        end: 1,
+                    },
+                });
+            }
+        }
+
+        const trackSegmentEntry: TrackSegmentWithCollision = {
+            curve: curve,
+            t0Joint: t0Joint,
+            t1Joint: t1Joint,
+            elevation: {
+                from: t0Elevation,
+                to: t1Elevation,
+            },
+            collision: [],
+            gauge,
+            splits: splitTValues,
+            splitCurves: splits,
+        };
+
+        this._internalTrackCurveManager.createEntityWithId(segmentNumber, {
+            segment: trackSegmentEntry,
+            offsets: {
+                positive: experimentPositiveOffsets.points,
+                negative: experimentNegativeOffsets.points,
+            },
+        });
+
+        const trackSegmentTreeEntry: TrackSegmentWithCollisionAndNumber = {
+            ...trackSegmentEntry,
+            trackSegmentNumber: segmentNumber,
+        };
+
+        this._internalRTree.insert(aabbRectangle, trackSegmentTreeEntry);
+
+        const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
+
+        splits.forEach(split => {
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, segmentNumber);
+            const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
+            this._persistedDrawData.splice(insertIndex, 0, {
+                ...drawDataForSplit,
+                callback: ((index: number) => {
+                    this._trackOrderMap.set(
+                        JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
+                        index
+                    );
+                }).bind(this),
+            });
+            this._persistedDrawDataMap.set(
+                JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
+                insertIndex
+            );
+            drawDataForSplits.push(drawDataForSplit);
+        });
+
+        this._addObservable.notify(-1, drawDataForSplits);
+        this._drawDataDirty = true;
+        this._addTrackSegmentObservable.notify(segmentNumber, trackSegmentEntry);
+    }
+
+    /**
+     * Reconstructs a TrackCurveManager from serialized data,
+     * preserving all original segment numbers. Derived state
+     * (offsets, split curves, RTree, draw data) is recomputed.
+     */
+    static deserialize(data: SerializedTrackSegment[]): TrackCurveManager {
+        const maxId = data.reduce((max, s) => Math.max(max, s.segmentNumber), -1);
+        const manager = new TrackCurveManager(Math.max(maxId + 1, 10));
+        for (const segment of data) {
+            const curve = new BCurve(segment.controlPoints);
+            manager.loadSegmentWithId(
+                segment.segmentNumber,
+                curve,
+                segment.t0Joint,
+                segment.t1Joint,
+                segment.elevation.from,
+                segment.elevation.to,
+                segment.gauge,
+                segment.splits
+            );
+        }
+        return manager;
     }
 }

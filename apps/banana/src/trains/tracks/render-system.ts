@@ -10,10 +10,12 @@ import { WorldRenderSystem, findElevationInterval } from '@/world-render-system'
 export class TrackRenderSystem {
 
     private _worldRenderSystem: WorldRenderSystem;
+    private _simplifiedTrack: Container;
     private _trackOffsetContainer: Container;
     private _topLevelContainer: Container;
     private _trackCurveManager: TrackCurveManager;
     private _offsetGraphicsMap: Map<number, Container> = new Map();
+    private _simplifiedTrackGraphicsMap: Map<number, Graphics> = new Map();
 
     /** Keys of drawables registered with the WorldRenderSystem by this renderer. */
     private _drawableKeys: Set<string> = new Set();
@@ -42,9 +44,11 @@ export class TrackRenderSystem {
         this._worldRenderSystem = worldRenderSystem;
         this._topLevelContainer = new Container();
         this._trackOffsetContainer = new Container();
+        this._simplifiedTrack = new Container();
 
         worldRenderSystem.addOverlayContainer(this._trackOffsetContainer);
         worldRenderSystem.addOverlayContainer(this._topLevelContainer);
+        worldRenderSystem.addOverlayContainer(this._simplifiedTrack);
 
         this._trackCurveManager = trackCurveManager;
 
@@ -195,6 +199,13 @@ export class TrackRenderSystem {
             segmentsContainer.destroy({ children: true });
             this._offsetGraphicsMap.delete(curveNumber);
         }
+
+        const simplifiedTrackGraphics = this._simplifiedTrackGraphicsMap.get(curveNumber);
+        if (simplifiedTrackGraphics !== undefined) {
+            this._simplifiedTrack.removeChild(simplifiedTrackGraphics);
+            simplifiedTrackGraphics.destroy();
+            this._simplifiedTrackGraphicsMap.delete(curveNumber);
+        }
     }
 
     private _onAddTrackSegment(curveNumber: number, trackSegment: TrackSegmentWithCollision) {
@@ -205,6 +216,17 @@ export class TrackRenderSystem {
 
         const positiveOffsetsGraphics = new Graphics();
         const negativeOffsetsGraphics = new Graphics();
+        const simplifiedTrackGraphics = new Graphics();
+
+        const controlPoints = trackSegment.curve.getControlPoints();
+
+        simplifiedTrackGraphics.moveTo(controlPoints[0].x, controlPoints[0].y);
+        if (controlPoints.length === 3) {
+            simplifiedTrackGraphics.quadraticCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y);
+        } else {
+            simplifiedTrackGraphics.bezierCurveTo(controlPoints[1].x, controlPoints[1].y, controlPoints[2].x, controlPoints[2].y, controlPoints[3].x, controlPoints[3].y);
+        }
+        simplifiedTrackGraphics.stroke({ color: 0x000000, pixelLine: true });
 
         positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
         for (let i = 1; i < positiveOffsets.length; i++) {
@@ -224,6 +246,9 @@ export class TrackRenderSystem {
         this._offsetGraphicsMap.set(curveNumber, segmentsContainer);
 
         this._trackOffsetContainer.addChild(segmentsContainer);
+
+        this._simplifiedTrack.addChild(simplifiedTrackGraphics);
+        this._simplifiedTrackGraphicsMap.set(curveNumber, simplifiedTrackGraphics);
     }
 
     private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {

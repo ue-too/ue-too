@@ -12,7 +12,7 @@ import {
 } from './trains/input-state-machine/kmt-state-machine';
 import { createLayoutStateMachine } from './trains/input-state-machine/utils';
 import './media';
-import { ELEVATION, TrackSegmentDrawData } from './trains/tracks/types';
+import { ELEVATION, TrackSegmentDrawData, validateSerializedTrackData } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
@@ -630,6 +630,50 @@ const captureButton = document.getElementById('capture') as HTMLButtonElement;
 
 captureButton.addEventListener('click', () => {
     capture = true;
+});
+
+const exportTracksButton = document.getElementById('export-tracks') as HTMLButtonElement;
+const importTracksButton = document.getElementById('import-tracks') as HTMLButtonElement;
+
+exportTracksButton.addEventListener('click', () => {
+    const data = curveEngine.trackGraph.serialize();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `track-data-${Date.now()}.json`;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+});
+
+importTracksButton.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result as string);
+                const result = validateSerializedTrackData(parsed);
+                if (!result.valid) {
+                    alert(`Invalid track data: ${result.error}`);
+                    return;
+                }
+                curveEngine.trackGraph.loadFromSerializedData(parsed);
+            } catch (e) {
+                alert(`Failed to parse JSON: ${(e as Error).message}`);
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.click();
 });
 
 function colorForJoint(joint: NewJointType) {
