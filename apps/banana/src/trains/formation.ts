@@ -1,6 +1,6 @@
 import { Point, approximately } from '@ue-too/curve';
 
-import { TrackGraph } from './tracks/track';
+import { TrackGraph, SegmentSplitInfo } from './tracks/track';
 import {
     JointDirectionManager,
     flipDirection,
@@ -158,7 +158,7 @@ export class Train {
         position: TrainPosition,
         preview: boolean = false
     ): TrainPosition[] | null {
-        console.log('get bogie positions', position, preview);
+        // console.log('get bogie positions', position, preview);
         const expandDirection = flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
@@ -168,19 +168,19 @@ export class Train {
             accuOffset += this._offsets[index];
             const bogiePosition = !preview
                 ? getPosition(
-                      accuOffset,
-                      { ...position, direction: expandDirection },
-                      this._trackGraph,
-                      this._jointDirectionManager,
-                      this._occupiedJointNumbers,
-                      this._occupiedTrackSegments
-                  )
+                    accuOffset,
+                    { ...position, direction: expandDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager,
+                    this._occupiedJointNumbers,
+                    this._occupiedTrackSegments
+                )
                 : getPosition(
-                      accuOffset,
-                      { ...position, direction: expandDirection },
-                      this._trackGraph,
-                      this._jointDirectionManager
-                  );
+                    accuOffset,
+                    { ...position, direction: expandDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager
+                );
             if (bogiePosition === null || bogiePosition.stop) {
                 // console.warn('cannot put the whole train at the current position');
                 return null;
@@ -272,6 +272,9 @@ export class Train {
 
     setPosition(position: TrainPosition) {
         this._position = position;
+        this._cachedBogiePositions = null;
+        this._occupiedJointNumbers = [];
+        this._occupiedTrackSegments = [];
     }
 
     getBogiePositions(preview: boolean = false): TrainPosition[] | null {
@@ -314,10 +317,10 @@ export class Train {
         if (
             this._previewPositionCache !== null &&
             this._previewPositionCache.direction ===
-                previewPosition.direction &&
+            previewPosition.direction &&
             this._previewPositionCache.tValue === previewPosition.tValue &&
             this._previewPositionCache.trackSegment ===
-                previewPosition.trackSegment
+            previewPosition.trackSegment
         ) {
             return this._previewPositions;
         }
@@ -349,7 +352,8 @@ export class Train {
             this._position.trackSegment
         );
         if (trackSegment === null) {
-            console.warn('track segment where the train is on is not found');
+            // console.log('this._position', this._position);
+            // console.warn('track segment where the train is on is not found');
             this._speed = 0;
             this._throttle = 'N';
             return;
@@ -436,6 +440,37 @@ export class Train {
             this._position,
             false
         );
+    }
+
+    /**
+     * Remap the train's head position and invalidate cached body data when a
+     * track segment is split. The body (bogies) may span the split segment
+     * even when the head does not, so occupied data is always cleared.
+     */
+    remapOnSegmentSplit(info: SegmentSplitInfo): void {
+        const { oldSegmentNumber, splitT, firstNewSegment, secondNewSegment } = info;
+
+        if (this._position !== null && this._position.trackSegment === oldSegmentNumber) {
+            if (this._position.tValue <= splitT) {
+                this._position.trackSegment = firstNewSegment;
+                this._position.tValue = splitT > 0
+                    ? this._position.tValue / splitT
+                    : 0;
+            } else {
+                this._position.trackSegment = secondNewSegment;
+                this._position.tValue = splitT < 1
+                    ? (this._position.tValue - splitT) / (1 - splitT)
+                    : 1;
+            }
+
+            this._position.point = this._trackGraph
+                .getTrackSegmentWithJoints(this._position.trackSegment)
+                ?.curve.get(this._position.tValue) ?? this._position.point;
+        }
+
+        this._occupiedTrackSegments = [];
+        this._occupiedJointNumbers = [];
+        this._cachedBogiePositions = null;
     }
 }
 
@@ -563,15 +598,15 @@ export function getPosition(
             nextPosition.type === 'withinCurve'
                 ? nextPosition.tVal
                 : nextDirection.direction === 'tangent'
-                  ? 1
-                  : 0;
+                    ? 1
+                    : 0;
     }
     xTValue =
         nextPosition.type === 'withinCurve'
             ? nextPosition.tVal
             : xDirection === 'tangent'
-              ? 1
-              : 0;
+                ? 1
+                : 0;
 
     return {
         stop: false,

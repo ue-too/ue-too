@@ -63,6 +63,9 @@ export class WorldRenderSystem {
     private _shadowMap: Map<string, { graphics: Graphics; elevation: ELEVATION }> = new Map();
     private _shadowContainerMap: Map<ELEVATION, Container> = new Map();
 
+    /** Number of track drawables registered in each elevation band (updated by sub-renderers after reindexing). */
+    private _bandTrackCount: Map<number, number> = new Map();
+
     get container(): Container {
         return this._mainContainer;
     }
@@ -178,6 +181,30 @@ export class WorldRenderSystem {
         return elevationBandIndex * LAYERS_PER_ELEVATION + 1 + orderWithinBand;
     }
 
+    /**
+     * Record the number of track drawables in a given elevation band.
+     * Call after reindexing so that {@link computeOnTrackObjectZIndex} can
+     * place on-track objects (e.g. train bogies) above all tracks in the band.
+     *
+     * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
+     * @param count - Total number of track drawables in this band
+     */
+    setBandTrackCount(bandIndex: number, count: number): void {
+        this._bandTrackCount.set(bandIndex, count);
+    }
+
+    /**
+     * Compute a z-index for an on-track object (e.g. a train bogie) that is
+     * guaranteed to be above every track drawable in the same elevation band.
+     *
+     * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
+     * @returns A z-index above all track drawables in that band
+     */
+    computeOnTrackObjectZIndex(bandIndex: number): number {
+        const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
+        return bandIndex * LAYERS_PER_ELEVATION + 1 + trackCount;
+    }
+
     sortChildren(): void {
         this._drawDataContainer.sortChildren();
     }
@@ -194,6 +221,7 @@ export class WorldRenderSystem {
             container.destroy({ children: true });
         });
         this._drawableMap.clear();
+        this._bandTrackCount.clear();
 
         this._drawDataContainer.destroy({ children: true });
         this._mainContainer.destroy({ children: true });

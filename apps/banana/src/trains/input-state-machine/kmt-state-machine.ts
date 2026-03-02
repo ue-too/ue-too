@@ -994,7 +994,10 @@ export class CurveCreationEngine implements LayoutContext {
         }
 
         this._trackGraph.connectJoints(startJointNumber, endJointNumber, cps);
-        this._trackGraph.logJoints();
+        // this._trackGraph.logJoints();
+        console.log('---track segments---');
+        this._trackGraph.logTrackSegments();
+        console.log('---track segments---');
         this.cancelCurrentCurve();
 
         return res;

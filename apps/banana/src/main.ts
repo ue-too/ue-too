@@ -16,6 +16,7 @@ import { ELEVATION, TrackSegmentDrawData, validateSerializedTrackData } from './
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 import { shadows } from './utils';
 import { TrackRenderSystem } from './trains/tracks/render-system';
+import { TrainRenderSystem } from './trains/train-render-system';
 import { WorldRenderSystem } from './world-render-system';
 import { baseInitApp } from '@ue-too/board-pixi-integration';
 import { BuildingManager, BuildingRenderSystem, type BuildingPreset } from './buildings';
@@ -318,7 +319,17 @@ const trainPlacementToggleButton = document.getElementById(
 ) as HTMLButtonElement;
 const trainPlacementEngine = new TrainPlacementEngine(curveEngine.trackGraph);
 const train = trainPlacementEngine.train;
+const trainRenderSystem = new TrainRenderSystem(
+    worldRenderSystem,
+    train,
+    curveEngine.trackGraph,
+    trackRenderSystem,
+);
 const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
+
+curveEngine.trackGraph.onSegmentSplit((info) => {
+    train.remapOnSegmentSplit(info);
+});
 
 pixiCanvas.addEventListener('pointerdown', event => {
     if (event.button !== 0) {
@@ -554,6 +565,9 @@ let lastTimestamp = 0;
 
 let capture = false;
 
+res.app.ticker.add((ticker) => {
+    trainRenderSystem.update(ticker.deltaMS);
+});
 
 // Initialize GeoJSON data
 initializeGeoJSON();

@@ -20,6 +20,9 @@ export class TrackRenderSystem {
     /** Keys of drawables registered with the WorldRenderSystem by this renderer. */
     private _drawableKeys: Set<string> = new Set();
 
+    /** Maps each draw data key to its elevation band index (rebuilt on every reindex). */
+    private _drawDataBandMap: Map<string, number> = new Map();
+
     /** Keys of preview drawables (ephemeral, re-created on each preview change). */
     private _previewKeys: string[] = [];
 
@@ -319,10 +322,15 @@ export class TrackRenderSystem {
     /**
      * Recompute z-indices for all persisted track drawables based on the
      * current draw order from the track curve manager.
+     *
+     * Also updates the per-band track counts in {@link WorldRenderSystem} so
+     * that on-track objects (train bogies, etc.) can be placed above all
+     * track drawables in the same elevation band.
      */
     private _reindexDrawData() {
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
         const orderInElevation = new Map<number, number>();
+        this._drawDataBandMap.clear();
 
         drawDataOrder.forEach((drawData) => {
             const rawElevation = Math.max(drawData.elevation.from, drawData.elevation.to);
@@ -332,7 +340,13 @@ export class TrackRenderSystem {
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
             const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, n);
             this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+            this._drawDataBandMap.set(key, bandIndex);
         });
+
+        orderInElevation.forEach((count, bandIndex) => {
+            this._worldRenderSystem.setBandTrackCount(bandIndex, count);
+        });
+
         this._worldRenderSystem.sortChildren();
     }
 
@@ -390,6 +404,21 @@ export class TrackRenderSystem {
     getZIndexOf(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number {
         const key = JSON.stringify(drawDataIdentifier);
         return this._worldRenderSystem.getDrawableZIndex(key);
+    }
+
+    /**
+     * Return a z-index for an on-track object (e.g. a train bogie) that sits
+     * above every track drawable in the same elevation band as the given draw data.
+     *
+     * @param drawDataIdentifier - Identifier of the draw data the object sits on
+     * @returns A z-index above all tracks in that elevation band, or null if the
+     *          identifier is unknown
+     */
+    getOnTrackObjectZIndex(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number | null {
+        const key = JSON.stringify(drawDataIdentifier);
+        const bandIndex = this._drawDataBandMap.get(key);
+        if (bandIndex === undefined) return null;
+        return this._worldRenderSystem.computeOnTrackObjectZIndex(bandIndex);
     }
 }
 
