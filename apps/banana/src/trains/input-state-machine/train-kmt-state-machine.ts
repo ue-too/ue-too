@@ -89,7 +89,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             return null;
         }
 
-        // short circuit
+        // short circuit: use occupied list only when it is consistent with the track graph
         if (occupiedJoints && occupiedJoints.length > 0) {
             for (let i = 0; i < occupiedJoints.length; i++) {
                 if (
@@ -103,27 +103,19 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
                             joint.connections.get(nextJointNumber);
                         const nextJoint =
                             this._trackGraph.getJoint(nextJointNumber);
-                        if (nextJoint === null) {
-                            console.warn(
-                                'next joint not found, something wrong about the occupied joints'
-                            );
-                            return null;
-                        }
-                        if (nextTrackSegmentNumber === undefined) {
-                            console.warn(
-                                'next track segment is not connected to the joint, something wrong about the occupied joints'
-                            );
-                            return null;
+                        // If occupied list is inconsistent (e.g. after direction switch or loop), fall through to normal path
+                        if (
+                            nextJoint === null ||
+                            nextTrackSegmentNumber === undefined
+                        ) {
+                            break;
                         }
                         const nextTrack =
                             this._trackGraph.getTrackSegmentWithJoints(
                                 nextTrackSegmentNumber
                             );
                         if (nextTrack === null) {
-                            console.warn(
-                                'next track segment is not found, something wrong about the occupied joints'
-                            );
-                            return null;
+                            break;
                         }
                         const nextDirection: 'tangent' | 'reverseTangent' =
                             nextTrack.t0Joint === jointNumber
@@ -147,9 +139,6 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
                                 lastOccupiedTrack.trackNumber
                             );
                         if (lastOccupiedTrackSegment == null) {
-                            console.warn(
-                                'last occupied track segment not found'
-                            );
                             break;
                         }
                         const nextJointNumber =
@@ -159,7 +148,6 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
                         const nextJoint =
                             this._trackGraph.getJoint(nextJointNumber);
                         if (nextJoint == null) {
-                            console.warn('next joint not found');
                             break;
                         }
                         return {

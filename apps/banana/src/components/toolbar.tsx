@@ -9,6 +9,7 @@ import type { BuildingPreset } from '@/buildings/types';
 import { Button } from '@/components/ui/button';
 import { useBananaApp } from '@/contexts/pixi';
 import { ELEVATION } from '@/trains/tracks/types';
+import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 
 type AppMode =
@@ -35,6 +36,8 @@ export function BananaToolbar() {
     const [buildingHeight, setBuildingHeight] = useState(1);
     const [showDistricts, setShowDistricts] = useState(true);
     const [showVillages, setShowVillages] = useState(true);
+    const [trackRenderStyle, setTrackRenderStyle] =
+        useState<DetailedTrackRenderStyle>('elevation');
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -59,6 +62,11 @@ export function BananaToolbar() {
         app.trackRenderSystem.sunAngle = sunAngle;
         app.buildingRenderSystem.sunAngle = sunAngle;
     }, [app, sunAngle]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.trackRenderSystem.detailedRenderStyle = trackRenderStyle;
+    }, [app, trackRenderStyle]);
 
     useEffect(() => {
         if (!app) return;
@@ -455,6 +463,29 @@ export function BananaToolbar() {
                     />
                     <span className="w-10 text-xs">{buildingHeight} lv</span>
                 </label>
+            </div>
+
+            {/* Track detailed render style (when zoomed in) */}
+            <div className="flex items-center gap-1.5">
+                <span className="text-sm">Track style:</span>
+                <Button
+                    variant={
+                        trackRenderStyle === 'elevation' ? 'default' : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => setTrackRenderStyle('elevation')}
+                >
+                    Elevation
+                </Button>
+                <Button
+                    variant={
+                        trackRenderStyle === 'texture' ? 'default' : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => setTrackRenderStyle('texture')}
+                >
+                    Texture
+                </Button>
             </div>
 
             {/* Sun angle */}

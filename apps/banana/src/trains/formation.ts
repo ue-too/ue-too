@@ -161,6 +161,18 @@ export class Train {
 
         let accuOffset = 0;
 
+        // When expanding from the back (expandDirection 'same'), getPosition asks getNextJoint
+        // with (joint, direction toward segment we came from). The occupied list stores
+        // (joint, direction toward segment we went to). Flip joint directions so the lookup matches.
+        const occupiedJointsForExpand =
+            !preview && this._expandDirection === 'same'
+                ? this._occupiedJointNumbers.map((j) => ({
+                      jointNumber: j.jointNumber,
+                      direction: flipDirection(j.direction),
+                  }))
+                : this._occupiedJointNumbers;
+        const occupiedTracksForExpand = this._occupiedTrackSegments;
+
         for (let index = 0; index < this._offsets.length; index++) {
             accuOffset += this._offsets[index];
             const bogiePosition = !preview
@@ -169,8 +181,8 @@ export class Train {
                     { ...position, direction: bogieDirection },
                     this._trackGraph,
                     this._jointDirectionManager,
-                    this._occupiedJointNumbers,
-                    this._occupiedTrackSegments
+                    occupiedJointsForExpand,
+                    occupiedTracksForExpand
                 )
                 : getPosition(
                     accuOffset,
@@ -227,8 +239,10 @@ export class Train {
                     this._occupiedJointNumbers.length == 0 &&
                     bogiePosition.passedJointNumbers.length > 0
                 ) {
+                    // Keep expansion order (first joint passed = index 0) so getNextJoint
+                    // can resolve the correct branch at junctions when expanding from position.
                     this._occupiedJointNumbers = [
-                        ...bogiePosition.passedJointNumbers.reverse(),
+                        ...bogiePosition.passedJointNumbers,
                     ];
                 }
                 if (
@@ -265,13 +279,15 @@ export class Train {
                     index === this._offsets.length - 1 &&
                     this._occupiedTrackSegments.length == 0
                 ) {
+                    // Keep expansion order (first segment entered = index 0) so getNextJoint
+                    // can resolve the correct branch at junctions when expanding from position.
                     this._occupiedTrackSegments = [
-                        ...bogiePosition.enteringTrackSegments.reverse(),
+                        {
+                            trackNumber: position.trackSegment,
+                            inTrackDirection: bogieDirection,
+                        },
+                        ...bogiePosition.enteringTrackSegments,
                     ];
-                    this._occupiedTrackSegments.unshift({
-                        trackNumber: position.trackSegment,
-                        inTrackDirection: bogieDirection,
-                    });
                 }
             }
             positions.push(bogiePosition);
@@ -460,6 +476,15 @@ export class Train {
         }
         this._position.direction = flipDirection(this._position.direction);
         this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
+        // Flip directions in occupied data so they match the new head (other end of train)
+        this._occupiedJointNumbers = this._occupiedJointNumbers.map((j) => ({
+            jointNumber: j.jointNumber,
+            direction: flipDirection(j.direction),
+        }));
+        this._occupiedTrackSegments = this._occupiedTrackSegments.map((t) => ({
+            trackNumber: t.trackNumber,
+            inTrackDirection: flipDirection(t.inTrackDirection),
+        }));
         this._cachedBogiePositions = null;
         const bogiePositions = this._getBogiePositions(this._position, false);
         if (bogiePositions === null) {

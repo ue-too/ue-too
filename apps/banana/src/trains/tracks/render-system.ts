@@ -1,4 +1,4 @@
-import { Container, FillGradient, Graphics } from 'pixi.js';
+import { Container, FillGradient, Graphics, MeshSimple, Texture } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
@@ -10,6 +10,20 @@ import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-
 
 /** Zoom level above which detailed track draw data is shown; below this only the bezier curve is drawn. */
 const ZOOM_THRESHOLD_DETAILED_TRACK = 5;
+
+/** How to render detailed track draw data: elevation-colored segments + offset rails, or a single tiled texture along the curve. */
+export type DetailedTrackRenderStyle = 'elevation' | 'texture';
+
+/** World-space length (meters when 1px = 1m) per one repeat of the track texture along the curve. ~0.6m matches typical tie spacing. */
+const TRACK_TEXTURE_TILE_LEN = 0.6;
+
+/** Resolution of the procedural track segment texture (power-of-two for repeat wrap). */
+const TRACK_TEX_SIZE = 64;
+
+/** Renderer (or app) that provides texture generation for the texture-style track. */
+type TrackTextureRenderer = {
+    renderer: { textureGenerator: { generateTexture: (options: { target: Container }) => Texture } };
+};
 
 export class TrackRenderSystem {
 
@@ -38,6 +52,15 @@ export class TrackRenderSystem {
 
     private _camera: ObservableBoardCamera;
 
+    /** Optional renderer for generating track texture (required for texture render style). */
+    private _textureRenderer: TrackTextureRenderer | null = null;
+
+    /** How to draw detailed track: elevation-colored segments or tiled texture. */
+    private _detailedRenderStyle: DetailedTrackRenderStyle = 'elevation';
+
+    /** Cached procedural track texture; created lazily when texture style is used. */
+    private _trackTexture: Texture | null = null;
+
     /**
      * Per-key shadow state retained for efficient sun-angle updates.
      *
@@ -47,9 +70,18 @@ export class TrackRenderSystem {
      */
     private _shadowRecords: Map<string, ShadowRecord> = new Map();
 
+    /** For each drawable key, the container has elevationNode at index 0 and textureNode at index 1. */
+    private _detailedStyleNodes: Map<string, { elevationNode: Container; textureNode: Container }> = new Map();
+
     private _abortController: AbortController = new AbortController();
 
-    constructor(worldRenderSystem: WorldRenderSystem, trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine, camera: ObservableBoardCamera) {
+    constructor(
+        worldRenderSystem: WorldRenderSystem,
+        trackCurveManager: TrackCurveManager,
+        curveCreationEngine: CurveCreationEngine,
+        camera: ObservableBoardCamera,
+        textureRenderer?: TrackTextureRenderer | null,
+    ) {
         this._worldRenderSystem = worldRenderSystem;
         this._topLevelContainer = new Container();
         this._trackOffsetContainer = new Container();
@@ -86,10 +118,33 @@ export class TrackRenderSystem {
         this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
 
         this._camera = camera;
+        this._textureRenderer = textureRenderer ?? null;
 
         this._camera.on('zoom', this._onZoom.bind(this), { signal: this._abortController.signal });
 
         this._applyZoomLod(this._camera.zoomLevel);
+    }
+
+    /** Current detailed track render style (elevation segments + offset rails vs. tiled texture). */
+    get detailedRenderStyle(): DetailedTrackRenderStyle {
+        return this._detailedRenderStyle;
+    }
+
+    set detailedRenderStyle(style: DetailedTrackRenderStyle) {
+        if (this._detailedRenderStyle === style) return;
+        this._detailedRenderStyle = style;
+        this._applyDetailedRenderStyle();
+    }
+
+    /** Apply current detailed render style visibility to all drawable containers and offset rails. */
+    private _applyDetailedRenderStyle(): void {
+        const useElevation = this._detailedRenderStyle === 'elevation';
+        for (const [, { elevationNode, textureNode }] of this._detailedStyleNodes) {
+            elevationNode.visible = useElevation;
+            textureNode.visible = !useElevation;
+        }
+        const useDetailed = this._camera.zoomLevel >= ZOOM_THRESHOLD_DETAILED_TRACK;
+        this._trackOffsetContainer.visible = useDetailed && useElevation;
     }
 
     get sunAngle(): number {
@@ -113,9 +168,10 @@ export class TrackRenderSystem {
      */
     private _applyZoomLod(zoomLevel: number): void {
         const useDetailed = zoomLevel >= ZOOM_THRESHOLD_DETAILED_TRACK;
+        const useElevation = this._detailedRenderStyle === 'elevation';
 
         this._simplifiedTrack.visible = !useDetailed;
-        this._trackOffsetContainer.visible = useDetailed;
+        this._trackOffsetContainer.visible = useDetailed && useElevation;
 
         for (const key of this._drawableKeys) {
             const container = this._worldRenderSystem.getDrawable(key);
@@ -218,9 +274,15 @@ export class TrackRenderSystem {
         this._topLevelContainer.destroy({ children: true });
 
         this._offsetGraphicsMap.clear();
+        this._detailedStyleNodes.clear();
+        if (this._trackTexture !== null) {
+            this._trackTexture.destroy(true);
+            this._trackTexture = null;
+        }
     }
 
     private _onDelete(key: string) {
+        this._detailedStyleNodes.delete(key);
         const container = this._worldRenderSystem.removeDrawable(key);
         if (container !== undefined) {
             container.destroy({ children: true });
@@ -231,6 +293,105 @@ export class TrackRenderSystem {
         this._shadowRecords.delete(key);
 
         this._reindexDrawData();
+    }
+
+    /**
+     * Build a mesh that draws the track texture along the curve (strip with UVs so texture tiles along arc length).
+     * Returns null if texture generation is not available.
+     */
+    private _buildTrackMeshForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
+        const texture = this._getOrCreateTrackTexture();
+        if (texture === null) return null;
+
+        const { curve, gauge } = drawData;
+        const hw = gauge / 2;
+        const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
+        const verts: number[] = [];
+        const uvs: number[] = [];
+        let arcLen = 0;
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = curve.getPointbyPercentage(t);
+            const derivative = curve.derivativeByPercentage(t);
+            const tangent = PointCal.unitVector(derivative);
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            if (i > 0) {
+                const prev = curve.getPointbyPercentage((i - 1) / steps);
+                const dx = point.x - prev.x;
+                const dy = point.y - prev.y;
+                arcLen += Math.sqrt(dx * dx + dy * dy);
+            }
+            const v = arcLen / TRACK_TEXTURE_TILE_LEN;
+
+            verts.push(point.x - nx * hw, point.y - ny * hw);
+            uvs.push(0, v);
+            verts.push(point.x + nx * hw, point.y + ny * hw);
+            uvs.push(1, v);
+        }
+
+        const indices: number[] = [];
+        for (let i = 0; i < steps; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        return new MeshSimple({
+            texture,
+            vertices: new Float32Array(verts),
+            uvs: new Float32Array(uvs),
+            indices: new Uint32Array(indices),
+        });
+    }
+
+    /** Create or return the shared procedural track segment texture (ballast, tie, rails). */
+    private _getOrCreateTrackTexture(): Texture | null {
+        if (this._trackTexture !== null) return this._trackTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const g = new Graphics();
+        g.rect(0, 0, TRACK_TEX_SIZE, TRACK_TEX_SIZE);
+        g.fill(0x9e8c6a);
+
+        const rng = seededRng(42);
+        for (let i = 0; i < 90; i++) {
+            const px = rng() * TRACK_TEX_SIZE;
+            const py = rng() * TRACK_TEX_SIZE;
+            const pr = 1 + rng() * 2;
+            const pc = [0x7a6a4a, 0xb8a880, 0x6e6050, 0xc4b090][Math.floor(rng() * 4)];
+            g.circle(px, py, pr);
+            g.fill({ color: pc, alpha: 0.75 });
+        }
+
+        const tieY = TRACK_TEX_SIZE * 0.5 - 6;
+        g.rect(2, tieY, TRACK_TEX_SIZE - 4, 12);
+        g.fill(0x5c3a1e);
+        for (let i = 0; i < 5; i++) {
+            const gy = tieY + 2 + rng() * 8;
+            g.moveTo(2, gy);
+            g.lineTo(TRACK_TEX_SIZE - 2, gy + rng() * 2 - 1);
+            g.stroke({ color: 0x3b2510, alpha: 0.5, width: 0.6 });
+        }
+
+        const railL = TRACK_TEX_SIZE * 0.22;
+        const railR = TRACK_TEX_SIZE * 0.78;
+        const railW = 5;
+        for (const rx of [railL, railR]) {
+            g.rect(rx - railW / 2, 0, railW, TRACK_TEX_SIZE);
+            g.fill(0x888888);
+            g.rect(rx - 1, 0, 2, TRACK_TEX_SIZE);
+            g.fill({ color: 0xcccccc, alpha: 0.7 });
+        }
+
+        this._trackTexture = renderer.generateTexture({ target: g });
+        const source = this._trackTexture.source;
+        if ('addressMode' in source) {
+            (source as { addressMode: string }).addressMode = 'repeat';
+        }
+        return this._trackTexture;
     }
 
     private _onRemoveTrackSegment(curveNumber: number) {
@@ -299,6 +460,7 @@ export class TrackRenderSystem {
 
             const segmentsContainer = new Container();
 
+            const elevationNode = new Container();
             const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
             for (let i = 0; i < segments.length - 1; i++) {
                 const graphics = new Graphics();
@@ -306,8 +468,20 @@ export class TrackRenderSystem {
                 graphics.lineTo(segments[i + 1].point.x, segments[i + 1].point.y);
                 const gradient = strokeGradientForElevation(segments[i].point, segments[i + 1].point, segments[i].elevation, segments[i + 1].elevation);
                 graphics.stroke({ fill: gradient, width: drawData.gauge });
-                segmentsContainer.addChild(graphics);
+                elevationNode.addChild(graphics);
             }
+            segmentsContainer.addChild(elevationNode);
+
+            const textureNode = new Container();
+            const trackMesh = this._buildTrackMeshForDrawData(drawData);
+            if (trackMesh !== null) {
+                textureNode.addChild(trackMesh);
+            }
+            textureNode.visible = this._detailedRenderStyle === 'texture';
+            elevationNode.visible = this._detailedRenderStyle === 'elevation';
+            segmentsContainer.addChild(textureNode);
+
+            this._detailedStyleNodes.set(key, { elevationNode, textureNode });
 
             const shadowGraphics = new Graphics();
             const isConstant = drawData.elevation.from === drawData.elevation.to;
@@ -551,7 +725,6 @@ const strokeGradientForElevation = (
     elevationFrom: ELEVATION,
     elevationTo: ELEVATION
 ): FillGradient => {
-    console.log('gradient', rgbToHex(findElevationColorStop(elevationFrom)), rgbToHex(findElevationColorStop(elevationTo)));
     return new FillGradient({
         type: 'linear',
         start: { x: start.x, y: start.y },
@@ -614,6 +787,17 @@ export const getElevationColorRgb = (elevation: ELEVATION): Rgb => {
             return { r: 128, g: 128, b: 128 };
     }
 };
+
+/** Seeded RNG for deterministic procedural texture (mulberry32-style). */
+function seededRng(seed: number): () => number {
+    let s = seed | 0;
+    return () => {
+        s = (s + 0x6d2b79f5) | 0;
+        let t = Math.imul(s ^ (s >>> 15), 1 | s);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
 
 const getProjectionTypeColor = (type: ProjectionPositiveResult['hitType']): number => {
     switch (type) {

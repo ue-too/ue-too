@@ -33,6 +33,8 @@ export const initApp = async (
 ): Promise<BananaAppComponents> => {
   const baseComponents = await baseInitApp(canvas, option);
 
+  baseComponents.camera.setMaxZoomLevel(30);
+
   const curveEngine = new CurveCreationEngine();
   const worldRenderSystem = new WorldRenderSystem();
   const trackRenderSystem = new TrackRenderSystem(
@@ -40,6 +42,7 @@ export const initApp = async (
     curveEngine.trackGraph.trackCurveManager,
     curveEngine,
     baseComponents.camera,
+    { renderer: baseComponents.app.renderer },
   );
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);

@@ -205,8 +205,9 @@ describe('switchDirectionOnly occupied track handling', () => {
             expect(train.occupiedTrackSegments[i].trackNumber).toBe(
                 occupiedBefore[i].trackNumber,
             );
+            // Directions are flipped so occupied data matches the new head
             expect(train.occupiedTrackSegments[i].inTrackDirection).toBe(
-                occupiedBefore[i].inTrackDirection,
+                flipDirection(occupiedBefore[i].inTrackDirection),
             );
         }
     });
@@ -244,8 +245,9 @@ describe('switchDirectionOnly occupied track handling', () => {
             expect(train.occupiedJointNumbers[i].jointNumber).toBe(
                 jointsBefore[i].jointNumber,
             );
+            // Directions are flipped so occupied data matches the new head (other end of train)
             expect(train.occupiedJointNumbers[i].direction).toBe(
-                jointsBefore[i].direction,
+                flipDirection(jointsBefore[i].direction),
             );
         }
     });
@@ -343,6 +345,7 @@ describe('switchDirectionOnly occupied track handling', () => {
         expect(bogies).not.toBeNull();
         expect(bogies![0].direction).toBe('tangent');
 
+        // After two flips, directions and order are restored
         expect(train.occupiedTrackSegments.length).toBe(occupiedBefore.length);
         for (let i = 0; i < occupiedBefore.length; i++) {
             expect(train.occupiedTrackSegments[i].trackNumber).toBe(
@@ -436,13 +439,14 @@ describe('occupied track consistency: switchDirectionOnly vs switchDirection', (
 
         const tracksAfter = train.occupiedTrackSegments;
 
+        // Order (track numbers) is NOT reversed; directions are flipped for new head
         expect(tracksAfter.length).toBe(tracksBefore.length);
         for (let i = 0; i < tracksBefore.length; i++) {
             expect(tracksAfter[i].trackNumber).toBe(
                 tracksBefore[i].trackNumber,
             );
             expect(tracksAfter[i].inTrackDirection).toBe(
-                tracksBefore[i].inTrackDirection,
+                flipDirection(tracksBefore[i].inTrackDirection),
             );
         }
     });
@@ -515,8 +519,9 @@ describe('occupied track initialization direction correctness', () => {
 
         train.switchDirectionOnly();
 
+        // Directions are flipped so occupied data matches the new head
         expect(train.occupiedTrackSegments[0].inTrackDirection).toBe(
-            'reverseTangent',
+            'tangent',
         );
     });
 

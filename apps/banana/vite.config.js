@@ -16,6 +16,7 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'src/index.html'),
                 react: resolve(__dirname, 'src/react.html'),
+                threejsPoc: resolve(__dirname, 'src/threejs-poc.html'),
             },
         },
     },
