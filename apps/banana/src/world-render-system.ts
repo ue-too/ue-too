@@ -104,6 +104,13 @@ export class WorldRenderSystem {
     }
 
     /**
+     * Get a drawable container by key (e.g. for visibility or other updates).
+     */
+    getDrawable(key: string): Container | undefined {
+        return this._drawableMap.get(key);
+    }
+
+    /**
      * Remove a drawable container. Returns the container so the caller can
      * decide whether to destroy it.
      */

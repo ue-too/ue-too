@@ -6,6 +6,10 @@ import { CurveCreationEngine } from '../input-state-machine';
 import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { shadows, clearShadowCache } from '@/utils';
 import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
+import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
+
+/** Zoom level above which detailed track draw data is shown; below this only the bezier curve is drawn. */
+const ZOOM_THRESHOLD_DETAILED_TRACK = 5;
 
 export class TrackRenderSystem {
 
@@ -32,6 +36,8 @@ export class TrackRenderSystem {
     private _sunAngle: number = 135;
     private _baseShadowLength: number = 10;
 
+    private _camera: ObservableBoardCamera;
+
     /**
      * Per-key shadow state retained for efficient sun-angle updates.
      *
@@ -43,7 +49,7 @@ export class TrackRenderSystem {
 
     private _abortController: AbortController = new AbortController();
 
-    constructor(worldRenderSystem: WorldRenderSystem, trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine) {
+    constructor(worldRenderSystem: WorldRenderSystem, trackCurveManager: TrackCurveManager, curveCreationEngine: CurveCreationEngine, camera: ObservableBoardCamera) {
         this._worldRenderSystem = worldRenderSystem;
         this._topLevelContainer = new Container();
         this._trackOffsetContainer = new Container();
@@ -78,6 +84,12 @@ export class TrackRenderSystem {
 
         this._trackCurveManager.onAddTrackSegment(this._onAddTrackSegment.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onRemoveTrackSegment(this._onRemoveTrackSegment.bind(this), { signal: this._abortController.signal });
+
+        this._camera = camera;
+
+        this._camera.on('zoom', this._onZoom.bind(this), { signal: this._abortController.signal });
+
+        this._applyZoomLod(this._camera.zoomLevel);
     }
 
     get sunAngle(): number {
@@ -89,6 +101,33 @@ export class TrackRenderSystem {
         this._sunAngle = angle;
         clearShadowCache();
         this._rebuildAllShadows();
+    }
+
+    private _onZoom(_event: CameraZoomEventPayload, cameraState: CameraState) {
+        console.log('zoom', cameraState.zoomLevel);
+        this._applyZoomLod(cameraState.zoomLevel);
+    }
+
+    /**
+     * Toggle track representation by zoom: low zoom shows only the bezier curve;
+     * high zoom shows detailed draw data (elevation segments, shadows) and hides the simplified curve.
+     */
+    private _applyZoomLod(zoomLevel: number): void {
+        const useDetailed = zoomLevel >= ZOOM_THRESHOLD_DETAILED_TRACK;
+
+        this._simplifiedTrack.visible = !useDetailed;
+        this._trackOffsetContainer.visible = useDetailed;
+
+        for (const key of this._drawableKeys) {
+            const container = this._worldRenderSystem.getDrawable(key);
+            if (container !== undefined) {
+                container.visible = useDetailed;
+            }
+        }
+
+        for (const [, record] of this._shadowRecords) {
+            record.graphics.visible = useDetailed;
+        }
     }
 
     /**
@@ -491,7 +530,9 @@ const computeShadowEdgePolygon = (
 
 const cutBezierCurveIntoEqualSegments = (curve: BCurve, segmentElevation: { from: number, to: number }, length: number) => {
     const segments: { point: Point, elevation: number }[] = [];
-    const steps = Math.max(1, Math.ceil(curve.fullLength / length));
+    const cps = curve.getControlPoints();
+    segments.push({ point: cps[0], elevation: segmentElevation.from });
+    const steps = Math.ceil(curve.fullLength / length);
     for (let i = 0; i <= steps; i++) {
         const percentage = i / steps;
         const point = curve.getPointbyPercentage(percentage);

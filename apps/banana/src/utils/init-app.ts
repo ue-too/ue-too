@@ -39,6 +39,7 @@ export const initApp = async (
     worldRenderSystem,
     curveEngine.trackGraph.trackCurveManager,
     curveEngine,
+    baseComponents.camera,
   );
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);

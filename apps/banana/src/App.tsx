@@ -11,11 +11,7 @@ import './App.css';
 const App = (): React.ReactNode => {
     return (
         <div className="app">
-            <Wrapper
-                option={{ fullScreen: true }}
-                initFunction={initApp}
-                canvasClassName="border border-black bg-white"
-            >
+            <Wrapper option={{ fullScreen: true }} initFunction={initApp}>
                 <ScrollBarDisplay />
                 <BananaToolbar />
             </Wrapper>
