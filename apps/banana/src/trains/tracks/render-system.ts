@@ -104,7 +104,6 @@ export class TrackRenderSystem {
     }
 
     private _onZoom(_event: CameraZoomEventPayload, cameraState: CameraState) {
-        console.log('zoom', cameraState.zoomLevel);
         this._applyZoomLod(cameraState.zoomLevel);
     }
 
