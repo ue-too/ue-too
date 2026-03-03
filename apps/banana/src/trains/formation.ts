@@ -106,8 +106,9 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 
 export class Train {
     private _position: TrainPosition | null;
+    private _expandDirection: 'same' | 'reverse' = 'reverse';
     private _carNumber: number;
-    private _offsets: number[] = [40, 10, 40, 10, 40];
+    private _offsets: number[] = [40];
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
     private _speed: number = 0;
@@ -159,7 +160,7 @@ export class Train {
         preview: boolean = false
     ): TrainPosition[] | null {
         // console.log('get bogie positions', position, preview);
-        const expandDirection = flipDirection(position.direction);
+        const bogieDirection = this._expandDirection === 'same' ? position.direction : flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
         let accuOffset = 0;
@@ -169,7 +170,7 @@ export class Train {
             const bogiePosition = !preview
                 ? getPosition(
                     accuOffset,
-                    { ...position, direction: expandDirection },
+                    { ...position, direction: bogieDirection },
                     this._trackGraph,
                     this._jointDirectionManager,
                     this._occupiedJointNumbers,
@@ -177,21 +178,23 @@ export class Train {
                 )
                 : getPosition(
                     accuOffset,
-                    { ...position, direction: expandDirection },
+                    { ...position, direction: bogieDirection },
                     this._trackGraph,
                     this._jointDirectionManager
                 );
             if (bogiePosition === null || bogiePosition.stop) {
                 console.warn(
                     '[_getBogiePositions] bogie failed',
-                    { bogieIndex: index, accuOffset, preview,
-                      headSegment: position.trackSegment,
-                      headT: position.tValue,
-                      headDirection: position.direction,
-                      expandDirection,
-                      stop: bogiePosition?.stop ?? 'null',
-                      stopSegment: bogiePosition?.trackSegment,
-                      stopT: bogiePosition?.tValue }
+                    {
+                        bogieIndex: index, accuOffset, preview,
+                        headSegment: position.trackSegment,
+                        headT: position.tValue,
+                        headDirection: position.direction,
+                        expandDirection: bogieDirection,
+                        stop: bogiePosition?.stop ?? 'null',
+                        stopSegment: bogiePosition?.trackSegment,
+                        stopT: bogiePosition?.tValue
+                    }
                 );
                 return null;
             }
@@ -454,6 +457,18 @@ export class Train {
         );
     }
 
+    switchDirectionOnly() {
+        if (this._position == null) {
+            return;
+        }
+        this._position.direction = flipDirection(this._position.direction);
+        this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
+        const bogiePositions = this.getBogiePositions(true);
+        if (bogiePositions === null) {
+            return;
+        }
+    }
+
     /**
      * Remap the train's head position and invalidate cached body data when a
      * track segment is split. The body (bogies) may span the split segment
@@ -488,11 +503,13 @@ export class Train {
 
             console.log(
                 '[remapOnSegmentSplit] remapped',
-                { oldSegmentNumber, splitT, origT,
-                  newSegment: this._position.trackSegment,
-                  newT: this._position.tValue,
-                  direction: this._position.direction,
-                  point: this._position.point }
+                {
+                    oldSegmentNumber, splitT, origT,
+                    newSegment: this._position.trackSegment,
+                    newT: this._position.tValue,
+                    direction: this._position.direction,
+                    point: this._position.point
+                }
             );
         } else {
             console.log(
@@ -581,9 +598,11 @@ export function getPosition(
         if (nextDirection === null) {
             console.warn(
                 '[getPosition] end of track at joint',
-                { enteringJointNumber, nextJointDirection,
-                  segment: xTrackSegment, direction: xDirection,
-                  remainLength: nextPosition.remainLength }
+                {
+                    enteringJointNumber, nextJointDirection,
+                    segment: xTrackSegment, direction: xDirection,
+                    remainLength: nextPosition.remainLength
+                }
             );
 
             xTValue = xDirection === 'tangent' ? 1 : 0;
