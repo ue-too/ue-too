@@ -491,9 +491,7 @@ const computeShadowEdgePolygon = (
 
 const cutBezierCurveIntoEqualSegments = (curve: BCurve, segmentElevation: { from: number, to: number }, length: number) => {
     const segments: { point: Point, elevation: number }[] = [];
-    const cps = curve.getControlPoints();
-    segments.push({ point: cps[0], elevation: segmentElevation.from });
-    const steps = Math.ceil(curve.fullLength / length);
+    const steps = Math.max(1, Math.ceil(curve.fullLength / length));
     for (let i = 0; i <= steps; i++) {
         const percentage = i / steps;
         const point = curve.getPointbyPercentage(percentage);

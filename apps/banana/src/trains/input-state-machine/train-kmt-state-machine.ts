@@ -228,7 +228,6 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             trackGraph
         );
         this._train = new Train(
-            1,
             null,
             [40, 10, 40],
             trackGraph,

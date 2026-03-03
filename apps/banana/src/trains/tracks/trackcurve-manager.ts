@@ -35,7 +35,6 @@ export class TrackCurveManager {
         positiveOffsets: Point[];
         negativeOffsets: Point[];
     })[] = [];
-    private _persistedDrawDataMap: Map<string, number> = new Map();
 
     private _deleteObservable: Observable<[string]> = new SynchronousObservable<[string]>();
     private _addObservable: Observable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]> = new SynchronousObservable<[number, (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]]>();
@@ -564,7 +563,6 @@ export class TrackCurveManager {
                     );
                 }).bind(this),
             });
-            this._persistedDrawDataMap.set(JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }), insertIndex);
             drawDataForSplits.push(drawDataForSplit);
         });
 
@@ -583,7 +581,6 @@ export class TrackCurveManager {
             console.warn('track segment not found');
             return;
         }
-        const splits = trackSegment.segment.splitCurves;
         const rectangle = new Rectangle(
             trackSegment.segment.curve.AABB.min.x,
             trackSegment.segment.curve.AABB.min.y,
@@ -601,21 +598,22 @@ export class TrackCurveManager {
         this._internalTrackCurveManager.destroyEntity(curveNumber);
         this._drawDataDirty = true;
 
-        let minIndex = this._persistedDrawData.length - 1;
-        const deletedSet: Set<string> = new Set();
-        splits.forEach(split => {
-            const key = JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval });
-            deletedSet.add(key);
-            const index = this._persistedDrawDataMap.get(key);
-            if (index !== undefined) {
-                if (index < minIndex) {
-                    minIndex = index;
-                }
-                this._persistedDrawData.splice(index, 1);
-                this._persistedDrawDataMap.delete(key);
-                this._deleteObservable.notify(key);
+        const removedKeys: string[] = [];
+        this._persistedDrawData = this._persistedDrawData.filter(entry => {
+            if (entry.originalTrackSegment.trackSegmentNumber === curveNumber) {
+                const key = JSON.stringify({
+                    trackSegmentNumber: curveNumber,
+                    tValInterval: entry.originalTrackSegment.tValInterval,
+                });
+                removedKeys.push(key);
+                return false;
             }
+            return true;
         });
+
+        for (const key of removedKeys) {
+            this._deleteObservable.notify(key);
+        }
         this._removeTrackSegmentObservable.notify(curveNumber);
     }
 
@@ -1050,10 +1048,6 @@ export class TrackCurveManager {
                     );
                 }).bind(this),
             });
-            this._persistedDrawDataMap.set(
-                JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
-                insertIndex
-            );
             drawDataForSplits.push(drawDataForSplit);
         });
 
