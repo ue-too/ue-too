@@ -161,16 +161,10 @@ export class Train {
 
         let accuOffset = 0;
 
-        // When expanding from the back (expandDirection 'same'), getPosition asks getNextJoint
-        // with (joint, direction toward segment we came from). The occupied list stores
-        // (joint, direction toward segment we went to). Flip joint directions so the lookup matches.
-        const occupiedJointsForExpand =
-            !preview && this._expandDirection === 'same'
-                ? this._occupiedJointNumbers.map((j) => ({
-                      jointNumber: j.jointNumber,
-                      direction: flipDirection(j.direction),
-                  }))
-                : this._occupiedJointNumbers;
+        // Occupied list is always in head-to-tail order with (joint, direction) from the head's
+        // perspective (direction we went to when passing the joint). Use as-is so getNextJoint
+        // finds (joint, bogieDirection) when walking from head toward tail in either expand mode.
+        const occupiedJointsForExpand = this._occupiedJointNumbers;
         const occupiedTracksForExpand = this._occupiedTrackSegments;
 
         // When expandDirection is 'same', expand from the tail (furthest bogie) so that
@@ -268,10 +262,12 @@ export class Train {
                         inTrackDirection: flipDirection(t.inTrackDirection),
                     }));
                 if (passedJointsHeadOrder.length > 0) {
-                    const lastJointNumber = passedJointsHeadOrder[0].jointNumber;
+                    // Trim to tail: keep joints from head up to and including the tail joint
+                    const tailJointNumber =
+                        passedJointsHeadOrder[passedJointsHeadOrder.length - 1].jointNumber;
                     let foundIndex = -1;
                     for (let i = this._occupiedJointNumbers.length - 1; i >= 0; i--) {
-                        if (this._occupiedJointNumbers[i].jointNumber === lastJointNumber) {
+                        if (this._occupiedJointNumbers[i].jointNumber === tailJointNumber) {
                             foundIndex = i;
                             break;
                         }
@@ -284,7 +280,9 @@ export class Train {
                     this._occupiedJointNumbers = [...passedJointsHeadOrder];
                 }
                 if (enteringTracksHeadOrder.length > 0) {
-                    const lastOccupiedTrackSegment = enteringTracksHeadOrder[0].trackNumber;
+                    // Trim to tail: keep segments from head up to and including the tail segment
+                    const lastOccupiedTrackSegment =
+                        enteringTracksHeadOrder[enteringTracksHeadOrder.length - 1].trackNumber;
                     let trackIndex = -1;
                     for (let i = this._occupiedTrackSegments.length - 1; i >= 0; i--) {
                         if (this._occupiedTrackSegments[i].trackNumber === lastOccupiedTrackSegment) {
