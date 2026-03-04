@@ -5,7 +5,7 @@ import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
 import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { shadows, clearShadowCache } from '@/utils';
-import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
+import { WorldRenderSystem, findElevationInterval, Z_INDEX_OFFSET_RAILS } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
 
 /** Zoom level above which detailed track draw data is shown; below this only the bezier curve is drawn. */
@@ -87,7 +87,7 @@ export class TrackRenderSystem {
         this._trackOffsetContainer = new Container();
         this._simplifiedTrack = new Container();
 
-        worldRenderSystem.addOverlayContainer(this._trackOffsetContainer);
+        worldRenderSystem.addOverlayContainer(this._trackOffsetContainer, { zIndex: Z_INDEX_OFFSET_RAILS });
         worldRenderSystem.addOverlayContainer(this._topLevelContainer);
         worldRenderSystem.addOverlayContainer(this._simplifiedTrack);
 

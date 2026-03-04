@@ -55,11 +55,24 @@ export const findElevationInterval = (elevation: number): { interval: [ELEVATION
  * Sub-renderers (TrackRenderSystem, future BuildingRenderSystem, etc.) create
  * their own Graphics/Containers and register them here for unified draw ordering.
  */
+/** Draw order (bottom to top): below (tracks, shadows, buildings) → offset rails → above (bogies) → other overlays. */
+const Z_INDEX_BELOW = 0;
+/** Use this when adding the track offset container so rails draw between track segments and bogies. */
+export const Z_INDEX_OFFSET_RAILS = 1;
+const Z_INDEX_ABOVE = 2;
+const Z_INDEX_OVERLAYS = 3;
+
+export type DrawableLayer = 'below' | 'above';
+
 export class WorldRenderSystem {
 
     private _mainContainer: Container;
-    private _drawDataContainer: Container;
+    /** Tracks, shadows, buildings. Draws below offset rails. */
+    private _drawDataBelow: Container;
+    /** Bogies and other on-track objects. Draws above offset rails. */
+    private _drawDataAbove: Container;
     private _drawableMap: Map<string, Container> = new Map();
+    private _drawableLayer: Map<string, DrawableLayer> = new Map();
     private _shadowMap: Map<string, { graphics: Graphics; elevation: ELEVATION }> = new Map();
     private _shadowContainerMap: Map<ELEVATION, Container> = new Map();
 
@@ -72,35 +85,52 @@ export class WorldRenderSystem {
 
     constructor() {
         this._mainContainer = new Container();
-        this._drawDataContainer = new Container();
-        this._drawDataContainer.sortableChildren = true;
-        this._mainContainer.addChild(this._drawDataContainer);
+        this._mainContainer.sortableChildren = true;
+        this._drawDataBelow = new Container();
+        this._drawDataBelow.sortableChildren = true;
+        this._drawDataBelow.zIndex = Z_INDEX_BELOW;
+        this._mainContainer.addChild(this._drawDataBelow);
+        this._drawDataAbove = new Container();
+        this._drawDataAbove.sortableChildren = true;
+        this._drawDataAbove.zIndex = Z_INDEX_ABOVE;
+        this._mainContainer.addChild(this._drawDataAbove);
 
         ELEVATION_VALUES.forEach((elevation, i) => {
             const container = new Container();
             container.zIndex = i * LAYERS_PER_ELEVATION;
-            this._drawDataContainer.addChild(container);
+            this._drawDataBelow.addChild(container);
             this._shadowContainerMap.set(elevation as ELEVATION, container);
         });
     }
 
     /**
-     * Add a sibling container alongside the sorted draw data container.
-     * Use for overlays like track offsets or UI elements that don't participate
-     * in elevation-based sorting.
+     * Add a sibling container alongside the draw data layers.
+     *
+     * @param options.zIndex - Use Z_INDEX_OFFSET_RAILS (1) for track offset rails so they draw
+     *   between track segments and bogies. Omit for overlays (drawn on top).
      */
-    addOverlayContainer(container: Container): void {
+    addOverlayContainer(container: Container, options?: { zIndex?: number }): void {
+        container.zIndex = options?.zIndex ?? Z_INDEX_OVERLAYS;
         this._mainContainer.addChild(container);
+        this._mainContainer.sortChildren();
     }
 
     removeOverlayContainer(container: Container): void {
         this._mainContainer.removeChild(container);
     }
 
-    /** Add a drawable container to the elevation-sorted draw data container. */
-    addDrawable(key: string, container: Container): void {
+    /**
+     * Add a drawable to the elevation-sorted layers.
+     *
+     * @param options.layer - 'below' (default): tracks, buildings, shadows. 'above': bogies and
+     *   other on-track objects, drawn above offset rails.
+     */
+    addDrawable(key: string, container: Container, options?: { layer?: DrawableLayer }): void {
+        const layer = options?.layer ?? 'below';
         this._drawableMap.set(key, container);
-        this._drawDataContainer.addChild(container);
+        this._drawableLayer.set(key, layer);
+        const parent = layer === 'below' ? this._drawDataBelow : this._drawDataAbove;
+        parent.addChild(container);
     }
 
     /**
@@ -116,9 +146,12 @@ export class WorldRenderSystem {
      */
     removeDrawable(key: string): Container | undefined {
         const container = this._drawableMap.get(key);
-        if (container !== undefined) {
-            this._drawDataContainer.removeChild(container);
+        const layer = this._drawableLayer.get(key);
+        if (container !== undefined && layer !== undefined) {
+            const parent = layer === 'below' ? this._drawDataBelow : this._drawDataAbove;
+            parent.removeChild(container);
             this._drawableMap.delete(key);
+            this._drawableLayer.delete(key);
         }
         return container;
     }
@@ -213,7 +246,8 @@ export class WorldRenderSystem {
     }
 
     sortChildren(): void {
-        this._drawDataContainer.sortChildren();
+        this._drawDataBelow.sortChildren();
+        this._drawDataAbove.sortChildren();
     }
 
     cleanup(): void {
@@ -223,14 +257,18 @@ export class WorldRenderSystem {
         });
         this._shadowMap.clear();
 
-        this._drawableMap.forEach(container => {
-            this._drawDataContainer.removeChild(container);
+        this._drawableMap.forEach((container, key) => {
+            const layer = this._drawableLayer.get(key);
+            const parent = layer === 'above' ? this._drawDataAbove : this._drawDataBelow;
+            parent.removeChild(container);
             container.destroy({ children: true });
         });
         this._drawableMap.clear();
+        this._drawableLayer.clear();
         this._bandTrackCount.clear();
 
-        this._drawDataContainer.destroy({ children: true });
+        this._drawDataBelow.destroy({ children: true });
+        this._drawDataAbove.destroy({ children: true });
         this._mainContainer.destroy({ children: true });
     }
 }

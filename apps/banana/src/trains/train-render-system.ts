@@ -164,7 +164,7 @@ export class TrainRenderSystem {
       const color = BOGIE_COLORS[idx % BOGIE_COLORS.length];
       const g = createBogieGraphics(color);
       this._actualGraphicsPool.push(g);
-      this._worldRenderSystem.addDrawable(bogieKey(idx), g);
+      this._worldRenderSystem.addDrawable(bogieKey(idx), g, { layer: 'above' });
     }
 
     for (let i = count; i < this._activeActualCount; i++) {
