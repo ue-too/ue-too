@@ -3,6 +3,7 @@ import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pi
 import { CurveCreationEngine, LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
 import { TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
+import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
 import { TrackRenderSystem } from '@/trains/tracks/render-system';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
@@ -18,6 +19,7 @@ export type BananaAppComponents = BaseAppComponents & {
   trainPlacementEngine: TrainPlacementEngine;
   layoutStateMachine: LayoutStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
+  debugOverlayRenderSystem: DebugOverlayRenderSystem;
 };
 
 /**
@@ -55,6 +57,11 @@ export const initApp = async (
   );
   const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
+  const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
+    worldRenderSystem,
+    curveEngine.trackGraph,
+    baseComponents.camera,
+  );
 
   curveEngine.trackGraph.onSegmentSplit((info) => {
     trainPlacementEngine.train.remapOnSegmentSplit(info);
@@ -77,5 +84,6 @@ export const initApp = async (
     trainPlacementEngine,
     layoutStateMachine,
     trainStateMachine,
+    debugOverlayRenderSystem,
   };
 };

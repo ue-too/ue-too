@@ -38,6 +38,8 @@ export function BananaToolbar() {
     const [showVillages, setShowVillages] = useState(true);
     const [trackRenderStyle, setTrackRenderStyle] =
         useState<DetailedTrackRenderStyle>('elevation');
+    const [showJointNumbers, setShowJointNumbers] = useState(false);
+    const [showSegmentIds, setShowSegmentIds] = useState(false);
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -67,6 +69,16 @@ export function BananaToolbar() {
         if (!app) return;
         app.trackRenderSystem.detailedRenderStyle = trackRenderStyle;
     }, [app, trackRenderStyle]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowJointDebug(showJointNumbers);
+    }, [app, showJointNumbers]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowSegmentDebug(showSegmentIds);
+    }, [app, showSegmentIds]);
 
     useEffect(() => {
         if (!app) return;
@@ -503,6 +515,25 @@ export function BananaToolbar() {
                     />
                     <span className="w-10 text-xs">{sunAngle}°</span>
                 </label>
+            </div>
+
+            {/* Debug overlays (joint numbers, segment IDs) */}
+            <div className="flex items-center gap-1.5">
+                <span className="text-sm">Debug:</span>
+                <Button
+                    variant={showJointNumbers ? 'secondary' : 'outline'}
+                    size="sm"
+                    onClick={() => setShowJointNumbers(v => !v)}
+                >
+                    Joint #
+                </Button>
+                <Button
+                    variant={showSegmentIds ? 'secondary' : 'outline'}
+                    size="sm"
+                    onClick={() => setShowSegmentIds(v => !v)}
+                >
+                    Segment #
+                </Button>
             </div>
 
             {/* GeoJSON + Import/Export */}
