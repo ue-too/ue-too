@@ -1,10 +1,20 @@
 import { Container, Graphics, Text } from 'pixi.js';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
+import { PointCal } from '@ue-too/math';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { TrackGraph } from './track';
 
 /** Base radius of the circle (world units); effective size = this / zoomLevel for constant screen size. */
 const LABEL_CIRCLE_RADIUS = 8;
+
+/** Arrow length in local units (scales with label for constant screen size). */
+const ARROW_LENGTH = 22;
+
+/** Arrowhead size (length from tip back along shaft). */
+const ARROW_HEAD_SIZE = 8;
+
+/** Arrowhead half-width (perpendicular to shaft). */
+const ARROW_HEAD_HALF_WIDTH = 5;
 
 /** Base font size for debug labels; effective size scales with 1/zoom for constant screen size. */
 const LABEL_FONT_SIZE = 14;
@@ -112,8 +122,16 @@ export class DebugOverlayRenderSystem {
         removed.forEach(c => c.destroy({ children: true }));
         const joints = this._trackGraph.getJoints();
         for (const { jointNumber, joint } of joints) {
-            const { position } = joint;
-            const node = this._makeLabelNode(String(jointNumber), position.x, position.y, JOINT_CIRCLE_FILL);
+            const { position, tangent } = joint;
+            const arrowDir =
+                PointCal.magnitude(tangent) > 1e-6 ? PointCal.unitVector(tangent) : null;
+            const node = this._makeLabelNode(
+                String(jointNumber),
+                position.x,
+                position.y,
+                JOINT_CIRCLE_FILL,
+                arrowDir,
+            );
             this._jointContainer.addChild(node);
         }
     }
@@ -126,15 +144,35 @@ export class DebugOverlayRenderSystem {
             const segment = this._trackGraph.getTrackSegmentWithJoints(segmentNumber);
             if (segment === null) continue;
             const mid = segment.curve.get(0.5);
-            const node = this._makeLabelNode(String(segmentNumber), mid.x, mid.y, SEGMENT_CIRCLE_FILL);
+            const derivative = segment.curve.derivative(0.5);
+            const positiveDir =
+                PointCal.magnitude(derivative) > 1e-6 ? PointCal.unitVector(derivative) : null;
+            const node = this._makeLabelNode(
+                String(segmentNumber),
+                mid.x,
+                mid.y,
+                SEGMENT_CIRCLE_FILL,
+                positiveDir,
+            );
             this._segmentContainer.addChild(node);
         }
     }
 
-    private _makeLabelNode(textStr: string, x: number, y: number, circleFill: number): Container {
+    private _makeLabelNode(
+        textStr: string,
+        x: number,
+        y: number,
+        circleFill: number,
+        arrowDirection: { x: number; y: number } | null = null,
+    ): Container {
         const container = new Container();
         container.position.set(x, y);
         container.scale.set(1 / this._zoomLevel);
+
+        if (arrowDirection !== null) {
+            const arrow = this._makeArrowGraphic(arrowDirection.x, arrowDirection.y, circleFill);
+            container.addChild(arrow);
+        }
 
         const circle = new Graphics();
         circle.circle(0, 0, LABEL_CIRCLE_RADIUS);
@@ -155,6 +193,35 @@ export class DebugOverlayRenderSystem {
         container.addChild(text);
 
         return container;
+    }
+
+    /**
+     * Draws an arrow from (0,0) in the given unit direction. Used for joint tangent and segment positive direction.
+     */
+    private _makeArrowGraphic(dx: number, dy: number, color: number): Graphics {
+        const g = new Graphics();
+        const tipX = ARROW_LENGTH * dx;
+        const tipY = ARROW_LENGTH * dy;
+        const backX = tipX - ARROW_HEAD_SIZE * dx;
+        const backY = tipY - ARROW_HEAD_SIZE * dy;
+        const perpX = -dy;
+        const perpY = dx;
+        const leftX = backX + ARROW_HEAD_HALF_WIDTH * perpX;
+        const leftY = backY + ARROW_HEAD_HALF_WIDTH * perpY;
+        const rightX = backX - ARROW_HEAD_HALF_WIDTH * perpX;
+        const rightY = backY - ARROW_HEAD_HALF_WIDTH * perpY;
+
+        g.moveTo(0, 0);
+        g.lineTo(backX, backY);
+        g.stroke({ color, width: 2, alpha: 0.95 });
+        g.moveTo(tipX, tipY);
+        g.lineTo(leftX, leftY);
+        g.lineTo(rightX, rightY);
+        g.closePath();
+        g.fill({ color, alpha: 0.95 });
+        g.stroke({ color: 0xffffff, width: 1, alpha: 0.8 });
+
+        return g;
     }
 
     /** Remove overlay and release resources. */
