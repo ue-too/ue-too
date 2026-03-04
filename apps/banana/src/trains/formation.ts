@@ -173,6 +173,139 @@ export class Train {
                 : this._occupiedJointNumbers;
         const occupiedTracksForExpand = this._occupiedTrackSegments;
 
+        // When expandDirection is 'same', expand from the tail (furthest bogie) so that
+        // end-of-track is detected at the tail and the same stopping mechanism works.
+        // We still return [head, ..., tail] so render order is unchanged.
+        if (this._expandDirection === 'same') {
+            const totalOffset = this._offsets.reduce((a, b) => a + b, 0);
+            const tailPos = !preview
+                ? getPosition(
+                    totalOffset,
+                    { ...position, direction: bogieDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager,
+                    occupiedJointsForExpand,
+                    occupiedTracksForExpand
+                )
+                : getPosition(
+                    totalOffset,
+                    { ...position, direction: bogieDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager
+                );
+            if (tailPos === null || tailPos.stop) {
+                return null;
+            }
+            // Walk from tail back to head so we get all bogie positions in order tail → head.
+            const positionsTailToHead: TrainPosition[] = [tailPos];
+            const directionTowardHead = flipDirection(bogieDirection);
+            const occupiedJointsTail = !preview
+                ? occupiedJointsForExpand.map((j) => ({
+                      jointNumber: j.jointNumber,
+                      direction: flipDirection(j.direction),
+                  }))
+                : undefined;
+            const occupiedTracksTail = !preview ? occupiedTracksForExpand : undefined;
+            let current: TrainPosition = { ...tailPos, direction: directionTowardHead };
+            const accumulatedPassedJoints: { jointNumber: number; direction: 'tangent' | 'reverseTangent' }[] = [
+                ...tailPos.passedJointNumbers.slice().reverse(),
+            ];
+            const accumulatedEnteringTracks: {
+                trackNumber: number;
+                fromJointNumber: number;
+                toJointNumber: number;
+                inTrackDirection: 'tangent' | 'reverseTangent';
+            }[] = [...tailPos.enteringTrackSegments.slice().reverse()];
+            for (let i = this._offsets.length - 1; i >= 0; i--) {
+                const stepOffset = this._offsets[i];
+                const nextPos = !preview
+                    ? getPosition(
+                        stepOffset,
+                        current,
+                        this._trackGraph,
+                        this._jointDirectionManager,
+                        occupiedJointsTail,
+                        occupiedTracksTail
+                    )
+                    : getPosition(
+                        stepOffset,
+                        current,
+                        this._trackGraph,
+                        this._jointDirectionManager
+                    );
+                if (nextPos === null || nextPos.stop) {
+                    return null;
+                }
+                if (!preview) {
+                    accumulatedPassedJoints.push(...nextPos.passedJointNumbers.slice().reverse());
+                    accumulatedEnteringTracks.push(...nextPos.enteringTrackSegments.slice().reverse());
+                }
+                positionsTailToHead.push(nextPos);
+                current = nextPos;
+            }
+            // Return [head, ..., tail] for consistent render order.
+            const result = positionsTailToHead.reverse();
+            // Head (first element) must match the train position so segment, tValue, and direction are correct.
+            if (result.length > 0) {
+                result[0] = { ...position, point: result[0].point };
+            }
+            if (!preview && result.length > 0) {
+                // Reorder to expansion-from-head order (first joint passed = index 0) and flip directions.
+                const passedJointsHeadOrder = accumulatedPassedJoints
+                    .slice()
+                    .reverse()
+                    .map((j) => ({
+                        jointNumber: j.jointNumber,
+                        direction: flipDirection(j.direction),
+                    }));
+                const enteringTracksHeadOrder = accumulatedEnteringTracks
+                    .slice()
+                    .reverse()
+                    .map((t) => ({
+                        trackNumber: t.trackNumber,
+                        fromJointNumber: t.fromJointNumber,
+                        toJointNumber: t.toJointNumber,
+                        inTrackDirection: flipDirection(t.inTrackDirection),
+                    }));
+                if (passedJointsHeadOrder.length > 0) {
+                    const lastJointNumber = passedJointsHeadOrder[0].jointNumber;
+                    let foundIndex = -1;
+                    for (let i = this._occupiedJointNumbers.length - 1; i >= 0; i--) {
+                        if (this._occupiedJointNumbers[i].jointNumber === lastJointNumber) {
+                            foundIndex = i;
+                            break;
+                        }
+                    }
+                    if (foundIndex !== -1) {
+                        this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, foundIndex + 1);
+                    }
+                }
+                if (this._occupiedJointNumbers.length === 0 && passedJointsHeadOrder.length > 0) {
+                    this._occupiedJointNumbers = [...passedJointsHeadOrder];
+                }
+                if (enteringTracksHeadOrder.length > 0) {
+                    const lastOccupiedTrackSegment = enteringTracksHeadOrder[0].trackNumber;
+                    let trackIndex = -1;
+                    for (let i = this._occupiedTrackSegments.length - 1; i >= 0; i--) {
+                        if (this._occupiedTrackSegments[i].trackNumber === lastOccupiedTrackSegment) {
+                            trackIndex = i;
+                            break;
+                        }
+                    }
+                    if (trackIndex !== -1) {
+                        this._occupiedTrackSegments = this._occupiedTrackSegments.slice(0, trackIndex + 1);
+                    }
+                }
+                if (this._occupiedTrackSegments.length === 0) {
+                    this._occupiedTrackSegments = [
+                        { trackNumber: position.trackSegment, inTrackDirection: bogieDirection },
+                        ...enteringTracksHeadOrder,
+                    ];
+                }
+            }
+            return result;
+        }
+
         for (let index = 0; index < this._offsets.length; index++) {
             accuOffset += this._offsets[index];
             const bogiePosition = !preview
@@ -410,6 +543,16 @@ export class Train {
             this._throttle = 'N';
             return;
         }
+        // When expanding in same direction, the tail is the leading end; stop before it hits end-of-track.
+        if (this._expandDirection === 'same') {
+            const bogies = this._getBogiePositions(nextPosition, false);
+            if (bogies === null) {
+                this._speed = 0;
+                this._throttle = 'N';
+                return;
+            }
+            this._cachedBogiePositions = bogies;
+        }
         const shouldFlipOccupied = this._expandDirection === 'reverse';
         const adjustedJoints = nextPosition.passedJointNumbers.map(joint => {
             return {
@@ -430,10 +573,12 @@ export class Train {
         this._occupiedTrackSegments.unshift(...adjustedEnteringTrackSegments);
 
         this._position = nextPosition;
-        this._cachedBogiePositions = this._getBogiePositions(
-            nextPosition,
-            false
-        );
+        if (this._expandDirection === 'reverse') {
+            this._cachedBogiePositions = this._getBogiePositions(
+                nextPosition,
+                false
+            );
+        }
     }
 
     switchDirection() {
