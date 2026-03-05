@@ -44,15 +44,7 @@ export function flipDirection(
 export interface JointDirectionManager {
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent',
-        occupiedJoints?: {
-            jointNumber: number;
-            direction: 'tangent' | 'reverseTangent';
-        }[],
-        occupiedTrackSegments?: {
-            trackNumber: number;
-            inTrackDirection: 'tangent' | 'reverseTangent';
-        }[]
+        direction: 'tangent' | 'reverseTangent'
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -69,15 +61,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
 
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent',
-        occupiedJoints?: {
-            jointNumber: number;
-            direction: 'tangent' | 'reverseTangent';
-        }[],
-        occupiedTrackSegments?: {
-            trackNumber: number;
-            inTrackDirection: 'tangent' | 'reverseTangent';
-        }[]
+        direction: 'tangent' | 'reverseTangent'
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -88,79 +72,6 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('starting joint not found');
             return null;
         }
-
-        // short circuit: use occupied list only when it is consistent with the track graph
-        if (occupiedJoints && occupiedJoints.length > 0) {
-            for (let i = 0; i < occupiedJoints.length; i++) {
-                if (
-                    occupiedJoints[i].jointNumber === jointNumber &&
-                    occupiedJoints[i].direction === direction
-                ) {
-                    if (i < occupiedJoints.length - 1) {
-                        const nextJointNumber =
-                            occupiedJoints[i + 1].jointNumber;
-                        const nextTrackSegmentNumber =
-                            joint.connections.get(nextJointNumber);
-                        const nextJoint =
-                            this._trackGraph.getJoint(nextJointNumber);
-                        // If occupied list is inconsistent (e.g. after direction switch or loop), fall through to normal path
-                        if (
-                            nextJoint === null ||
-                            nextTrackSegmentNumber === undefined
-                        ) {
-                            break;
-                        }
-                        const nextTrack =
-                            this._trackGraph.getTrackSegmentWithJoints(
-                                nextTrackSegmentNumber
-                            );
-                        if (nextTrack === null) {
-                            break;
-                        }
-                        const nextDirection: 'tangent' | 'reverseTangent' =
-                            nextTrack.t0Joint === jointNumber
-                                ? 'tangent'
-                                : 'reverseTangent';
-                        return {
-                            jointNumber: nextJointNumber,
-                            direction: nextDirection,
-                            curveNumber: nextTrackSegmentNumber,
-                        };
-                    } else if (
-                        occupiedTrackSegments &&
-                        occupiedTrackSegments.length > 0
-                    ) {
-                        const lastOccupiedTrack =
-                            occupiedTrackSegments[
-                            occupiedTrackSegments.length - 1
-                            ];
-                        const lastOccupiedTrackSegment =
-                            this._trackGraph.getTrackSegmentWithJoints(
-                                lastOccupiedTrack.trackNumber
-                            );
-                        if (lastOccupiedTrackSegment == null) {
-                            break;
-                        }
-                        const nextJointNumber =
-                            lastOccupiedTrack.inTrackDirection === 'tangent'
-                                ? lastOccupiedTrackSegment.t1Joint
-                                : lastOccupiedTrackSegment.t0Joint;
-                        const nextJoint =
-                            this._trackGraph.getJoint(nextJointNumber);
-                        if (nextJoint == null) {
-                            break;
-                        }
-                        return {
-                            jointNumber: nextJointNumber,
-                            curveNumber: lastOccupiedTrack.trackNumber,
-                            direction: lastOccupiedTrack.inTrackDirection,
-                        };
-                    }
-                }
-            }
-        }
-        // short circuit
-
         const possibleNextJoints = joint.direction[direction];
         if (possibleNextJoints.size === 0) {
             console.warn('no possible next joints');
@@ -190,7 +101,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('first next track segment not found');
             return null;
         }
-        let nextDirection: 'tangent' | 'reverseTangent' =
+        const nextDirection: 'tangent' | 'reverseTangent' =
             firstNextTrackSegment.t0Joint === jointNumber
                 ? 'tangent'
                 : 'reverseTangent';

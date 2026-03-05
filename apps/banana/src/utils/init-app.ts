@@ -101,6 +101,7 @@ export const initApp = async (
     trainPlacementEngine.train,
     trackGraph,
     trackRenderSystem,
+    { renderer: baseComponents.app.renderer },
   );
   const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);

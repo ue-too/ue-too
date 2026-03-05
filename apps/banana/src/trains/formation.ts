@@ -107,6 +107,8 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 export class Train {
     private _position: TrainPosition | null;
     private _expandDirection: 'same' | 'reverse' = 'reverse';
+    /** True when position is the tail (after switchDirection()); advance uses negated distance. */
+    private _positionIsTail: boolean = false;
     private _offsets: number[] = [40];
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
@@ -115,15 +117,6 @@ export class Train {
     private _throttle: ThrottleSteps = 'N';
     private _previewPositions: TrainPosition[] | null = null;
     private _previewPositionCache: TrainPosition | null = null;
-    private _occupiedJointNumbers: {
-        jointNumber: number;
-        direction: 'tangent' | 'reverseTangent';
-    }[] = [];
-
-    private _occupiedTrackSegments: {
-        trackNumber: number;
-        inTrackDirection: 'tangent' | 'reverseTangent'; // the direction is to go from the start of the train to the end of the train
-    }[] = [];
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
@@ -161,78 +154,34 @@ export class Train {
 
         let accuOffset = 0;
 
-        // Occupied list is always in head-to-tail order with (joint, direction) from the head's
-        // perspective (direction we went to when passing the joint). Use as-is so getNextJoint
-        // finds (joint, bogieDirection) when walking from head toward tail in either expand mode.
-        const occupiedJointsForExpand = this._occupiedJointNumbers;
-        const occupiedTracksForExpand = this._occupiedTrackSegments;
-
         // When expandDirection is 'same', expand from the tail (furthest bogie) so that
         // end-of-track is detected at the tail and the same stopping mechanism works.
         // We still return [head, ..., tail] so render order is unchanged.
         if (this._expandDirection === 'same') {
             const totalOffset = this._offsets.reduce((a, b) => a + b, 0);
-            const tailPos = !preview
-                ? getPosition(
-                    totalOffset,
-                    { ...position, direction: bogieDirection },
-                    this._trackGraph,
-                    this._jointDirectionManager,
-                    occupiedJointsForExpand,
-                    occupiedTracksForExpand
-                )
-                : getPosition(
-                    totalOffset,
-                    { ...position, direction: bogieDirection },
+            const tailPos = getPosition(
+                totalOffset,
+                { ...position, direction: bogieDirection },
+                this._trackGraph,
+                this._jointDirectionManager
+            );
+            if (tailPos === null) {
+                return null;
+            }
+            // Allow tail at path start (stop at junction with no path segment ahead).
+            // Walk from tail back to head so we get all bogie positions in order tail → head.
+            const positionsTailToHead: TrainPosition[] = [tailPos];
+            let current: TrainPosition = { ...tailPos, direction: flipDirection(tailPos.direction) };
+            for (let i = this._offsets.length - 1; i >= 0; i--) {
+                const stepOffset = this._offsets[i];
+                const nextPos = getPosition(
+                    stepOffset,
+                    current,
                     this._trackGraph,
                     this._jointDirectionManager
                 );
-            if (tailPos === null || tailPos.stop) {
-                return null;
-            }
-            // Walk from tail back to head so we get all bogie positions in order tail → head.
-            const positionsTailToHead: TrainPosition[] = [tailPos];
-            const directionTowardHead = flipDirection(bogieDirection);
-            const occupiedJointsTail = !preview
-                ? occupiedJointsForExpand.map((j) => ({
-                      jointNumber: j.jointNumber,
-                      direction: flipDirection(j.direction),
-                  }))
-                : undefined;
-            const occupiedTracksTail = !preview ? occupiedTracksForExpand : undefined;
-            let current: TrainPosition = { ...tailPos, direction: directionTowardHead };
-            const accumulatedPassedJoints: { jointNumber: number; direction: 'tangent' | 'reverseTangent' }[] = [
-                ...tailPos.passedJointNumbers.slice().reverse(),
-            ];
-            const accumulatedEnteringTracks: {
-                trackNumber: number;
-                fromJointNumber: number;
-                toJointNumber: number;
-                inTrackDirection: 'tangent' | 'reverseTangent';
-            }[] = [...tailPos.enteringTrackSegments.slice().reverse()];
-            for (let i = this._offsets.length - 1; i >= 0; i--) {
-                const stepOffset = this._offsets[i];
-                const nextPos = !preview
-                    ? getPosition(
-                        stepOffset,
-                        current,
-                        this._trackGraph,
-                        this._jointDirectionManager,
-                        occupiedJointsTail,
-                        occupiedTracksTail
-                    )
-                    : getPosition(
-                        stepOffset,
-                        current,
-                        this._trackGraph,
-                        this._jointDirectionManager
-                    );
                 if (nextPos === null || nextPos.stop) {
                     return null;
-                }
-                if (!preview) {
-                    accumulatedPassedJoints.push(...nextPos.passedJointNumbers.slice().reverse());
-                    accumulatedEnteringTracks.push(...nextPos.enteringTrackSegments.slice().reverse());
                 }
                 positionsTailToHead.push(nextPos);
                 current = nextPos;
@@ -243,194 +192,36 @@ export class Train {
             if (result.length > 0) {
                 result[0] = { ...position, point: result[0].point };
             }
-            if (!preview && result.length > 0) {
-                // Reorder to expansion-from-head order (first joint passed = index 0) and flip directions.
-                const passedJointsHeadOrder = accumulatedPassedJoints
-                    .slice()
-                    .reverse()
-                    .map((j) => ({
-                        jointNumber: j.jointNumber,
-                        direction: flipDirection(j.direction),
-                    }));
-                const enteringTracksHeadOrder = accumulatedEnteringTracks
-                    .slice()
-                    .reverse()
-                    .map((t) => ({
-                        trackNumber: t.trackNumber,
-                        fromJointNumber: t.fromJointNumber,
-                        toJointNumber: t.toJointNumber,
-                        inTrackDirection: flipDirection(t.inTrackDirection),
-                    }));
-                if (passedJointsHeadOrder.length > 0) {
-                    // Trim to tail: keep joints from head up to and including the tail joint
-                    const tailJointNumber =
-                        passedJointsHeadOrder[passedJointsHeadOrder.length - 1].jointNumber;
-                    let foundIndex = -1;
-                    for (let i = this._occupiedJointNumbers.length - 1; i >= 0; i--) {
-                        if (this._occupiedJointNumbers[i].jointNumber === tailJointNumber) {
-                            foundIndex = i;
-                            break;
-                        }
-                    }
-                    if (foundIndex !== -1) {
-                        this._occupiedJointNumbers = this._occupiedJointNumbers.slice(0, foundIndex + 1);
-                    }
-                }
-                if (this._occupiedJointNumbers.length === 0 && passedJointsHeadOrder.length > 0) {
-                    this._occupiedJointNumbers = [...passedJointsHeadOrder];
-                }
-                if (enteringTracksHeadOrder.length > 0) {
-                    // Trim to tail: keep segments from head up to and including the tail segment
-                    const lastOccupiedTrackSegment =
-                        enteringTracksHeadOrder[enteringTracksHeadOrder.length - 1].trackNumber;
-                    let trackIndex = -1;
-                    for (let i = this._occupiedTrackSegments.length - 1; i >= 0; i--) {
-                        if (this._occupiedTrackSegments[i].trackNumber === lastOccupiedTrackSegment) {
-                            trackIndex = i;
-                            break;
-                        }
-                    }
-                    if (trackIndex !== -1) {
-                        this._occupiedTrackSegments = this._occupiedTrackSegments.slice(0, trackIndex + 1);
-                    }
-                }
-                if (this._occupiedTrackSegments.length === 0) {
-                    this._occupiedTrackSegments = [
-                        { trackNumber: position.trackSegment, inTrackDirection: bogieDirection },
-                        ...enteringTracksHeadOrder,
-                    ];
-                }
-            }
             return result;
         }
 
         for (let index = 0; index < this._offsets.length; index++) {
             accuOffset += this._offsets[index];
-            const bogiePosition = !preview
-                ? getPosition(
-                    accuOffset,
-                    { ...position, direction: bogieDirection },
-                    this._trackGraph,
-                    this._jointDirectionManager,
-                    occupiedJointsForExpand,
-                    occupiedTracksForExpand
-                )
-                : getPosition(
-                    accuOffset,
-                    { ...position, direction: bogieDirection },
-                    this._trackGraph,
-                    this._jointDirectionManager
-                );
-            if (bogiePosition === null || bogiePosition.stop) {
-                console.warn(
-                    '[_getBogiePositions] bogie failed',
-                    {
-                        bogieIndex: index, accuOffset, preview,
-                        headSegment: position.trackSegment,
-                        headT: position.tValue,
-                        headDirection: position.direction,
-                        expandDirection: bogieDirection,
-                        stop: bogiePosition?.stop ?? 'null',
-                        stopSegment: bogiePosition?.trackSegment,
-                        stopT: bogiePosition?.tValue
-                    }
-                );
+            const bogiePosition = getPosition(
+                accuOffset,
+                { ...position, direction: bogieDirection },
+                this._trackGraph,
+                this._jointDirectionManager
+            );
+            if (bogiePosition === null) {
                 return null;
             }
-            if (!preview) {
-                if (
-                    index === this._offsets.length - 1 &&
-                    bogiePosition.passedJointNumbers.length > 0
-                ) {
-                    const lastBogiePositionPassedJointNumbers =
-                        bogiePosition.passedJointNumbers;
-                    const lastJointNumber =
-                        lastBogiePositionPassedJointNumbers[0].jointNumber;
-                    let index = -1;
-                    for (
-                        let i = this._occupiedJointNumbers.length - 1;
-                        i >= 0;
-                        i--
-                    ) {
-                        if (
-                            this._occupiedJointNumbers[i].jointNumber ===
-                            lastJointNumber
-                        ) {
-                            index = i;
-                            break;
-                        }
-                    }
-                    if (index !== -1) {
-                        this._occupiedJointNumbers =
-                            this._occupiedJointNumbers.slice(0, index + 1);
-                    }
-                }
-                if (
-                    index === this._offsets.length - 1 &&
-                    this._occupiedJointNumbers.length == 0 &&
-                    bogiePosition.passedJointNumbers.length > 0
-                ) {
-                    // Keep expansion order (first joint passed = index 0) so getNextJoint
-                    // can resolve the correct branch at junctions when expanding from position.
-                    this._occupiedJointNumbers = [
-                        ...bogiePosition.passedJointNumbers,
-                    ];
-                }
-                if (
-                    index === this._offsets.length - 1 &&
-                    bogiePosition.enteringTrackSegments.length > 0
-                ) {
-                    const lastBogiePositionEnteringTrackSegments =
-                        bogiePosition.enteringTrackSegments;
-                    const lastOccupiedTrackSegment =
-                        lastBogiePositionEnteringTrackSegments[0].trackNumber;
-                    let trackIndex = -1;
-                    for (
-                        let i = this._occupiedTrackSegments.length - 1;
-                        i >= 0;
-                        i--
-                    ) {
-                        if (
-                            this._occupiedTrackSegments[i].trackNumber ===
-                            lastOccupiedTrackSegment
-                        ) {
-                            trackIndex = i;
-                            break;
-                        }
-                    }
-                    if (trackIndex !== -1) {
-                        this._occupiedTrackSegments =
-                            this._occupiedTrackSegments.slice(
-                                0,
-                                trackIndex + 1
-                            );
-                    }
-                }
-                if (
-                    index === this._offsets.length - 1 &&
-                    this._occupiedTrackSegments.length == 0
-                ) {
-                    // Keep expansion order (first segment entered = index 0) so getNextJoint
-                    // can resolve the correct branch at junctions when expanding from position.
-                    this._occupiedTrackSegments = [
-                        {
-                            trackNumber: position.trackSegment,
-                            inTrackDirection: bogieDirection,
-                        },
-                        ...bogiePosition.enteringTrackSegments,
-                    ];
-                }
-            }
             positions.push(bogiePosition);
+            if (bogiePosition.stop) {
+                // Clamp remaining bogies at the end-of-track position.
+                for (let j = index + 1; j < this._offsets.length; j++) {
+                    positions.push(bogiePosition);
+                }
+                break;
+            }
         }
         return positions;
     }
 
     setPosition(position: TrainPosition) {
         this._position = position;
+        this._positionIsTail = false;
         this._cachedBogiePositions = null;
-        this._occupiedJointNumbers = [];
-        this._occupiedTrackSegments = [];
     }
 
     getBogiePositions(preview: boolean = false): TrainPosition[] | null {
@@ -451,20 +242,6 @@ export class Train {
 
     get previewBogiePositions(): TrainPosition[] | null {
         return this._previewPositions;
-    }
-
-    get occupiedJointNumbers(): {
-        jointNumber: number;
-        direction: 'tangent' | 'reverseTangent';
-    }[] {
-        return this._occupiedJointNumbers;
-    }
-
-    get occupiedTrackSegments(): {
-        trackNumber: number;
-        inTrackDirection: 'tangent' | 'reverseTangent';
-    }[] {
-        return this._occupiedTrackSegments;
     }
 
     getPreviewBogiePositions(
@@ -530,6 +307,10 @@ export class Train {
         if (approximately(distanceToAdvance, 0, 0.01)) {
             return;
         }
+        // After switchDirection(), position is the tail (leading end); advance it in the opposite direction.
+        if (this._positionIsTail) {
+            distanceToAdvance = -distanceToAdvance;
+        }
         const nextPosition = getPosition(
             distanceToAdvance,
             this._position,
@@ -551,24 +332,6 @@ export class Train {
             }
             this._cachedBogiePositions = bogies;
         }
-        const shouldFlipOccupied = this._expandDirection === 'reverse';
-        const adjustedJoints = nextPosition.passedJointNumbers.map(joint => {
-            return {
-                jointNumber: joint.jointNumber,
-                direction: shouldFlipOccupied ? flipDirection(joint.direction) : joint.direction,
-            };
-        });
-        this._occupiedJointNumbers = adjustedJoints.concat(this._occupiedJointNumbers);
-
-        const adjustedEnteringTrackSegments =
-            nextPosition.enteringTrackSegments.map(track => {
-                return {
-                    trackNumber: track.trackNumber,
-                    inTrackDirection: shouldFlipOccupied ? flipDirection(track.inTrackDirection) : track.inTrackDirection,
-                };
-            });
-
-        this._occupiedTrackSegments.unshift(...adjustedEnteringTrackSegments);
 
         this._position = nextPosition;
         if (this._expandDirection === 'reverse') {
@@ -589,24 +352,8 @@ export class Train {
         }
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
+        this._positionIsTail = !this._positionIsTail;
         this._offsets = this._offsets.reverse();
-        // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
-        this._occupiedJointNumbers = this._occupiedJointNumbers
-            .reverse()
-            .map(joint => {
-                return {
-                    ...joint,
-                    direction: flipDirection(joint.direction),
-                };
-            });
-        this._occupiedTrackSegments = this._occupiedTrackSegments
-            .reverse()
-            .map(track => {
-                return {
-                    ...track,
-                    inTrackDirection: flipDirection(track.inTrackDirection),
-                };
-            });
         this._cachedBogiePositions = this._getBogiePositions(
             this._position,
             false
@@ -619,17 +366,15 @@ export class Train {
         }
         this._position.direction = flipDirection(this._position.direction);
         this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
-        // Flip directions in occupied data so they match the new head (other end of train)
-        this._occupiedJointNumbers = this._occupiedJointNumbers.map((j) => ({
-            jointNumber: j.jointNumber,
-            direction: flipDirection(j.direction),
-        }));
-        this._occupiedTrackSegments = this._occupiedTrackSegments.map((t) => ({
-            trackNumber: t.trackNumber,
-            inTrackDirection: flipDirection(t.inTrackDirection),
-        }));
         this._cachedBogiePositions = null;
-        const bogiePositions = this._getBogiePositions(this._position, false);
+        let bogiePositions = this._getBogiePositions(this._position, false);
+        // If any bogie (not the head) got clamped at a dead end (squished), fall back to the other expand mode.
+        const anyBogieStopped = bogiePositions !== null
+            && bogiePositions.slice(1).some(b => (b as AdvancedTrainPositionRes).stop === true);
+        if (anyBogieStopped) {
+            this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
+            bogiePositions = this._getBogiePositions(this._position, false);
+        }
         if (bogiePositions === null) {
             return;
         }
@@ -685,8 +430,6 @@ export class Train {
             );
         }
 
-        this._occupiedTrackSegments = [];
-        this._occupiedJointNumbers = [];
         this._cachedBogiePositions = null;
     }
 }
@@ -695,15 +438,7 @@ export function getPosition(
     distance: number,
     position: TrainPosition,
     trackGraph: TrackGraph,
-    jointDirectionManager: JointDirectionManager,
-    occupiedJoints?: {
-        jointNumber: number;
-        direction: 'tangent' | 'reverseTangent';
-    }[],
-    occupiedTrackSegments?: {
-        trackNumber: number;
-        inTrackDirection: 'tangent' | 'reverseTangent';
-    }[]
+    jointDirectionManager: JointDirectionManager
 ): AdvancedTrainPositionRes | null {
     let distanceToAdvance = distance;
 
@@ -757,9 +492,7 @@ export function getPosition(
             : 'reverseTangent';
         const nextDirection = jointDirectionManager.getNextJoint(
             enteringJointNumber,
-            nextJointDirection,
-            occupiedJoints,
-            occupiedTrackSegments
+            nextJointDirection
         );
 
         if (nextDirection === null) {

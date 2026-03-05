@@ -20,8 +20,8 @@ const TRACK_TEXTURE_TILE_LEN = 0.6;
 /** Resolution of the procedural track segment texture (power-of-two for repeat wrap). */
 const TRACK_TEX_SIZE = 64;
 
-/** Renderer (or app) that provides texture generation for the texture-style track. */
-type TrackTextureRenderer = {
+/** Renderer (or app) that provides texture generation for the texture-style track and train cars. */
+export type TrackTextureRenderer = {
     renderer: { textureGenerator: { generateTexture: (options: { target: Container }) => Texture } };
 };
 

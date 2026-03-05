@@ -1,11 +1,23 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { Train, TrainPosition } from './formation';
 import { TrackGraph } from './tracks/track';
-import { TrackRenderSystem } from './tracks/render-system';
+import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { PlacedTrainEntry } from './train-manager';
 
 const BOGIE_RADIUS = 1.067 / 2;
+
+/** World-space width of each car rectangle (meters). */
+const CAR_WIDTH = 2.5;
+
+/** Distance from the rear of the car to the first bogie (meters). Bogies are inset from the car edges. */
+const BOGIE_OFFSET_FROM_REAR = 4;
+/** Distance from the second bogie to the front of the car (meters). */
+const BOGIE_OFFSET_FROM_FRONT = 4;
+
+/** Resolution of the procedural car body texture (power-of-two for crisp scaling). */
+const CAR_TEX_WIDTH = 64;
+const CAR_TEX_HEIGHT = 32;
 
 const BOGIE_COLORS: number[] = [
   0xFF0000,
@@ -27,6 +39,44 @@ function bogieKey(trainId: number | 'preview', bogieIndex: number): string {
   return `__train_${trainId}_bogie_${bogieIndex}`;
 }
 
+function carKey(trainId: number | 'preview', carIndex: number): string {
+  return `__train_${trainId}_car_${carIndex}`;
+}
+
+/**
+ * Car geometry: car k connects bogie 2k and bogie 2k+1. Train position is the first bogie.
+ * Both bogies are inset from the car rectangle edges (offset from rear and front).
+ */
+type CarGeometry = {
+  /** World position of the rear (back) of the car; first bogie is at rear + forward * BOGIE_OFFSET_FROM_REAR. */
+  x: number;
+  y: number;
+  angle: number;
+  /** World-space length of the car (distance between bogies + rear offset + front offset). */
+  length: number;
+};
+
+/**
+ * First car connects bogie 0 and 1, second car connects bogie 2 and 3, etc.
+ * Car rear = first bogie - forward * BOGIE_OFFSET_FROM_REAR; front extends past second bogie by BOGIE_OFFSET_FROM_FRONT.
+ */
+function getCarGeometries(positions: TrainPosition[]): CarGeometry[] {
+  const out: CarGeometry[] = [];
+  for (let k = 0; 2 * k + 1 < positions.length; k++) {
+    const b0 = positions[2 * k].point;
+    const b1 = positions[2 * k + 1].point;
+    const dx = b1.x - b0.x;
+    const dy = b1.y - b0.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+    const rearX = b0.x - Math.cos(angle) * BOGIE_OFFSET_FROM_REAR;
+    const rearY = b0.y - Math.sin(angle) * BOGIE_OFFSET_FROM_REAR;
+    const length = distance + BOGIE_OFFSET_FROM_REAR + BOGIE_OFFSET_FROM_FRONT;
+    out.push({ x: rearX, y: rearY, angle, length });
+  }
+  return out;
+}
+
 /**
  * Renders train bogie positions using PixiJS Graphics.
  *
@@ -44,16 +94,25 @@ export class TrainRenderSystem {
   private _trackGraph: TrackGraph;
   private _trackRenderSystem: TrackRenderSystem;
   private _worldRenderSystem: WorldRenderSystem;
+  private _textureRenderer: TrackTextureRenderer | null;
 
   private _previewContainer: Container;
   private _previewGraphicsPool: Graphics[] = [];
+  private _previewCarPool: Sprite[] = [];
 
   /** Per-train-id: pool of Graphics for actual bogies. */
   private _actualPools: Map<number, Graphics[]> = new Map();
   /** Per-train-id: number of active bogie drawables. */
   private _activeCounts: Map<number, number> = new Map();
+  /** Per-train-id: pool of Sprites for actual cars (texture-based). */
+  private _actualCarPools: Map<number, Sprite[]> = new Map();
+  /** Per-train-id: number of active car drawables. */
+  private _activeCarCounts: Map<number, number> = new Map();
   /** Train ids we had last frame (to remove drawables when a train is removed). */
   private _lastTrainIds: Set<number> = new Set();
+
+  /** Cached procedural car body texture; created lazily when texture renderer is available. */
+  private _carTexture: Texture | null = null;
 
   constructor(
     worldRenderSystem: WorldRenderSystem,
@@ -61,14 +120,17 @@ export class TrainRenderSystem {
     previewTrain: Train,
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
+    textureRenderer?: TrackTextureRenderer | null,
   ) {
     this._worldRenderSystem = worldRenderSystem;
     this._getPlacedTrains = getPlacedTrains;
     this._previewTrain = previewTrain;
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
+    this._textureRenderer = textureRenderer ?? null;
 
     this._previewContainer = new Container();
+    this._previewContainer.sortableChildren = true;
     worldRenderSystem.addOverlayContainer(this._previewContainer);
   }
 
@@ -86,7 +148,9 @@ export class TrainRenderSystem {
     this._previewTrain.update(deltaTime);
 
     this._updatePreviewBogies();
+    this._updatePreviewCars();
     this._updateActualBogies(placed);
+    this._updateActualCars(placed);
 
     this._lastTrainIds.clear();
     for (const { id } of placed) this._lastTrainIds.add(id);
@@ -103,11 +167,23 @@ export class TrainRenderSystem {
     }
     this._actualPools.clear();
     this._activeCounts.clear();
+
+    for (const [trainId, pool] of this._actualCarPools) {
+      const count = this._activeCarCounts.get(trainId) ?? 0;
+      for (let i = 0; i < count; i++) {
+        const key = carKey(trainId, i);
+        const removed = this._worldRenderSystem.removeDrawable(key);
+        removed?.destroy({ children: true });
+      }
+    }
+    this._actualCarPools.clear();
+    this._activeCarCounts.clear();
     this._lastTrainIds.clear();
 
     this._worldRenderSystem.removeOverlayContainer(this._previewContainer);
     this._previewContainer.destroy({ children: true });
     this._previewGraphicsPool = [];
+    this._previewCarPool = [];
   }
 
   private _updatePreviewBogies(): void {
@@ -162,6 +238,119 @@ export class TrainRenderSystem {
     this._worldRenderSystem.sortChildren();
   }
 
+  private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
+    if (this._getOrCreateCarTexture() === null) return;
+
+    for (const { id, train } of placed) {
+      const positions = train.getBogiePositions();
+      if (positions === null || positions.length < 2) {
+        this._hideActualCarsForTrain(id);
+        continue;
+      }
+      const geometries = getCarGeometries(positions);
+      this._syncActualCarPoolForTrain(id, geometries.length);
+      const pool = this._actualCarPools.get(id)!;
+      const headZIndex = this._resolveZIndex(positions[0]);
+
+      for (let i = 0; i < geometries.length; i++) {
+        const sprite = pool[i];
+        const g = geometries[i];
+        sprite.position.set(g.x, g.y);
+        sprite.rotation = g.angle;
+        sprite.scale.set(g.length / CAR_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
+        sprite.visible = true;
+
+        const firstBogieOfCar = positions[2 * i];
+        const bogieZ = this._resolveZIndex(firstBogieOfCar);
+        const carZIndex = bogieZ !== null ? bogieZ - 1 : headZIndex !== null ? headZIndex - 1 : undefined;
+        if (carZIndex !== undefined) {
+          this._worldRenderSystem.setDrawableZIndex(carKey(id, i), carZIndex);
+        }
+      }
+    }
+
+    this._worldRenderSystem.sortChildren();
+  }
+
+  private _updatePreviewCars(): void {
+    const texture = this._getOrCreateCarTexture();
+    const positions = this._previewTrain.previewBogiePositions;
+    if (texture === null || positions === null || positions.length < 2) {
+      for (const s of this._previewCarPool) s.visible = false;
+      return;
+    }
+    const geometries = getCarGeometries(positions);
+    while (this._previewCarPool.length < geometries.length) {
+      const sprite = createCarSprite(texture);
+      sprite.zIndex = 0;
+      this._previewCarPool.push(sprite);
+      this._previewContainer.addChild(sprite);
+    }
+    for (let i = 0; i < this._previewCarPool.length; i++) {
+      const sprite = this._previewCarPool[i];
+      if (i < geometries.length) {
+        const g = geometries[i];
+        sprite.position.set(g.x, g.y);
+        sprite.rotation = g.angle;
+        sprite.scale.set(g.length / CAR_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
+        sprite.visible = true;
+      } else {
+        sprite.visible = false;
+      }
+    }
+  }
+
+  private _getOrCreateCarTexture(): Texture | null {
+    if (this._carTexture !== null) return this._carTexture;
+    const renderer = this._textureRenderer?.renderer?.textureGenerator;
+    if (renderer === undefined) return null;
+
+    const g = new Graphics();
+    g.rect(0, 0, CAR_TEX_WIDTH, CAR_TEX_HEIGHT);
+    g.fill(0x3d3d3d);
+    g.rect(2, 2, CAR_TEX_WIDTH - 4, CAR_TEX_HEIGHT - 4);
+    g.fill(0x505050);
+    g.rect(4, CAR_TEX_HEIGHT / 2 - 4, CAR_TEX_WIDTH - 8, 8);
+    g.fill(0x2a2a2a);
+
+    this._carTexture = renderer.generateTexture({ target: g });
+    return this._carTexture;
+  }
+
+  private _hideActualCarsForTrain(trainId: number): void {
+    const pool = this._actualCarPools.get(trainId);
+    const count = this._activeCarCounts.get(trainId) ?? 0;
+    if (pool) {
+      for (let i = 0; i < count; i++) {
+        pool[i].visible = false;
+      }
+    }
+  }
+
+  private _syncActualCarPoolForTrain(trainId: number, count: number): void {
+    const texture = this._getOrCreateCarTexture();
+    if (texture === null) return;
+
+    let pool = this._actualCarPools.get(trainId);
+    if (!pool) {
+      pool = [];
+      this._actualCarPools.set(trainId, pool);
+    }
+    const currentActive = this._activeCarCounts.get(trainId) ?? 0;
+
+    while (pool.length < count) {
+      const idx = pool.length;
+      const sprite = createCarSprite(texture);
+      pool.push(sprite);
+      this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite, { layer: 'above' });
+    }
+
+    for (let i = count; i < currentActive; i++) {
+      pool[i].visible = false;
+    }
+    this._activeCarCounts.set(trainId, Math.max(currentActive, count));
+  }
+
   private _removeTrainDrawables(trainId: number): void {
     const pool = this._actualPools.get(trainId);
     const count = this._activeCounts.get(trainId) ?? 0;
@@ -174,6 +363,18 @@ export class TrainRenderSystem {
       this._actualPools.delete(trainId);
     }
     this._activeCounts.delete(trainId);
+
+    const carPool = this._actualCarPools.get(trainId);
+    const carCount = this._activeCarCounts.get(trainId) ?? 0;
+    if (carPool) {
+      for (let i = 0; i < carCount; i++) {
+        const key = carKey(trainId, i);
+        const removed = this._worldRenderSystem.removeDrawable(key);
+        removed?.destroy({ children: true });
+      }
+      this._actualCarPools.delete(trainId);
+    }
+    this._activeCarCounts.delete(trainId);
   }
 
   private _resolveZIndex(position: TrainPosition): number | null {
@@ -220,6 +421,7 @@ export class TrainRenderSystem {
   private _syncPreviewPool(count: number): void {
     while (this._previewGraphicsPool.length < count) {
       const g = createBogieGraphics(PREVIEW_BOGIE_COLOR);
+      g.zIndex = 1;
       this._previewGraphicsPool.push(g);
       this._previewContainer.addChild(g);
     }
@@ -235,4 +437,11 @@ const createBogieGraphics = (color: number): Graphics => {
   g.fill({ color });
   g.stroke({ color: 0x000000, pixelLine: true });
   return g;
+};
+
+/** Creates a car body sprite with anchor at left center so position/rotation align with first bogie and line to second. */
+const createCarSprite = (texture: Texture): Sprite => {
+  const sprite = new Sprite({ texture });
+  sprite.anchor.set(0, 0.5);
+  return sprite;
 };
