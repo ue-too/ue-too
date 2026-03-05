@@ -1,11 +1,12 @@
 import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pixi-integration';
 import Stats from 'stats.js';
 
-import { Train } from '@/trains/formation';
+import { Train, type TrainPosition } from '@/trains/formation';
 import { CurveCreationEngine, LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
 import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
+import { generateProceduralTrackPath, type ProceduralTrackOptions } from '@/trains/tracks/procedural-tracks';
 import { TrackRenderSystem } from '@/trains/tracks/render-system';
 import { TrainManager } from '@/trains/train-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
@@ -26,6 +27,16 @@ export type BananaAppComponents = BaseAppComponents & {
   layoutStateMachine: LayoutStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
+  /** Add a train at the given segment and t. For stress testing. */
+  addTrainAtPosition: (
+    segmentNumber: number,
+    tValue: number,
+    direction: 'tangent' | 'reverseTangent',
+  ) => boolean;
+  /** Add multiple trains on the first segment for performance testing. Returns number added. */
+  addStressTestTrains: (count: number) => number;
+  /** Generate a procedural track path for stress testing. Returns number of segments created. */
+  generateProceduralTracks: (options: ProceduralTrackOptions) => number;
 };
 
 /**
@@ -112,6 +123,46 @@ export const initApp = async (
     trainRenderSystem.update(ticker.deltaMS);
   });
 
+  const addTrainAtPosition = (
+    segmentNumber: number,
+    tValue: number,
+    direction: 'tangent' | 'reverseTangent',
+  ): boolean => {
+    const segment = trackGraph.getTrackSegmentWithJoints(segmentNumber);
+    if (!segment) return false;
+    const point = segment.curve.getPointbyPercentage(tValue);
+    const position: TrainPosition = {
+      trackSegment: segmentNumber,
+      tValue,
+      direction,
+      point,
+    };
+    const train = new Train(
+      position,
+      [...DEFAULT_BOGIE_OFFSETS],
+      trackGraph,
+      jointDirectionManager,
+    );
+    trainManager.addTrain(train);
+    return true;
+  };
+
+  const addStressTestTrains = (count: number): number => {
+    const segmentNumbers = trackGraph.trackCurveManager.livingEntities;
+    if (segmentNumbers.length === 0) return 0;
+    const segmentNumber = segmentNumbers[0];
+    let added = 0;
+    for (let i = 0; i < count; i++) {
+      const t = 0.3 + (i / Math.max(count, 1)) * 0.4;
+      if (addTrainAtPosition(segmentNumber, t, 'tangent')) added += 1;
+    }
+    return added;
+  };
+
+  const generateProceduralTracks = (options: ProceduralTrackOptions): number => {
+    return generateProceduralTrackPath(trackGraph, options);
+  };
+
   return {
     ...baseComponents,
     curveEngine,
@@ -125,5 +176,8 @@ export const initApp = async (
     layoutStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,
+    addTrainAtPosition,
+    addStressTestTrains,
+    generateProceduralTracks,
   };
 };

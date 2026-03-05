@@ -429,6 +429,25 @@ export function BananaToolbar() {
                             No trains. Use &quot;Place Train&quot; then click on track.
                         </p>
                     )}
+                    <div className="flex flex-wrap items-center gap-1.5 border-t pt-2 mt-1">
+                        <span className="text-muted-foreground text-xs">Stress test:</span>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => app.addStressTestTrains(10)}
+                            disabled={app.curveEngine.trackGraph.trackCurveManager.livingEntities.length === 0}
+                        >
+                            +10 trains
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => app.addStressTestTrains(50)}
+                            disabled={app.curveEngine.trackGraph.trackCurveManager.livingEntities.length === 0}
+                        >
+                            +50 trains
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -453,6 +472,32 @@ export function BananaToolbar() {
                     {mode === 'layout-deletion'
                         ? 'End Deletion'
                         : 'Delete Layout'}
+                </Button>
+            </div>
+
+            {/* Procedural tracks (stress test) */}
+            <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-muted-foreground text-xs">Procedural tracks:</span>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => app.generateProceduralTracks({ segmentCount: 20 })}
+                >
+                    20 segments
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => app.generateProceduralTracks({ segmentCount: 100 })}
+                >
+                    100 segments
+                </Button>
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => app.generateProceduralTracks({ segmentCount: 100, gentleCurve: true })}
+                >
+                    100 curved
                 </Button>
             </div>
 
