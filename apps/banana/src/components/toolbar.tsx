@@ -7,6 +7,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { useBananaApp } from '@/contexts/pixi';
 import { ELEVATION } from '@/trains/tracks/types';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
@@ -40,6 +46,7 @@ export function BananaToolbar() {
         useState<DetailedTrackRenderStyle>('elevation');
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
+    const [trainListVersion, setTrainListVersion] = useState(0);
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -79,6 +86,11 @@ export function BananaToolbar() {
         if (!app) return;
         app.debugOverlayRenderSystem.setShowSegmentDebug(showSegmentIds);
     }, [app, showSegmentIds]);
+
+    useEffect(() => {
+        if (!app) return;
+        return app.trainManager.subscribe(() => setTrainListVersion(v => v + 1));
+    }, [app]);
 
     useEffect(() => {
         if (!app) return;
@@ -342,10 +354,84 @@ export function BananaToolbar() {
 
     if (!app) return null;
 
-    const train = app.trainPlacementEngine.train;
+    const trainManager = app.trainManager;
+    const placedTrains = trainManager.getPlacedTrains();
+    const selectedTrain = trainManager.getSelectedTrain();
+    const selectedIndex = trainManager.selectedIndex;
 
     return (
         <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
+            {/* Train list and controls */}
+            <Card className="w-full max-w-md">
+                <CardHeader className="py-2 px-4">
+                    <CardTitle className="text-sm">Trains</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2 py-0 px-4 pb-4">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <Button
+                            variant={mode === 'train-placement' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={handleTrainPlacementToggle}
+                            disabled={mode !== 'idle' && mode !== 'train-placement'}
+                        >
+                            {mode === 'train-placement'
+                                ? 'End Placement'
+                                : 'Place Train'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => selectedTrain?.setThrottleStep('p5')}
+                            disabled={!selectedTrain}
+                        >
+                            P5
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => selectedTrain?.setThrottleStep('N')}
+                            disabled={!selectedTrain}
+                        >
+                            Neutral
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => selectedTrain?.switchDirectionOnly()}
+                            disabled={!selectedTrain}
+                        >
+                            Switch Dir
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => trainManager.removeSelectedTrain()}
+                            disabled={placedTrains.length === 0}
+                        >
+                            Remove selected
+                        </Button>
+                    </div>
+                    {placedTrains.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                            {placedTrains.map((entry, index) => (
+                                <Button
+                                    key={entry.id}
+                                    variant={index === selectedIndex ? 'default' : 'outline'}
+                                    size="sm"
+                                    onClick={() => trainManager.setSelectedIndex(index)}
+                                >
+                                    Train {index + 1}
+                                </Button>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground text-xs">
+                            No trains. Use &quot;Place Train&quot; then click on track.
+                        </p>
+                    )}
+                </CardContent>
+            </Card>
+
             {/* Track layout controls */}
             <div className="flex items-center gap-1.5">
                 <Button
@@ -367,41 +453,6 @@ export function BananaToolbar() {
                     {mode === 'layout-deletion'
                         ? 'End Deletion'
                         : 'Delete Layout'}
-                </Button>
-            </div>
-
-            {/* Train controls */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={mode === 'train-placement' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={handleTrainPlacementToggle}
-                    disabled={mode !== 'idle' && mode !== 'train-placement'}
-                >
-                    {mode === 'train-placement'
-                        ? 'End Train Placement'
-                        : 'Place Train'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => train.setThrottleStep('p5')}
-                >
-                    P5
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => train.setThrottleStep('N')}
-                >
-                    Neutral
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => train.switchDirectionOnly()}
-                >
-                    Switch Dir
                 </Button>
             </div>
 

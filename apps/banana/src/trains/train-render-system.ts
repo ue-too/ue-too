@@ -3,6 +3,7 @@ import { Train, TrainPosition } from './formation';
 import { TrackGraph } from './tracks/track';
 import { TrackRenderSystem } from './tracks/render-system';
 import { WorldRenderSystem } from '@/world-render-system';
+import type { PlacedTrainEntry } from './train-manager';
 
 const BOGIE_RADIUS = 1.067 / 2;
 
@@ -22,23 +23,24 @@ const BOGIE_COLORS: number[] = [
 
 const PREVIEW_BOGIE_COLOR = 0x00FF00;
 
+function bogieKey(trainId: number | 'preview', bogieIndex: number): string {
+  return `__train_${trainId}_bogie_${bogieIndex}`;
+}
+
 /**
  * Renders train bogie positions using PixiJS Graphics.
  *
- * Manages two groups of visuals:
- * - **Preview bogies**: shown during train placement (green circles), rendered as an overlay
- * - **Actual bogies**: shown after the train is placed (color-cycled circles),
- *   registered as drawables in the {@link WorldRenderSystem} with z-indices
- *   derived from the track draw order so they sort correctly with elevation
+ * Manages multiple placed trains plus a single preview train (during placement).
+ * Placed trains use stable ids for drawable keys; preview uses 'preview'.
  *
- * Call {@link update} each frame to advance the train simulation
- * and synchronize the graphics.
+ * Call {@link update} each frame to advance the simulation and sync graphics.
  *
  * @group Train System
  */
 export class TrainRenderSystem {
 
-  private _train: Train;
+  private _getPlacedTrains: () => readonly PlacedTrainEntry[];
+  private _previewTrain: Train;
   private _trackGraph: TrackGraph;
   private _trackRenderSystem: TrackRenderSystem;
   private _worldRenderSystem: WorldRenderSystem;
@@ -46,44 +48,62 @@ export class TrainRenderSystem {
   private _previewContainer: Container;
   private _previewGraphicsPool: Graphics[] = [];
 
-  private _actualGraphicsPool: Graphics[] = [];
-  /** Number of actual bogies currently registered as drawables. */
-  private _activeActualCount = 0;
+  /** Per-train-id: pool of Graphics for actual bogies. */
+  private _actualPools: Map<number, Graphics[]> = new Map();
+  /** Per-train-id: number of active bogie drawables. */
+  private _activeCounts: Map<number, number> = new Map();
+  /** Train ids we had last frame (to remove drawables when a train is removed). */
+  private _lastTrainIds: Set<number> = new Set();
 
   constructor(
     worldRenderSystem: WorldRenderSystem,
-    train: Train,
+    getPlacedTrains: () => readonly PlacedTrainEntry[],
+    previewTrain: Train,
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
   ) {
-    this._train = train;
+    this._worldRenderSystem = worldRenderSystem;
+    this._getPlacedTrains = getPlacedTrains;
+    this._previewTrain = previewTrain;
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
-    this._worldRenderSystem = worldRenderSystem;
 
     this._previewContainer = new Container();
     worldRenderSystem.addOverlayContainer(this._previewContainer);
   }
 
   /**
-   * Advance the train simulation and update all bogie graphics.
+   * Advance all trains and the preview train, then sync bogie graphics.
    *
    * @param deltaTime - Elapsed time since last frame in milliseconds
    */
   update(deltaTime: number): void {
-    this._train.update(deltaTime);
+    const placed = this._getPlacedTrains();
+
+    for (const { train } of placed) {
+      train.update(deltaTime);
+    }
+    this._previewTrain.update(deltaTime);
+
     this._updatePreviewBogies();
-    this._updateActualBogies();
+    this._updateActualBogies(placed);
+
+    this._lastTrainIds.clear();
+    for (const { id } of placed) this._lastTrainIds.add(id);
   }
 
   cleanup(): void {
-    for (let i = 0; i < this._activeActualCount; i++) {
-      const key = bogieKey(i);
-      const removed = this._worldRenderSystem.removeDrawable(key);
-      removed?.destroy({ children: true });
+    for (const [trainId, pool] of this._actualPools) {
+      const count = this._activeCounts.get(trainId) ?? 0;
+      for (let i = 0; i < count; i++) {
+        const key = bogieKey(trainId, i);
+        const removed = this._worldRenderSystem.removeDrawable(key);
+        removed?.destroy({ children: true });
+      }
     }
-    this._actualGraphicsPool = [];
-    this._activeActualCount = 0;
+    this._actualPools.clear();
+    this._activeCounts.clear();
+    this._lastTrainIds.clear();
 
     this._worldRenderSystem.removeOverlayContainer(this._previewContainer);
     this._previewContainer.destroy({ children: true });
@@ -91,7 +111,7 @@ export class TrainRenderSystem {
   }
 
   private _updatePreviewBogies(): void {
-    const positions = this._train.previewBogiePositions;
+    const positions = this._previewTrain.previewBogiePositions;
 
     if (positions === null || positions.length === 0) {
       this._previewContainer.visible = false;
@@ -107,38 +127,55 @@ export class TrainRenderSystem {
     }
   }
 
-  private _updateActualBogies(): void {
-    const positions = this._train.getBogiePositions();
+  private _updateActualBogies(placed: readonly PlacedTrainEntry[]): void {
+    const currentIds = new Set(placed.map(p => p.id));
 
-    if (positions === null || positions.length === 0) {
-      this._hideActualBogies();
-      return;
+    for (const id of this._lastTrainIds) {
+      if (!currentIds.has(id)) {
+        this._removeTrainDrawables(id);
+      }
     }
 
-    this._syncActualPool(positions.length);
+    for (const { id, train } of placed) {
+      const positions = train.getBogiePositions();
+      if (positions === null || positions.length === 0) {
+        this._hideActualBogiesForTrain(id);
+        continue;
+      }
+      this._syncActualPoolForTrain(id, positions.length);
+      const pool = this._actualPools.get(id)!;
+      const headZIndex = this._resolveZIndex(positions[0]);
 
-    const headZIndex = this._resolveZIndex(positions[0]);
+      for (let i = 0; i < positions.length; i++) {
+        const g = pool[i];
+        const key = bogieKey(id, i);
+        g.position.set(positions[i].point.x, positions[i].point.y);
+        g.visible = true;
 
-    for (let i = 0; i < positions.length; i++) {
-      const g = this._actualGraphicsPool[i];
-      const key = bogieKey(i);
-      g.position.set(positions[i].point.x, positions[i].point.y);
-      g.visible = true;
-
-      const zIndex = i === 0 ? headZIndex : (this._resolveZIndex(positions[i]) ?? headZIndex);
-      if (zIndex !== null) {
-        this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+        const zIndex = i === 0 ? headZIndex : (this._resolveZIndex(positions[i]) ?? headZIndex);
+        if (zIndex !== null) {
+          this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+        }
       }
     }
 
     this._worldRenderSystem.sortChildren();
   }
 
-  /**
-   * Resolve a z-index for a bogie that is above every track drawable in
-   * the same elevation band. This prevents track segments at the same
-   * elevation (e.g. at a junction) from covering the bogie.
-   */
+  private _removeTrainDrawables(trainId: number): void {
+    const pool = this._actualPools.get(trainId);
+    const count = this._activeCounts.get(trainId) ?? 0;
+    if (pool) {
+      for (let i = 0; i < count; i++) {
+        const key = bogieKey(trainId, i);
+        const removed = this._worldRenderSystem.removeDrawable(key);
+        removed?.destroy({ children: true });
+      }
+      this._actualPools.delete(trainId);
+    }
+    this._activeCounts.delete(trainId);
+  }
+
   private _resolveZIndex(position: TrainPosition): number | null {
     const id = this._trackGraph.getDrawDataIdentifier(
       position.trackSegment,
@@ -148,30 +185,36 @@ export class TrainRenderSystem {
     return this._trackRenderSystem.getOnTrackObjectZIndex(id);
   }
 
-  private _hideActualBogies(): void {
-    for (let i = 0; i < this._activeActualCount; i++) {
-      this._actualGraphicsPool[i].visible = false;
+  private _hideActualBogiesForTrain(trainId: number): void {
+    const pool = this._actualPools.get(trainId);
+    const count = this._activeCounts.get(trainId) ?? 0;
+    if (pool) {
+      for (let i = 0; i < count; i++) {
+        pool[i].visible = false;
+      }
     }
   }
 
-  /**
-   * Grow or shrink the pool of actual-bogie drawables registered in
-   * the WorldRenderSystem.
-   */
-  private _syncActualPool(count: number): void {
-    while (this._actualGraphicsPool.length < count) {
-      const idx = this._actualGraphicsPool.length;
+  private _syncActualPoolForTrain(trainId: number, count: number): void {
+    let pool = this._actualPools.get(trainId);
+    if (!pool) {
+      pool = [];
+      this._actualPools.set(trainId, pool);
+    }
+    const currentActive = this._activeCounts.get(trainId) ?? 0;
+
+    while (pool.length < count) {
+      const idx = pool.length;
       const color = BOGIE_COLORS[idx % BOGIE_COLORS.length];
       const g = createBogieGraphics(color);
-      this._actualGraphicsPool.push(g);
-      this._worldRenderSystem.addDrawable(bogieKey(idx), g, { layer: 'above' });
+      pool.push(g);
+      this._worldRenderSystem.addDrawable(bogieKey(trainId, idx), g, { layer: 'above' });
     }
 
-    for (let i = count; i < this._activeActualCount; i++) {
-      this._actualGraphicsPool[i].visible = false;
+    for (let i = count; i < currentActive; i++) {
+      pool[i].visible = false;
     }
-
-    this._activeActualCount = Math.max(this._activeActualCount, count);
+    this._activeCounts.set(trainId, Math.max(currentActive, count));
   }
 
   private _syncPreviewPool(count: number): void {
@@ -185,8 +228,6 @@ export class TrainRenderSystem {
     }
   }
 }
-
-const bogieKey = (index: number): string => `__train_bogie__${index}`;
 
 const createBogieGraphics = (color: number): Graphics => {
   const g = new Graphics();

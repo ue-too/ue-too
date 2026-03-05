@@ -13,6 +13,6 @@ export function useBananaApp(): BananaAppComponents | null {
   return useMemo(() => {
     const check = appIsReady(result);
     if (!check.ready) return null;
-    return check.components as BananaAppComponents;
+    return check.components;
   }, [result]);
-}
+};

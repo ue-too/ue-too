@@ -202,6 +202,14 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
     }
 }
 
+/** Options for {@link TrainPlacementEngine}. */
+export type TrainPlacementEngineOptions = {
+    /** When a train is placed, called with that train. Return a new Train to use for the next placement (e.g. for multiple trains). */
+    onPlaced?: (placed: Train) => Train | void;
+};
+
+const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
+
 export class TrainPlacementEngine implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
     private _trainTangent: Point | null = null;
@@ -209,15 +217,17 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _train: Train;
+    private _onPlaced: ((placed: Train) => Train | void) | undefined;
 
-    constructor(trackGraph: TrackGraph) {
+    constructor(trackGraph: TrackGraph, options?: TrainPlacementEngineOptions) {
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(
             trackGraph
         );
+        this._onPlaced = options?.onPlaced;
         this._train = new Train(
             null,
-            [40, 10, 40],
+            [...DEFAULT_BOGIE_OFFSETS],
             trackGraph,
             this._jointDirectionManager
         );
@@ -239,7 +249,13 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         this._train.setPosition(previewPosition);
         this._train.clearPreviewPosition();
-        console.log('placed train');
+
+        if (this._onPlaced) {
+            const next = this._onPlaced(this._train);
+            if (next) {
+                this._train = next;
+            }
+        }
     }
 
     hoverForPlacement(position: Point) {
