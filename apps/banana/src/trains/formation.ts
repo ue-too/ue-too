@@ -107,8 +107,6 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 
 export class Train {
     private _position: TrainPosition | null;
-    private _carNumber: number;
-    private _offsets: number[] = [40, 10, 40, 10, 40];
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
     private _speed: number = 0;
@@ -128,19 +126,37 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
-    private _cars: Car[] = [new Car([40], 5, 5)];
+    private _cars: Car[] = [new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5)];
+
+    get carOffsets(): number[] {
+        const res: number[] = [];
+
+        for (let i = 0; i < this._cars.length; i++) {
+            const car = this._cars[i];
+            const edgeToBogie = car.edgeToBogie;
+            const bogieToEdge = car.bogieToEdge;
+            let previousBogieToEdge = 0;
+            if (i > 0) {
+                previousBogieToEdge = this._cars[i - 1].bogieToEdge;
+            }
+            res.push(previousBogieToEdge + edgeToBogie);
+            for (let j = 0; j < car.bogieOffsets.length; j++) {
+                res.push(car.bogieOffsets[j]);
+            }
+        }
+
+        res.shift();
+        return res;
+    }
 
     constructor(
-        carNumber: number,
         position: TrainPosition | null,
-        bogieOffsets: number[],
         trackGraph: TrackGraph,
         jointDirectionManager: JointDirectionManager
     ) {
-        this._carNumber = carNumber;
         this._position = position;
         this._trackGraph = trackGraph;
-        this._offsets = bogieOffsets;
+        // this._offsets = bogieOffsets;
         this._jointDirectionManager = jointDirectionManager;
     }
 
@@ -167,10 +183,10 @@ export class Train {
 
         let accuOffset = 0;
 
-        const testOffsets = this._cars.map(car => car.bogieOffsets);
+        const testOffsets = this.carOffsets
 
-        for (let index = 0; index < this._offsets.length; index++) {
-            accuOffset += this._offsets[index];
+        for (let index = 0; index < testOffsets.length; index++) {
+            accuOffset += testOffsets[index];
             const bogiePosition = !preview
                 ? getPosition(
                     accuOffset,
@@ -192,7 +208,7 @@ export class Train {
             }
             if (!preview) {
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     bogiePosition.passedJointNumbers.length > 0
                 ) {
                     const lastBogiePositionPassedJointNumbers =
@@ -219,7 +235,7 @@ export class Train {
                     }
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     this._occupiedJointNumbers.length == 0 &&
                     bogiePosition.passedJointNumbers.length > 0
                 ) {
@@ -228,7 +244,7 @@ export class Train {
                     ];
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     bogiePosition.enteringTrackSegments.length > 0
                 ) {
                     const lastBogiePositionEnteringTrackSegments =
@@ -258,7 +274,7 @@ export class Train {
                     }
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     this._occupiedTrackSegments.length == 0
                 ) {
                     this._occupiedTrackSegments = [
@@ -419,7 +435,10 @@ export class Train {
         }
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
-        this._offsets = this._offsets.reverse();
+        // this._offsets = this._offsets.reverse();
+        this._cars.forEach(car => {
+            car.switchDirection();
+        });
         // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
         this._occupiedJointNumbers = this._occupiedJointNumbers
             .reverse()

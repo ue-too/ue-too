@@ -145,9 +145,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         );
         this._onPlaced = options?.onPlaced;
         this._train = new Train(
-            1,
             null,
-            [...DEFAULT_BOGIE_OFFSETS],
             trackGraph,
             this._jointDirectionManager
         );
