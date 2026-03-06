@@ -5,19 +5,20 @@ import {
     JointDirectionManager,
     flipDirection,
 } from './input-state-machine/train-kmt-state-machine';
+import { Car } from './cars';
 
-export type Car = {
-    id: number;
-    position: {
-        trackNumber: number;
-        tVal: number;
-        extendPositionOnTrack: 'positive' | 'negative';
-    };
-    bogieOffsets: number[];
-};
+// export type Car = {
+//     id: number;
+//     position: {
+//         trackNumber: number;
+//         tVal: number;
+//         extendPositionOnTrack: 'positive' | 'negative';
+//     };
+//     bogieOffsets: number[];
+// };
 
 export interface Formation {
-    cars(): Car[];
+    // cars(): Car[];
 }
 
 export type TrainPosition = {
@@ -127,6 +128,8 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
+    private _cars: Car[] = [new Car([40], 5, 5)];
+
     constructor(
         carNumber: number,
         position: TrainPosition | null,
@@ -163,6 +166,8 @@ export class Train {
         const positions: TrainPosition[] = [position];
 
         let accuOffset = 0;
+
+        const testOffsets = this._cars.map(car => car.bogieOffsets);
 
         for (let index = 0; index < this._offsets.length; index++) {
             accuOffset += this._offsets[index];
