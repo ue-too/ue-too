@@ -1,6 +1,6 @@
 import { Point, approximately } from '@ue-too/curve';
 
-import { TrackGraph, SegmentSplitInfo } from './tracks/track';
+import { TrackGraph } from './tracks/track';
 import {
     JointDirectionManager,
     flipDirection,
@@ -106,10 +106,8 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 
 export class Train {
     private _position: TrainPosition | null;
-    private _expandDirection: 'same' | 'reverse' = 'reverse';
-    /** True when position is the tail (after switchDirection()); advance uses negated distance. */
-    private _positionIsTail: boolean = false;
-    private _offsets: number[] = [40];
+    private _carNumber: number;
+    private _offsets: number[] = [40, 10, 40, 10, 40];
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
     private _speed: number = 0;
@@ -117,15 +115,26 @@ export class Train {
     private _throttle: ThrottleSteps = 'N';
     private _previewPositions: TrainPosition[] | null = null;
     private _previewPositionCache: TrainPosition | null = null;
+    private _occupiedJointNumbers: {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[] = [];
+
+    private _occupiedTrackSegments: {
+        trackNumber: number;
+        inTrackDirection: 'tangent' | 'reverseTangent'; // the direction is to go from the start of the train to the end of the train
+    }[] = [];
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
     constructor(
+        carNumber: number,
         position: TrainPosition | null,
         bogieOffsets: number[],
         trackGraph: TrackGraph,
         jointDirectionManager: JointDirectionManager
     ) {
+        this._carNumber = carNumber;
         this._position = position;
         this._trackGraph = trackGraph;
         this._offsets = bogieOffsets;
@@ -149,79 +158,120 @@ export class Train {
         position: TrainPosition,
         preview: boolean = false
     ): TrainPosition[] | null {
-        const bogieDirection = this._expandDirection === 'same' ? position.direction : flipDirection(position.direction);
+        console.log('get bogie positions', position, preview);
+        const expandDirection = flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
         let accuOffset = 0;
 
-        // When expandDirection is 'same', expand from the tail (furthest bogie) so that
-        // end-of-track is detected at the tail and the same stopping mechanism works.
-        // We still return [head, ..., tail] so render order is unchanged.
-        if (this._expandDirection === 'same') {
-            const totalOffset = this._offsets.reduce((a, b) => a + b, 0);
-            const tailPos = getPosition(
-                totalOffset,
-                { ...position, direction: bogieDirection },
-                this._trackGraph,
-                this._jointDirectionManager
-            );
-            if (tailPos === null) {
-                return null;
-            }
-            // Allow tail at path start (stop at junction with no path segment ahead).
-            // Walk from tail back to head so we get all bogie positions in order tail → head.
-            const positionsTailToHead: TrainPosition[] = [tailPos];
-            let current: TrainPosition = { ...tailPos, direction: flipDirection(tailPos.direction) };
-            for (let i = this._offsets.length - 1; i >= 0; i--) {
-                const stepOffset = this._offsets[i];
-                const nextPos = getPosition(
-                    stepOffset,
-                    current,
+        for (let index = 0; index < this._offsets.length; index++) {
+            accuOffset += this._offsets[index];
+            const bogiePosition = !preview
+                ? getPosition(
+                    accuOffset,
+                    { ...position, direction: expandDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager,
+                    this._occupiedJointNumbers,
+                    this._occupiedTrackSegments
+                )
+                : getPosition(
+                    accuOffset,
+                    { ...position, direction: expandDirection },
                     this._trackGraph,
                     this._jointDirectionManager
                 );
-                if (nextPos === null || nextPos.stop) {
-                    return null;
-                }
-                positionsTailToHead.push(nextPos);
-                current = nextPos;
-            }
-            // Return [head, ..., tail] for consistent render order.
-            const result = positionsTailToHead.reverse();
-            // Head (first element) must match the train position so segment, tValue, and direction are correct.
-            if (result.length > 0) {
-                result[0] = { ...position, point: result[0].point };
-            }
-            return result;
-        }
-
-        for (let index = 0; index < this._offsets.length; index++) {
-            accuOffset += this._offsets[index];
-            const bogiePosition = getPosition(
-                accuOffset,
-                { ...position, direction: bogieDirection },
-                this._trackGraph,
-                this._jointDirectionManager
-            );
-            if (bogiePosition === null) {
+            if (bogiePosition === null || bogiePosition.stop) {
+                // console.warn('cannot put the whole train at the current position');
                 return null;
             }
-            positions.push(bogiePosition);
-            if (bogiePosition.stop) {
-                // Clamp remaining bogies at the end-of-track position.
-                for (let j = index + 1; j < this._offsets.length; j++) {
-                    positions.push(bogiePosition);
+            if (!preview) {
+                if (
+                    index === this._offsets.length - 1 &&
+                    bogiePosition.passedJointNumbers.length > 0
+                ) {
+                    const lastBogiePositionPassedJointNumbers =
+                        bogiePosition.passedJointNumbers;
+                    const lastJointNumber =
+                        lastBogiePositionPassedJointNumbers[0].jointNumber;
+                    let index = -1;
+                    for (
+                        let i = this._occupiedJointNumbers.length - 1;
+                        i >= 0;
+                        i--
+                    ) {
+                        if (
+                            this._occupiedJointNumbers[i].jointNumber ===
+                            lastJointNumber
+                        ) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    if (index !== -1) {
+                        this._occupiedJointNumbers =
+                            this._occupiedJointNumbers.slice(0, index + 1);
+                    }
                 }
-                break;
+                if (
+                    index === this._offsets.length - 1 &&
+                    this._occupiedJointNumbers.length == 0 &&
+                    bogiePosition.passedJointNumbers.length > 0
+                ) {
+                    this._occupiedJointNumbers = [
+                        ...bogiePosition.passedJointNumbers.reverse(),
+                    ];
+                }
+                if (
+                    index === this._offsets.length - 1 &&
+                    bogiePosition.enteringTrackSegments.length > 0
+                ) {
+                    const lastBogiePositionEnteringTrackSegments =
+                        bogiePosition.enteringTrackSegments;
+                    const lastOccupiedTrackSegment =
+                        lastBogiePositionEnteringTrackSegments[0].trackNumber;
+                    let trackIndex = -1;
+                    for (
+                        let i = this._occupiedTrackSegments.length - 1;
+                        i >= 0;
+                        i--
+                    ) {
+                        if (
+                            this._occupiedTrackSegments[i].trackNumber ===
+                            lastOccupiedTrackSegment
+                        ) {
+                            trackIndex = i;
+                            break;
+                        }
+                    }
+                    if (trackIndex !== -1) {
+                        this._occupiedTrackSegments =
+                            this._occupiedTrackSegments.slice(
+                                0,
+                                trackIndex + 1
+                            );
+                    }
+                }
+                if (
+                    index === this._offsets.length - 1 &&
+                    this._occupiedTrackSegments.length == 0
+                ) {
+                    this._occupiedTrackSegments = [
+                        ...bogiePosition.enteringTrackSegments.reverse(),
+                    ];
+                    this._occupiedTrackSegments.unshift({
+                        trackNumber: position.trackSegment,
+                        inTrackDirection: flipDirection(position.direction),
+                    });
+                }
             }
+            positions.push(bogiePosition);
         }
         return positions;
     }
 
     setPosition(position: TrainPosition) {
         this._position = position;
-        this._positionIsTail = false;
-        this._cachedBogiePositions = null;
     }
 
     getBogiePositions(preview: boolean = false): TrainPosition[] | null {
@@ -242,6 +292,20 @@ export class Train {
 
     get previewBogiePositions(): TrainPosition[] | null {
         return this._previewPositions;
+    }
+
+    get occupiedJointNumbers(): {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[] {
+        return this._occupiedJointNumbers;
+    }
+
+    get occupiedTrackSegments(): {
+        trackNumber: number;
+        inTrackDirection: 'tangent' | 'reverseTangent';
+    }[] {
+        return this._occupiedTrackSegments;
     }
 
     getPreviewBogiePositions(
@@ -285,10 +349,7 @@ export class Train {
             this._position.trackSegment
         );
         if (trackSegment === null) {
-            console.warn(
-                '[Train.update] track segment not found!',
-                { trackSegment: this._position.trackSegment, tValue: this._position.tValue }
-            );
+            console.warn('track segment where the train is on is not found');
             this._speed = 0;
             this._throttle = 'N';
             return;
@@ -307,10 +368,6 @@ export class Train {
         if (approximately(distanceToAdvance, 0, 0.01)) {
             return;
         }
-        // After switchDirection(), position is the tail (leading end); advance it in the opposite direction.
-        if (this._positionIsTail) {
-            distanceToAdvance = -distanceToAdvance;
-        }
         const nextPosition = getPosition(
             distanceToAdvance,
             this._position,
@@ -322,24 +379,29 @@ export class Train {
             this._throttle = 'N';
             return;
         }
-        // When expanding in same direction, the tail is the leading end; stop before it hits end-of-track.
-        if (this._expandDirection === 'same') {
-            const bogies = this._getBogiePositions(nextPosition, false);
-            if (bogies === null) {
-                this._speed = 0;
-                this._throttle = 'N';
-                return;
-            }
-            this._cachedBogiePositions = bogies;
-        }
+        const flipped = nextPosition.passedJointNumbers.map(joint => {
+            return {
+                jointNumber: joint.jointNumber,
+                direction: flipDirection(joint.direction),
+            };
+        });
+        this._occupiedJointNumbers = flipped.concat(this._occupiedJointNumbers);
+
+        const flippedEnteringTrackSegments =
+            nextPosition.enteringTrackSegments.map(track => {
+                return {
+                    trackNumber: track.trackNumber,
+                    inTrackDirection: flipDirection(track.inTrackDirection),
+                };
+            });
+
+        this._occupiedTrackSegments.unshift(...flippedEnteringTrackSegments);
 
         this._position = nextPosition;
-        if (this._expandDirection === 'reverse') {
-            this._cachedBogiePositions = this._getBogiePositions(
-                nextPosition,
-                false
-            );
-        }
+        this._cachedBogiePositions = this._getBogiePositions(
+            nextPosition,
+            false
+        );
     }
 
     switchDirection() {
@@ -352,85 +414,28 @@ export class Train {
         }
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
-        this._positionIsTail = !this._positionIsTail;
         this._offsets = this._offsets.reverse();
+        // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
+        this._occupiedJointNumbers = this._occupiedJointNumbers
+            .reverse()
+            .map(joint => {
+                return {
+                    ...joint,
+                    direction: flipDirection(joint.direction),
+                };
+            });
+        this._occupiedTrackSegments = this._occupiedTrackSegments
+            .reverse()
+            .map(track => {
+                return {
+                    ...track,
+                    inTrackDirection: flipDirection(track.inTrackDirection),
+                };
+            });
         this._cachedBogiePositions = this._getBogiePositions(
             this._position,
             false
         );
-    }
-
-    switchDirectionOnly() {
-        if (this._position == null) {
-            return;
-        }
-        this._position.direction = flipDirection(this._position.direction);
-        this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
-        this._cachedBogiePositions = null;
-        let bogiePositions = this._getBogiePositions(this._position, false);
-        // If any bogie (not the head) got clamped at a dead end (squished), fall back to the other expand mode.
-        const anyBogieStopped = bogiePositions !== null
-            && bogiePositions.slice(1).some(b => (b as AdvancedTrainPositionRes).stop === true);
-        if (anyBogieStopped) {
-            this._expandDirection = this._expandDirection === 'same' ? 'reverse' : 'same';
-            bogiePositions = this._getBogiePositions(this._position, false);
-        }
-        if (bogiePositions === null) {
-            return;
-        }
-        this._cachedBogiePositions = bogiePositions;
-    }
-
-    /**
-     * Remap the train's head position and invalidate cached body data when a
-     * track segment is split. The body (bogies) may span the split segment
-     * even when the head does not, so occupied data is always cleared.
-     */
-    remapOnSegmentSplit(info: SegmentSplitInfo): void {
-        const { oldSegmentNumber, splitT, firstNewSegment, secondNewSegment } = info;
-
-        if (this._position !== null && this._position.trackSegment === oldSegmentNumber) {
-            const origT = this._position.tValue;
-            if (this._position.tValue <= splitT) {
-                this._position.trackSegment = firstNewSegment;
-                this._position.tValue = splitT > 0
-                    ? this._position.tValue / splitT
-                    : 0;
-            } else {
-                this._position.trackSegment = secondNewSegment;
-                this._position.tValue = splitT < 1
-                    ? (this._position.tValue - splitT) / (1 - splitT)
-                    : 1;
-            }
-
-            const seg = this._trackGraph
-                .getTrackSegmentWithJoints(this._position.trackSegment);
-            if (seg === null) {
-                console.warn(
-                    '[remapOnSegmentSplit] new segment not found!',
-                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
-                );
-            }
-            this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
-
-            console.log(
-                '[remapOnSegmentSplit] remapped',
-                {
-                    oldSegmentNumber, splitT, origT,
-                    newSegment: this._position.trackSegment,
-                    newT: this._position.tValue,
-                    direction: this._position.direction,
-                    point: this._position.point
-                }
-            );
-        } else {
-            console.log(
-                '[remapOnSegmentSplit] position not on split segment',
-                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
-            );
-        }
-
-        this._cachedBogiePositions = null;
     }
 }
 
@@ -438,7 +443,15 @@ export function getPosition(
     distance: number,
     position: TrainPosition,
     trackGraph: TrackGraph,
-    jointDirectionManager: JointDirectionManager
+    jointDirectionManager: JointDirectionManager,
+    occupiedJoints?: {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+    }[],
+    occupiedTrackSegments?: {
+        trackNumber: number;
+        inTrackDirection: 'tangent' | 'reverseTangent';
+    }[]
 ): AdvancedTrainPositionRes | null {
     let distanceToAdvance = distance;
 
@@ -492,18 +505,13 @@ export function getPosition(
             : 'reverseTangent';
         const nextDirection = jointDirectionManager.getNextJoint(
             enteringJointNumber,
-            nextJointDirection
+            nextJointDirection,
+            occupiedJoints,
+            occupiedTrackSegments
         );
 
         if (nextDirection === null) {
-            console.warn(
-                '[getPosition] end of track at joint',
-                {
-                    enteringJointNumber, nextJointDirection,
-                    segment: xTrackSegment, direction: xDirection,
-                    remainLength: nextPosition.remainLength
-                }
-            );
+            // console.warn("end of the track");
 
             xTValue = xDirection === 'tangent' ? 1 : 0;
             return {

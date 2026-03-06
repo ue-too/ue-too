@@ -44,7 +44,15 @@ export function flipDirection(
 export interface JointDirectionManager {
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent'
+        direction: 'tangent' | 'reverseTangent',
+        occupiedJoints?: {
+            jointNumber: number;
+            direction: 'tangent' | 'reverseTangent';
+        }[],
+        occupiedTrackSegments?: {
+            trackNumber: number;
+            inTrackDirection: 'tangent' | 'reverseTangent';
+        }[]
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -137,6 +145,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         );
         this._onPlaced = options?.onPlaced;
         this._train = new Train(
+            1,
             null,
             [...DEFAULT_BOGIE_OFFSETS],
             trackGraph,

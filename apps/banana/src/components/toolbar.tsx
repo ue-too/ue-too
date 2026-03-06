@@ -7,15 +7,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBananaApp } from '@/contexts/pixi';
-import { ELEVATION } from '@/trains/tracks/types';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
+import { ELEVATION } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 
 type AppMode =
@@ -89,7 +84,9 @@ export function BananaToolbar() {
 
     useEffect(() => {
         if (!app) return;
-        return app.trainManager.subscribe(() => setTrainListVersion(v => v + 1));
+        return app.trainManager.subscribe(() =>
+            setTrainListVersion(v => v + 1)
+        );
     }, [app]);
 
     useEffect(() => {
@@ -363,16 +360,22 @@ export function BananaToolbar() {
         <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
             {/* Train list and controls */}
             <Card className="w-full max-w-md">
-                <CardHeader className="py-2 px-4">
+                <CardHeader className="px-4 py-2">
                     <CardTitle className="text-sm">Trains</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-2 py-0 px-4 pb-4">
+                <CardContent className="flex flex-col gap-2 px-4 py-0 pb-4">
                     <div className="flex flex-wrap items-center gap-1.5">
                         <Button
-                            variant={mode === 'train-placement' ? 'default' : 'outline'}
+                            variant={
+                                mode === 'train-placement'
+                                    ? 'default'
+                                    : 'outline'
+                            }
                             size="sm"
                             onClick={handleTrainPlacementToggle}
-                            disabled={mode !== 'idle' && mode !== 'train-placement'}
+                            disabled={
+                                mode !== 'idle' && mode !== 'train-placement'
+                            }
                         >
                             {mode === 'train-placement'
                                 ? 'End Placement'
@@ -397,7 +400,7 @@ export function BananaToolbar() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => selectedTrain?.switchDirectionOnly()}
+                            onClick={() => selectedTrain?.switchDirection()}
                             disabled={!selectedTrain}
                         >
                             Switch Dir
@@ -416,9 +419,15 @@ export function BananaToolbar() {
                             {placedTrains.map((entry, index) => (
                                 <Button
                                     key={entry.id}
-                                    variant={index === selectedIndex ? 'default' : 'outline'}
+                                    variant={
+                                        index === selectedIndex
+                                            ? 'default'
+                                            : 'outline'
+                                    }
                                     size="sm"
-                                    onClick={() => trainManager.setSelectedIndex(index)}
+                                    onClick={() =>
+                                        trainManager.setSelectedIndex(index)
+                                    }
                                 >
                                     Train {index + 1}
                                 </Button>
@@ -426,16 +435,22 @@ export function BananaToolbar() {
                         </div>
                     ) : (
                         <p className="text-muted-foreground text-xs">
-                            No trains. Use &quot;Place Train&quot; then click on track.
+                            No trains. Use &quot;Place Train&quot; then click on
+                            track.
                         </p>
                     )}
-                    <div className="flex flex-wrap items-center gap-1.5 border-t pt-2 mt-1">
-                        <span className="text-muted-foreground text-xs">Stress test:</span>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 border-t pt-2">
+                        <span className="text-muted-foreground text-xs">
+                            Stress test:
+                        </span>
                         <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => app.addStressTestTrains(10)}
-                            disabled={app.curveEngine.trackGraph.trackCurveManager.livingEntities.length === 0}
+                            disabled={
+                                app.curveEngine.trackGraph.trackCurveManager
+                                    .livingEntities.length === 0
+                            }
                         >
                             +10 trains
                         </Button>
@@ -443,7 +458,10 @@ export function BananaToolbar() {
                             variant="secondary"
                             size="sm"
                             onClick={() => app.addStressTestTrains(50)}
-                            disabled={app.curveEngine.trackGraph.trackCurveManager.livingEntities.length === 0}
+                            disabled={
+                                app.curveEngine.trackGraph.trackCurveManager
+                                    .livingEntities.length === 0
+                            }
                         >
                             +50 trains
                         </Button>
@@ -477,25 +495,36 @@ export function BananaToolbar() {
 
             {/* Procedural tracks (stress test) */}
             <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-muted-foreground text-xs">Procedural tracks:</span>
+                <span className="text-muted-foreground text-xs">
+                    Procedural tracks:
+                </span>
                 <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => app.generateProceduralTracks({ segmentCount: 20 })}
+                    onClick={() =>
+                        app.generateProceduralTracks({ segmentCount: 20 })
+                    }
                 >
                     20 segments
                 </Button>
                 <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => app.generateProceduralTracks({ segmentCount: 100 })}
+                    onClick={() =>
+                        app.generateProceduralTracks({ segmentCount: 100 })
+                    }
                 >
                     100 segments
                 </Button>
                 <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => app.generateProceduralTracks({ segmentCount: 100, gentleCurve: true })}
+                    onClick={() =>
+                        app.generateProceduralTracks({
+                            segmentCount: 100,
+                            gentleCurve: true,
+                        })
+                    }
                 >
                     100 curved
                 </Button>
