@@ -92,7 +92,7 @@ export const initApp = async (
   const trainPlacementEngine = new TrainPlacementEngine(trackGraph, {
     onPlaced: (placed) => {
       trainManager.addTrain(placed);
-      return new Train(null, [...DEFAULT_BOGIE_OFFSETS], trackGraph, jointDirectionManager);
+      return new Train(1, null, [...DEFAULT_BOGIE_OFFSETS], trackGraph, jointDirectionManager);
     },
   });
   const trainRenderSystem = new TrainRenderSystem(
@@ -139,6 +139,7 @@ export const initApp = async (
       point,
     };
     const train = new Train(
+      1,
       position,
       [...DEFAULT_BOGIE_OFFSETS],
       trackGraph,

@@ -1,6 +1,6 @@
 import { Point, approximately } from '@ue-too/curve';
 
-import { TrackGraph } from './tracks/track';
+import { SegmentSplitInfo, TrackGraph } from './tracks/track';
 import {
     JointDirectionManager,
     flipDirection,
@@ -436,6 +436,58 @@ export class Train {
             this._position,
             false
         );
+    }
+
+    /**
+     * Remap the train's head position and invalidate cached body data when a
+     * track segment is split. The body (bogies) may span the split segment
+     * even when the head does not, so occupied data is always cleared.
+     */
+    remapOnSegmentSplit(info: SegmentSplitInfo): void {
+        const { oldSegmentNumber, splitT, firstNewSegment, secondNewSegment } = info;
+
+        if (this._position !== null && this._position.trackSegment === oldSegmentNumber) {
+            const origT = this._position.tValue;
+            if (this._position.tValue <= splitT) {
+                this._position.trackSegment = firstNewSegment;
+                this._position.tValue = splitT > 0
+                    ? this._position.tValue / splitT
+                    : 0;
+            } else {
+                this._position.trackSegment = secondNewSegment;
+                this._position.tValue = splitT < 1
+                    ? (this._position.tValue - splitT) / (1 - splitT)
+                    : 1;
+            }
+
+            const seg = this._trackGraph
+                .getTrackSegmentWithJoints(this._position.trackSegment);
+            if (seg === null) {
+                console.warn(
+                    '[remapOnSegmentSplit] new segment not found!',
+                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
+                );
+            }
+            this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
+
+            console.log(
+                '[remapOnSegmentSplit] remapped',
+                {
+                    oldSegmentNumber, splitT, origT,
+                    newSegment: this._position.trackSegment,
+                    newT: this._position.tValue,
+                    direction: this._position.direction,
+                    point: this._position.point
+                }
+            );
+        } else {
+            console.log(
+                '[remapOnSegmentSplit] position not on split segment',
+                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
+            );
+        }
+
+        this._cachedBogiePositions = null;
     }
 }
 
