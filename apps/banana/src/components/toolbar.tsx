@@ -84,7 +84,7 @@ export function BananaToolbar() {
 
     useEffect(() => {
         if (!app) return;
-        return app.trainManager.subscribe(() =>
+        return app.trainManager.subscribeToChanges((id, type) =>
             setTrainListVersion(v => v + 1)
         );
     }, [app]);
