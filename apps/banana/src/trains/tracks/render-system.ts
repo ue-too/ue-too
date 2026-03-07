@@ -1,9 +1,10 @@
-import { Container, FillGradient, Graphics, MeshSimple, Texture } from 'pixi.js';
+import { Container, Graphics, MeshSimple, Texture } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
+import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
+import { LEVEL_HEIGHT } from './constants';
 import { shadows, clearShadowCache } from '@/utils';
 import { WorldRenderSystem, findElevationInterval, Z_INDEX_OFFSET_RAILS } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
@@ -19,6 +20,18 @@ const TRACK_TEXTURE_TILE_LEN = 0.6;
 
 /** Resolution of the procedural track segment texture (power-of-two for repeat wrap). */
 const TRACK_TEX_SIZE = 64;
+
+/** Dimensions of the shared 1D elevation gradient texture. */
+const ELEVATION_GRADIENT_WIDTH = 4;
+const ELEVATION_GRADIENT_HEIGHT = 128;
+
+/** Raw elevation range in world units (ELEVATION * LEVEL_HEIGHT). */
+const ELEVATION_RAW_MIN = ELEVATION_MIN * LEVEL_HEIGHT;
+const ELEVATION_RAW_MAX = ELEVATION_MAX * LEVEL_HEIGHT;
+
+/** Map a raw elevation value to a normalised [0, 1] coordinate into the gradient texture. */
+const normalizeElevation = (rawElevation: number): number =>
+    (rawElevation - ELEVATION_RAW_MIN) / (ELEVATION_RAW_MAX - ELEVATION_RAW_MIN);
 
 /** Renderer (or app) that provides texture generation for the texture-style track and train cars. */
 export type TrackTextureRenderer = {
@@ -60,6 +73,9 @@ export class TrackRenderSystem {
 
     /** Cached procedural track texture; created lazily when texture style is used. */
     private _trackTexture: Texture | null = null;
+
+    /** Shared 1D elevation gradient texture; created lazily. */
+    private _elevationGradientTexture: Texture | null = null;
 
     /**
      * Per-key shadow state retained for efficient sun-angle updates.
@@ -279,6 +295,10 @@ export class TrackRenderSystem {
             this._trackTexture.destroy(true);
             this._trackTexture = null;
         }
+        if (this._elevationGradientTexture !== null) {
+            this._elevationGradientTexture.destroy(true);
+            this._elevationGradientTexture = null;
+        }
     }
 
     private _onDelete(key: string) {
@@ -310,16 +330,21 @@ export class TrackRenderSystem {
         const uvs: number[] = [];
         let arcLen = 0;
 
+        const controlPoints = curve.getControlPoints();
+        const startPoint = controlPoints[0];
+        const endPoint = controlPoints[controlPoints.length - 1];
+
         for (let i = 0; i <= steps; i++) {
             const t = i / steps;
-            const point = curve.getPointbyPercentage(t);
+            const point = i === 0 ? startPoint : i === steps ? endPoint : curve.getPointbyPercentage(t);
             const derivative = curve.derivativeByPercentage(t);
             const tangent = PointCal.unitVector(derivative);
             const nx = -tangent.y;
             const ny = tangent.x;
 
             if (i > 0) {
-                const prev = curve.getPointbyPercentage((i - 1) / steps);
+                const prevT = (i - 1) / steps;
+                const prev = i === 1 ? startPoint : curve.getPointbyPercentage(prevT);
                 const dx = point.x - prev.x;
                 const dy = point.y - prev.y;
                 arcLen += Math.sqrt(dx * dx + dy * dy);
@@ -394,6 +419,78 @@ export class TrackRenderSystem {
         return this._trackTexture;
     }
 
+    /** Create or return the shared 1D elevation gradient texture. */
+    private _getOrCreateElevationGradientTexture(): Texture | null {
+        if (this._elevationGradientTexture !== null) return this._elevationGradientTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const g = new Graphics();
+        for (let y = 0; y < ELEVATION_GRADIENT_HEIGHT; y++) {
+            const normalizedV = y / (ELEVATION_GRADIENT_HEIGHT - 1);
+            const rawElevation = ELEVATION_RAW_MIN + normalizedV * (ELEVATION_RAW_MAX - ELEVATION_RAW_MIN);
+            const rgb = findElevationColorStop(rawElevation);
+            const color = rgbToHex(rgb);
+            g.rect(0, y, ELEVATION_GRADIENT_WIDTH, 1);
+            g.fill(color);
+        }
+
+        this._elevationGradientTexture = renderer.generateTexture({ target: g });
+        return this._elevationGradientTexture;
+    }
+
+    /**
+     * Build a mesh strip along the curve colored by the elevation gradient.
+     * Uses a single shared gradient texture with UV V coordinates mapping
+     * from normalised(elevation.from) to normalised(elevation.to).
+     */
+    private _buildElevationMeshForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
+        const texture = this._getOrCreateElevationGradientTexture();
+        if (texture === null) return null;
+
+        const { curve, gauge, elevation } = drawData;
+        const hw = gauge / 2;
+        const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
+        const verts: number[] = [];
+        const uvs: number[] = [];
+
+        const vFrom = normalizeElevation(elevation.from);
+        const vTo = normalizeElevation(elevation.to);
+
+        const controlPoints = curve.getControlPoints();
+        const startPoint = controlPoints[0];
+        const endPoint = controlPoints[controlPoints.length - 1];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = i === 0 ? startPoint : i === steps ? endPoint : curve.getPointbyPercentage(t);
+            const derivative = curve.derivativeByPercentage(t);
+            const tangent = PointCal.unitVector(derivative);
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            const v = vFrom + (vTo - vFrom) * t;
+
+            verts.push(point.x - nx * hw, point.y - ny * hw);
+            uvs.push(0.5, v);
+            verts.push(point.x + nx * hw, point.y + ny * hw);
+            uvs.push(0.5, v);
+        }
+
+        const indices: number[] = [];
+        for (let i = 0; i < steps; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        return new MeshSimple({
+            texture,
+            vertices: new Float32Array(verts),
+            uvs: new Float32Array(uvs),
+            indices: new Uint32Array(indices),
+        });
+    }
+
     private _onRemoveTrackSegment(curveNumber: number) {
         const segmentsContainer = this._offsetGraphicsMap.get(curveNumber);
         if (segmentsContainer !== undefined) {
@@ -461,14 +558,9 @@ export class TrackRenderSystem {
             const segmentsContainer = new Container();
 
             const elevationNode = new Container();
-            const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
-            for (let i = 0; i < segments.length - 1; i++) {
-                const graphics = new Graphics();
-                graphics.moveTo(segments[i].point.x, segments[i].point.y);
-                graphics.lineTo(segments[i + 1].point.x, segments[i + 1].point.y);
-                const gradient = strokeGradientForElevation(segments[i].point, segments[i + 1].point, segments[i].elevation, segments[i + 1].elevation);
-                graphics.stroke({ fill: gradient, width: drawData.gauge });
-                elevationNode.addChild(graphics);
+            const elevationMesh = this._buildElevationMeshForDrawData(drawData);
+            if (elevationMesh !== null) {
+                elevationNode.addChild(elevationMesh);
             }
             segmentsContainer.addChild(elevationNode);
 
@@ -714,29 +806,6 @@ const cutBezierCurveIntoEqualSegments = (curve: BCurve, segmentElevation: { from
     }
     return segments;
 }
-
-/**
- * Creates a linear gradient for a stroke from path start to end, colored by elevation.
- * Uses PixiJS global texture space so the gradient runs along the path.
- */
-const strokeGradientForElevation = (
-    start: Point,
-    end: Point,
-    elevationFrom: ELEVATION,
-    elevationTo: ELEVATION
-): FillGradient => {
-    return new FillGradient({
-        type: 'linear',
-        start: { x: start.x, y: start.y },
-        end: { x: end.x, y: end.y },
-        colorStops: [
-            { offset: 0, color: rgbToHex(findElevationColorStop(elevationFrom)) },
-            { offset: 1, color: rgbToHex(findElevationColorStop(elevationTo)) },
-        ],
-        textureSpace: 'global',
-    });
-};
-
 
 /** RGB components 0–255 for interpolation. */
 export type Rgb = { r: number; g: number; b: number };
