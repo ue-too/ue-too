@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { Train, TrainPosition } from './formation';
 import { TrackGraph } from './tracks/track';
 import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-system';
@@ -18,6 +18,8 @@ const BOGIE_OFFSET_FROM_FRONT = 4;
 /** Resolution of the procedural car body texture (power-of-two for crisp scaling). */
 const CAR_TEX_WIDTH = 64;
 const CAR_TEX_HEIGHT = 32;
+/** Half the texture width — each half-car sprite maps to one half of the texture. */
+const CAR_HALF_TEX_WIDTH = CAR_TEX_WIDTH / 2;
 
 const BOGIE_COLORS: number[] = [
   0xFF0000,
@@ -78,6 +80,49 @@ function getCarGeometries(positions: TrainPosition[]): CarGeometry[] {
 }
 
 /**
+ * Half-car geometry: each car is split into two halves so that each half can
+ * be rendered at the z-index of its associated bogie. This reduces visual
+ * tearing when two bogies of the same car sit on track draw data with
+ * different elevations.
+ */
+type CarHalfGeometry = {
+  x: number;
+  y: number;
+  angle: number;
+  length: number;
+  /** Index into the bogie positions array for z-index resolution. */
+  bogiePositionIndex: number;
+};
+
+/**
+ * Split each car into two halves at the midpoint. Car k produces halves at
+ * indices 2k (rear, associated with bogie 2k) and 2k+1 (front, associated
+ * with bogie 2k+1).
+ */
+function getCarHalfGeometries(positions: TrainPosition[]): CarHalfGeometry[] {
+  const out: CarHalfGeometry[] = [];
+  for (let k = 0; 2 * k + 1 < positions.length; k++) {
+    const b0 = positions[2 * k].point;
+    const b1 = positions[2 * k + 1].point;
+    const dx = b1.x - b0.x;
+    const dy = b1.y - b0.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+    const fullLength = distance + BOGIE_OFFSET_FROM_REAR + BOGIE_OFFSET_FROM_FRONT;
+    const halfLength = fullLength / 2;
+
+    const rearX = b0.x - Math.cos(angle) * BOGIE_OFFSET_FROM_REAR;
+    const rearY = b0.y - Math.sin(angle) * BOGIE_OFFSET_FROM_REAR;
+    const midX = rearX + Math.cos(angle) * halfLength;
+    const midY = rearY + Math.sin(angle) * halfLength;
+
+    out.push({ x: rearX, y: rearY, angle, length: halfLength, bogiePositionIndex: 2 * k });
+    out.push({ x: midX, y: midY, angle, length: halfLength, bogiePositionIndex: 2 * k + 1 });
+  }
+  return out;
+}
+
+/**
  * Renders train bogie positions using PixiJS Graphics.
  *
  * Manages multiple placed trains plus a single preview train (during placement).
@@ -113,6 +158,10 @@ export class TrainRenderSystem {
 
   /** Cached procedural car body texture; created lazily when texture renderer is available. */
   private _carTexture: Texture | null = null;
+  /** Rear-half sub-texture (left half of the car texture). */
+  private _carTextureRear: Texture | null = null;
+  /** Front-half sub-texture (right half of the car texture). */
+  private _carTextureFront: Texture | null = null;
 
   constructor(
     worldRenderSystem: WorldRenderSystem,
@@ -239,7 +288,7 @@ export class TrainRenderSystem {
   }
 
   private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
-    if (this._getOrCreateCarTexture() === null) return;
+    if (this._getOrCreateCarHalfTextures() === null) return;
 
     for (const { id, train } of placed) {
       const positions = train.getBogiePositions();
@@ -247,24 +296,21 @@ export class TrainRenderSystem {
         this._hideActualCarsForTrain(id);
         continue;
       }
-      const geometries = getCarGeometries(positions);
-      this._syncActualCarPoolForTrain(id, geometries.length);
+      const halves = getCarHalfGeometries(positions);
+      this._syncActualCarPoolForTrain(id, halves.length);
       const pool = this._actualCarPools.get(id)!;
-      const headZIndex = this._resolveZIndex(positions[0]);
 
-      for (let i = 0; i < geometries.length; i++) {
+      for (let i = 0; i < halves.length; i++) {
         const sprite = pool[i];
-        const g = geometries[i];
-        sprite.position.set(g.x, g.y);
-        sprite.rotation = g.angle;
-        sprite.scale.set(g.length / CAR_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
+        const h = halves[i];
+        sprite.position.set(h.x, h.y);
+        sprite.rotation = h.angle;
+        sprite.scale.set(h.length / CAR_HALF_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
         sprite.visible = true;
 
-        const firstBogieOfCar = positions[2 * i];
-        const bogieZ = this._resolveZIndex(firstBogieOfCar);
-        const carZIndex = bogieZ !== null ? bogieZ - 1 : headZIndex !== null ? headZIndex - 1 : undefined;
-        if (carZIndex !== undefined) {
-          this._worldRenderSystem.setDrawableZIndex(carKey(id, i), carZIndex);
+        const bogieZ = this._resolveZIndex(positions[h.bogiePositionIndex]);
+        if (bogieZ !== null) {
+          this._worldRenderSystem.setDrawableZIndex(carKey(id, i), bogieZ - 1);
         }
       }
     }
@@ -317,6 +363,25 @@ export class TrainRenderSystem {
     return this._carTexture;
   }
 
+  private _getOrCreateCarHalfTextures(): { rear: Texture; front: Texture } | null {
+    if (this._carTextureRear !== null && this._carTextureFront !== null) {
+      return { rear: this._carTextureRear, front: this._carTextureFront };
+    }
+    const base = this._getOrCreateCarTexture();
+    if (base === null) return null;
+
+    const frame = base.frame;
+    this._carTextureRear = new Texture({
+      source: base.source,
+      frame: new Rectangle(frame.x, frame.y, frame.width / 2, frame.height),
+    });
+    this._carTextureFront = new Texture({
+      source: base.source,
+      frame: new Rectangle(frame.x + frame.width / 2, frame.y, frame.width / 2, frame.height),
+    });
+    return { rear: this._carTextureRear, front: this._carTextureFront };
+  }
+
   private _hideActualCarsForTrain(trainId: number): void {
     const pool = this._actualCarPools.get(trainId);
     const count = this._activeCarCounts.get(trainId) ?? 0;
@@ -328,8 +393,8 @@ export class TrainRenderSystem {
   }
 
   private _syncActualCarPoolForTrain(trainId: number, count: number): void {
-    const texture = this._getOrCreateCarTexture();
-    if (texture === null) return;
+    const textures = this._getOrCreateCarHalfTextures();
+    if (textures === null) return;
 
     let pool = this._actualCarPools.get(trainId);
     if (!pool) {
@@ -340,6 +405,7 @@ export class TrainRenderSystem {
 
     while (pool.length < count) {
       const idx = pool.length;
+      const texture = idx % 2 === 0 ? textures.rear : textures.front;
       const sprite = createCarSprite(texture);
       pool.push(sprite);
       this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite);
