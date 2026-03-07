@@ -342,7 +342,7 @@ export class TrainRenderSystem {
       const idx = pool.length;
       const sprite = createCarSprite(texture);
       pool.push(sprite);
-      this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite, { layer: 'above' });
+      this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite);
     }
 
     for (let i = count; i < currentActive; i++) {
@@ -409,7 +409,7 @@ export class TrainRenderSystem {
       const color = BOGIE_COLORS[idx % BOGIE_COLORS.length];
       const g = createBogieGraphics(color);
       pool.push(g);
-      this._worldRenderSystem.addDrawable(bogieKey(trainId, idx), g, { layer: 'above' });
+      this._worldRenderSystem.addDrawable(bogieKey(trainId, idx), g);
     }
 
     for (let i = count; i < currentActive; i++) {
