@@ -1,4 +1,4 @@
-import { Container, Graphics } from 'pixi.js';
+import { Container } from 'pixi.js';
 import { ELEVATION, ELEVATION_VALUES } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 
@@ -73,7 +73,7 @@ export class WorldRenderSystem {
     private _drawDataAbove: Container;
     private _drawableMap: Map<string, Container> = new Map();
     private _drawableLayer: Map<string, DrawableLayer> = new Map();
-    private _shadowMap: Map<string, { graphics: Graphics; elevation: ELEVATION }> = new Map();
+    private _shadowMap: Map<string, { container: Container; elevation: ELEVATION }> = new Map();
     private _shadowContainerMap: Map<ELEVATION, Container> = new Map();
 
     /** Number of track drawables registered in each elevation band (updated by sub-renderers after reindexing). */
@@ -175,19 +175,19 @@ export class WorldRenderSystem {
      * For buildings: use one level above the base elevation (shadow falls on
      * the ground next to the building, below elevated objects).
      */
-    addShadow(key: string, graphics: Graphics, elevation: ELEVATION): void {
+    addShadow(key: string, container: Container, elevation: ELEVATION): void {
         const shadowContainer = this._shadowContainerMap.get(elevation);
         if (shadowContainer !== undefined) {
-            shadowContainer.addChild(graphics);
+            shadowContainer.addChild(container);
         }
-        this._shadowMap.set(key, { graphics, elevation });
+        this._shadowMap.set(key, { container, elevation });
     }
 
     removeShadow(key: string): void {
         const shadow = this._shadowMap.get(key);
         if (shadow !== undefined) {
-            this._shadowContainerMap.get(shadow.elevation)?.removeChild(shadow.graphics);
-            shadow.graphics.destroy({ children: true });
+            this._shadowContainerMap.get(shadow.elevation)?.removeChild(shadow.container);
+            shadow.container.destroy({ children: true });
             this._shadowMap.delete(key);
         }
     }
@@ -251,9 +251,9 @@ export class WorldRenderSystem {
     }
 
     cleanup(): void {
-        this._shadowMap.forEach(({ graphics, elevation }) => {
-            this._shadowContainerMap.get(elevation)?.removeChild(graphics);
-            graphics.destroy({ children: true });
+        this._shadowMap.forEach(({ container, elevation }) => {
+            this._shadowContainerMap.get(elevation)?.removeChild(container);
+            container.destroy({ children: true });
         });
         this._shadowMap.clear();
 

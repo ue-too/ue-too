@@ -5,7 +5,7 @@ import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
 import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
 import { LEVEL_HEIGHT } from './constants';
-import { shadows, clearShadowCache } from '@/utils';
+import { clearShadowCache } from '@/utils';
 import { WorldRenderSystem, findElevationInterval, Z_INDEX_OFFSET_RAILS } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
 
@@ -32,6 +32,12 @@ const ELEVATION_RAW_MAX = ELEVATION_MAX * LEVEL_HEIGHT;
 /** Map a raw elevation value to a normalised [0, 1] coordinate into the gradient texture. */
 const normalizeElevation = (rawElevation: number): number =>
     (rawElevation - ELEVATION_RAW_MIN) / (ELEVATION_RAW_MAX - ELEVATION_RAW_MIN);
+
+/** Size of the tiny solid-black texture used for shadow meshes. */
+const SHADOW_TEX_SIZE = 4;
+
+/** Half the standard track gauge used for shadow edge offsets. */
+const SHADOW_TRACK_HALF_WIDTH = 1.067 / 2;
 
 /** Renderer (or app) that provides texture generation for the texture-style track and train cars. */
 export type TrackTextureRenderer = {
@@ -76,6 +82,9 @@ export class TrackRenderSystem {
 
     /** Shared 1D elevation gradient texture; created lazily. */
     private _elevationGradientTexture: Texture | null = null;
+
+    /** Tiny solid-black texture for shadow meshes; created lazily. */
+    private _shadowTexture: Texture | null = null;
 
     /**
      * Per-key shadow state retained for efficient sun-angle updates.
@@ -197,7 +206,7 @@ export class TrackRenderSystem {
         }
 
         for (const [, record] of this._shadowRecords) {
-            record.graphics.visible = useDetailed;
+            record.mesh.visible = useDetailed;
         }
     }
 
@@ -210,19 +219,29 @@ export class TrackRenderSystem {
      */
     private _rebuildAllShadows(): void {
         const sunAngleRad = (this._sunAngle * Math.PI) / 180;
+        const cosA = Math.cos(sunAngleRad);
+        const sinA = Math.sin(sunAngleRad);
 
         for (const [, record] of this._shadowRecords) {
             if (record.constantElevation) {
-                record.graphics.position.set(
-                    Math.cos(sunAngleRad) * record.shadowLength,
-                    Math.sin(sunAngleRad) * record.shadowLength,
+                record.mesh.position.set(
+                    cosA * record.shadowLength,
+                    sinA * record.shadowLength,
                 );
-            } else {
-                record.graphics.clear();
-                const shadowPoints = shadows(record.drawData, this._sunAngle, this._baseShadowLength);
-                if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
-                    drawShadowPolygon(record.graphics, shadowPoints);
+            } else if (record.baseVerts && record.elevationFactors) {
+                const verts = record.mesh.vertices as Float32Array;
+                const base = record.baseVerts;
+                const factors = record.elevationFactors;
+                for (let i = 0; i < factors.length; i++) {
+                    const offsetX = cosA * factors[i];
+                    const offsetY = sinA * factors[i];
+                    const bi = i * 4;
+                    verts[bi] = base[bi] + offsetX;
+                    verts[bi + 1] = base[bi + 1] + offsetY;
+                    verts[bi + 2] = base[bi + 2] + offsetX;
+                    verts[bi + 3] = base[bi + 3] + offsetY;
                 }
+                record.mesh.vertices = verts;
             }
         }
     }
@@ -298,6 +317,10 @@ export class TrackRenderSystem {
         if (this._elevationGradientTexture !== null) {
             this._elevationGradientTexture.destroy(true);
             this._elevationGradientTexture = null;
+        }
+        if (this._shadowTexture !== null) {
+            this._shadowTexture.destroy(true);
+            this._shadowTexture = null;
         }
     }
 
@@ -439,6 +462,103 @@ export class TrackRenderSystem {
         return this._elevationGradientTexture;
     }
 
+    /** Create or return the shared solid-black texture for shadow meshes. */
+    private _getOrCreateShadowTexture(): Texture | null {
+        if (this._shadowTexture !== null) return this._shadowTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const g = new Graphics();
+        g.rect(0, 0, SHADOW_TEX_SIZE, SHADOW_TEX_SIZE);
+        g.fill(0x000000);
+
+        this._shadowTexture = renderer.generateTexture({ target: g });
+        return this._shadowTexture;
+    }
+
+    /**
+     * Build a shadow mesh strip along a curve.
+     *
+     * @param curve - The bezier curve to trace
+     * @param elevation - Elevation range for shadow offset calculation
+     * @param sunAngle - Sun angle in degrees
+     * @param baseShadowLength - Base shadow length multiplier
+     * @returns The mesh plus auxiliary data for efficient sun-angle updates,
+     *          or null if the texture renderer is unavailable
+     */
+    private _buildShadowMesh(
+        curve: BCurve,
+        elevation: { from: number; to: number },
+        sunAngle: number,
+        baseShadowLength: number,
+    ): { mesh: MeshSimple; baseVerts: Float32Array; elevationFactors: Float32Array } | null {
+        const texture = this._getOrCreateShadowTexture();
+        if (texture === null) return null;
+
+        const steps = 10;
+        const sunAngleRad = (sunAngle * Math.PI) / 180;
+        const cosA = Math.cos(sunAngleRad);
+        const sinA = Math.sin(sunAngleRad);
+
+        const controlPoints = curve.getControlPoints();
+        const startPoint = controlPoints[0];
+        const endPoint = controlPoints[controlPoints.length - 1];
+
+        const vertCount = (steps + 1) * 2;
+        const baseVerts = new Float32Array(vertCount * 2);
+        const elevationFactors = new Float32Array(steps + 1);
+        const verts = new Float32Array(vertCount * 2);
+        const uvs = new Float32Array(vertCount * 2);
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = i === 0 ? startPoint : i === steps ? endPoint : curve.getPointbyPercentage(t);
+            const tangent = PointCal.unitVector(curve.derivativeByPercentage(t));
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            const elevationAtT = elevation.from + (elevation.to - elevation.from) * t;
+            const shadowLen = elevationAtT > 0 ? baseShadowLength * (elevationAtT / 100) : 0;
+            const offsetX = cosA * shadowLen;
+            const offsetY = sinA * shadowLen;
+
+            const bi = i * 4;
+            // Left edge base (no sun offset)
+            baseVerts[bi] = point.x + nx * SHADOW_TRACK_HALF_WIDTH;
+            baseVerts[bi + 1] = point.y + ny * SHADOW_TRACK_HALF_WIDTH;
+            // Right edge base
+            baseVerts[bi + 2] = point.x - nx * SHADOW_TRACK_HALF_WIDTH;
+            baseVerts[bi + 3] = point.y - ny * SHADOW_TRACK_HALF_WIDTH;
+
+            elevationFactors[i] = shadowLen;
+
+            // Apply sun offset
+            verts[bi] = baseVerts[bi] + offsetX;
+            verts[bi + 1] = baseVerts[bi + 1] + offsetY;
+            verts[bi + 2] = baseVerts[bi + 2] + offsetX;
+            verts[bi + 3] = baseVerts[bi + 3] + offsetY;
+
+            const ui = i * 4;
+            uvs[ui] = 0; uvs[ui + 1] = 0;
+            uvs[ui + 2] = 1; uvs[ui + 3] = 0;
+        }
+
+        const indices: number[] = [];
+        for (let i = 0; i < steps; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        const mesh = new MeshSimple({
+            texture,
+            vertices: verts,
+            uvs,
+            indices: new Uint32Array(indices),
+        });
+
+        return { mesh, baseVerts, elevationFactors };
+    }
+
     /**
      * Build a mesh strip along the curve colored by the elevation gradient.
      * Uses a single shared gradient texture with UV V coordinates mapping
@@ -575,46 +695,48 @@ export class TrackRenderSystem {
 
             this._detailedStyleNodes.set(key, { elevationNode, textureNode });
 
-            const shadowGraphics = new Graphics();
             const isConstant = drawData.elevation.from === drawData.elevation.to;
             const hasPositiveElevation =
                 drawData.elevation.from > 0 || drawData.elevation.to > 0;
 
-            if (isConstant && hasPositiveElevation) {
-                const edgePoints = computeShadowEdgePolygon(drawData);
-                drawShadowPolygon(shadowGraphics, edgePoints);
+            const shadowResult = this._buildShadowMesh(
+                drawData.curve, drawData.elevation, this._sunAngle, this._baseShadowLength,
+            );
 
-                const shadowLen = this._baseShadowLength * (drawData.elevation.from / 100);
-                const sunAngleRad = (this._sunAngle * Math.PI) / 180;
-                shadowGraphics.position.set(
-                    Math.cos(sunAngleRad) * shadowLen,
-                    Math.sin(sunAngleRad) * shadowLen,
-                );
+            if (shadowResult !== null) {
+                const { mesh: shadowMesh, baseVerts, elevationFactors } = shadowResult;
 
-                this._shadowRecords.set(key, {
-                    drawData,
-                    graphics: shadowGraphics,
-                    constantElevation: true,
-                    shadowLength: shadowLen,
-                });
-            } else {
-                const shadowPoints = shadows(drawData, this._sunAngle, this._baseShadowLength);
-                if (shadowPoints.positive.length > 0 && shadowPoints.negative.length > 0) {
-                    drawShadowPolygon(shadowGraphics, shadowPoints);
+                if (isConstant && hasPositiveElevation) {
+                    const shadowLen = this._baseShadowLength * (drawData.elevation.from / 100);
+                    // Use base vertices (no baked sun offset); position handles the offset
+                    shadowMesh.vertices = new Float32Array(baseVerts);
+                    const sunAngleRad = (this._sunAngle * Math.PI) / 180;
+                    shadowMesh.position.set(
+                        Math.cos(sunAngleRad) * shadowLen,
+                        Math.sin(sunAngleRad) * shadowLen,
+                    );
+                    this._shadowRecords.set(key, {
+                        drawData,
+                        mesh: shadowMesh,
+                        constantElevation: true,
+                        shadowLength: shadowLen,
+                    });
+                } else {
+                    this._shadowRecords.set(key, {
+                        drawData,
+                        mesh: shadowMesh,
+                        constantElevation: false,
+                        shadowLength: 0,
+                        baseVerts,
+                        elevationFactors,
+                    });
                 }
 
-                this._shadowRecords.set(key, {
-                    drawData,
-                    graphics: shadowGraphics,
-                    constantElevation: false,
-                    shadowLength: 0,
-                });
+                const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
+                    Math.max(drawData.elevation.from, drawData.elevation.to)
+                );
+                this._worldRenderSystem.addShadow(key, shadowMesh, shadowElevation);
             }
-
-            const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
-                Math.max(drawData.elevation.from, drawData.elevation.to)
-            );
-            this._worldRenderSystem.addShadow(key, shadowGraphics, shadowElevation);
 
             this._drawableKeys.add(key);
             this._worldRenderSystem.addDrawable(key, segmentsContainer);
@@ -636,16 +758,34 @@ export class TrackRenderSystem {
         const orderInElevation = new Map<number, number>();
         this._drawDataBandMap.clear();
 
+        // Group draw data by elevation band, then sort within each band
+        // by minimum elevation so ramps draw below constant-elevation tracks.
+        const bandGroups = new Map<number, { drawData: TrackSegmentDrawData; key: string; minElevation: number }[]>();
+
         drawDataOrder.forEach((drawData) => {
             const rawElevation = Math.max(drawData.elevation.from, drawData.elevation.to);
             const bandIndex = this._worldRenderSystem.getElevationBandIndex(rawElevation);
-            const n = orderInElevation.get(bandIndex) ?? 0;
-            orderInElevation.set(bandIndex, n + 1);
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
-            const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, n);
-            this._worldRenderSystem.setDrawableZIndex(key, zIndex);
-            this._drawDataBandMap.set(key, bandIndex);
+            const minElevation = Math.min(drawData.elevation.from, drawData.elevation.to);
+
+            let group = bandGroups.get(bandIndex);
+            if (!group) {
+                group = [];
+                bandGroups.set(bandIndex, group);
+            }
+            group.push({ drawData, key, minElevation });
         });
+
+        for (const [bandIndex, group] of bandGroups) {
+            group.sort((a, b) => a.minElevation - b.minElevation);
+            for (let n = 0; n < group.length; n++) {
+                const { key } = group[n];
+                const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, n);
+                this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+                this._drawDataBandMap.set(key, bandIndex);
+            }
+            orderInElevation.set(bandIndex, group.length);
+        }
 
         orderInElevation.forEach((count, bandIndex) => {
             this._worldRenderSystem.setBandTrackCount(bandIndex, count);
@@ -728,69 +868,19 @@ export class TrackRenderSystem {
 
 type ShadowRecord = {
     drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] };
-    graphics: Graphics;
+    mesh: MeshSimple;
     /** True when from === to and elevation > 0 — position-only update is sufficient. */
     constantElevation: boolean;
     /** For constant-elevation entries, the pre-computed shadow length used with the position offset. */
     shadowLength: number;
-};
-
-/**
- * Draw a closed shadow polygon from positive and negative edge arrays.
- * Traces the positive edge forward, then the negative edge in reverse.
- */
-const drawShadowPolygon = (
-    graphics: Graphics,
-    points: { positive: Point[]; negative: Point[] },
-): void => {
-    graphics.moveTo(points.positive[0].x, points.positive[0].y);
-    for (let i = 1; i < points.positive.length; i++) {
-        graphics.lineTo(points.positive[i].x, points.positive[i].y);
-    }
-    graphics.lineTo(
-        points.negative[points.negative.length - 1].x,
-        points.negative[points.negative.length - 1].y,
-    );
-    for (let i = points.negative.length - 2; i >= 0; i--) {
-        graphics.lineTo(points.negative[i].x, points.negative[i].y);
-    }
-    graphics.closePath();
-    graphics.fill({ color: 0x000000 });
-};
-
-/**
- * Compute the shadow edge polygon (track edges offset by half the standard
- * gauge) **without** any sun-angle translation. The caller applies the
- * sun offset via `graphics.position`, so the polygon shape is reusable
- * across angle changes.
- */
-const computeShadowEdgePolygon = (
-    trackSegment: TrackSegmentDrawData,
-    steps: number = 10,
-): { positive: Point[]; negative: Point[] } => {
-    const trackHalfWidth = 1.067 / 2;
-    const positive: Point[] = [];
-    const negative: Point[] = [];
-
-    for (let i = 0; i <= steps; i++) {
-        const t = i / steps;
-        const point = trackSegment.curve.getPointbyPercentage(t);
-        const tangent = PointCal.unitVector(
-            trackSegment.curve.derivativeByPercentage(t),
-        );
-        const ortho: Point = { x: -tangent.y, y: tangent.x };
-
-        positive.push({
-            x: point.x + ortho.x * trackHalfWidth,
-            y: point.y + ortho.y * trackHalfWidth,
-        });
-        negative.push({
-            x: point.x - ortho.x * trackHalfWidth,
-            y: point.y - ortho.y * trackHalfWidth,
-        });
-    }
-
-    return { positive, negative };
+    /**
+     * For varying-elevation shadows: base vertex positions (curve ± ortho * hw,
+     * no sun offset) stored flat [x0,y0, x1,y1, …] so sun-angle updates can
+     * recompute vertices without re-evaluating the curve.
+     */
+    baseVerts?: Float32Array;
+    /** Per-vertex-pair elevation factor (shadowLength / baseShadowLength) for sun-angle updates. */
+    elevationFactors?: Float32Array;
 };
 
 const cutBezierCurveIntoEqualSegments = (curve: BCurve, segmentElevation: { from: number, to: number }, length: number) => {
