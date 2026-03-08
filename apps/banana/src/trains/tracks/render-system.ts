@@ -699,9 +699,11 @@ export class TrackRenderSystem {
             const hasPositiveElevation =
                 drawData.elevation.from > 0 || drawData.elevation.to > 0;
 
-            const shadowResult = this._buildShadowMesh(
-                drawData.curve, drawData.elevation, this._sunAngle, this._baseShadowLength,
-            );
+            const shadowResult = hasPositiveElevation
+                ? this._buildShadowMesh(
+                    drawData.curve, drawData.elevation, this._sunAngle, this._baseShadowLength,
+                )
+                : null;
 
             if (shadowResult !== null) {
                 const { mesh: shadowMesh, baseVerts, elevationFactors } = shadowResult;

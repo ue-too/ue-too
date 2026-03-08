@@ -11,7 +11,7 @@ import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
 
-import { PreviewCurveCalculator } from '../tracks/new-joint';
+import { PreviewCurveCalculator, TENSION_STEP } from '../tracks/new-joint';
 import {
     ELEVATION,
     FlatElevation,
@@ -55,6 +55,8 @@ export type LayoutEvents = {
     scroll: {
         positive: boolean;
     };
+    arrowUp: {};
+    arrowDown: {};
 };
 
 export interface LayoutContext extends BaseContext {
@@ -81,6 +83,8 @@ export interface LayoutContext extends BaseContext {
     lowerStartJointElevation: () => void;
     bumpEndJointElevation: () => void;
     lowerEndJointElevation: () => void;
+    bumpTension: () => void;
+    lowerTension: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
     lastCurveSuccess: boolean;
@@ -202,13 +206,14 @@ export class LayoutHoverForStartingPointState extends TemplateState<
                 },
                 defaultTargetState: 'HOVER_FOR_CURVE_DELETION',
             },
-            scroll: {
-                action: (context, event) => {
-                    if (event.positive) {
-                        context.bumpStartJointElevation();
-                    } else {
-                        context.lowerStartJointElevation();
-                    }
+            arrowUp: {
+                action: (context) => {
+                    context.bumpStartJointElevation();
+                },
+            },
+            arrowDown: {
+                action: (context) => {
+                    context.lowerStartJointElevation();
                 },
             },
         };
@@ -281,10 +286,20 @@ export class LayoutHoverForEndingPointState extends TemplateState<
             scroll: {
                 action: (context, event) => {
                     if (event.positive) {
-                        context.bumpEndJointElevation();
+                        context.bumpTension();
                     } else {
-                        context.lowerEndJointElevation();
+                        context.lowerTension();
                     }
+                },
+            },
+            arrowUp: {
+                action: (context) => {
+                    context.bumpEndJointElevation();
+                },
+            },
+            arrowDown: {
+                action: (context) => {
+                    context.lowerEndJointElevation();
                 },
             },
         };
@@ -386,6 +401,9 @@ export class CurveCreationEngine implements LayoutContext {
     private _previewCurveCalculator: PreviewCurveCalculator =
         new PreviewCurveCalculator();
 
+    private _tensionObservable: Observable<[number]> =
+        new SynchronousObservable<[number]>();
+
     private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]> =
         new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>();
 
@@ -399,6 +417,10 @@ export class CurveCreationEngine implements LayoutContext {
 
     get lastCurveSuccess(): boolean {
         return this._lastCurveSuccess;
+    }
+
+    get currentTension(): number {
+        return this._previewCurveCalculator.tension;
     }
 
     get previewCurveForDeletion(): BCurve | null {
@@ -570,6 +592,28 @@ export class CurveCreationEngine implements LayoutContext {
 
     onElevationChange(observer: Observer<[ELEVATION | null]>) {
         this._elevationObservable.subscribe(observer);
+    }
+
+    bumpTension() {
+        this._previewCurveCalculator.tension += TENSION_STEP;
+        this._tensionObservable.notify(this._previewCurveCalculator.tension);
+        if (this._newStartJoint === null || this._newEndJoint === null) {
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    lowerTension() {
+        this._previewCurveCalculator.tension -= TENSION_STEP;
+        this._tensionObservable.notify(this._previewCurveCalculator.tension);
+        if (this._newStartJoint === null || this._newEndJoint === null) {
+            return;
+        }
+        this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
+    }
+
+    onTensionChange(observer: Observer<[number]>) {
+        this._tensionObservable.subscribe(observer);
     }
 
     hoverForCurveDeletion(position: Point) {

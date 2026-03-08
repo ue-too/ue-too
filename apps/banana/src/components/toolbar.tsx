@@ -28,6 +28,7 @@ export function BananaToolbar() {
 
     const [mode, setMode] = useState<AppMode>('idle');
     const [elevation, setElevation] = useState<string>('N/A');
+    const [tension, setTension] = useState<string>('1.0');
     const [sunAngle, setSunAngle] = useState(135);
     const [buildingPreset, setBuildingPreset] =
         useState<BuildingPreset>('medium');
@@ -58,6 +59,10 @@ export function BananaToolbar() {
         if (!app) return;
         app.curveEngine.onElevationChange(elev => {
             setElevation(elev != null ? String(elev) : 'N/A');
+        });
+        setTension(app.curveEngine.currentTension.toFixed(1));
+        app.curveEngine.onTensionChange(t => {
+            setTension(t.toFixed(1));
         });
     }, [app]);
 
@@ -291,6 +296,12 @@ export function BananaToolbar() {
                 app.layoutStateMachine.happens('flipStartTangent');
             } else if (event.key === 'q') {
                 app.layoutStateMachine.happens('toggleStraightLine');
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                app.layoutStateMachine.happens('arrowUp');
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                app.layoutStateMachine.happens('arrowDown');
             }
         };
 
@@ -695,7 +706,7 @@ export function BananaToolbar() {
 
             {/* Status */}
             <p className="text-muted-foreground text-xs">
-                Elevation: {elevation}
+                Elevation: {elevation} · Tension: {tension}
             </p>
         </div>
     );
