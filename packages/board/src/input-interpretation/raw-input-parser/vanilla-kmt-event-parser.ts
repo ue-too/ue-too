@@ -354,6 +354,12 @@ export class VanillaKMTEventParser implements KMTEventParser {
             console.log('escape key pressed');
             this.processEvent('escapeKey');
         }
+        if (e.key === 'ArrowUp') {
+            this.processEvent('arrowUp');
+        }
+        if (e.key === 'ArrowDown') {
+            this.processEvent('arrowDown');
+        }
     }
 
     keyupHandler(e: KeyboardEvent) {
