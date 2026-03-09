@@ -211,27 +211,27 @@ export class KmtPlacementState extends TemplateState<
         KmtInputStateMachineExpansionStates,
         KmtInputStateMachineExpansionEventOutputMapping
     > = {
-        leftPointerUp: {
-            action: (context, eventPayload, stateMachine) => {
-                // console.log('leftPointerUp', eventPayload);
-                const cell = context.isAtCell({
-                    x: eventPayload.x,
-                    y: eventPayload.y,
-                });
-                if (cell != null) {
-                    context.setAt(cell.row, cell.column, 'knit');
-                }
-                return {
-                    type: 'checkPlacement',
-                    point: {
+            leftPointerUp: {
+                action: (context, eventPayload, stateMachine) => {
+                    // console.log('leftPointerUp', eventPayload);
+                    const cell = context.isAtCell({
                         x: eventPayload.x,
                         y: eventPayload.y,
-                    },
-                };
+                    });
+                    if (cell != null) {
+                        context.setAt(cell.row, cell.column, 'knit');
+                    }
+                    return {
+                        type: 'checkPlacement',
+                        point: {
+                            x: eventPayload.x,
+                            y: eventPayload.y,
+                        },
+                    };
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-    };
+        };
 }
 
 export function createKmtInputStateMachineExpansion(
@@ -261,8 +261,7 @@ export function createKmtInputStateMachineExpansion(
 
 export class ExpandedInputTracker
     extends ObservableInputTracker
-    implements KmtInputStateMachineExpansionContext
-{
+    implements KmtInputStateMachineExpansionContext {
     private _grid: PixiGrid;
     private _camera: DefaultBoardCamera;
 

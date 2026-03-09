@@ -2,7 +2,8 @@ import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pi
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
-import { CurveCreationEngine, LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
+import { LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
+import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
 import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
@@ -74,7 +75,7 @@ export const initApp = async (
 
   baseComponents.camera.setMaxZoomLevel(30);
 
-  const curveEngine = new CurveCreationEngine();
+  const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy);
   const worldRenderSystem = new WorldRenderSystem();
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,

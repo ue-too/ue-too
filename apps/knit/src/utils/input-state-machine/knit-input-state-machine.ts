@@ -75,27 +75,27 @@ class KnitMoveState extends TemplateState<
         KnitInputEventMapping,
         KnitInputStates
     > = {
-        action: (context, event, eventKey, stateMachine) => {
-            const res = this._cMachine.happens(eventKey, event);
-            if (res.handled) {
-                return { handled: true, output: res.output };
-            }
-            return { handled: false };
-        },
-    };
+            action: (context, event, eventKey, stateMachine) => {
+                const res = this._cMachine.happens(eventKey, event);
+                if (res.handled) {
+                    return { handled: true, output: res.output };
+                }
+                return { handled: false };
+            },
+        };
 
     protected _eventReactions: EventReactions<
         KnitInputEventMapping,
         BaseContext,
         KnitInputStates
     > = {
-        switchToKnit: {
-            action: (context, event, stateMachine) => {
-                return { handled: true };
+            switchToKnit: {
+                action: (context, event, stateMachine) => {
+                    return { handled: true };
+                },
+                defaultTargetState: 'IDLE',
             },
-            defaultTargetState: 'IDLE',
-        },
-    };
+        };
 }
 
 class KnitIdleState extends TemplateState<
@@ -108,13 +108,13 @@ class KnitIdleState extends TemplateState<
         BaseContext,
         KnitInputStates
     > = {
-        move: {
-            action: (context, event, stateMachine) => {
-                return { handled: true };
+            move: {
+                action: (context, event, stateMachine) => {
+                    return { handled: true };
+                },
+                defaultTargetState: 'MOVING',
             },
-            defaultTargetState: 'MOVING',
-        },
-    };
+        };
 }
 
 export const createKnitInputStateMachine = (
