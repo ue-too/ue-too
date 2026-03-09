@@ -339,6 +339,7 @@ export class VanillaKMTEventParser implements KMTEventParser {
     }
 
     keypressHandler(e: KeyboardEvent) {
+        console.log('keypressHandler', e.key);
         if (e.target !== document.body) {
             return;
         }
@@ -348,6 +349,25 @@ export class VanillaKMTEventParser implements KMTEventParser {
         this._keyfirstPressed.set(e.key, true);
         if (e.key === ' ') {
             this.processEvent('spacebarDown');
+        }
+        if (e.key === 'Escape') {
+            console.log('escape key pressed');
+            this.processEvent('escapeKey');
+        }
+        if (e.key === 'ArrowUp') {
+            this.processEvent('arrowUp');
+        }
+        if (e.key === 'ArrowDown') {
+            this.processEvent('arrowDown');
+        }
+        if (e.key === 'f') {
+            this.processEvent('F');
+        }
+        if (e.key === 'g') {
+            this.processEvent('G');
+        }
+        if (e.key === 'q') {
+            this.processEvent('Q');
         }
     }
 

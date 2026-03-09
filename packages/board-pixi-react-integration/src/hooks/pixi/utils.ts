@@ -23,7 +23,7 @@ export const useCanvasSize = () => {
                 result.success == false ||
                 result.components.app.renderer == null
             ) {
-                return () => {};
+                return () => { };
             }
             result.components.app.renderer.on('resize', cb);
             return () => {
@@ -95,7 +95,6 @@ export const useCoordinateConversion = () => {
         (event: PointerEvent) => {
             event.preventDefault();
             const point = { x: event.clientX, y: event.clientY };
-            console.log('point', point);
             if (
                 result.initialized == false ||
                 result.success == false ||

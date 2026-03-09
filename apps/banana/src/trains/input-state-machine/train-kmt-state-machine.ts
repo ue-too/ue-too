@@ -69,15 +69,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
 
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent',
-        occupiedJoints?: {
-            jointNumber: number;
-            direction: 'tangent' | 'reverseTangent';
-        }[],
-        occupiedTrackSegments?: {
-            trackNumber: number;
-            inTrackDirection: 'tangent' | 'reverseTangent';
-        }[]
+        direction: 'tangent' | 'reverseTangent'
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -88,91 +80,6 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('starting joint not found');
             return null;
         }
-
-        // short circuit
-        if (occupiedJoints && occupiedJoints.length > 0) {
-            for (let i = 0; i < occupiedJoints.length; i++) {
-                if (
-                    occupiedJoints[i].jointNumber === jointNumber &&
-                    occupiedJoints[i].direction === direction
-                ) {
-                    if (i < occupiedJoints.length - 1) {
-                        const nextJointNumber =
-                            occupiedJoints[i + 1].jointNumber;
-                        const nextTrackSegmentNumber =
-                            joint.connections.get(nextJointNumber);
-                        const nextJoint =
-                            this._trackGraph.getJoint(nextJointNumber);
-                        if (nextJoint === null) {
-                            console.warn(
-                                'next joint not found, something wrong about the occupied joints'
-                            );
-                            return null;
-                        }
-                        if (nextTrackSegmentNumber === undefined) {
-                            console.warn(
-                                'next track segment is not connected to the joint, something wrong about the occupied joints'
-                            );
-                            return null;
-                        }
-                        const nextTrack =
-                            this._trackGraph.getTrackSegmentWithJoints(
-                                nextTrackSegmentNumber
-                            );
-                        if (nextTrack === null) {
-                            console.warn(
-                                'next track segment is not found, something wrong about the occupied joints'
-                            );
-                            return null;
-                        }
-                        const nextDirection: 'tangent' | 'reverseTangent' =
-                            nextTrack.t0Joint === jointNumber
-                                ? 'tangent'
-                                : 'reverseTangent';
-                        return {
-                            jointNumber: nextJointNumber,
-                            direction: nextDirection,
-                            curveNumber: nextTrackSegmentNumber,
-                        };
-                    } else if (
-                        occupiedTrackSegments &&
-                        occupiedTrackSegments.length > 0
-                    ) {
-                        const lastOccupiedTrack =
-                            occupiedTrackSegments[
-                            occupiedTrackSegments.length - 1
-                            ];
-                        const lastOccupiedTrackSegment =
-                            this._trackGraph.getTrackSegmentWithJoints(
-                                lastOccupiedTrack.trackNumber
-                            );
-                        if (lastOccupiedTrackSegment == null) {
-                            console.warn(
-                                'last occupied track segment not found'
-                            );
-                            break;
-                        }
-                        const nextJointNumber =
-                            lastOccupiedTrack.inTrackDirection === 'tangent'
-                                ? lastOccupiedTrackSegment.t1Joint
-                                : lastOccupiedTrackSegment.t0Joint;
-                        const nextJoint =
-                            this._trackGraph.getJoint(nextJointNumber);
-                        if (nextJoint == null) {
-                            console.warn('next joint not found');
-                            break;
-                        }
-                        return {
-                            jointNumber: nextJointNumber,
-                            curveNumber: lastOccupiedTrack.trackNumber,
-                            direction: lastOccupiedTrack.inTrackDirection,
-                        };
-                    }
-                }
-            }
-        }
-        // short circuit
-
         const possibleNextJoints = joint.direction[direction];
         if (possibleNextJoints.size === 0) {
             console.warn('no possible next joints');
@@ -202,7 +109,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('first next track segment not found');
             return null;
         }
-        let nextDirection: 'tangent' | 'reverseTangent' =
+        const nextDirection: 'tangent' | 'reverseTangent' =
             firstNextTrackSegment.t0Joint === jointNumber
                 ? 'tangent'
                 : 'reverseTangent';
@@ -214,6 +121,14 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
     }
 }
 
+/** Options for {@link TrainPlacementEngine}. */
+export type TrainPlacementEngineOptions = {
+    /** When a train is placed, called with that train. Return a new Train to use for the next placement (e.g. for multiple trains). */
+    onPlaced?: (placed: Train) => Train | void;
+};
+
+const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
+
 export class TrainPlacementEngine implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
     private _trainTangent: Point | null = null;
@@ -221,16 +136,16 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _jointDirectionManager: JointDirectionManager;
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _train: Train;
+    private _onPlaced: ((placed: Train) => Train | void) | undefined;
 
-    constructor(trackGraph: TrackGraph) {
+    constructor(trackGraph: TrackGraph, options?: TrainPlacementEngineOptions) {
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(
             trackGraph
         );
+        this._onPlaced = options?.onPlaced;
         this._train = new Train(
-            1,
             null,
-            [40, 10, 40, 10, 40],
             trackGraph,
             this._jointDirectionManager
         );
@@ -252,7 +167,13 @@ export class TrainPlacementEngine implements TrainPlacementContext {
         }
         this._train.setPosition(previewPosition);
         this._train.clearPreviewPosition();
-        console.log('placed train');
+
+        if (this._onPlaced) {
+            const next = this._onPlaced(this._train);
+            if (next) {
+                this._train = next;
+            }
+        }
     }
 
     hoverForPlacement(position: Point) {

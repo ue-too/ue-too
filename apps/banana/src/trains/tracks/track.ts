@@ -6,12 +6,21 @@ import {
     normalizeAngleZero2TwoPI,
     sameDirection,
 } from '@ue-too/math';
+import { Observable, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
 
 import { LEVEL_HEIGHT } from './constants';
-import { ELEVATION, ProjectionInfo, ProjectionJointResult, ProjectionResult, TrackJoint, TrackJointWithElevation, TrackSegment, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithElevation } from './types';
+import { ELEVATION, ProjectionInfo, ProjectionJointResult, ProjectionResult, SerializedTrackJoint, SerializedTrackSegment, TrackJoint, TrackJointWithElevation, TrackSegment, TrackSegmentDrawData, TrackSegmentWithCollision, TrackSegmentWithElevation } from './types';
 import { TrackCurveManager } from './trackcurve-manager';
 import { TrackJointManager } from './trackjoint-manager';
 import { elevationIntervalOverlaps, getElevationAtT, orderTest, trackIsSloped } from './utils';
+
+export type SegmentSplitInfo = {
+    oldSegmentNumber: number;
+    splitT: number;
+    firstNewSegment: number;
+    secondNewSegment: number;
+    newJointNumber: number;
+};
 
 export class TrackGraph {
     private _jointManager: TrackJointManager = new TrackJointManager(10);
@@ -22,12 +31,26 @@ export class TrackGraph {
         callback(index: number): void;
     })[] = [];
 
+    private _segmentSplitObservable: Observable<[SegmentSplitInfo]> =
+        new SynchronousObservable<[SegmentSplitInfo]>();
+
     getJoints(): { jointNumber: number; joint: TrackJoint }[] {
         return this._jointManager.getJoints();
     }
 
     getJoint(jointNumber: number): TrackJoint | null {
         return this._jointManager.getJoint(jointNumber);
+    }
+
+    /**
+     * Subscribe to notifications when a track segment is split by a new joint.
+     * Fires after both new segments are fully wired up.
+     */
+    onSegmentSplit(
+        callback: (info: SegmentSplitInfo) => void,
+        options?: SubscriptionOptions,
+    ) {
+        return this._segmentSplitObservable.subscribe(callback, options);
     }
 
     insertJointIntoTrackSegmentUsingTrackNumber(
@@ -150,6 +173,14 @@ export class TrackGraph {
             t1Joint.direction.tangent.delete(t0JointNumber);
             t1Joint.direction.tangent.add(newJointNumber);
         }
+
+        this._segmentSplitObservable.notify({
+            oldSegmentNumber: trackSegmentNumber,
+            splitT: atT,
+            firstNewSegment: firstSegmentNumber,
+            secondNewSegment: secondSegmentNumber,
+            newJointNumber,
+        });
 
         return newJointNumber;
     }
@@ -287,6 +318,14 @@ export class TrackGraph {
             t1Joint.direction.tangent.delete(t0JointNumber);
             t1Joint.direction.tangent.add(newJointNumber);
         }
+
+        this._segmentSplitObservable.notify({
+            oldSegmentNumber: trackSegmentNumber,
+            splitT: atT,
+            firstNewSegment: firstSegmentNumber,
+            secondNewSegment: secondSegmentNumber,
+            newJointNumber,
+        });
     }
 
     get trackOffsets(): { positive: Point[]; negative: Point[] }[] {
@@ -989,6 +1028,39 @@ export class TrackGraph {
         return order;
     }
 
+    /**
+     * Resolve a position on a track segment to the draw data identifier
+     * used for z-index lookups in the render system.
+     *
+     * @param trackSegmentNumber - The track segment number
+     * @param tVal - The t-value on the curve
+     * @returns The identifier containing the segment number and t-value interval,
+     *          or null if the position cannot be resolved
+     */
+    getDrawDataIdentifier(
+        trackSegmentNumber: number,
+        tVal: number
+    ): { trackSegmentNumber: number; tValInterval: { start: number; end: number } } | null {
+        const trackSegment =
+            this._trackCurveManager.getTrackSegmentWithJoints(
+                trackSegmentNumber
+            );
+        if (trackSegment === null) {
+            return null;
+        }
+
+        const splits = trackSegment.splitCurves;
+        const index = this._findTValIntervalIndex(splits, tVal);
+        if (index === null) {
+            return null;
+        }
+
+        return {
+            trackSegmentNumber,
+            tValInterval: splits[index].tValInterval,
+        };
+    }
+
     private _findTValIntervalIndex(
         splits: { tValInterval: { start: number; end: number } }[],
         tVal: number
@@ -1094,6 +1166,68 @@ export class TrackGraph {
 
     get trackCurveManager(): TrackCurveManager {
         return this._trackCurveManager;
+    }
+
+    get jointManager(): TrackJointManager {
+        return this._jointManager;
+    }
+
+    /**
+     * Serializes the entire track graph (joints + segments) into a
+     * JSON-safe object suitable for `JSON.stringify`.
+     */
+    serialize(): { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] } {
+        return {
+            joints: this._jointManager.serialize(),
+            segments: this._trackCurveManager.serialize(),
+        };
+    }
+
+    /**
+     * Replaces the current track graph state with data from a serialized payload.
+     * All existing tracks and joints are destroyed first (firing observer
+     * notifications so the render system can clean up), then the new data
+     * is loaded in, again with notifications so the render system rebuilds.
+     */
+    loadFromSerializedData(data: { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] }): void {
+        const existingSegmentIds = [...this._trackCurveManager.livingEntities];
+        for (const segId of existingSegmentIds) {
+            this._trackCurveManager.destroyCurve(segId);
+        }
+
+        const existingJoints = this._jointManager.getJoints();
+        for (const { jointNumber } of existingJoints) {
+            this._jointManager.destroyJoint(jointNumber);
+        }
+
+        for (const joint of data.joints) {
+            this._jointManager.createJointWithId(joint.jointNumber, {
+                position: joint.position,
+                connections: new Map(joint.connections),
+                tangent: joint.tangent,
+                direction: {
+                    tangent: new Set(joint.direction.tangent),
+                    reverseTangent: new Set(joint.direction.reverseTangent),
+                },
+                elevation: joint.elevation,
+            });
+        }
+
+        for (const segment of data.segments) {
+            const curve = new BCurve(segment.controlPoints);
+            this._trackCurveManager.loadSegmentWithId(
+                segment.segmentNumber,
+                curve,
+                segment.t0Joint,
+                segment.t1Joint,
+                segment.elevation.from,
+                segment.elevation.to,
+                segment.gauge,
+                segment.splits
+            );
+        }
+
+        this._drawDataDirty = true;
     }
 }
 

@@ -1,23 +1,24 @@
 import { Point, approximately } from '@ue-too/curve';
 
-import { TrackGraph } from './tracks/track';
+import { SegmentSplitInfo, TrackGraph } from './tracks/track';
 import {
     JointDirectionManager,
     flipDirection,
 } from './input-state-machine/train-kmt-state-machine';
+import { Car } from './cars';
 
-export type Car = {
-    id: number;
-    position: {
-        trackNumber: number;
-        tVal: number;
-        extendPositionOnTrack: 'positive' | 'negative';
-    };
-    bogieOffsets: number[];
-};
+// export type Car = {
+//     id: number;
+//     position: {
+//         trackNumber: number;
+//         tVal: number;
+//         extendPositionOnTrack: 'positive' | 'negative';
+//     };
+//     bogieOffsets: number[];
+// };
 
 export interface Formation {
-    cars(): Car[];
+    // cars(): Car[];
 }
 
 export type TrainPosition = {
@@ -106,8 +107,6 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
 
 export class Train {
     private _position: TrainPosition | null;
-    private _carNumber: number;
-    private _offsets: number[] = [40, 10, 40, 10, 40];
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
     private _speed: number = 0;
@@ -127,17 +126,37 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
+    private _cars: Car[] = [new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5)];
+
+    get carOffsets(): number[] {
+        const res: number[] = [];
+
+        for (let i = 0; i < this._cars.length; i++) {
+            const car = this._cars[i];
+            const edgeToBogie = car.edgeToBogie;
+            const bogieToEdge = car.bogieToEdge;
+            let previousBogieToEdge = 0;
+            if (i > 0) {
+                previousBogieToEdge = this._cars[i - 1].bogieToEdge;
+            }
+            res.push(previousBogieToEdge + edgeToBogie);
+            for (let j = 0; j < car.bogieOffsets.length; j++) {
+                res.push(car.bogieOffsets[j]);
+            }
+        }
+
+        res.shift();
+        return res;
+    }
+
     constructor(
-        carNumber: number,
         position: TrainPosition | null,
-        bogieOffsets: number[],
         trackGraph: TrackGraph,
         jointDirectionManager: JointDirectionManager
     ) {
-        this._carNumber = carNumber;
         this._position = position;
         this._trackGraph = trackGraph;
-        this._offsets = bogieOffsets;
+        // this._offsets = bogieOffsets;
         this._jointDirectionManager = jointDirectionManager;
     }
 
@@ -164,30 +183,32 @@ export class Train {
 
         let accuOffset = 0;
 
-        for (let index = 0; index < this._offsets.length; index++) {
-            accuOffset += this._offsets[index];
+        const testOffsets = this.carOffsets
+
+        for (let index = 0; index < testOffsets.length; index++) {
+            accuOffset += testOffsets[index];
             const bogiePosition = !preview
                 ? getPosition(
-                      accuOffset,
-                      { ...position, direction: expandDirection },
-                      this._trackGraph,
-                      this._jointDirectionManager,
-                      this._occupiedJointNumbers,
-                      this._occupiedTrackSegments
-                  )
+                    accuOffset,
+                    { ...position, direction: expandDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager,
+                    this._occupiedJointNumbers,
+                    this._occupiedTrackSegments
+                )
                 : getPosition(
-                      accuOffset,
-                      { ...position, direction: expandDirection },
-                      this._trackGraph,
-                      this._jointDirectionManager
-                  );
+                    accuOffset,
+                    { ...position, direction: expandDirection },
+                    this._trackGraph,
+                    this._jointDirectionManager
+                );
             if (bogiePosition === null || bogiePosition.stop) {
                 // console.warn('cannot put the whole train at the current position');
                 return null;
             }
             if (!preview) {
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     bogiePosition.passedJointNumbers.length > 0
                 ) {
                     const lastBogiePositionPassedJointNumbers =
@@ -214,7 +235,7 @@ export class Train {
                     }
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     this._occupiedJointNumbers.length == 0 &&
                     bogiePosition.passedJointNumbers.length > 0
                 ) {
@@ -223,7 +244,7 @@ export class Train {
                     ];
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     bogiePosition.enteringTrackSegments.length > 0
                 ) {
                     const lastBogiePositionEnteringTrackSegments =
@@ -253,7 +274,7 @@ export class Train {
                     }
                 }
                 if (
-                    index === this._offsets.length - 1 &&
+                    index === testOffsets.length - 1 &&
                     this._occupiedTrackSegments.length == 0
                 ) {
                     this._occupiedTrackSegments = [
@@ -314,10 +335,10 @@ export class Train {
         if (
             this._previewPositionCache !== null &&
             this._previewPositionCache.direction ===
-                previewPosition.direction &&
+            previewPosition.direction &&
             this._previewPositionCache.tValue === previewPosition.tValue &&
             this._previewPositionCache.trackSegment ===
-                previewPosition.trackSegment
+            previewPosition.trackSegment
         ) {
             return this._previewPositions;
         }
@@ -414,7 +435,10 @@ export class Train {
         }
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
-        this._offsets = this._offsets.reverse();
+        // this._offsets = this._offsets.reverse();
+        this._cars.forEach(car => {
+            car.switchDirection();
+        });
         // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
         this._occupiedJointNumbers = this._occupiedJointNumbers
             .reverse()
@@ -436,6 +460,58 @@ export class Train {
             this._position,
             false
         );
+    }
+
+    /**
+     * Remap the train's head position and invalidate cached body data when a
+     * track segment is split. The body (bogies) may span the split segment
+     * even when the head does not, so occupied data is always cleared.
+     */
+    remapOnSegmentSplit(info: SegmentSplitInfo): void {
+        const { oldSegmentNumber, splitT, firstNewSegment, secondNewSegment } = info;
+
+        if (this._position !== null && this._position.trackSegment === oldSegmentNumber) {
+            const origT = this._position.tValue;
+            if (this._position.tValue <= splitT) {
+                this._position.trackSegment = firstNewSegment;
+                this._position.tValue = splitT > 0
+                    ? this._position.tValue / splitT
+                    : 0;
+            } else {
+                this._position.trackSegment = secondNewSegment;
+                this._position.tValue = splitT < 1
+                    ? (this._position.tValue - splitT) / (1 - splitT)
+                    : 1;
+            }
+
+            const seg = this._trackGraph
+                .getTrackSegmentWithJoints(this._position.trackSegment);
+            if (seg === null) {
+                console.warn(
+                    '[remapOnSegmentSplit] new segment not found!',
+                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
+                );
+            }
+            this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
+
+            console.log(
+                '[remapOnSegmentSplit] remapped',
+                {
+                    oldSegmentNumber, splitT, origT,
+                    newSegment: this._position.trackSegment,
+                    newT: this._position.tValue,
+                    direction: this._position.direction,
+                    point: this._position.point
+                }
+            );
+        } else {
+            console.log(
+                '[remapOnSegmentSplit] position not on split segment',
+                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
+            );
+        }
+
+        this._cachedBogiePositions = null;
     }
 }
 
@@ -563,15 +639,15 @@ export function getPosition(
             nextPosition.type === 'withinCurve'
                 ? nextPosition.tVal
                 : nextDirection.direction === 'tangent'
-                  ? 1
-                  : 0;
+                    ? 1
+                    : 0;
     }
     xTValue =
         nextPosition.type === 'withinCurve'
             ? nextPosition.tVal
             : xDirection === 'tangent'
-              ? 1
-              : 0;
+                ? 1
+                : 0;
 
     return {
         stop: false,

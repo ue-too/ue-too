@@ -47,13 +47,31 @@ export type PreviewCurveResult = {
     shouldToggleEndTangentFlip: boolean;
 };
 
+/** Minimum tension value (loose curve, control points close to chord). */
+export const TENSION_MIN = 0.1;
+/** Maximum tension value (tight curve, control points far along tangents). */
+export const TENSION_MAX = 3.0;
+/** Default tension (matches the previous hardcoded value). */
+export const TENSION_DEFAULT = 1.0;
+/** Amount tension changes per scroll tick. */
+export const TENSION_STEP = 0.1;
+
 export class PreviewCurveCalculator {
     private _previewStartTangentFlipped: boolean = false;
     private _previewEndTangentFlipped: boolean = false;
 
     private _extendAsStraightLine: boolean = false;
+    private _tension: number = TENSION_DEFAULT;
 
-    constructor() {}
+    constructor() { }
+
+    get tension(): number {
+        return this._tension;
+    }
+
+    set tension(value: number) {
+        this._tension = Math.max(TENSION_MIN, Math.min(TENSION_MAX, Math.round(value * 10) / 10));
+    }
 
     toggleStraightLine() {
         this._extendAsStraightLine = !this._extendAsStraightLine;
@@ -80,7 +98,8 @@ export class PreviewCurveCalculator {
         const res = getPreviewCurveExp(
             previewCurveType,
             this._previewStartTangentFlipped,
-            this._previewEndTangentFlipped
+            this._previewEndTangentFlipped,
+            this._tension
         );
 
         if (res.shouldToggleEndTangentFlip) {
@@ -190,7 +209,8 @@ function determinePreviewCurveForNotNewStartJoint(
 function getPreviewCurveExp(
     previewCurveType: PreviewCurveType,
     previewStartTangentFlipped: boolean,
-    previewEndTangentFlipped: boolean
+    previewEndTangentFlipped: boolean,
+    tension: number = TENSION_DEFAULT
 ): PreviewCurveResult {
     if (previewCurveType.type === 'straight') {
         return getStraightLinePreviewCurve(
@@ -203,7 +223,8 @@ function getPreviewCurveExp(
         return getQuadraticPreviewCurve(
             previewCurveType.startJoint,
             previewCurveType.endJoint,
-            previewStartTangentFlipped
+            previewStartTangentFlipped,
+            tension
         );
     }
     if (previewCurveType.type === 'cubic') {
@@ -211,13 +232,15 @@ function getPreviewCurveExp(
             previewCurveType.startJoint,
             previewCurveType.endJoint,
             previewStartTangentFlipped,
-            previewEndTangentFlipped
+            previewEndTangentFlipped,
+            tension
         );
     }
     return getReversedQuadraticPreviewCurve(
         previewCurveType.startJoint,
         previewCurveType.endJoint,
-        previewEndTangentFlipped
+        previewEndTangentFlipped,
+        tension
     );
 }
 
@@ -231,9 +254,9 @@ function getStraightLinePreviewCurve(
             startJoint.type !== 'new'
                 ? startJoint.constraint.tangent
                 : PointCal.unitVectorFromA2B(
-                      startJoint.position,
-                      endJoint.position
-                  ),
+                    startJoint.position,
+                    endJoint.position
+                ),
             startJoint.position,
             endJoint.position
         );
@@ -276,7 +299,8 @@ function getStraightLinePreviewCurve(
 function getReversedQuadraticPreviewCurve(
     startJoint: NewJointType,
     endJoint: Exclude<NewJointType, BrandNewJoint>,
-    previewEndTangentFlipped: boolean
+    previewEndTangentFlipped: boolean,
+    tension: number = TENSION_DEFAULT
 ): PreviewCurveResult {
     let { flipped: tangentCalibrated, tangent } = calibrateTangent(
         endJoint.constraint.tangent,
@@ -291,7 +315,8 @@ function getReversedQuadraticPreviewCurve(
         endJoint.position,
         startJoint.position,
         tangent,
-        curvature
+        curvature,
+        tension
     );
     // const previewCurveCPs = createCubicFromTangentsCurvaturesV2(newEndJointType.position, newStartJointType.position, {tangent, curvature});
     return {
@@ -306,7 +331,8 @@ function getReversedQuadraticPreviewCurve(
 function getQuadraticPreviewCurve(
     startJoint: Exclude<NewJointType, BrandNewJoint>,
     endJoint: BrandNewJoint,
-    previewStartTangentFlipped: boolean
+    previewStartTangentFlipped: boolean,
+    tension: number = TENSION_DEFAULT
 ): PreviewCurveResult {
     let { flipped: tangentCalibrated, tangent } = calibrateTangent(
         startJoint.constraint.tangent,
@@ -317,13 +343,12 @@ function getQuadraticPreviewCurve(
         ? PointCal.multiplyVectorByScalar(tangent, -1)
         : tangent;
     const curvature = startJoint.constraint.curvature;
-    // branch to a new joint
-    // const previewCurveCPs = createCubicFromTangentsCurvaturesV2(newStartJointType.position, newEndJointType.position, {tangent, curvature});
     const previewCurveCPs = createQuadraticFromTangentCurvature(
         startJoint.position,
         endJoint.position,
         tangent,
-        curvature
+        curvature,
+        tension
     );
     return {
         cps: [previewCurveCPs.p0, previewCurveCPs.p1, previewCurveCPs.p2],
@@ -338,7 +363,8 @@ function getCubicPreviewCurve(
     startJoint: Exclude<NewJointType, BrandNewJoint>,
     endJoint: Exclude<NewJointType, BrandNewJoint>,
     previewStartTangentFlipped: boolean,
-    previewEndTangentFlipped: boolean
+    previewEndTangentFlipped: boolean,
+    tension: number = TENSION_DEFAULT
 ): PreviewCurveResult {
     let { flipped: tangentCalibrated, tangent } = calibrateTangent(
         startJoint.constraint.tangent,
@@ -371,7 +397,8 @@ function getCubicPreviewCurve(
         tangent,
         previewEndTangent,
         curvature,
-        endJoint.constraint.curvature
+        endJoint.constraint.curvature,
+        tension
     );
     return {
         cps: [
@@ -516,7 +543,8 @@ function createQuadraticFromTangentCurvature(
     startPoint: Point,
     endPoint: Point,
     tangentDirection: Point,
-    curvature: number
+    curvature: number,
+    tension = 1.0
 ): { p0: Point; p1: Point; p2: Point } {
     // Ensure tangent direction is normalized
     let unitTangent = PointCal.unitVector(tangentDirection);
@@ -528,9 +556,8 @@ function createQuadraticFromTangentCurvature(
     // For a quadratic Bézier curve, the relationship between curvature and control point placement
     // can be derived from the curve's mathematical properties
     // The control point distance is inversely related to curvature magnitude
-
     // Base control distance as a fraction of chord length
-    let controlDistance = chordLength * 0.5;
+    let controlDistance = chordLength * tension * 0.5;
 
     // Adjust control distance based on curvature
     // Higher curvature magnitude requires closer control points for tighter curves

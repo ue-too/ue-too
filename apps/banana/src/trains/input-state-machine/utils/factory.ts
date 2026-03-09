@@ -1,10 +1,12 @@
 import { TemplateStateMachine } from "@ue-too/being";
-import { CurveCreationEngine, LayoutEvents, LayoutContext, LayoutStateMachine, LayoutStates, LayoutIDLEState, LayoutHoverForStartingPointState, LayoutHoverForEndingPointState, LayoutHoverForCurveDeletionState } from "../kmt-state-machine";
+import { LayoutEvents, LayoutContext, LayoutStateMachine, LayoutStates, LayoutIDLEState, LayoutHoverForStartingPointState, LayoutHoverForEndingPointState, LayoutHoverForCurveDeletionState } from "../kmt-state-machine";
+import { CurveCreationEngine } from "../curve-engine";
 import { TrainPlacementEngine } from "../train-kmt-state-machine";
 import { TrackGraph } from "@/trains/tracks";
+import { Canvas, ObservableBoardCamera } from "@ue-too/board";
 
-const createCurveCreationEngine = (): CurveCreationEngine => {
-    const curveEngine = new CurveCreationEngine();
+const createCurveCreationEngine = (canvas: Canvas, camera: ObservableBoardCamera): CurveCreationEngine => {
+    const curveEngine = new CurveCreationEngine(canvas, camera);
 
     return curveEngine;
 };
@@ -27,8 +29,8 @@ const createLayoutStateMachine = (curveEngine: CurveCreationEngine): LayoutState
     return stateMachine;
 };
 
-const createLayouyStateMachineWithDefaultContext = (): LayoutStateMachine => {
-    const context = createCurveCreationEngine();
+const createLayouyStateMachineWithDefaultContext = (canvas: Canvas, camera: ObservableBoardCamera): LayoutStateMachine => {
+    const context = createCurveCreationEngine(canvas, camera);
     return createLayoutStateMachine(context);
 }
 

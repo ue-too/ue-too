@@ -71,10 +71,10 @@ export type CreateStateType<ArrayLiteral extends readonly string[]> =
  */
 export type EventArgs<EventPayloadMapping, K> =
     K extends keyof EventPayloadMapping
-        ? IsEmptyObject<EventPayloadMapping[K]> extends true
-            ? [event: K] // No payload needed
-            : [event: K, payload: EventPayloadMapping[K]] // Payload required
-        : [event: K, payload?: unknown]; // Unknown events
+    ? IsEmptyObject<EventPayloadMapping[K]> extends true
+    ? [event: K] // No payload needed
+    : [event: K, payload: EventPayloadMapping[K]] // Payload required
+    : [event: K, payload?: unknown]; // Unknown events
 
 /**
  * No-operation function constant used as a placeholder for optional actions.
@@ -85,7 +85,7 @@ export type EventArgs<EventPayloadMapping, K> =
  *
  * @category Core
  */
-export const NO_OP: NOOP = () => {};
+export const NO_OP: NOOP = () => { };
 
 /**
  * Result type indicating an event was not handled by the current state.
@@ -253,6 +253,7 @@ export interface StateMachine<
     reset(): void;
     start(): void;
     wrapup(): void;
+    currentState: States | 'INITIAL' | 'TERMINAL';
 }
 
 /**
@@ -329,8 +330,8 @@ export interface State<
         EventGuards<EventPayloadMapping, States, Context, Guard<Context>>
     >;
     delay:
-        | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
-        | undefined;
+    | Delay<Context, EventPayloadMapping, States, EventOutputMapping>
+    | undefined;
     eventReactions: EventReactions<
         EventPayloadMapping,
         Context,
@@ -360,22 +361,22 @@ export type EventReactions<
         Record<keyof EventPayloadMapping, unknown>
     > = DefaultOutputMapping<EventPayloadMapping>,
 > = {
-    [K in keyof Partial<EventPayloadMapping>]: {
-        action: (
-            context: Context,
-            event: EventPayloadMapping[K],
-            stateMachine: StateMachine<
-                EventPayloadMapping,
-                Context,
-                States,
-                EventOutputMapping
-            >
-        ) => K extends keyof EventOutputMapping
-            ? EventOutputMapping[K] | void
-            : void;
-        defaultTargetState?: States;
+        [K in keyof Partial<EventPayloadMapping>]: {
+            action: (
+                context: Context,
+                event: EventPayloadMapping[K],
+                stateMachine: StateMachine<
+                    EventPayloadMapping,
+                    Context,
+                    States,
+                    EventOutputMapping
+                >
+            ) => K extends keyof EventOutputMapping
+                ? EventOutputMapping[K] | void
+                : void;
+            defaultTargetState?: States;
+        };
     };
-};
 
 /**
  * @description This is the type for the guard evaluation when a state transition is happening.
@@ -484,8 +485,8 @@ export type EventGuards<
     Context extends BaseContext,
     T extends Guard<Context>,
 > = {
-    [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
-};
+        [K in keyof EventPayloadMapping]: GuardMapping<Context, T, States>[];
+    };
 
 /**
  * Concrete implementation of a finite state machine.
@@ -969,15 +970,15 @@ export abstract class TemplateState<
                 return finalResult as EventResult<
                     States,
                     K extends keyof EventOutputMapping
-                        ? EventOutputMapping[K]
-                        : void
+                    ? EventOutputMapping[K]
+                    : void
                 >;
             }
             return resultWithOutput as EventResult<
                 States,
                 K extends keyof EventOutputMapping
-                    ? EventOutputMapping[K]
-                    : void
+                ? EventOutputMapping[K]
+                : void
             >;
         }
         return { handled: false };
