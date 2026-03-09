@@ -1,5 +1,6 @@
 import type {
     BaseContext,
+    CreateStateType,
     EventGuards,
     EventReactions,
     Guard,
@@ -14,11 +15,15 @@ import {
 } from '../tracks/types';
 import { NewJointType } from './types';
 
+export const LAYOUT_STATES = [
+    'IDLE',
+    'HOVER_FOR_STARTING_POINT',
+    'HOVER_FOR_ENDING_POINT',
+    'HOVER_FOR_CURVE_DELETION',
+] as const;
+
 export type LayoutStates =
-    | 'IDLE'
-    | 'HOVER_FOR_STARTING_POINT'
-    | 'HOVER_FOR_ENDING_POINT'
-    | 'HOVER_FOR_CURVE_DELETION';
+    CreateStateType<typeof LAYOUT_STATES>;
 
 export type LayoutEvents = {
     pointerdown: {
@@ -46,6 +51,7 @@ export type LayoutEvents = {
     };
     arrowUp: {};
     arrowDown: {};
+    clearEndPoint: {};
 };
 
 export interface LayoutContext extends BaseContext {
@@ -74,6 +80,7 @@ export interface LayoutContext extends BaseContext {
     lowerEndJointElevation: () => void;
     bumpTension: () => void;
     lowerTension: () => void;
+    clearEndPoint: () => void;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
     lastCurveSuccess: boolean;
@@ -291,6 +298,11 @@ export class LayoutHoverForEndingPointState extends TemplateState<
                     context.lowerEndJointElevation();
                 },
             },
+            clearEndPoint: {
+                action: (context, event) => {
+                    context.clearEndPoint();
+                }
+            }
         };
 
     protected _guards: Guard<LayoutContext, string> = {

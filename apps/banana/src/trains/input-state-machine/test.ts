@@ -1,4 +1,4 @@
-import { BaseContext, CreateStateType, Defer, EventReactions, Guard, State, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { BaseContext, CreateStateType, Defer, EventReactions, EventResult, Guard, State, TemplateState, TemplateStateMachine } from "@ue-too/being";
 
 const MAIN_STATES = ['IDLE', 'CURVE_CREATION', 'TRAIN_PLACEMENT'] as const;
 
@@ -33,7 +33,7 @@ type SubEventMapping = {
 };
 
 /** Single source of truth for which events are forwarded to the sub state machine. */
-const SUB_EVENT_KEYS: (keyof SubEventMapping)[] = ['start', 'end'];
+const SUB_EVENT_KEYS: (keyof SubEventMapping)[] = ['start', 'end', 'log'];
 
 const SUB_EVENT_KEY_SET = new Set<string>(SUB_EVENT_KEYS);
 
@@ -51,13 +51,15 @@ class SubStartState extends TemplateState<SubEventMapping, SubContext, SubStates
             action: (context, event, stateMachine) => {
                 return 'END';
             },
+            defaultTargetState: 'END',
         },
         log: {
             action: (context, event, stateMachine) => {
                 return {
-                    message: 'log in the end state',
+                    message: 'log in the start state',
                 }
             },
+            defaultTargetState: 'START',
         },
     };
 }
@@ -72,7 +74,7 @@ class SubEndState extends TemplateState<SubEventMapping, SubContext, SubStatesWi
         log: {
             action: (context, event, stateMachine) => {
                 return {
-                    message: 'log in the start state',
+                    message: 'log in the end state',
                 }
             },
         }
@@ -175,8 +177,12 @@ class MainIdleExtensionState extends TemplateState<MainEventMappingExtension, Ma
                 k: keyof SubEventMapping,
                 p: SubEventMapping[keyof SubEventMapping]
             ) => ReturnType<SubStateMachine['happens']>)(key, payload);
+
             if (result.handled) {
-                return { handled: true as const };
+                return {
+                    handled: true,
+                    output: result.output,
+                }
             }
             return { handled: false };
         },

@@ -6,6 +6,7 @@ describe('Main State Machine', () => {
 
         const res = stateMachine.happens("log");
         if (res.handled && res.output) {
+            console.log('in test case res', res);
             expect(res.output.message).toBe('log in the start state');
         } else {
             expect(res.handled).toBe(false);
@@ -16,11 +17,11 @@ describe('Main State Machine', () => {
         stateMachine.happens('createCurve');
         stateMachine.happens('endCurve');
 
-        stateMachine.happens('log');
-        if (res.handled && res.output) {
-            expect(res.output.message).toBe('log in the end state');
+        const res2 = stateMachine.happens('log');
+        if (res2.handled && res2.output) {
+            expect(res2.output.message).toBe('log in the end state');
         } else {
-            expect(res.handled).toBe(false);
+            expect(res2.handled).toBe(false);
         }
     });
 });

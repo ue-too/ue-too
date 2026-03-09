@@ -253,6 +253,7 @@ export interface StateMachine<
     reset(): void;
     start(): void;
     wrapup(): void;
+    currentState: States | 'INITIAL' | 'TERMINAL';
 }
 
 /**

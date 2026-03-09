@@ -13,6 +13,7 @@ import { TrainManager } from '@/trains/train-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
+import { createKmtInputStateMachineExpansion } from '@/trains/input-state-machine/kmt-state-machine-extension';
 
 const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 
@@ -76,6 +77,9 @@ export const initApp = async (
   baseComponents.camera.setMaxZoomLevel(30);
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy);
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(curveEngine);
+  baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
+  baseComponents.kmtInputStateMachine = kmtInputStateMachine;
   const worldRenderSystem = new WorldRenderSystem();
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,

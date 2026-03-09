@@ -782,6 +782,12 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 };
         }
     }
+
+    clearEndPoint() {
+        this._newEndJoint = null;
+        this._previewCurve = null;
+        this._previewDrawDataObservable.notify(undefined)
+    }
 }
 
 function extendTrackIsPossible(
