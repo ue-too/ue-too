@@ -51,7 +51,7 @@ export type LayoutEvents = {
     startDeletion: {};
     endDeletion: {};
     scroll: {
-        positive: boolean;
+        deltaY: number;
     };
     arrowUp: {};
     arrowDown: {};
@@ -289,7 +289,7 @@ export class LayoutHoverForEndingPointState extends TemplateState<
             },
             scroll: {
                 action: (context, event) => {
-                    if (event.positive) {
+                    if (event.deltaY > 0) {
                         context.bumpTension();
                     } else {
                         context.lowerTension();

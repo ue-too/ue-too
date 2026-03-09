@@ -118,6 +118,7 @@ export type KmtInputEventMapping = {
     leftPointerMove: PointerEventPayload;
     spacebarDown: EmptyPayload;
     spacebarUp: EmptyPayload;
+    escapeKey: EmptyPayload;
     stayIdle: EmptyPayload;
     cursorOnElement: EmptyPayload;
     scroll: ScrollWithCtrlEventPayload;

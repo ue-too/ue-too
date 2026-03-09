@@ -281,9 +281,9 @@ export function BananaToolbar() {
         };
 
         const handleWheel = (event: WheelEvent) => {
-            app.layoutStateMachine.happens('scroll', {
-                positive: event.deltaY > 0,
-            });
+            // app.layoutStateMachine.happens('scroll', {
+            //     positive: event.deltaY > 0,
+            // });
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {

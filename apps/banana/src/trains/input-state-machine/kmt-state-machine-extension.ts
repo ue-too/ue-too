@@ -63,7 +63,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
     protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventExtension, KmtInputStates, KmtInputEventOutputMapping> = {
         action: (context, event, eventKey, stateMachine) => {
             console.log('eventKey', eventKey, 'event', event);
-            console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
+            // console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
             if (!LAYOUT_EVENT_KEY_SET.has(eventKey as string)) {
                 return { handled: false };
             }

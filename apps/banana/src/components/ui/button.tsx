@@ -44,12 +44,23 @@ function Button({
     variant = 'default',
     size = 'default',
     asChild = false,
+    blurAfterClick = true,
+    onClick,
     ...props
 }: React.ComponentProps<'button'> &
     VariantProps<typeof buttonVariants> & {
         asChild?: boolean;
+        /** When true (default), blurs the button after click so keyboard events go to document.body (e.g. for canvas KMT parser). */
+        blurAfterClick?: boolean;
     }) {
     const Comp = asChild ? Slot : 'button';
+
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        onClick?.(e);
+        if (blurAfterClick && e.currentTarget instanceof HTMLElement) {
+            e.currentTarget.blur();
+        }
+    };
 
     return (
         <Comp
@@ -57,6 +68,7 @@ function Button({
             data-variant={variant}
             data-size={size}
             className={cn(buttonVariants({ variant, size, className }))}
+            onClick={handleClick}
             {...props}
         />
     );
