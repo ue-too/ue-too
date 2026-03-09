@@ -45,9 +45,7 @@ export type LayoutEvents = {
     escapeKey: {};
     startLayout: {};
     endLayout: {};
-    flipEndTangent: {};
-    flipStartTangent: {};
-    toggleStraightLine: {};
+    // toggleStraightLine: {};
     startDeletion: {};
     endDeletion: {};
     scroll: {
@@ -56,6 +54,9 @@ export type LayoutEvents = {
     arrowUp: {};
     arrowDown: {};
     clearEndPoint: {};
+    F: {};
+    G: {};
+    Q: {};
 };
 
 export interface LayoutContext extends BaseContext {
@@ -191,13 +192,13 @@ export class LayoutHoverForStartingPointState extends TemplateState<
                 },
                 defaultTargetState: 'IDLE',
             },
-            flipEndTangent: {
+            F: {
                 action: (context, event) => {
                     context.flipEndTangent();
                 },
                 defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            flipStartTangent: {
+            G: {
                 action: (context, event) => {
                     context.flipStartTangent();
                 },
@@ -266,17 +267,17 @@ export class LayoutHoverForEndingPointState extends TemplateState<
                 },
                 defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
-            flipEndTangent: {
+            F: {
                 action: (context, event) => {
                     context.flipEndTangent();
                 },
             },
-            flipStartTangent: {
+            G: {
                 action: (context, event) => {
                     context.flipStartTangent();
                 },
             },
-            toggleStraightLine: {
+            Q: {
                 action: (context, event) => {
                     context.toggleStraightLine();
                 },

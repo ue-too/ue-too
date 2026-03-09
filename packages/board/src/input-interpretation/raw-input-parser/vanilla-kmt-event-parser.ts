@@ -360,6 +360,15 @@ export class VanillaKMTEventParser implements KMTEventParser {
         if (e.key === 'ArrowDown') {
             this.processEvent('arrowDown');
         }
+        if (e.key === 'f') {
+            this.processEvent('F');
+        }
+        if (e.key === 'g') {
+            this.processEvent('G');
+        }
+        if (e.key === 'q') {
+            this.processEvent('Q');
+        }
     }
 
     keyupHandler(e: KeyboardEvent) {

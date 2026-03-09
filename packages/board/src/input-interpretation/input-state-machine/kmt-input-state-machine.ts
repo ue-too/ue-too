@@ -131,6 +131,9 @@ export type KmtInputEventMapping = {
     pointerMove: PointerEventPayload;
     arrowUp: EmptyPayload;
     arrowDown: EmptyPayload;
+    F: EmptyPayload;
+    G: EmptyPayload;
+    Q: EmptyPayload;
 };
 
 /**

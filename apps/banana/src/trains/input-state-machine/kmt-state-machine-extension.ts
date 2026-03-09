@@ -16,14 +16,14 @@ const LAYOUT_EVENT_KEYS: (keyof LayoutEvents)[] = [
     'escapeKey',
     'startLayout',
     'endLayout',
-    'flipEndTangent',
-    'flipStartTangent',
-    'toggleStraightLine',
     'startDeletion',
     'endDeletion',
     'scroll',
     'arrowUp',
     'arrowDown',
+    'F',
+    'G',
+    'Q',
 ];
 
 const LAYOUT_EVENT_KEY_SET = new Set<string>(LAYOUT_EVENT_KEYS);
