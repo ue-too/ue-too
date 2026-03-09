@@ -45,7 +45,6 @@ export type LayoutEvents = {
     escapeKey: {};
     startLayout: {};
     endLayout: {};
-    // toggleStraightLine: {};
     startDeletion: {};
     endDeletion: {};
     scroll: {
