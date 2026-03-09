@@ -1,4 +1,4 @@
-import { Canvas, Observable, ObservableInputTracker, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
+import { Canvas, convertFromCanvas2ViewPort, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWindow2Canvas, convertFromWorld2Viewport, Observable, ObservableBoardCamera, ObservableInputTracker, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
 import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
@@ -54,9 +54,12 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]> =
         new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>();
 
-    constructor(canvas: Canvas) {
+    private _camera: ObservableBoardCamera;
+
+    constructor(canvas: Canvas, camera: ObservableBoardCamera) {
         super(canvas);
         this._trackGraph = new TrackGraph();
+        this._camera = camera;
     }
 
     get newStartJointType(): NewJointType | null {
@@ -787,6 +790,20 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         this._newEndJoint = null;
         this._previewCurve = null;
         this._previewDrawDataObservable.notify(undefined)
+    }
+
+    // position is in raw window coordinates space
+    convert2WorldPosition(position: Point): Point {
+        const pointInCanvas = convertFromWindow2Canvas(position, this.canvas);
+        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromViewport2World(pointInViewPort, this._camera.position, this._camera.zoomLevel, this._camera.rotation, false);
+    }
+
+    // position is in the world space
+    convert2WindowPosition(position: Point): Point {
+        const pointInViewPort = convertFromWorld2Viewport(position, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
+        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromCanvas2Window(pointInCanvas, this.canvas);
     }
 }
 

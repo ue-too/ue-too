@@ -10,9 +10,9 @@ type KmtStateMachineEventExtension = KmtInputEventMapping & LayoutEvents;
 type KmtStateMachineExtensionContext = KmtInputContext & LayoutContext;
 
 const LAYOUT_EVENT_KEYS: (keyof LayoutEvents)[] = [
-    'pointerdown',
-    'pointerup',
-    'pointermove',
+    'leftPointerDown',
+    'leftPointerUp',
+    'pointerMove',
     'escapeKey',
     'startLayout',
     'endLayout',
@@ -62,6 +62,8 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
 
     protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventExtension, KmtInputStates, KmtInputEventOutputMapping> = {
         action: (context, event, eventKey, stateMachine) => {
+            console.log('eventKey', eventKey, 'event', event);
+            console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
             if (!LAYOUT_EVENT_KEY_SET.has(eventKey as string)) {
                 return { handled: false };
             }
@@ -72,7 +74,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
                 k: keyof LayoutEvents,
                 p: LayoutEvents[keyof LayoutEvents]
             ) => ReturnType<LayoutStateMachine['happens']>)(key, payload);
-
+            console.log('result', result)
             if (result.handled) {
                 return {
                     handled: true,

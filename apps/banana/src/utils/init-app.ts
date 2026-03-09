@@ -76,7 +76,7 @@ export const initApp = async (
 
   baseComponents.camera.setMaxZoomLevel(30);
 
-  const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy);
+  const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
   const kmtInputStateMachine = createKmtInputStateMachineExpansion(curveEngine);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;

@@ -142,13 +142,13 @@ export function BananaToolbar() {
     const handleLayoutToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'layout') {
-            app.layoutStateMachine.happens('endLayout');
+            app.kmtInputStateMachine.happens('endLayout');
             toggleKmtInput(true);
             setMode('idle');
         } else {
             exitAllModes();
-            app.layoutStateMachine.happens('startLayout');
-            toggleKmtInput(false);
+            app.kmtInputStateMachine.happens('startLayout');
+            // toggleKmtInput(false);
             setMode('layout');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);

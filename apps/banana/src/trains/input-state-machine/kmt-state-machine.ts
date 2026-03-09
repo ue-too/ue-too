@@ -26,17 +26,21 @@ export type LayoutStates =
     CreateStateType<typeof LAYOUT_STATES>;
 
 export type LayoutEvents = {
-    pointerdown: {
-        position: Point;
-        pointerId: number;
+    leftPointerDown: {
+        x: number;
+        y: number;
+        // pointerId: number;
     };
-    pointerup: {
-        pointerId: number;
-        position: Point;
+    leftPointerUp: {
+        x: number;
+        y: number;
+        // pointerId: number;
+        // position: Point;
     };
-    pointermove: {
-        pointerId: number;
-        position: Point;
+    pointerMove: {
+        // pointerId: number;
+        x: number;
+        y: number;
     };
     escapeKey: {};
     startLayout: {};
@@ -81,6 +85,8 @@ export interface LayoutContext extends BaseContext {
     bumpTension: () => void;
     lowerTension: () => void;
     clearEndPoint: () => void;
+    convert2WorldPosition: (position: Point) => Point;
+    convert2WindowPosition: (position: Point) => Point;
     previewStartProjection: ProjectionPositiveResult | null;
     newStartJointType: NewJointType | null;
     lastCurveSuccess: boolean;
@@ -125,12 +131,12 @@ export class LayoutHoverForCurveDeletionState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-            pointermove: {
+            pointerMove: {
                 action: (context, event) => {
-                    context.hoverForCurveDeletion(event.position);
+                    context.hoverForCurveDeletion(event);
                 },
             },
-            pointerup: {
+            leftPointerUp: {
                 action: (context, event) => {
                     // context.deleteCurrentCurve();
                     context.deleteCurrentCurve();
@@ -160,15 +166,16 @@ export class LayoutHoverForStartingPointState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-            pointerup: {
+            leftPointerUp: {
                 action: (context, event) => {
                     context.startCurve();
                 },
                 defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
-            pointermove: {
+            pointerMove: {
                 action: (context, event) => {
-                    context.hoverForStartingPoint(event.position);
+                    const position = context.convert2WorldPosition(event);
+                    context.hoverForStartingPoint(position);
                 },
                 defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
@@ -229,7 +236,7 @@ export class LayoutHoverForEndingPointState extends TemplateState<
         LayoutContext,
         LayoutStates
     > = {
-            pointerup: {
+            leftPointerUp: {
                 action: (context, event) => {
                     const res = context.endCurve();
                     if (res == null) {
@@ -240,9 +247,10 @@ export class LayoutHoverForEndingPointState extends TemplateState<
                 },
                 defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
-            pointermove: {
+            pointerMove: {
                 action: (context, event) => {
-                    context.hoveringForEndJoint(event.position);
+                    const position = context.convert2WorldPosition(event);
+                    context.hoveringForEndJoint(position);
                 },
                 defaultTargetState: 'HOVER_FOR_ENDING_POINT',
             },
@@ -319,7 +327,7 @@ export class LayoutHoverForEndingPointState extends TemplateState<
             Guard<LayoutContext, string>
         >
     > = {
-            pointerup: [
+            leftPointerUp: [
                 {
                     guard: 'lastCurveNotSuccess',
                     target: 'HOVER_FOR_STARTING_POINT',
