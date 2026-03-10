@@ -3,12 +3,40 @@ import {
     useCoordinateConversion,
     useToggleKmtInput,
 } from '@ue-too/board-pixi-react-integration';
+import {
+    ArrowLeftRight,
+    Building2,
+    CircleDot,
+    Download,
+    Eraser,
+    Gauge,
+    House,
+    Layers,
+    Map,
+    Paintbrush,
+    Pause,
+    Pencil,
+    Plus,
+    Spline,
+    Sun,
+    TrainFront,
+    Trash2,
+    Upload,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
+import { cn } from '@/lib/utils';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { ELEVATION } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
@@ -20,6 +48,44 @@ type AppMode =
     | 'train-placement'
     | 'building-placement'
     | 'building-deletion';
+
+function ToolbarButton({
+    tooltip,
+    active,
+    destructive,
+    disabled,
+    onClick,
+    children,
+}: {
+    tooltip: string;
+    active?: boolean;
+    destructive?: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    const variant = destructive
+        ? 'destructive'
+        : active
+          ? 'default'
+          : 'ghost';
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    variant={variant}
+                    size="icon"
+                    disabled={disabled}
+                    onClick={onClick}
+                >
+                    {children}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{tooltip}</TooltipContent>
+        </Tooltip>
+    );
+}
 
 export function BananaToolbar() {
     const app = useBananaApp();
@@ -113,7 +179,10 @@ export function BananaToolbar() {
 
     const handleLayoutToggle = useCallback(() => {
         if (!app) return;
-        if (mode === 'layout') {
+        if (mode === 'layout' || mode === 'layout-deletion') {
+            if (mode === 'layout-deletion') {
+                app.kmtStateMachineExpansion.happens('endDeletion');
+            }
             app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
@@ -126,14 +195,13 @@ export function BananaToolbar() {
     const handleLayoutDeletionToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'layout-deletion') {
-            // app.layoutStateMachine.happens('endDeletion');
             app.kmtStateMachineExpansion.happens('endDeletion');
-            setMode('idle');
-        } else {
+            setMode('layout');
+        } else if (mode === 'layout') {
             app.kmtStateMachineExpansion.happens('startDeletion');
             setMode('layout-deletion');
         }
-    }, [app, mode, exitAllModes, toggleKmtInput]);
+    }, [app, mode]);
 
     const handleTrainPlacementToggle = useCallback(() => {
         if (!app) return;
@@ -258,351 +326,329 @@ export function BananaToolbar() {
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
+    const isLayoutActive = mode === 'layout' || mode === 'layout-deletion';
+
     return (
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
-            {/* Train list and controls */}
-            <Card className="w-full max-w-md">
-                <CardHeader className="px-4 py-2">
-                    <CardTitle className="text-sm">Trains</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2 px-4 py-0 pb-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <Button
-                            variant={
-                                mode === 'train-placement'
-                                    ? 'default'
-                                    : 'outline'
+        <TooltipProvider delayDuration={200}>
+            <div className="pointer-events-auto absolute left-3 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3">
+                {/* Main icon toolbar */}
+                <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                    {/* Track layout group */}
+                    <ToolbarButton
+                        tooltip={isLayoutActive ? 'End Layout' : 'Start Layout'}
+                        active={isLayoutActive}
+                        disabled={
+                            mode !== 'idle' && !isLayoutActive
+                        }
+                        onClick={handleLayoutToggle}
+                    >
+                        <Pencil />
+                    </ToolbarButton>
+
+                    {isLayoutActive && (
+                        <ToolbarButton
+                            tooltip={
+                                mode === 'layout-deletion'
+                                    ? 'End Deletion'
+                                    : 'Delete Track'
                             }
-                            size="sm"
-                            onClick={handleTrainPlacementToggle}
-                            disabled={
-                                mode !== 'idle' && mode !== 'train-placement'
-                            }
+                            active={mode === 'layout-deletion'}
+                            destructive={mode === 'layout-deletion'}
+                            onClick={handleLayoutDeletionToggle}
                         >
-                            {mode === 'train-placement'
+                            <Eraser />
+                        </ToolbarButton>
+                    )}
+
+                    <Separator />
+
+                    {/* Train */}
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'train-placement'
                                 ? 'End Placement'
-                                : 'Place Train'}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.setThrottleStep('p5')}
-                            disabled={!selectedTrain}
-                        >
-                            P5
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.setThrottleStep('N')}
-                            disabled={!selectedTrain}
-                        >
-                            Neutral
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.switchDirection()}
-                            disabled={!selectedTrain}
-                        >
-                            Switch Dir
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => trainManager.removeSelectedTrain()}
-                            disabled={placedTrains.length === 0}
-                        >
-                            Remove selected
-                        </Button>
-                    </div>
-                    {placedTrains.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                            {placedTrains.map((entry, index) => (
-                                <Button
-                                    key={entry.id}
-                                    variant={
-                                        index === selectedIndex
-                                            ? 'default'
-                                            : 'outline'
+                                : 'Place Train'
+                        }
+                        active={mode === 'train-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'train-placement'
+                        }
+                        onClick={handleTrainPlacementToggle}
+                    >
+                        <TrainFront />
+                    </ToolbarButton>
+
+                    {/* Building */}
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'building-placement'
+                                ? 'End Placement'
+                                : 'Place Building'
+                        }
+                        active={mode === 'building-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'building-placement'
+                        }
+                        onClick={handleBuildingPlacementToggle}
+                    >
+                        <Building2 />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'building-deletion'
+                                ? 'End Deletion'
+                                : 'Delete Building'
+                        }
+                        active={mode === 'building-deletion'}
+                        destructive={mode === 'building-deletion'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'building-deletion'
+                        }
+                        onClick={handleBuildingDeletionToggle}
+                    >
+                        <Trash2 />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Track style */}
+                    <ToolbarButton
+                        tooltip="Elevation Style"
+                        active={trackRenderStyle === 'elevation'}
+                        onClick={() => setTrackRenderStyle('elevation')}
+                    >
+                        <Layers />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Texture Style"
+                        active={trackRenderStyle === 'texture'}
+                        onClick={() => setTrackRenderStyle('texture')}
+                    >
+                        <Paintbrush />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Geo layers */}
+                    <ToolbarButton
+                        tooltip={
+                            showDistricts
+                                ? 'Hide Districts'
+                                : 'Show Districts'
+                        }
+                        active={showDistricts}
+                        onClick={() => setShowDistricts(v => !v)}
+                    >
+                        <Map />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={
+                            showVillages ? 'Hide Villages' : 'Show Villages'
+                        }
+                        active={showVillages}
+                        onClick={() => setShowVillages(v => !v)}
+                    >
+                        <House />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Import/Export */}
+                    <ToolbarButton
+                        tooltip="Export Tracks"
+                        onClick={handleExportTracks}
+                    >
+                        <Download />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Import Tracks"
+                        onClick={handleImportTracks}
+                    >
+                        <Upload />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Debug */}
+                    <ToolbarButton
+                        tooltip="Joint Numbers"
+                        active={showJointNumbers}
+                        onClick={() => setShowJointNumbers(v => !v)}
+                    >
+                        <CircleDot />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Segment IDs"
+                        active={showSegmentIds}
+                        onClick={() => setShowSegmentIds(v => !v)}
+                    >
+                        <Spline />
+                    </ToolbarButton>
+                </div>
+
+                {/* Sun angle mini control */}
+                <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center gap-1">
+                                <Sun className="text-muted-foreground size-4" />
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={360}
+                                    step={1}
+                                    value={sunAngle}
+                                    onChange={e =>
+                                        setSunAngle(Number(e.target.value))
                                     }
-                                    size="sm"
+                                    className="h-20 w-1.5 appearance-none [writing-mode:vertical-lr]"
+                                />
+                                <span className="text-muted-foreground text-[10px]">
+                                    {sunAngle}°
+                                </span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">Sun Angle</TooltipContent>
+                    </Tooltip>
+                </div>
+            </div>
+
+            {/* Train controls panel — only visible when trains exist or in placement mode */}
+            {(mode === 'train-placement' || placedTrains.length > 0) && (
+                <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
+                    <div className="bg-background/80 flex items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                        {placedTrains.map((entry, index) => (
+                            <Tooltip key={entry.id}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant={
+                                            index === selectedIndex
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
+                                        size="icon-sm"
+                                        onClick={() =>
+                                            trainManager.setSelectedIndex(index)
+                                        }
+                                    >
+                                        <span className="text-xs font-mono">
+                                            {index + 1}
+                                        </span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Train {index + 1}
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
+
+                        {placedTrains.length > 0 && (
+                            <>
+                                <Separator
+                                    orientation="vertical"
+                                    className="mx-0.5 h-6"
+                                />
+                                <ToolbarButton
+                                    tooltip="Throttle P5"
+                                    disabled={!selectedTrain}
                                     onClick={() =>
-                                        trainManager.setSelectedIndex(index)
+                                        selectedTrain?.setThrottleStep('p5')
                                     }
                                 >
-                                    Train {index + 1}
-                                </Button>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground text-xs">
-                            No trains. Use &quot;Place Train&quot; then click on
-                            track.
-                        </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 border-t pt-2">
-                        <span className="text-muted-foreground text-xs">
-                            Stress test:
-                        </span>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => app.addStressTestTrains(10)}
-                            disabled={
-                                app.curveEngine.trackGraph.trackCurveManager
-                                    .livingEntities.length === 0
-                            }
-                        >
-                            +10 trains
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => app.addStressTestTrains(50)}
-                            disabled={
-                                app.curveEngine.trackGraph.trackCurveManager
-                                    .livingEntities.length === 0
-                            }
-                        >
-                            +50 trains
-                        </Button>
+                                    <Gauge />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Neutral"
+                                    disabled={!selectedTrain}
+                                    onClick={() =>
+                                        selectedTrain?.setThrottleStep('N')
+                                    }
+                                >
+                                    <Pause />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Switch Direction"
+                                    disabled={!selectedTrain}
+                                    onClick={() =>
+                                        selectedTrain?.switchDirection()
+                                    }
+                                >
+                                    <ArrowLeftRight />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Remove Selected Train"
+                                    destructive
+                                    onClick={() =>
+                                        trainManager.removeSelectedTrain()
+                                    }
+                                >
+                                    <Trash2 />
+                                </ToolbarButton>
+                            </>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            )}
 
-            {/* Track layout controls */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={mode === 'layout' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={handleLayoutToggle}
-                    disabled={mode !== 'idle' && mode !== 'layout'}
-                >
-                    {mode === 'layout' ? 'End Layout' : 'Start Layout'}
-                </Button>
-                <Button
-                    variant={
-                        mode === 'layout-deletion' ? 'destructive' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleLayoutDeletionToggle}
-                    disabled={
-                        mode !== 'idle' &&
-                        mode !== 'layout-deletion' &&
-                        mode !== 'layout'
-                    }
-                >
-                    {mode === 'layout-deletion'
-                        ? 'End Deletion'
-                        : 'Delete Layout'}
-                </Button>
-            </div>
+            {/* Building options — only visible in building-placement mode */}
+            {mode === 'building-placement' && (
+                <div className="pointer-events-auto absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="bg-background/80 flex flex-col gap-2 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
+                        <span className="text-muted-foreground text-xs font-medium">
+                            Building
+                        </span>
+                        <select
+                            className="bg-background h-7 rounded-md border px-2 text-xs"
+                            value={buildingPreset}
+                            onChange={e =>
+                                setBuildingPreset(
+                                    e.target.value as BuildingPreset
+                                )
+                            }
+                        >
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                            <option value="l-shape">L-Shape</option>
+                        </select>
+                        <select
+                            className="bg-background h-7 rounded-md border px-2 text-xs"
+                            value={buildingElevation}
+                            onChange={e =>
+                                setBuildingElevation(
+                                    Number(e.target.value) as ELEVATION
+                                )
+                            }
+                        >
+                            <option value={ELEVATION.GROUND}>Ground</option>
+                            <option value={ELEVATION.ABOVE_1}>Above 1</option>
+                            <option value={ELEVATION.ABOVE_2}>Above 2</option>
+                            <option value={ELEVATION.ABOVE_3}>Above 3</option>
+                        </select>
+                        <label className="flex flex-col gap-1 text-xs">
+                            Height: {buildingHeight} lv
+                            <input
+                                type="range"
+                                min={0.5}
+                                max={5}
+                                step={0.5}
+                                value={buildingHeight}
+                                onChange={e =>
+                                    setBuildingHeight(Number(e.target.value))
+                                }
+                                className="w-full"
+                            />
+                        </label>
+                    </div>
+                </div>
+            )}
 
-            {/* Procedural tracks (stress test) */}
-            <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-muted-foreground text-xs">
-                    Procedural tracks:
+            {/* Status bar */}
+            <div className="pointer-events-none absolute bottom-3 right-3">
+                <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
+                    Elev: {elevation} · T: {tension}
                 </span>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({ segmentCount: 20 })
-                    }
-                >
-                    20 segments
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({ segmentCount: 100 })
-                    }
-                >
-                    100 segments
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({
-                            segmentCount: 100,
-                            gentleCurve: true,
-                        })
-                    }
-                >
-                    100 curved
-                </Button>
             </div>
-
-            {/* Building controls */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={
-                        mode === 'building-placement' ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleBuildingPlacementToggle}
-                    disabled={mode !== 'idle' && mode !== 'building-placement'}
-                >
-                    {mode === 'building-placement'
-                        ? 'End Placement'
-                        : 'Place Building'}
-                </Button>
-                <Button
-                    variant={
-                        mode === 'building-deletion' ? 'destructive' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleBuildingDeletionToggle}
-                    disabled={mode !== 'idle' && mode !== 'building-deletion'}
-                >
-                    {mode === 'building-deletion'
-                        ? 'End Deletion'
-                        : 'Delete Building'}
-                </Button>
-
-                <select
-                    className="bg-background h-8 rounded-md border px-2 text-sm"
-                    value={buildingPreset}
-                    onChange={e =>
-                        setBuildingPreset(e.target.value as BuildingPreset)
-                    }
-                >
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
-                    <option value="l-shape">L-Shape</option>
-                </select>
-
-                <select
-                    className="bg-background h-8 rounded-md border px-2 text-sm"
-                    value={buildingElevation}
-                    onChange={e =>
-                        setBuildingElevation(
-                            Number(e.target.value) as ELEVATION
-                        )
-                    }
-                >
-                    <option value={ELEVATION.GROUND}>Ground</option>
-                    <option value={ELEVATION.ABOVE_1}>Above 1</option>
-                    <option value={ELEVATION.ABOVE_2}>Above 2</option>
-                    <option value={ELEVATION.ABOVE_3}>Above 3</option>
-                </select>
-
-                <label className="flex items-center gap-1.5 text-sm">
-                    Height:
-                    <input
-                        type="range"
-                        min={0.5}
-                        max={5}
-                        step={0.5}
-                        value={buildingHeight}
-                        onChange={e =>
-                            setBuildingHeight(Number(e.target.value))
-                        }
-                        className="w-24"
-                    />
-                    <span className="w-10 text-xs">{buildingHeight} lv</span>
-                </label>
-            </div>
-
-            {/* Track detailed render style (when zoomed in) */}
-            <div className="flex items-center gap-1.5">
-                <span className="text-sm">Track style:</span>
-                <Button
-                    variant={
-                        trackRenderStyle === 'elevation' ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => setTrackRenderStyle('elevation')}
-                >
-                    Elevation
-                </Button>
-                <Button
-                    variant={
-                        trackRenderStyle === 'texture' ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => setTrackRenderStyle('texture')}
-                >
-                    Texture
-                </Button>
-            </div>
-
-            {/* Sun angle */}
-            <div className="flex items-center gap-1.5">
-                <label className="flex items-center gap-1.5 text-sm">
-                    Sun Angle:
-                    <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        step={1}
-                        value={sunAngle}
-                        onChange={e => setSunAngle(Number(e.target.value))}
-                        className="w-40"
-                    />
-                    <span className="w-10 text-xs">{sunAngle}°</span>
-                </label>
-            </div>
-
-            {/* Debug overlays (joint numbers, segment IDs) */}
-            <div className="flex items-center gap-1.5">
-                <span className="text-sm">Debug:</span>
-                <Button
-                    variant={showJointNumbers ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowJointNumbers(v => !v)}
-                >
-                    Joint #
-                </Button>
-                <Button
-                    variant={showSegmentIds ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowSegmentIds(v => !v)}
-                >
-                    Segment #
-                </Button>
-            </div>
-
-            {/* GeoJSON + Import/Export */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={showDistricts ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowDistricts(v => !v)}
-                >
-                    {showDistricts ? 'Hide Districts' : 'Show Districts'}
-                </Button>
-                <Button
-                    variant={showVillages ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowVillages(v => !v)}
-                >
-                    {showVillages ? 'Hide Villages' : 'Show Villages'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportTracks}
-                >
-                    Export Tracks
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleImportTracks}
-                >
-                    Import Tracks
-                </Button>
-            </div>
-
-            {/* Status */}
-            <p className="text-muted-foreground text-xs">
-                Elevation: {elevation} · Tension: {tension}
-            </p>
-        </div>
+        </TooltipProvider>
     );
 }
