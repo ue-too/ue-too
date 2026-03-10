@@ -53,18 +53,18 @@ export class TrainManager {
     return id;
   }
 
-  /** Remove the train at the given list index. */
-  removeTrainAtIndex(index: number): void {
-    this._internalTrainManager.destroyEntity(index);
-    if (index < 0 || index >= this._placedTrains.length) return;
-    this._internalTrainManager.destroyEntity(index);
-    this._placedTrains.splice(index, 1);
-    if (this._selectedIndex >= this._placedTrains.length) {
-      this._selectedIndex = Math.max(0, this._placedTrains.length - 1);
-    } else if (this._selectedIndex > index) {
-      this._selectedIndex -= 1;
+  /** Remove the train with the given entity id. */
+  removeTrainAtIndex(id: number): void {
+    const entryIndex = this._placedTrains.findIndex((e) => e.id === id);
+    if (entryIndex === -1) return;
+    this._internalTrainManager.destroyEntity(id);
+    this._placedTrains.splice(entryIndex, 1);
+    if (this._selectedIndex === id) {
+      // Select another train if available, otherwise 0
+      this._selectedIndex =
+        this._placedTrains.length > 0 ? this._placedTrains[0].id : 0;
     }
-    this._observable.notify(index, { type: 'remove' });
+    this._observable.notify(id, { type: 'remove' });
     this._notify();
   }
 

@@ -429,7 +429,7 @@ export class Train {
         if (this._position == null) {
             return;
         }
-        const bogiePositions = this.getBogiePositions(true);
+        const bogiePositions = this.getBogiePositions(false);
         if (bogiePositions === null) {
             return;
         }

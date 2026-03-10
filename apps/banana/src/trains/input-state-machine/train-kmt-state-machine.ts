@@ -76,7 +76,15 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
 
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent'
+        direction: 'tangent' | 'reverseTangent',
+        occupiedJoints?: {
+            jointNumber: number;
+            direction: 'tangent' | 'reverseTangent';
+        }[],
+        occupiedTrackSegments?: {
+            trackNumber: number;
+            inTrackDirection: 'tangent' | 'reverseTangent';
+        }[]
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -92,38 +100,54 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('no possible next joints');
             return null;
         }
-        const firstNextJointNumber: number | undefined = possibleNextJoints
-            .values()
-            .next().value;
-        if (firstNextJointNumber === undefined) {
+
+        // When there are multiple branches and we know which segments the
+        // train occupies, prefer the branch whose segment is already occupied.
+        let selectedNextJointNumber: number | undefined;
+        if (possibleNextJoints.size > 1 && occupiedTrackSegments && occupiedTrackSegments.length > 0) {
+            for (const nextJoint of possibleNextJoints) {
+                const segNumber = joint.connections.get(nextJoint);
+                if (segNumber === undefined) continue;
+                if (occupiedTrackSegments.some(s => s.trackNumber === segNumber)) {
+                    selectedNextJointNumber = nextJoint;
+                    break;
+                }
+            }
+        }
+
+        // Fall back to the first available joint if no occupied match was found.
+        if (selectedNextJointNumber === undefined) {
+            selectedNextJointNumber = possibleNextJoints.values().next().value;
+        }
+        if (selectedNextJointNumber === undefined) {
             return null;
         }
-        const firstNextTrackSegmentNumber =
-            joint.connections.get(firstNextJointNumber);
-        const firstNextJoint = this._trackGraph.getJoint(firstNextJointNumber);
-        if (firstNextTrackSegmentNumber === undefined) {
+        const nextTrackSegmentNumber =
+            joint.connections.get(selectedNextJointNumber);
+        const nextJoint = this._trackGraph.getJoint(selectedNextJointNumber);
+        if (nextTrackSegmentNumber === undefined) {
             return null;
         }
-        const firstNextTrackSegment =
+        const nextTrackSegment =
             this._trackGraph.getTrackSegmentWithJoints(
-                firstNextTrackSegmentNumber
+                nextTrackSegmentNumber
             );
-        if (firstNextJoint === null) {
-            console.warn('first next joint not found');
+        if (nextJoint === null) {
+            console.warn('next joint not found');
             return null;
         }
-        if (firstNextTrackSegment === null) {
-            console.warn('first next track segment not found');
+        if (nextTrackSegment === null) {
+            console.warn('next track segment not found');
             return null;
         }
         const nextDirection: 'tangent' | 'reverseTangent' =
-            firstNextTrackSegment.t0Joint === jointNumber
+            nextTrackSegment.t0Joint === jointNumber
                 ? 'tangent'
                 : 'reverseTangent';
         return {
-            jointNumber: firstNextJointNumber,
+            jointNumber: selectedNextJointNumber,
             direction: nextDirection,
-            curveNumber: firstNextTrackSegmentNumber,
+            curveNumber: nextTrackSegmentNumber,
         };
     }
 }

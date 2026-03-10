@@ -155,9 +155,16 @@ export function BananaToolbar() {
 
     useEffect(() => {
         if (!app) return;
-        return app.trainManager.subscribeToChanges((id, type) =>
+        const unsubChanges = app.trainManager.subscribeToChanges((id, type) =>
             setTrainListVersion(v => v + 1)
         );
+        const unsubSelect = app.trainManager.subscribe(() =>
+            setTrainListVersion(v => v + 1)
+        );
+        return () => {
+            unsubChanges();
+            unsubSelect();
+        };
     }, [app]);
 
     useEffect(() => {
@@ -522,13 +529,15 @@ export function BananaToolbar() {
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant={
-                                            index === selectedIndex
+                                            entry.id === selectedIndex
                                                 ? 'default'
                                                 : 'ghost'
                                         }
                                         size="icon-sm"
                                         onClick={() =>
-                                            trainManager.setSelectedIndex(index)
+                                            trainManager.setSelectedIndex(
+                                                entry.id
+                                            )
                                         }
                                     >
                                         <span className="text-xs font-mono">
