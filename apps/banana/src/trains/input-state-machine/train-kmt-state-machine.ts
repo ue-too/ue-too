@@ -26,6 +26,7 @@ export type TrainPlacementEvents = {
     startPlacement: {};
     endPlacement: {};
     flipTrainDirection: {};
+    F: {};
 };
 
 export interface TrainPlacementContext extends BaseContext {
@@ -294,11 +295,11 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
                 },
                 defaultTargetState: 'IDLE',
             },
-            flipTrainDirection: {
+            F: {
                 action: context => {
                     context.flipTrainDirection();
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
-            },
+            }
         };
 }

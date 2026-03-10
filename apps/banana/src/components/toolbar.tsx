@@ -106,8 +106,7 @@ export function BananaToolbar() {
 
     const exitAllModes = useCallback(() => {
         if (!app) return;
-        app.trainStateMachine.happens('endPlacement');
-        toggleKmtInput(true);
+        app.kmtStateMachineExpansion.happens('switchToIdle');
         selectedBuildingRef.current = null;
         setMode('idle');
     }, [app, toggleKmtInput]);
@@ -211,51 +210,11 @@ export function BananaToolbar() {
             //     position: worldPosition,
             //     pointerId: event.pointerId,
             // });
-            app.trainStateMachine.happens('pointerdown', {
-                position: worldPosition,
-            });
         },
         [app, convertCoords]
     );
 
     useCanvasPointerDown(handlePointerDown);
-
-    useEffect(() => {
-        if (!app) return;
-
-        const canvas = app.app.canvas;
-
-        const handlePointerUp = (event: PointerEvent) => {
-            if (event.button !== 0) return;
-            const worldPosition = convertCoords(event);
-            app.trainStateMachine.happens('pointerup', {
-                position: worldPosition,
-            });
-        };
-
-        const handlePointerMove = (event: PointerEvent) => {
-            const worldPosition = convertCoords(event);
-            app.trainStateMachine.happens('pointermove', {
-                position: worldPosition,
-            });
-        };
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'f') {
-                app.trainStateMachine.happens('flipTrainDirection');
-            }
-        };
-
-        canvas.addEventListener('pointerup', handlePointerUp);
-        canvas.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            canvas.removeEventListener('pointerup', handlePointerUp);
-            canvas.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [app, convertCoords]);
 
     const handleExportTracks = useCallback(() => {
         if (!app) return;
