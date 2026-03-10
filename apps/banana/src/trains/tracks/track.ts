@@ -821,7 +821,7 @@ export class TrackGraph {
             // console.log("edge hit", edgeRes);
             return { hit: true, hitType: 'edge', ...edgeRes };
         }
-        console.log('no hit');
+        // console.log('no hit');
         return { hit: false };
     }
 

@@ -23,7 +23,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
     private _originalEventReactions: EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
     private _toolSwitcherSubStateMachine: ToolSwitcherStateMachine;
 
-    constructor(curveEngine: CurveCreationEngine) {
+    constructor(layoutSubStateMachine: LayoutStateMachine) {
         super();
         const originalIdleState = new KmtIdleState();
         this._originalEventReactions = originalIdleState.eventReactions as unknown as EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
@@ -47,7 +47,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
 
         this._guards = originalIdleState.guards as unknown as Guard<KmtStateMachineExtensionContext>;
 
-        this._toolSwitcherSubStateMachine = createToolSwitcherStateMachine(curveEngine);
+        this._toolSwitcherSubStateMachine = createToolSwitcherStateMachine(layoutSubStateMachine);
     }
 
     protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventWithToolSwitcher, KmtInputStates, KmtInputEventOutputMapping> = {
@@ -104,13 +104,14 @@ export type KmtExpandedStateMachine = StateMachine<
     KmtStateMachineExtensionContext,
     KmtInputStates,
     KmtInputEventOutputMapping
->;
+>
 
 export function createKmtInputStateMachineExpansion(
-    curveEngine: CurveCreationEngine
+    layoutSubStateMachine: LayoutStateMachine,
+    context: KmtStateMachineExtensionContext
 ): KmtExpandedStateMachine {
     const states = {
-        IDLE: new KmtStateMachineExtensionIdleState(curveEngine),
+        IDLE: new KmtStateMachineExtensionIdleState(layoutSubStateMachine),
         READY_TO_PAN_VIA_SPACEBAR: expandState(
             new ReadyToPanViaSpaceBarState()
         ),
@@ -122,10 +123,13 @@ export function createKmtInputStateMachineExpansion(
         PAN_VIA_SCROLL_WHEEL: expandState(new PanViaScrollWheelState()),
         DISABLED: expandState(new DisabledState()),
     };
-    return new TemplateStateMachine<
+
+    const stateMachine = new TemplateStateMachine<
         KmtStateMachineEventWithToolSwitcher,
         KmtStateMachineExtensionContext,
         KmtInputStates,
         KmtInputEventOutputMapping
-    >(states, 'IDLE', curveEngine);
+    >(states, 'IDLE', context);
+
+    return stateMachine;
 }

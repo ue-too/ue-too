@@ -78,7 +78,8 @@ export const initApp = async (
   baseComponents.camera.setMaxZoomLevel(30);
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(curveEngine);
+  const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, baseComponents.observableInputTracker);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;
   const worldRenderSystem = new WorldRenderSystem();
@@ -109,7 +110,7 @@ export const initApp = async (
     trackRenderSystem,
     { renderer: baseComponents.app.renderer },
   );
-  const layoutStateMachine = createLayoutStateMachine(curveEngine);
+  // const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
   const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
     worldRenderSystem,
@@ -179,7 +180,7 @@ export const initApp = async (
     buildingRenderSystem,
     trainPlacementEngine,
     trainManager,
-    layoutStateMachine,
+    layoutStateMachine: layoutSubStateMachine,
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,

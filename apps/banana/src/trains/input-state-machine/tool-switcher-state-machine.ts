@@ -97,10 +97,10 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
 
 class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> { };
 
-export const createToolSwitcherStateMachine = (curveEngine: CurveCreationEngine): ToolSwitcherStateMachine => {
+export const createToolSwitcherStateMachine = (layoutSubStateMachine: LayoutStateMachine): ToolSwitcherStateMachine => {
     return new TemplateStateMachine<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates>({
         IDLE: new ToolSwitcherIdleState(),
-        LAYOUT: new ToolSwitcherLayoutState(createLayoutStateMachine(curveEngine)),
+        LAYOUT: new ToolSwitcherLayoutState(layoutSubStateMachine),
         TRAIN: new ToolSwitcherTrainState(),
     }, 'IDLE', {
         setup: () => { },

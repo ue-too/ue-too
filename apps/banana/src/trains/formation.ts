@@ -177,7 +177,7 @@ export class Train {
         position: TrainPosition,
         preview: boolean = false
     ): TrainPosition[] | null {
-        console.log('get bogie positions', position, preview);
+        // console.log('get bogie positions', position, preview);
         const expandDirection = flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
@@ -370,7 +370,7 @@ export class Train {
             this._position.trackSegment
         );
         if (trackSegment === null) {
-            console.warn('track segment where the train is on is not found');
+            // console.warn('track segment where the train is on is not found');
             this._speed = 0;
             this._throttle = 'N';
             return;
@@ -487,28 +487,28 @@ export class Train {
             const seg = this._trackGraph
                 .getTrackSegmentWithJoints(this._position.trackSegment);
             if (seg === null) {
-                console.warn(
-                    '[remapOnSegmentSplit] new segment not found!',
-                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
-                );
+                // console.warn(
+                //     '[remapOnSegmentSplit] new segment not found!',
+                //     { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
+                // );
             }
             this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
 
-            console.log(
-                '[remapOnSegmentSplit] remapped',
-                {
-                    oldSegmentNumber, splitT, origT,
-                    newSegment: this._position.trackSegment,
-                    newT: this._position.tValue,
-                    direction: this._position.direction,
-                    point: this._position.point
-                }
-            );
+            // console.log(
+            //     '[remapOnSegmentSplit] remapped',
+            //     {
+            //         oldSegmentNumber, splitT, origT,
+            //         newSegment: this._position.trackSegment,
+            //         newT: this._position.tValue,
+            //         direction: this._position.direction,
+            //         point: this._position.point
+            //     }
+            // );
         } else {
-            console.log(
-                '[remapOnSegmentSplit] position not on split segment',
-                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
-            );
+            // console.log(
+            //     '[remapOnSegmentSplit] position not on split segment',
+            //     { positionSegment: this._position?.trackSegment, oldSegmentNumber }
+            // );
         }
 
         this._cachedBogiePositions = null;

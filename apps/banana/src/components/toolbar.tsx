@@ -107,32 +107,32 @@ export function BananaToolbar() {
     useEffect(() => {
         if (!app) return;
 
-        const unsub = app.layoutStateMachine.onStateChange((_current, next) => {
-            switch (next) {
-                case 'HOVER_FOR_CURVE_DELETION':
-                    setMode('layout-deletion');
-                    break;
-                case 'HOVER_FOR_STARTING_POINT':
-                    setMode('layout');
-                    break;
-                case 'IDLE':
-                    if (
-                        modeRef.current === 'layout' ||
-                        modeRef.current === 'layout-deletion'
-                    ) {
-                        setMode('idle');
-                    }
-                    break;
-            }
-        });
+        // const unsub = app.layoutStateMachine.onStateChange((_current, next) => {
+        //     switch (next) {
+        //         case 'HOVER_FOR_CURVE_DELETION':
+        //             setMode('layout-deletion');
+        //             break;
+        //         case 'HOVER_FOR_STARTING_POINT':
+        //             setMode('layout');
+        //             break;
+        //         case 'IDLE':
+        //             if (
+        //                 modeRef.current === 'layout' ||
+        //                 modeRef.current === 'layout-deletion'
+        //             ) {
+        //                 setMode('idle');
+        //             }
+        //             break;
+        //     }
+        // });
 
-        return unsub;
+        // return unsub;
     }, [app]);
 
     const exitAllModes = useCallback(() => {
         if (!app) return;
-        app.layoutStateMachine.happens('endLayout');
-        app.layoutStateMachine.happens('endDeletion');
+        // app.layoutStateMachine.happens('endLayout');
+        // app.layoutStateMachine.happens('endDeletion');
         app.trainStateMachine.happens('endPlacement');
         toggleKmtInput(true);
         selectedBuildingRef.current = null;
@@ -154,12 +154,12 @@ export function BananaToolbar() {
     const handleLayoutDeletionToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'layout-deletion') {
-            app.layoutStateMachine.happens('endDeletion');
+            // app.layoutStateMachine.happens('endDeletion');
             toggleKmtInput(true);
             setMode('idle');
         } else {
             exitAllModes();
-            app.layoutStateMachine.happens('startDeletion');
+            // app.layoutStateMachine.happens('startDeletion');
             toggleKmtInput(false);
             setMode('layout-deletion');
         }
@@ -237,10 +237,10 @@ export function BananaToolbar() {
                 }
             }
 
-            app.layoutStateMachine.happens('pointerdown', {
-                position: worldPosition,
-                pointerId: event.pointerId,
-            });
+            // app.layoutStateMachine.happens('pointerdown', {
+            //     position: worldPosition,
+            //     pointerId: event.pointerId,
+            // });
             app.trainStateMachine.happens('pointerdown', {
                 position: worldPosition,
             });
