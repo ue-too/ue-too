@@ -79,9 +79,6 @@ export const initApp = async (
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
   const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, baseComponents.observableInputTracker);
-  baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
-  baseComponents.kmtInputStateMachine = kmtInputStateMachine;
   const worldRenderSystem = new WorldRenderSystem();
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,
@@ -117,6 +114,10 @@ export const initApp = async (
     trackGraph,
     baseComponents.camera,
   );
+
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, baseComponents.observableInputTracker);
+  baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
+  baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
   curveEngine.trackGraph.onSegmentSplit((info) => {
     for (const { train } of trainManager.getPlacedTrains()) {

@@ -692,7 +692,8 @@ export class TrackGraph {
     connectJoints(
         startJointNumber: number,
         endJointNumber: number,
-        controlPoints: Point[]
+        controlPoints: Point[],
+        gauge: number = 1.067 // in meters
     ): boolean {
         console.log('connectJoints', startJointNumber, endJointNumber);
         const startJoint = this._jointManager.getJoint(startJointNumber);
@@ -736,7 +737,7 @@ export class TrackGraph {
                 endJointNumber,
                 startJoint.elevation,
                 endJoint.elevation,
-                1.067,
+                gauge,
                 excludeSegementSet
             );
 

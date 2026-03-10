@@ -104,35 +104,8 @@ export function BananaToolbar() {
         }
     }, [app, buildingHeight]);
 
-    useEffect(() => {
-        if (!app) return;
-
-        // const unsub = app.layoutStateMachine.onStateChange((_current, next) => {
-        //     switch (next) {
-        //         case 'HOVER_FOR_CURVE_DELETION':
-        //             setMode('layout-deletion');
-        //             break;
-        //         case 'HOVER_FOR_STARTING_POINT':
-        //             setMode('layout');
-        //             break;
-        //         case 'IDLE':
-        //             if (
-        //                 modeRef.current === 'layout' ||
-        //                 modeRef.current === 'layout-deletion'
-        //             ) {
-        //                 setMode('idle');
-        //             }
-        //             break;
-        //     }
-        // });
-
-        // return unsub;
-    }, [app]);
-
     const exitAllModes = useCallback(() => {
         if (!app) return;
-        // app.layoutStateMachine.happens('endLayout');
-        // app.layoutStateMachine.happens('endDeletion');
         app.trainStateMachine.happens('endPlacement');
         toggleKmtInput(true);
         selectedBuildingRef.current = null;
@@ -168,13 +141,10 @@ export function BananaToolbar() {
     const handleTrainPlacementToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'train-placement') {
-            app.trainStateMachine.happens('endPlacement');
-            toggleKmtInput(true);
+            app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
-            exitAllModes();
-            app.trainStateMachine.happens('startPlacement');
-            toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('switchToTrain');
             setMode('train-placement');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);

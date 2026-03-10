@@ -1,6 +1,6 @@
 import { BaseContext, CreateStateType, DefaultOutputMapping, Defer, EventReactions, NO_OP, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { LayoutStateMachine } from "./layout-kmt-state-machine";
-import { createLayoutStateMachine, CurveCreationEngine } from ".";
+import { createLayoutStateMachine, CurveCreationEngine, TrainPlacementStateMachine } from ".";
 
 export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'IDLE'] as const;
 
@@ -65,10 +65,7 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
 
     protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
         action: (context, event, eventKey, stateMachine) => {
-            // console.log('eventKey', eventKey, 'event', event);
-            // console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
             const result = this._layoutSubStateMachine.happens(eventKey, event);
-            // console.log('result', result);
             if (result.handled) {
                 return {
                     handled: true,
@@ -95,13 +92,55 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
     }
 };
 
-class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> { };
+class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
+    private _trainSubStateMachine: TrainPlacementStateMachine;
 
-export const createToolSwitcherStateMachine = (layoutSubStateMachine: LayoutStateMachine): ToolSwitcherStateMachine => {
+    constructor(trainSubStateMachine: TrainPlacementStateMachine) {
+        super();
+        this._trainSubStateMachine = trainSubStateMachine;
+    }
+
+    protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
+        switchToLayout: {
+            action: NO_OP,
+            defaultTargetState: 'LAYOUT',
+        },
+        switchToTrain: {
+            action: NO_OP,
+            defaultTargetState: 'TRAIN',
+        },
+        switchToIdle: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE',
+        }
+    }
+
+    uponEnter(context: BaseContext, stateMachine: StateMachine<ToolSwitcherEvents, BaseContext, "LAYOUT" | "TRAIN" | "IDLE", DefaultOutputMapping<ToolSwitcherEvents>>, from: "LAYOUT" | "TRAIN" | "IDLE" | "INITIAL"): void {
+        this._trainSubStateMachine.happens("startPlacement");
+    }
+
+    beforeExit(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, toState: ToolSwitcherStates) {
+        this._trainSubStateMachine.happens("endPlacement");
+    }
+
+    protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
+        action: (context, event, eventKey, stateMachine) => {
+            const result = this._trainSubStateMachine.happens(eventKey, event);
+            if (result.handled) {
+                return {
+                    handled: true, output: result.output,
+                }
+            }
+            return { handled: false };
+        },
+    };
+};
+
+export const createToolSwitcherStateMachine = (layoutSubStateMachine: LayoutStateMachine, trainSubStateMachine: TrainPlacementStateMachine): ToolSwitcherStateMachine => {
     return new TemplateStateMachine<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates>({
         IDLE: new ToolSwitcherIdleState(),
         LAYOUT: new ToolSwitcherLayoutState(layoutSubStateMachine),
-        TRAIN: new ToolSwitcherTrainState(),
+        TRAIN: new ToolSwitcherTrainState(trainSubStateMachine),
     }, 'IDLE', {
         setup: () => { },
         cleanup: () => { },
