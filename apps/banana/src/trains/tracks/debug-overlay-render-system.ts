@@ -62,7 +62,7 @@ export class DebugOverlayRenderSystem {
 
         const tcm = trackGraph.trackCurveManager;
         tcm.onAdd(() => this.refresh(), { signal: this._abortController.signal });
-        tcm.onDelete(() => this.refresh(), { signal: this._abortController.signal });
+        trackGraph.onSegmentRemoved(() => this.refresh(), { signal: this._abortController.signal });
         trackGraph.onSegmentSplit(() => this.refresh(), { signal: this._abortController.signal });
     }
 

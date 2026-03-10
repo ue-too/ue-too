@@ -9,18 +9,22 @@ import { Point, PointCal } from '@ue-too/math';
 
 import { TrackGraph } from '../tracks/track';
 import { Train, TrainPosition } from '../formation';
+import { convertFromCanvas2ViewPort, convertFromWindow2Canvas, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWorld2Viewport, ObservableBoardCamera, Canvas, ObservableInputTracker } from '@ue-too/board';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
 export type TrainPlacementEvents = {
-    pointerdown: {
-        position: Point;
+    leftPointerDown: {
+        x: number;
+        y: number;
     };
-    pointerup: {
-        position: Point;
+    leftPointerUp: {
+        x: number;
+        y: number;
     };
-    pointermove: {
-        position: Point;
+    pointerMove: {
+        x: number;
+        y: number;
     };
     escapeKey: {};
     startPlacement: {};
@@ -34,6 +38,8 @@ export interface TrainPlacementContext extends BaseContext {
     placeTrain: (position: Point) => void;
     hoverForPlacement: (position: Point) => void;
     flipTrainDirection: () => void;
+    convert2WorldPosition: (position: Point) => Point;
+    convert2WindowPosition: (position: Point) => Point;
 }
 
 export function flipDirection(
@@ -128,9 +134,7 @@ export type TrainPlacementEngineOptions = {
     onPlaced?: (placed: Train) => Train | void;
 };
 
-const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
-
-export class TrainPlacementEngine implements TrainPlacementContext {
+export class TrainPlacementEngine extends ObservableInputTracker implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
     private _trainTangent: Point | null = null;
 
@@ -138,8 +142,10 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _train: Train;
     private _onPlaced: ((placed: Train) => Train | void) | undefined;
+    private _camera: ObservableBoardCamera;
 
-    constructor(trackGraph: TrackGraph, options?: TrainPlacementEngineOptions) {
+    constructor(canvas: Canvas, trackGraph: TrackGraph, camera: ObservableBoardCamera, options?: TrainPlacementEngineOptions) {
+        super(canvas);
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(
             trackGraph
@@ -150,6 +156,7 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             trackGraph,
             this._jointDirectionManager
         );
+        this._camera = camera;
     }
 
     cancelCurrentTrainPlacement() {
@@ -225,6 +232,20 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     cleanup() {
         // TODO: cleanup
     }
+    // position is in raw window coordinates space
+    convert2WorldPosition(position: Point): Point {
+        const pointInCanvas = convertFromWindow2Canvas(position, this.canvas);
+        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromViewport2World(pointInViewPort, this._camera.position, this._camera.zoomLevel, this._camera.rotation, false);
+    }
+
+    // position is in the world space
+    convert2WindowPosition(position: Point): Point {
+        const pointInViewPort = convertFromWorld2Viewport(position, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
+        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromCanvas2Window(pointInCanvas, this.canvas);
+    }
+
 }
 
 export class TrainPlacementStateMachine extends TemplateStateMachine<
@@ -277,15 +298,17 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
                 },
                 defaultTargetState: 'IDLE',
             },
-            pointerup: {
+            leftPointerUp: {
                 action: (context, event) => {
-                    context.placeTrain(event.position);
+                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
+                    context.placeTrain(worldPosition);
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            pointermove: {
+            pointerMove: {
                 action: (context, event) => {
-                    context.hoverForPlacement(event.position);
+                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
+                    context.hoverForPlacement(worldPosition);
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },

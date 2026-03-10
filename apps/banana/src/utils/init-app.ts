@@ -93,7 +93,7 @@ export const initApp = async (
   const trainManager = new TrainManager();
   const trackGraph = curveEngine.trackGraph;
   const jointDirectionManager = new DefaultJointDirectionManager(trackGraph);
-  const trainPlacementEngine = new TrainPlacementEngine(trackGraph, {
+  const trainPlacementEngine = new TrainPlacementEngine(baseComponents.canvasProxy, trackGraph, baseComponents.camera, {
     onPlaced: (placed) => {
       trainManager.addTrain(placed);
       return new Train(null, trackGraph, jointDirectionManager);

@@ -127,6 +127,8 @@ class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitc
 
     protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
         action: (context, event, eventKey, stateMachine) => {
+            console.log('eventKey', eventKey, 'event', event);
+            console.log('current state of the train sub state machine', this._trainSubStateMachine.currentState);
             const result = this._trainSubStateMachine.happens(eventKey, event);
             if (result.handled) {
                 return {
