@@ -2,7 +2,7 @@ import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pi
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
-import { LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
+import { LayoutStateMachine } from '@/trains/input-state-machine/layout-kmt-state-machine';
 import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
 import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
@@ -13,7 +13,7 @@ import { TrainManager } from '@/trains/train-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
-import { createKmtInputStateMachineExpansion } from '@/trains/input-state-machine/kmt-state-machine-extension';
+import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 
 const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 
@@ -27,6 +27,7 @@ export type BananaAppComponents = BaseAppComponents & {
   trainPlacementEngine: TrainPlacementEngine;
   trainManager: TrainManager;
   layoutStateMachine: LayoutStateMachine;
+  kmtStateMachineExpansion: KmtExpandedStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
   /** Add a train at the given segment and t. For stress testing. */
@@ -179,6 +180,7 @@ export const initApp = async (
     trainPlacementEngine,
     trainManager,
     layoutStateMachine,
+    kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,
     addTrainAtPosition,

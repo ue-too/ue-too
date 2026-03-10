@@ -142,13 +142,11 @@ export function BananaToolbar() {
     const handleLayoutToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'layout') {
-            app.kmtInputStateMachine.happens('endLayout');
-            toggleKmtInput(true);
+            app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
             exitAllModes();
-            app.kmtInputStateMachine.happens('startLayout');
-            // toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('switchToLayout');
             setMode('layout');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);
@@ -260,10 +258,6 @@ export function BananaToolbar() {
         const handlePointerUp = (event: PointerEvent) => {
             if (event.button !== 0) return;
             const worldPosition = convertCoords(event);
-            app.layoutStateMachine.happens('pointerup', {
-                pointerId: event.pointerId,
-                position: worldPosition,
-            });
             app.trainStateMachine.happens('pointerup', {
                 position: worldPosition,
             });
@@ -271,49 +265,24 @@ export function BananaToolbar() {
 
         const handlePointerMove = (event: PointerEvent) => {
             const worldPosition = convertCoords(event);
-            app.layoutStateMachine.happens('pointermove', {
-                pointerId: event.pointerId,
-                position: worldPosition,
-            });
             app.trainStateMachine.happens('pointermove', {
                 position: worldPosition,
             });
         };
 
-        const handleWheel = (event: WheelEvent) => {
-            // app.layoutStateMachine.happens('scroll', {
-            //     positive: event.deltaY > 0,
-            // });
-        };
-
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                app.layoutStateMachine.happens('escapeKey');
-            } else if (event.key === 'f') {
-                app.layoutStateMachine.happens('flipEndTangent');
+            if (event.key === 'f') {
                 app.trainStateMachine.happens('flipTrainDirection');
-            } else if (event.key === 'g') {
-                app.layoutStateMachine.happens('flipStartTangent');
-            } else if (event.key === 'q') {
-                app.layoutStateMachine.happens('toggleStraightLine');
-            } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                app.layoutStateMachine.happens('arrowUp');
-            } else if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                app.layoutStateMachine.happens('arrowDown');
             }
         };
 
         canvas.addEventListener('pointerup', handlePointerUp);
         canvas.addEventListener('pointermove', handlePointerMove);
-        canvas.addEventListener('wheel', handleWheel);
         window.addEventListener('keydown', handleKeyDown);
 
         return () => {
             canvas.removeEventListener('pointerup', handlePointerUp);
             canvas.removeEventListener('pointermove', handlePointerMove);
-            canvas.removeEventListener('wheel', handleWheel);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [app, convertCoords]);

@@ -11,7 +11,7 @@ import {
     TrackSegmentDrawData,
 } from '../tracks/types';
 import { TrackGraph } from '../tracks/track';
-import { LayoutContext } from './kmt-state-machine';
+import { LayoutContext } from './layout-kmt-state-machine';
 import { NewJointType } from './types';
 
 export class CurveCreationEngine extends ObservableInputTracker implements LayoutContext {
