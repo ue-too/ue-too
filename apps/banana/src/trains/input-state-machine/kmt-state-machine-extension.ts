@@ -7,17 +7,12 @@ import { CurveCreationEngine } from "./curve-engine";
 import { createToolSwitcherStateMachine, ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStateMachine } from "./tool-switcher-state-machine";
 import { TrainPlacementStateMachine } from "./train-kmt-state-machine";
 
-type KmtStateMachineEventWithToolSwitcher = KmtInputEventMapping & ToolSwitcherEvents;
+type KmtStateMachineEventWithToolSwitcher = KmtInputEventMapping & ToolSwitcherEvents & {
+    startDeletion: {};
+    endDeletion: {};
+};
 
 type KmtStateMachineExtensionContext = KmtInputContext & ToolSwitcherContext;
-
-const KMT_STATE_MACHINE_EVENT_WITH_TOOL_SWITCHER_KEYS: (keyof LayoutEvents | keyof ToolSwitcherEvents)[] = [
-    'switchToLayout',
-    'switchToTrain',
-    'switchToIdle',
-];
-
-const KMT_STATE_MACHINE_EVENT_WITH_TOOL_SWITCHER_KEY_SET = new Set<string>(KMT_STATE_MACHINE_EVENT_WITH_TOOL_SWITCHER_KEYS);
 
 class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping> {
 

@@ -127,12 +127,10 @@ export function BananaToolbar() {
         if (!app) return;
         if (mode === 'layout-deletion') {
             // app.layoutStateMachine.happens('endDeletion');
-            toggleKmtInput(true);
+            app.kmtStateMachineExpansion.happens('endDeletion');
             setMode('idle');
         } else {
-            exitAllModes();
-            // app.layoutStateMachine.happens('startDeletion');
-            toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('startDeletion');
             setMode('layout-deletion');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);
@@ -205,11 +203,6 @@ export function BananaToolbar() {
                     app.buildingManager.removeBuilding(hit);
                 }
             }
-
-            // app.layoutStateMachine.happens('pointerdown', {
-            //     position: worldPosition,
-            //     pointerId: event.pointerId,
-            // });
         },
         [app, convertCoords]
     );
@@ -394,7 +387,11 @@ export function BananaToolbar() {
                     }
                     size="sm"
                     onClick={handleLayoutDeletionToggle}
-                    disabled={mode !== 'idle' && mode !== 'layout-deletion'}
+                    disabled={
+                        mode !== 'idle' &&
+                        mode !== 'layout-deletion' &&
+                        mode !== 'layout'
+                    }
                 >
                     {mode === 'layout-deletion'
                         ? 'End Deletion'

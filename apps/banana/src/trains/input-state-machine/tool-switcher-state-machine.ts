@@ -65,6 +65,8 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
 
     protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
         action: (context, event, eventKey, stateMachine) => {
+            console.log('eventKey', eventKey, 'event', event);
+            console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
             const result = this._layoutSubStateMachine.happens(eventKey, event);
             if (result.handled) {
                 return {
