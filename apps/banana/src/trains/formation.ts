@@ -126,7 +126,11 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
-    private _cars: Car[] = [new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5)];
+    private _cars: Car[] = [new Car([20], 2.5, 2.5), new Car([20], 2.5, 2.5), new Car([20], 2.5, 2.5), new Car([20], 2.5, 2.5)];
+
+    get cars(): readonly Car[] {
+        return this._cars;
+    }
 
     get carOffsets(): number[] {
         const res: number[] = [];

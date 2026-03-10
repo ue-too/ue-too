@@ -4,6 +4,7 @@ export class Car {
 
     private _edgeToBogie: number;
     private _bogieToEdge: number;
+    private _flipped: boolean = false;
 
     constructor(bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number) {
         this._bogieOffsets = bogieOffsets;
@@ -18,6 +19,7 @@ export class Car {
     switchDirection(): void {
         this._bogieOffsets = this._bogieOffsets.reverse();
         [this._edgeToBogie, this._bogieToEdge] = [this._bogieToEdge, this._edgeToBogie];
+        this._flipped = !this._flipped;
     }
 
     get edgeToBogie(): number {
@@ -26,6 +28,10 @@ export class Car {
 
     get bogieToEdge(): number {
         return this._bogieToEdge;
+    }
+
+    get flipped(): boolean {
+        return this._flipped;
     }
 };
 
