@@ -59,6 +59,32 @@ export class TrainManager {
     return id;
   }
 
+  /**
+   * Add a train with a specific id. Used when restoring from serialized data.
+   * The id must be available (e.g. after clearForLoad).
+   */
+  addTrainWithId(id: number, train: Train): void {
+    this._internalTrainManager.createEntityWithId(id, train);
+    this._placedTrains.push({ id, train });
+    if (this._placedTrains.length === 1) this._selectedIndex = id;
+    this._notify();
+    this._observable.notify(id, { type: 'add' });
+  }
+
+  /**
+   * Remove all trains without running onBeforeRemove. Use when replacing
+   * the scene from serialized data (load).
+   */
+  clearForLoad(): void {
+    const ids = this._internalTrainManager.getLivingEntitesIndex();
+    for (const id of ids) {
+      this._internalTrainManager.destroyEntity(id);
+    }
+    this._placedTrains = [];
+    this._selectedIndex = 0;
+    this._notify();
+  }
+
   /** Remove the train with the given entity id. */
   removeTrainAtIndex(id: number): void {
     const entryIndex = this._placedTrains.findIndex((e) => e.id === id);

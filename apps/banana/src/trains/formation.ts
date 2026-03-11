@@ -274,6 +274,11 @@ export class Train {
         return this._formation;
     }
 
+    /** Current head position on the track, or null if not placed. */
+    get position(): TrainPosition | null {
+        return this._position;
+    }
+
     get cars(): readonly Car[] {
         return this._formation.flatCars();
     }

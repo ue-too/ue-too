@@ -41,8 +41,27 @@ import {
 } from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
 import { cn } from '@/lib/utils';
+import {
+    deserializeSceneData,
+    serializeSceneData,
+    type SerializedSceneData,
+    validateSerializedSceneData,
+} from '@/scene-serialization';
+import { ExportSceneIcon } from '@/assets/icons/export-scene';
+import { ImportSceneIcon } from '@/assets/icons/import-scene';
+import { ExportTrackIcon } from '@/assets/icons/export-track';
+import { ImportTrackIcon } from '@/assets/icons/import-track';
+import { ExportTrainIcon } from '@/assets/icons/export-train';
+import { ImportTrainIcon } from '@/assets/icons/import-train';
+import {
+    deserializeTrainData,
+    serializeTrainData,
+    type SerializedTrainData,
+    validateSerializedTrainData,
+} from '@/trains/train-serialization';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { ELEVATION } from '@/trains/tracks/types';
+import type { SerializedTrackData } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 
 type AppMode =
@@ -89,6 +108,40 @@ function ToolbarButton({
             <TooltipContent side="right">{tooltip}</TooltipContent>
         </Tooltip>
     );
+}
+
+function downloadJson(filename: string, data: unknown): void {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function uploadJson(onJson: (parsed: unknown) => void): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result as string);
+                onJson(parsed);
+            } catch (e) {
+                alert(`Failed to parse JSON: ${(e as Error).message}`);
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.click();
 }
 
 export function BananaToolbar() {
@@ -313,43 +366,68 @@ export function BananaToolbar() {
     const handleExportTracks = useCallback(() => {
         if (!app) return;
         const data = app.curveEngine.trackGraph.serialize();
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `track-data-${Date.now()}.json`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        downloadJson(`track-data-${Date.now()}.json`, data);
     }, [app]);
 
     const handleImportTracks = useCallback(() => {
         if (!app) return;
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json,application/json';
-        input.addEventListener('change', () => {
-            const file = input.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const parsed = JSON.parse(reader.result as string);
-                    const result = validateSerializedTrackData(parsed);
-                    if (!result.valid) {
-                        alert(`Invalid track data: ${result.error}`);
-                        return;
-                    }
-                    app.curveEngine.trackGraph.loadFromSerializedData(parsed);
-                } catch (e) {
-                    alert(`Failed to parse JSON: ${(e as Error).message}`);
-                }
-            };
-            reader.readAsText(file);
+        uploadJson((parsed) => {
+            const result = validateSerializedTrackData(parsed);
+            if (!result.valid) {
+                alert(`Invalid track data: ${result.error}`);
+                return;
+            }
+            app.curveEngine.trackGraph.loadFromSerializedData(
+                parsed as SerializedTrackData
+            );
         });
-        input.click();
+    }, [app]);
+
+    const handleExportTrains = useCallback(() => {
+        if (!app) return;
+        const data = serializeTrainData(
+            app.trainManager,
+            app.formationManager,
+            app.carStockManager,
+        );
+        downloadJson(`train-data-${Date.now()}.json`, data);
+    }, [app]);
+
+    const handleImportTrains = useCallback(() => {
+        if (!app) return;
+        uploadJson((parsed) => {
+            const result = validateSerializedTrainData(parsed);
+            if (!result.valid) {
+                alert(`Invalid train data: ${result.error}`);
+                return;
+            }
+            deserializeTrainData(
+                parsed as SerializedTrainData,
+                app.curveEngine.trackGraph,
+                app.jointDirectionManager,
+                app.trainManager,
+                app.formationManager,
+                app.carStockManager,
+            );
+        });
+    }, [app]);
+
+    const handleExportAll = useCallback(() => {
+        if (!app) return;
+        const data = serializeSceneData(app);
+        downloadJson(`scene-data-${Date.now()}.json`, data);
+    }, [app]);
+
+    const handleImportAll = useCallback(() => {
+        if (!app) return;
+        uploadJson((parsed) => {
+            const result = validateSerializedSceneData(parsed);
+            if (!result.valid) {
+                alert(`Invalid scene data: ${result.error}`);
+                return;
+            }
+            deserializeSceneData(app, parsed as SerializedSceneData);
+        });
     }, [app]);
 
     if (!app) return null;
@@ -515,13 +593,37 @@ export function BananaToolbar() {
                         tooltip="Export Tracks"
                         onClick={handleExportTracks}
                     >
-                        <Download />
+                        <ExportTrackIcon />
                     </ToolbarButton>
                     <ToolbarButton
                         tooltip="Import Tracks"
                         onClick={handleImportTracks}
                     >
-                        <Upload />
+                        <ImportTrackIcon />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Export Trains (cars, formations, positions)"
+                        onClick={handleExportTrains}
+                    >
+                        <ExportTrainIcon />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Import Trains"
+                        onClick={handleImportTrains}
+                    >
+                        <ImportTrainIcon />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Export All (tracks + trains)"
+                        onClick={handleExportAll}
+                    >
+                        <ExportSceneIcon />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Import All (tracks + trains)"
+                        onClick={handleImportAll}
+                    >
+                        <ImportSceneIcon />
                     </ToolbarButton>
 
                     <Separator />

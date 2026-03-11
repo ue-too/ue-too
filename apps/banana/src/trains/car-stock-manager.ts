@@ -62,6 +62,12 @@ export class CarStockManager {
         return this._cars.has(id);
     }
 
+    /** Clear all cars from stock. Used when loading from serialized data. */
+    clearForLoad(): void {
+        this._cars.clear();
+        this._notify();
+    }
+
     /** Number of cars currently in stock. */
     get count(): number {
         return this._cars.size;

@@ -158,6 +158,12 @@ export class FormationManager {
         return this._formations.has(id);
     }
 
+    /** Clear all formations. Used when loading from serialized data. */
+    clearForLoad(): void {
+        this._formations.clear();
+        this._notify();
+    }
+
     /** Number of saved formations. */
     get count(): number {
         return this._formations.size;

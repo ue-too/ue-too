@@ -2,9 +2,10 @@ import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pi
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
+import type { JointDirectionManager } from '@/trains/input-state-machine/train-kmt-state-machine';
+import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { LayoutStateMachine } from '@/trains/input-state-machine/layout-kmt-state-machine';
 import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
-import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
 import { generateProceduralTrackPath, type ProceduralTrackOptions } from '@/trains/tracks/procedural-tracks';
@@ -30,6 +31,7 @@ export type BananaAppComponents = BaseAppComponents & {
   trainManager: TrainManager;
   carStockManager: CarStockManager;
   formationManager: FormationManager;
+  jointDirectionManager: JointDirectionManager;
   layoutStateMachine: LayoutStateMachine;
   kmtStateMachineExpansion: KmtExpandedStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
@@ -200,6 +202,7 @@ export const initApp = async (
     trainManager,
     carStockManager,
     formationManager,
+    jointDirectionManager,
     layoutStateMachine: layoutSubStateMachine,
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,

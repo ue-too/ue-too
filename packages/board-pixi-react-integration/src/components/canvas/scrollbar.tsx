@@ -1,6 +1,6 @@
 import { translationHeightOf, translationWidthOf } from '@ue-too/board';
 import { convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { usePixiCanvas } from '../../contexts/pixi';
 import { useViewportScrollBar } from '../../hooks/pixi/utils';
@@ -15,12 +15,94 @@ export const ScrollBarDisplay = () => {
 
     const { result } = usePixiCanvas();
 
+    const hideAfterMs = 3000;
+    const fadeMs = 180;
+    const hideTimeoutRef = useRef<number | undefined>(undefined);
+    const [isVisible, setIsVisible] = useState<boolean>(false);
+
+    const [isHorizontalHovered, setIsHorizontalHovered] =
+        useState<boolean>(false);
+    const [isHorizontalActive, setIsHorizontalActive] = useState<boolean>(false);
+    const [isHorizontalFocused, setIsHorizontalFocused] =
+        useState<boolean>(false);
+    const [isVerticalHovered, setIsVerticalHovered] = useState<boolean>(false);
+    const [isVerticalActive, setIsVerticalActive] = useState<boolean>(false);
+    const [isVerticalFocused, setIsVerticalFocused] = useState<boolean>(false);
+
+    const clearHideTimeout = useCallback(() => {
+        if (hideTimeoutRef.current == null) {
+            return;
+        }
+        window.clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = undefined;
+    }, []);
+
+    const scheduleHide = useCallback(() => {
+        clearHideTimeout();
+        hideTimeoutRef.current = window.setTimeout(() => {
+            setIsVisible(false);
+        }, hideAfterMs);
+    }, [clearHideTimeout]);
+
+    useEffect(() => {
+        return () => {
+            clearHideTimeout();
+        };
+    }, [clearHideTimeout]);
+
+    const hasScrollBars =
+        (scrollBar.horizontalLength ?? 0) > 0 || (scrollBar.verticalLength ?? 0) > 0;
+
+    useEffect(() => {
+        if (!hasScrollBars) {
+            setIsVisible(false);
+            return;
+        }
+        setIsVisible(true);
+        scheduleHide();
+    }, [
+        hasScrollBars,
+        scrollBar.horizontal,
+        scrollBar.vertical,
+        scrollBar.horizontalLength,
+        scrollBar.verticalLength,
+        scheduleHide,
+    ]);
+
+    const themeThumbColor = useMemo(() => {
+        if (isHorizontalActive || isVerticalActive) {
+            return 'var(--scrollbar-thumb-active, rgba(127, 127, 127, 0.65))';
+        }
+        if (isHorizontalHovered || isVerticalHovered) {
+            return 'var(--scrollbar-thumb-hover, rgba(127, 127, 127, 0.55))';
+        }
+        return 'var(--scrollbar-thumb, rgba(127, 127, 127, 0.45))';
+    }, [
+        isHorizontalActive,
+        isVerticalActive,
+        isHorizontalHovered,
+        isVerticalHovered,
+    ]);
+
+    const focusOutline = '2px solid var(--ring, #0066cc)';
+    const shouldShow =
+        (hasScrollBars && isVisible) ||
+        isHorizontalHovered ||
+        isVerticalHovered ||
+        isHorizontalActive ||
+        isVerticalActive ||
+        isHorizontalFocused ||
+        isVerticalFocused;
+
     const horizontalPointerDown = (
         event: React.PointerEvent<HTMLDivElement>
     ) => {
         event.preventDefault();
         initialHorizontalPositionRef.current = event.clientX;
         isHorizontalPointerDownRef.current = true;
+        setIsHorizontalActive(true);
+        setIsVisible(true);
+        clearHideTimeout();
     };
 
     const horizontalPointerMove = useCallback(
@@ -64,6 +146,8 @@ export const ScrollBarDisplay = () => {
     const horizontalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
         isHorizontalPointerDownRef.current = false;
+        setIsHorizontalActive(false);
+        scheduleHide();
     };
 
     const horizontalKeyDown = useCallback(
@@ -145,6 +229,9 @@ export const ScrollBarDisplay = () => {
         event.preventDefault();
         initialVerticalPositionRef.current = event.clientY;
         isVerticalPointerDownRef.current = true;
+        setIsVerticalActive(true);
+        setIsVisible(true);
+        clearHideTimeout();
     };
 
     const verticalPointerMove = useCallback(
@@ -188,6 +275,8 @@ export const ScrollBarDisplay = () => {
     const verticalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
         isVerticalPointerDownRef.current = false;
+        setIsVerticalActive(false);
+        scheduleHide();
     };
 
     const verticalKeyDown = useCallback(
@@ -306,7 +395,7 @@ export const ScrollBarDisplay = () => {
             {/* Horizontal scroll bar */}
             <div
                 className="pointer-events-auto"
-                tabIndex={0}
+                tabIndex={shouldShow ? 0 : -1}
                 role="scrollbar"
                 aria-label="Horizontal scrollbar"
                 aria-orientation="horizontal"
@@ -317,27 +406,45 @@ export const ScrollBarDisplay = () => {
                     width: scrollBar.horizontalLength ?? 0,
                     height: 10,
                     left: scrollBar.horizontal ?? 0,
-                    bottom: 0,
-                    backgroundColor: 'red',
+                    bottom: 2,
+                    backgroundColor: themeThumbColor,
                     position: 'absolute',
                     outline: 'none',
+                    borderRadius: 999,
+                    opacity: shouldShow ? 0.9 : 0,
+                    transition:
+                        `opacity ${fadeMs}ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 120ms ease, transform 120ms ease`,
+                    transform: isHorizontalActive ? 'scaleY(1.15)' : undefined,
+                    pointerEvents: shouldShow ? 'auto' : 'none',
                 }}
                 onPointerDown={horizontalPointerDown}
                 onPointerMove={horizontalPointerMove}
                 onPointerUp={horizontalPointerUp}
+                onPointerEnter={() => setIsHorizontalHovered(true)}
+                onPointerLeave={() => {
+                    setIsHorizontalHovered(false);
+                    setIsHorizontalActive(false);
+                    isHorizontalPointerDownRef.current = false;
+                    scheduleHide();
+                }}
                 onKeyDown={horizontalKeyDown}
                 onFocus={e => {
-                    e.currentTarget.style.outline = '2px solid #0066cc';
+                    e.currentTarget.style.outline = focusOutline;
                     e.currentTarget.style.outlineOffset = '2px';
+                    setIsHorizontalFocused(true);
+                    setIsVisible(true);
+                    clearHideTimeout();
                 }}
                 onBlur={e => {
                     e.currentTarget.style.outline = 'none';
+                    setIsHorizontalFocused(false);
+                    scheduleHide();
                 }}
             />
             {/* Vertical scroll bar */}
             <div
                 className="pointer-events-auto"
-                tabIndex={0}
+                tabIndex={shouldShow ? 0 : -1}
                 role="scrollbar"
                 aria-label="Vertical scrollbar"
                 aria-orientation="vertical"
@@ -347,23 +454,40 @@ export const ScrollBarDisplay = () => {
                 style={{
                     width: 10,
                     height: scrollBar.verticalLength ?? 0,
-                    right: 0,
+                    right: 2,
                     top: scrollBar.vertical ?? 0,
-                    backgroundColor: 'blue',
+                    backgroundColor: themeThumbColor,
                     position: 'absolute',
-                    pointerEvents: 'auto',
                     outline: 'none',
+                    borderRadius: 999,
+                    opacity: shouldShow ? 0.9 : 0,
+                    transition:
+                        `opacity ${fadeMs}ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 120ms ease, transform 120ms ease`,
+                    transform: isVerticalActive ? 'scaleX(1.15)' : undefined,
+                    pointerEvents: shouldShow ? 'auto' : 'none',
                 }}
                 onPointerDown={verticalPointerDown}
                 onPointerMove={verticalPointerMove}
                 onPointerUp={verticalPointerUp}
+                onPointerEnter={() => setIsVerticalHovered(true)}
+                onPointerLeave={() => {
+                    setIsVerticalHovered(false);
+                    setIsVerticalActive(false);
+                    isVerticalPointerDownRef.current = false;
+                    scheduleHide();
+                }}
                 onKeyDown={verticalKeyDown}
                 onFocus={e => {
-                    e.currentTarget.style.outline = '2px solid #0066cc';
+                    e.currentTarget.style.outline = focusOutline;
                     e.currentTarget.style.outlineOffset = '2px';
+                    setIsVerticalFocused(true);
+                    setIsVisible(true);
+                    clearHideTimeout();
                 }}
                 onBlur={e => {
                     e.currentTarget.style.outline = 'none';
+                    setIsVerticalFocused(false);
+                    scheduleHide();
                 }}
             />
         </>

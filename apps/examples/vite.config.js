@@ -36,6 +36,7 @@ export default defineConfig({
                     'src/image-example/index.html'
                 ),
                 physics: resolve(__dirname, 'src/physics/index.html'),
+                'svg': resolve(__dirname, 'src/svg/index.html'),
             },
         },
     },

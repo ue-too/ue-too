@@ -12,6 +12,29 @@ export function generateFormationId(): string {
 }
 
 /**
+ * Seeds the car/formation ID generators so the next generated IDs won't clash
+ * with existing serialized IDs. Call during deserialization after parsing
+ * car and formation id arrays.
+ *
+ * @param carIds - All car IDs from serialized data (e.g. "car-0", "car-1")
+ * @param formationIds - All formation IDs from serialized data (e.g. "formation-0")
+ */
+export function seedIdGeneratorsFromSerialized(carIds: string[], formationIds: string[]): void {
+    const carNum = (id: string) => {
+        const m = /^car-(\d+)$/.exec(id);
+        return m ? parseInt(m[1], 10) : -1;
+    };
+    const formationNum = (id: string) => {
+        const m = /^formation-(\d+)$/.exec(id);
+        return m ? parseInt(m[1], 10) : -1;
+    };
+    const maxCar = carIds.reduce((a, id) => Math.max(a, carNum(id)), -1);
+    const maxFormation = formationIds.reduce((a, id) => Math.max(a, formationNum(id)), -1);
+    if (maxCar >= 0) _nextCarId = maxCar + 1;
+    if (maxFormation >= 0) _nextFormationId = maxFormation + 1;
+}
+
+/**
  * Common interface for train composition elements.
  * Both individual cars (leaf) and formations (composite) implement this.
  */
