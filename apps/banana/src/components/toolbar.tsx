@@ -5,6 +5,7 @@ import {
 } from '@ue-too/board-pixi-react-integration';
 import {
     ArrowLeftRight,
+    Bug,
     Building2,
     CircleDot,
     Download,
@@ -12,6 +13,7 @@ import {
     Gauge,
     House,
     Layers,
+    ListOrdered,
     Map,
     Paintbrush,
     Pause,
@@ -23,16 +25,20 @@ import {
     Trash2,
     Upload,
     Warehouse,
-    ListOrdered,
-    Bug,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ExportSceneIcon } from '@/assets/icons/export-scene';
+import { ExportTrackIcon } from '@/assets/icons/export-track';
+import { ExportTrainIcon } from '@/assets/icons/export-train';
+import { ImportSceneIcon } from '@/assets/icons/import-scene';
+import { ImportTrackIcon } from '@/assets/icons/import-track';
+import { ImportTrainIcon } from '@/assets/icons/import-train';
 import type { BuildingPreset } from '@/buildings/types';
+import { FormationEditor } from '@/components/formation-editor';
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
-import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import {
     Tooltip,
@@ -43,27 +49,21 @@ import {
 import { useBananaApp } from '@/contexts/pixi';
 import { cn } from '@/lib/utils';
 import {
+    type SerializedSceneData,
     deserializeSceneData,
     serializeSceneData,
-    type SerializedSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
-import { ExportSceneIcon } from '@/assets/icons/export-scene';
-import { ImportSceneIcon } from '@/assets/icons/import-scene';
-import { ExportTrackIcon } from '@/assets/icons/export-track';
-import { ImportTrackIcon } from '@/assets/icons/import-track';
-import { ExportTrainIcon } from '@/assets/icons/export-train';
-import { ImportTrainIcon } from '@/assets/icons/import-train';
-import {
-    deserializeTrainData,
-    serializeTrainData,
-    type SerializedTrainData,
-    validateSerializedTrainData,
-} from '@/trains/train-serialization';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { ELEVATION } from '@/trains/tracks/types';
 import type { SerializedTrackData } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
+import {
+    type SerializedTrainData,
+    deserializeTrainData,
+    serializeTrainData,
+    validateSerializedTrainData,
+} from '@/trains/train-serialization';
 
 type AppMode =
     | 'idle'
@@ -88,11 +88,7 @@ function ToolbarButton({
     onClick: () => void;
     children: ReactNode;
 }) {
-    const variant = destructive
-        ? 'destructive'
-        : active
-          ? 'default'
-          : 'ghost';
+    const variant = destructive ? 'destructive' : active ? 'default' : 'ghost';
 
     return (
         <Tooltip>
@@ -164,6 +160,7 @@ export function BananaToolbar() {
     const [showVillages, setShowVillages] = useState(true);
     const [trackRenderStyle, setTrackRenderStyle] =
         useState<DetailedTrackRenderStyle>('elevation');
+    const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
     const [trainListVersion, setTrainListVersion] = useState(0);
@@ -207,6 +204,11 @@ export function BananaToolbar() {
         if (!app) return;
         app.trackRenderSystem.detailedRenderStyle = trackRenderStyle;
     }, [app, trackRenderStyle]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.trackRenderSystem.showPreviewCurveArcs = showPreviewCurveArcs;
+    }, [app, showPreviewCurveArcs]);
 
     useEffect(() => {
         if (!app) return;
@@ -373,7 +375,7 @@ export function BananaToolbar() {
 
     const handleImportTracks = useCallback(() => {
         if (!app) return;
-        uploadJson((parsed) => {
+        uploadJson(parsed => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
                 alert(`Invalid track data: ${result.error}`);
@@ -390,14 +392,14 @@ export function BananaToolbar() {
         const data = serializeTrainData(
             app.trainManager,
             app.formationManager,
-            app.carStockManager,
+            app.carStockManager
         );
         downloadJson(`train-data-${Date.now()}.json`, data);
     }, [app]);
 
     const handleImportTrains = useCallback(() => {
         if (!app) return;
-        uploadJson((parsed) => {
+        uploadJson(parsed => {
             const result = validateSerializedTrainData(parsed);
             if (!result.valid) {
                 alert(`Invalid train data: ${result.error}`);
@@ -409,7 +411,7 @@ export function BananaToolbar() {
                 app.jointDirectionManager,
                 app.trainManager,
                 app.formationManager,
-                app.carStockManager,
+                app.carStockManager
             );
         });
     }, [app]);
@@ -422,7 +424,7 @@ export function BananaToolbar() {
 
     const handleImportAll = useCallback(() => {
         if (!app) return;
-        uploadJson((parsed) => {
+        uploadJson(parsed => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
                 alert(`Invalid scene data: ${result.error}`);
@@ -443,16 +445,14 @@ export function BananaToolbar() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="pointer-events-auto absolute left-3 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3">
+            <div className="pointer-events-auto absolute top-1/2 left-3 flex -translate-y-1/2 flex-col items-center gap-3">
                 {/* Main icon toolbar */}
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     {/* Track layout group */}
                     <ToolbarButton
                         tooltip={isLayoutActive ? 'End Layout' : 'Start Layout'}
                         active={isLayoutActive}
-                        disabled={
-                            mode !== 'idle' && !isLayoutActive
-                        }
+                        disabled={mode !== 'idle' && !isLayoutActive}
                         onClick={handleLayoutToggle}
                     >
                         <Pencil />
@@ -483,9 +483,7 @@ export function BananaToolbar() {
                                 : 'Place Train'
                         }
                         active={mode === 'train-placement'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'train-placement'
-                        }
+                        disabled={mode !== 'idle' && mode !== 'train-placement'}
                         onClick={handleTrainPlacementToggle}
                     >
                         <TrainFront />
@@ -508,9 +506,7 @@ export function BananaToolbar() {
                                 : 'Edit Formations'
                         }
                         active={showFormationEditor}
-                        onClick={() =>
-                            setShowFormationEditor(v => !v)
-                        }
+                        onClick={() => setShowFormationEditor(v => !v)}
                     >
                         <ListOrdered />
                     </ToolbarButton>
@@ -564,14 +560,24 @@ export function BananaToolbar() {
                         <Paintbrush />
                     </ToolbarButton>
 
+                    <ToolbarButton
+                        tooltip={
+                            showPreviewCurveArcs
+                                ? 'Hide Preview Curve Arcs'
+                                : 'Show Preview Curve Arcs'
+                        }
+                        active={showPreviewCurveArcs}
+                        onClick={() => setShowPreviewCurveArcs(v => !v)}
+                    >
+                        <Spline />
+                    </ToolbarButton>
+
                     <Separator />
 
                     {/* Geo layers */}
                     <ToolbarButton
                         tooltip={
-                            showDistricts
-                                ? 'Hide Districts'
-                                : 'Show Districts'
+                            showDistricts ? 'Hide Districts' : 'Show Districts'
                         }
                         active={showDistricts}
                         onClick={() => setShowDistricts(v => !v)}
@@ -681,7 +687,9 @@ export function BananaToolbar() {
                                         const val = e.target.value || null;
                                         setSelectedPlacementFormationId(val);
                                         const formation = val
-                                            ? app.formationManager.getFormation(val)
+                                            ? app.formationManager.getFormation(
+                                                  val
+                                              )
                                             : null;
                                         app.trainPlacementEngine.setFormation(
                                             formation
@@ -697,9 +705,13 @@ export function BananaToolbar() {
                                                 value={entry.id}
                                             >
                                                 {entry.id} (
-                                                {entry.formation.flatCars().length}{' '}
+                                                {
+                                                    entry.formation.flatCars()
+                                                        .length
+                                                }{' '}
                                                 car
-                                                {entry.formation.flatCars().length !== 1
+                                                {entry.formation.flatCars()
+                                                    .length !== 1
                                                     ? 's'
                                                     : ''}
                                                 )
@@ -729,7 +741,7 @@ export function BananaToolbar() {
                                             )
                                         }
                                     >
-                                        <span className="text-xs font-mono">
+                                        <span className="font-mono text-xs">
                                             {index + 1}
                                         </span>
                                     </Button>
@@ -790,7 +802,7 @@ export function BananaToolbar() {
 
             {/* Building options — only visible in building-placement mode */}
             {mode === 'building-placement' && (
-                <div className="pointer-events-auto absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
                     <div className="bg-background/80 flex flex-col gap-2 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
                         <span className="text-muted-foreground text-xs font-medium">
                             Building
@@ -851,9 +863,7 @@ export function BananaToolbar() {
                         <Button
                             variant="ghost"
                             size="icon-xs"
-                            onClick={() =>
-                                app.carStockManager.createCar()
-                            }
+                            onClick={() => app.carStockManager.createCar()}
                         >
                             <Plus className="size-3.5" />
                         </Button>
@@ -861,8 +871,7 @@ export function BananaToolbar() {
                 >
                     <Separator className="mb-2" />
                     <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
-                        {app.carStockManager.getAvailableCars().length ===
-                        0 ? (
+                        {app.carStockManager.getAvailableCars().length === 0 ? (
                             <span className="text-muted-foreground py-4 text-center text-xs">
                                 No cars in stock
                             </span>
@@ -875,22 +884,22 @@ export function BananaToolbar() {
                                         className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
                                     >
                                         <div className="flex flex-col">
-                                            <span className="text-foreground text-xs font-mono">
+                                            <span className="text-foreground font-mono text-xs">
                                                 {entry.id}
                                             </span>
                                             <span className="text-muted-foreground text-[10px]">
-                                                {entry.car.bogieOffsets().length + 1} bogies
+                                                {entry.car.bogieOffsets()
+                                                    .length + 1}{' '}
+                                                bogies
                                                 {' · '}
                                                 {entry.car.edgeToBogie +
                                                     entry.car
                                                         .bogieOffsets()
                                                         .reduce(
-                                                            (a, b) =>
-                                                                a + b,
+                                                            (a, b) => a + b,
                                                             0
                                                         ) +
-                                                    entry.car
-                                                        .bogieToEdge}
+                                                    entry.car.bogieToEdge}
                                                 m
                                             </span>
                                         </div>
@@ -931,7 +940,9 @@ export function BananaToolbar() {
                     <Separator className="mb-2" />
                     <div className="flex flex-col gap-2">
                         <label className="flex items-center justify-between gap-2 text-xs">
-                            <span className="text-foreground">Joint numbers</span>
+                            <span className="text-foreground">
+                                Joint numbers
+                            </span>
                             <input
                                 type="checkbox"
                                 checked={showJointNumbers}
@@ -951,7 +962,7 @@ export function BananaToolbar() {
             )}
 
             {/* Status bar */}
-            <div className="pointer-events-none absolute bottom-3 right-3">
+            <div className="pointer-events-none absolute right-3 bottom-3">
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
                     Elev: {elevation} · T: {tension}
                 </span>
