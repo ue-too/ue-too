@@ -9,26 +9,23 @@ import {
     Building2,
     CircleDot,
     Download,
-    Eraser,
     Gauge,
-    House,
     Layers,
     ListOrdered,
-    Map,
     Paintbrush,
     Pause,
-    Pencil,
     Plus,
     Spline,
     Sun,
     TrainFront,
+    TrainTrack,
     Trash2,
-    Upload,
     Warehouse,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { BulldozerIcon } from '@/assets/icons/bulldozer';
 import { ExportSceneIcon } from '@/assets/icons/export-scene';
 import { ExportTrackIcon } from '@/assets/icons/export-track';
 import { ExportTrainIcon } from '@/assets/icons/export-train';
@@ -73,10 +70,14 @@ type AppMode =
     | 'building-placement'
     | 'building-deletion';
 
+/** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar) */
+const TOOLBAR_LEFT = 'left-6';
+
 function ToolbarButton({
     tooltip,
     active,
     destructive,
+    destructiveMuted,
     disabled,
     onClick,
     children,
@@ -84,6 +85,8 @@ function ToolbarButton({
     tooltip: string;
     active?: boolean;
     destructive?: boolean;
+    /** When true, normal state uses darker red; active uses bright red */
+    destructiveMuted?: boolean;
     disabled?: boolean;
     onClick: () => void;
     children: ReactNode;
@@ -98,6 +101,11 @@ function ToolbarButton({
                     size="icon"
                     disabled={disabled}
                     onClick={onClick}
+                    className={
+                        destructiveMuted && !active
+                            ? 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                            : undefined
+                    }
                 >
                     {children}
                 </Button>
@@ -156,8 +164,6 @@ export function BananaToolbar() {
         ELEVATION.ABOVE_1
     );
     const [buildingHeight, setBuildingHeight] = useState(1);
-    const [showDistricts, setShowDistricts] = useState(true);
-    const [showVillages, setShowVillages] = useState(true);
     const [trackRenderStyle, setTrackRenderStyle] =
         useState<DetailedTrackRenderStyle>('elevation');
     const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
@@ -167,6 +173,10 @@ export function BananaToolbar() {
     const [showDepot, setShowDepot] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
+    const [showExportSubmenu, setShowExportSubmenu] = useState(false);
+    const exportSubmenuTimeoutRef = useRef<ReturnType<
+        typeof setTimeout
+    > | null>(null);
     const [depotVersion, setDepotVersion] = useState(0);
     const [formationVersion, setFormationVersion] = useState(0);
     const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
@@ -259,6 +269,14 @@ export function BananaToolbar() {
             );
         }
     }, [app, buildingHeight]);
+
+    useEffect(() => {
+        return () => {
+            if (exportSubmenuTimeoutRef.current) {
+                clearTimeout(exportSubmenuTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const exitAllModes = useCallback(() => {
         if (!app) return;
@@ -445,7 +463,12 @@ export function BananaToolbar() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="pointer-events-auto absolute top-1/2 left-3 flex -translate-y-1/2 flex-col items-center gap-3">
+            <div
+                className={cn(
+                    'pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-3',
+                    TOOLBAR_LEFT
+                )}
+            >
                 {/* Main icon toolbar */}
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     {/* Track layout group */}
@@ -455,23 +478,8 @@ export function BananaToolbar() {
                         disabled={mode !== 'idle' && !isLayoutActive}
                         onClick={handleLayoutToggle}
                     >
-                        <Pencil />
+                        <TrainTrack />
                     </ToolbarButton>
-
-                    {isLayoutActive && (
-                        <ToolbarButton
-                            tooltip={
-                                mode === 'layout-deletion'
-                                    ? 'End Deletion'
-                                    : 'Delete Track'
-                            }
-                            active={mode === 'layout-deletion'}
-                            destructive={mode === 'layout-deletion'}
-                            onClick={handleLayoutDeletionToggle}
-                        >
-                            <Eraser />
-                        </ToolbarButton>
-                    )}
 
                     <Separator />
 
@@ -574,65 +582,91 @@ export function BananaToolbar() {
 
                     <Separator />
 
-                    {/* Geo layers */}
-                    <ToolbarButton
-                        tooltip={
-                            showDistricts ? 'Hide Districts' : 'Show Districts'
-                        }
-                        active={showDistricts}
-                        onClick={() => setShowDistricts(v => !v)}
+                    {/* Import/Export — hover to expand */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => {
+                            if (exportSubmenuTimeoutRef.current) {
+                                clearTimeout(exportSubmenuTimeoutRef.current);
+                                exportSubmenuTimeoutRef.current = null;
+                            }
+                            setShowExportSubmenu(true);
+                        }}
+                        onMouseLeave={() => {
+                            exportSubmenuTimeoutRef.current = setTimeout(
+                                () => setShowExportSubmenu(false),
+                                400
+                            );
+                        }}
                     >
-                        <Map />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip={
-                            showVillages ? 'Hide Villages' : 'Show Villages'
-                        }
-                        active={showVillages}
-                        onClick={() => setShowVillages(v => !v)}
-                    >
-                        <House />
-                    </ToolbarButton>
-
-                    <Separator />
-
-                    {/* Import/Export */}
-                    <ToolbarButton
-                        tooltip="Export Tracks"
-                        onClick={handleExportTracks}
-                    >
-                        <ExportTrackIcon />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Import Tracks"
-                        onClick={handleImportTracks}
-                    >
-                        <ImportTrackIcon />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Export Trains (cars, formations, positions)"
-                        onClick={handleExportTrains}
-                    >
-                        <ExportTrainIcon />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Import Trains"
-                        onClick={handleImportTrains}
-                    >
-                        <ImportTrainIcon />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Export All (tracks + trains)"
-                        onClick={handleExportAll}
-                    >
-                        <ExportSceneIcon />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Import All (tracks + trains)"
-                        onClick={handleImportAll}
-                    >
-                        <ImportSceneIcon />
-                    </ToolbarButton>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                showExportSubmenu && 'bg-accent'
+                            )}
+                        >
+                            <Download />
+                        </Button>
+                        {showExportSubmenu && (
+                            <div
+                                className="bg-background/80 absolute top-0 left-full z-50 flex translate-x-4 flex-col gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm"
+                                onMouseEnter={() => {
+                                    if (exportSubmenuTimeoutRef.current) {
+                                        clearTimeout(
+                                            exportSubmenuTimeoutRef.current
+                                        );
+                                        exportSubmenuTimeoutRef.current = null;
+                                    }
+                                    setShowExportSubmenu(true);
+                                }}
+                                onMouseLeave={() => {
+                                    exportSubmenuTimeoutRef.current =
+                                        setTimeout(
+                                            () => setShowExportSubmenu(false),
+                                            150
+                                        );
+                                }}
+                            >
+                                <ToolbarButton
+                                    tooltip="Export Tracks"
+                                    onClick={handleExportTracks}
+                                >
+                                    <ExportTrackIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import Tracks"
+                                    onClick={handleImportTracks}
+                                >
+                                    <ImportTrackIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Export Trains (cars, formations, positions)"
+                                    onClick={handleExportTrains}
+                                >
+                                    <ExportTrainIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import Trains"
+                                    onClick={handleImportTrains}
+                                >
+                                    <ImportTrainIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Export All (tracks + trains)"
+                                    onClick={handleExportAll}
+                                >
+                                    <ExportSceneIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import All (tracks + trains)"
+                                    onClick={handleImportAll}
+                                >
+                                    <ImportSceneIcon />
+                                </ToolbarButton>
+                            </div>
+                        )}
+                    </div>
 
                     <Separator />
 
@@ -672,6 +706,32 @@ export function BananaToolbar() {
                     </Tooltip>
                 </div>
             </div>
+
+            {/* Layout deletion toolbar — lower left, only visible when layout mode is active */}
+            {isLayoutActive && (
+                <div
+                className={cn(
+                    'pointer-events-auto absolute bottom-3',
+                    TOOLBAR_LEFT
+                )}
+            >
+                    <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                        <ToolbarButton
+                            tooltip={
+                                mode === 'layout-deletion'
+                                    ? 'End Deletion'
+                                    : 'Delete Track'
+                            }
+                            active={mode === 'layout-deletion'}
+                            destructive={mode === 'layout-deletion'}
+                            destructiveMuted
+                            onClick={handleLayoutDeletionToggle}
+                        >
+                            <BulldozerIcon />
+                        </ToolbarButton>
+                    </div>
+                </div>
+            )}
 
             {/* Train controls panel — only visible when trains exist or in placement mode */}
             {(mode === 'train-placement' || placedTrains.length > 0) && (
