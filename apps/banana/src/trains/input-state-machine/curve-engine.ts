@@ -95,6 +95,11 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         this._currentJointElevation = elevation;
     }
 
+    setCurrentGauge(gauge: number) {
+        this._previewCurveGauge = gauge;
+    }
+
+
     bumpStartJointElevation() {
         if (
             this._newStartJoint !== null &&
