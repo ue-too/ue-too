@@ -24,6 +24,7 @@ import {
     Upload,
     Warehouse,
     ListOrdered,
+    Bug,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -168,6 +169,7 @@ export function BananaToolbar() {
     const [trainListVersion, setTrainListVersion] = useState(0);
     const [showDepot, setShowDepot] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
+    const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [depotVersion, setDepotVersion] = useState(0);
     const [formationVersion, setFormationVersion] = useState(0);
     const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
@@ -630,18 +632,11 @@ export function BananaToolbar() {
 
                     {/* Debug */}
                     <ToolbarButton
-                        tooltip="Joint Numbers"
-                        active={showJointNumbers}
-                        onClick={() => setShowJointNumbers(v => !v)}
+                        tooltip={showDebugPanel ? 'Close Debug' : 'Open Debug'}
+                        active={showDebugPanel}
+                        onClick={() => setShowDebugPanel(v => !v)}
                     >
-                        <CircleDot />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Segment IDs"
-                        active={showSegmentIds}
-                        onClick={() => setShowSegmentIds(v => !v)}
-                    >
-                        <Spline />
+                        <Bug />
                     </ToolbarButton>
                 </div>
 
@@ -924,6 +919,35 @@ export function BananaToolbar() {
                     carStockManager={app.carStockManager}
                     onClose={() => setShowFormationEditor(false)}
                 />
+            )}
+
+            {/* Debug panel */}
+            {showDebugPanel && (
+                <DraggablePanel
+                    title="Debug"
+                    onClose={() => setShowDebugPanel(false)}
+                    className="w-56"
+                >
+                    <Separator className="mb-2" />
+                    <div className="flex flex-col gap-2">
+                        <label className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-foreground">Joint numbers</span>
+                            <input
+                                type="checkbox"
+                                checked={showJointNumbers}
+                                onChange={() => setShowJointNumbers(v => !v)}
+                            />
+                        </label>
+                        <label className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-foreground">Segment IDs</span>
+                            <input
+                                type="checkbox"
+                                checked={showSegmentIds}
+                                onChange={() => setShowSegmentIds(v => !v)}
+                            />
+                        </label>
+                    </div>
+                </DraggablePanel>
             )}
 
             {/* Status bar */}

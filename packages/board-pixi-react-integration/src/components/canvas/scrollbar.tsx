@@ -98,6 +98,7 @@ export const ScrollBarDisplay = () => {
         event: React.PointerEvent<HTMLDivElement>
     ) => {
         event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
         initialHorizontalPositionRef.current = event.clientX;
         isHorizontalPointerDownRef.current = true;
         setIsHorizontalActive(true);
@@ -145,6 +146,21 @@ export const ScrollBarDisplay = () => {
 
     const horizontalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        isHorizontalPointerDownRef.current = false;
+        setIsHorizontalActive(false);
+        scheduleHide();
+    };
+
+    const horizontalPointerCancel = (
+        event: React.PointerEvent<HTMLDivElement>
+    ) => {
+        event.preventDefault();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         isHorizontalPointerDownRef.current = false;
         setIsHorizontalActive(false);
         scheduleHide();
@@ -227,6 +243,7 @@ export const ScrollBarDisplay = () => {
 
     const verticalPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
         initialVerticalPositionRef.current = event.clientY;
         isVerticalPointerDownRef.current = true;
         setIsVerticalActive(true);
@@ -274,6 +291,19 @@ export const ScrollBarDisplay = () => {
 
     const verticalPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
         event.preventDefault();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        isVerticalPointerDownRef.current = false;
+        setIsVerticalActive(false);
+        scheduleHide();
+    };
+
+    const verticalPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         isVerticalPointerDownRef.current = false;
         setIsVerticalActive(false);
         scheduleHide();
@@ -420,6 +450,7 @@ export const ScrollBarDisplay = () => {
                 onPointerDown={horizontalPointerDown}
                 onPointerMove={horizontalPointerMove}
                 onPointerUp={horizontalPointerUp}
+                onPointerCancel={horizontalPointerCancel}
                 onPointerEnter={() => setIsHorizontalHovered(true)}
                 onPointerLeave={() => {
                     setIsHorizontalHovered(false);
@@ -469,6 +500,7 @@ export const ScrollBarDisplay = () => {
                 onPointerDown={verticalPointerDown}
                 onPointerMove={verticalPointerMove}
                 onPointerUp={verticalPointerUp}
+                onPointerCancel={verticalPointerCancel}
                 onPointerEnter={() => setIsVerticalHovered(true)}
                 onPointerLeave={() => {
                     setIsVerticalHovered(false);
