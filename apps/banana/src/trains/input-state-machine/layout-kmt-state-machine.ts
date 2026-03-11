@@ -133,7 +133,8 @@ export class LayoutHoverForCurveDeletionState extends TemplateState<
     > = {
             pointerMove: {
                 action: (context, event) => {
-                    context.hoverForCurveDeletion(event);
+                    const position = context.convert2WorldPosition(event);
+                    context.hoverForCurveDeletion(position);
                 },
             },
             leftPointerUp: {
@@ -205,6 +206,7 @@ export class LayoutHoverForStartingPointState extends TemplateState<
             },
             startDeletion: {
                 action: (context, event) => {
+                    console.log('startDeletion');
                     context.cancelCurrentCurve();
                 },
                 defaultTargetState: 'HOVER_FOR_CURVE_DELETION',

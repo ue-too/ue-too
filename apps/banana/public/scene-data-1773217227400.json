@@ -1,0 +1,213 @@
+{
+  "tracks": {
+    "joints": [
+      {
+        "jointNumber": 0,
+        "position": {
+          "x": -507.14453125,
+          "y": -263.28515625
+        },
+        "connections": [
+          [
+            1,
+            0
+          ]
+        ],
+        "tangent": {
+          "x": 0.3722099357522169,
+          "y": 0.9281485677020305
+        },
+        "direction": {
+          "tangent": [
+            1
+          ],
+          "reverseTangent": []
+        },
+        "elevation": 0
+      },
+      {
+        "jointNumber": 1,
+        "position": {
+          "x": -400.375,
+          "y": 2.95703125
+        },
+        "connections": [
+          [
+            0,
+            0
+          ],
+          [
+            2,
+            1
+          ]
+        ],
+        "tangent": {
+          "x": 0.3722099357522169,
+          "y": 0.9281485677020305
+        },
+        "direction": {
+          "tangent": [
+            2
+          ],
+          "reverseTangent": [
+            0
+          ]
+        },
+        "elevation": 0
+      },
+      {
+        "jointNumber": 2,
+        "position": {
+          "x": -45.65234375,
+          "y": 209.74609375
+        },
+        "connections": [
+          [
+            1,
+            1
+          ]
+        ],
+        "tangent": {
+          "x": 0.9983015017541556,
+          "y": 0.05825900441474934
+        },
+        "direction": {
+          "tangent": [],
+          "reverseTangent": [
+            1
+          ]
+        },
+        "elevation": 0
+      }
+    ],
+    "segments": [
+      {
+        "segmentNumber": 0,
+        "controlPoints": [
+          {
+            "x": -507.14453125,
+            "y": -263.28515625
+          },
+          {
+            "x": -453.759765625,
+            "y": -130.1640625
+          },
+          {
+            "x": -400.375,
+            "y": 2.95703125
+          }
+        ],
+        "t0Joint": 0,
+        "t1Joint": 1,
+        "elevation": {
+          "from": 0,
+          "to": 0
+        },
+        "gauge": 1.067,
+        "splits": []
+      },
+      {
+        "segmentNumber": 1,
+        "controlPoints": [
+          {
+            "x": -400.375,
+            "y": 2.95703125
+          },
+          {
+            "x": -323.9608623989551,
+            "y": 193.5045302662813
+          },
+          {
+            "x": -45.65234375,
+            "y": 209.74609375
+          }
+        ],
+        "t0Joint": 1,
+        "t1Joint": 2,
+        "elevation": {
+          "from": 0,
+          "to": 0
+        },
+        "gauge": 1.067,
+        "splits": []
+      }
+    ]
+  },
+  "trains": {
+    "cars": [
+      {
+        "id": "car-0",
+        "bogieOffsets": [
+          20
+        ],
+        "edgeToBogie": 2.5,
+        "bogieToEdge": 2.5,
+        "flipped": false
+      },
+      {
+        "id": "car-1",
+        "bogieOffsets": [
+          20
+        ],
+        "edgeToBogie": 2.5,
+        "bogieToEdge": 2.5,
+        "flipped": false
+      },
+      {
+        "id": "car-2",
+        "bogieOffsets": [
+          20
+        ],
+        "edgeToBogie": 2.5,
+        "bogieToEdge": 2.5,
+        "flipped": false
+      },
+      {
+        "id": "car-3",
+        "bogieOffsets": [
+          20
+        ],
+        "edgeToBogie": 2.5,
+        "bogieToEdge": 2.5,
+        "flipped": false
+      }
+    ],
+    "formations": [
+      {
+        "id": "formation-0",
+        "children": [
+          {
+            "type": "car",
+            "id": "car-0"
+          },
+          {
+            "type": "car",
+            "id": "car-1"
+          },
+          {
+            "type": "car",
+            "id": "car-2"
+          },
+          {
+            "type": "car",
+            "id": "car-3"
+          }
+        ],
+        "flipped": false
+      }
+    ],
+    "carStockIds": [],
+    "formationManagerIds": [],
+    "placedTrains": [
+      {
+        "id": 0,
+        "position": {
+          "trackSegment": 0,
+          "tValue": 0.9680000000000007,
+          "direction": "tangent"
+        },
+        "formationId": "formation-0"
+      }
+    ]
+  }
+}

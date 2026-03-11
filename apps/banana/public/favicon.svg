@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    .track { stroke: #1a1a1a; stroke-width: 2.5; }
+    @media (prefers-color-scheme: dark) {
+      .track { stroke: #e5e5e5; }
+    }
+  </style>
+  <!-- rails – larger so icon reads at small sizes -->
+  <path class="track" d="M6 2v20" />
+  <path class="track" d="M18 2v20" />
+  <path class="track" d="M6 6h12" />
+  <path class="track" d="M6 12h12" />
+  <path class="track" d="M6 18h12" />
+</svg>

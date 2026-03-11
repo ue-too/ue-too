@@ -18,6 +18,12 @@ export class TrainManager {
   private _selectedIndex = 0;
   private _listeners: (() => void)[] = [];
   private _observable: Observable<[number, { type: TrainChangeType }]> = new SynchronousObservable<[number, { type: TrainChangeType }]>();
+  private _onBeforeRemove: ((train: Train) => void) | null = null;
+
+  /** Register a callback invoked before a train is removed. */
+  setOnBeforeRemove(callback: (train: Train) => void): void {
+    this._onBeforeRemove = callback;
+  }
 
   /** Current list of placed trains (do not mutate). */
   getPlacedTrains(): readonly PlacedTrainEntry[] {
@@ -53,18 +59,48 @@ export class TrainManager {
     return id;
   }
 
-  /** Remove the train at the given list index. */
-  removeTrainAtIndex(index: number): void {
-    this._internalTrainManager.destroyEntity(index);
-    if (index < 0 || index >= this._placedTrains.length) return;
-    this._internalTrainManager.destroyEntity(index);
-    this._placedTrains.splice(index, 1);
-    if (this._selectedIndex >= this._placedTrains.length) {
-      this._selectedIndex = Math.max(0, this._placedTrains.length - 1);
-    } else if (this._selectedIndex > index) {
-      this._selectedIndex -= 1;
+  /**
+   * Add a train with a specific id. Used when restoring from serialized data.
+   * The id must be available (e.g. after clearForLoad).
+   */
+  addTrainWithId(id: number, train: Train): void {
+    this._internalTrainManager.createEntityWithId(id, train);
+    this._placedTrains.push({ id, train });
+    if (this._placedTrains.length === 1) this._selectedIndex = id;
+    this._notify();
+    this._observable.notify(id, { type: 'add' });
+  }
+
+  /**
+   * Remove all trains without running onBeforeRemove. Use when replacing
+   * the scene from serialized data (load).
+   */
+  clearForLoad(): void {
+    const ids = this._internalTrainManager.getLivingEntitesIndex();
+    for (const id of ids) {
+      this._internalTrainManager.destroyEntity(id);
     }
-    this._observable.notify(index, { type: 'remove' });
+    this._placedTrains = [];
+    this._selectedIndex = 0;
+    this._notify();
+  }
+
+  /** Remove the train with the given entity id. */
+  removeTrainAtIndex(id: number): void {
+    const entryIndex = this._placedTrains.findIndex((e) => e.id === id);
+    if (entryIndex === -1) return;
+    const train = this._internalTrainManager.getEntity(id);
+    if (train && this._onBeforeRemove) {
+      this._onBeforeRemove(train);
+    }
+    this._internalTrainManager.destroyEntity(id);
+    this._placedTrains.splice(entryIndex, 1);
+    if (this._selectedIndex === id) {
+      // Select another train if available, otherwise 0
+      this._selectedIndex =
+        this._placedTrains.length > 0 ? this._placedTrains[0].id : 0;
+    }
+    this._observable.notify(id, { type: 'remove' });
     this._notify();
   }
 

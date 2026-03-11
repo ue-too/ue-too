@@ -1,5 +1,6 @@
 import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { Train, TrainPosition } from './formation';
+import { Car } from './cars';
 import { TrackGraph } from './tracks/track';
 import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-system';
 import { WorldRenderSystem } from '@/world-render-system';
@@ -10,10 +11,8 @@ const BOGIE_RADIUS = 1.067 / 2;
 /** World-space width of each car rectangle (meters). */
 const CAR_WIDTH = 2.5;
 
-/** Distance from the rear of the car to the first bogie (meters). Bogies are inset from the car edges. */
-const BOGIE_OFFSET_FROM_REAR = 4;
-/** Distance from the second bogie to the front of the car (meters). */
-const BOGIE_OFFSET_FROM_FRONT = 4;
+/** Per-side gap between adjacent cars (meters). Each car edge shrinks by this amount. */
+const CAR_GAP = 0.3;
 
 /** Resolution of the procedural car body texture (power-of-two for crisp scaling). */
 const CAR_TEX_WIDTH = 64;
@@ -47,33 +46,40 @@ function carKey(trainId: number | 'preview', carIndex: number): string {
 
 /**
  * Car geometry: car k connects bogie 2k and bogie 2k+1. Train position is the first bogie.
- * Both bogies are inset from the car rectangle edges (offset from rear and front).
+ * Both bogies are inset from the car rectangle edges by the car's edgeToBogie/bogieToEdge distances.
  */
 type CarGeometry = {
-  /** World position of the rear (back) of the car; first bogie is at rear + forward * BOGIE_OFFSET_FROM_REAR. */
+  /** World position of the rear (back) of the car. */
   x: number;
   y: number;
   angle: number;
-  /** World-space length of the car (distance between bogies + rear offset + front offset). */
+  /** World-space length of the car (distance between bogies + edgeToBogie + bogieToEdge). */
   length: number;
 };
 
 /**
  * First car connects bogie 0 and 1, second car connects bogie 2 and 3, etc.
- * Car rear = first bogie - forward * BOGIE_OFFSET_FROM_REAR; front extends past second bogie by BOGIE_OFFSET_FROM_FRONT.
+ * Car rear = first bogie - forward * edgeToBogie; front extends past second bogie by bogieToEdge.
  */
-function getCarGeometries(positions: TrainPosition[]): CarGeometry[] {
+function getCarGeometries(positions: TrainPosition[], cars: readonly Car[]): CarGeometry[] {
   const out: CarGeometry[] = [];
   for (let k = 0; 2 * k + 1 < positions.length; k++) {
-    const b0 = positions[2 * k].point;
-    const b1 = positions[2 * k + 1].point;
+    const car = cars[k];
+    // When the car is flipped, swap bogies so the angle stays consistent with
+    // the car's original physical orientation and the texture isn't mirrored.
+    const rearIdx = car.flipped ? 2 * k + 1 : 2 * k;
+    const frontIdx = car.flipped ? 2 * k : 2 * k + 1;
+    const edgeToBogie = (car.flipped ? car.bogieToEdge : car.edgeToBogie) - CAR_GAP;
+    const bogieToEdge = (car.flipped ? car.edgeToBogie : car.bogieToEdge) - CAR_GAP;
+    const b0 = positions[rearIdx].point;
+    const b1 = positions[frontIdx].point;
     const dx = b1.x - b0.x;
     const dy = b1.y - b0.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
-    const rearX = b0.x - Math.cos(angle) * BOGIE_OFFSET_FROM_REAR;
-    const rearY = b0.y - Math.sin(angle) * BOGIE_OFFSET_FROM_REAR;
-    const length = distance + BOGIE_OFFSET_FROM_REAR + BOGIE_OFFSET_FROM_FRONT;
+    const rearX = b0.x - Math.cos(angle) * edgeToBogie;
+    const rearY = b0.y - Math.sin(angle) * edgeToBogie;
+    const length = distance + edgeToBogie + bogieToEdge;
     out.push({ x: rearX, y: rearY, angle, length });
   }
   return out;
@@ -99,25 +105,30 @@ type CarHalfGeometry = {
  * indices 2k (rear, associated with bogie 2k) and 2k+1 (front, associated
  * with bogie 2k+1).
  */
-function getCarHalfGeometries(positions: TrainPosition[]): CarHalfGeometry[] {
+function getCarHalfGeometries(positions: TrainPosition[], cars: readonly Car[]): CarHalfGeometry[] {
   const out: CarHalfGeometry[] = [];
   for (let k = 0; 2 * k + 1 < positions.length; k++) {
-    const b0 = positions[2 * k].point;
-    const b1 = positions[2 * k + 1].point;
+    const car = cars[k];
+    const rearIdx = car.flipped ? 2 * k + 1 : 2 * k;
+    const frontIdx = car.flipped ? 2 * k : 2 * k + 1;
+    const edgeToBogie = (car.flipped ? car.bogieToEdge : car.edgeToBogie) - CAR_GAP;
+    const bogieToEdge = (car.flipped ? car.edgeToBogie : car.bogieToEdge) - CAR_GAP;
+    const b0 = positions[rearIdx].point;
+    const b1 = positions[frontIdx].point;
     const dx = b1.x - b0.x;
     const dy = b1.y - b0.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
-    const fullLength = distance + BOGIE_OFFSET_FROM_REAR + BOGIE_OFFSET_FROM_FRONT;
+    const fullLength = distance + edgeToBogie + bogieToEdge;
     const halfLength = fullLength / 2;
 
-    const rearX = b0.x - Math.cos(angle) * BOGIE_OFFSET_FROM_REAR;
-    const rearY = b0.y - Math.sin(angle) * BOGIE_OFFSET_FROM_REAR;
+    const rearX = b0.x - Math.cos(angle) * edgeToBogie;
+    const rearY = b0.y - Math.sin(angle) * edgeToBogie;
     const midX = rearX + Math.cos(angle) * halfLength;
     const midY = rearY + Math.sin(angle) * halfLength;
 
-    out.push({ x: rearX, y: rearY, angle, length: halfLength, bogiePositionIndex: 2 * k });
-    out.push({ x: midX, y: midY, angle, length: halfLength, bogiePositionIndex: 2 * k + 1 });
+    out.push({ x: rearX, y: rearY, angle, length: halfLength, bogiePositionIndex: rearIdx });
+    out.push({ x: midX, y: midY, angle, length: halfLength, bogiePositionIndex: frontIdx });
   }
   return out;
 }
@@ -135,7 +146,7 @@ function getCarHalfGeometries(positions: TrainPosition[]): CarHalfGeometry[] {
 export class TrainRenderSystem {
 
   private _getPlacedTrains: () => readonly PlacedTrainEntry[];
-  private _previewTrain: Train;
+  private _getPreviewTrain: () => Train;
   private _trackGraph: TrackGraph;
   private _trackRenderSystem: TrackRenderSystem;
   private _worldRenderSystem: WorldRenderSystem;
@@ -166,14 +177,14 @@ export class TrainRenderSystem {
   constructor(
     worldRenderSystem: WorldRenderSystem,
     getPlacedTrains: () => readonly PlacedTrainEntry[],
-    previewTrain: Train,
+    getPreviewTrain: () => Train,
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
     textureRenderer?: TrackTextureRenderer | null,
   ) {
     this._worldRenderSystem = worldRenderSystem;
     this._getPlacedTrains = getPlacedTrains;
-    this._previewTrain = previewTrain;
+    this._getPreviewTrain = getPreviewTrain;
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
     this._textureRenderer = textureRenderer ?? null;
@@ -194,7 +205,7 @@ export class TrainRenderSystem {
     for (const { train } of placed) {
       train.update(deltaTime);
     }
-    this._previewTrain.update(deltaTime);
+    this._getPreviewTrain().update(deltaTime);
 
     this._updatePreviewBogies();
     this._updatePreviewCars();
@@ -236,7 +247,7 @@ export class TrainRenderSystem {
   }
 
   private _updatePreviewBogies(): void {
-    const positions = this._previewTrain.previewBogiePositions;
+    const positions = this._getPreviewTrain().previewBogiePositions;
 
     if (positions === null || positions.length === 0) {
       this._previewContainer.visible = false;
@@ -288,7 +299,8 @@ export class TrainRenderSystem {
   }
 
   private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
-    if (this._getOrCreateCarHalfTextures() === null) return;
+    const textures = this._getOrCreateCarHalfTextures();
+    if (textures === null) return;
 
     for (const { id, train } of placed) {
       const positions = train.getBogiePositions();
@@ -296,13 +308,13 @@ export class TrainRenderSystem {
         this._hideActualCarsForTrain(id);
         continue;
       }
-      const halves = getCarHalfGeometries(positions);
+      const halves = getCarHalfGeometries(positions, train.cars);
       this._syncActualCarPoolForTrain(id, halves.length);
       const pool = this._actualCarPools.get(id)!;
-
       for (let i = 0; i < halves.length; i++) {
         const sprite = pool[i];
         const h = halves[i];
+
         sprite.position.set(h.x, h.y);
         sprite.rotation = h.angle;
         sprite.scale.set(h.length / CAR_HALF_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
@@ -320,12 +332,12 @@ export class TrainRenderSystem {
 
   private _updatePreviewCars(): void {
     const texture = this._getOrCreateCarTexture();
-    const positions = this._previewTrain.previewBogiePositions;
+    const positions = this._getPreviewTrain().previewBogiePositions;
     if (texture === null || positions === null || positions.length < 2) {
       for (const s of this._previewCarPool) s.visible = false;
       return;
     }
-    const geometries = getCarGeometries(positions);
+    const geometries = getCarGeometries(positions, this._getPreviewTrain().cars);
     while (this._previewCarPool.length < geometries.length) {
       const sprite = createCarSprite(texture);
       sprite.zIndex = 0;
@@ -352,12 +364,23 @@ export class TrainRenderSystem {
     if (renderer === undefined) return null;
 
     const g = new Graphics();
+    // Outer border
     g.rect(0, 0, CAR_TEX_WIDTH, CAR_TEX_HEIGHT);
     g.fill(0x3d3d3d);
+    // Car body
     g.rect(2, 2, CAR_TEX_WIDTH - 4, CAR_TEX_HEIGHT - 4);
     g.fill(0x505050);
+    // Center stripe
     g.rect(4, CAR_TEX_HEIGHT / 2 - 4, CAR_TEX_WIDTH - 8, 8);
     g.fill(0x2a2a2a);
+
+    const bandWidth = 6;
+    // Head-side band (left/rear) — green
+    g.rect(2, 2, bandWidth, CAR_TEX_HEIGHT - 4);
+    g.fill(0x2e8b57);
+    // Tail-side band (right/front) — red
+    g.rect(CAR_TEX_WIDTH - 2 - bandWidth, 2, bandWidth, CAR_TEX_HEIGHT - 4);
+    g.fill(0xc0392b);
 
     this._carTexture = renderer.generateTexture({ target: g });
     return this._carTexture;

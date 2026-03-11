@@ -5,7 +5,7 @@ import {
     JointDirectionManager,
     flipDirection,
 } from './input-state-machine/train-kmt-state-machine';
-import { Car } from './cars';
+import { Car, TrainUnit, generateCarId, generateFormationId } from './cars';
 
 // export type Car = {
 //     id: number;
@@ -17,8 +17,141 @@ import { Car } from './cars';
 //     bogieOffsets: number[];
 // };
 
-export interface Formation {
-    // cars(): Car[];
+const MAX_FORMATION_DEPTH = 3;
+
+/**
+ * Composite node in the train unit hierarchy.
+ * A Formation holds an ordered list of TrainUnit children (Cars or nested Formations).
+ * Position is always determined from the head (first child) outward.
+ */
+export class Formation implements TrainUnit {
+
+    readonly id: string;
+    private _children: TrainUnit[];
+    private _flipped: boolean = false;
+    private _depth: number;
+
+    constructor(id: string, children: TrainUnit[], depth: number = 1) {
+        if (depth > MAX_FORMATION_DEPTH) {
+            throw new Error(`Formation nesting depth exceeds maximum of ${MAX_FORMATION_DEPTH}`);
+        }
+        if (children.length === 0) {
+            throw new Error('Formation must have at least one child');
+        }
+        this.id = id;
+        this._children = children;
+        this._depth = depth;
+    }
+
+    get edgeToBogie(): number {
+        return this._children[0].edgeToBogie;
+    }
+
+    get bogieToEdge(): number {
+        return this._children[this._children.length - 1].bogieToEdge;
+    }
+
+    get flipped(): boolean {
+        return this._flipped;
+    }
+
+    get depth(): number {
+        return this._depth;
+    }
+
+    get children(): readonly TrainUnit[] {
+        return this._children;
+    }
+
+    /**
+     * Returns the inter-bogie distances for the entire formation.
+     * The first element is the leading edgeToBogie of the first child.
+     * Subsequent elements alternate between intra-child bogie offsets
+     * and inter-child gaps (prevChild.bogieToEdge + nextChild.edgeToBogie).
+     */
+    bogieOffsets(): number[] {
+        const res: number[] = [];
+        for (let i = 0; i < this._children.length; i++) {
+            const child = this._children[i];
+            const childOffsets = child.bogieOffsets();
+
+            if (i === 0) {
+                // First child: include its leading edgeToBogie + its bogie offsets
+                res.push(child.edgeToBogie);
+                for (const offset of childOffsets) {
+                    res.push(offset);
+                }
+            } else {
+                const prevChild = this._children[i - 1];
+                // Gap between previous child's trailing edge and this child's leading edge
+                res.push(prevChild.bogieToEdge + child.edgeToBogie);
+                for (const offset of childOffsets) {
+                    res.push(offset);
+                }
+            }
+        }
+        return res;
+    }
+
+    flatCars(): readonly Car[] {
+        const result: Car[] = [];
+        for (const child of this._children) {
+            for (const car of child.flatCars()) {
+                result.push(car);
+            }
+        }
+        return result;
+    }
+
+    switchDirection(): void {
+        this._children.reverse();
+        for (const child of this._children) {
+            child.switchDirection();
+        }
+        this._flipped = !this._flipped;
+    }
+
+    /** Couple a unit to the tail of this formation. */
+    append(unit: TrainUnit): void {
+        this._validateDepth(unit);
+        this._children.push(unit);
+    }
+
+    /** Couple a unit to the head of this formation. */
+    prepend(unit: TrainUnit): void {
+        this._validateDepth(unit);
+        this._children.unshift(unit);
+    }
+
+    /** Decouple and return the child at the given index. */
+    removeAt(index: number): TrainUnit {
+        if (index < 0 || index >= this._children.length) {
+            throw new Error(`Index ${index} out of bounds for formation with ${this._children.length} children`);
+        }
+        if (this._children.length <= 1) {
+            throw new Error('Cannot remove the last child from a formation');
+        }
+        return this._children.splice(index, 1)[0];
+    }
+
+    /** Create a default 4-car formation for backwards compatibility. */
+    static createDefault(): Formation {
+        return new Formation(generateFormationId(), [
+            new Car(generateCarId(), [20], 2.5, 2.5),
+            new Car(generateCarId(), [20], 2.5, 2.5),
+            new Car(generateCarId(), [20], 2.5, 2.5),
+            new Car(generateCarId(), [20], 2.5, 2.5),
+        ]);
+    }
+
+    private _validateDepth(unit: TrainUnit): void {
+        const unitDepth = unit.depth;
+        if (this._depth + unitDepth >= MAX_FORMATION_DEPTH) {
+            throw new Error(
+                `Adding unit with depth ${unitDepth} to formation at depth ${this._depth} would exceed maximum nesting depth of ${MAX_FORMATION_DEPTH}`
+            );
+        }
+    }
 }
 
 export type TrainPosition = {
@@ -103,6 +236,15 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
     p3: 0.3,
     p4: 0.5,
     p5: 0.7,
+    p6: 0.9,
+    p7: 1.1,
+    p8: 1.3,
+    p9: 1.5,
+    p10: 1.7,
+    p11: 1.9,
+    p12: 2.1,
+    p13: 2.3,
+    p14: 2.5,
 };
 
 export class Train {
@@ -126,25 +268,23 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
-    private _cars: Car[] = [new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5), new Car([40], 5, 5)];
+    private _formation: Formation;
+
+    get formation(): Formation {
+        return this._formation;
+    }
+
+    /** Current head position on the track, or null if not placed. */
+    get position(): TrainPosition | null {
+        return this._position;
+    }
+
+    get cars(): readonly Car[] {
+        return this._formation.flatCars();
+    }
 
     get carOffsets(): number[] {
-        const res: number[] = [];
-
-        for (let i = 0; i < this._cars.length; i++) {
-            const car = this._cars[i];
-            const edgeToBogie = car.edgeToBogie;
-            const bogieToEdge = car.bogieToEdge;
-            let previousBogieToEdge = 0;
-            if (i > 0) {
-                previousBogieToEdge = this._cars[i - 1].bogieToEdge;
-            }
-            res.push(previousBogieToEdge + edgeToBogie);
-            for (let j = 0; j < car.bogieOffsets.length; j++) {
-                res.push(car.bogieOffsets[j]);
-            }
-        }
-
+        const res = this._formation.bogieOffsets();
         res.shift();
         return res;
     }
@@ -152,12 +292,13 @@ export class Train {
     constructor(
         position: TrainPosition | null,
         trackGraph: TrackGraph,
-        jointDirectionManager: JointDirectionManager
+        jointDirectionManager: JointDirectionManager,
+        formation?: Formation,
     ) {
         this._position = position;
         this._trackGraph = trackGraph;
-        // this._offsets = bogieOffsets;
         this._jointDirectionManager = jointDirectionManager;
+        this._formation = formation ?? Formation.createDefault();
     }
 
     clearPreviewPosition() {
@@ -177,7 +318,7 @@ export class Train {
         position: TrainPosition,
         preview: boolean = false
     ): TrainPosition[] | null {
-        console.log('get bogie positions', position, preview);
+        // console.log('get bogie positions', position, preview);
         const expandDirection = flipDirection(position.direction);
         const positions: TrainPosition[] = [position];
 
@@ -370,7 +511,7 @@ export class Train {
             this._position.trackSegment
         );
         if (trackSegment === null) {
-            console.warn('track segment where the train is on is not found');
+            // console.warn('track segment where the train is on is not found');
             this._speed = 0;
             this._throttle = 'N';
             return;
@@ -429,16 +570,13 @@ export class Train {
         if (this._position == null) {
             return;
         }
-        const bogiePositions = this.getBogiePositions(true);
+        const bogiePositions = this.getBogiePositions(false);
         if (bogiePositions === null) {
             return;
         }
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
-        // this._offsets = this._offsets.reverse();
-        this._cars.forEach(car => {
-            car.switchDirection();
-        });
+        this._formation.switchDirection();
         // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
         this._occupiedJointNumbers = this._occupiedJointNumbers
             .reverse()
@@ -487,28 +625,28 @@ export class Train {
             const seg = this._trackGraph
                 .getTrackSegmentWithJoints(this._position.trackSegment);
             if (seg === null) {
-                console.warn(
-                    '[remapOnSegmentSplit] new segment not found!',
-                    { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
-                );
+                // console.warn(
+                //     '[remapOnSegmentSplit] new segment not found!',
+                //     { trackSegment: this._position.trackSegment, origT, splitT, firstNewSegment, secondNewSegment }
+                // );
             }
             this._position.point = seg?.curve.get(this._position.tValue) ?? this._position.point;
 
-            console.log(
-                '[remapOnSegmentSplit] remapped',
-                {
-                    oldSegmentNumber, splitT, origT,
-                    newSegment: this._position.trackSegment,
-                    newT: this._position.tValue,
-                    direction: this._position.direction,
-                    point: this._position.point
-                }
-            );
+            // console.log(
+            //     '[remapOnSegmentSplit] remapped',
+            //     {
+            //         oldSegmentNumber, splitT, origT,
+            //         newSegment: this._position.trackSegment,
+            //         newT: this._position.tValue,
+            //         direction: this._position.direction,
+            //         point: this._position.point
+            //     }
+            // );
         } else {
-            console.log(
-                '[remapOnSegmentSplit] position not on split segment',
-                { positionSegment: this._position?.trackSegment, oldSegmentNumber }
-            );
+            // console.log(
+            //     '[remapOnSegmentSplit] position not on split segment',
+            //     { positionSegment: this._position?.trackSegment, oldSegmentNumber }
+            // );
         }
 
         this._cachedBogiePositions = null;

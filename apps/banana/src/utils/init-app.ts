@@ -2,18 +2,21 @@ import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pi
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
-import { LayoutStateMachine } from '@/trains/input-state-machine/kmt-state-machine';
-import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
+import type { JointDirectionManager } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
+import { LayoutStateMachine } from '@/trains/input-state-machine/layout-kmt-state-machine';
+import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
 import { generateProceduralTrackPath, type ProceduralTrackOptions } from '@/trains/tracks/procedural-tracks';
 import { TrackRenderSystem } from '@/trains/tracks/render-system';
 import { TrainManager } from '@/trains/train-manager';
+import { CarStockManager } from '@/trains/car-stock-manager';
+import { FormationManager } from '@/trains/formation-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
-import { createKmtInputStateMachineExpansion } from '@/trains/input-state-machine/kmt-state-machine-extension';
+import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 
 const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 
@@ -26,7 +29,11 @@ export type BananaAppComponents = BaseAppComponents & {
   buildingRenderSystem: BuildingRenderSystem;
   trainPlacementEngine: TrainPlacementEngine;
   trainManager: TrainManager;
+  carStockManager: CarStockManager;
+  formationManager: FormationManager;
+  jointDirectionManager: JointDirectionManager;
   layoutStateMachine: LayoutStateMachine;
+  kmtStateMachineExpansion: KmtExpandedStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
   /** Add a train at the given segment and t. For stress testing. */
@@ -77,9 +84,7 @@ export const initApp = async (
   baseComponents.camera.setMaxZoomLevel(30);
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(curveEngine);
-  baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
-  baseComponents.kmtInputStateMachine = kmtInputStateMachine;
+  const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
   const worldRenderSystem = new WorldRenderSystem();
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,
@@ -92,29 +97,46 @@ export const initApp = async (
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);
 
   const trainManager = new TrainManager();
+  const carStockManager = new CarStockManager();
+  const formationManager = new FormationManager(carStockManager);
   const trackGraph = curveEngine.trackGraph;
   const jointDirectionManager = new DefaultJointDirectionManager(trackGraph);
-  const trainPlacementEngine = new TrainPlacementEngine(trackGraph, {
+  const trainPlacementEngine = new TrainPlacementEngine(baseComponents.canvasProxy, trackGraph, baseComponents.camera, {
     onPlaced: (placed) => {
+      // Detach the formation from the manager — it's now owned by the placed train
+      formationManager.detachFormation(placed.formation.id);
       trainManager.addTrain(placed);
+      // Reset to default formation for next placement
+      trainPlacementEngine.setFormation(null);
       return new Train(null, trackGraph, jointDirectionManager);
     },
   });
   const trainRenderSystem = new TrainRenderSystem(
     worldRenderSystem,
     () => trainManager.getPlacedTrains(),
-    trainPlacementEngine.train,
+    () => trainPlacementEngine.train,
     trackGraph,
     trackRenderSystem,
     { renderer: baseComponents.app.renderer },
   );
-  const layoutStateMachine = createLayoutStateMachine(curveEngine);
+  // const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
   const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
     worldRenderSystem,
     trackGraph,
     baseComponents.camera,
   );
+
+  // When a train is removed from the track, return its cars to stock
+  trainManager.setOnBeforeRemove((train) => {
+    for (const car of train.formation.flatCars()) {
+      carStockManager.addCar(car);
+    }
+  });
+
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, baseComponents.observableInputTracker);
+  baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
+  baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
   curveEngine.trackGraph.onSegmentSplit((info) => {
     for (const { train } of trainManager.getPlacedTrains()) {
@@ -178,7 +200,11 @@ export const initApp = async (
     buildingRenderSystem,
     trainPlacementEngine,
     trainManager,
-    layoutStateMachine,
+    carStockManager,
+    formationManager,
+    jointDirectionManager,
+    layoutStateMachine: layoutSubStateMachine,
+    kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,
     addTrainAtPosition,

@@ -8,24 +8,29 @@ import {
 import { Point, PointCal } from '@ue-too/math';
 
 import { TrackGraph } from '../tracks/track';
-import { Train, TrainPosition } from '../formation';
+import { Formation, Train, TrainPosition } from '../formation';
+import { convertFromCanvas2ViewPort, convertFromWindow2Canvas, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWorld2Viewport, ObservableBoardCamera, Canvas, ObservableInputTracker } from '@ue-too/board';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
 export type TrainPlacementEvents = {
-    pointerdown: {
-        position: Point;
+    leftPointerDown: {
+        x: number;
+        y: number;
     };
-    pointerup: {
-        position: Point;
+    leftPointerUp: {
+        x: number;
+        y: number;
     };
-    pointermove: {
-        position: Point;
+    pointerMove: {
+        x: number;
+        y: number;
     };
     escapeKey: {};
     startPlacement: {};
     endPlacement: {};
     flipTrainDirection: {};
+    F: {};
 };
 
 export interface TrainPlacementContext extends BaseContext {
@@ -33,6 +38,8 @@ export interface TrainPlacementContext extends BaseContext {
     placeTrain: (position: Point) => void;
     hoverForPlacement: (position: Point) => void;
     flipTrainDirection: () => void;
+    convert2WorldPosition: (position: Point) => Point;
+    convert2WindowPosition: (position: Point) => Point;
 }
 
 export function flipDirection(
@@ -69,7 +76,15 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
 
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent'
+        direction: 'tangent' | 'reverseTangent',
+        occupiedJoints?: {
+            jointNumber: number;
+            direction: 'tangent' | 'reverseTangent';
+        }[],
+        occupiedTrackSegments?: {
+            trackNumber: number;
+            inTrackDirection: 'tangent' | 'reverseTangent';
+        }[]
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -85,38 +100,54 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             console.warn('no possible next joints');
             return null;
         }
-        const firstNextJointNumber: number | undefined = possibleNextJoints
-            .values()
-            .next().value;
-        if (firstNextJointNumber === undefined) {
+
+        // When there are multiple branches and we know which segments the
+        // train occupies, prefer the branch whose segment is already occupied.
+        let selectedNextJointNumber: number | undefined;
+        if (possibleNextJoints.size > 1 && occupiedTrackSegments && occupiedTrackSegments.length > 0) {
+            for (const nextJoint of possibleNextJoints) {
+                const segNumber = joint.connections.get(nextJoint);
+                if (segNumber === undefined) continue;
+                if (occupiedTrackSegments.some(s => s.trackNumber === segNumber)) {
+                    selectedNextJointNumber = nextJoint;
+                    break;
+                }
+            }
+        }
+
+        // Fall back to the first available joint if no occupied match was found.
+        if (selectedNextJointNumber === undefined) {
+            selectedNextJointNumber = possibleNextJoints.values().next().value;
+        }
+        if (selectedNextJointNumber === undefined) {
             return null;
         }
-        const firstNextTrackSegmentNumber =
-            joint.connections.get(firstNextJointNumber);
-        const firstNextJoint = this._trackGraph.getJoint(firstNextJointNumber);
-        if (firstNextTrackSegmentNumber === undefined) {
+        const nextTrackSegmentNumber =
+            joint.connections.get(selectedNextJointNumber);
+        const nextJoint = this._trackGraph.getJoint(selectedNextJointNumber);
+        if (nextTrackSegmentNumber === undefined) {
             return null;
         }
-        const firstNextTrackSegment =
+        const nextTrackSegment =
             this._trackGraph.getTrackSegmentWithJoints(
-                firstNextTrackSegmentNumber
+                nextTrackSegmentNumber
             );
-        if (firstNextJoint === null) {
-            console.warn('first next joint not found');
+        if (nextJoint === null) {
+            console.warn('next joint not found');
             return null;
         }
-        if (firstNextTrackSegment === null) {
-            console.warn('first next track segment not found');
+        if (nextTrackSegment === null) {
+            console.warn('next track segment not found');
             return null;
         }
         const nextDirection: 'tangent' | 'reverseTangent' =
-            firstNextTrackSegment.t0Joint === jointNumber
+            nextTrackSegment.t0Joint === jointNumber
                 ? 'tangent'
                 : 'reverseTangent';
         return {
-            jointNumber: firstNextJointNumber,
+            jointNumber: selectedNextJointNumber,
             direction: nextDirection,
-            curveNumber: firstNextTrackSegmentNumber,
+            curveNumber: nextTrackSegmentNumber,
         };
     }
 }
@@ -127,9 +158,7 @@ export type TrainPlacementEngineOptions = {
     onPlaced?: (placed: Train) => Train | void;
 };
 
-const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
-
-export class TrainPlacementEngine implements TrainPlacementContext {
+export class TrainPlacementEngine extends ObservableInputTracker implements TrainPlacementContext {
     private _trackGraph: TrackGraph;
     private _trainTangent: Point | null = null;
 
@@ -137,8 +166,11 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     private _potentialTrainPlacement: TrainPosition | null = null;
     private _train: Train;
     private _onPlaced: ((placed: Train) => Train | void) | undefined;
+    private _camera: ObservableBoardCamera;
+    private _pendingFormation: Formation | null = null;
 
-    constructor(trackGraph: TrackGraph, options?: TrainPlacementEngineOptions) {
+    constructor(canvas: Canvas, trackGraph: TrackGraph, camera: ObservableBoardCamera, options?: TrainPlacementEngineOptions) {
+        super(canvas);
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(
             trackGraph
@@ -149,6 +181,24 @@ export class TrainPlacementEngine implements TrainPlacementContext {
             trackGraph,
             this._jointDirectionManager
         );
+        this._camera = camera;
+    }
+
+    /** Set the formation to use for the next train placement. */
+    setFormation(formation: Formation | null): void {
+        this._pendingFormation = formation;
+        // Rebuild the preview train with the new formation
+        this._train = new Train(
+            null,
+            this._trackGraph,
+            this._jointDirectionManager,
+            formation ?? undefined,
+        );
+    }
+
+    /** The formation currently set for the next placement, or null for default. */
+    get pendingFormation(): Formation | null {
+        return this._pendingFormation;
     }
 
     cancelCurrentTrainPlacement() {
@@ -224,6 +274,20 @@ export class TrainPlacementEngine implements TrainPlacementContext {
     cleanup() {
         // TODO: cleanup
     }
+    // position is in raw window coordinates space
+    convert2WorldPosition(position: Point): Point {
+        const pointInCanvas = convertFromWindow2Canvas(position, this.canvas);
+        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromViewport2World(pointInViewPort, this._camera.position, this._camera.zoomLevel, this._camera.rotation, false);
+    }
+
+    // position is in the world space
+    convert2WindowPosition(position: Point): Point {
+        const pointInViewPort = convertFromWorld2Viewport(position, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
+        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        return convertFromCanvas2Window(pointInCanvas, this.canvas);
+    }
+
 }
 
 export class TrainPlacementStateMachine extends TemplateStateMachine<
@@ -276,15 +340,17 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
                 },
                 defaultTargetState: 'IDLE',
             },
-            pointerup: {
+            leftPointerUp: {
                 action: (context, event) => {
-                    context.placeTrain(event.position);
+                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
+                    context.placeTrain(worldPosition);
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
-            pointermove: {
+            pointerMove: {
                 action: (context, event) => {
-                    context.hoverForPlacement(event.position);
+                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
+                    context.hoverForPlacement(worldPosition);
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
             },
@@ -294,11 +360,11 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
                 },
                 defaultTargetState: 'IDLE',
             },
-            flipTrainDirection: {
+            F: {
                 action: context => {
                     context.flipTrainDirection();
                 },
                 defaultTargetState: 'HOVER_FOR_PLACEMENT',
-            },
+            }
         };
 }

@@ -1,80 +1,64 @@
 import { DisabledState, InitialPanState, KmtIdleState, KmtInputContext, KmtInputEventMapping, KmtInputEventOutputMapping, KmtInputStateMachineWebWorkerProxy, KmtInputStates, PanState, PanViaScrollWheelState, ReadyToPanViaScrollWheelState, ReadyToPanViaSpaceBarState } from "@ue-too/board";
 import { StateMachine } from "@ue-too/being";
-import { LayoutContext, LayoutEvents, LayoutStateMachine } from "./kmt-state-machine";
-import { createStateGuard, Defer, EventReactions, Guard, State, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { LayoutContext, LayoutEvents, LayoutStateMachine } from "./layout-kmt-state-machine";
+import { Defer, EventReactions, Guard, State, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { createLayoutStateMachine } from "./utils";
 import { CurveCreationEngine } from "./curve-engine";
+import { createToolSwitcherStateMachine, ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStateMachine } from "./tool-switcher-state-machine";
+import { TrainPlacementStateMachine } from "./train-kmt-state-machine";
 
-type KmtStateMachineEventExtension = KmtInputEventMapping & LayoutEvents;
+type KmtStateMachineEventWithToolSwitcher = KmtInputEventMapping & ToolSwitcherEvents & {
+    startDeletion: {};
+    endDeletion: {};
+};
 
-type KmtStateMachineExtensionContext = KmtInputContext & LayoutContext;
+type KmtStateMachineExtensionContext = KmtInputContext & ToolSwitcherContext;
 
-const LAYOUT_EVENT_KEYS: (keyof LayoutEvents)[] = [
-    'leftPointerDown',
-    'leftPointerUp',
-    'pointerMove',
-    'escapeKey',
-    'startLayout',
-    'endLayout',
-    'startDeletion',
-    'endDeletion',
-    'scroll',
-    'arrowUp',
-    'arrowDown',
-    'F',
-    'G',
-    'Q',
-];
+class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping> {
 
-const LAYOUT_EVENT_KEY_SET = new Set<string>(LAYOUT_EVENT_KEYS);
+    private _originalEventReactions: EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
+    private _toolSwitcherSubStateMachine: ToolSwitcherStateMachine;
 
-class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping> {
-
-    private _originalEventReactions: EventReactions<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
-    private _layoutSubStateMachine: LayoutStateMachine;
-
-    constructor(curveEngine: CurveCreationEngine) {
+    constructor(layoutSubStateMachine: LayoutStateMachine, trainSubStateMachine: TrainPlacementStateMachine) {
         super();
         const originalIdleState = new KmtIdleState();
-        this._originalEventReactions = originalIdleState.eventReactions as unknown as EventReactions<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
+        this._originalEventReactions = originalIdleState.eventReactions as unknown as EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
 
         this._eventReactions = {
             ...this._originalEventReactions,
-        } as EventReactions<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
+        } as EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
 
 
         this.uponEnter = originalIdleState.uponEnter as unknown as (
             context: KmtStateMachineExtensionContext,
-            stateMachine: TemplateStateMachine<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>,
+            stateMachine: TemplateStateMachine<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>,
             from: KmtInputStates | 'INITIAL'
         ) => void;
 
         this.beforeExit = originalIdleState.beforeExit as unknown as (
             context: KmtStateMachineExtensionContext,
-            stateMachine: TemplateStateMachine<KmtStateMachineEventExtension, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>,
+            stateMachine: TemplateStateMachine<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>,
             to: KmtInputStates | 'TERMINAL'
         ) => void;
 
         this._guards = originalIdleState.guards as unknown as Guard<KmtStateMachineExtensionContext>;
 
-        this._layoutSubStateMachine = createLayoutStateMachine(curveEngine);
+        this._toolSwitcherSubStateMachine = createToolSwitcherStateMachine(layoutSubStateMachine, trainSubStateMachine);
     }
 
-    protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventExtension, KmtInputStates, KmtInputEventOutputMapping> = {
+    protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventWithToolSwitcher, KmtInputStates, KmtInputEventOutputMapping> = {
         action: (context, event, eventKey, stateMachine) => {
-            console.log('eventKey', eventKey, 'event', event);
-            // console.log('current state of the layout sub state machine', this._layoutSubStateMachine.currentState);
-            if (!LAYOUT_EVENT_KEY_SET.has(eventKey as string)) {
-                return { handled: false };
-            }
-            const key = eventKey as keyof LayoutEvents;
-            const payload = event as LayoutEvents[keyof LayoutEvents];
+            // console.log('eventKey', eventKey, 'event', event);
+            // console.log('current state of the tool switcher sub state machine', this._toolSwitcherSubStateMachine.currentState);
+            const key = eventKey as keyof ToolSwitcherEvents;
+            const payload = event as ToolSwitcherEvents[keyof ToolSwitcherEvents];
             // Assert: at runtime key and payload are correlated; TS can't infer from the union
-            const result = (this._layoutSubStateMachine.happens as (
-                k: keyof LayoutEvents,
-                p: LayoutEvents[keyof LayoutEvents]
-            ) => ReturnType<LayoutStateMachine['happens']>)(key, payload);
-            console.log('result', result)
+            const result = (this._toolSwitcherSubStateMachine.happens as (
+                k: keyof ToolSwitcherEvents,
+                p: ToolSwitcherEvents[keyof ToolSwitcherEvents]
+            ) => ReturnType<ToolSwitcherStateMachine['happens']>)(key, payload);
+            // const result = this._toolSwitcherSubStateMachine.happens(key, payload);
+            // console.log('result', result);
             if (result.handled) {
                 return {
                     handled: true,
@@ -104,25 +88,27 @@ const expandState = createAdaptedStateToExpansionFunc<
         KmtInputEventOutputMapping
     >,
     State<
-        KmtStateMachineEventExtension,
+        KmtStateMachineEventWithToolSwitcher,
         KmtStateMachineExtensionContext,
         KmtInputStates,
         KmtInputEventOutputMapping
     >
 >();
 
-type KmtExpandedStateMachine = StateMachine<
-    KmtStateMachineEventExtension,
+export type KmtExpandedStateMachine = StateMachine<
+    KmtStateMachineEventWithToolSwitcher,
     KmtStateMachineExtensionContext,
     KmtInputStates,
     KmtInputEventOutputMapping
->;
+>
 
 export function createKmtInputStateMachineExpansion(
-    curveEngine: CurveCreationEngine
+    layoutSubStateMachine: LayoutStateMachine,
+    trainSubStateMachine: TrainPlacementStateMachine,
+    context: KmtStateMachineExtensionContext
 ): KmtExpandedStateMachine {
     const states = {
-        IDLE: new KmtStateMachineExtensionIdleState(curveEngine),
+        IDLE: new KmtStateMachineExtensionIdleState(layoutSubStateMachine, trainSubStateMachine),
         READY_TO_PAN_VIA_SPACEBAR: expandState(
             new ReadyToPanViaSpaceBarState()
         ),
@@ -134,10 +120,13 @@ export function createKmtInputStateMachineExpansion(
         PAN_VIA_SCROLL_WHEEL: expandState(new PanViaScrollWheelState()),
         DISABLED: expandState(new DisabledState()),
     };
-    return new TemplateStateMachine<
-        KmtStateMachineEventExtension,
+
+    const stateMachine = new TemplateStateMachine<
+        KmtStateMachineEventWithToolSwitcher,
         KmtStateMachineExtensionContext,
         KmtInputStates,
         KmtInputEventOutputMapping
-    >(states, 'IDLE', curveEngine);
+    >(states, 'IDLE', context);
+
+    return stateMachine;
 }

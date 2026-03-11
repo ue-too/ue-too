@@ -1,4 +1,4 @@
-import { Container, Graphics, MeshSimple, Texture } from 'pixi.js';
+import { Container, Graphics, MeshSimple, Text, Texture } from 'pixi.js';
 import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve, offset2 } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
@@ -65,6 +65,11 @@ export class TrackRenderSystem {
 
     private _previewStartProjection: Graphics = new Graphics();
     private _previewEndProjection: Graphics = new Graphics();
+
+    private _showPreviewCurveArcs: boolean = false;
+    private _latestPreviewDrawDataList:
+        | { index: number; drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[]
+        | undefined = undefined;
 
     private _sunAngle: number = 135;
     private _baseShadowLength: number = 10;
@@ -183,8 +188,23 @@ export class TrackRenderSystem {
         this._rebuildAllShadows();
     }
 
+    get showPreviewCurveArcs(): boolean {
+        return this._showPreviewCurveArcs;
+    }
+
+    set showPreviewCurveArcs(show: boolean) {
+        if (this._showPreviewCurveArcs === show) return;
+        this._showPreviewCurveArcs = show;
+        // Redraw current preview immediately (without requiring pointer movement).
+        this._onPreviewDrawDataChange(this._latestPreviewDrawDataList);
+    }
+
     private _onZoom(_event: CameraZoomEventPayload, cameraState: CameraState) {
         this._applyZoomLod(cameraState.zoomLevel);
+        // Redraw preview so radius labels pick up new zoom-based font size.
+        if (this._showPreviewCurveArcs) {
+            this._onPreviewDrawDataChange(this._latestPreviewDrawDataList);
+        }
     }
 
     /**
@@ -797,6 +817,7 @@ export class TrackRenderSystem {
     }
 
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {
+        this._latestPreviewDrawDataList = drawDataList;
         this._previewKeys.forEach(key => {
             const container = this._worldRenderSystem.removeDrawable(key);
             container?.destroy({ children: true });
@@ -811,6 +832,7 @@ export class TrackRenderSystem {
             const key = `__preview__${i}`;
             const segmentsContainer = new Container();
             const graphics = new Graphics();
+            const arcFanContainer = new Container();
             const positiveOffsetsGraphics = new Graphics();
             const negativeOffsetsGraphics = new Graphics();
 
@@ -821,6 +843,65 @@ export class TrackRenderSystem {
                 graphics.lineTo(segments[i].point.x, segments[i].point.y);
             }
             graphics.stroke({ color: 0x000000, pixelLine: true });
+
+            if (this._showPreviewCurveArcs) {
+                // For straight lines, arc fitting is not meaningful (circle radius -> ∞)
+                // and can produce noisy results. Skip entirely.
+                if (!curveIsNearlyStraight(drawData.curve)) {
+                const arcs = drawData.curve.getArcs(0.5);
+                for (const arc of arcs) {
+                    const a0 = Math.atan2(arc.startPoint.y - arc.center.y, arc.startPoint.x - arc.center.x);
+                    const a1 = Math.atan2(arc.endPoint.y - arc.center.y, arc.endPoint.x - arc.center.x);
+
+                    // Choose direction that best matches the curve by sampling a midpoint.
+                    const midT = (arc.startT + arc.endT) / 2;
+                    const midPoint = drawData.curve.get(midT);
+                    const am = Math.atan2(midPoint.y - arc.center.y, midPoint.x - arc.center.x);
+
+                    const cwErr = arcDirectionFitError(arc.center, arc.radius, a0, a1, am, 'cw');
+                    const ccwErr = arcDirectionFitError(arc.center, arc.radius, a0, a1, am, 'ccw');
+                    const direction: 'cw' | 'ccw' = cwErr <= ccwErr ? 'cw' : 'ccw';
+
+                    const wedge = new Graphics();
+                    // Build a "fan" (sector) shape: center -> start -> arc -> back to center.
+                    // Use polyline instead of Graphics.arc() to avoid full-circle ambiguity.
+                    const span = angleDelta(a0, a1, direction);
+                    if (span > Math.PI * 1.9) continue; // Skip near-full-circle arcs
+                    wedge.moveTo(arc.center.x, arc.center.y);
+                    wedge.lineTo(arc.startPoint.x, arc.startPoint.y);
+                    drawArcPolyline(wedge, arc.center, arc.radius, a0, a1, direction);
+                    wedge.lineTo(arc.center.x, arc.center.y);
+                    wedge.closePath();
+                    wedge.fill({ color: 0x1d4ed8, alpha: 0.18 });
+                    wedge.stroke({ color: 0x1d4ed8, alpha: 0.55, pixelLine: true, width: 1 });
+                    arcFanContainer.addChild(wedge);
+
+                    // CAD-style radius label: position near the arc (not at center).
+                    const labelDist = arc.radius * 0.7; // ~70% from center toward arc
+                    const midAngle = direction === 'ccw' ? a0 + span / 2 : a0 - span / 2;
+                    const labelX = arc.center.x + Math.cos(midAngle) * labelDist;
+                    const labelY = arc.center.y + Math.sin(midAngle) * labelDist;
+                    const zoomLevel = this._camera.zoomLevel;
+                    // Use fixed pixel font + scale container by 1/zoom so text stays crisp and constant screen size.
+                    const labelContainer = new Container();
+                    labelContainer.position.set(labelX, labelY);
+                    labelContainer.scale.set(1 / zoomLevel, 1 / zoomLevel);
+                    const radiusLabel = new Text({
+                        text: `R ${arc.radius.toFixed(1)}`,
+                        style: {
+                            fontFamily: 'sans-serif',
+                            fontSize: 14,
+                            fill: 0x1d4ed8,
+                            fontWeight: '600',
+                        },
+                    });
+                    radiusLabel.anchor.set(0.5, 0.5);
+                    radiusLabel.position.set(0, 0);
+                    labelContainer.addChild(radiusLabel);
+                    arcFanContainer.addChild(labelContainer);
+                }
+                }
+            }
 
             const positiveOffsets = drawData.positiveOffsets;
             const negativeOffsets = drawData.negativeOffsets;
@@ -837,6 +918,10 @@ export class TrackRenderSystem {
             }
             negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
 
+            if (this._showPreviewCurveArcs) {
+                // Put the fan wedges behind the preview polyline.
+                segmentsContainer.addChild(arcFanContainer);
+            }
             segmentsContainer.addChild(graphics);
             segmentsContainer.addChild(positiveOffsetsGraphics);
             segmentsContainer.addChild(negativeOffsetsGraphics);
@@ -867,6 +952,96 @@ export class TrackRenderSystem {
         return this._worldRenderSystem.computeOnTrackObjectZIndex(bandIndex);
     }
 }
+
+const normalizeAngle0ToTau = (a: number): number => {
+    const TAU = Math.PI * 2;
+    let x = a % TAU;
+    if (x < 0) x += TAU;
+    return x;
+};
+
+const angleDelta = (from: number, to: number, direction: 'cw' | 'ccw'): number => {
+    const TAU = Math.PI * 2;
+    const a0 = normalizeAngle0ToTau(from);
+    const a1 = normalizeAngle0ToTau(to);
+    if (direction === 'ccw') {
+        // Increase angle (wrapping) from a0 to a1
+        return (a1 - a0 + TAU) % TAU;
+    }
+    // Decrease angle (wrapping) from a0 to a1
+    return (a0 - a1 + TAU) % TAU;
+};
+
+const drawArcPolyline = (
+    g: Graphics,
+    center: Point,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    direction: 'cw' | 'ccw',
+): void => {
+    const span = angleDelta(startAngle, endAngle, direction);
+    const steps = Math.max(8, Math.ceil((span * radius) / 8)); // ~1 point per 8px of arc length
+    for (let i = 0; i <= steps; i++) {
+        const t = steps === 0 ? 0 : i / steps;
+        const a =
+            direction === 'ccw'
+                ? startAngle + span * t
+                : startAngle - span * t;
+        const x = center.x + Math.cos(a) * radius;
+        const y = center.y + Math.sin(a) * radius;
+        if (i === 0) g.moveTo(x, y);
+        else g.lineTo(x, y);
+    }
+};
+
+const arcDirectionFitError = (
+    center: Point,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    desiredMidAngle: number,
+    direction: 'cw' | 'ccw',
+): number => {
+    // Compare the mid-angle produced by traversing the arc to the curve’s mid-angle.
+    const span = angleDelta(startAngle, endAngle, direction);
+    const candidateMidAngle =
+        direction === 'ccw'
+            ? startAngle + span / 2
+            : startAngle - span / 2;
+    const a = normalizeAngle0ToTau(candidateMidAngle);
+    const b = normalizeAngle0ToTau(desiredMidAngle);
+    const d = Math.abs(a - b);
+    // Smallest angular distance on circle.
+    const TAU = Math.PI * 2;
+    const angularDist = Math.min(d, TAU - d);
+    // Scale by radius so larger arcs penalize mismatch more.
+    return angularDist * radius;
+};
+
+const curveIsNearlyStraight = (curve: BCurve): boolean => {
+    const cps = curve.getControlPoints();
+    if (cps.length < 2) return true;
+    const a = cps[0];
+    const b = cps[cps.length - 1];
+    const ab = { x: b.x - a.x, y: b.y - a.y };
+    const denom = Math.hypot(ab.x, ab.y);
+    if (denom < 1e-6) return true; // Degenerate (all points on top of each other)
+
+    // Max perpendicular distance of control points to the chord AB.
+    // If small relative to chord length, treat as straight.
+    let maxDist = 0;
+    for (let i = 1; i < cps.length - 1; i++) {
+        const p = cps[i];
+        const ap = { x: p.x - a.x, y: p.y - a.y };
+        const cross = Math.abs(ab.x * ap.y - ab.y * ap.x);
+        const dist = cross / denom;
+        if (dist > maxDist) maxDist = dist;
+    }
+
+    // Threshold tuned for world-space coordinates: allow tiny curvature jitter.
+    return maxDist / denom < 0.002;
+};
 
 type ShadowRecord = {
     drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] };

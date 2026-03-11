@@ -34,6 +34,9 @@ export class TrackGraph {
     private _segmentSplitObservable: Observable<[SegmentSplitInfo]> =
         new SynchronousObservable<[SegmentSplitInfo]>();
 
+    private _segmentRemovedObservable: Observable<[number]> =
+        new SynchronousObservable<[number]>();
+
     getJoints(): { jointNumber: number; joint: TrackJoint }[] {
         return this._jointManager.getJoints();
     }
@@ -51,6 +54,17 @@ export class TrackGraph {
         options?: SubscriptionOptions,
     ) {
         return this._segmentSplitObservable.subscribe(callback, options);
+    }
+
+    /**
+     * Subscribe to notifications when a track segment is fully removed
+     * (including cleanup of orphaned joints).
+     */
+    onSegmentRemoved(
+        callback: (segmentNumber: number) => void,
+        options?: SubscriptionOptions,
+    ) {
+        return this._segmentRemovedObservable.subscribe(callback, options);
     }
 
     insertJointIntoTrackSegmentUsingTrackNumber(
@@ -397,6 +411,7 @@ export class TrackGraph {
             this._jointManager.destroyJoint(segment.t1Joint);
         }
         this._drawDataDirty = true;
+        this._segmentRemovedObservable.notify(trackSegmentNumber);
     }
 
     branchToNewJoint(
@@ -692,7 +707,8 @@ export class TrackGraph {
     connectJoints(
         startJointNumber: number,
         endJointNumber: number,
-        controlPoints: Point[]
+        controlPoints: Point[],
+        gauge: number = 1.067 // in meters
     ): boolean {
         console.log('connectJoints', startJointNumber, endJointNumber);
         const startJoint = this._jointManager.getJoint(startJointNumber);
@@ -736,7 +752,7 @@ export class TrackGraph {
                 endJointNumber,
                 startJoint.elevation,
                 endJoint.elevation,
-                1.067,
+                gauge,
                 excludeSegementSet
             );
 
@@ -821,7 +837,7 @@ export class TrackGraph {
             // console.log("edge hit", edgeRes);
             return { hit: true, hitType: 'edge', ...edgeRes };
         }
-        console.log('no hit');
+        // console.log('no hit');
         return { hit: false };
     }
 

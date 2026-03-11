@@ -3,15 +3,65 @@ import {
     useCoordinateConversion,
     useToggleKmtInput,
 } from '@ue-too/board-pixi-react-integration';
+import {
+    ArrowLeftRight,
+    Bug,
+    Building2,
+    CircleDot,
+    Download,
+    Gauge,
+    Layers,
+    List,
+    ListOrdered,
+    Paintbrush,
+    Pause,
+    Plus,
+    Spline,
+    Sun,
+    TrainFront,
+    TrainTrack,
+    Trash2,
+    Warehouse,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { BulldozerIcon } from '@/assets/icons/bulldozer';
+import { ExportSceneIcon } from '@/assets/icons/export-scene';
+import { ExportTrackIcon } from '@/assets/icons/export-track';
+import { ExportTrainIcon } from '@/assets/icons/export-train';
+import { ImportSceneIcon } from '@/assets/icons/import-scene';
+import { ImportTrackIcon } from '@/assets/icons/import-track';
+import { ImportTrainIcon } from '@/assets/icons/import-train';
 import type { BuildingPreset } from '@/buildings/types';
+import { FormationEditor } from '@/components/formation-editor';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DraggablePanel } from '@/components/ui/draggable-panel';
+import { Separator } from '@/components/ui/separator';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
+import { cn } from '@/lib/utils';
+import {
+    type SerializedSceneData,
+    deserializeSceneData,
+    serializeSceneData,
+    validateSerializedSceneData,
+} from '@/scene-serialization';
 import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { ELEVATION } from '@/trains/tracks/types';
+import type { SerializedTrackData } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
+import {
+    type SerializedTrainData,
+    deserializeTrainData,
+    serializeTrainData,
+    validateSerializedTrainData,
+} from '@/trains/train-serialization';
 
 type AppMode =
     | 'idle'
@@ -20,6 +70,85 @@ type AppMode =
     | 'train-placement'
     | 'building-placement'
     | 'building-deletion';
+
+/** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar) */
+const TOOLBAR_LEFT = 'left-6';
+
+function ToolbarButton({
+    tooltip,
+    active,
+    destructive,
+    destructiveMuted,
+    disabled,
+    onClick,
+    children,
+}: {
+    tooltip: string;
+    active?: boolean;
+    destructive?: boolean;
+    /** When true, normal state uses darker red; active uses bright red */
+    destructiveMuted?: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+    children: ReactNode;
+}) {
+    const variant = destructive ? 'destructive' : active ? 'default' : 'ghost';
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    variant={variant}
+                    size="icon"
+                    disabled={disabled}
+                    onClick={onClick}
+                    className={
+                        destructiveMuted && !active
+                            ? 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                            : undefined
+                    }
+                >
+                    {children}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{tooltip}</TooltipContent>
+        </Tooltip>
+    );
+}
+
+function downloadJson(filename: string, data: unknown): void {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function uploadJson(onJson: (parsed: unknown) => void): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result as string);
+                onJson(parsed);
+            } catch (e) {
+                alert(`Failed to parse JSON: ${(e as Error).message}`);
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.click();
+}
 
 export function BananaToolbar() {
     const app = useBananaApp();
@@ -36,13 +165,24 @@ export function BananaToolbar() {
         ELEVATION.ABOVE_1
     );
     const [buildingHeight, setBuildingHeight] = useState(1);
-    const [showDistricts, setShowDistricts] = useState(true);
-    const [showVillages, setShowVillages] = useState(true);
     const [trackRenderStyle, setTrackRenderStyle] =
         useState<DetailedTrackRenderStyle>('elevation');
+    const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
     const [trainListVersion, setTrainListVersion] = useState(0);
+    const [showDepot, setShowDepot] = useState(false);
+    const [showTrainPanel, setShowTrainPanel] = useState(false);
+    const [showFormationEditor, setShowFormationEditor] = useState(false);
+    const [showDebugPanel, setShowDebugPanel] = useState(false);
+    const [showExportSubmenu, setShowExportSubmenu] = useState(false);
+    const exportSubmenuTimeoutRef = useRef<ReturnType<
+        typeof setTimeout
+    > | null>(null);
+    const [depotVersion, setDepotVersion] = useState(0);
+    const [formationVersion, setFormationVersion] = useState(0);
+    const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
+        useState<string | null>(null);
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -79,6 +219,11 @@ export function BananaToolbar() {
 
     useEffect(() => {
         if (!app) return;
+        app.trackRenderSystem.showPreviewCurveArcs = showPreviewCurveArcs;
+    }, [app, showPreviewCurveArcs]);
+
+    useEffect(() => {
+        if (!app) return;
         app.debugOverlayRenderSystem.setShowJointDebug(showJointNumbers);
     }, [app, showJointNumbers]);
 
@@ -89,9 +234,32 @@ export function BananaToolbar() {
 
     useEffect(() => {
         if (!app) return;
-        return app.trainManager.subscribeToChanges((id, type) =>
+        const unsubChanges = app.trainManager.subscribeToChanges((id, type) =>
             setTrainListVersion(v => v + 1)
         );
+        const unsubSelect = app.trainManager.subscribe(() =>
+            setTrainListVersion(v => v + 1)
+        );
+        return () => {
+            unsubChanges();
+            unsubSelect();
+        };
+    }, [app]);
+
+    useEffect(() => {
+        if (!app) return;
+        const unsub = app.carStockManager.subscribe(() =>
+            setDepotVersion(v => v + 1)
+        );
+        return unsub;
+    }, [app]);
+
+    useEffect(() => {
+        if (!app) return;
+        const unsub = app.formationManager.subscribe(() =>
+            setFormationVersion(v => v + 1)
+        );
+        return unsub;
     }, [app]);
 
     useEffect(() => {
@@ -105,50 +273,31 @@ export function BananaToolbar() {
     }, [app, buildingHeight]);
 
     useEffect(() => {
-        if (!app) return;
-
-        const unsub = app.layoutStateMachine.onStateChange((_current, next) => {
-            switch (next) {
-                case 'HOVER_FOR_CURVE_DELETION':
-                    setMode('layout-deletion');
-                    break;
-                case 'HOVER_FOR_STARTING_POINT':
-                    setMode('layout');
-                    break;
-                case 'IDLE':
-                    if (
-                        modeRef.current === 'layout' ||
-                        modeRef.current === 'layout-deletion'
-                    ) {
-                        setMode('idle');
-                    }
-                    break;
+        return () => {
+            if (exportSubmenuTimeoutRef.current) {
+                clearTimeout(exportSubmenuTimeoutRef.current);
             }
-        });
-
-        return unsub;
-    }, [app]);
+        };
+    }, []);
 
     const exitAllModes = useCallback(() => {
         if (!app) return;
-        app.layoutStateMachine.happens('endLayout');
-        app.layoutStateMachine.happens('endDeletion');
-        app.trainStateMachine.happens('endPlacement');
-        toggleKmtInput(true);
+        app.kmtStateMachineExpansion.happens('switchToIdle');
         selectedBuildingRef.current = null;
         setMode('idle');
     }, [app, toggleKmtInput]);
 
     const handleLayoutToggle = useCallback(() => {
         if (!app) return;
-        if (mode === 'layout') {
-            app.kmtInputStateMachine.happens('endLayout');
-            toggleKmtInput(true);
+        if (mode === 'layout' || mode === 'layout-deletion') {
+            if (mode === 'layout-deletion') {
+                app.kmtStateMachineExpansion.happens('endDeletion');
+            }
+            app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
             exitAllModes();
-            app.kmtInputStateMachine.happens('startLayout');
-            // toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('switchToLayout');
             setMode('layout');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);
@@ -156,30 +305,29 @@ export function BananaToolbar() {
     const handleLayoutDeletionToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'layout-deletion') {
-            app.layoutStateMachine.happens('endDeletion');
-            toggleKmtInput(true);
-            setMode('idle');
-        } else {
-            exitAllModes();
-            app.layoutStateMachine.happens('startDeletion');
-            toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('endDeletion');
+            setMode('layout');
+        } else if (mode === 'layout') {
+            app.kmtStateMachineExpansion.happens('startDeletion');
             setMode('layout-deletion');
         }
-    }, [app, mode, exitAllModes, toggleKmtInput]);
+    }, [app, mode]);
 
     const handleTrainPlacementToggle = useCallback(() => {
         if (!app) return;
         if (mode === 'train-placement') {
-            app.trainStateMachine.happens('endPlacement');
-            toggleKmtInput(true);
+            app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
             exitAllModes();
-            app.trainStateMachine.happens('startPlacement');
-            toggleKmtInput(false);
+            app.kmtStateMachineExpansion.happens('switchToTrain');
             setMode('train-placement');
         }
-    }, [app, mode, exitAllModes, toggleKmtInput]);
+    }, [app, mode, exitAllModes]);
+
+    const handleTrainListToggle = useCallback(() => {
+        setShowTrainPanel(v => !v);
+    }, []);
 
     const handleBuildingPlacementToggle = useCallback(() => {
         if (!app) return;
@@ -238,126 +386,77 @@ export function BananaToolbar() {
                     app.buildingManager.removeBuilding(hit);
                 }
             }
-
-            app.layoutStateMachine.happens('pointerdown', {
-                position: worldPosition,
-                pointerId: event.pointerId,
-            });
-            app.trainStateMachine.happens('pointerdown', {
-                position: worldPosition,
-            });
         },
         [app, convertCoords]
     );
 
     useCanvasPointerDown(handlePointerDown);
 
-    useEffect(() => {
-        if (!app) return;
-
-        const canvas = app.app.canvas;
-
-        const handlePointerUp = (event: PointerEvent) => {
-            if (event.button !== 0) return;
-            const worldPosition = convertCoords(event);
-            app.layoutStateMachine.happens('pointerup', {
-                pointerId: event.pointerId,
-                position: worldPosition,
-            });
-            app.trainStateMachine.happens('pointerup', {
-                position: worldPosition,
-            });
-        };
-
-        const handlePointerMove = (event: PointerEvent) => {
-            const worldPosition = convertCoords(event);
-            app.layoutStateMachine.happens('pointermove', {
-                pointerId: event.pointerId,
-                position: worldPosition,
-            });
-            app.trainStateMachine.happens('pointermove', {
-                position: worldPosition,
-            });
-        };
-
-        const handleWheel = (event: WheelEvent) => {
-            // app.layoutStateMachine.happens('scroll', {
-            //     positive: event.deltaY > 0,
-            // });
-        };
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                app.layoutStateMachine.happens('escapeKey');
-            } else if (event.key === 'f') {
-                app.layoutStateMachine.happens('flipEndTangent');
-                app.trainStateMachine.happens('flipTrainDirection');
-            } else if (event.key === 'g') {
-                app.layoutStateMachine.happens('flipStartTangent');
-            } else if (event.key === 'q') {
-                app.layoutStateMachine.happens('toggleStraightLine');
-            } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                app.layoutStateMachine.happens('arrowUp');
-            } else if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                app.layoutStateMachine.happens('arrowDown');
-            }
-        };
-
-        canvas.addEventListener('pointerup', handlePointerUp);
-        canvas.addEventListener('pointermove', handlePointerMove);
-        canvas.addEventListener('wheel', handleWheel);
-        window.addEventListener('keydown', handleKeyDown);
-
-        return () => {
-            canvas.removeEventListener('pointerup', handlePointerUp);
-            canvas.removeEventListener('pointermove', handlePointerMove);
-            canvas.removeEventListener('wheel', handleWheel);
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [app, convertCoords]);
-
     const handleExportTracks = useCallback(() => {
         if (!app) return;
         const data = app.curveEngine.trackGraph.serialize();
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `track-data-${Date.now()}.json`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        downloadJson(`track-data-${Date.now()}.json`, data);
     }, [app]);
 
     const handleImportTracks = useCallback(() => {
         if (!app) return;
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json,application/json';
-        input.addEventListener('change', () => {
-            const file = input.files?.[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const parsed = JSON.parse(reader.result as string);
-                    const result = validateSerializedTrackData(parsed);
-                    if (!result.valid) {
-                        alert(`Invalid track data: ${result.error}`);
-                        return;
-                    }
-                    app.curveEngine.trackGraph.loadFromSerializedData(parsed);
-                } catch (e) {
-                    alert(`Failed to parse JSON: ${(e as Error).message}`);
-                }
-            };
-            reader.readAsText(file);
+        uploadJson(parsed => {
+            const result = validateSerializedTrackData(parsed);
+            if (!result.valid) {
+                alert(`Invalid track data: ${result.error}`);
+                return;
+            }
+            app.curveEngine.trackGraph.loadFromSerializedData(
+                parsed as SerializedTrackData
+            );
         });
-        input.click();
+    }, [app]);
+
+    const handleExportTrains = useCallback(() => {
+        if (!app) return;
+        const data = serializeTrainData(
+            app.trainManager,
+            app.formationManager,
+            app.carStockManager
+        );
+        downloadJson(`train-data-${Date.now()}.json`, data);
+    }, [app]);
+
+    const handleImportTrains = useCallback(() => {
+        if (!app) return;
+        uploadJson(parsed => {
+            const result = validateSerializedTrainData(parsed);
+            if (!result.valid) {
+                alert(`Invalid train data: ${result.error}`);
+                return;
+            }
+            deserializeTrainData(
+                parsed as SerializedTrainData,
+                app.curveEngine.trackGraph,
+                app.jointDirectionManager,
+                app.trainManager,
+                app.formationManager,
+                app.carStockManager
+            );
+        });
+    }, [app]);
+
+    const handleExportAll = useCallback(() => {
+        if (!app) return;
+        const data = serializeSceneData(app);
+        downloadJson(`scene-data-${Date.now()}.json`, data);
+    }, [app]);
+
+    const handleImportAll = useCallback(() => {
+        if (!app) return;
+        uploadJson(parsed => {
+            const result = validateSerializedSceneData(parsed);
+            if (!result.valid) {
+                alert(`Invalid scene data: ${result.error}`);
+                return;
+            }
+            deserializeSceneData(app, parsed as SerializedSceneData);
+        });
     }, [app]);
 
     if (!app) return null;
@@ -367,347 +466,635 @@ export function BananaToolbar() {
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
+    const isLayoutActive = mode === 'layout' || mode === 'layout-deletion';
+
     return (
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2">
-            {/* Train list and controls */}
-            <Card className="w-full max-w-md">
-                <CardHeader className="px-4 py-2">
-                    <CardTitle className="text-sm">Trains</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2 px-4 py-0 pb-4">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        <Button
-                            variant={
-                                mode === 'train-placement'
-                                    ? 'default'
-                                    : 'outline'
-                            }
-                            size="sm"
-                            onClick={handleTrainPlacementToggle}
-                            disabled={
-                                mode !== 'idle' && mode !== 'train-placement'
-                            }
-                        >
-                            {mode === 'train-placement'
+        <TooltipProvider delayDuration={200}>
+            <div
+                className={cn(
+                    'pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-3',
+                    TOOLBAR_LEFT
+                )}
+            >
+                {/* Main icon toolbar */}
+                <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                    {/* Track layout group */}
+                    <ToolbarButton
+                        tooltip={isLayoutActive ? 'End Layout' : 'Start Layout'}
+                        active={isLayoutActive}
+                        disabled={mode !== 'idle' && !isLayoutActive}
+                        onClick={handleLayoutToggle}
+                    >
+                        <TrainTrack />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Place Train */}
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'train-placement'
                                 ? 'End Placement'
-                                : 'Place Train'}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.setThrottleStep('p5')}
-                            disabled={!selectedTrain}
-                        >
-                            P5
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.setThrottleStep('N')}
-                            disabled={!selectedTrain}
-                        >
-                            Neutral
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => selectedTrain?.switchDirection()}
-                            disabled={!selectedTrain}
-                        >
-                            Switch Dir
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => trainManager.removeSelectedTrain()}
-                            disabled={placedTrains.length === 0}
-                        >
-                            Remove selected
-                        </Button>
-                    </div>
-                    {placedTrains.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                            {placedTrains.map((entry, index) => (
-                                <Button
-                                    key={entry.id}
-                                    variant={
-                                        index === selectedIndex
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    size="sm"
-                                    onClick={() =>
-                                        trainManager.setSelectedIndex(index)
-                                    }
-                                >
-                                    Train {index + 1}
-                                </Button>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-muted-foreground text-xs">
-                            No trains. Use &quot;Place Train&quot; then click on
-                            track.
-                        </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 border-t pt-2">
-                        <span className="text-muted-foreground text-xs">
-                            Stress test:
-                        </span>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => app.addStressTestTrains(10)}
-                            disabled={
-                                app.curveEngine.trackGraph.trackCurveManager
-                                    .livingEntities.length === 0
-                            }
-                        >
-                            +10 trains
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => app.addStressTestTrains(50)}
-                            disabled={
-                                app.curveEngine.trackGraph.trackCurveManager
-                                    .livingEntities.length === 0
-                            }
-                        >
-                            +50 trains
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Track layout controls */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={mode === 'layout' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={handleLayoutToggle}
-                    disabled={mode !== 'idle' && mode !== 'layout'}
-                >
-                    {mode === 'layout' ? 'End Layout' : 'Start Layout'}
-                </Button>
-                <Button
-                    variant={
-                        mode === 'layout-deletion' ? 'destructive' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleLayoutDeletionToggle}
-                    disabled={mode !== 'idle' && mode !== 'layout-deletion'}
-                >
-                    {mode === 'layout-deletion'
-                        ? 'End Deletion'
-                        : 'Delete Layout'}
-                </Button>
-            </div>
-
-            {/* Procedural tracks (stress test) */}
-            <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-muted-foreground text-xs">
-                    Procedural tracks:
-                </span>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({ segmentCount: 20 })
-                    }
-                >
-                    20 segments
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({ segmentCount: 100 })
-                    }
-                >
-                    100 segments
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() =>
-                        app.generateProceduralTracks({
-                            segmentCount: 100,
-                            gentleCurve: true,
-                        })
-                    }
-                >
-                    100 curved
-                </Button>
-            </div>
-
-            {/* Building controls */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={
-                        mode === 'building-placement' ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleBuildingPlacementToggle}
-                    disabled={mode !== 'idle' && mode !== 'building-placement'}
-                >
-                    {mode === 'building-placement'
-                        ? 'End Placement'
-                        : 'Place Building'}
-                </Button>
-                <Button
-                    variant={
-                        mode === 'building-deletion' ? 'destructive' : 'outline'
-                    }
-                    size="sm"
-                    onClick={handleBuildingDeletionToggle}
-                    disabled={mode !== 'idle' && mode !== 'building-deletion'}
-                >
-                    {mode === 'building-deletion'
-                        ? 'End Deletion'
-                        : 'Delete Building'}
-                </Button>
-
-                <select
-                    className="bg-background h-8 rounded-md border px-2 text-sm"
-                    value={buildingPreset}
-                    onChange={e =>
-                        setBuildingPreset(e.target.value as BuildingPreset)
-                    }
-                >
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
-                    <option value="l-shape">L-Shape</option>
-                </select>
-
-                <select
-                    className="bg-background h-8 rounded-md border px-2 text-sm"
-                    value={buildingElevation}
-                    onChange={e =>
-                        setBuildingElevation(
-                            Number(e.target.value) as ELEVATION
-                        )
-                    }
-                >
-                    <option value={ELEVATION.GROUND}>Ground</option>
-                    <option value={ELEVATION.ABOVE_1}>Above 1</option>
-                    <option value={ELEVATION.ABOVE_2}>Above 2</option>
-                    <option value={ELEVATION.ABOVE_3}>Above 3</option>
-                </select>
-
-                <label className="flex items-center gap-1.5 text-sm">
-                    Height:
-                    <input
-                        type="range"
-                        min={0.5}
-                        max={5}
-                        step={0.5}
-                        value={buildingHeight}
-                        onChange={e =>
-                            setBuildingHeight(Number(e.target.value))
+                                : 'Place Train'
                         }
-                        className="w-24"
-                    />
-                    <span className="w-10 text-xs">{buildingHeight} lv</span>
-                </label>
+                        active={mode === 'train-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'train-placement'
+                        }
+                        onClick={handleTrainPlacementToggle}
+                    >
+                        <TrainFront />
+                    </ToolbarButton>
+
+                    {/* Train List */}
+                    <ToolbarButton
+                        tooltip={
+                            showTrainPanel
+                                ? 'Close Train List'
+                                : 'Train List'
+                        }
+                        active={showTrainPanel}
+                        disabled={
+                            placedTrains.length === 0 &&
+                            mode !== 'train-placement'
+                        }
+                        onClick={handleTrainListToggle}
+                    >
+                        <List />
+                    </ToolbarButton>
+
+                    {/* Depot */}
+                    <ToolbarButton
+                        tooltip={showDepot ? 'Close Depot' : 'Open Depot'}
+                        active={showDepot}
+                        onClick={() => setShowDepot(v => !v)}
+                    >
+                        <Warehouse />
+                    </ToolbarButton>
+
+                    {/* Formation Editor */}
+                    <ToolbarButton
+                        tooltip={
+                            showFormationEditor
+                                ? 'Close Formations'
+                                : 'Edit Formations'
+                        }
+                        active={showFormationEditor}
+                        onClick={() => setShowFormationEditor(v => !v)}
+                    >
+                        <ListOrdered />
+                    </ToolbarButton>
+
+                    {/* Building */}
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'building-placement'
+                                ? 'End Placement'
+                                : 'Place Building'
+                        }
+                        active={mode === 'building-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'building-placement'
+                        }
+                        onClick={handleBuildingPlacementToggle}
+                    >
+                        <Building2 />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'building-deletion'
+                                ? 'End Deletion'
+                                : 'Delete Building'
+                        }
+                        active={mode === 'building-deletion'}
+                        destructive={mode === 'building-deletion'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'building-deletion'
+                        }
+                        onClick={handleBuildingDeletionToggle}
+                    >
+                        <Trash2 />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Track style */}
+                    <ToolbarButton
+                        tooltip="Elevation Style"
+                        active={trackRenderStyle === 'elevation'}
+                        onClick={() => setTrackRenderStyle('elevation')}
+                    >
+                        <Layers />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip="Texture Style"
+                        active={trackRenderStyle === 'texture'}
+                        onClick={() => setTrackRenderStyle('texture')}
+                    >
+                        <Paintbrush />
+                    </ToolbarButton>
+
+                    <ToolbarButton
+                        tooltip={
+                            showPreviewCurveArcs
+                                ? 'Hide Preview Curve Arcs'
+                                : 'Show Preview Curve Arcs'
+                        }
+                        active={showPreviewCurveArcs}
+                        onClick={() => setShowPreviewCurveArcs(v => !v)}
+                    >
+                        <Spline />
+                    </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Import/Export — hover to expand */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => {
+                            if (exportSubmenuTimeoutRef.current) {
+                                clearTimeout(exportSubmenuTimeoutRef.current);
+                                exportSubmenuTimeoutRef.current = null;
+                            }
+                            setShowExportSubmenu(true);
+                        }}
+                        onMouseLeave={() => {
+                            exportSubmenuTimeoutRef.current = setTimeout(
+                                () => setShowExportSubmenu(false),
+                                400
+                            );
+                        }}
+                    >
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                showExportSubmenu && 'bg-accent'
+                            )}
+                        >
+                            <Download />
+                        </Button>
+                        {showExportSubmenu && (
+                            <div
+                                className="bg-background/80 absolute top-0 left-full z-50 flex translate-x-4 flex-col gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm"
+                                onMouseEnter={() => {
+                                    if (exportSubmenuTimeoutRef.current) {
+                                        clearTimeout(
+                                            exportSubmenuTimeoutRef.current
+                                        );
+                                        exportSubmenuTimeoutRef.current = null;
+                                    }
+                                    setShowExportSubmenu(true);
+                                }}
+                                onMouseLeave={() => {
+                                    exportSubmenuTimeoutRef.current =
+                                        setTimeout(
+                                            () => setShowExportSubmenu(false),
+                                            150
+                                        );
+                                }}
+                            >
+                                <ToolbarButton
+                                    tooltip="Export Tracks"
+                                    onClick={handleExportTracks}
+                                >
+                                    <ExportTrackIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import Tracks"
+                                    onClick={handleImportTracks}
+                                >
+                                    <ImportTrackIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Export Trains (cars, formations, positions)"
+                                    onClick={handleExportTrains}
+                                >
+                                    <ExportTrainIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import Trains"
+                                    onClick={handleImportTrains}
+                                >
+                                    <ImportTrainIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Export All (tracks + trains)"
+                                    onClick={handleExportAll}
+                                >
+                                    <ExportSceneIcon />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    tooltip="Import All (tracks + trains)"
+                                    onClick={handleImportAll}
+                                >
+                                    <ImportSceneIcon />
+                                </ToolbarButton>
+                            </div>
+                        )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Debug */}
+                    <ToolbarButton
+                        tooltip={showDebugPanel ? 'Close Debug' : 'Open Debug'}
+                        active={showDebugPanel}
+                        onClick={() => setShowDebugPanel(v => !v)}
+                    >
+                        <Bug />
+                    </ToolbarButton>
+                </div>
+
+                {/* Sun angle mini control */}
+                <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex flex-col items-center gap-1">
+                                <Sun className="text-muted-foreground size-4" />
+                                <input
+                                    type="range"
+                                    min={0}
+                                    max={360}
+                                    step={1}
+                                    value={sunAngle}
+                                    onChange={e =>
+                                        setSunAngle(Number(e.target.value))
+                                    }
+                                    className="h-20 w-1.5 appearance-none [writing-mode:vertical-lr]"
+                                />
+                                <span className="text-muted-foreground text-[10px]">
+                                    {sunAngle}°
+                                </span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">Sun Angle</TooltipContent>
+                    </Tooltip>
+                </div>
             </div>
 
-            {/* Track detailed render style (when zoomed in) */}
-            <div className="flex items-center gap-1.5">
-                <span className="text-sm">Track style:</span>
-                <Button
-                    variant={
-                        trackRenderStyle === 'elevation' ? 'default' : 'outline'
+            {/* Formation selector toolbar — bottom center, only in train-placement mode */}
+            {mode === 'train-placement' && (
+                <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
+                    <div className="bg-background/80 flex items-center gap-2 rounded-xl border p-2 shadow-lg backdrop-blur-sm">
+                        <TrainFront className="text-muted-foreground size-4" />
+                        <span className="text-muted-foreground whitespace-nowrap text-xs font-medium">
+                            Formation
+                        </span>
+                        <select
+                            className="bg-background h-7 min-w-[160px] rounded-md border px-2 text-xs"
+                            value={selectedPlacementFormationId ?? ''}
+                            onChange={e => {
+                                const val = e.target.value || null;
+                                setSelectedPlacementFormationId(val);
+                                const formation = val
+                                    ? app.formationManager.getFormation(val)
+                                    : null;
+                                app.trainPlacementEngine.setFormation(
+                                    formation
+                                );
+                            }}
+                        >
+                            <option value="">Default (4 cars)</option>
+                            {app.formationManager
+                                .getFormations()
+                                .map(entry => (
+                                    <option
+                                        key={entry.id}
+                                        value={entry.id}
+                                    >
+                                        {entry.id} (
+                                        {entry.formation.flatCars().length}{' '}
+                                        car
+                                        {entry.formation.flatCars().length !==
+                                        1
+                                            ? 's'
+                                            : ''}
+                                        )
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
+                </div>
+            )}
+
+            {/* Layout deletion toolbar — lower left, only visible when layout mode is active */}
+            {isLayoutActive && (
+                <div
+                className={cn(
+                    'pointer-events-auto absolute bottom-3',
+                    TOOLBAR_LEFT
+                )}
+            >
+                    <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                        <ToolbarButton
+                            tooltip={
+                                mode === 'layout-deletion'
+                                    ? 'End Deletion'
+                                    : 'Delete Track'
+                            }
+                            active={mode === 'layout-deletion'}
+                            destructive={mode === 'layout-deletion'}
+                            destructiveMuted
+                            onClick={handleLayoutDeletionToggle}
+                        >
+                            <BulldozerIcon />
+                        </ToolbarButton>
+                    </div>
+                </div>
+            )}
+
+            {/* Train panel — draggable, visible when trains exist or in placement mode */}
+            {showTrainPanel &&
+                (mode === 'train-placement' || placedTrains.length > 0) && (
+                    <DraggablePanel
+                        title="Trains"
+                        onClose={() => setShowTrainPanel(false)}
+                        className="w-56"
+                    >
+                        <Separator className="mb-2" />
+                        <div className="flex flex-col gap-2">
+                            {/* Train list */}
+                            {placedTrains.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Placed trains
+                                    </span>
+                                    <div className="flex flex-col gap-1">
+                                        {placedTrains.map((entry, index) => {
+                                            const formation = entry.train
+                                                .formation;
+                                            const carCount =
+                                                formation.flatCars().length;
+                                            return (
+                                                <button
+                                                    key={entry.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        trainManager.setSelectedIndex(
+                                                            entry.id
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors',
+                                                        entry.id ===
+                                                            selectedIndex
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted/50 hover:bg-muted'
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs font-medium">
+                                                            {index + 1}
+                                                        </span>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs">
+                                                                {formation.id}
+                                                            </span>
+                                                            <span
+                                                                className={
+                                                                    entry.id ===
+                                                                    selectedIndex
+                                                                        ? 'text-primary-foreground/80'
+                                                                        : 'text-muted-foreground'
+                                                                }
+                                                            >
+                                                                {carCount} car
+                                                                {carCount !== 1
+                                                                    ? 's'
+                                                                    : ''}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Train controls */}
+                            {placedTrains.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Controls
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                        <ToolbarButton
+                                            tooltip="Throttle P5"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.setThrottleStep(
+                                                    'p5'
+                                                )
+                                            }
+                                        >
+                                            <Gauge />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Neutral"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.setThrottleStep(
+                                                    'N'
+                                                )
+                                            }
+                                        >
+                                            <Pause />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Switch Direction"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.switchDirection()
+                                            }
+                                        >
+                                            <ArrowLeftRight />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Remove Selected Train"
+                                            destructive
+                                            onClick={() =>
+                                                trainManager.removeSelectedTrain()
+                                            }
+                                        >
+                                            <Trash2 />
+                                        </ToolbarButton>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </DraggablePanel>
+                )}
+
+            {/* Building options — only visible in building-placement mode */}
+            {mode === 'building-placement' && (
+                <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
+                    <div className="bg-background/80 flex flex-col gap-2 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
+                        <span className="text-muted-foreground text-xs font-medium">
+                            Building
+                        </span>
+                        <select
+                            className="bg-background h-7 rounded-md border px-2 text-xs"
+                            value={buildingPreset}
+                            onChange={e =>
+                                setBuildingPreset(
+                                    e.target.value as BuildingPreset
+                                )
+                            }
+                        >
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                            <option value="l-shape">L-Shape</option>
+                        </select>
+                        <select
+                            className="bg-background h-7 rounded-md border px-2 text-xs"
+                            value={buildingElevation}
+                            onChange={e =>
+                                setBuildingElevation(
+                                    Number(e.target.value) as ELEVATION
+                                )
+                            }
+                        >
+                            <option value={ELEVATION.GROUND}>Ground</option>
+                            <option value={ELEVATION.ABOVE_1}>Above 1</option>
+                            <option value={ELEVATION.ABOVE_2}>Above 2</option>
+                            <option value={ELEVATION.ABOVE_3}>Above 3</option>
+                        </select>
+                        <label className="flex flex-col gap-1 text-xs">
+                            Height: {buildingHeight} lv
+                            <input
+                                type="range"
+                                min={0.5}
+                                max={5}
+                                step={0.5}
+                                value={buildingHeight}
+                                onChange={e =>
+                                    setBuildingHeight(Number(e.target.value))
+                                }
+                                className="w-full"
+                            />
+                        </label>
+                    </div>
+                </div>
+            )}
+
+            {/* Depot panel — car stock */}
+            {showDepot && (
+                <DraggablePanel
+                    title="Depot"
+                    onClose={() => setShowDepot(false)}
+                    className="w-56"
+                    headerActions={
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => app.carStockManager.createCar()}
+                        >
+                            <Plus className="size-3.5" />
+                        </Button>
                     }
-                    size="sm"
-                    onClick={() => setTrackRenderStyle('elevation')}
                 >
-                    Elevation
-                </Button>
-                <Button
-                    variant={
-                        trackRenderStyle === 'texture' ? 'default' : 'outline'
-                    }
-                    size="sm"
-                    onClick={() => setTrackRenderStyle('texture')}
-                >
-                    Texture
-                </Button>
-            </div>
+                    <Separator className="mb-2" />
+                    <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+                        {app.carStockManager.getAvailableCars().length === 0 ? (
+                            <span className="text-muted-foreground py-4 text-center text-xs">
+                                No cars in stock
+                            </span>
+                        ) : (
+                            app.carStockManager
+                                .getAvailableCars()
+                                .map(entry => (
+                                    <div
+                                        key={entry.id}
+                                        className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-foreground font-mono text-xs">
+                                                {entry.id}
+                                            </span>
+                                            <span className="text-muted-foreground text-[10px]">
+                                                {entry.car.bogieOffsets()
+                                                    .length + 1}{' '}
+                                                bogies
+                                                {' · '}
+                                                {entry.car.edgeToBogie +
+                                                    entry.car
+                                                        .bogieOffsets()
+                                                        .reduce(
+                                                            (a, b) => a + b,
+                                                            0
+                                                        ) +
+                                                    entry.car.bogieToEdge}
+                                                m
+                                            </span>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            onClick={() =>
+                                                app.carStockManager.removeCar(
+                                                    entry.id
+                                                )
+                                            }
+                                        >
+                                            <Trash2 className="size-3" />
+                                        </Button>
+                                    </div>
+                                ))
+                        )}
+                    </div>
+                </DraggablePanel>
+            )}
 
-            {/* Sun angle */}
-            <div className="flex items-center gap-1.5">
-                <label className="flex items-center gap-1.5 text-sm">
-                    Sun Angle:
-                    <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        step={1}
-                        value={sunAngle}
-                        onChange={e => setSunAngle(Number(e.target.value))}
-                        className="w-40"
-                    />
-                    <span className="w-10 text-xs">{sunAngle}°</span>
-                </label>
-            </div>
+            {/* Formation editor panel */}
+            {showFormationEditor && (
+                <FormationEditor
+                    formationManager={app.formationManager}
+                    carStockManager={app.carStockManager}
+                    trainManager={app.trainManager}
+                    onClose={() => setShowFormationEditor(false)}
+                />
+            )}
 
-            {/* Debug overlays (joint numbers, segment IDs) */}
-            <div className="flex items-center gap-1.5">
-                <span className="text-sm">Debug:</span>
-                <Button
-                    variant={showJointNumbers ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowJointNumbers(v => !v)}
+            {/* Debug panel */}
+            {showDebugPanel && (
+                <DraggablePanel
+                    title="Debug"
+                    onClose={() => setShowDebugPanel(false)}
+                    className="w-56"
                 >
-                    Joint #
-                </Button>
-                <Button
-                    variant={showSegmentIds ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowSegmentIds(v => !v)}
-                >
-                    Segment #
-                </Button>
-            </div>
+                    <Separator className="mb-2" />
+                    <div className="flex flex-col gap-2">
+                        <label className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-foreground">
+                                Joint numbers
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={showJointNumbers}
+                                onChange={() => setShowJointNumbers(v => !v)}
+                            />
+                        </label>
+                        <label className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-foreground">Segment IDs</span>
+                            <input
+                                type="checkbox"
+                                checked={showSegmentIds}
+                                onChange={() => setShowSegmentIds(v => !v)}
+                            />
+                        </label>
+                    </div>
+                </DraggablePanel>
+            )}
 
-            {/* GeoJSON + Import/Export */}
-            <div className="flex items-center gap-1.5">
-                <Button
-                    variant={showDistricts ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowDistricts(v => !v)}
-                >
-                    {showDistricts ? 'Hide Districts' : 'Show Districts'}
-                </Button>
-                <Button
-                    variant={showVillages ? 'secondary' : 'outline'}
-                    size="sm"
-                    onClick={() => setShowVillages(v => !v)}
-                >
-                    {showVillages ? 'Hide Villages' : 'Show Villages'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExportTracks}
-                >
-                    Export Tracks
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleImportTracks}
-                >
-                    Import Tracks
-                </Button>
+            {/* Status bar */}
+            <div className="pointer-events-none absolute right-3 bottom-3">
+                <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
+                    Elev: {elevation} · T: {tension}
+                </span>
             </div>
-
-            {/* Status */}
-            <p className="text-muted-foreground text-xs">
-                Elevation: {elevation} · Tension: {tension}
-            </p>
-        </div>
+        </TooltipProvider>
     );
 }

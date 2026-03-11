@@ -754,6 +754,16 @@ export class BCurve {
         return res;
     }
 
+    /**
+     * Get a sequence of circular arcs that approximate the curve.
+     *
+     * @param errorThreshold - Maximum allowed radial error when fitting an arc.
+     * @returns A list of arcs that cover the curve from \(t=0\) to \(t=1\).
+     */
+    public getArcs(errorThreshold: number) {
+        return this.findArcs(errorThreshold);
+    }
+
     public findArcStartingAt(errorThreshold: number, low: number) {
         let high = 1;
         let mid = low + (high - low) / 2;

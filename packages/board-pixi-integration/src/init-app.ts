@@ -43,6 +43,7 @@ export type InitAppOptions = {
     fullScreen: boolean;
     limitEntireViewPort: boolean;
     camera: DefaultBoardCamera;
+    boundaries: { min: { x: number; y: number }; max: { x: number; y: number } };
 };
 
 export const baseInitApp = async (
@@ -51,6 +52,7 @@ export const baseInitApp = async (
 ): Promise<BaseAppComponents> => {
 
     const {
+        boundaries = { min: { x: -1000, y: -1000 }, max: { x: 1000, y: 1000 } },
         fullScreen = true,
         limitEntireViewPort = true,
         camera = new DefaultBoardCamera({
@@ -59,9 +61,10 @@ export const baseInitApp = async (
             position: { x: 0, y: 0 },
             rotation: 0,
             zoomLevel: 1,
-            boundaries: { min: { x: -1000, y: -1000 }, max: { x: 1000, y: 1000 } },
+            boundaries,
         })
     } = option;
+
     // Create a PixiJS application.
     const app = new Application();
 

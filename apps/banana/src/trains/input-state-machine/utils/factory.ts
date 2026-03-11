@@ -1,5 +1,5 @@
 import { TemplateStateMachine } from "@ue-too/being";
-import { LayoutEvents, LayoutContext, LayoutStateMachine, LayoutStates, LayoutIDLEState, LayoutHoverForStartingPointState, LayoutHoverForEndingPointState, LayoutHoverForCurveDeletionState } from "../kmt-state-machine";
+import { LayoutEvents, LayoutContext, LayoutStateMachine, LayoutStates, LayoutIDLEState, LayoutHoverForStartingPointState, LayoutHoverForEndingPointState, LayoutHoverForCurveDeletionState } from "../layout-kmt-state-machine";
 import { CurveCreationEngine } from "../curve-engine";
 import { TrainPlacementEngine } from "../train-kmt-state-machine";
 import { TrackGraph } from "@/trains/tracks";
