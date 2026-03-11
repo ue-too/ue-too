@@ -11,6 +11,7 @@ import {
     Download,
     Gauge,
     Layers,
+    List,
     ListOrdered,
     Paintbrush,
     Pause,
@@ -171,6 +172,7 @@ export function BananaToolbar() {
     const [showSegmentIds, setShowSegmentIds] = useState(false);
     const [trainListVersion, setTrainListVersion] = useState(0);
     const [showDepot, setShowDepot] = useState(false);
+    const [showTrainPanel, setShowTrainPanel] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showExportSubmenu, setShowExportSubmenu] = useState(false);
@@ -317,10 +319,15 @@ export function BananaToolbar() {
             app.kmtStateMachineExpansion.happens('switchToIdle');
             setMode('idle');
         } else {
+            exitAllModes();
             app.kmtStateMachineExpansion.happens('switchToTrain');
             setMode('train-placement');
         }
-    }, [app, mode, exitAllModes, toggleKmtInput]);
+    }, [app, mode, exitAllModes]);
+
+    const handleTrainListToggle = useCallback(() => {
+        setShowTrainPanel(v => !v);
+    }, []);
 
     const handleBuildingPlacementToggle = useCallback(() => {
         if (!app) return;
@@ -483,7 +490,7 @@ export function BananaToolbar() {
 
                     <Separator />
 
-                    {/* Train */}
+                    {/* Place Train */}
                     <ToolbarButton
                         tooltip={
                             mode === 'train-placement'
@@ -491,10 +498,29 @@ export function BananaToolbar() {
                                 : 'Place Train'
                         }
                         active={mode === 'train-placement'}
-                        disabled={mode !== 'idle' && mode !== 'train-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'train-placement'
+                        }
                         onClick={handleTrainPlacementToggle}
                     >
                         <TrainFront />
+                    </ToolbarButton>
+
+                    {/* Train List */}
+                    <ToolbarButton
+                        tooltip={
+                            showTrainPanel
+                                ? 'Close Train List'
+                                : 'Train List'
+                        }
+                        active={showTrainPanel}
+                        disabled={
+                            placedTrains.length === 0 &&
+                            mode !== 'train-placement'
+                        }
+                        onClick={handleTrainListToggle}
+                    >
+                        <List />
                     </ToolbarButton>
 
                     {/* Depot */}
@@ -707,6 +733,51 @@ export function BananaToolbar() {
                 </div>
             </div>
 
+            {/* Formation selector toolbar — bottom center, only in train-placement mode */}
+            {mode === 'train-placement' && (
+                <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
+                    <div className="bg-background/80 flex items-center gap-2 rounded-xl border p-2 shadow-lg backdrop-blur-sm">
+                        <TrainFront className="text-muted-foreground size-4" />
+                        <span className="text-muted-foreground whitespace-nowrap text-xs font-medium">
+                            Formation
+                        </span>
+                        <select
+                            className="bg-background h-7 min-w-[160px] rounded-md border px-2 text-xs"
+                            value={selectedPlacementFormationId ?? ''}
+                            onChange={e => {
+                                const val = e.target.value || null;
+                                setSelectedPlacementFormationId(val);
+                                const formation = val
+                                    ? app.formationManager.getFormation(val)
+                                    : null;
+                                app.trainPlacementEngine.setFormation(
+                                    formation
+                                );
+                            }}
+                        >
+                            <option value="">Default (4 cars)</option>
+                            {app.formationManager
+                                .getFormations()
+                                .map(entry => (
+                                    <option
+                                        key={entry.id}
+                                        value={entry.id}
+                                    >
+                                        {entry.id} (
+                                        {entry.formation.flatCars().length}{' '}
+                                        car
+                                        {entry.formation.flatCars().length !==
+                                        1
+                                            ? 's'
+                                            : ''}
+                                        )
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
+                </div>
+            )}
+
             {/* Layout deletion toolbar — lower left, only visible when layout mode is active */}
             {isLayoutActive && (
                 <div
@@ -733,132 +804,128 @@ export function BananaToolbar() {
                 </div>
             )}
 
-            {/* Train controls panel — only visible when trains exist or in placement mode */}
-            {(mode === 'train-placement' || placedTrains.length > 0) && (
-                <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
-                    <div className="bg-background/80 flex items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
-                        {/* Formation selector — only in placement mode */}
-                        {mode === 'train-placement' && (
-                            <>
-                                <select
-                                    className="bg-background h-7 rounded-md border px-2 text-xs"
-                                    value={selectedPlacementFormationId ?? ''}
-                                    onChange={e => {
-                                        const val = e.target.value || null;
-                                        setSelectedPlacementFormationId(val);
-                                        const formation = val
-                                            ? app.formationManager.getFormation(
-                                                  val
-                                              )
-                                            : null;
-                                        app.trainPlacementEngine.setFormation(
-                                            formation
-                                        );
-                                    }}
-                                >
-                                    <option value="">Default (4 cars)</option>
-                                    {app.formationManager
-                                        .getFormations()
-                                        .map(entry => (
-                                            <option
-                                                key={entry.id}
-                                                value={entry.id}
-                                            >
-                                                {entry.id} (
-                                                {
-                                                    entry.formation.flatCars()
-                                                        .length
-                                                }{' '}
-                                                car
-                                                {entry.formation.flatCars()
-                                                    .length !== 1
-                                                    ? 's'
-                                                    : ''}
+            {/* Train panel — draggable, visible when trains exist or in placement mode */}
+            {showTrainPanel &&
+                (mode === 'train-placement' || placedTrains.length > 0) && (
+                    <DraggablePanel
+                        title="Trains"
+                        onClose={() => setShowTrainPanel(false)}
+                        className="w-56"
+                    >
+                        <Separator className="mb-2" />
+                        <div className="flex flex-col gap-2">
+                            {/* Train list */}
+                            {placedTrains.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Placed trains
+                                    </span>
+                                    <div className="flex flex-col gap-1">
+                                        {placedTrains.map((entry, index) => {
+                                            const formation = entry.train
+                                                .formation;
+                                            const carCount =
+                                                formation.flatCars().length;
+                                            return (
+                                                <button
+                                                    key={entry.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        trainManager.setSelectedIndex(
+                                                            entry.id
+                                                        )
+                                                    }
+                                                    className={cn(
+                                                        'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors',
+                                                        entry.id ===
+                                                            selectedIndex
+                                                            ? 'bg-primary text-primary-foreground'
+                                                            : 'bg-muted/50 hover:bg-muted'
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs font-medium">
+                                                            {index + 1}
+                                                        </span>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs">
+                                                                {formation.id}
+                                                            </span>
+                                                            <span
+                                                                className={
+                                                                    entry.id ===
+                                                                    selectedIndex
+                                                                        ? 'text-primary-foreground/80'
+                                                                        : 'text-muted-foreground'
+                                                                }
+                                                            >
+                                                                {carCount} car
+                                                                {carCount !== 1
+                                                                    ? 's'
+                                                                    : ''}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Train controls */}
+                            {placedTrains.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-muted-foreground text-xs font-medium">
+                                        Controls
+                                    </span>
+                                    <div className="flex flex-wrap gap-1">
+                                        <ToolbarButton
+                                            tooltip="Throttle P5"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.setThrottleStep(
+                                                    'p5'
                                                 )
-                                            </option>
-                                        ))}
-                                </select>
-                                <Separator
-                                    orientation="vertical"
-                                    className="mx-0.5 h-6"
-                                />
-                            </>
-                        )}
-
-                        {placedTrains.map((entry, index) => (
-                            <Tooltip key={entry.id}>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant={
-                                            entry.id === selectedIndex
-                                                ? 'default'
-                                                : 'ghost'
-                                        }
-                                        size="icon-sm"
-                                        onClick={() =>
-                                            trainManager.setSelectedIndex(
-                                                entry.id
-                                            )
-                                        }
-                                    >
-                                        <span className="font-mono text-xs">
-                                            {index + 1}
-                                        </span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    Train {index + 1}
-                                </TooltipContent>
-                            </Tooltip>
-                        ))}
-
-                        {placedTrains.length > 0 && (
-                            <>
-                                <Separator
-                                    orientation="vertical"
-                                    className="mx-0.5 h-6"
-                                />
-                                <ToolbarButton
-                                    tooltip="Throttle P5"
-                                    disabled={!selectedTrain}
-                                    onClick={() =>
-                                        selectedTrain?.setThrottleStep('p5')
-                                    }
-                                >
-                                    <Gauge />
-                                </ToolbarButton>
-                                <ToolbarButton
-                                    tooltip="Neutral"
-                                    disabled={!selectedTrain}
-                                    onClick={() =>
-                                        selectedTrain?.setThrottleStep('N')
-                                    }
-                                >
-                                    <Pause />
-                                </ToolbarButton>
-                                <ToolbarButton
-                                    tooltip="Switch Direction"
-                                    disabled={!selectedTrain}
-                                    onClick={() =>
-                                        selectedTrain?.switchDirection()
-                                    }
-                                >
-                                    <ArrowLeftRight />
-                                </ToolbarButton>
-                                <ToolbarButton
-                                    tooltip="Remove Selected Train"
-                                    destructive
-                                    onClick={() =>
-                                        trainManager.removeSelectedTrain()
-                                    }
-                                >
-                                    <Trash2 />
-                                </ToolbarButton>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
+                                            }
+                                        >
+                                            <Gauge />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Neutral"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.setThrottleStep(
+                                                    'N'
+                                                )
+                                            }
+                                        >
+                                            <Pause />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Switch Direction"
+                                            disabled={!selectedTrain}
+                                            onClick={() =>
+                                                selectedTrain?.switchDirection()
+                                            }
+                                        >
+                                            <ArrowLeftRight />
+                                        </ToolbarButton>
+                                        <ToolbarButton
+                                            tooltip="Remove Selected Train"
+                                            destructive
+                                            onClick={() =>
+                                                trainManager.removeSelectedTrain()
+                                            }
+                                        >
+                                            <Trash2 />
+                                        </ToolbarButton>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </DraggablePanel>
+                )}
 
             {/* Building options — only visible in building-placement mode */}
             {mode === 'building-placement' && (
@@ -986,6 +1053,7 @@ export function BananaToolbar() {
                 <FormationEditor
                     formationManager={app.formationManager}
                     carStockManager={app.carStockManager}
+                    trainManager={app.trainManager}
                     onClose={() => setShowFormationEditor(false)}
                 />
             )}

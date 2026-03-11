@@ -1,28 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, Plus, Trash2, TrainFront } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
 import type { CarStockManager } from '@/trains/car-stock-manager';
 import type { FormationManager } from '@/trains/formation-manager';
+import type { TrainManager } from '@/trains/train-manager';
 import type { Formation } from '@/trains/formation';
+import type { TrainUnit } from '@/trains/cars';
 
 type FormationEditorProps = {
     formationManager: FormationManager;
     carStockManager: CarStockManager;
+    trainManager: TrainManager;
     onClose: () => void;
 };
+
+/** Returns true if the TrainUnit is a nested Formation (has depth > 0). */
+function isNestedFormation(unit: TrainUnit): boolean {
+    return unit.depth > 0;
+}
 
 export function FormationEditor({
     formationManager,
     carStockManager,
+    trainManager,
     onClose,
 }: FormationEditorProps) {
     const [version, setVersion] = useState(0);
-    const [selectedFormationId, setSelectedFormationId] = useState<
-        string | null
-    >(null);
+    /** For unplaced: formation id. For placed: `placed-${trainIndex}` */
+    const [selectedKey, setSelectedKey] = useState<string | null>(null);
     // Which car in stock is selected to be added to a formation
     const [selectedStockCarId, setSelectedStockCarId] = useState<
         string | null
@@ -35,20 +43,45 @@ export function FormationEditor({
         const unsub2 = carStockManager.subscribe(() =>
             setVersion(v => v + 1)
         );
+        const unsub3 = trainManager.subscribe(() =>
+            setVersion(v => v + 1)
+        );
         return () => {
             unsub1();
             unsub2();
+            unsub3();
         };
-    }, [formationManager, carStockManager]);
+    }, [formationManager, carStockManager, trainManager]);
 
-    // Clear selection if formation was deleted
-    const formations = formationManager.getFormations();
+    // Placed formations: from trains on track
+    const placedFormations = trainManager
+        .getPlacedTrains()
+        .map((entry, index) => ({
+            trainIndex: index + 1,
+            formation: entry.train.formation,
+        }));
+
+    // Unplaced formations: in depot (formation manager)
+    const unplacedFormations = formationManager.getFormations();
+
+    // Resolve selected formation from selectedKey
     const selectedFormation =
-        selectedFormationId !== null
-            ? formationManager.getFormation(selectedFormationId)
-            : null;
-    if (selectedFormationId !== null && selectedFormation === null) {
-        setSelectedFormationId(null);
+        selectedKey === null
+            ? null
+            : selectedKey.startsWith('placed-')
+              ? (() => {
+                    const trainIndex = parseInt(
+                        selectedKey.replace('placed-', ''),
+                        10
+                    );
+                    const entry = placedFormations.find(
+                        p => p.trainIndex === trainIndex
+                    );
+                    return entry?.formation ?? null;
+                })()
+              : formationManager.getFormation(selectedKey);
+    if (selectedKey !== null && selectedFormation === null) {
+        setSelectedKey(null);
     }
 
     const availableCars = carStockManager.getAvailableCars();
@@ -58,17 +91,17 @@ export function FormationEditor({
         // Create a formation with the first available car
         const firstCar = availableCars[0];
         const formation = formationManager.createFormation([firstCar.id]);
-        setSelectedFormationId(formation.id);
+        setSelectedKey(formation.id);
     }, [formationManager, availableCars]);
 
     const handleDeleteFormation = useCallback(
         (id: string) => {
             formationManager.deleteFormation(id);
-            if (selectedFormationId === id) {
-                setSelectedFormationId(null);
+            if (selectedKey === id) {
+                setSelectedKey(null);
             }
         },
-        [formationManager, selectedFormationId]
+        [formationManager, selectedKey]
     );
 
     const handleAppendCar = useCallback(
@@ -114,51 +147,95 @@ export function FormationEditor({
                 </Button>
             }
         >
-            {/* Formation list */}
-            {formations.length === 0 ? (
-                <span className="text-muted-foreground block py-4 text-center text-xs">
-                    No formations.
-                    {availableCars.length > 0
-                        ? ' Click + to create one.'
-                        : ' Add cars to the depot first.'}
-                </span>
-            ) : (
-                <div className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto">
-                    {formations.map(({ id, formation }) => (
-                        <FormationCard
-                            key={id}
-                            formation={formation}
-                            isSelected={id === selectedFormationId}
-                            onSelect={() =>
-                                setSelectedFormationId(
-                                    id === selectedFormationId ? null : id
-                                )
-                            }
-                            onDelete={() => handleDeleteFormation(id)}
-                            availableCars={availableCars}
-                            selectedStockCarId={selectedStockCarId}
-                            onSelectStockCar={setSelectedStockCarId}
-                            onAppendCar={carId =>
-                                handleAppendCar(id, carId)
-                            }
-                            onPrependCar={carId =>
-                                handlePrependCar(id, carId)
-                            }
-                            onRemoveChild={childIndex =>
-                                handleRemoveChild(id, childIndex)
-                            }
-                        />
-                    ))}
+            <div className="flex max-h-[70vh] flex-col gap-3 overflow-y-auto">
+                {/* Placed formations (on trains) */}
+                {placedFormations.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                        <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
+                            <TrainFront className="size-3" />
+                            On track
+                        </span>
+                        {placedFormations.map(({ trainIndex, formation }) => {
+                            const key = `placed-${trainIndex}`;
+                            return (
+                                <FormationCard
+                                    key={key}
+                                    formation={formation}
+                                    trainLabel={trainIndex}
+                                    isSelected={key === selectedKey}
+                                    onSelect={() =>
+                                        setSelectedKey(
+                                            key === selectedKey ? null : key
+                                        )
+                                    }
+                                    readOnly
+                                    onDelete={() => {}}
+                                    availableCars={[]}
+                                    selectedStockCarId={null}
+                                    onSelectStockCar={() => {}}
+                                    onAppendCar={() => {}}
+                                    onPrependCar={() => {}}
+                                    onRemoveChild={() => {}}
+                                />
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Unplaced formations (in depot) */}
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
+                        <Layers className="size-3" />
+                        In depot
+                    </span>
+                    {unplacedFormations.length === 0 ? (
+                        <span className="text-muted-foreground block py-2 text-center text-xs">
+                            No formations in depot.
+                            {availableCars.length > 0
+                                ? ' Click + to create one.'
+                                : ' Add cars to the depot first.'}
+                        </span>
+                    ) : (
+                        unplacedFormations.map(({ id, formation }) => (
+                            <FormationCard
+                                key={id}
+                                formation={formation}
+                                isSelected={id === selectedKey}
+                                onSelect={() =>
+                                    setSelectedKey(
+                                        id === selectedKey ? null : id
+                                    )
+                                }
+                                readOnly={false}
+                                onDelete={() => handleDeleteFormation(id)}
+                                availableCars={availableCars}
+                                selectedStockCarId={selectedStockCarId}
+                                onSelectStockCar={setSelectedStockCarId}
+                                onAppendCar={carId =>
+                                    handleAppendCar(id, carId)
+                                }
+                                onPrependCar={carId =>
+                                    handlePrependCar(id, carId)
+                                }
+                                onRemoveChild={childIndex =>
+                                    handleRemoveChild(id, childIndex)
+                                }
+                            />
+                        ))
+                    )}
                 </div>
-            )}
+            </div>
         </DraggablePanel>
     );
 }
 
 type FormationCardProps = {
     formation: Formation;
+    /** When set, shows "Train N" label (for placed formations). */
+    trainLabel?: number;
     isSelected: boolean;
     onSelect: () => void;
+    readOnly?: boolean;
     onDelete: () => void;
     availableCars: readonly { id: string; car: import('@/trains/cars').Car }[];
     selectedStockCarId: string | null;
@@ -170,8 +247,10 @@ type FormationCardProps = {
 
 function FormationCard({
     formation,
+    trainLabel,
     isSelected,
     onSelect,
+    readOnly = false,
     onDelete,
     availableCars,
     selectedStockCarId,
@@ -182,6 +261,7 @@ function FormationCard({
 }: FormationCardProps) {
     const cars = formation.flatCars();
     const children = formation.children;
+    const hasNestedFormations = children.some(isNestedFormation);
 
     return (
         <div className="bg-muted/50 rounded-lg border">
@@ -196,23 +276,38 @@ function FormationCard({
                     ) : (
                         <ChevronDown className="text-muted-foreground size-3" />
                     )}
+                    {trainLabel !== undefined && (
+                        <span className="text-muted-foreground text-[10px]">
+                            Train {trainLabel}
+                        </span>
+                    )}
                     <span className="text-foreground text-xs font-mono">
                         {formation.id}
                     </span>
                     <span className="text-muted-foreground text-[10px]">
                         ({cars.length} car{cars.length !== 1 ? 's' : ''})
                     </span>
+                    {hasNestedFormations && (
+                        <span
+                            className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
+                            title="Contains nested formations"
+                        >
+                            nested
+                        </span>
+                    )}
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={e => {
-                        e.stopPropagation();
-                        onDelete();
-                    }}
-                >
-                    <Trash2 className="size-3" />
-                </Button>
+                {!readOnly && (
+                    <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={e => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                    >
+                        <Trash2 className="size-3" />
+                    </Button>
+                )}
             </div>
 
             {/* Expanded detail */}
@@ -226,7 +321,7 @@ function FormationCard({
                     </span>
                     <div className="flex flex-col gap-0.5">
                         {children.map((child, index) => {
-                            const childCars = child.flatCars();
+                            const isNested = isNestedFormation(child);
                             return (
                                 <div
                                     key={child.id}
@@ -239,22 +334,37 @@ function FormationCard({
                                         <span className="text-foreground text-[11px] font-mono">
                                             {child.id}
                                         </span>
+                                        {isNested && (
+                                            <span
+                                                className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
+                                                title="Nested formation"
+                                            >
+                                                {child.flatCars().length} car
+                                                {child.flatCars().length !== 1
+                                                    ? 's'
+                                                    : ''}
+                                            </span>
+                                        )}
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-xs"
-                                        disabled={children.length <= 1}
-                                        onClick={() => onRemoveChild(index)}
-                                    >
-                                        <Trash2 className="size-2.5" />
-                                    </Button>
+                                    {!readOnly && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            disabled={children.length <= 1}
+                                            onClick={() =>
+                                                onRemoveChild(index)
+                                            }
+                                        >
+                                            <Trash2 className="size-2.5" />
+                                        </Button>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
 
                     {/* Add car from stock */}
-                    {availableCars.length > 0 && (
+                    {!readOnly && availableCars.length > 0 && (
                         <>
                             <Separator />
                             <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
