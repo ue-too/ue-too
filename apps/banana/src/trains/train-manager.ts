@@ -18,6 +18,12 @@ export class TrainManager {
   private _selectedIndex = 0;
   private _listeners: (() => void)[] = [];
   private _observable: Observable<[number, { type: TrainChangeType }]> = new SynchronousObservable<[number, { type: TrainChangeType }]>();
+  private _onBeforeRemove: ((train: Train) => void) | null = null;
+
+  /** Register a callback invoked before a train is removed. */
+  setOnBeforeRemove(callback: (train: Train) => void): void {
+    this._onBeforeRemove = callback;
+  }
 
   /** Current list of placed trains (do not mutate). */
   getPlacedTrains(): readonly PlacedTrainEntry[] {
@@ -57,6 +63,10 @@ export class TrainManager {
   removeTrainAtIndex(id: number): void {
     const entryIndex = this._placedTrains.findIndex((e) => e.id === id);
     if (entryIndex === -1) return;
+    const train = this._internalTrainManager.getEntity(id);
+    if (train && this._onBeforeRemove) {
+      this._onBeforeRemove(train);
+    }
     this._internalTrainManager.destroyEntity(id);
     this._placedTrains.splice(entryIndex, 1);
     if (this._selectedIndex === id) {

@@ -22,12 +22,16 @@ import {
     TrainFront,
     Trash2,
     Upload,
+    Warehouse,
+    ListOrdered,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { Button } from '@/components/ui/button';
+import { DraggablePanel } from '@/components/ui/draggable-panel';
+import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import {
     Tooltip,
@@ -109,6 +113,12 @@ export function BananaToolbar() {
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
     const [trainListVersion, setTrainListVersion] = useState(0);
+    const [showDepot, setShowDepot] = useState(false);
+    const [showFormationEditor, setShowFormationEditor] = useState(false);
+    const [depotVersion, setDepotVersion] = useState(0);
+    const [formationVersion, setFormationVersion] = useState(0);
+    const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
+        useState<string | null>(null);
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -165,6 +175,22 @@ export function BananaToolbar() {
             unsubChanges();
             unsubSelect();
         };
+    }, [app]);
+
+    useEffect(() => {
+        if (!app) return;
+        const unsub = app.carStockManager.subscribe(() =>
+            setDepotVersion(v => v + 1)
+        );
+        return unsub;
+    }, [app]);
+
+    useEffect(() => {
+        if (!app) return;
+        const unsub = app.formationManager.subscribe(() =>
+            setFormationVersion(v => v + 1)
+        );
+        return unsub;
     }, [app]);
 
     useEffect(() => {
@@ -385,6 +411,30 @@ export function BananaToolbar() {
                         <TrainFront />
                     </ToolbarButton>
 
+                    {/* Depot */}
+                    <ToolbarButton
+                        tooltip={showDepot ? 'Close Depot' : 'Open Depot'}
+                        active={showDepot}
+                        onClick={() => setShowDepot(v => !v)}
+                    >
+                        <Warehouse />
+                    </ToolbarButton>
+
+                    {/* Formation Editor */}
+                    <ToolbarButton
+                        tooltip={
+                            showFormationEditor
+                                ? 'Close Formations'
+                                : 'Edit Formations'
+                        }
+                        active={showFormationEditor}
+                        onClick={() =>
+                            setShowFormationEditor(v => !v)
+                        }
+                    >
+                        <ListOrdered />
+                    </ToolbarButton>
+
                     {/* Building */}
                     <ToolbarButton
                         tooltip={
@@ -524,6 +574,48 @@ export function BananaToolbar() {
             {(mode === 'train-placement' || placedTrains.length > 0) && (
                 <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
                     <div className="bg-background/80 flex items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                        {/* Formation selector — only in placement mode */}
+                        {mode === 'train-placement' && (
+                            <>
+                                <select
+                                    className="bg-background h-7 rounded-md border px-2 text-xs"
+                                    value={selectedPlacementFormationId ?? ''}
+                                    onChange={e => {
+                                        const val = e.target.value || null;
+                                        setSelectedPlacementFormationId(val);
+                                        const formation = val
+                                            ? app.formationManager.getFormation(val)
+                                            : null;
+                                        app.trainPlacementEngine.setFormation(
+                                            formation
+                                        );
+                                    }}
+                                >
+                                    <option value="">Default (4 cars)</option>
+                                    {app.formationManager
+                                        .getFormations()
+                                        .map(entry => (
+                                            <option
+                                                key={entry.id}
+                                                value={entry.id}
+                                            >
+                                                {entry.id} (
+                                                {entry.formation.flatCars().length}{' '}
+                                                car
+                                                {entry.formation.flatCars().length !== 1
+                                                    ? 's'
+                                                    : ''}
+                                                )
+                                            </option>
+                                        ))}
+                                </select>
+                                <Separator
+                                    orientation="vertical"
+                                    className="mx-0.5 h-6"
+                                />
+                            </>
+                        )}
+
                         {placedTrains.map((entry, index) => (
                             <Tooltip key={entry.id}>
                                 <TooltipTrigger asChild>
@@ -650,6 +742,86 @@ export function BananaToolbar() {
                         </label>
                     </div>
                 </div>
+            )}
+
+            {/* Depot panel — car stock */}
+            {showDepot && (
+                <DraggablePanel
+                    title="Depot"
+                    onClose={() => setShowDepot(false)}
+                    className="w-56"
+                    headerActions={
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() =>
+                                app.carStockManager.createCar()
+                            }
+                        >
+                            <Plus className="size-3.5" />
+                        </Button>
+                    }
+                >
+                    <Separator className="mb-2" />
+                    <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
+                        {app.carStockManager.getAvailableCars().length ===
+                        0 ? (
+                            <span className="text-muted-foreground py-4 text-center text-xs">
+                                No cars in stock
+                            </span>
+                        ) : (
+                            app.carStockManager
+                                .getAvailableCars()
+                                .map(entry => (
+                                    <div
+                                        key={entry.id}
+                                        className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="text-foreground text-xs font-mono">
+                                                {entry.id}
+                                            </span>
+                                            <span className="text-muted-foreground text-[10px]">
+                                                {entry.car.bogieOffsets().length + 1} bogies
+                                                {' · '}
+                                                {entry.car.edgeToBogie +
+                                                    entry.car
+                                                        .bogieOffsets()
+                                                        .reduce(
+                                                            (a, b) =>
+                                                                a + b,
+                                                            0
+                                                        ) +
+                                                    entry.car
+                                                        .bogieToEdge}
+                                                m
+                                            </span>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-xs"
+                                            onClick={() =>
+                                                app.carStockManager.removeCar(
+                                                    entry.id
+                                                )
+                                            }
+                                        >
+                                            <Trash2 className="size-3" />
+                                        </Button>
+                                    </div>
+                                ))
+                        )}
+                    </div>
+                </DraggablePanel>
+            )}
+
+            {/* Formation editor panel */}
+            {showFormationEditor && (
+                <FormationEditor
+                    formationManager={app.formationManager}
+                    carStockManager={app.carStockManager}
+                    onClose={() => setShowFormationEditor(false)}
+                />
             )}
 
             {/* Status bar */}

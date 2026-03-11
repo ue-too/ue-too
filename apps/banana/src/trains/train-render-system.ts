@@ -146,7 +146,7 @@ function getCarHalfGeometries(positions: TrainPosition[], cars: readonly Car[]):
 export class TrainRenderSystem {
 
   private _getPlacedTrains: () => readonly PlacedTrainEntry[];
-  private _previewTrain: Train;
+  private _getPreviewTrain: () => Train;
   private _trackGraph: TrackGraph;
   private _trackRenderSystem: TrackRenderSystem;
   private _worldRenderSystem: WorldRenderSystem;
@@ -177,14 +177,14 @@ export class TrainRenderSystem {
   constructor(
     worldRenderSystem: WorldRenderSystem,
     getPlacedTrains: () => readonly PlacedTrainEntry[],
-    previewTrain: Train,
+    getPreviewTrain: () => Train,
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
     textureRenderer?: TrackTextureRenderer | null,
   ) {
     this._worldRenderSystem = worldRenderSystem;
     this._getPlacedTrains = getPlacedTrains;
-    this._previewTrain = previewTrain;
+    this._getPreviewTrain = getPreviewTrain;
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
     this._textureRenderer = textureRenderer ?? null;
@@ -205,7 +205,7 @@ export class TrainRenderSystem {
     for (const { train } of placed) {
       train.update(deltaTime);
     }
-    this._previewTrain.update(deltaTime);
+    this._getPreviewTrain().update(deltaTime);
 
     this._updatePreviewBogies();
     this._updatePreviewCars();
@@ -247,7 +247,7 @@ export class TrainRenderSystem {
   }
 
   private _updatePreviewBogies(): void {
-    const positions = this._previewTrain.previewBogiePositions;
+    const positions = this._getPreviewTrain().previewBogiePositions;
 
     if (positions === null || positions.length === 0) {
       this._previewContainer.visible = false;
@@ -332,12 +332,12 @@ export class TrainRenderSystem {
 
   private _updatePreviewCars(): void {
     const texture = this._getOrCreateCarTexture();
-    const positions = this._previewTrain.previewBogiePositions;
+    const positions = this._getPreviewTrain().previewBogiePositions;
     if (texture === null || positions === null || positions.length < 2) {
       for (const s of this._previewCarPool) s.visible = false;
       return;
     }
-    const geometries = getCarGeometries(positions, this._previewTrain.cars);
+    const geometries = getCarGeometries(positions, this._getPreviewTrain().cars);
     while (this._previewCarPool.length < geometries.length) {
       const sprite = createCarSprite(texture);
       sprite.zIndex = 0;

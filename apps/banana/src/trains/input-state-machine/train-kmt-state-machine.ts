@@ -8,7 +8,7 @@ import {
 import { Point, PointCal } from '@ue-too/math';
 
 import { TrackGraph } from '../tracks/track';
-import { Train, TrainPosition } from '../formation';
+import { Formation, Train, TrainPosition } from '../formation';
 import { convertFromCanvas2ViewPort, convertFromWindow2Canvas, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWorld2Viewport, ObservableBoardCamera, Canvas, ObservableInputTracker } from '@ue-too/board';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
@@ -167,6 +167,7 @@ export class TrainPlacementEngine extends ObservableInputTracker implements Trai
     private _train: Train;
     private _onPlaced: ((placed: Train) => Train | void) | undefined;
     private _camera: ObservableBoardCamera;
+    private _pendingFormation: Formation | null = null;
 
     constructor(canvas: Canvas, trackGraph: TrackGraph, camera: ObservableBoardCamera, options?: TrainPlacementEngineOptions) {
         super(canvas);
@@ -181,6 +182,23 @@ export class TrainPlacementEngine extends ObservableInputTracker implements Trai
             this._jointDirectionManager
         );
         this._camera = camera;
+    }
+
+    /** Set the formation to use for the next train placement. */
+    setFormation(formation: Formation | null): void {
+        this._pendingFormation = formation;
+        // Rebuild the preview train with the new formation
+        this._train = new Train(
+            null,
+            this._trackGraph,
+            this._jointDirectionManager,
+            formation ?? undefined,
+        );
+    }
+
+    /** The formation currently set for the next placement, or null for default. */
+    get pendingFormation(): Formation | null {
+        return this._pendingFormation;
     }
 
     cancelCurrentTrainPlacement() {
