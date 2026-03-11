@@ -237,12 +237,16 @@ export class WorldRenderSystem {
      * Compute a z-index for an on-track object (e.g. a train bogie) that is
      * guaranteed to be above every track drawable in the same elevation band.
      *
+     * The returned value leaves a gap of 2 above the highest track so that
+     * callers can place sub-layers (e.g. car bodies at bogieZ − 1) that are
+     * still above all tracks.
+     *
      * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
      * @returns A z-index above all track drawables in that band
      */
     computeOnTrackObjectZIndex(bandIndex: number): number {
         const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
-        return bandIndex * LAYERS_PER_ELEVATION + 1 + trackCount;
+        return bandIndex * LAYERS_PER_ELEVATION + 2 + trackCount;
     }
 
     sortChildren(): void {
