@@ -1,13 +1,13 @@
+import { BaseAppComponents } from '@ue-too/board-pixi-integration';
 import { Application } from 'pixi.js';
 
-import { PixiCanvasResult } from '../../contexts';
-import { ResolvedComponents } from '../../contexts';
+import { PixiCanvasResult, ResolvedComponents } from '../../contexts';
 
-export const appIsReady = (
-    result: PixiCanvasResult<ResolvedComponents>
+export const appIsReady = <C extends BaseAppComponents = ResolvedComponents>(
+    result: PixiCanvasResult<C>
 ):
     | { ready: false }
-    | { ready: true; app: Application; components: ResolvedComponents } => {
+    | { ready: true; app: Application; components: C } => {
     if (
         result.initialized == false ||
         result.success == false ||
