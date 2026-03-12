@@ -1,31 +1,30 @@
 import type { IconProps } from './icon-types';
 
-export function ExportTrackIcon({ title = 'Export tracks', ...props }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="1em"
-      height="1em"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-label={title}
-      role="img"
-      {...props}
-    >
-      <title>{title}</title>
-      {/* rails */}
-      <path d="M7 3v8" />
-      <path d="M17 3v8" />
-      <path d="M9.5 4.5h5" />
-      <path d="M9.5 7.5h5" />
-      <path d="M9.5 10.5h5" />
-      {/* export arrow */}
-      <path d="M12 13v7" />
-      <path d="M8.5 16.5 12 20l3.5-3.5" />
-    </svg>
-  );
+export function ExportTrackIcon({
+    title = 'Export tracks',
+    ...props
+}: IconProps) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
+            height="24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <title>{title}</title>
+            <path d="M5 2v20" />
+            <path d="M11 2v20" />
+            <path d="M2 6h12" />
+            <path d="M2 12h12" />
+            <path d="M2 18h12" />
+            <path d="M16 20h7" />
+            <path d="M22 7l-3-3-3 3" />
+            <path d="M19 17V4" />
+        </svg>
+    );
 }
-
