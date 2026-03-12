@@ -99,7 +99,7 @@ function ToolbarButton({
             <TooltipTrigger asChild>
                 <Button
                     variant={variant}
-                    size="icon"
+                    size="icon-lg"
                     disabled={disabled}
                     onClick={onClick}
                     className={
@@ -498,9 +498,7 @@ export function BananaToolbar() {
                                 : 'Place Train'
                         }
                         active={mode === 'train-placement'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'train-placement'
-                        }
+                        disabled={mode !== 'idle' && mode !== 'train-placement'}
                         onClick={handleTrainPlacementToggle}
                     >
                         <TrainFront />
@@ -509,9 +507,7 @@ export function BananaToolbar() {
                     {/* Train List */}
                     <ToolbarButton
                         tooltip={
-                            showTrainPanel
-                                ? 'Close Train List'
-                                : 'Train List'
+                            showTrainPanel ? 'Close Train List' : 'Train List'
                         }
                         active={showTrainPanel}
                         disabled={
@@ -628,9 +624,7 @@ export function BananaToolbar() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className={cn(
-                                showExportSubmenu && 'bg-accent'
-                            )}
+                            className={cn(showExportSubmenu && 'bg-accent')}
                         >
                             <Download />
                         </Button>
@@ -738,7 +732,7 @@ export function BananaToolbar() {
                 <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
                     <div className="bg-background/80 flex items-center gap-2 rounded-xl border p-2 shadow-lg backdrop-blur-sm">
                         <TrainFront className="text-muted-foreground size-4" />
-                        <span className="text-muted-foreground whitespace-nowrap text-xs font-medium">
+                        <span className="text-muted-foreground text-xs font-medium whitespace-nowrap">
                             Formation
                         </span>
                         <select
@@ -756,23 +750,16 @@ export function BananaToolbar() {
                             }}
                         >
                             <option value="">Default (4 cars)</option>
-                            {app.formationManager
-                                .getFormations()
-                                .map(entry => (
-                                    <option
-                                        key={entry.id}
-                                        value={entry.id}
-                                    >
-                                        {entry.id} (
-                                        {entry.formation.flatCars().length}{' '}
-                                        car
-                                        {entry.formation.flatCars().length !==
-                                        1
-                                            ? 's'
-                                            : ''}
-                                        )
-                                    </option>
-                                ))}
+                            {app.formationManager.getFormations().map(entry => (
+                                <option key={entry.id} value={entry.id}>
+                                    {entry.id} (
+                                    {entry.formation.flatCars().length} car
+                                    {entry.formation.flatCars().length !== 1
+                                        ? 's'
+                                        : ''}
+                                    )
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -781,11 +768,11 @@ export function BananaToolbar() {
             {/* Layout deletion toolbar — lower left, only visible when layout mode is active */}
             {isLayoutActive && (
                 <div
-                className={cn(
-                    'pointer-events-auto absolute bottom-3',
-                    TOOLBAR_LEFT
-                )}
-            >
+                    className={cn(
+                        'pointer-events-auto absolute bottom-3',
+                        TOOLBAR_LEFT
+                    )}
+                >
                     <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                         <ToolbarButton
                             tooltip={
@@ -822,8 +809,8 @@ export function BananaToolbar() {
                                     </span>
                                     <div className="flex flex-col gap-1">
                                         {placedTrains.map((entry, index) => {
-                                            const formation = entry.train
-                                                .formation;
+                                            const formation =
+                                                entry.train.formation;
                                             const carCount =
                                                 formation.flatCars().length;
                                             return (
