@@ -1,9 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Route, Routes } from 'react-router';
 
 import { BananaAppComponents } from '@/utils/init-app';
 
 import App from './App';
+import { TrainEditor } from './pages/train-editor';
 
 declare module '@ue-too/board-pixi-react-integration' {
   interface PixiCanvasRegistry {
@@ -23,6 +25,11 @@ const root = createRoot(rootElement);
 
 root.render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/train-editor" element={<TrainEditor />} />
+      </Routes>
+    </BrowserRouter>
   </StrictMode>,
 );

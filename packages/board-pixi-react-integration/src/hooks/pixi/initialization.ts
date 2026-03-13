@@ -1,18 +1,18 @@
-import { InitAppOptions } from '@ue-too/board-pixi-integration';
+import { BaseAppComponents, InitAppOptions } from '@ue-too/board-pixi-integration';
 import { useEffect, useRef } from 'react';
 
-import { ResolvedComponents, usePixiCanvas } from '../../contexts/pixi';
+import { usePixiCanvas } from '../../contexts/pixi';
 
 export const useInitializePixiApp = <T extends InitAppOptions = InitAppOptions>(
     option: Partial<T>,
     initFunction: (
         canvas: HTMLCanvasElement,
         option: Partial<T>
-    ) => Promise<ResolvedComponents>
+    ) => Promise<BaseAppComponents>
 ) => {
-    const { setResult } = usePixiCanvas();
+    const { setResult } = usePixiCanvas<BaseAppComponents>();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const appComponentsRef = useRef<ResolvedComponents | null>(null);
+    const appComponentsRef = useRef<BaseAppComponents | null>(null);
     const isInitializingRef = useRef(false);
 
     useEffect(() => {

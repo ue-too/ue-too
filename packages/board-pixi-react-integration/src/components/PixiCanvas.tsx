@@ -1,6 +1,6 @@
-import { InitAppOptions, baseInitApp } from '@ue-too/board-pixi-integration';
+import { BaseAppComponents, InitAppOptions, baseInitApp } from '@ue-too/board-pixi-integration';
 
-import { PixiCanvasProvider, ResolvedComponents } from '../contexts';
+import { PixiCanvasProvider } from '../contexts';
 import { useInitializePixiApp } from '../hooks';
 import { useCanvasSize } from '../hooks/pixi/utils';
 import { ScrollBarDisplay } from './canvas/scrollbar';
@@ -19,7 +19,7 @@ export const PixiCanvas = ({
     initFunction: (
         canvas: HTMLCanvasElement,
         option: Partial<InitAppOptions>
-    ) => Promise<ResolvedComponents>;
+    ) => Promise<BaseAppComponents>;
     className?: string;
 }): React.ReactNode => {
     const { canvasRef } = useInitializePixiApp(option, initFunction);
@@ -60,7 +60,7 @@ export const Wrapper = ({
     initFunction: (
         canvas: HTMLCanvasElement,
         option: Partial<InitAppOptions>
-    ) => Promise<ResolvedComponents>;
+    ) => Promise<BaseAppComponents>;
     canvasClassName?: string;
     children?: React.ReactNode;
 }) => {

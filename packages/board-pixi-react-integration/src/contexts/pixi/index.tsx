@@ -37,20 +37,42 @@ export type ResolvedComponents = PixiCanvasRegistry extends {
 export interface PixiCanvasRegistry {}
 
 const PixiCanvasContext = createContext<
-    PixiCanvasContextType<ResolvedComponents>
+    PixiCanvasContextType<BaseAppComponents>
 >({
     setResult: () => {},
     result: { initialized: false },
 });
 
-export const usePixiCanvas = () => {
+/**
+ * Access the PixiJS canvas context with typed components.
+ *
+ * @typeParam C - The component type to resolve. Defaults to {@link ResolvedComponents}
+ * which uses the global {@link PixiCanvasRegistry} augmentation if available,
+ * otherwise falls back to {@link BaseAppComponents}.
+ * For multi-page apps with different component types per page, pass the
+ * specific component type explicitly.
+ *
+ * @returns The pixi canvas context with typed result and setResult
+ *
+ * @example
+ * ```typescript
+ * // Single-app project with module augmentation (no generic needed):
+ * const { result } = usePixiCanvas();
+ *
+ * // Multi-page project with explicit type:
+ * const { result } = usePixiCanvas<TrainEditorComponents>();
+ * ```
+ *
+ * @group Hooks
+ */
+export const usePixiCanvas = <C extends BaseAppComponents = ResolvedComponents>() => {
     const context = useContext(PixiCanvasContext);
     if (context == null) {
         throw new Error(
             'PixiCanvasContext not found, make sure you are using PixiCanvasProvider to wrap your component'
         );
     }
-    return context;
+    return context as unknown as PixiCanvasContextType<C>;
 };
 
 export const PixiCanvasProvider = ({
@@ -58,7 +80,7 @@ export const PixiCanvasProvider = ({
 }: {
     children: React.ReactNode;
 }) => {
-    const [result, setResult] = useState<PixiCanvasResult<ResolvedComponents>>({
+    const [result, setResult] = useState<PixiCanvasResult<BaseAppComponents>>({
         initialized: false,
     });
 
@@ -78,7 +100,7 @@ export const PixiCanvasProvider = ({
                 // Return safe state immediately to prevent accessing destroyed app
                 return {
                     initialized: false,
-                } as PixiCanvasResult<ResolvedComponents>;
+                } as PixiCanvasResult<BaseAppComponents>;
             }
         }
         return result;

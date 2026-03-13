@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(grep -r \"react-router\\\\|createBrowserRouter\\\\|BrowserRouter\\\\|Routes\\\\|Route\" /Users/vincent.yy.chang/dev/ue-too/train-editor/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)"
     ]
   }
 }
