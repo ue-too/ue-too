@@ -1094,8 +1094,8 @@ export function BananaToolbar({
                 </DraggablePanel>
             )}
 
-            {/* Status bar */}
-            <div className="pointer-events-none absolute right-3 bottom-3">
+            {/* Status bar — positioned above the map attribution */}
+            <div className="pointer-events-none absolute right-3 bottom-10">
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
                     Elev: {elevation} · T: {tension}
                 </span>

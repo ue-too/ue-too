@@ -25,7 +25,8 @@
       "Bash(bun -e \"\n// Tile count estimate for bbox 121.4-121.7, 24.9-25.2\nfunction lng2tile\\(lng, z\\) { return Math.floor\\(\\(\\(lng + 180\\) / 360\\) * \\(1 << z\\)\\); }\nfunction lat2tile\\(lat, z\\) { const r = lat * Math.PI / 180; return Math.floor\\(\\(\\(1 - Math.log\\(Math.tan\\(r\\) + 1/Math.cos\\(r\\)\\) / Math.PI\\) / 2\\) * \\(1 << z\\)\\); }\nfor \\(let z = 15; z <= 18; z++\\) {\n  const xMin = lng2tile\\(121.4, z\\), xMax = lng2tile\\(121.7, z\\);\n  const yMin = lat2tile\\(25.2, z\\), yMax = lat2tile\\(24.9, z\\);\n  const count = \\(xMax-xMin+1\\)*\\(yMax-yMin+1\\);\n  console.log\\('z' + z + ': ' + count + ' tiles'\\);\n}\n\" 2>&1)",
       "Bash(find /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public -maxdepth 1 -type f -name \"*.json\" | xargs ls -lh)",
       "Bash(head -50 /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public/*.json 2>/dev/null | head -100)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/sprites/v4/light.json 2>&1)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/sprites/v4/light.json 2>&1)",
+      "Bash(grep -rn \"pointer-events-none.*bottom\\\\|bottom.*pointer-events-none\" /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)"
     ]
   }
 }

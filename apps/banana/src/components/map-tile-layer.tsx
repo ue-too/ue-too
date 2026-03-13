@@ -3,7 +3,8 @@ import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Protocol } from 'pmtiles';
-import { useEffect, useRef } from 'react';
+import { Info } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const USE_LOCAL_TILES = !!import.meta.env.VITE_LOCAL_TILES;
 
@@ -178,23 +179,42 @@ export function MapTileLayer({
                     filter: 'brightness(0.9) saturate(0.8)',
                 }}
             />
-            {visible && (
+            {visible && <MapAttribution />}
+        </div>
+    );
+}
+
+function MapAttribution() {
+    const [open, setOpen] = useState(true);
+
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 6,
+                pointerEvents: 'auto',
+            }}
+        >
+            {open && (
                 <div
                     style={{
-                        position: 'absolute',
-                        bottom: 4,
-                        right: 4,
-                        zIndex: 1000,
-                        fontSize: 11,
-                        color: 'rgba(255,255,255,0.6)',
-                        pointerEvents: 'auto',
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.75)',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        borderRadius: 4,
+                        padding: '3px 8px',
                     }}
                 >
                     <a
                         href="https://www.openstreetmap.org/copyright"
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: 'rgba(255,255,255,0.6)' }}
+                        style={{ color: 'rgba(255,255,255,0.75)' }}
                     >
                         &copy; OpenStreetMap contributors
                     </a>
@@ -203,12 +223,32 @@ export function MapTileLayer({
                         href="https://protomaps.com"
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: 'rgba(255,255,255,0.6)' }}
+                        style={{ color: 'rgba(255,255,255,0.75)' }}
                     >
                         Protomaps
                     </a>
                 </div>
             )}
+            <button
+                onClick={() => setOpen((v) => !v)}
+                style={{
+                    background: 'rgba(0,0,0,0.5)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 22,
+                    height: 22,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.75)',
+                    padding: 0,
+                    flexShrink: 0,
+                }}
+                aria-label="Toggle attribution"
+            >
+                <Info size={14} />
+            </button>
         </div>
     );
 }
