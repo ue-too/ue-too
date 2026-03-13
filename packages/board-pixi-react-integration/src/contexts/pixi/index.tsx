@@ -72,7 +72,7 @@ export const usePixiCanvas = <C extends BaseAppComponents = ResolvedComponents>(
             'PixiCanvasContext not found, make sure you are using PixiCanvasProvider to wrap your component'
         );
     }
-    return context as PixiCanvasContextType<C>;
+    return context as unknown as PixiCanvasContextType<C>;
 };
 
 export const PixiCanvasProvider = ({
