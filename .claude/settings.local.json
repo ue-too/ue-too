@@ -8,7 +8,11 @@
       "Bash(timeout 15 bun run dev 2>&1 || true)",
       "Bash(find node_modules/.bun -path '*leaflet*' -name '*.js' -not -path '*esm*' 2>/dev/null | head -5)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/map-overlay)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/ && echo \" index\" && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/map-overlay && echo \" map-overlay\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/ && echo \" index\" && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/map-overlay && echo \" map-overlay\")",
+      "WebSearch",
+      "WebFetch(domain:docs.protomaps.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:pmtiles.io)"
     ]
   }
 }

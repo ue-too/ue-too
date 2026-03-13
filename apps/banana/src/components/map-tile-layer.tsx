@@ -66,16 +66,28 @@ function syncBoardToLeaflet(
  * ```
  */
 export function MapTileLayer({
+    visible,
     onMapReady,
     onMapDestroy,
 }: {
+    visible: boolean;
     onMapReady: (map: L.Map) => void;
     onMapDestroy: () => void;
 }) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const leafletMapRef = useRef<L.Map | null>(null);
 
+    // Create / destroy Leaflet map based on visibility
     useEffect(() => {
+        if (!visible) {
+            if (leafletMapRef.current) {
+                leafletMapRef.current.remove();
+                leafletMapRef.current = null;
+                onMapDestroy();
+            }
+            return;
+        }
+
         if (!mapContainerRef.current || leafletMapRef.current) return;
 
         const map = L.map(mapContainerRef.current, {
@@ -104,53 +116,65 @@ export function MapTileLayer({
         onMapReady(map);
 
         return () => {
-            map.remove();
-            leafletMapRef.current = null;
-            onMapDestroy();
+            if (leafletMapRef.current) {
+                leafletMapRef.current.remove();
+                leafletMapRef.current = null;
+                onMapDestroy();
+            }
         };
-    }, [onMapReady, onMapDestroy]);
+    }, [visible, onMapReady, onMapDestroy]);
 
+    // Always render the container div to keep DOM structure stable.
+    // Leaflet is only initialized when visible=true.
     return (
-        <>
+        <div
+            style={{
+                position: 'absolute',
+                inset: 0,
+                pointerEvents: 'none',
+                visibility: visible ? 'visible' : 'hidden',
+            }}
+        >
             <div
                 ref={mapContainerRef}
                 style={{
                     position: 'absolute',
                     inset: 0,
-                    pointerEvents: 'none',
                     filter: 'brightness(0.9) saturate(0.8)',
                 }}
             />
-            <div
-                style={{
-                    position: 'absolute',
-                    bottom: 4,
-                    right: 4,
-                    zIndex: 1000,
-                    fontSize: 11,
-                    color: 'rgba(255,255,255,0.6)',
-                    pointerEvents: 'auto',
-                }}
-            >
-                <a
-                    href="https://www.openstreetmap.org/copyright"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: 'rgba(255,255,255,0.6)' }}
+            {visible && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 4,
+                        right: 4,
+                        zIndex: 1000,
+                        fontSize: 11,
+                        color: 'rgba(255,255,255,0.6)',
+                        pointerEvents: 'auto',
+                    }}
                 >
-                    &copy; OpenStreetMap contributors
-                </a>
-                {' | '}
-                <a
-                    href="https://carto.com/attributions"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ color: 'rgba(255,255,255,0.6)' }}
-                >
-                    &copy; CARTO
-                </a>
-            </div>
-        </>
+                    <a
+                        href="https://www.openstreetmap.org/copyright"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: 'rgba(255,255,255,0.6)' }}
+                    >
+                        &copy; OpenStreetMap contributors
+                    </a>
+                    {' | '}
+                    <a
+                        href="https://carto.com/attributions"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: 'rgba(255,255,255,0.6)' }}
+                    >
+                        &copy; CARTO
+                    </a>
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -158,7 +182,8 @@ export function MapTileLayer({
  * Camera sync component. Subscribes to board camera changes and syncs them
  * to the Leaflet map. Must be rendered inside a `Wrapper` (needs `usePixiCanvas`).
  *
- * Also clamps the board camera's max zoom so it doesn't exceed Leaflet's max (19).
+ * Also clamps the board camera's max zoom so it doesn't exceed Leaflet's
+ * max (19), and restores the original max zoom on unmount.
  */
 export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
     const { result } = usePixiCanvas();
@@ -166,6 +191,9 @@ export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
     useEffect(() => {
         if (!result.initialized || !result.success) return;
         const camera = result.components.camera;
+
+        // Save original max zoom so we can restore it on unmount
+        const originalMaxZoom = camera.zoomBoundaries?.max;
 
         // Clamp board zoom so leaflet zoom never exceeds its max (19).
         const MAX_LEAFLET_ZOOM = 19;
@@ -184,6 +212,10 @@ export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
 
         return () => {
             unsubscribe();
+            // Restore original max zoom
+            if (originalMaxZoom !== undefined) {
+                camera.setMaxZoomLevel(originalMaxZoom);
+            }
         };
     }, [result, leafletMap]);
 

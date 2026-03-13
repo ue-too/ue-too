@@ -127,6 +127,7 @@ export function MapOverlayPage(): React.ReactNode {
             }}
         >
             <MapTileLayer
+                visible={true}
                 onMapReady={setLeafletMap}
                 onMapDestroy={handleMapDestroy}
             />
