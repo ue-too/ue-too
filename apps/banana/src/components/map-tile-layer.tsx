@@ -2,7 +2,15 @@ import { LIGHT, layers } from '@protomaps/basemaps';
 import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Protocol } from 'pmtiles';
 import { useEffect, useRef } from 'react';
+
+const USE_LOCAL_TILES = !!import.meta.env.VITE_LOCAL_TILES;
+
+if (USE_LOCAL_TILES) {
+    const pmtilesProtocol = new Protocol();
+    maplibregl.addProtocol('pmtiles', pmtilesProtocol.tile);
+}
 
 /**
  * The map instance type exposed to consumers.
@@ -71,12 +79,18 @@ const BUCKET_BASE = 'https://bucket.vntchang.dev';
 
 const STYLE: maplibregl.StyleSpecification = {
     version: 8,
-    glyphs: `${TILES_BASE}/fonts/{fontstack}/{range}.pbf`,
-    sprite: `${TILES_BASE}/sprites/v4/light`,
+    glyphs: USE_LOCAL_TILES
+        ? '/fonts/{fontstack}/{range}.pbf'
+        : `${TILES_BASE}/fonts/{fontstack}/{range}.pbf`,
+    sprite: USE_LOCAL_TILES
+        ? `${window.location.origin}/sprites/v4/light`
+        : `${TILES_BASE}/sprites/v4/light`,
     sources: {
         protomaps: {
             type: 'vector',
-            url: `${TILES_BASE}/taipei/taipei.json`,
+            url: USE_LOCAL_TILES
+                ? 'pmtiles:///tiles/taipei.pmtiles'
+                : `${TILES_BASE}/taipei/taipei.json`,
         },
     },
     layers: layers('protomaps', LIGHT, { lang: 'en' }),

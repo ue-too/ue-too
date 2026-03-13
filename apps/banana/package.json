@@ -48,6 +48,7 @@
     },
     "scripts": {
         "dev": "vite",
+        "dev:local": "VITE_LOCAL_TILES=1 vite",
         "build": "vite build",
         "preview": "vite preview",
         "test": "jest"

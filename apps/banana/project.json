@@ -14,6 +14,13 @@
     "sourceRoot": "apps/banana/src",
     "tags": [],
     "targets": {
+        "dev:local": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "bun run dev:local",
+                "cwd": "apps/banana"
+            }
+        },
         "build": {
             "executor": "nx:run-commands",
             "options": {
