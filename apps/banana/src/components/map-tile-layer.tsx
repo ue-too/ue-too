@@ -1,67 +1,100 @@
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Protocol } from 'pmtiles';
+import { layers, LIGHT } from '@protomaps/basemaps';
 import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 
 /**
- * A tile layer that prevents white flashes during externally-driven zoom.
- *
- * Removes the `viewprereset` → `_invalidateAll()` binding so tile updates
- * flow through `_pruneTiles()` → `_retainParent()`, keeping lower-zoom
- * tiles visible as a CSS-scaled background while new tiles load.
+ * The map instance type exposed to consumers.
  */
-const RetainingTileLayer = L.TileLayer.extend({
-    getEvents: function () {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const events = (L.TileLayer.prototype as any).getEvents.call(this);
-        delete events.viewprereset;
-        return events;
-    },
-});
+export type MapInstance = maplibregl.Map;
 
 const EARTH_CIRCUMFERENCE = 2 * Math.PI * 6_378_137;
 const TAIPEI_LAT_RAD = (25.0330 * Math.PI) / 180;
 
 /**
- * The base Leaflet zoom level where 1 tile pixel ≈ 1 meter at Taipei's latitude.
+ * The base zoom level where 1 tile pixel ≈ 1 meter at Taipei's latitude.
+ * Computed for the 256 px tile convention used by the board's coordinate system.
  */
 export const BASE_ZOOM =
     Math.log2((EARTH_CIRCUMFERENCE * Math.cos(TAIPEI_LAT_RAD)) / 256);
 
-const ORIGIN_LATLNG = L.latLng(25.0330, 121.5654);
-const ORIGIN_PIXEL = L.CRS.EPSG3857.latLngToPoint(ORIGIN_LATLNG, BASE_ZOOM);
+const ORIGIN_LNG = 121.5654;
+const ORIGIN_LAT = 25.0330;
 
-function syncBoardToLeaflet(
-    map: L.Map,
+/**
+ * Origin in MapLibre's normalised Mercator space ([0,1] × [0,1]).
+ * Pre-computed once so every sync call is a cheap add + divide.
+ */
+const ORIGIN_MERC = maplibregl.MercatorCoordinate.fromLngLat(
+    { lng: ORIGIN_LNG, lat: ORIGIN_LAT },
+);
+
+/**
+ * Number of 256 px-tile-convention pixels that span the full world at BASE_ZOOM.
+ * Dividing a board-pixel offset by this value converts it to the [0,1] Mercator
+ * coordinate space that MapLibre uses internally.
+ */
+const WORLD_SIZE_PX = 256 * Math.pow(2, BASE_ZOOM);
+
+function syncBoardToMapLibre(
+    map: maplibregl.Map,
     boardPosition: { x: number; y: number },
     boardZoom: number,
 ): void {
-    const leafletZoom = Math.log2(boardZoom) + BASE_ZOOM;
-    const clampedZoom = Math.max(1, Math.min(19, leafletZoom));
+    // Board pixels → normalised Mercator → LngLat
+    const merc = new maplibregl.MercatorCoordinate(
+        ORIGIN_MERC.x + boardPosition.x / WORLD_SIZE_PX,
+        ORIGIN_MERC.y + boardPosition.y / WORLD_SIZE_PX,
+        0,
+    );
+    const center = merc.toLngLat();
 
-    const absolutePixel: L.PointExpression = [
-        ORIGIN_PIXEL.x + boardPosition.x,
-        ORIGIN_PIXEL.y + boardPosition.y,
-    ];
-    const centerLatLng = map.unproject(absolutePixel, BASE_ZOOM);
+    // Board zoom 1× = BASE_ZOOM in 256 px-tile convention.
+    // MapLibre internally uses 512 px tiles, so its zoom is offset by −1.
+    const mapZoom = Math.log2(boardZoom) + BASE_ZOOM - 1;
+    const clampedZoom = Math.max(0, Math.min(19, mapZoom));
 
-    map.setView(centerLatLng, clampedZoom, { animate: false });
+    map.jumpTo({ center, zoom: clampedZoom });
 }
 
+// Register the PMTiles protocol once globally.
+const protocol = new Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+
 /**
- * The visual Leaflet map layer. Renders the map container div and attribution.
- * Must be placed as a **sibling before** the Wrapper so it sits behind the canvas.
+ * PMTiles URL. Set `VITE_PMTILES_URL` for production (e.g. a Cloudflare R2 URL).
+ * Falls back to local `/tiles/taipei.pmtiles` for development.
+ */
+const PMTILES_URL =
+    import.meta.env.VITE_PMTILES_URL ?? 'https://bucket.vntchang.dev/taipei/taipei.pmtiles';
+const STYLE: maplibregl.StyleSpecification = {
+    version: 8,
+    glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+    sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+    sources: {
+        protomaps: {
+            type: 'vector',
+            url: `pmtiles://${PMTILES_URL}`,
+        },
+    },
+    layers: layers('protomaps', LIGHT, { lang: 'en' }),
+};
+
+/**
+ * The visual map layer using MapLibre GL with PMTiles.
+ * Renders vector tiles via WebGL for GPU-accelerated rendering.
  *
- * Communicates with {@link MapTileLayerSync} via the `onMapReady` / `onMapDestroy`
- * callbacks which pass the Leaflet map instance.
+ * Must be placed as a **sibling before** the Wrapper so it sits behind the canvas.
  *
  * @example
  * ```tsx
- * const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
+ * const [map, setMap] = useState<MapInstance | null>(null);
  *
- * <MapTileLayer onMapReady={setLeafletMap} onMapDestroy={() => setLeafletMap(null)} />
+ * <MapTileLayer onMapReady={setMap} onMapDestroy={() => setMap(null)} />
  * <Wrapper ...>
- *     {leafletMap && <MapTileLayerSync leafletMap={leafletMap} />}
+ *     {map && <MapTileLayerSync map={map} />}
  * </Wrapper>
  * ```
  */
@@ -71,61 +104,49 @@ export function MapTileLayer({
     onMapDestroy,
 }: {
     visible: boolean;
-    onMapReady: (map: L.Map) => void;
+    onMapReady: (map: MapInstance) => void;
     onMapDestroy: () => void;
 }) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
-    const leafletMapRef = useRef<L.Map | null>(null);
+    const mapRef = useRef<maplibregl.Map | null>(null);
 
-    // Create / destroy Leaflet map based on visibility
+    // Create / destroy MapLibre map based on visibility
     useEffect(() => {
         if (!visible) {
-            if (leafletMapRef.current) {
-                leafletMapRef.current.remove();
-                leafletMapRef.current = null;
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
                 onMapDestroy();
             }
             return;
         }
 
-        if (!mapContainerRef.current || leafletMapRef.current) return;
+        if (!mapContainerRef.current || mapRef.current) return;
 
-        const map = L.map(mapContainerRef.current, {
-            center: ORIGIN_LATLNG,
+        const map = new maplibregl.Map({
+            container: mapContainerRef.current,
+            style: STYLE,
+            center: [ORIGIN_LNG, ORIGIN_LAT],
             zoom: BASE_ZOOM,
-            zoomSnap: 0,
-            dragging: false,
-            scrollWheelZoom: false,
-            doubleClickZoom: false,
-            touchZoom: false,
-            boxZoom: false,
-            keyboard: false,
-            zoomControl: false,
+            interactive: false,
             attributionControl: false,
+            fadeDuration: 0,
         });
 
-        new (RetainingTileLayer as new (...args: ConstructorParameters<typeof L.TileLayer>) => L.TileLayer)(
-            'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-            {
-                maxZoom: 19,
-                keepBuffer: 4,
-            },
-        ).addTo(map);
-
-        leafletMapRef.current = map;
-        onMapReady(map);
+        map.on('load', () => {
+            mapRef.current = map;
+            onMapReady(map);
+        });
 
         return () => {
-            if (leafletMapRef.current) {
-                leafletMapRef.current.remove();
-                leafletMapRef.current = null;
+            if (mapRef.current) {
+                mapRef.current.remove();
+                mapRef.current = null;
                 onMapDestroy();
             }
         };
     }, [visible, onMapReady, onMapDestroy]);
 
-    // Always render the container div to keep DOM structure stable.
-    // Leaflet is only initialized when visible=true.
     return (
         <div
             style={{
@@ -165,12 +186,12 @@ export function MapTileLayer({
                     </a>
                     {' | '}
                     <a
-                        href="https://carto.com/attributions"
+                        href="https://protomaps.com"
                         target="_blank"
                         rel="noreferrer"
                         style={{ color: 'rgba(255,255,255,0.6)' }}
                     >
-                        &copy; CARTO
+                        Protomaps
                     </a>
                 </div>
             )}
@@ -180,12 +201,12 @@ export function MapTileLayer({
 
 /**
  * Camera sync component. Subscribes to board camera changes and syncs them
- * to the Leaflet map. Must be rendered inside a `Wrapper` (needs `usePixiCanvas`).
+ * to the MapLibre GL map. Must be rendered inside a `Wrapper` (needs `usePixiCanvas`).
  *
- * Also clamps the board camera's max zoom so it doesn't exceed Leaflet's
+ * Also clamps the board camera's max zoom so it doesn't exceed the map's
  * max (19), and restores the original max zoom on unmount.
  */
-export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
+export function MapTileLayerSync({ map }: { map: MapInstance }) {
     const { result } = usePixiCanvas();
 
     useEffect(() => {
@@ -195,32 +216,29 @@ export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
         // Save original max zoom so we can restore it on unmount
         const originalMaxZoom = camera.zoomBoundaries?.max;
 
-        // Clamp board zoom so leaflet zoom never exceeds its max (19).
-        const MAX_LEAFLET_ZOOM = 19;
-        const maxBoardZoom = Math.pow(2, MAX_LEAFLET_ZOOM - BASE_ZOOM);
+        // Clamp board zoom so map zoom never exceeds max (19).
+        // MapLibre zoom = log2(boardZoom) + BASE_ZOOM − 1, so
+        // boardZoom_max = 2^(19 − BASE_ZOOM + 1).
+        const MAX_MAP_ZOOM = 19;
+        const maxBoardZoom = Math.pow(2, MAX_MAP_ZOOM - BASE_ZOOM + 1);
         camera.setMaxZoomLevel(maxBoardZoom);
 
-        syncBoardToLeaflet(leafletMap, camera.position, camera.zoomLevel);
+        syncBoardToMapLibre(map, camera.position, camera.zoomLevel);
 
         const unsubscribe = camera.on(
             'all',
             (_event: unknown, cameraState: { position: { x: number; y: number }; zoomLevel: number }) => {
-                syncBoardToLeaflet(
-                    leafletMap,
-                    cameraState.position,
-                    cameraState.zoomLevel,
-                );
+                syncBoardToMapLibre(map, cameraState.position, cameraState.zoomLevel);
             },
         );
 
         return () => {
             unsubscribe();
-            // Restore original max zoom
             if (originalMaxZoom !== undefined) {
                 camera.setMaxZoomLevel(originalMaxZoom);
             }
         };
-    }, [result, leafletMap]);
+    }, [result, map]);
 
     return null;
 }

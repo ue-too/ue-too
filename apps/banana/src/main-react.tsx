@@ -2,10 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
+import { ExpPage } from '@/pages/exp';
 import { MapOverlayPage } from '@/pages/map-overlay';
 import { BananaAppComponents } from '@/utils/init-app';
-import { MapOverlayPage } from '@/pages/map-overlay';
-import { ExpPage } from '@/pages/exp';
 
 import App from './App';
 import { TrainEditor } from './pages/train-editor';
@@ -32,7 +31,7 @@ root.render(
             <Routes>
                 <Route path="/" element={<App />} />
                 <Route path="/map-overlay" element={<MapOverlayPage />} />
-             <Route path="/exp" element={<ExpPage />} />
+                <Route path="/exp" element={<ExpPage />} />
                 <Route path="/train-editor" element={<TrainEditor />} />
             </Routes>
         </BrowserRouter>

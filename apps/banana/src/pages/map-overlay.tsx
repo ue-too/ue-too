@@ -8,9 +8,7 @@ import {
     baseInitApp,
     type InitAppOptions,
 } from '@ue-too/board-pixi-integration';
-import type L from 'leaflet';
-
-import { MapTileLayer, MapTileLayerSync, BASE_ZOOM } from '@/components/map-tile-layer';
+import { MapTileLayer, MapTileLayerSync, BASE_ZOOM, type MapInstance } from '@/components/map-tile-layer';
 
 /**
  * Init function for the map overlay page.
@@ -110,11 +108,11 @@ const initMapOverlayApp = async (
 };
 
 /**
- * Map overlay page: a Leaflet tile map controlled by a @ue-too/board-pixi canvas overlay.
+ * Map overlay page: a map tile layer controlled by a @ue-too/board-pixi canvas overlay.
  */
 export function MapOverlayPage(): React.ReactNode {
-    const [leafletMap, setLeafletMap] = useState<L.Map | null>(null);
-    const handleMapDestroy = useCallback(() => setLeafletMap(null), []);
+    const [mapInstance, setMapInstance] = useState<MapInstance | null>(null);
+    const handleMapDestroy = useCallback(() => setMapInstance(null), []);
 
     return (
         <div
@@ -128,7 +126,7 @@ export function MapOverlayPage(): React.ReactNode {
         >
             <MapTileLayer
                 visible={true}
-                onMapReady={setLeafletMap}
+                onMapReady={setMapInstance}
                 onMapDestroy={handleMapDestroy}
             />
 
@@ -143,8 +141,8 @@ export function MapOverlayPage(): React.ReactNode {
                     }}
                     initFunction={initMapOverlayApp}
                 >
-                    {leafletMap && (
-                        <MapTileLayerSync leafletMap={leafletMap} />
+                    {mapInstance && (
+                        <MapTileLayerSync map={mapInstance} />
                     )}
                 </Wrapper>
             </div>
