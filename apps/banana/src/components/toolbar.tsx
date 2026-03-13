@@ -12,6 +12,7 @@ import {
     Gauge,
     Layers,
     List,
+    Map,
     ListOrdered,
     Paintbrush,
     Pause,
@@ -150,7 +151,13 @@ function uploadJson(onJson: (parsed: unknown) => void): void {
     input.click();
 }
 
-export function BananaToolbar() {
+export function BananaToolbar({
+    showMap = false,
+    onToggleMap,
+}: {
+    showMap?: boolean;
+    onToggleMap?: () => void;
+} = {}) {
     const app = useBananaApp();
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
@@ -689,6 +696,17 @@ export function BananaToolbar() {
                     </div>
 
                     <Separator />
+
+                    {/* Map overlay */}
+                    {onToggleMap && (
+                        <ToolbarButton
+                            tooltip={showMap ? 'Hide Map' : 'Show Map'}
+                            active={showMap}
+                            onClick={onToggleMap}
+                        >
+                            <Map />
+                        </ToolbarButton>
+                    )}
 
                     {/* Debug */}
                     <ToolbarButton

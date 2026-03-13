@@ -3,7 +3,12 @@
     "allow": [
       "Bash(npx tsc:*)",
       "Bash(npx vite:*)",
-      "Bash(grep -r \"react-router\\\\|createBrowserRouter\\\\|BrowserRouter\\\\|Routes\\\\|Route\" /Users/vincent.yy.chang/dev/ue-too/train-editor/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)"
+      "Bash(grep -r \"leaflet\\\\|Leaflet\\\\|L\\\\.\" /Users/niuee/dev/ue-too/ue-too/sync-map/apps/banana --include=\"*.tsx\" --include=\"*.ts\" --include=\"*.json\" 2>/dev/null | head -10)",
+      "Bash(cd /Users/niuee/dev/ue-too/ue-too/sync-map/apps/banana && bun add leaflet @types/leaflet)",
+      "Bash(timeout 15 bun run dev 2>&1 || true)",
+      "Bash(find node_modules/.bun -path '*leaflet*' -name '*.js' -not -path '*esm*' 2>/dev/null | head -5)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/map-overlay)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/ && echo \" index\" && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/map-overlay && echo \" map-overlay\")"
     ]
   }
 }
