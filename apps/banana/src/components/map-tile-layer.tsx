@@ -104,7 +104,7 @@ export function MapTileLayer({
             attributionControl: false,
         });
 
-        new RetainingTileLayer(
+        new (RetainingTileLayer as new (...args: ConstructorParameters<typeof L.TileLayer>) => L.TileLayer)(
             'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
             {
                 maxZoom: 19,
@@ -202,13 +202,16 @@ export function MapTileLayerSync({ leafletMap }: { leafletMap: L.Map }) {
 
         syncBoardToLeaflet(leafletMap, camera.position, camera.zoomLevel);
 
-        const unsubscribe = camera.on('all', (_event, cameraState) => {
-            syncBoardToLeaflet(
-                leafletMap,
-                cameraState.position,
-                cameraState.zoomLevel,
-            );
-        });
+        const unsubscribe = camera.on(
+            'all',
+            (_event: unknown, cameraState: { position: { x: number; y: number }; zoomLevel: number }) => {
+                syncBoardToLeaflet(
+                    leafletMap,
+                    cameraState.position,
+                    cameraState.zoomLevel,
+                );
+            },
+        );
 
         return () => {
             unsubscribe();
