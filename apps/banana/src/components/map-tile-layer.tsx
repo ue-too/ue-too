@@ -1,9 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { LIGHT, layers } from '@protomaps/basemaps';
+import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Protocol } from 'pmtiles';
-import { layers, LIGHT } from '@protomaps/basemaps';
-import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
+import { useEffect, useRef } from 'react';
 
 /**
  * The map instance type exposed to consumers.
@@ -11,25 +10,27 @@ import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 export type MapInstance = maplibregl.Map;
 
 const EARTH_CIRCUMFERENCE = 2 * Math.PI * 6_378_137;
-const TAIPEI_LAT_RAD = (25.0330 * Math.PI) / 180;
+const TAIPEI_LAT_RAD = (25.033 * Math.PI) / 180;
 
 /**
  * The base zoom level where 1 tile pixel ≈ 1 meter at Taipei's latitude.
  * Computed for the 256 px tile convention used by the board's coordinate system.
  */
-export const BASE_ZOOM =
-    Math.log2((EARTH_CIRCUMFERENCE * Math.cos(TAIPEI_LAT_RAD)) / 256);
+export const BASE_ZOOM = Math.log2(
+    (EARTH_CIRCUMFERENCE * Math.cos(TAIPEI_LAT_RAD)) / 256
+);
 
 const ORIGIN_LNG = 121.5654;
-const ORIGIN_LAT = 25.0330;
+const ORIGIN_LAT = 25.033;
 
 /**
  * Origin in MapLibre's normalised Mercator space ([0,1] × [0,1]).
  * Pre-computed once so every sync call is a cheap add + divide.
  */
-const ORIGIN_MERC = maplibregl.MercatorCoordinate.fromLngLat(
-    { lng: ORIGIN_LNG, lat: ORIGIN_LAT },
-);
+const ORIGIN_MERC = maplibregl.MercatorCoordinate.fromLngLat({
+    lng: ORIGIN_LNG,
+    lat: ORIGIN_LAT,
+});
 
 /**
  * Number of 256 px-tile-convention pixels that span the full world at BASE_ZOOM.
@@ -41,13 +42,13 @@ const WORLD_SIZE_PX = 256 * Math.pow(2, BASE_ZOOM);
 function syncBoardToMapLibre(
     map: maplibregl.Map,
     boardPosition: { x: number; y: number },
-    boardZoom: number,
+    boardZoom: number
 ): void {
     // Board pixels → normalised Mercator → LngLat
     const merc = new maplibregl.MercatorCoordinate(
         ORIGIN_MERC.x + boardPosition.x / WORLD_SIZE_PX,
         ORIGIN_MERC.y + boardPosition.y / WORLD_SIZE_PX,
-        0,
+        0
     );
     const center = merc.toLngLat();
 
@@ -59,24 +60,23 @@ function syncBoardToMapLibre(
     map.jumpTo({ center, zoom: clampedZoom });
 }
 
-// Register the PMTiles protocol once globally.
-const protocol = new Protocol();
-maplibregl.addProtocol('pmtiles', protocol.tile);
-
 /**
- * PMTiles URL. Set `VITE_PMTILES_URL` for production (e.g. a Cloudflare R2 URL).
- * Falls back to local `/tiles/taipei.pmtiles` for development.
+ * Base URL for the Protomaps Cloudflare Worker. Serves vector tiles, fonts, and
+ * sprites from a single domain. Set `VITE_TILES_BASE` to override.
  */
-const PMTILES_URL =
-    import.meta.env.VITE_PMTILES_URL ?? 'https://bucket.vntchang.dev/taipei/taipei.pmtiles';
+const TILES_BASE =
+    import.meta.env.VITE_TILES_BASE ?? 'https://map.vntchang.dev';
+
+const BUCKET_BASE = 'https://bucket.vntchang.dev';
+
 const STYLE: maplibregl.StyleSpecification = {
     version: 8,
-    glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
-    sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+    glyphs: `${TILES_BASE}/fonts/{fontstack}/{range}.pbf`,
+    sprite: `${TILES_BASE}/sprites/v4/light`,
     sources: {
         protomaps: {
             type: 'vector',
-            url: `pmtiles://${PMTILES_URL}`,
+            url: `${TILES_BASE}/taipei/taipei.json`,
         },
     },
     layers: layers('protomaps', LIGHT, { lang: 'en' }),
@@ -227,9 +227,19 @@ export function MapTileLayerSync({ map }: { map: MapInstance }) {
 
         const unsubscribe = camera.on(
             'all',
-            (_event: unknown, cameraState: { position: { x: number; y: number }; zoomLevel: number }) => {
-                syncBoardToMapLibre(map, cameraState.position, cameraState.zoomLevel);
-            },
+            (
+                _event: unknown,
+                cameraState: {
+                    position: { x: number; y: number };
+                    zoomLevel: number;
+                }
+            ) => {
+                syncBoardToMapLibre(
+                    map,
+                    cameraState.position,
+                    cameraState.zoomLevel
+                );
+            }
         );
 
         return () => {
