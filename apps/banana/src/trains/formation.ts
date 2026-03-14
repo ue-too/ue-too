@@ -236,15 +236,6 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
     p3: 0.3,
     p4: 0.5,
     p5: 0.7,
-    p6: 0.9,
-    p7: 1.1,
-    p8: 1.3,
-    p9: 1.5,
-    p10: 1.7,
-    p11: 1.9,
-    p12: 2.1,
-    p13: 2.3,
-    p14: 2.5,
 };
 
 export class Train {
