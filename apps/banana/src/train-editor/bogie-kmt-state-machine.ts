@@ -1,16 +1,19 @@
-import { BaseContext, EventGuards, EventReactions, Guard, NO_OP, TemplateState, TemplateStateMachine } from "@ue-too/being";
+import { BaseContext, EventGuards, EventReactions, Guard, NO_OP, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { Point } from "@ue-too/math";
 
 
-type BogieStates = 'IDLE' | 'DRAGGING';
+export type BogieEditStates = 'INACTIVE' | 'IDLE' | 'DRAGGING';
 
-type BogieEvents = {
+export type BogieEditEvents = {
+    'startEditing': {};
+    'endEditing': {};
     'leftPointerDown': Point;
     'leftPointerUp': Point;
+    'leftPointerMove': Point;
     'pointerMove': Point;
 }
 
-export type BogieContext = BaseContext & {
+export type BogieEditContext = BaseContext & {
     setCurrentPosition: (position: Point) => void;
     projectOnBogie: (position: Point) => boolean;
     convert2WorldPosition: (pointInWindow: Point) => Point;
@@ -19,7 +22,18 @@ export type BogieContext = BaseContext & {
     getCurrentPosition: () => Point;
 }
 
-class BogieIdleState extends TemplateState<BogieEvents, BogieContext, BogieStates> {
+export type BogieEditStateMachine = StateMachine<BogieEditEvents, BogieEditContext, BogieEditStates>;
+
+class BogieInactiveState extends TemplateState<BogieEditEvents, BogieEditContext, BogieEditStates> {
+    protected _eventReactions = {
+        startEditing: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE' as const,
+        },
+    } as EventReactions<BogieEditEvents, BogieEditContext, BogieEditStates>;
+}
+
+class BogieIdleState extends TemplateState<BogieEditEvents, BogieEditContext, BogieEditStates> {
 
     constructor() {
         super();
@@ -29,20 +43,24 @@ class BogieIdleState extends TemplateState<BogieEvents, BogieContext, BogieState
         leftPointerDown: {
             action: this.leftPointerDown.bind(this),
         },
-    } as EventReactions<BogieEvents, BogieContext, BogieStates>;
+        endEditing: {
+            action: NO_OP,
+            defaultTargetState: 'INACTIVE' as const,
+        },
+    } as EventReactions<BogieEditEvents, BogieEditContext, BogieEditStates>;
 
 
-    protected _guards: Guard<BogieContext, 'projectOnBogie'> = {
-        projectOnBogie: ((context: BogieContext) => {
+    protected _guards: Guard<BogieEditContext, 'projectOnBogie'> = {
+        projectOnBogie: ((context: BogieEditContext) => {
             return context.projectOnBogie(context.getCurrentPosition());
         }).bind(this),
     };
 
     protected _eventGuards: Partial<
         EventGuards<
-            BogieEvents,
-            BogieStates,
-            BogieContext,
+            BogieEditEvents,
+            BogieEditStates,
+            BogieEditContext,
             typeof this._guards
         >
     > = {
@@ -54,42 +72,50 @@ class BogieIdleState extends TemplateState<BogieEvents, BogieContext, BogieState
             ],
         };
 
-    leftPointerDown(context: BogieContext, payload: Point): void {
-        context.setCurrentPosition(payload);
+    leftPointerDown(context: BogieEditContext, payload: Point): void {
+        const worldPos = context.convert2WorldPosition(payload);
+        context.setCurrentPosition(worldPos);
     }
 
 }
 
-class BogieDraggingState extends TemplateState<BogieEvents, BogieContext, BogieStates> {
+class BogieDraggingState extends TemplateState<BogieEditEvents, BogieEditContext, BogieEditStates> {
     constructor() {
         super();
     }
 
     protected _eventReactions = {
+        leftPointerMove: {
+            action: this.onPointerMove.bind(this),
+        },
         pointerMove: {
-            action: this.pointerMove.bind(this),
+            action: this.onPointerMove.bind(this),
         },
         leftPointerUp: {
-            action: NO_OP,
-            defaultTargetState: 'IDLE',
+            action: this.leftPointerUp.bind(this),
+            defaultTargetState: 'IDLE' as const,
         },
-    } as EventReactions<BogieEvents, BogieContext, BogieStates>;
+    } as EventReactions<BogieEditEvents, BogieEditContext, BogieEditStates>;
 
-    pointerMove(context: BogieContext, payload: Point): void {
-        context.setCurrentPosition(payload);
+    onPointerMove(context: BogieEditContext, payload: Point): void {
+        const worldPos = context.convert2WorldPosition(payload);
+        context.setCurrentPosition(worldPos);
+    }
+
+    leftPointerUp(context: BogieEditContext, _payload: Point): void {
+        context.dropCurrentBogie();
     }
 
 }
 
-type BogieStateMachine = TemplateStateMachine<BogieEvents, BogieContext, BogieStates>;
-
-export const createBogieStateMachine = (context: BogieContext): BogieStateMachine => {
-    return new TemplateStateMachine<BogieEvents, BogieContext, BogieStates>(
+export const createBogieEditStateMachine = (context: BogieEditContext): BogieEditStateMachine => {
+    return new TemplateStateMachine<BogieEditEvents, BogieEditContext, BogieEditStates>(
         {
+            INACTIVE: new BogieInactiveState(),
             IDLE: new BogieIdleState(),
             DRAGGING: new BogieDraggingState(),
         },
-        'IDLE',
+        'INACTIVE',
         context
     );
 }

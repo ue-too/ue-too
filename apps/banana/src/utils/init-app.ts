@@ -17,6 +17,7 @@ import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
+import { CarImageRegistry } from '@/trains/car-image-registry';
 
 const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 
@@ -36,6 +37,7 @@ export type BananaAppComponents = BaseAppComponents & {
   kmtStateMachineExpansion: KmtExpandedStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
+  carImageRegistry: CarImageRegistry;
   /** Add a train at the given segment and t. For stress testing. */
   addTrainAtPosition: (
     segmentNumber: number,
@@ -111,6 +113,7 @@ export const initApp = async (
       return new Train(null, trackGraph, jointDirectionManager);
     },
   });
+  const carImageRegistry = new CarImageRegistry();
   const trainRenderSystem = new TrainRenderSystem(
     worldRenderSystem,
     () => trainManager.getPlacedTrains(),
@@ -118,6 +121,7 @@ export const initApp = async (
     trackGraph,
     trackRenderSystem,
     { renderer: baseComponents.app.renderer },
+    carImageRegistry,
   );
   // const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
@@ -207,6 +211,7 @@ export const initApp = async (
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,
+    carImageRegistry,
     addTrainAtPosition,
     addStressTestTrains,
     generateProceduralTracks,

@@ -26,7 +26,10 @@
       "Bash(find /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public -maxdepth 1 -type f -name \"*.json\" | xargs ls -lh)",
       "Bash(head -50 /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public/*.json 2>/dev/null | head -100)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/sprites/v4/light.json 2>&1)",
-      "Bash(grep -rn \"pointer-events-none.*bottom\\\\|bottom.*pointer-events-none\" /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)"
+      "Bash(grep -rn \"pointer-events-none.*bottom\\\\|bottom.*pointer-events-none\" /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cd:*)"
     ]
   }
 }

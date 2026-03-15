@@ -1,10 +1,11 @@
-import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { Train, TrainPosition } from './formation';
 import { Car } from './cars';
 import { TrackGraph } from './tracks/track';
 import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { PlacedTrainEntry } from './train-manager';
+import type { CarImageRegistry } from './car-image-registry';
 
 const BOGIE_RADIUS = 1.067 / 2;
 
@@ -174,6 +175,11 @@ export class TrainRenderSystem {
   /** Front-half sub-texture (right half of the car texture). */
   private _carTextureFront: Texture | null = null;
 
+  /** Optional registry mapping car IDs to custom image data URLs. */
+  private _carImageRegistry: CarImageRegistry | null = null;
+  /** Cache of loaded custom car textures by car ID. */
+  private _customCarTextures: Map<string, { full: Texture; rear: Texture; front: Texture }> = new Map();
+
   constructor(
     worldRenderSystem: WorldRenderSystem,
     getPlacedTrains: () => readonly PlacedTrainEntry[],
@@ -181,6 +187,7 @@ export class TrainRenderSystem {
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
     textureRenderer?: TrackTextureRenderer | null,
+    carImageRegistry?: CarImageRegistry | null,
   ) {
     this._worldRenderSystem = worldRenderSystem;
     this._getPlacedTrains = getPlacedTrains;
@@ -188,6 +195,7 @@ export class TrainRenderSystem {
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
     this._textureRenderer = textureRenderer ?? null;
+    this._carImageRegistry = carImageRegistry ?? null;
 
     this._previewContainer = new Container();
     this._previewContainer.sortableChildren = true;
@@ -299,8 +307,8 @@ export class TrainRenderSystem {
   }
 
   private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
-    const textures = this._getOrCreateCarHalfTextures();
-    if (textures === null) return;
+    const defaultTextures = this._getOrCreateCarHalfTextures();
+    if (defaultTextures === null) return;
 
     for (const { id, train } of placed) {
       const positions = train.getBogiePositions();
@@ -308,16 +316,33 @@ export class TrainRenderSystem {
         this._hideActualCarsForTrain(id);
         continue;
       }
-      const halves = getCarHalfGeometries(positions, train.cars);
+      const cars = train.cars;
+      const halves = getCarHalfGeometries(positions, cars);
       this._syncActualCarPoolForTrain(id, halves.length);
       const pool = this._actualCarPools.get(id)!;
       for (let i = 0; i < halves.length; i++) {
         const sprite = pool[i];
         const h = halves[i];
 
+        // Check for custom car texture
+        const carIndex = Math.floor(i / 2);
+        const car = cars[carIndex];
+        const customTex = car ? this._getCustomCarTextures(car.id) : null;
+        const isRearHalf = i % 2 === 0;
+        const tex = customTex
+          ? (isRearHalf ? customTex.rear : customTex.front)
+          : (isRearHalf ? defaultTextures.rear : defaultTextures.front);
+
+        if (sprite.texture !== tex) {
+          sprite.texture = tex;
+        }
+
         sprite.position.set(h.x, h.y);
         sprite.rotation = h.angle;
-        sprite.scale.set(h.length / CAR_HALF_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
+
+        const texW = tex.width || CAR_HALF_TEX_WIDTH;
+        const texH = tex.height || CAR_TEX_HEIGHT;
+        sprite.scale.set(h.length / texW, CAR_WIDTH / texH);
         sprite.visible = true;
 
         const bogieZ = this._resolveZIndex(positions[h.bogiePositionIndex]);
@@ -403,6 +428,29 @@ export class TrainRenderSystem {
       frame: new Rectangle(frame.x + frame.width / 2, frame.y, frame.width / 2, frame.height),
     });
     return { rear: this._carTextureRear, front: this._carTextureFront };
+  }
+
+  private _getCustomCarTextures(carId: string): { rear: Texture; front: Texture } | null {
+    const cached = this._customCarTextures.get(carId);
+    if (cached) return cached;
+
+    if (!this._carImageRegistry || !this._carImageRegistry.has(carId)) return null;
+
+    const src = this._carImageRegistry.get(carId)!;
+    // Load texture asynchronously; return null for this frame, it'll be available next frame
+    Assets.load(src).then((texture: Texture) => {
+      const frame = texture.frame;
+      const rear = new Texture({
+        source: texture.source,
+        frame: new Rectangle(frame.x, frame.y, frame.width / 2, frame.height),
+      });
+      const front = new Texture({
+        source: texture.source,
+        frame: new Rectangle(frame.x + frame.width / 2, frame.y, frame.width / 2, frame.height),
+      });
+      this._customCarTextures.set(carId, { full: texture, rear, front });
+    });
+    return null;
   }
 
   private _hideActualCarsForTrain(trainId: number): void {

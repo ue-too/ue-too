@@ -63,6 +63,11 @@ import {
     serializeTrainData,
     validateSerializedTrainData,
 } from '@/trains/train-serialization';
+import {
+    type CarTemplate,
+    generateTemplateId,
+    validateCarDefinition,
+} from '@/trains/car-template';
 
 type AppMode =
     | 'idle'
@@ -188,6 +193,7 @@ export function BananaToolbar({
     > | null>(null);
     const [depotVersion, setDepotVersion] = useState(0);
     const [formationVersion, setFormationVersion] = useState(0);
+    const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
     const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
         useState<string | null>(null);
 
@@ -466,6 +472,31 @@ export function BananaToolbar({
         });
     }, [app]);
 
+    const handleImportCarDefinition = useCallback(() => {
+        if (!app) return;
+        uploadJson(parsed => {
+            const result = validateCarDefinition(parsed);
+            if (!result.valid) {
+                alert(`Invalid car definition: ${result.error}`);
+                return;
+            }
+            const def = parsed as {
+                bogieOffsets: number[];
+                edgeToBogie?: number;
+                bogieToEdge?: number;
+                image?: { src: string; position: { x: number; y: number }; width: number; height: number };
+            };
+            const template: CarTemplate = {
+                id: generateTemplateId(),
+                bogieOffsets: def.bogieOffsets,
+                edgeToBogie: def.edgeToBogie ?? 2.5,
+                bogieToEdge: def.bogieToEdge ?? 2.5,
+                image: def.image,
+            };
+            setCarTemplates(prev => [...prev, template]);
+        });
+    }, [app]);
+
     if (!app) return null;
 
     const trainManager = app.trainManager;
@@ -690,6 +721,13 @@ export function BananaToolbar({
                                     onClick={handleImportAll}
                                 >
                                     <ImportSceneIcon />
+                                </ToolbarButton>
+                                <Separator />
+                                <ToolbarButton
+                                    tooltip="Import Car Definition (from Train Editor)"
+                                    onClick={handleImportCarDefinition}
+                                >
+                                    <Gauge />
                                 </ToolbarButton>
                             </div>
                         )}
@@ -1050,6 +1088,71 @@ export function BananaToolbar({
                                 ))
                         )}
                     </div>
+
+                    {/* Car templates */}
+                    {carTemplates.length > 0 && (
+                        <>
+                            <Separator className="my-2" />
+                            <span className="text-muted-foreground mb-1 text-[10px] font-medium uppercase tracking-wider">
+                                Templates
+                            </span>
+                            <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+                                {carTemplates.map(tpl => (
+                                    <div
+                                        key={tpl.id}
+                                        className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
+                                    >
+                                        <div className="flex flex-col gap-0.5">
+                                            {tpl.image && (
+                                                <img
+                                                    src={tpl.image.src}
+                                                    alt="car"
+                                                    className="h-6 w-auto rounded object-contain"
+                                                />
+                                            )}
+                                            <span className="text-muted-foreground text-[10px]">
+                                                {tpl.bogieOffsets.length + 1} bogies
+                                                {' · '}
+                                                {tpl.edgeToBogie +
+                                                    tpl.bogieOffsets.reduce((a, b) => a + b, 0) +
+                                                    tpl.bogieToEdge}
+                                                m
+                                            </span>
+                                        </div>
+                                        <div className="flex gap-0.5">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-xs"
+                                                onClick={() => {
+                                                    const newCar = app.carStockManager.createCar(
+                                                        [...tpl.bogieOffsets],
+                                                        tpl.edgeToBogie,
+                                                        tpl.bogieToEdge
+                                                    );
+                                                    if (tpl.image) {
+                                                        app.carImageRegistry.set(newCar.id, tpl.image.src);
+                                                    }
+                                                }}
+                                            >
+                                                <Plus className="size-3" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-xs"
+                                                onClick={() =>
+                                                    setCarTemplates(prev =>
+                                                        prev.filter(t => t.id !== tpl.id)
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="size-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </DraggablePanel>
             )}
 
