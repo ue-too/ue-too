@@ -6,12 +6,10 @@ import {
 import {
     Bug,
     Building2,
-    Gauge,
     Layers,
     List,
     ListOrdered,
     Map,
-    Paintbrush,
     Spline,
     TrainFront,
     TrainTrack,
@@ -32,7 +30,6 @@ import {
     serializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
-import type { DetailedTrackRenderStyle } from '@/trains/tracks/render-system';
 import { ELEVATION } from '@/trains/tracks/types';
 import type { SerializedTrackData } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
@@ -82,8 +79,7 @@ export function BananaToolbar({
         ELEVATION.ABOVE_1
     );
     const [buildingHeight, setBuildingHeight] = useState(1);
-    const [trackRenderStyle, setTrackRenderStyle] =
-        useState<DetailedTrackRenderStyle>('elevation');
+    const [showElevationGradient, setShowElevationGradient] = useState(true);
     const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
@@ -127,8 +123,8 @@ export function BananaToolbar({
 
     useEffect(() => {
         if (!app) return;
-        app.trackRenderSystem.detailedRenderStyle = trackRenderStyle;
-    }, [app, trackRenderStyle]);
+        app.trackRenderSystem.showElevationGradient = showElevationGradient;
+    }, [app, showElevationGradient]);
 
     useEffect(() => {
         if (!app) return;
@@ -481,18 +477,15 @@ export function BananaToolbar({
                     <Separator />
 
                     <ToolbarButton
-                        tooltip="Elevation Style"
-                        active={trackRenderStyle === 'elevation'}
-                        onClick={() => setTrackRenderStyle('elevation')}
+                        tooltip={
+                            showElevationGradient
+                                ? 'Hide Elevation Gradient'
+                                : 'Show Elevation Gradient'
+                        }
+                        active={showElevationGradient}
+                        onClick={() => setShowElevationGradient(v => !v)}
                     >
                         <Layers />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip="Texture Style"
-                        active={trackRenderStyle === 'texture'}
-                        onClick={() => setTrackRenderStyle('texture')}
-                    >
-                        <Paintbrush />
                     </ToolbarButton>
 
                     <ToolbarButton
