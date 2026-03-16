@@ -31,7 +31,7 @@ import {
     validateSerializedSceneData,
 } from '@/scene-serialization';
 import { ELEVATION } from '@/trains/tracks/types';
-import type { SerializedTrackData } from '@/trains/tracks/types';
+import type { SerializedTrackData, TrackStyle } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 import {
     type SerializedTrainData,
@@ -57,6 +57,7 @@ import { TrainPanel } from './TrainPanel';
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
 import { DepotPanel } from './DepotPanel';
 import { DebugPanel } from './DebugPanel';
+import { TrackStyleSelector } from './TrackStyleSelector';
 
 export function BananaToolbar({
     showMap = false,
@@ -83,11 +84,16 @@ export function BananaToolbar({
     const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
+    const [showFormationIds, setShowFormationIds] = useState(false);
     const [, setTrainListVersion] = useState(0);
     const [showDepot, setShowDepot] = useState(false);
     const [showTrainPanel, setShowTrainPanel] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
+    const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
+    const [electrified, setElectrified] = useState(false);
+    const [ballastWidth, setBallastWidth] = useState(1.5);
+    const [projectionBuffer, setProjectionBuffer] = useState(0.5);
     const [showExportSubmenu, setShowExportSubmenu] = useState(false);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
     const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
@@ -133,6 +139,27 @@ export function BananaToolbar({
 
     useEffect(() => {
         if (!app) return;
+        app.trackRenderSystem.trackStyle = trackStyle;
+    }, [app, trackStyle]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.trackRenderSystem.electrified = electrified;
+    }, [app, electrified]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.trackRenderSystem.ballastWidth = ballastWidth;
+        app.curveEngine.trackGraph.ballastWidth = ballastWidth;
+    }, [app, ballastWidth]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.curveEngine.trackGraph.projectionBuffer = projectionBuffer;
+    }, [app, projectionBuffer]);
+
+    useEffect(() => {
+        if (!app) return;
         app.debugOverlayRenderSystem.setShowJointDebug(showJointNumbers);
     }, [app, showJointNumbers]);
 
@@ -140,6 +167,11 @@ export function BananaToolbar({
         if (!app) return;
         app.debugOverlayRenderSystem.setShowSegmentDebug(showSegmentIds);
     }, [app, showSegmentIds]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowFormationDebug(showFormationIds);
+    }, [app, showFormationIds]);
 
     useEffect(() => {
         if (!app) return;
@@ -548,10 +580,22 @@ export function BananaToolbar({
             )}
 
             {isLayoutActive && (
-                <LayoutDeletionToolbar
-                    isDeletionMode={mode === 'layout-deletion'}
-                    onToggle={handleLayoutDeletionToggle}
-                />
+                <>
+                    <LayoutDeletionToolbar
+                        isDeletionMode={mode === 'layout-deletion'}
+                        onToggle={handleLayoutDeletionToggle}
+                    />
+                    <TrackStyleSelector
+                        value={trackStyle}
+                        onChange={setTrackStyle}
+                        electrified={electrified}
+                        onElectrifiedChange={setElectrified}
+                        ballastWidth={ballastWidth}
+                        onBallastWidthChange={setBallastWidth}
+                        projectionBuffer={projectionBuffer}
+                        onProjectionBufferChange={setProjectionBuffer}
+                    />
+                </>
             )}
 
             {showTrainPanel &&
@@ -598,6 +642,8 @@ export function BananaToolbar({
                     onShowJointNumbersChange={setShowJointNumbers}
                     showSegmentIds={showSegmentIds}
                     onShowSegmentIdsChange={setShowSegmentIds}
+                    showFormationIds={showFormationIds}
+                    onShowFormationIdsChange={setShowFormationIds}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}

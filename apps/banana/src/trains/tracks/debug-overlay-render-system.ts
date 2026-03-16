@@ -3,6 +3,7 @@ import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-
 import { PointCal } from '@ue-too/math';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { TrackGraph } from './track';
+import type { PlacedTrainEntry } from '@/trains/train-manager';
 
 /** Base radius of the circle (world units); effective size = this / zoomLevel for constant screen size. */
 const LABEL_CIRCLE_RADIUS = 8;
@@ -25,6 +26,9 @@ const JOINT_CIRCLE_FILL = 0x2563eb;
 /** Fill color for segment label circles (debug). */
 const SEGMENT_CIRCLE_FILL = 0x16a34a;
 
+/** Fill color for formation ID label circles (debug). */
+const FORMATION_CIRCLE_FILL = 0xd97706;
+
 /**
  * Renders debug overlays for joints (joint number in a circle) and track segments
  * (segment id in a circle) on the world overlay layer. For debug only; can be
@@ -37,8 +41,11 @@ export class DebugOverlayRenderSystem {
     private _overlayContainer: Container;
     private _jointContainer: Container;
     private _segmentContainer: Container;
+    private _formationContainer: Container;
     private _showJointNumbers = false;
     private _showSegmentIds = false;
+    private _showFormationIds = false;
+    private _getPlacedTrains: (() => readonly PlacedTrainEntry[]) | null = null;
     private _zoomLevel = 1;
     private _abortController = new AbortController();
 
@@ -53,8 +60,11 @@ export class DebugOverlayRenderSystem {
         this._overlayContainer = new Container();
         this._jointContainer = new Container();
         this._segmentContainer = new Container();
+        this._formationContainer = new Container();
+        this._formationContainer.visible = false;
         this._overlayContainer.addChild(this._jointContainer);
         this._overlayContainer.addChild(this._segmentContainer);
+        this._overlayContainer.addChild(this._formationContainer);
         this._worldRenderSystem.addOverlayContainer(this._overlayContainer);
 
         this._zoomLevel = this._camera.zoomLevel;
@@ -78,6 +88,9 @@ export class DebugOverlayRenderSystem {
             child.scale.set(scale);
         }
         for (const child of this._segmentContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._formationContainer.children) {
             child.scale.set(scale);
         }
     }
@@ -106,6 +119,27 @@ export class DebugOverlayRenderSystem {
         this._showSegmentIds = show;
         this._segmentContainer.visible = show;
         if (show) this._rebuildSegmentLabels();
+    }
+
+    /** Show or hide formation ID labels above each car. */
+    setShowFormationDebug(show: boolean): void {
+        if (this._showFormationIds === show) return;
+        this._showFormationIds = show;
+        this._formationContainer.visible = show;
+    }
+
+    /** Provide the getter for placed trains so formation labels can be rendered. */
+    setPlacedTrainsGetter(getter: () => readonly PlacedTrainEntry[]): void {
+        this._getPlacedTrains = getter;
+    }
+
+    /**
+     * Update formation ID labels each frame (cars move with trains).
+     * Call this from the render loop after train positions have been updated.
+     */
+    updateFormationLabels(): void {
+        if (!this._showFormationIds || this._getPlacedTrains === null) return;
+        this._rebuildFormationLabels();
     }
 
     /**
@@ -158,12 +192,43 @@ export class DebugOverlayRenderSystem {
         }
     }
 
+    private _rebuildFormationLabels(): void {
+        const removed = this._formationContainer.removeChildren();
+        removed.forEach(c => c.destroy({ children: true }));
+        if (this._getPlacedTrains === null) return;
+        const placed = this._getPlacedTrains();
+        for (const { train } of placed) {
+            const positions = train.getBogiePositions();
+            if (positions === null || positions.length < 2) continue;
+            const formationId = train.formation.id;
+            const cars = train.cars;
+            for (let k = 0; 2 * k + 1 < positions.length; k++) {
+                const car = cars[k];
+                if (!car) continue;
+                const b0 = positions[2 * k].point;
+                const b1 = positions[2 * k + 1].point;
+                const cx = (b0.x + b1.x) / 2;
+                const cy = (b0.y + b1.y) / 2;
+                const node = this._makeLabelNode(
+                    formationId,
+                    cx,
+                    cy,
+                    FORMATION_CIRCLE_FILL,
+                    null,
+                    true,
+                );
+                this._formationContainer.addChild(node);
+            }
+        }
+    }
+
     private _makeLabelNode(
         textStr: string,
         x: number,
         y: number,
         circleFill: number,
         arrowDirection: { x: number; y: number } | null = null,
+        pill: boolean = false,
     ): Container {
         const container = new Container();
         container.position.set(x, y);
@@ -174,17 +239,22 @@ export class DebugOverlayRenderSystem {
             container.addChild(arrow);
         }
 
-        const circle = new Graphics();
-        circle.circle(0, 0, LABEL_CIRCLE_RADIUS);
-        circle.fill({ color: circleFill, alpha: 0.9 });
-        circle.stroke({ color: 0xffffff, width: 1, alpha: 0.8 });
-        container.addChild(circle);
+        const bg = new Graphics();
+        if (pill) {
+            const pillHalfWidth = Math.max(LABEL_CIRCLE_RADIUS, textStr.length * 4 + 6);
+            bg.roundRect(-pillHalfWidth, -LABEL_CIRCLE_RADIUS, pillHalfWidth * 2, LABEL_CIRCLE_RADIUS * 2, LABEL_CIRCLE_RADIUS);
+        } else {
+            bg.circle(0, 0, LABEL_CIRCLE_RADIUS);
+        }
+        bg.fill({ color: circleFill, alpha: 0.9 });
+        bg.stroke({ color: 0xffffff, width: 1, alpha: 0.8 });
+        container.addChild(bg);
 
         const text = new Text({
             text: textStr,
             style: {
                 fontFamily: 'sans-serif',
-                fontSize: LABEL_FONT_SIZE,
+                fontSize: pill ? LABEL_FONT_SIZE - 2 : LABEL_FONT_SIZE,
                 fill: 0xffffff,
             },
         });

@@ -1,5 +1,8 @@
 import { BCurve, Point } from "@ue-too/curve";
 
+/** Visual style applied to track rendering. */
+export type TrackStyle = 'ballasted' | 'slab';
+
 export enum ELEVATION {
     SUB_3 = -3,
     SUB_2,
@@ -25,6 +28,8 @@ export type TrackSegment = {
     curve: BCurve;
     gauge: number;
     gauges?: number[];
+    /** Total visual width of the ballast/slab bed (meters). Used for snapping and rendering. */
+    ballastWidth?: number;
     splits: number[];
     splitCurves: {
         curve: BCurve;
@@ -85,6 +90,12 @@ export type TrackSegmentDrawData = {
         to: ELEVATION;
     };
     excludeSegmentsForCollisionCheck: Set<number>;
+    /** Visual style for this track segment. Defaults to 'ballasted' if not set. */
+    trackStyle?: TrackStyle;
+    /** Whether this track segment has overhead catenary electrification. */
+    electrified?: boolean;
+    /** Total visual width of the ballast/slab bed in world units (meters). */
+    ballastWidth?: number;
 };
 
 export type TrackSegmentSplit = {

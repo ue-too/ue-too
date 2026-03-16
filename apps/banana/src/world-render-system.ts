@@ -55,12 +55,18 @@ export const findElevationInterval = (elevation: number): { interval: [ELEVATION
  * Sub-renderers (TrackRenderSystem, future BuildingRenderSystem, etc.) create
  * their own Graphics/Containers and register them here for unified draw ordering.
  */
-/** Draw order (bottom to top): below (tracks, shadows, buildings) → offset rails → above (bogies) → other overlays. */
+/** Draw order (bottom to top): below (tracks, rails, shadows, buildings) → above (bogies) → other overlays. */
 const Z_INDEX_BELOW = 0;
-/** Use this when adding the track offset container so rails draw between track segments and bogies. */
-export const Z_INDEX_OFFSET_RAILS = 1;
 const Z_INDEX_ABOVE = 2;
 const Z_INDEX_OVERLAYS = 3;
+
+/**
+ * Within each elevation band (LAYERS_PER_ELEVATION slots), the sub-ranges are:
+ *   0          : shadow container
+ *   1..499     : ballast / track drawables
+ *   500..999   : rail overlay drawables (above ballast, below next band's shadows)
+ */
+const RAIL_OFFSET_WITHIN_BAND = 500;
 
 export type DrawableLayer = 'below' | 'above';
 
@@ -106,8 +112,7 @@ export class WorldRenderSystem {
     /**
      * Add a sibling container alongside the draw data layers.
      *
-     * @param options.zIndex - Use Z_INDEX_OFFSET_RAILS (1) for track offset rails so they draw
-     *   between track segments and bogies. Omit for overlays (drawn on top).
+     * @param options.zIndex - Custom z-index. Omit for overlays (drawn on top).
      */
     addOverlayContainer(container: Container, options?: { zIndex?: number }): void {
         container.zIndex = options?.zIndex ?? Z_INDEX_OVERLAYS;
@@ -222,6 +227,24 @@ export class WorldRenderSystem {
     }
 
     /**
+     * Compute the z-index for a rail overlay in the given elevation band.
+     * Rails sit above ballast drawables but below the next elevation band's shadows.
+     */
+    computeRailZIndex(elevationBandIndex: number, orderWithinBand: number): number {
+        return elevationBandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + orderWithinBand;
+    }
+
+    /** Add a rail container to the elevation-sorted below layer. */
+    addRail(container: Container): void {
+        this._drawDataBelow.addChild(container);
+    }
+
+    /** Remove a rail container from the below layer. */
+    removeRail(container: Container): void {
+        this._drawDataBelow.removeChild(container);
+    }
+
+    /**
      * Record the number of track drawables in a given elevation band.
      * Call after reindexing so that {@link computeOnTrackObjectZIndex} can
      * place on-track objects (e.g. train bogies) above all tracks in the band.
@@ -246,7 +269,17 @@ export class WorldRenderSystem {
      */
     computeOnTrackObjectZIndex(bandIndex: number): number {
         const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
-        return bandIndex * LAYERS_PER_ELEVATION + 2 + trackCount;
+        return bandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + trackCount + 2;
+    }
+
+    /**
+     * Compute a z-index for catenary (overhead wire) elements that renders
+     * above trains in the same elevation band.
+     */
+    computeCatenaryZIndex(bandIndex: number): number {
+        const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
+        // +10 above on-track objects (+2) to leave room for car bodies etc.
+        return bandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + trackCount + 10;
     }
 
     sortChildren(): void {

@@ -42,6 +42,15 @@ export class TrackCurveManager {
     private _addTrackSegmentObservable: Observable<[number, TrackSegmentWithCollision]> = new SynchronousObservable<[number, TrackSegmentWithCollision]>();
     private _removeTrackSegmentObservable: Observable<[number]> = new SynchronousObservable<[number]>();
 
+    /**
+     * Extra distance added to gauge-based projection thresholds.
+     * Prevents head-on train texture overlap at joints.
+     */
+    private _projectionBuffer: number = 0.5;
+
+    /** Total visual width of the ballast/slab bed for newly created tracks. Used for snapping. */
+    private _ballastWidth: number = 1.5;
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
             segment: TrackSegmentWithCollision;
@@ -50,6 +59,26 @@ export class TrackCurveManager {
                 negative: Point[];
             };
         }>(initialCount);
+    }
+
+    /** Get the current projection buffer value. */
+    get projectionBuffer(): number {
+        return this._projectionBuffer;
+    }
+
+    /** Set the projection buffer (extra distance beyond gauge for snapping). */
+    set projectionBuffer(value: number) {
+        this._projectionBuffer = Math.max(0, value);
+    }
+
+    /** Get the current ballast/slab width for newly created tracks. */
+    get ballastWidth(): number {
+        return this._ballastWidth;
+    }
+
+    /** Set the ballast/slab width for newly created tracks (affects rendering and snapping). */
+    set ballastWidth(value: number) {
+        this._ballastWidth = Math.max(0.5, value);
     }
 
     get persistedDrawData(): (TrackSegmentDrawData & {
@@ -201,7 +230,7 @@ export class TrackCurveManager {
     }
 
     onTrackSegmentEdge(position: Point): ProjectionInfo | null {
-        let minDistance = 2;
+        let minDistance = Infinity;
         let projectionInfo: ProjectionInfo | null = null;
         const bbox = new Rectangle(
             position.x - 10,
@@ -217,8 +246,12 @@ export class TrackCurveManager {
                     position,
                     res.projection
                 );
+                const existingBw = trackSegment.ballastWidth ?? trackSegment.gauge;
+                const newBw = this._ballastWidth;
+                const maxSnapDistance = existingBw / 2 + newBw / 2 + this._projectionBuffer;
                 if (
                     distance < minDistance &&
+                    distance < maxSnapDistance &&
                     distance > trackSegment.gauge / 2
                 ) {
                     minDistance = distance;
@@ -245,7 +278,7 @@ export class TrackCurveManager {
                         res.projection,
                         PointCal.multiplyVectorByScalar(
                             orthogonalDirection,
-                            trackSegment.gauge
+                            existingBw / 2 + newBw / 2
                         )
                     );
                     if (projectionInfo === null) {
@@ -285,16 +318,16 @@ export class TrackCurveManager {
     }
 
     projectOnCurve(
-        position: Point,
-        maxDistance: number = 1
+        position: Point
     ): ProjectionInfo | null {
-        let minDistance = maxDistance;
+        let minDistance = Infinity;
         let projectionInfo: ProjectionInfo | null = null;
+        const searchRadius = 10;
         const bbox = new Rectangle(
-            position.x - 0.1,
-            position.y - 0.1,
-            position.x + 0.1,
-            position.y + 0.1
+            position.x - searchRadius,
+            position.y - searchRadius,
+            position.x + searchRadius,
+            position.y + searchRadius
         );
         const possibleTrackSegments = this._internalRTree.search(bbox);
         possibleTrackSegments.forEach(trackSegment => {
@@ -306,7 +339,7 @@ export class TrackCurveManager {
                 );
                 const tangent = trackSegment.curve.derivative(res.tVal);
                 const curvature = trackSegment.curve.curvature(res.tVal);
-                if (distance < minDistance) {
+                if (distance < minDistance && distance < trackSegment.gauge / 2) {
                     minDistance = distance;
                     if (projectionInfo === null) {
                         const curveIsSloped = trackSegment.elevation.from !== trackSegment.elevation.to;
@@ -351,7 +384,8 @@ export class TrackCurveManager {
         t0Elevation: ELEVATION,
         t1Elevation: ELEVATION,
         gauge: number = 1.067,
-        excludeSegmentsForCollisionCheck: Set<number> = new Set()
+        excludeSegmentsForCollisionCheck: Set<number> = new Set(),
+        ballastWidth?: number
     ): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -532,6 +566,7 @@ export class TrackCurveManager {
             },
             collision: collisions,
             gauge,
+            ballastWidth: ballastWidth ?? this._ballastWidth,
             splits: insertionT,
             splitCurves: splits,
         };

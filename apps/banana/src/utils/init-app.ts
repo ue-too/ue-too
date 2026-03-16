@@ -132,6 +132,7 @@ export const initApp = async (
     trackGraph,
     baseComponents.camera,
   );
+  debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
 
   // When a train is removed from the track, return its cars to stock
   trainManager.setOnBeforeRemove((train) => {
@@ -155,6 +156,7 @@ export const initApp = async (
 
   baseComponents.app.ticker.add((ticker) => {
     trainRenderSystem.update(ticker.deltaMS);
+    debugOverlayRenderSystem.updateFormationLabels();
   });
 
   const addTrainAtPosition = (

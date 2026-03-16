@@ -3,10 +3,10 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision } from './types';
+import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { clearShadowCache } from '@/utils';
-import { WorldRenderSystem, findElevationInterval, Z_INDEX_OFFSET_RAILS } from '@/world-render-system';
+import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
 
 /** Zoom level above which detailed track draw data is shown; below this only the bezier curve is drawn. */
@@ -14,6 +14,9 @@ const ZOOM_THRESHOLD_DETAILED_TRACK = 5;
 
 /** World-space length (meters when 1px = 1m) per one repeat of the rail texture along the curve. ~0.6m matches typical tie spacing. */
 const TRACK_TEXTURE_TILE_LEN = 0.6;
+
+/** World-space length per one repeat of the ballast texture. */
+const BALLAST_TEXTURE_TILE_LEN = 2;
 
 /** Resolution of the procedural track segment texture (power-of-two for repeat wrap). */
 const TRACK_TEX_SIZE = 64;
@@ -33,6 +36,22 @@ const normalizeElevation = (rawElevation: number): number =>
 /** Size of the tiny solid-black texture used for shadow meshes. */
 const SHADOW_TEX_SIZE = 4;
 
+/** Compute the ballast/slab half-width for a draw data entry. Uses ballastWidth if set, otherwise derives from gauge. */
+const ballastHalfWidth = (drawData: TrackSegmentDrawData): number => {
+    if (drawData.ballastWidth !== undefined) return drawData.ballastWidth / 2;
+    const tieOverhang = 4;
+    const tieHw = (drawData.gauge / 2) * ((TRACK_TEX_SIZE + tieOverhang * 2) / TRACK_TEX_SIZE);
+    return tieHw + 0.15;
+};
+
+/** Compute the rail mesh half-width (always derived from gauge — not affected by ballast width). */
+const railHalfWidth = (drawData: TrackSegmentDrawData): number => {
+    const style = drawData.trackStyle ?? 'ballasted';
+    const tieOverhang = style === 'slab' ? 0 : 4;
+    const texFullWidth = TRACK_TEX_SIZE + tieOverhang * 2;
+    return (drawData.gauge / 2) * (texFullWidth / TRACK_TEX_SIZE);
+};
+
 
 /** Renderer (or app) that provides texture generation for the texture-style track and train cars. */
 export type TrackTextureRenderer = {
@@ -43,7 +62,6 @@ export class TrackRenderSystem {
 
     private _worldRenderSystem: WorldRenderSystem;
     private _simplifiedTrack: Container;
-    private _trackOffsetContainer: Container;
     private _topLevelContainer: Container;
     private _trackCurveManager: TrackCurveManager;
     private _simplifiedTrackGraphicsMap: Map<number, Graphics> = new Map();
@@ -78,11 +96,29 @@ export class TrackRenderSystem {
     /** Whether to show elevation gradient on ballast (vs solid color). */
     private _showElevationGradient: boolean = true;
 
+    /** Current track visual style. */
+    private _trackStyle: TrackStyle = 'ballasted';
+
+    /** Whether newly laid tracks are electrified (catenary poles). */
+    private _electrified: boolean = false;
+
+    /** Total visual width of the ballast/slab bed in world units. Stamped per track when laid. */
+    private _ballastWidth: number = 1.5;
+
+    /** Catenary pole containers keyed by draw data key. */
+    private _catenaryMap: Map<string, Container> = new Map();
+
     /** Shared solid ballast texture (used when elevation gradient is off); created lazily. */
     private _solidBallastTexture: Texture | null = null;
 
     /** Shared rail + ties texture; created lazily. */
     private _railTexture: Texture | null = null;
+
+    /** Shared slab track texture (concrete bed); created lazily. */
+    private _slabBallastTexture: Texture | null = null;
+
+    /** Shared slab-style rail texture (short concrete ties); created lazily. */
+    private _slabRailTexture: Texture | null = null;
 
     /** Shared 1D elevation gradient texture; created lazily. */
     private _elevationGradientTexture: Texture | null = null;
@@ -113,11 +149,8 @@ export class TrackRenderSystem {
     ) {
         this._worldRenderSystem = worldRenderSystem;
         this._topLevelContainer = new Container();
-        this._trackOffsetContainer = new Container();
-        this._trackOffsetContainer.sortableChildren = true;
         this._simplifiedTrack = new Container();
 
-        worldRenderSystem.addOverlayContainer(this._trackOffsetContainer, { zIndex: Z_INDEX_OFFSET_RAILS });
         worldRenderSystem.addOverlayContainer(this._topLevelContainer);
         worldRenderSystem.addOverlayContainer(this._simplifiedTrack);
 
@@ -174,6 +207,33 @@ export class TrackRenderSystem {
         }
     }
 
+    /** Current track visual style. */
+    get trackStyle(): TrackStyle {
+        return this._trackStyle;
+    }
+
+    set trackStyle(style: TrackStyle) {
+        this._trackStyle = style;
+    }
+
+    /** Whether newly laid tracks will have catenary poles. */
+    get electrified(): boolean {
+        return this._electrified;
+    }
+
+    set electrified(value: boolean) {
+        this._electrified = value;
+    }
+
+    /** Total visual width of the ballast/slab bed for newly laid tracks (meters). */
+    get ballastWidth(): number {
+        return this._ballastWidth;
+    }
+
+    set ballastWidth(value: number) {
+        this._ballastWidth = Math.max(0.5, value);
+    }
+
     get sunAngle(): number {
         return this._sunAngle;
     }
@@ -212,13 +272,20 @@ export class TrackRenderSystem {
         const useDetailed = zoomLevel >= ZOOM_THRESHOLD_DETAILED_TRACK;
 
         this._simplifiedTrack.visible = !useDetailed;
-        this._trackOffsetContainer.visible = useDetailed;
 
         for (const key of this._drawableKeys) {
             const container = this._worldRenderSystem.getDrawable(key);
             if (container !== undefined) {
                 container.visible = useDetailed;
             }
+        }
+
+        for (const [, railContainer] of this._offsetRailMap) {
+            railContainer.visible = useDetailed;
+        }
+
+        for (const [, catenaryContainer] of this._catenaryMap) {
+            catenaryContainer.visible = useDetailed;
         }
 
         for (const [, record] of this._shadowRecords) {
@@ -319,12 +386,16 @@ export class TrackRenderSystem {
         this._previewEndProjection.destroy();
 
         this._offsetRailMap.forEach((railContainer) => {
-            this._trackOffsetContainer.removeChild(railContainer);
+            this._worldRenderSystem.removeRail(railContainer);
             railContainer.destroy({ children: true });
         });
         this._offsetRailMap.clear();
-        this._worldRenderSystem.removeOverlayContainer(this._trackOffsetContainer);
-        this._trackOffsetContainer.destroy({ children: true });
+
+        this._catenaryMap.forEach((catenaryContainer, key) => {
+            this._worldRenderSystem.removeDrawable(`__catenary__${key}`);
+            catenaryContainer.destroy({ children: true });
+        });
+        this._catenaryMap.clear();
 
         this._worldRenderSystem.removeOverlayContainer(this._topLevelContainer);
         this._topLevelContainer.destroy({ children: true });
@@ -338,6 +409,14 @@ export class TrackRenderSystem {
             this._railTexture.destroy(true);
             this._railTexture = null;
         }
+        if (this._slabBallastTexture !== null) {
+            this._slabBallastTexture.destroy(true);
+            this._slabBallastTexture = null;
+        }
+        if (this._slabRailTexture !== null) {
+            this._slabRailTexture.destroy(true);
+            this._slabRailTexture = null;
+        }
         if (this._elevationGradientTexture !== null) {
             this._elevationGradientTexture.destroy(true);
             this._elevationGradientTexture = null;
@@ -346,6 +425,76 @@ export class TrackRenderSystem {
             this._shadowTexture.destroy(true);
             this._shadowTexture = null;
         }
+    }
+
+    /**
+     * Build catenary pole + wire overhang graphics for an electrified track segment.
+     *
+     * Poles are placed at regular intervals along the curve. Each pole is a
+     * vertical mast with an outrigger arm and a contact wire line.
+     */
+    private _buildCatenaryForDrawData(drawData: TrackSegmentDrawData): Container {
+        const container = new Container();
+        const curve = drawData.curve;
+        const curveLength = curve.fullLength;
+
+        // Pole spacing in world units (meters).
+        const poleSpacing = 25;
+        const poleCount = Math.max(1, Math.floor(curveLength / poleSpacing));
+
+        const gauge = drawData.gauge;
+        // Mast offset from track center (outside the track).
+        const mastOffset = gauge / 2 + 2;
+
+        // Alternate which side the pole appears on.
+        let side = 1;
+
+        for (let i = 0; i <= poleCount; i++) {
+            const t = poleCount === 0 ? 0.5 : i / poleCount;
+            const point = curve.getPointbyPercentage(t);
+            const derivative = curve.derivativeByPercentage(t);
+            const tangent = PointCal.unitVector(derivative);
+            // Normal perpendicular to track.
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            const mastX = point.x + nx * mastOffset * side;
+            const mastY = point.y + ny * mastOffset * side;
+
+            const pole = new Graphics();
+
+            // Mast — vertical pole (drawn as a thick line in 2D top-down view).
+            pole.circle(mastX, mastY, 0.12);
+            pole.fill(0x707070);
+
+            // Outrigger arm from mast to above track center.
+            pole.moveTo(mastX, mastY);
+            pole.lineTo(point.x, point.y);
+            pole.stroke({ color: 0x888888, width: 0.06 });
+
+            // Contact wire dot at track center.
+            pole.circle(point.x, point.y, 0.04);
+            pole.fill(0x404040);
+
+            container.addChild(pole);
+
+            side *= -1;
+        }
+
+        // Draw the catenary wire along the full curve.
+        const wire = new Graphics();
+        const wireSteps = Math.max(10, Math.ceil(curveLength / 1));
+        const controlPoints = curve.getControlPoints();
+        wire.moveTo(controlPoints[0].x, controlPoints[0].y);
+        for (let i = 1; i <= wireSteps; i++) {
+            const t = i / wireSteps;
+            const p = i === wireSteps ? controlPoints[controlPoints.length - 1] : curve.getPointbyPercentage(t);
+            wire.lineTo(p.x, p.y);
+        }
+        wire.stroke({ color: 0x505050, width: 0.04 });
+        container.addChild(wire);
+
+        return container;
     }
 
     private _onDelete(key: string) {
@@ -361,25 +510,65 @@ export class TrackRenderSystem {
 
         const railContainer = this._offsetRailMap.get(key);
         if (railContainer !== undefined) {
-            this._trackOffsetContainer.removeChild(railContainer);
+            this._worldRenderSystem.removeRail(railContainer);
             railContainer.destroy({ children: true });
             this._offsetRailMap.delete(key);
+        }
+
+        const catenaryContainer = this._catenaryMap.get(key);
+        if (catenaryContainer !== undefined) {
+            this._worldRenderSystem.removeDrawable(`__catenary__${key}`);
+            catenaryContainer.destroy({ children: true });
+            this._catenaryMap.delete(key);
         }
 
         this._reindexDrawData();
     }
 
-    /** Create or return the shared solid ballast texture (neutral color when elevation gradient is off). */
+    /** Create or return the shared solid ballast texture with procedural rock detail. */
     private _getOrCreateSolidBallastTexture(): Texture | null {
         if (this._solidBallastTexture !== null) return this._solidBallastTexture;
         const renderer = this._textureRenderer?.renderer?.textureGenerator;
         if (renderer === undefined) return null;
 
+        const size = 256;
         const g = new Graphics();
-        g.rect(0, 0, 4, 4);
-        g.fill(0x9e8c6a);
+        // Base fill — covers exact bounds so generateTexture produces a clean size×size texture.
+        g.rect(0, 0, size, size);
+        g.fill(0x706860);
+
+        // Scatter small rocks fully inside the rect so generateTexture bounds
+        // stay exactly size×size (no overflow that would enlarge the texture).
+        const rng = seededRng(73);
+        const rockColors = [0x585048, 0x4a4238, 0x665e54, 0x3e3830, 0x7a726a];
+        const highlightColors = [0x9a9288, 0xa8a098, 0x8e8680];
+        const rockCount = 300;
+        for (let r = 0; r < rockCount; r++) {
+            const rw = 3 + rng() * 6;
+            const rh = 3 + rng() * 5;
+            // Pad by the max drawn radius (outline = rw+1) so nothing overflows.
+            const pad = Math.max(rw, rh) + 1;
+            const rx = pad + rng() * (size - pad * 2);
+            const ry = pad + rng() * (size - pad * 2);
+            const color = rockColors[Math.floor(rng() * rockColors.length)];
+            // Dark outline to make rocks stand out from the base
+            g.ellipse(rx, ry, rw + 1, rh + 1);
+            g.fill({ color: 0x3a3020, alpha: 0.4 });
+            g.ellipse(rx, ry, rw, rh);
+            g.fill(color);
+            // Highlight on top-left to give depth
+            if (rng() > 0.3) {
+                const hc = highlightColors[Math.floor(rng() * highlightColors.length)];
+                g.ellipse(rx - rw * 0.2, ry - rh * 0.25, rw * 0.5, rh * 0.4);
+                g.fill({ color: hc, alpha: 0.5 });
+            }
+        }
 
         this._solidBallastTexture = renderer.generateTexture({ target: g });
+        const source = this._solidBallastTexture.source;
+        if ('addressMode' in source) {
+            (source as { addressMode: string }).addressMode = 'repeat';
+        }
         return this._solidBallastTexture;
     }
 
@@ -387,14 +576,18 @@ export class TrackRenderSystem {
      * Build a mesh that draws solid-color ballast along the curve (used when elevation gradient is off).
      */
     private _buildSolidBallastMeshForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
-        const texture = this._getOrCreateSolidBallastTexture();
+        const style = drawData.trackStyle ?? 'ballasted';
+        const texture = style === 'slab'
+            ? this._getOrCreateSlabBallastTexture()
+            : this._getOrCreateSolidBallastTexture();
         if (texture === null) return null;
 
-        const { curve, gauge } = drawData;
-        const hw = gauge / 2;
+        const { curve } = drawData;
+        const hw = ballastHalfWidth(drawData);
         const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
         const verts: number[] = [];
         const uvs: number[] = [];
+        let arcLen = 0;
 
         const controlPoints = curve.getControlPoints();
         const startPoint = controlPoints[0];
@@ -408,10 +601,19 @@ export class TrackRenderSystem {
             const nx = -tangent.y;
             const ny = tangent.x;
 
+            if (i > 0) {
+                const prevT = (i - 1) / steps;
+                const prev = i === 1 ? startPoint : curve.getPointbyPercentage(prevT);
+                const dx = point.x - prev.x;
+                const dy = point.y - prev.y;
+                arcLen += Math.sqrt(dx * dx + dy * dy);
+            }
+            const v = arcLen / BALLAST_TEXTURE_TILE_LEN;
+
             verts.push(point.x - nx * hw, point.y - ny * hw);
-            uvs.push(0, 0);
+            uvs.push(0, v);
             verts.push(point.x + nx * hw, point.y + ny * hw);
-            uvs.push(1, 1);
+            uvs.push(1, v);
         }
 
         const indices: number[] = [];
@@ -441,23 +643,32 @@ export class TrackRenderSystem {
         const rng = seededRng(42);
         const tieY = TRACK_TEX_SIZE * 0.5 - 6;
         const tieOverhang = 4;
+        // Concrete tie
         g.rect(-tieOverhang, tieY, TRACK_TEX_SIZE + tieOverhang * 2, 12);
-        g.fill(0x5c3a1e);
+        g.fill(0xa8a8a0);
+        // Subtle surface texture on tie
         for (let i = 0; i < 5; i++) {
             const gy = tieY + 2 + rng() * 8;
             g.moveTo(-tieOverhang, gy);
             g.lineTo(TRACK_TEX_SIZE + tieOverhang, gy + rng() * 2 - 1);
-            g.stroke({ color: 0x3b2510, alpha: 0.5, width: 0.6 });
+            g.stroke({ color: 0x8a8a82, alpha: 0.4, width: 0.6 });
         }
 
         const railW = 5;
         const railL = railW / 2;
         const railR = TRACK_TEX_SIZE - railW / 2;
         for (const rx of [railL, railR]) {
+            // Rusty brown rail body
             g.rect(rx - railW / 2, 0, railW, TRACK_TEX_SIZE);
-            g.fill(0x888888);
-            g.rect(rx - 1, 0, 2, TRACK_TEX_SIZE);
-            g.fill({ color: 0xcccccc, alpha: 0.7 });
+            g.fill(0x6b3a1f);
+            // Darker rust edges
+            g.rect(rx - railW / 2, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0x4a2810, alpha: 0.6 });
+            g.rect(rx + railW / 2 - 1, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0x4a2810, alpha: 0.6 });
+            // Silver running line (wheel contact strip)
+            g.rect(rx - 0.5, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0xd0d0d0, alpha: 0.8 });
         }
 
         this._railTexture = renderer.generateTexture({ target: g });
@@ -468,6 +679,97 @@ export class TrackRenderSystem {
         return this._railTexture;
     }
 
+    /** Create or return the shared slab ballast texture (smooth concrete bed). */
+    private _getOrCreateSlabBallastTexture(): Texture | null {
+        if (this._slabBallastTexture !== null) return this._slabBallastTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const size = 256;
+        const g = new Graphics();
+        // Concrete base
+        g.rect(0, 0, size, size);
+        g.fill(0xc0bab0);
+
+        // Subtle concrete surface variation
+        const rng = seededRng(91);
+        const speckleColors = [0xb5afa5, 0xccc6bc, 0xada79d, 0xd1cbc3];
+        for (let s = 0; s < 200; s++) {
+            const sx = 2 + rng() * (size - 4);
+            const sy = 2 + rng() * (size - 4);
+            const sw = 1 + rng() * 3;
+            const sh = 1 + rng() * 2;
+            g.ellipse(sx, sy, sw, sh);
+            g.fill({ color: speckleColors[Math.floor(rng() * speckleColors.length)], alpha: 0.4 });
+        }
+        // A few hairline cracks
+        for (let c = 0; c < 3; c++) {
+            const cx = 10 + rng() * (size - 20);
+            const cy = rng() * size;
+            g.moveTo(cx, cy);
+            g.lineTo(cx + (rng() - 0.5) * 30, cy + 20 + rng() * 40);
+            g.stroke({ color: 0x8a847a, alpha: 0.3, width: 0.5 });
+        }
+
+        this._slabBallastTexture = renderer.generateTexture({ target: g });
+        const source = this._slabBallastTexture.source;
+        if ('addressMode' in source) {
+            (source as { addressMode: string }).addressMode = 'repeat';
+        }
+        return this._slabBallastTexture;
+    }
+
+    /** Create or return the shared slab-style rail texture (short concrete ties that don't span the full gauge). */
+    private _getOrCreateSlabRailTexture(): Texture | null {
+        if (this._slabRailTexture !== null) return this._slabRailTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const g = new Graphics();
+        g.rect(0, 0, TRACK_TEX_SIZE, TRACK_TEX_SIZE);
+        g.fill({ color: 0xffffff, alpha: 0 });
+
+        // Short concrete tie blocks under each rail — they don't span the full width.
+        const railW = 5;
+        const railL = railW / 2;
+        const railR = TRACK_TEX_SIZE - railW / 2;
+        const tieBlockWidth = 14;
+        const tieBlockHeight = 8;
+        const tieY = TRACK_TEX_SIZE * 0.5 - tieBlockHeight / 2;
+        // Left rail tie block
+        g.rect(railL - tieBlockWidth / 2, tieY, tieBlockWidth, tieBlockHeight);
+        g.fill(0xa09a90);
+        g.rect(railL - tieBlockWidth / 2, tieY, tieBlockWidth, tieBlockHeight);
+        g.stroke({ color: 0x888278, width: 0.5 });
+        // Right rail tie block
+        g.rect(railR - tieBlockWidth / 2, tieY, tieBlockWidth, tieBlockHeight);
+        g.fill(0xa09a90);
+        g.rect(railR - tieBlockWidth / 2, tieY, tieBlockWidth, tieBlockHeight);
+        g.stroke({ color: 0x888278, width: 0.5 });
+
+        // Rails
+        for (const rx of [railL, railR]) {
+            // Rusty brown rail body
+            g.rect(rx - railW / 2, 0, railW, TRACK_TEX_SIZE);
+            g.fill(0x6b3a1f);
+            // Darker rust edges
+            g.rect(rx - railW / 2, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0x4a2810, alpha: 0.6 });
+            g.rect(rx + railW / 2 - 1, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0x4a2810, alpha: 0.6 });
+            // Silver running line (wheel contact strip)
+            g.rect(rx - 0.5, 0, 1, TRACK_TEX_SIZE);
+            g.fill({ color: 0xd0d0d0, alpha: 0.8 });
+        }
+
+        this._slabRailTexture = renderer.generateTexture({ target: g });
+        const railSource = this._slabRailTexture.source;
+        if ('addressMode' in railSource) {
+            (railSource as { addressMode: string }).addressMode = 'repeat';
+        }
+        return this._slabRailTexture;
+    }
+
     /**
      * Build a mesh that draws the rail texture (rails + ties) along the curve.
      * Tiles the shared texture along arc length. Returns null if texture generation is not available.
@@ -476,14 +778,14 @@ export class TrackRenderSystem {
      * We use a mesh wider than the gauge so that rails span the gauge and ties extend beyond it.
      */
     private _buildRailMeshForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
-        const texture = this._getOrCreateRailTexture();
+        const style = drawData.trackStyle ?? 'ballasted';
+        const texture = style === 'slab'
+            ? this._getOrCreateSlabRailTexture()
+            : this._getOrCreateRailTexture();
         if (texture === null) return null;
 
-        const { curve, gauge } = drawData;
-        const tieOverhang = 4;
-        const railSpanInTex = TRACK_TEX_SIZE;
-        const texFullWidth = TRACK_TEX_SIZE + tieOverhang * 2;
-        const hw = (gauge / 2) * (texFullWidth / railSpanInTex);
+        const { curve } = drawData;
+        const hw = railHalfWidth(drawData);
         const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
         const verts: number[] = [];
         const uvs: number[] = [];
@@ -659,8 +961,8 @@ export class TrackRenderSystem {
         const texture = this._getOrCreateElevationGradientTexture();
         if (texture === null) return null;
 
-        const { curve, gauge, elevation } = drawData;
-        const hw = gauge / 2;
+        const { curve, elevation } = drawData;
+        const hw = ballastHalfWidth(drawData);
         const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
         const verts: number[] = [];
         const uvs: number[] = [];
@@ -730,6 +1032,18 @@ export class TrackRenderSystem {
     private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {
 
         drawDataList.forEach((drawData) => {
+            // Stamp the current track style and electrification onto the draw data
+            // so each segment retains the options that were active when it was laid down.
+            if (drawData.trackStyle === undefined) {
+                drawData.trackStyle = this._trackStyle;
+            }
+            if (drawData.electrified === undefined) {
+                drawData.electrified = this._electrified;
+            }
+            if (drawData.ballastWidth === undefined) {
+                drawData.ballastWidth = this._ballastWidth;
+            }
+
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
 
             const segmentsContainer = new Container();
@@ -757,7 +1071,7 @@ export class TrackRenderSystem {
             if (railMesh !== null) {
                 const railContainer = new Container();
                 railContainer.addChild(railMesh);
-                this._trackOffsetContainer.addChild(railContainer);
+                this._worldRenderSystem.addRail(railContainer);
                 this._offsetRailMap.set(key, railContainer);
             }
 
@@ -813,6 +1127,14 @@ export class TrackRenderSystem {
 
             this._drawableKeys.add(key);
             this._worldRenderSystem.addDrawable(key, segmentsContainer);
+
+            // Build catenary poles if this segment is electrified.
+            if (drawData.electrified) {
+                const catenaryContainer = this._buildCatenaryForDrawData(drawData);
+                const catenaryKey = `__catenary__${key}`;
+                this._worldRenderSystem.addDrawable(catenaryKey, catenaryContainer);
+                this._catenaryMap.set(key, catenaryContainer);
+            }
         });
 
         this._reindexDrawData();
@@ -858,13 +1180,17 @@ export class TrackRenderSystem {
                 this._drawDataBandMap.set(key, bandIndex);
                 const railContainer = this._offsetRailMap.get(key);
                 if (railContainer !== undefined) {
-                    railContainer.zIndex = zIndex;
+                    railContainer.zIndex = this._worldRenderSystem.computeRailZIndex(bandIndex, n);
+                }
+                // Catenary renders above trains in the same elevation band.
+                if (this._catenaryMap.has(key)) {
+                    const catenaryZIndex = this._worldRenderSystem.computeCatenaryZIndex(bandIndex);
+                    this._worldRenderSystem.setDrawableZIndex(`__catenary__${key}`, catenaryZIndex);
                 }
             }
             orderInElevation.set(bandIndex, group.length);
         }
 
-        this._trackOffsetContainer.sortChildren();
         orderInElevation.forEach((count, bandIndex) => {
             this._worldRenderSystem.setBandTrackCount(bandIndex, count);
         });
