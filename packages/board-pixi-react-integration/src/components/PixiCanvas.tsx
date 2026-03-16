@@ -1,4 +1,8 @@
-import { BaseAppComponents, InitAppOptions, baseInitApp } from '@ue-too/board-pixi-integration';
+import {
+    BaseAppComponents,
+    InitAppOptions,
+    baseInitApp,
+} from '@ue-too/board-pixi-integration';
 
 import { PixiCanvasProvider } from '../contexts';
 import { useInitializePixiApp } from '../hooks';
@@ -50,7 +54,7 @@ export const OverlayContainer = ({
     );
 };
 
-export const Wrapper = ({
+export const PixiCanvasApp = ({
     option,
     initFunction,
     canvasClassName,
@@ -77,3 +81,5 @@ export const Wrapper = ({
         </div>
     );
 };
+
+export { PixiCanvasApp as Wrapper };
