@@ -1,4 +1,5 @@
 import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pixi-integration';
+import { toast } from 'sonner';
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
@@ -110,6 +111,7 @@ export const initApp = async (
       trainManager.addTrain(placed);
       // Reset to default formation for next placement
       trainPlacementEngine.setFormation(null);
+      toast.success('Train placed on the simulation map');
       return new Train(null, trackGraph, jointDirectionManager);
     },
   });
