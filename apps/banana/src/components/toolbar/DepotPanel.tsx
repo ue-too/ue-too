@@ -1,10 +1,11 @@
 import { Plus, Trash2 } from 'lucide-react';
-import type { Dispatch, SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useSyncExternalStore } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
 import type { CarStockManager } from '@/trains/car-stock-manager';
+import type { CarStockEntry } from '@/trains/car-stock-manager';
 import type { CarImageRegistry } from '@/trains/car-image-registry';
 import type { CarTemplate } from '@/trains/car-template';
 
@@ -23,6 +24,16 @@ export function DepotPanel({
     onCarTemplatesChange,
     onClose,
 }: DepotPanelProps) {
+    const subscribe = useCallback(
+        (cb: () => void) => carStockManager.subscribe(cb),
+        [carStockManager]
+    );
+    const getSnapshot = useCallback(
+        (): readonly CarStockEntry[] => carStockManager.getAvailableCars(),
+        [carStockManager]
+    );
+    const availableCars = useSyncExternalStore(subscribe, getSnapshot);
+
     return (
         <DraggablePanel
             title="Depot"
@@ -40,12 +51,12 @@ export function DepotPanel({
         >
             <Separator className="mb-2" />
             <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
-                {carStockManager.getAvailableCars().length === 0 ? (
+                {availableCars.length === 0 ? (
                     <span className="text-muted-foreground py-4 text-center text-xs">
                         No cars in stock
                     </span>
                 ) : (
-                    carStockManager.getAvailableCars().map(entry => (
+                    availableCars.map(entry => (
                         <div
                             key={entry.id}
                             className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
