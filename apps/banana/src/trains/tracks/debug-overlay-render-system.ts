@@ -4,6 +4,7 @@ import { PointCal } from '@ue-too/math';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { TrackGraph } from './track';
 import type { PlacedTrainEntry } from '@/trains/train-manager';
+import type { StationManager } from '@/stations/station-manager';
 
 /** Base radius of the circle (world units); effective size = this / zoomLevel for constant screen size. */
 const LABEL_CIRCLE_RADIUS = 8;
@@ -29,6 +30,12 @@ const SEGMENT_CIRCLE_FILL = 0x16a34a;
 /** Fill color for formation ID label circles (debug). */
 const FORMATION_CIRCLE_FILL = 0xd97706;
 
+/** Fill color for station stop position label circles (debug). */
+const STATION_STOP_CIRCLE_FILL = 0xdc2626;
+
+/** Fill color for station location label circles (debug). */
+const STATION_LOCATION_CIRCLE_FILL = 0x7c3aed;
+
 /**
  * Renders debug overlays for joints (joint number in a circle) and track segments
  * (segment id in a circle) on the world overlay layer. For debug only; can be
@@ -42,10 +49,15 @@ export class DebugOverlayRenderSystem {
     private _jointContainer: Container;
     private _segmentContainer: Container;
     private _formationContainer: Container;
+    private _stationStopContainer: Container;
+    private _stationLocationContainer: Container;
     private _showJointNumbers = false;
     private _showSegmentIds = false;
     private _showFormationIds = false;
+    private _showStationStops = false;
+    private _showStationLocations = false;
     private _getPlacedTrains: (() => readonly PlacedTrainEntry[]) | null = null;
+    private _stationManager: StationManager | null = null;
     private _zoomLevel = 1;
     private _abortController = new AbortController();
 
@@ -61,10 +73,16 @@ export class DebugOverlayRenderSystem {
         this._jointContainer = new Container();
         this._segmentContainer = new Container();
         this._formationContainer = new Container();
+        this._stationStopContainer = new Container();
+        this._stationLocationContainer = new Container();
         this._formationContainer.visible = false;
+        this._stationStopContainer.visible = false;
+        this._stationLocationContainer.visible = false;
         this._overlayContainer.addChild(this._jointContainer);
         this._overlayContainer.addChild(this._segmentContainer);
         this._overlayContainer.addChild(this._formationContainer);
+        this._overlayContainer.addChild(this._stationStopContainer);
+        this._overlayContainer.addChild(this._stationLocationContainer);
         this._worldRenderSystem.addOverlayContainer(this._overlayContainer);
 
         this._zoomLevel = this._camera.zoomLevel;
@@ -91,6 +109,12 @@ export class DebugOverlayRenderSystem {
             child.scale.set(scale);
         }
         for (const child of this._formationContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._stationStopContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._stationLocationContainer.children) {
             child.scale.set(scale);
         }
     }
@@ -133,6 +157,27 @@ export class DebugOverlayRenderSystem {
         this._getPlacedTrains = getter;
     }
 
+    /** Provide the station manager so stop position labels can be rendered. */
+    setStationManager(stationManager: StationManager): void {
+        this._stationManager = stationManager;
+    }
+
+    /** Show or hide station stop position labels. */
+    setShowStationStopDebug(show: boolean): void {
+        if (this._showStationStops === show) return;
+        this._showStationStops = show;
+        this._stationStopContainer.visible = show;
+        if (show) this._rebuildStationStopLabels();
+    }
+
+    /** Show or hide station location labels. */
+    setShowStationLocationDebug(show: boolean): void {
+        if (this._showStationLocations === show) return;
+        this._showStationLocations = show;
+        this._stationLocationContainer.visible = show;
+        if (show) this._rebuildStationLocationLabels();
+    }
+
     /**
      * Update formation ID labels each frame (cars move with trains).
      * Call this from the render loop after train positions have been updated.
@@ -149,6 +194,8 @@ export class DebugOverlayRenderSystem {
     refresh(): void {
         if (this._showJointNumbers) this._rebuildJointLabels();
         if (this._showSegmentIds) this._rebuildSegmentLabels();
+        if (this._showStationStops) this._rebuildStationStopLabels();
+        if (this._showStationLocations) this._rebuildStationLocationLabels();
     }
 
     private _rebuildJointLabels(): void {
@@ -218,6 +265,59 @@ export class DebugOverlayRenderSystem {
                     true,
                 );
                 this._formationContainer.addChild(node);
+            }
+        }
+    }
+
+    private _rebuildStationLocationLabels(): void {
+        const removed = this._stationLocationContainer.removeChildren();
+        removed.forEach(c => c.destroy({ children: true }));
+        if (this._stationManager === null) return;
+        const stations = this._stationManager.getStations();
+        for (const { station } of stations) {
+            const node = this._makeLabelNode(
+                station.name,
+                station.position.x,
+                station.position.y,
+                STATION_LOCATION_CIRCLE_FILL,
+                null,
+                true,
+            );
+            this._stationLocationContainer.addChild(node);
+        }
+    }
+
+    private _rebuildStationStopLabels(): void {
+        const removed = this._stationStopContainer.removeChildren();
+        removed.forEach(c => c.destroy({ children: true }));
+        if (this._stationManager === null) return;
+        const stations = this._stationManager.getStations();
+        for (const { station } of stations) {
+            for (const platform of station.platforms) {
+                for (const stop of platform.stopPositions) {
+                    const curve = this._trackGraph.getTrackSegmentCurve(stop.trackSegmentId);
+                    if (curve === null) continue;
+                    const pos = curve.get(stop.tValue);
+                    const derivative = curve.derivative(stop.tValue);
+                    const mag = PointCal.magnitude(derivative);
+                    let arrowDir: { x: number; y: number } | null = null;
+                    if (mag > 1e-6) {
+                        const unit = PointCal.unitVector(derivative);
+                        // 'tangent' points in derivative direction; 'reverseTangent' points opposite
+                        arrowDir = stop.direction === 'tangent'
+                            ? unit
+                            : { x: -unit.x, y: -unit.y };
+                    }
+                    const label = `S${stop.trackSegmentId}`;
+                    const node = this._makeLabelNode(
+                        label,
+                        pos.x,
+                        pos.y,
+                        STATION_STOP_CIRCLE_FILL,
+                        arrowDir,
+                    );
+                    this._stationStopContainer.addChild(node);
+                }
             }
         }
     }

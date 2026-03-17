@@ -6,6 +6,7 @@ import {
 import {
     Bug,
     Building2,
+    Landmark,
     Layers,
     List,
     ListOrdered,
@@ -31,6 +32,8 @@ import {
     validateSerializedSceneData,
 } from '@/scene-serialization';
 import { ELEVATION } from '@/trains/tracks/types';
+import { StationManager } from '@/stations/station-manager';
+import type { SerializedStationData } from '@/stations/types';
 import type { SerializedTrackData, TrackStyle } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 import {
@@ -57,6 +60,7 @@ import { TrainPanel } from './TrainPanel';
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
 import { DepotPanel } from './DepotPanel';
 import { DebugPanel } from './DebugPanel';
+import { StationListPanel } from './StationListPanel';
 import { TrackStyleSelector } from './TrackStyleSelector';
 
 export function BananaToolbar({
@@ -80,16 +84,19 @@ export function BananaToolbar({
         ELEVATION.ABOVE_1
     );
     const [buildingHeight, setBuildingHeight] = useState(1);
-    const [showElevationGradient, setShowElevationGradient] = useState(true);
+    const [showElevationGradient, setShowElevationGradient] = useState(false);
     const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
     const [showJointNumbers, setShowJointNumbers] = useState(false);
     const [showSegmentIds, setShowSegmentIds] = useState(false);
     const [showFormationIds, setShowFormationIds] = useState(false);
+    const [showStationStops, setShowStationStops] = useState(false);
+    const [showStationLocations, setShowStationLocations] = useState(false);
     const [, setTrainListVersion] = useState(0);
     const [showDepot, setShowDepot] = useState(false);
     const [showTrainPanel, setShowTrainPanel] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
+    const [showStationList, setShowStationList] = useState(false);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [ballastWidth, setBallastWidth] = useState(1.5);
@@ -172,6 +179,16 @@ export function BananaToolbar({
         if (!app) return;
         app.debugOverlayRenderSystem.setShowFormationDebug(showFormationIds);
     }, [app, showFormationIds]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowStationStopDebug(showStationStops);
+    }, [app, showStationStops]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowStationLocationDebug(showStationLocations);
+    }, [app, showStationLocations]);
 
     useEffect(() => {
         if (!app) return;
@@ -264,6 +281,17 @@ export function BananaToolbar({
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);
 
+    const handleStationPlacementToggle = useCallback(() => {
+        if (!app) return;
+        if (mode === 'station-placement') {
+            exitAllModes();
+        } else {
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToStation');
+            setMode('station-placement');
+        }
+    }, [app, mode, exitAllModes]);
+
     const handlePointerDown = useCallback(
         (event: PointerEvent) => {
             if (event.button !== 0 || !app) return;
@@ -307,7 +335,10 @@ export function BananaToolbar({
 
     const handleExportTracks = useCallback(() => {
         if (!app) return;
-        const data = app.curveEngine.trackGraph.serialize();
+        const data = {
+            ...app.curveEngine.trackGraph.serialize(),
+            stations: app.stationManager.serialize().stations,
+        };
         downloadJson(`track-data-${Date.now()}.json`, data);
     }, [app]);
 
@@ -322,6 +353,19 @@ export function BananaToolbar({
             app.curveEngine.trackGraph.loadFromSerializedData(
                 parsed as SerializedTrackData
             );
+            // Restore stations if present in the track data
+            const obj = parsed as Record<string, unknown>;
+            if (Array.isArray(obj.stations)) {
+                for (const { id } of app.stationManager.getStations()) {
+                    app.stationRenderSystem.removeStation(id);
+                    app.stationManager.destroyStation(id);
+                }
+                const restored = StationManager.deserialize({ stations: obj.stations as SerializedStationData['stations'] });
+                for (const { id, station } of restored.getStations()) {
+                    app.stationManager.createStationWithId(id, station);
+                    app.stationRenderSystem.addStation(id);
+                }
+            }
         });
     }, [app]);
 
@@ -505,6 +549,27 @@ export function BananaToolbar({
                     >
                         <Trash2 />
                     </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'station-placement'
+                                ? 'End Station Placement'
+                                : 'Place Station'
+                        }
+                        active={mode === 'station-placement'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'station-placement'
+                        }
+                        onClick={handleStationPlacementToggle}
+                    >
+                        <Warehouse />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={showStationList ? 'Close Station List' : 'Open Station List'}
+                        active={showStationList}
+                        onClick={() => setShowStationList(v => !v)}
+                    >
+                        <Landmark />
+                    </ToolbarButton>
 
                     <Separator />
 
@@ -636,6 +701,17 @@ export function BananaToolbar({
                 />
             )}
 
+            {showStationList && (
+                <StationListPanel
+                    stationManager={app.stationManager}
+                    stationRenderSystem={app.stationRenderSystem}
+                    trackGraph={app.curveEngine.trackGraph}
+                    cameraRig={app.cameraRig}
+                    onClose={() => setShowStationList(false)}
+                    onStationChange={() => app.debugOverlayRenderSystem.refresh()}
+                />
+            )}
+
             {showDebugPanel && (
                 <DebugPanel
                     showJointNumbers={showJointNumbers}
@@ -644,6 +720,10 @@ export function BananaToolbar({
                     onShowSegmentIdsChange={setShowSegmentIds}
                     showFormationIds={showFormationIds}
                     onShowFormationIdsChange={setShowFormationIds}
+                    showStationStops={showStationStops}
+                    onShowStationStopsChange={setShowStationStops}
+                    showStationLocations={showStationLocations}
+                    onShowStationLocationsChange={setShowStationLocations}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}

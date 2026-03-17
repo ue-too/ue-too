@@ -1,4 +1,4 @@
-import { Hash, ListOrdered, TrainFront } from 'lucide-react';
+import { Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
@@ -11,6 +11,10 @@ type DebugPanelProps = {
     onShowSegmentIdsChange: (value: boolean) => void;
     showFormationIds: boolean;
     onShowFormationIdsChange: (value: boolean) => void;
+    showStationStops: boolean;
+    onShowStationStopsChange: (value: boolean) => void;
+    showStationLocations: boolean;
+    onShowStationLocationsChange: (value: boolean) => void;
     onClose: () => void;
 };
 
@@ -21,6 +25,10 @@ export function DebugPanel({
     onShowSegmentIdsChange,
     showFormationIds,
     onShowFormationIdsChange,
+    showStationStops,
+    onShowStationStopsChange,
+    showStationLocations,
+    onShowStationLocationsChange,
     onClose,
 }: DebugPanelProps) {
     return (
@@ -62,6 +70,28 @@ export function DebugPanel({
                         aria-label="Toggle formation IDs"
                     >
                         <TrainFront className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">Station stops</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showStationStops}
+                        onPressedChange={onShowStationStopsChange}
+                        aria-label="Toggle station stop positions"
+                    >
+                        <MapPin className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">Station locations</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showStationLocations}
+                        onPressedChange={onShowStationLocationsChange}
+                        aria-label="Toggle station locations"
+                    >
+                        <Landmark className="size-3.5" />
                     </Toggle>
                 </div>
             </div>

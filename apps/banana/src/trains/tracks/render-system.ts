@@ -77,6 +77,9 @@ export class TrackRenderSystem {
     /** Keys of preview drawables (ephemeral, re-created on each preview change). */
     private _previewKeys: string[] = [];
 
+    /** Rail containers added to the offset layer for preview curves (cleaned up on each preview change). */
+    private _previewRailContainers: Container[] = [];
+
     private _previewStartProjection: Graphics = new Graphics();
     private _previewEndProjection: Graphics = new Graphics();
 
@@ -94,7 +97,7 @@ export class TrackRenderSystem {
     private _textureRenderer: TrackTextureRenderer | null = null;
 
     /** Whether to show elevation gradient on ballast (vs solid color). */
-    private _showElevationGradient: boolean = true;
+    private _showElevationGradient: boolean = false;
 
     /** Current track visual style. */
     private _trackStyle: TrackStyle = 'ballasted';
@@ -373,6 +376,11 @@ export class TrackRenderSystem {
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
+        this._previewRailContainers.forEach(c => {
+            this._worldRenderSystem.removeRail(c);
+            c.destroy({ children: true });
+        });
+        this._previewRailContainers = [];
 
         this._drawableKeys.forEach(key => {
             const container = this._worldRenderSystem.removeDrawable(key);
@@ -1138,6 +1146,7 @@ export class TrackRenderSystem {
         });
 
         this._reindexDrawData();
+        this._applyZoomLod(this._camera.zoomLevel);
     }
 
     /**
@@ -1205,6 +1214,11 @@ export class TrackRenderSystem {
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
+        this._previewRailContainers.forEach(c => {
+            this._worldRenderSystem.removeRail(c);
+            c.destroy({ children: true });
+        });
+        this._previewRailContainers = [];
 
         if (drawDataList == undefined) {
             return;
@@ -1212,21 +1226,52 @@ export class TrackRenderSystem {
 
         drawDataList.forEach(({ drawData, index }, i) => {
             const key = `__preview__${i}`;
-            const segmentsContainer = new Container();
-            const graphics = new Graphics();
-            const arcFanContainer = new Container();
-            const positiveOffsetsGraphics = new Graphics();
-            const negativeOffsetsGraphics = new Graphics();
 
-            const segments = cutBezierCurveIntoEqualSegments(drawData.curve, drawData.elevation, 1);
-
-            graphics.moveTo(segments[0].point.x, segments[0].point.y);
-            for (let i = 1; i < segments.length; i++) {
-                graphics.lineTo(segments[i].point.x, segments[i].point.y);
+            // Stamp current settings so texture builders use the active style.
+            if (drawData.trackStyle === undefined) {
+                drawData.trackStyle = this._trackStyle;
             }
-            graphics.stroke({ color: 0x000000, pixelLine: true });
+            if (drawData.electrified === undefined) {
+                drawData.electrified = this._electrified;
+            }
+            if (drawData.ballastWidth === undefined) {
+                drawData.ballastWidth = this._ballastWidth;
+            }
 
+            const segmentsContainer = new Container();
+
+            // Build textured ballast mesh (same as committed tracks).
+            const ballastNode = new Container();
+            const elevationMeshContainer = new Container();
+            const elevationMesh = this._buildElevationMeshForDrawData(drawData);
+            if (elevationMesh !== null) {
+                elevationMeshContainer.addChild(elevationMesh);
+            }
+            elevationMeshContainer.visible = this._showElevationGradient;
+            ballastNode.addChild(elevationMeshContainer);
+
+            const solidBallastMeshContainer = new Container();
+            const solidBallastMesh = this._buildSolidBallastMeshForDrawData(drawData);
+            if (solidBallastMesh !== null) {
+                solidBallastMeshContainer.addChild(solidBallastMesh);
+            }
+            solidBallastMeshContainer.visible = !this._showElevationGradient;
+            ballastNode.addChild(solidBallastMeshContainer);
+
+            segmentsContainer.addChild(ballastNode);
+
+            // Build textured rail mesh.
+            const railMesh = this._buildRailMeshForDrawData(drawData);
+            if (railMesh !== null) {
+                const railContainer = new Container();
+                railContainer.addChild(railMesh);
+                this._worldRenderSystem.addRail(railContainer);
+                this._previewRailContainers.push(railContainer);
+            }
+
+            // Arc visualization overlay (optional).
             if (this._showPreviewCurveArcs) {
+                const arcFanContainer = new Container();
                 // For straight lines, arc fitting is not meaningful (circle radius -> ∞)
                 // and can produce noisy results. Skip entirely.
                 if (!curveIsNearlyStraight(drawData.curve)) {
@@ -1283,30 +1328,9 @@ export class TrackRenderSystem {
                     arcFanContainer.addChild(labelContainer);
                 }
                 }
+                // Put the fan wedges behind the preview meshes.
+                segmentsContainer.addChildAt(arcFanContainer, 0);
             }
-
-            const positiveOffsets = drawData.positiveOffsets;
-            const negativeOffsets = drawData.negativeOffsets;
-
-            positiveOffsetsGraphics.moveTo(positiveOffsets[0].x, positiveOffsets[0].y);
-            for (let i = 1; i < positiveOffsets.length; i++) {
-                positiveOffsetsGraphics.lineTo(positiveOffsets[i].x, positiveOffsets[i].y);
-            }
-            positiveOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
-
-            negativeOffsetsGraphics.moveTo(negativeOffsets[0].x, negativeOffsets[0].y);
-            for (let i = 1; i < negativeOffsets.length; i++) {
-                negativeOffsetsGraphics.lineTo(negativeOffsets[i].x, negativeOffsets[i].y);
-            }
-            negativeOffsetsGraphics.stroke({ color: 0x000000, pixelLine: true });
-
-            if (this._showPreviewCurveArcs) {
-                // Put the fan wedges behind the preview polyline.
-                segmentsContainer.addChild(arcFanContainer);
-            }
-            segmentsContainer.addChild(graphics);
-            segmentsContainer.addChild(positiveOffsetsGraphics);
-            segmentsContainer.addChild(negativeOffsetsGraphics);
 
             this._worldRenderSystem.addDrawable(key, segmentsContainer);
             this._worldRenderSystem.setDrawableZIndex(key, index);

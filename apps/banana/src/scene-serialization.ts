@@ -6,17 +6,21 @@ import {
   serializeTrainData,
   validateSerializedTrainData,
 } from '@/trains/train-serialization';
+import type { SerializedStationData } from '@/stations/types';
+import { StationManager } from '@/stations/station-manager';
 import type { BananaAppComponents } from '@/utils/init-app';
 
 export type SerializedSceneData = {
   tracks: SerializedTrackData;
   trains: SerializedTrainData;
+  stations?: SerializedStationData;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
   return {
     tracks: app.curveEngine.trackGraph.serialize(),
     trains: serializeTrainData(app.trainManager, app.formationManager, app.carStockManager),
+    stations: app.stationManager.serialize(),
   };
 }
 
@@ -31,6 +35,20 @@ export function deserializeSceneData(app: BananaAppComponents, data: SerializedS
     app.formationManager,
     app.carStockManager,
   );
+
+  // Load stations and rebuild their render visuals
+  if (data.stations) {
+    const restored = StationManager.deserialize(data.stations);
+    // Replace the current station manager's state
+    for (const { id } of app.stationManager.getStations()) {
+      app.stationRenderSystem.removeStation(id);
+      app.stationManager.destroyStation(id);
+    }
+    for (const { id, station } of restored.getStations()) {
+      app.stationManager.createStationWithId(id, station);
+      app.stationRenderSystem.addStation(id);
+    }
+  }
 }
 
 export function validateSerializedSceneData(
@@ -46,6 +64,49 @@ export function validateSerializedSceneData(
   if (!trackRes.valid) return { valid: false, error: `tracks: ${trackRes.error}` };
   const trainRes = validateSerializedTrainData(trains);
   if (!trainRes.valid) return { valid: false, error: `trains: ${trainRes.error}` };
+  // stations is optional for backwards compatibility
+  if (obj.stations !== undefined) {
+    const stationRes = validateSerializedStationData(obj.stations);
+    if (!stationRes.valid) return { valid: false, error: `stations: ${stationRes.error}` };
+  }
+  return { valid: true };
+}
+
+function validateSerializedStationData(
+  data: unknown
+): { valid: true } | { valid: false; error: string } {
+  if (data == null || typeof data !== 'object') {
+    return { valid: false, error: 'Data must be a non-null object' };
+  }
+  const obj = data as Record<string, unknown>;
+  if (!Array.isArray(obj.stations)) {
+    return { valid: false, error: 'Missing or invalid "stations" array' };
+  }
+  for (let i = 0; i < obj.stations.length; i++) {
+    const s = obj.stations[i] as Record<string, unknown>;
+    const prefix = `stations[${i}]`;
+    if (typeof s.id !== 'number') {
+      return { valid: false, error: `${prefix}.id must be a number` };
+    }
+    if (typeof s.name !== 'string') {
+      return { valid: false, error: `${prefix}.name must be a string` };
+    }
+    if (s.position == null || typeof (s.position as Record<string, unknown>).x !== 'number' || typeof (s.position as Record<string, unknown>).y !== 'number') {
+      return { valid: false, error: `${prefix}.position must be {x, y}` };
+    }
+    if (typeof s.elevation !== 'number') {
+      return { valid: false, error: `${prefix}.elevation must be a number` };
+    }
+    if (!Array.isArray(s.platforms)) {
+      return { valid: false, error: `${prefix}.platforms must be an array` };
+    }
+    if (!Array.isArray(s.trackSegments)) {
+      return { valid: false, error: `${prefix}.trackSegments must be a number[]` };
+    }
+    if (!Array.isArray(s.joints)) {
+      return { valid: false, error: `${prefix}.joints must be a number[]` };
+    }
+  }
   return { valid: true };
 }
 

@@ -224,6 +224,22 @@ export class TrainRenderSystem {
     for (const { id } of placed) this._lastTrainIds.add(id);
   }
 
+  /**
+   * Force a one-shot graphics sync without advancing simulation.
+   * Call when trains are added/removed while time is paused.
+   */
+  forceSync(): void {
+    const placed = this._getPlacedTrains();
+
+    this._updatePreviewBogies();
+    this._updatePreviewCars();
+    this._updateActualBogies(placed);
+    this._updateActualCars(placed);
+
+    this._lastTrainIds.clear();
+    for (const { id } of placed) this._lastTrainIds.add(id);
+  }
+
   cleanup(): void {
     for (const [trainId, pool] of this._actualPools) {
       const count = this._activeCounts.get(trainId) ?? 0;

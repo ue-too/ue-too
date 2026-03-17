@@ -35,7 +35,8 @@
       "Bash(bun -e \"import { createCanvas } from 'canvas'; console.log\\('ok'\\)\" 2>&1)",
       "Bash(cd /Users/vincent.yy.chang/dev/ue-too/map/apps/banana && bun run scripts/generate-track-textures.ts 2>&1)",
       "Bash(bun run:*)",
-      "Bash(pkill -f \"generate-track-textures\" 2>&1 || true)"
+      "Bash(pkill -f \"generate-track-textures\" 2>&1 || true)",
+      "Bash(git log:*)"
     ]
   }
 }

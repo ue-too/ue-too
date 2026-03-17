@@ -77,10 +77,10 @@ export function ExportSubmenu({
                     onMouseEnter={clearTimeoutAndShow}
                     onMouseLeave={() => scheduleHide(150)}
                 >
-                    <ToolbarButton tooltip="Export Tracks" onClick={onExportTracks}>
+                    <ToolbarButton tooltip="Export Tracks + Stations" onClick={onExportTracks}>
                         <ExportTrackIcon />
                     </ToolbarButton>
-                    <ToolbarButton tooltip="Import Tracks" onClick={onImportTracks}>
+                    <ToolbarButton tooltip="Import Tracks + Stations" onClick={onImportTracks}>
                         <ImportTrackIcon />
                     </ToolbarButton>
                     <ToolbarButton
@@ -93,13 +93,13 @@ export function ExportSubmenu({
                         <ImportTrainIcon />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip="Export All (tracks + trains)"
+                        tooltip="Export All (tracks + trains + stations)"
                         onClick={onExportAll}
                     >
                         <ExportSceneIcon />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip="Import All (tracks + trains)"
+                        tooltip="Import All (tracks + trains + stations)"
                         onClick={onImportAll}
                     >
                         <ImportSceneIcon />
