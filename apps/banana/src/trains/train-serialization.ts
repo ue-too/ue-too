@@ -40,6 +40,8 @@ export type SerializedPlacedTrain = {
   id: number;
   position: SerializedTrainPosition;
   formationId: string;
+  frontCouplerLocked?: boolean;
+  rearCouplerLocked?: boolean;
 };
 
 /** Full train data for export/import (cars, formations, stock, manager, placed trains). */
@@ -120,13 +122,15 @@ export function serializeTrainData(
   const carStockIds = stockCars.map((e) => e.id);
   const formationManagerIds = managerFormations.map((e) => e.id);
   const placedTrains: SerializedPlacedTrain[] = placed
-    .map(({ id, train }) => {
+    .map(({ id, train }): SerializedPlacedTrain | null => {
       const pos = train.position;
       if (pos === null) return null;
       return {
         id,
         position: serializePosition(pos),
         formationId: train.formation.id,
+        frontCouplerLocked: train.frontCouplerLocked || undefined,
+        rearCouplerLocked: train.rearCouplerLocked || undefined,
       };
     })
     .filter((t): t is SerializedPlacedTrain => t !== null);
@@ -255,6 +259,8 @@ export function deserializeTrainData(
       jointDirectionManager,
       formation
     );
+    train.frontCouplerLocked = pt.frontCouplerLocked ?? false;
+    train.rearCouplerLocked = pt.rearCouplerLocked ?? false;
     trainManager.addTrainWithId(pt.id, train);
   }
 }

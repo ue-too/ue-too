@@ -134,6 +134,24 @@ export class Formation implements TrainUnit {
         return this._children.splice(index, 1)[0];
     }
 
+    /**
+     * Split this formation at the given child index.
+     * Children `[0, atIndex)` stay in this formation;
+     * children `[atIndex, end)` move to a new formation which is returned.
+     *
+     * @param atIndex - Index at which to split. Must be in range `[1, children.length)`.
+     * @returns A new Formation containing the rear portion of children.
+     */
+    split(atIndex: number): Formation {
+        if (atIndex < 1 || atIndex >= this._children.length) {
+            throw new Error(
+                `Split index ${atIndex} out of range [1, ${this._children.length}) for formation with ${this._children.length} children`
+            );
+        }
+        const rearChildren = this._children.splice(atIndex);
+        return new Formation(generateFormationId(), rearChildren, this._depth);
+    }
+
     /** Create a default 4-car formation for backwards compatibility. */
     static createDefault(): Formation {
         return new Formation(generateFormationId(), [
@@ -261,8 +279,27 @@ export class Train {
 
     private _formation: Formation;
 
+    private _frontCouplerLocked: boolean = false;
+    private _rearCouplerLocked: boolean = false;
+
     get formation(): Formation {
         return this._formation;
+    }
+
+    get frontCouplerLocked(): boolean {
+        return this._frontCouplerLocked;
+    }
+
+    set frontCouplerLocked(locked: boolean) {
+        this._frontCouplerLocked = locked;
+    }
+
+    get rearCouplerLocked(): boolean {
+        return this._rearCouplerLocked;
+    }
+
+    set rearCouplerLocked(locked: boolean) {
+        this._rearCouplerLocked = locked;
     }
 
     /** Current head position on the track, or null if not placed. */
@@ -568,6 +605,7 @@ export class Train {
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
         this._formation.switchDirection();
+        [this._frontCouplerLocked, this._rearCouplerLocked] = [this._rearCouplerLocked, this._frontCouplerLocked];
         // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
         this._occupiedJointNumbers = this._occupiedJointNumbers
             .reverse()
@@ -589,6 +627,100 @@ export class Train {
             this._position,
             false
         );
+    }
+
+    /**
+     * Get the position of the train's leading edge (head tip).
+     * Advances from the head bogie position by `edgeToBogie` in the travel direction.
+     */
+    getHeadTipPosition(): TrainPosition | null {
+        if (this._position == null) return null;
+        const edgeDist = this._formation.edgeToBogie;
+        if (edgeDist === 0) return this._position;
+        const result = getPosition(
+            edgeDist,
+            this._position,
+            this._trackGraph,
+            this._jointDirectionManager,
+        );
+        if (result === null || result.stop) return null;
+        return {
+            trackSegment: result.trackSegment,
+            tValue: result.tValue,
+            direction: result.direction,
+            point: result.point,
+        };
+    }
+
+    /**
+     * Get the position of the train's trailing edge (tail tip).
+     * Advances from the last bogie position by `bogieToEdge` in the expand direction.
+     */
+    getTailTipPosition(): TrainPosition | null {
+        const bogiePositions = this.getBogiePositions(false);
+        if (bogiePositions === null || bogiePositions.length === 0) return null;
+        const lastBogie = bogiePositions[bogiePositions.length - 1];
+        const edgeDist = this._formation.bogieToEdge;
+        if (edgeDist === 0) return lastBogie;
+        // Expand direction is opposite to travel direction
+        const expandDirection = flipDirection(this._position!.direction);
+        const result = getPosition(
+            edgeDist,
+            { ...lastBogie, direction: expandDirection },
+            this._trackGraph,
+            this._jointDirectionManager,
+        );
+        if (result === null || result.stop) return null;
+        return {
+            trackSegment: result.trackSegment,
+            tValue: result.tValue,
+            direction: result.direction,
+            point: result.point,
+        };
+    }
+
+    /**
+     * Split this train at the given child index in the formation.
+     * The front portion (children `[0, atChildIndex)`) stays with this train.
+     * Returns the rear formation and the head position for the new rear train.
+     *
+     * @param atChildIndex - Child index at which to split the formation.
+     * @returns The rear formation and its head bogie position, or null if unable to split.
+     */
+    decouple(atChildIndex: number): { rearFormation: Formation; rearHeadPosition: TrainPosition } | null {
+        const bogiePositions = this.getBogiePositions(false);
+        if (bogiePositions === null) return null;
+
+        // Compute the bogiePositions index for the first bogie of child[atChildIndex].
+        // carOffsets = bogieOffsets minus leading edgeToBogie:
+        //   [...child0.bogieOffsets(), gap0-1, ...child1.bogieOffsets(), gap1-2, ...]
+        // bogiePositions[0] = head, bogiePositions[k] = after carOffsets[0..k-1].
+        let carOffsetsIndex = 0;
+        for (let i = 0; i < atChildIndex; i++) {
+            carOffsetsIndex += this._formation.children[i].bogieOffsets().length;
+            if (i < this._formation.children.length - 1) {
+                carOffsetsIndex += 1; // gap between children
+            }
+        }
+
+        const rearHeadBogieIndex = carOffsetsIndex;
+
+        if (rearHeadBogieIndex >= bogiePositions.length) return null;
+        const rearHeadPosition: TrainPosition = {
+            ...bogiePositions[rearHeadBogieIndex],
+            direction: this._position!.direction,
+        };
+
+        // Perform the split on the formation
+        const rearFormation = this._formation.split(atChildIndex);
+
+        // Clear and rebuild occupied data for the shortened front train
+        this._occupiedJointNumbers = [];
+        this._occupiedTrackSegments = [];
+        this._cachedBogiePositions = null;
+        this.getBogiePositions(false);
+
+        return { rearFormation, rearHeadPosition };
     }
 
     /**

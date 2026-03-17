@@ -19,6 +19,7 @@ import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 import { CarImageRegistry } from '@/trains/car-image-registry';
+import { CouplingSystem } from '@/trains/coupling-system';
 import { TimeManager } from '@/time';
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
@@ -46,6 +47,7 @@ export type BananaAppComponents = BaseAppComponents & {
   timeManager: TimeManager;
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
+  couplingSystem: CouplingSystem;
   /** Add a train at the given segment and t. For stress testing. */
   addTrainAtPosition: (
     segmentNumber: number,
@@ -167,6 +169,12 @@ export const initApp = async (
     }
   });
 
+  trainManager.setTrainFactory((position, formation) =>
+    new Train(position, trackGraph, jointDirectionManager, formation)
+  );
+
+  const couplingSystem = new CouplingSystem(trainManager);
+
   const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, baseComponents.observableInputTracker);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;
@@ -182,6 +190,8 @@ export const initApp = async (
 
   timeManager.subscribe((_, deltaTime) => {
     trainRenderSystem.update(deltaTime);
+    const coupled = couplingSystem.update();
+    if (coupled) trainRenderSystem.forceSync();
     debugOverlayRenderSystem.updateFormationLabels();
   });
 
@@ -249,6 +259,7 @@ export const initApp = async (
     timeManager,
     stationManager,
     stationRenderSystem,
+    couplingSystem,
     addTrainAtPosition,
     addStressTestTrains,
     generateProceduralTracks,

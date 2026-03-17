@@ -667,6 +667,7 @@ export function BananaToolbar({
                 (mode === 'train-placement' || placedTrains.length > 0) && (
                     <TrainPanel
                         trainManager={trainManager}
+                        couplingSystem={app!.couplingSystem}
                         onClose={() => setShowTrainPanel(false)}
                     />
                 )}

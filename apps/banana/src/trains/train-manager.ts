@@ -1,5 +1,5 @@
 import { GenericEntityManager } from '@/utils';
-import { Train } from './formation';
+import { Formation, Train, type TrainPosition } from './formation';
 import { Observable, SynchronousObservable } from '@ue-too/board';
 
 export type PlacedTrainEntry = { id: number; train: Train };
@@ -19,10 +19,16 @@ export class TrainManager {
   private _listeners: (() => void)[] = [];
   private _observable: Observable<[number, { type: TrainChangeType }]> = new SynchronousObservable<[number, { type: TrainChangeType }]>();
   private _onBeforeRemove: ((train: Train) => void) | null = null;
+  private _trainFactory: ((position: TrainPosition, formation: Formation) => Train) | null = null;
 
   /** Register a callback invoked before a train is removed. */
   setOnBeforeRemove(callback: (train: Train) => void): void {
     this._onBeforeRemove = callback;
+  }
+
+  /** Register a factory for creating trains from a position and formation. */
+  setTrainFactory(factory: (position: TrainPosition, formation: Formation) => Train): void {
+    this._trainFactory = factory;
   }
 
   /** Current list of placed trains (do not mutate). */
@@ -121,6 +127,73 @@ export class TrainManager {
 
   subscribeToChanges(listener: (id: number, type: TrainChangeType) => void): () => void {
     return this._observable.subscribe((id, { type }) => listener(id, type));
+  }
+
+  /**
+   * Split a train at the given child index, creating a new stationary rear train.
+   * @returns The new rear train's ID, or null if the split failed.
+   */
+  decoupleTrainAt(trainId: number, atChildIndex: number): number | null {
+    const train = this._internalTrainManager.getEntity(trainId);
+    if (!train || !this._trainFactory) return null;
+
+    const result = train.decouple(atChildIndex);
+    if (!result) return null;
+
+    const newTrain = this._trainFactory(result.rearHeadPosition, result.rearFormation);
+    const newId = this.addTrain(newTrain);
+    return newId;
+  }
+
+  /**
+   * Couple two trains together. The absorber retains its identity; the absorbed is removed.
+   * @param absorberId - Train that keeps its ID
+   * @param absorbedId - Train that gets merged in and removed
+   * @param prependToAbsorber - If true, prepend absorbed to absorber's head; otherwise append to tail
+   * @returns true if coupling succeeded
+   */
+  coupleTrains(absorberId: number, absorbedId: number, prependToAbsorber: boolean): boolean {
+    const absorber = this._internalTrainManager.getEntity(absorberId);
+    const absorbed = this._internalTrainManager.getEntity(absorbedId);
+    if (!absorber || !absorbed) return false;
+
+    // Check coupler locks
+    if (prependToAbsorber && absorber.frontCouplerLocked) return false;
+    if (!prependToAbsorber && absorber.rearCouplerLocked) return false;
+
+    // Append/prepend children individually to avoid nesting depth issues
+    const children = [...absorbed.formation.children];
+    if (prependToAbsorber) {
+      // Absorber's head moves to absorbed's head position
+      const absorbedPos = absorbed.position;
+      if (absorbedPos) absorber.setPosition(absorbedPos);
+      for (let i = children.length - 1; i >= 0; i--) {
+        absorber.formation.prepend(children[i]);
+      }
+    } else {
+      for (const child of children) {
+        absorber.formation.append(child);
+      }
+    }
+
+    // Remove absorbed train without returning cars to stock
+    this._removeTrainRaw(absorbedId);
+
+    this._notify();
+    return true;
+  }
+
+  /** Remove a train without invoking _onBeforeRemove (cars stay on track). */
+  private _removeTrainRaw(id: number): void {
+    const entryIndex = this._placedTrains.findIndex((e) => e.id === id);
+    if (entryIndex === -1) return;
+    this._internalTrainManager.destroyEntity(id);
+    this._placedTrains.splice(entryIndex, 1);
+    if (this._selectedIndex === id) {
+      this._selectedIndex =
+        this._placedTrains.length > 0 ? this._placedTrains[0].id : 0;
+    }
+    this._observable.notify(id, { type: 'remove' });
   }
 
   private _notify(): void {
