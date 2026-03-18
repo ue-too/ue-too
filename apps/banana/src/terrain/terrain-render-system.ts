@@ -263,9 +263,7 @@ export class TerrainRenderSystem {
       const threshold = elevationEnum * LEVEL_HEIGHT;
 
       // Skip the lowest band — nothing below it to occlude.
-      // Also skip if threshold <= 0 (below-ground bands don't need terrain occlusion
-      // since terrain at negative heights is unusual).
-      if (threshold <= 0) continue;
+      if (bandIdx === 0) continue;
 
       const mesh = this._buildOcclusionMeshForThreshold(threshold);
       if (mesh) {
