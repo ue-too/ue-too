@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, Crosshair, Settings2, Trash2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -155,6 +156,7 @@ export function StationListPanel({
     onClose,
     onStationChange,
 }: StationListPanelProps) {
+    const { t } = useTranslation();
     const stations = stationManager.getStations();
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editValue, setEditValue] = useState('');
@@ -217,7 +219,7 @@ export function StationListPanel({
 
     return (
         <DraggablePanel
-            title="Stations"
+            title={t('stations')}
             onClose={onClose}
             className="w-64"
         >
@@ -225,7 +227,7 @@ export function StationListPanel({
             <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
                 {stations.length === 0 ? (
                     <span className="text-muted-foreground py-4 text-center text-xs">
-                        No stations
+                        {t('noStations')}
                     </span>
                 ) : (
                     stations.map(({ id, station }) => (
@@ -258,7 +260,7 @@ export function StationListPanel({
                                 <span className="text-muted-foreground text-[10px]">
                                     ({station.position.x.toFixed(1)}, {station.position.y.toFixed(1)})
                                     {' · '}
-                                    {station.platforms.length} platform{station.platforms.length !== 1 ? 's' : ''}
+                                    {t('platform', { count: station.platforms.length })}
                                 </span>
                             </div>
                             <div className="flex shrink-0 gap-0.5">
@@ -267,7 +269,7 @@ export function StationListPanel({
                                         variant="ghost"
                                         size="icon-xs"
                                         onClick={() => setPickingForStation(null)}
-                                        title="Done picking platforms"
+                                        title={t('donePickingPlatforms')}
                                     >
                                         <Check className="size-3" />
                                     </Button>
@@ -276,7 +278,7 @@ export function StationListPanel({
                                         variant="ghost"
                                         size="icon-xs"
                                         onClick={() => setPickingForStation(id)}
-                                        title="Pick platforms to add"
+                                        title={t('pickPlatformsToAdd')}
                                         disabled={pickingForStation !== null}
                                     >
                                         <Settings2 className="size-3" />
@@ -286,7 +288,7 @@ export function StationListPanel({
                                     variant="ghost"
                                     size="icon-xs"
                                     onClick={() => handleLocate(station.position)}
-                                    title="Pan to station"
+                                    title={t('panToStation')}
                                 >
                                     <Crosshair className="size-3" />
                                 </Button>
@@ -294,7 +296,7 @@ export function StationListPanel({
                                     variant="ghost"
                                     size="icon-xs"
                                     onClick={() => handleDelete(id)}
-                                    title="Delete station"
+                                    title={t('deleteStation')}
                                 >
                                     <Trash2 className="size-3" />
                                 </Button>
@@ -310,13 +312,13 @@ export function StationListPanel({
                     <Separator className="my-2" />
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
-                            Nearby platforms
+                            {t('nearbyPlatforms')}
                         </span>
                         <Button
                             variant="ghost"
                             size="icon-xs"
                             onClick={() => setPickingForStation(null)}
-                            title="Cancel"
+                            title={t('cancel')}
                         >
                             <X className="size-3" />
                         </Button>
@@ -324,12 +326,12 @@ export function StationListPanel({
                     <div className="mt-1 flex max-h-40 flex-col gap-1 overflow-y-auto">
                         {nearbyCandidates.length === 0 ? (
                             <span className="text-muted-foreground py-2 text-center text-[10px]">
-                                No nearby platforms from other stations
+                                {t('noNearbyPlatforms')}
                             </span>
                         ) : (
                             nearbyCandidates.map(({ stationId, platform, distance }) => {
                                 const srcStation = stationManager.getStation(stationId);
-                                const srcName = srcStation?.name ?? `Station ${stationId}`;
+                                const srcName = srcStation?.name ?? t('stationFallback', { id: stationId });
                                 return (
                                     <button
                                         key={`${stationId}-${platform.track}-${platform.id}`}
@@ -339,10 +341,10 @@ export function StationListPanel({
                                     >
                                         <div className="flex flex-col">
                                             <span className="text-foreground text-xs">
-                                                Platform {platform.id} — track {platform.track}
+                                                {t('platformTrackInfo', { platformId: platform.id, trackId: platform.track })}
                                             </span>
                                             <span className="text-muted-foreground text-[10px]">
-                                                from {srcName} · {distance.toFixed(1)}m away
+                                                {t('fromStationDistance', { name: srcName, distance: distance.toFixed(1) })}
                                             </span>
                                         </div>
                                     </button>

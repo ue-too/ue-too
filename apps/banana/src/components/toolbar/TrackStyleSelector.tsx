@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import type { TrackStyle } from '@/trains/tracks/types';
 
 type TrackStyleSelectorProps = {
@@ -25,12 +27,13 @@ export function TrackStyleSelector({
     bedWidth,
     onBedWidthChange,
 }: TrackStyleSelectorProps) {
+    const { t } = useTranslation();
     return (
         <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
             <div className="bg-background/80 flex flex-col gap-3 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
                 <div className="flex flex-col gap-2">
                     <span className="text-muted-foreground text-xs font-medium">
-                        Track Style
+                        {t('trackStyle')}
                     </span>
                     <select
                         className="bg-background h-7 rounded-md border px-2 text-xs"
@@ -40,8 +43,8 @@ export function TrackStyleSelector({
                             e.target.blur();
                         }}
                     >
-                        <option value="ballasted">Ballasted</option>
-                        <option value="slab">Slab (Elevated)</option>
+                        <option value="ballasted">{t('ballasted')}</option>
+                        <option value="slab">{t('slabElevated')}</option>
                     </select>
                     <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                         <input
@@ -51,7 +54,7 @@ export function TrackStyleSelector({
                             onClick={() => onElectrifiedChange(!electrified)}
                             className="size-3.5 rounded"
                         />
-                        <span className="text-foreground">Electrified</span>
+                        <span className="text-foreground">{t('electrified')}</span>
                     </label>
                     <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                         <input
@@ -61,12 +64,12 @@ export function TrackStyleSelector({
                             onClick={() => onBedChange(!bed)}
                             className="size-3.5 rounded"
                         />
-                        <span className="text-foreground">Bed</span>
+                        <span className="text-foreground">{t('bed')}</span>
                     </label>
                 </div>
                 <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground text-xs font-medium">
-                        Bed Width
+                        {t('bedWidth')}
                     </span>
                     <input
                         type="range"
@@ -84,7 +87,7 @@ export function TrackStyleSelector({
                 </div>
                 <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground text-xs font-medium">
-                        Snap Buffer
+                        {t('snapBuffer')}
                     </span>
                     <input
                         type="range"

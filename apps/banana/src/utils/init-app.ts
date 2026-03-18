@@ -46,6 +46,8 @@ export type BananaAppComponents = BaseAppComponents & {
   timeManager: TimeManager;
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
+  /** The stats.js DOM element for toggling visibility. */
+  statsDom: HTMLDivElement;
   /** Add a train at the given segment and t. For stress testing. */
   addTrainAtPosition: (
     segmentNumber: number,
@@ -75,7 +77,7 @@ export const initApp = async (
   const stats = new Stats();
   stats.showPanel(0); // 0: FPS, 1: MS, 2: MB
   stats.dom.style.position = 'fixed';
-  stats.dom.style.top = '0';
+  stats.dom.style.top = '4rem';
   stats.dom.style.right = '0';
   stats.dom.style.left = 'auto';
   stats.dom.style.zIndex = '10000';
@@ -249,6 +251,7 @@ export const initApp = async (
     timeManager,
     stationManager,
     stationRenderSystem,
+    statsDom: stats.dom,
     addTrainAtPosition,
     addStressTestTrains,
     generateProceduralTracks,

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { BulldozerIcon } from '@/assets/icons/bulldozer';
 import { TOOLBAR_LEFT } from '@/components/toolbar/types';
 import { cn } from '@/lib/utils';
@@ -13,6 +15,7 @@ export function LayoutDeletionToolbar({
     isDeletionMode,
     onToggle,
 }: LayoutDeletionToolbarProps) {
+    const { t } = useTranslation();
     return (
         <div
             className={cn(
@@ -23,7 +26,7 @@ export function LayoutDeletionToolbar({
             <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                 <ToolbarButton
                     tooltip={
-                        isDeletionMode ? 'End Deletion' : 'Delete Track'
+                        isDeletionMode ? t('endDeletion') : t('deleteTrack')
                     }
                     active={isDeletionMode}
                     destructive={isDeletionMode}

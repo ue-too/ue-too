@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Point } from '@ue-too/math';
 
 import { Button } from '@/components/ui/button';
@@ -71,7 +72,7 @@ type TrainEditorExport = {
     };
 };
 
-function uploadJson(onJson: (parsed: unknown) => void): void {
+function uploadJson(onJson: (parsed: unknown) => void, onError?: (error: string) => void): void {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';
@@ -84,7 +85,9 @@ function uploadJson(onJson: (parsed: unknown) => void): void {
                 const parsed = JSON.parse(reader.result as string);
                 onJson(parsed);
             } catch (e) {
-                alert(`Failed to parse JSON: ${(e as Error).message}`);
+                if (onError) {
+                    onError((e as Error).message);
+                }
             }
         };
         reader.readAsText(file);
@@ -117,6 +120,7 @@ function uploadImage(onLoad: (src: string, width: number, height: number) => voi
 }
 
 export function TrainEditorToolbar() {
+    const { t } = useTranslation();
     const app = useTrainEditorApp();
     const [mode, setMode] = useState<TrainEditorMode>('idle');
 
@@ -180,7 +184,7 @@ export function TrainEditorToolbar() {
         if (!app) return;
         const def = app.bogieEditorEngine.exportCarDefinition();
         if (!def) {
-            alert('Need at least 2 bogies to export.');
+            alert(t('needAtLeast2Bogies'));
             return;
         }
         const image = app.imageEditorEngine.getImage();
@@ -206,7 +210,7 @@ export function TrainEditorToolbar() {
         uploadJson(parsed => {
             const data = parsed as Partial<TrainEditorExport>;
             if (!data.bogieOffsets || !Array.isArray(data.bogieOffsets)) {
-                alert('Invalid file: missing bogieOffsets.');
+                alert(t('invalidFileMissingBogieOffsets'));
                 return;
             }
             // Clear existing bogies
@@ -233,8 +237,8 @@ export function TrainEditorToolbar() {
                 // Notify render system of the restored position
                 app.imageEditorEngine.notifyChange();
             }
-        });
-    }, [app]);
+        }, (error) => alert(t('failedToParseJson', { error })));
+    }, [app, t]);
 
     if (!app) return null;
 
@@ -251,7 +255,7 @@ export function TrainEditorToolbar() {
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     {/* Edit bogies */}
                     <ToolbarButton
-                        tooltip={mode === 'edit-bogie' ? 'End Edit' : 'Edit Bogies'}
+                        tooltip={mode === 'edit-bogie' ? t('endEdit') : t('editBogies')}
                         active={mode === 'edit-bogie'}
                         onClick={handleEditBogieToggle}
                     >
@@ -260,7 +264,7 @@ export function TrainEditorToolbar() {
 
                     {/* Add bogie */}
                     <ToolbarButton
-                        tooltip={mode === 'add-bogie' ? 'End Add' : 'Add Bogie'}
+                        tooltip={mode === 'add-bogie' ? t('endAdd') : t('addBogie')}
                         active={mode === 'add-bogie'}
                         onClick={handleAddBogieToggle}
                     >
@@ -271,7 +275,7 @@ export function TrainEditorToolbar() {
 
                     {/* Import image */}
                     <ToolbarButton
-                        tooltip="Import Image"
+                        tooltip={t('importImage')}
                         onClick={handleImportImage}
                     >
                         <Image />
@@ -279,7 +283,7 @@ export function TrainEditorToolbar() {
 
                     {/* Edit image */}
                     <ToolbarButton
-                        tooltip={mode === 'edit-image' ? 'End Image Edit' : 'Edit Image'}
+                        tooltip={mode === 'edit-image' ? t('endImageEdit') : t('editImage')}
                         active={mode === 'edit-image'}
                         disabled={!hasImage && mode !== 'edit-image'}
                         onClick={handleEditImageToggle}
@@ -291,7 +295,7 @@ export function TrainEditorToolbar() {
 
                     {/* Export */}
                     <ToolbarButton
-                        tooltip="Export Car Definition"
+                        tooltip={t('exportCarDefinition')}
                         disabled={!hasBogies}
                         onClick={handleExport}
                     >
@@ -300,7 +304,7 @@ export function TrainEditorToolbar() {
 
                     {/* Import */}
                     <ToolbarButton
-                        tooltip="Import Car Definition"
+                        tooltip={t('importCarDefinition')}
                         onClick={handleImport}
                     >
                         <Upload />

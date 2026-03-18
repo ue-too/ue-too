@@ -1,6 +1,8 @@
 import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+
+import '@/i18n';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
 import { Toaster } from '@/components/ui/sonner';
