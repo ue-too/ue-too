@@ -163,6 +163,7 @@ export function BananaToolbar({
     useEffect(() => {
         if (!app) return;
         app.trackRenderSystem.bed = bed;
+        app.curveEngine.trackGraph.bedEnabled = bed;
     }, [app, bed]);
 
     useEffect(() => {

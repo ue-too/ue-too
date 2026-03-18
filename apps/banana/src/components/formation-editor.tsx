@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Layers, Plus, Trash2, TrainFront } from 'lucide-react';
+import { ChevronDown, ChevronUp, Layers, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -58,6 +58,7 @@ export function FormationEditor({
         .getPlacedTrains()
         .map((entry, index) => ({
             trainIndex: index + 1,
+            trainId: entry.id,
             formation: entry.train.formation,
         }));
 
@@ -155,7 +156,7 @@ export function FormationEditor({
                             <TrainFront className="size-3" />
                             On track
                         </span>
-                        {placedFormations.map(({ trainIndex, formation }) => {
+                        {placedFormations.map(({ trainIndex, trainId, formation }) => {
                             const key = `placed-${trainIndex}`;
                             return (
                                 <FormationCard
@@ -176,6 +177,18 @@ export function FormationEditor({
                                     onAppendCar={() => {}}
                                     onPrependCar={() => {}}
                                     onRemoveChild={() => {}}
+                                    onDecouple={
+                                        formation.flatCars().length > 1
+                                            ? (headCarIndex, tailCarIndex) => {
+                                                trainManager.decoupleTrainAtCar(
+                                                    trainId,
+                                                    headCarIndex,
+                                                    tailCarIndex,
+                                                    'head',
+                                                );
+                                            }
+                                            : undefined
+                                    }
                                 />
                             );
                         })}
@@ -243,6 +256,8 @@ type FormationCardProps = {
     onAppendCar: (carId: string) => void;
     onPrependCar: (carId: string) => void;
     onRemoveChild: (childIndex: number) => void;
+    /** When set, decouple buttons appear between children. Args: (headCarIndex, tailCarIndex). */
+    onDecouple?: (headCarIndex: number, tailCarIndex: number) => void;
 };
 
 function FormationCard({
@@ -258,9 +273,11 @@ function FormationCard({
     onAppendCar,
     onPrependCar,
     onRemoveChild,
+    onDecouple,
 }: FormationCardProps) {
     const cars = formation.flatCars();
-    const children = formation.children;
+    // Use operational order when decouple is available so indices match flatCars()
+    const children = onDecouple ? formation.children : formation.originalChildren;
     const hasNestedFormations = children.some(isNestedFormation);
 
     return (
@@ -322,41 +339,59 @@ function FormationCard({
                     <div className="flex flex-col gap-0.5">
                         {children.map((child, index) => {
                             const isNested = isNestedFormation(child);
+                            // Compute flat car index at the boundary after this child
+                            let flatCarOffset = 0;
+                            for (let i = 0; i <= index; i++) {
+                                flatCarOffset += children[i].flatCars().length;
+                            }
+                            const headCarIndex = flatCarOffset - 1;
+                            const tailCarIndex = flatCarOffset;
                             return (
-                                <div
-                                    key={child.id}
-                                    className="bg-background/60 flex items-center justify-between rounded px-2 py-1"
-                                >
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-muted-foreground text-[10px] font-mono w-4 text-center">
-                                            {index + 1}
-                                        </span>
-                                        <span className="text-foreground text-[11px] font-mono">
-                                            {child.id}
-                                        </span>
-                                        {isNested && (
-                                            <span
-                                                className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
-                                                title="Nested formation"
-                                            >
-                                                {child.flatCars().length} car
-                                                {child.flatCars().length !== 1
-                                                    ? 's'
-                                                    : ''}
+                                <div key={child.id}>
+                                    <div
+                                        className="bg-background/60 flex items-center justify-between rounded px-2 py-1"
+                                    >
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-muted-foreground text-[10px] font-mono w-4 text-center">
+                                                {index + 1}
                                             </span>
+                                            <span className="text-foreground text-[11px] font-mono">
+                                                {child.id}
+                                            </span>
+                                            {isNested && (
+                                                <span
+                                                    className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
+                                                    title="Nested formation"
+                                                >
+                                                    {child.flatCars().length} car
+                                                    {child.flatCars().length !== 1
+                                                        ? 's'
+                                                        : ''}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {!readOnly && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-xs"
+                                                disabled={children.length <= 1}
+                                                onClick={() =>
+                                                    onRemoveChild(index)
+                                                }
+                                            >
+                                                <Trash2 className="size-2.5" />
+                                            </Button>
                                         )}
                                     </div>
-                                    {!readOnly && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-xs"
-                                            disabled={children.length <= 1}
-                                            onClick={() =>
-                                                onRemoveChild(index)
-                                            }
+                                    {onDecouple && index < children.length - 1 && (
+                                        <button
+                                            className="group flex w-full items-center gap-1 py-0.5 px-2"
+                                            onClick={() => onDecouple(headCarIndex, tailCarIndex)}
                                         >
-                                            <Trash2 className="size-2.5" />
-                                        </Button>
+                                            <div className="bg-border group-hover:bg-destructive/50 h-px flex-1 transition-colors" />
+                                            <Scissors className="text-muted-foreground group-hover:text-destructive size-2.5 transition-colors" />
+                                            <div className="bg-border group-hover:bg-destructive/50 h-px flex-1 transition-colors" />
+                                        </button>
                                     )}
                                 </div>
                             );

@@ -50,6 +50,8 @@ export class TrackCurveManager {
 
     /** Total width of the gravel bed foundation for newly created tracks. Used for snapping when bed is enabled. */
     private _bedWidth: number = 3;
+    /** Whether the bed layer is enabled (affects snapping distance). */
+    private _bedEnabled: boolean = false;
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
@@ -79,6 +81,16 @@ export class TrackCurveManager {
     /** Set the bed width for newly created tracks (affects snapping). */
     set bedWidth(value: number) {
         this._bedWidth = Math.max(1, value);
+    }
+
+    /** Whether the bed layer is enabled for snapping. */
+    get bedEnabled(): boolean {
+        return this._bedEnabled;
+    }
+
+    /** Toggle bed layer for snapping. When off, snapping uses gauge only. */
+    set bedEnabled(value: boolean) {
+        this._bedEnabled = value;
     }
 
     get persistedDrawData(): (TrackSegmentDrawData & {
@@ -247,7 +259,7 @@ export class TrackCurveManager {
                     res.projection
                 );
                 const existingWidth = trackSegment.bedWidth ?? trackSegment.gauge;
-                const newWidth = this._bedWidth;
+                const newWidth = this._bedEnabled ? this._bedWidth : trackSegment.gauge;
                 const maxSnapDistance = existingWidth / 2 + newWidth / 2 + this._projectionBuffer;
                 if (
                     distance < minDistance &&

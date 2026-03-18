@@ -20,6 +20,15 @@ import { Car, TrainUnit, generateCarId, generateFormationId } from './cars';
 const MAX_FORMATION_DEPTH = 3;
 
 /**
+ * If `units` has more than one element, wrap them in a new Formation
+ * inheriting the depth of `original`. Otherwise return as-is.
+ */
+function wrapIfMultiple(units: TrainUnit[], original: Formation): TrainUnit[] {
+    if (units.length <= 1) return units;
+    return [new Formation(generateFormationId(), units, original.depth)];
+}
+
+/**
  * Composite node in the train unit hierarchy.
  * A Formation holds an ordered list of TrainUnit children (Cars or nested Formations).
  * Position is always determined from the head (first child) outward.
@@ -28,8 +37,14 @@ export class Formation implements TrainUnit {
 
     readonly id: string;
     private _children: TrainUnit[];
+    /** Stable insertion-order list for UI display. Not affected by switchDirection. */
+    private _originalChildren: TrainUnit[];
     private _flipped: boolean = false;
     private _depth: number;
+
+    private _bogieOffsetsCache: number[] | null = null;
+    private _flatCarsCache: readonly Car[] | null = null;
+    private _flatCarsWithPathCache: readonly { car: Car; path: string[] }[] | null = null;
 
     constructor(id: string, children: TrainUnit[], depth: number = 1) {
         if (depth > MAX_FORMATION_DEPTH) {
@@ -40,6 +55,7 @@ export class Formation implements TrainUnit {
         }
         this.id = id;
         this._children = children;
+        this._originalChildren = [...children];
         this._depth = depth;
     }
 
@@ -59,8 +75,14 @@ export class Formation implements TrainUnit {
         return this._depth;
     }
 
+    /** Operational children order (affected by switchDirection). */
     get children(): readonly TrainUnit[] {
         return this._children;
+    }
+
+    /** Stable insertion-order children list for UI display. Not affected by switchDirection. */
+    get originalChildren(): readonly TrainUnit[] {
+        return this._originalChildren;
     }
 
     /**
@@ -70,6 +92,7 @@ export class Formation implements TrainUnit {
      * and inter-child gaps (prevChild.bogieToEdge + nextChild.edgeToBogie).
      */
     bogieOffsets(): number[] {
+        if (this._bogieOffsetsCache !== null) return this._bogieOffsetsCache;
         const res: number[] = [];
         for (let i = 0; i < this._children.length; i++) {
             const child = this._children[i];
@@ -90,16 +113,31 @@ export class Formation implements TrainUnit {
                 }
             }
         }
+        this._bogieOffsetsCache = res;
         return res;
     }
 
     flatCars(): readonly Car[] {
+        if (this._flatCarsCache !== null) return this._flatCarsCache;
         const result: Car[] = [];
         for (const child of this._children) {
             for (const car of child.flatCars()) {
                 result.push(car);
             }
         }
+        this._flatCarsCache = result;
+        return result;
+    }
+
+    _flatCars(): readonly { car: Car, path: string[] }[] {
+        if (this._flatCarsWithPathCache !== null) return this._flatCarsWithPathCache;
+        const result: { car: Car, path: string[] }[] = [];
+        for (const child of this._children) {
+            for (const entry of child._flatCars()) {
+                result.push({ car: entry.car, path: [...entry.path, this.id] });
+            }
+        }
+        this._flatCarsWithPathCache = result;
         return result;
     }
 
@@ -109,18 +147,187 @@ export class Formation implements TrainUnit {
             child.switchDirection();
         }
         this._flipped = !this._flipped;
+        this._invalidateCache();
     }
 
     /** Couple a unit to the tail of this formation. */
     append(unit: TrainUnit): void {
         this._validateDepth(unit);
         this._children.push(unit);
+        this._originalChildren.push(unit);
+        this._invalidateCache();
     }
 
     /** Couple a unit to the head of this formation. */
     prepend(unit: TrainUnit): void {
         this._validateDepth(unit);
         this._children.unshift(unit);
+        this._originalChildren.unshift(unit);
+        this._invalidateCache();
+    }
+
+    /**
+     * Check whether decoupling would break any child formations.
+     *
+     * The split produces a head portion [0..headCarIndex] and a tail portion
+     * [tailCarIndex..end]. Any child formation that has cars on both sides of
+     * a split point would be broken.
+     *
+     * @param headCarIndex - Index of the last car in the head portion.
+     * @param tailCarIndex - Index of the first car in the tail portion.
+     * @returns An object indicating whether child formations would break, and if so which ones.
+     */
+    wouldBreakFormations(headCarIndex: number, tailCarIndex: number): { breaks: false } | { breaks: true; formationIds: string[] } {
+        const cars = this._flatCars();
+        if (headCarIndex < 0 || headCarIndex >= cars.length) {
+            throw new Error(`headCarIndex ${headCarIndex} out of bounds for formation with ${cars.length} cars`);
+        }
+        if (tailCarIndex < 0 || tailCarIndex >= cars.length) {
+            throw new Error(`tailCarIndex ${tailCarIndex} out of bounds for formation with ${cars.length} cars`);
+        }
+        if (headCarIndex >= tailCarIndex) {
+            throw new Error(`headCarIndex (${headCarIndex}) must be less than tailCarIndex (${tailCarIndex})`);
+        }
+        const broken = new Set<string>();
+
+        // Check the head split: between car[headCarIndex] and car[headCarIndex + 1]
+        const headLeftPath = new Set(cars[headCarIndex].path);
+        for (const id of cars[headCarIndex + 1].path) {
+            if (id !== this.id && headLeftPath.has(id)) {
+                broken.add(id);
+            }
+        }
+
+        // Check the tail split: between car[tailCarIndex - 1] and car[tailCarIndex]
+        if (tailCarIndex - 1 > headCarIndex) {
+            const tailLeftPath = new Set(cars[tailCarIndex - 1].path);
+            for (const id of cars[tailCarIndex].path) {
+                if (id !== this.id && tailLeftPath.has(id)) {
+                    broken.add(id);
+                }
+            }
+        }
+
+        return broken.size === 0
+            ? { breaks: false }
+            : { breaks: true, formationIds: [...broken] };
+    }
+
+    /**
+     * Decouple this formation at the given car indices.
+     *
+     * The `inherit` parameter determines which side this formation becomes:
+     * - `'head'`: this formation is mutated to contain cars [0..headCarIndex],
+     *   and a **new** Formation for [tailCarIndex..end] is returned.
+     * - `'tail'`: this formation is mutated to contain cars [tailCarIndex..end],
+     *   and a **new** Formation for [0..headCarIndex] is returned.
+     *
+     * Child formations that span a split point are recursively split.
+     * When a broken child has only one unit remaining, it is unwrapped.
+     *
+     * @param headCarIndex - Index of the last car in the head portion (in the flattened car list).
+     * @param tailCarIndex - Index of the first car in the tail portion.
+     * @param inherit - Which side this formation keeps.
+     * @returns A new Formation for the non-inherited side.
+     */
+    decoupleAtCar(headCarIndex: number, tailCarIndex: number, inherit: 'head' | 'tail'): Formation {
+        const { head, tail } = this._splitUnits(headCarIndex, tailCarIndex);
+
+        const kept = inherit === 'head' ? head : tail;
+        const other = inherit === 'head' ? tail : head;
+
+        // Unwrap inherited side: if it's a single Formation child, adopt its children
+        if (kept.length === 1 && kept[0] instanceof Formation) {
+            this._children = [...(kept[0] as Formation)._children];
+        } else {
+            this._children = kept;
+        }
+        this._originalChildren = [...this._children];
+        this._invalidateCache();
+
+        // Unwrap other side: if it's a single Formation child, return it directly
+        if (other.length === 1 && other[0] instanceof Formation) {
+            return other[0] as Formation;
+        }
+
+        return new Formation(generateFormationId(), other, this._depth);
+    }
+
+    /**
+     * Compute the head and tail unit arrays for a split without mutating this formation.
+     */
+    private _splitUnits(headCarIndex: number, tailCarIndex: number): { head: TrainUnit[]; tail: TrainUnit[] } {
+        const totalCars = this.flatCars().length;
+        if (headCarIndex < 0 || headCarIndex >= totalCars) {
+            throw new Error(`headCarIndex ${headCarIndex} out of bounds for formation with ${totalCars} cars`);
+        }
+        if (tailCarIndex < 0 || tailCarIndex >= totalCars) {
+            throw new Error(`tailCarIndex ${tailCarIndex} out of bounds for formation with ${totalCars} cars`);
+        }
+        if (headCarIndex >= tailCarIndex) {
+            throw new Error(`headCarIndex (${headCarIndex}) must be less than tailCarIndex (${tailCarIndex})`);
+        }
+
+        const head: TrainUnit[] = [];
+        const tail: TrainUnit[] = [];
+        let flatOffset = 0;
+
+        for (const child of this._children) {
+            const childCarCount = child.flatCars().length;
+            const childStart = flatOffset;
+            const childEnd = flatOffset + childCarCount - 1;
+            flatOffset += childCarCount;
+
+            // Entirely in head portion
+            if (childEnd <= headCarIndex) {
+                head.push(child);
+                continue;
+            }
+            // Entirely in tail portion
+            if (childStart >= tailCarIndex) {
+                tail.push(child);
+                continue;
+            }
+            // Entirely in the discarded middle
+            if (childStart > headCarIndex && childEnd < tailCarIndex) {
+                continue;
+            }
+
+            // Child spans a split point — must be a Formation to contain multiple cars
+            if (!(child instanceof Formation)) {
+                // Single car can only be in one region; already handled above
+                continue;
+            }
+
+            const localHeadIdx = headCarIndex - childStart;
+            const localTailIdx = tailCarIndex - childStart;
+
+            // Child spans both split points
+            if (childStart <= headCarIndex && childEnd >= tailCarIndex) {
+                const { head: childHead, tail: childTail } = child._splitUnits(localHeadIdx, localTailIdx);
+                head.push(...wrapIfMultiple(childHead, child));
+                tail.push(...wrapIfMultiple(childTail, child));
+                continue;
+            }
+
+            // Child spans only the head split (childStart <= headCarIndex < childEnd < tailCarIndex)
+            if (childStart <= headCarIndex && childEnd < tailCarIndex) {
+                const localSplit = localHeadIdx;
+                const { head: childHead } = child._splitUnits(localSplit, localSplit + 1);
+                head.push(...wrapIfMultiple(childHead, child));
+                continue;
+            }
+
+            // Child spans only the tail split (headCarIndex < childStart < tailCarIndex <= childEnd)
+            if (childStart < tailCarIndex && childEnd >= tailCarIndex) {
+                const localSplit = localTailIdx;
+                const { tail: childTail } = child._splitUnits(localSplit - 1, localSplit);
+                tail.push(...wrapIfMultiple(childTail, child));
+                continue;
+            }
+        }
+
+        return { head, tail };
     }
 
     /** Decouple and return the child at the given index. */
@@ -131,7 +338,13 @@ export class Formation implements TrainUnit {
         if (this._children.length <= 1) {
             throw new Error('Cannot remove the last child from a formation');
         }
-        return this._children.splice(index, 1)[0];
+        const removed = this._children.splice(index, 1)[0];
+        const origIndex = this._originalChildren.indexOf(removed);
+        if (origIndex >= 0) {
+            this._originalChildren.splice(origIndex, 1);
+        }
+        this._invalidateCache();
+        return removed;
     }
 
     /** Create a default 4-car formation for backwards compatibility. */
@@ -142,6 +355,12 @@ export class Formation implements TrainUnit {
             new Car(generateCarId(), [20], 2.5, 2.5),
             new Car(generateCarId(), [20], 2.5, 2.5),
         ]);
+    }
+
+    private _invalidateCache(): void {
+        this._bogieOffsetsCache = null;
+        this._flatCarsCache = null;
+        this._flatCarsWithPathCache = null;
     }
 
     private _validateDepth(unit: TrainUnit): void {
@@ -275,9 +494,7 @@ export class Train {
     }
 
     get carOffsets(): number[] {
-        const res = this._formation.bogieOffsets();
-        res.shift();
-        return res;
+        return this._formation.bogieOffsets().slice(1);
     }
 
     constructor(
@@ -589,6 +806,79 @@ export class Train {
             this._position,
             false
         );
+    }
+
+    /**
+     * Decouple this train at the given car indices, splitting the formation
+     * and creating a new Train for the detached portion.
+     *
+     * @param headCarIndex - Index of the last car in the head portion (in the flattened car list).
+     * @param tailCarIndex - Index of the first car in the tail portion.
+     * @param inherit - Which side this train keeps ('head' or 'tail').
+     * @returns A new Train holding the non-inherited portion.
+     */
+    decoupleAtCar(
+        headCarIndex: number,
+        tailCarIndex: number,
+        inherit: 'head' | 'tail',
+    ): Train {
+        // Capture bogie positions BEFORE the formation split
+        const originalFlatCars = this._formation.flatCars();
+        const bogiePositions = this._position !== null
+            ? this.getBogiePositions(false)
+            : null;
+
+        // Split the formation (mutates this._formation)
+        const otherFormation = this._formation.decoupleAtCar(
+            headCarIndex, tailCarIndex, inherit
+        );
+
+        // Calculate position for the tail portion's head bogie
+        let selfPosition = this._position;
+        let otherPosition: TrainPosition | null = null;
+
+        if (bogiePositions !== null && this._position !== null) {
+            // Count bogies for cars before tailCarIndex to find the tail's first bogie
+            let tailBogieIndex = 0;
+            for (let i = 0; i < tailCarIndex; i++) {
+                tailBogieIndex += originalFlatCars[i].bogieOffsets().length + 1;
+            }
+
+            const tailBogiePosition = bogiePositions[tailBogieIndex];
+            const tailHeadPosition: TrainPosition = {
+                ...tailBogiePosition,
+                // Bogies are expanded backward; flip to get forward direction
+                direction: flipDirection(tailBogiePosition.direction),
+            };
+
+            if (inherit === 'head') {
+                // Self keeps head — position unchanged; new train gets tail position
+                otherPosition = tailHeadPosition;
+            } else {
+                // Self keeps tail — adopt tail position; new train gets original head
+                selfPosition = tailHeadPosition;
+                otherPosition = this._position;
+            }
+        }
+
+        // Reset self state
+        this._position = selfPosition;
+        this._speed = 0;
+        this._acceleration = 0;
+        this._throttle = 'N';
+        this._cachedBogiePositions = null;
+        this._occupiedJointNumbers = [];
+        this._occupiedTrackSegments = [];
+
+        // Create new train for the other portion
+        const newTrain = new Train(
+            otherPosition,
+            this._trackGraph,
+            this._jointDirectionManager,
+            otherFormation,
+        );
+
+        return newTrain;
     }
 
     /**

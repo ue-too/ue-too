@@ -1224,6 +1224,14 @@ export class TrackGraph {
         this._trackCurveManager.bedWidth = value;
     }
 
+    get bedEnabled(): boolean {
+        return this._trackCurveManager.bedEnabled;
+    }
+
+    set bedEnabled(value: boolean) {
+        this._trackCurveManager.bedEnabled = value;
+    }
+
     /**
      * Serializes the entire track graph (joints + segments) into a
      * JSON-safe object suitable for `JSON.stringify`.
