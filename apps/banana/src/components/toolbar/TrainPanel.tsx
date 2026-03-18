@@ -1,4 +1,5 @@
 import { ArrowLeftRight, Gauge, Pause, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
@@ -13,13 +14,14 @@ type TrainPanelProps = {
 };
 
 export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
+    const { t } = useTranslation();
     const placedTrains = trainManager.getPlacedTrains();
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
     return (
         <DraggablePanel
-            title="Trains"
+            title={t('trains')}
             onClose={onClose}
             className="w-56"
         >
@@ -28,7 +30,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                 {placedTrains.length > 0 && (
                     <div className="flex flex-col gap-1">
                         <span className="text-muted-foreground text-xs font-medium">
-                            Placed trains
+                            {t('placedTrains')}
                         </span>
                         <div className="flex flex-col gap-1">
                             {placedTrains.map((entry, index) => {
@@ -65,8 +67,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                                             : 'text-muted-foreground'
                                                     }
                                                 >
-                                                    {carCount} car
-                                                    {carCount !== 1 ? 's' : ''}
+                                                    {t('car', { count: carCount })}
                                                 </span>
                                             </div>
                                         </div>
@@ -80,11 +81,11 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                 {placedTrains.length > 0 && (
                     <div className="flex flex-col gap-1">
                         <span className="text-muted-foreground text-xs font-medium">
-                            Controls
+                            {t('controls')}
                         </span>
                         <div className="flex flex-wrap gap-1">
                             <ToolbarButton
-                                tooltip="Throttle P5"
+                                tooltip={t('throttleP5')}
                                 disabled={!selectedTrain}
                                 onClick={() =>
                                     selectedTrain?.setThrottleStep('p5')
@@ -93,7 +94,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                 <Gauge />
                             </ToolbarButton>
                             <ToolbarButton
-                                tooltip="Neutral"
+                                tooltip={t('neutral')}
                                 disabled={!selectedTrain}
                                 onClick={() =>
                                     selectedTrain?.setThrottleStep('N')
@@ -102,7 +103,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                 <Pause />
                             </ToolbarButton>
                             <ToolbarButton
-                                tooltip="Switch Direction"
+                                tooltip={t('switchDirection')}
                                 disabled={!selectedTrain}
                                 onClick={() =>
                                     selectedTrain?.switchDirection()
@@ -111,7 +112,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                 <ArrowLeftRight />
                             </ToolbarButton>
                             <ToolbarButton
-                                tooltip="Remove Selected Train"
+                                tooltip={t('removeSelectedTrain')}
                                 destructive
                                 onClick={() =>
                                     trainManager.removeSelectedTrain()

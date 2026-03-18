@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Layers, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -28,6 +29,7 @@ export function FormationEditor({
     trainManager,
     onClose,
 }: FormationEditorProps) {
+    const { t } = useTranslation();
     const [version, setVersion] = useState(0);
     /** For unplaced: formation id. For placed: `placed-${trainIndex}` */
     const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -130,7 +132,7 @@ export function FormationEditor({
 
     return (
         <DraggablePanel
-            title="Formations"
+            title={t('formations')}
             onClose={onClose}
             className="w-72"
             defaultPosition={{
@@ -154,7 +156,7 @@ export function FormationEditor({
                     <div className="flex flex-col gap-1.5">
                         <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
                             <TrainFront className="size-3" />
-                            On track
+                            {t('onTrack')}
                         </span>
                         {placedFormations.map(({ trainIndex, trainId, formation }) => {
                             const key = `placed-${trainIndex}`;
@@ -199,14 +201,14 @@ export function FormationEditor({
                 <div className="flex flex-col gap-1.5">
                     <span className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider">
                         <Layers className="size-3" />
-                        In depot
+                        {t('inDepot')}
                     </span>
                     {unplacedFormations.length === 0 ? (
                         <span className="text-muted-foreground block py-2 text-center text-xs">
-                            No formations in depot.
+                            {t('noFormationsInDepot')}
                             {availableCars.length > 0
-                                ? ' Click + to create one.'
-                                : ' Add cars to the depot first.'}
+                                ? ` ${t('clickPlusToCreate')}`
+                                : ` ${t('addCarsToDepotFirst')}`}
                         </span>
                     ) : (
                         unplacedFormations.map(({ id, formation }) => (
@@ -275,6 +277,7 @@ function FormationCard({
     onRemoveChild,
     onDecouple,
 }: FormationCardProps) {
+    const { t } = useTranslation();
     const cars = formation.flatCars();
     // Use operational order when decouple is available so indices match flatCars()
     const children = onDecouple ? formation.children : formation.originalChildren;
@@ -295,21 +298,21 @@ function FormationCard({
                     )}
                     {trainLabel !== undefined && (
                         <span className="text-muted-foreground text-[10px]">
-                            Train {trainLabel}
+                            {t('trainLabel', { number: trainLabel })}
                         </span>
                     )}
                     <span className="text-foreground text-xs font-mono">
                         {formation.id}
                     </span>
                     <span className="text-muted-foreground text-[10px]">
-                        ({cars.length} car{cars.length !== 1 ? 's' : ''})
+                        ({t('car', { count: cars.length })})
                     </span>
                     {hasNestedFormations && (
                         <span
                             className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
-                            title="Contains nested formations"
+                            title={t('containsNestedFormations')}
                         >
-                            nested
+                            {t('nested')}
                         </span>
                     )}
                 </div>
@@ -334,7 +337,7 @@ function FormationCard({
 
                     {/* Car composition list */}
                     <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
-                        Composition
+                        {t('composition')}
                     </span>
                     <div className="flex flex-col gap-0.5">
                         {children.map((child, index) => {
@@ -361,12 +364,9 @@ function FormationCard({
                                             {isNested && (
                                                 <span
                                                     className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
-                                                    title="Nested formation"
+                                                    title={t('nestedFormation')}
                                                 >
-                                                    {child.flatCars().length} car
-                                                    {child.flatCars().length !== 1
-                                                        ? 's'
-                                                        : ''}
+                                                    {t('car', { count: child.flatCars().length })}
                                                 </span>
                                             )}
                                         </div>
@@ -403,7 +403,7 @@ function FormationCard({
                         <>
                             <Separator />
                             <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
-                                Add from stock
+                                {t('addFromStock')}
                             </span>
                             <div className="flex flex-col gap-0.5">
                                 {availableCars.map(entry => (

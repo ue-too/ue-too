@@ -1,4 +1,5 @@
 import { Sun } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
     Tooltip,
@@ -12,6 +13,7 @@ type SunAngleControlProps = {
 };
 
 export function SunAngleControl({ value, onChange }: SunAngleControlProps) {
+    const { t } = useTranslation();
     return (
         <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
             <Tooltip>
@@ -32,7 +34,7 @@ export function SunAngleControl({ value, onChange }: SunAngleControlProps) {
                         </span>
                     </div>
                 </TooltipTrigger>
-                <TooltipContent side="right">Sun Angle</TooltipContent>
+                <TooltipContent side="right">{t('sunAngle')}</TooltipContent>
             </Tooltip>
         </div>
     );

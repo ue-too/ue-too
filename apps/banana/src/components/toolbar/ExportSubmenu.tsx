@@ -1,5 +1,6 @@
 import { Download, Gauge } from 'lucide-react';
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { ExportSceneIcon } from '@/assets/icons/export-scene';
 import { ExportTrackIcon } from '@/assets/icons/export-track';
@@ -36,6 +37,7 @@ export function ExportSubmenu({
     onImportAll,
     onImportCarDefinition,
 }: ExportSubmenuProps) {
+    const { t } = useTranslation();
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
@@ -77,36 +79,36 @@ export function ExportSubmenu({
                     onMouseEnter={clearTimeoutAndShow}
                     onMouseLeave={() => scheduleHide(150)}
                 >
-                    <ToolbarButton tooltip="Export Tracks + Stations" onClick={onExportTracks}>
+                    <ToolbarButton tooltip={t('exportTracksStations')} onClick={onExportTracks}>
                         <ExportTrackIcon />
                     </ToolbarButton>
-                    <ToolbarButton tooltip="Import Tracks + Stations" onClick={onImportTracks}>
+                    <ToolbarButton tooltip={t('importTracksStations')} onClick={onImportTracks}>
                         <ImportTrackIcon />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip="Export Trains (cars, formations, positions)"
+                        tooltip={t('exportTrains')}
                         onClick={onExportTrains}
                     >
                         <ExportTrainIcon />
                     </ToolbarButton>
-                    <ToolbarButton tooltip="Import Trains" onClick={onImportTrains}>
+                    <ToolbarButton tooltip={t('importTrains')} onClick={onImportTrains}>
                         <ImportTrainIcon />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip="Export All (tracks + trains + stations)"
+                        tooltip={t('exportAll')}
                         onClick={onExportAll}
                     >
                         <ExportSceneIcon />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip="Import All (tracks + trains + stations)"
+                        tooltip={t('importAll')}
                         onClick={onImportAll}
                     >
                         <ImportSceneIcon />
                     </ToolbarButton>
                     <Separator />
                     <ToolbarButton
-                        tooltip="Import Car Definition (from Train Editor)"
+                        tooltip={t('importCarDefinitionFromEditor')}
                         onClick={onImportCarDefinition}
                     >
                         <Gauge />

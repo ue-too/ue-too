@@ -18,6 +18,7 @@ import {
     Warehouse,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { FormationEditor } from '@/components/formation-editor';
@@ -31,9 +32,14 @@ import {
     serializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
-import { ELEVATION } from '@/trains/tracks/types';
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
+import {
+    type CarTemplate,
+    generateTemplateId,
+    validateCarDefinition,
+} from '@/trains/car-template';
+import { ELEVATION } from '@/trains/tracks/types';
 import type { SerializedTrackData, TrackStyle } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 import {
@@ -42,26 +48,22 @@ import {
     serializeTrainData,
     validateSerializedTrainData,
 } from '@/trains/train-serialization';
-import {
-    type CarTemplate,
-    generateTemplateId,
-    validateCarDefinition,
-} from '@/trains/car-template';
 
+import { BuildingOptionsPanel } from './BuildingOptionsPanel';
+import { DebugPanel } from './DebugPanel';
+import { DepotPanel } from './DepotPanel';
+import { ExportSubmenu } from './ExportSubmenu';
+import { FormationSelector } from './FormationSelector';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
+import { StationListPanel } from './StationListPanel';
+import { SunAngleControl } from './SunAngleControl';
+import { ToolbarButton } from './ToolbarButton';
+import { TrackStyleSelector } from './TrackStyleSelector';
+import { TrainPanel } from './TrainPanel';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
 import { downloadJson, uploadJson } from './utils';
-import { ToolbarButton } from './ToolbarButton';
-import { ExportSubmenu } from './ExportSubmenu';
-import { SunAngleControl } from './SunAngleControl';
-import { FormationSelector } from './FormationSelector';
-import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
-import { TrainPanel } from './TrainPanel';
-import { BuildingOptionsPanel } from './BuildingOptionsPanel';
-import { DepotPanel } from './DepotPanel';
-import { DebugPanel } from './DebugPanel';
-import { StationListPanel } from './StationListPanel';
-import { TrackStyleSelector } from './TrackStyleSelector';
 
 export function BananaToolbar({
     showMap = false,
@@ -70,6 +72,7 @@ export function BananaToolbar({
     showMap?: boolean;
     onToggleMap?: () => void;
 } = {}) {
+    const { t } = useTranslation();
     const app = useBananaApp();
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
@@ -97,6 +100,7 @@ export function BananaToolbar({
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showStationList, setShowStationList] = useState(false);
+    const [showStats, setShowStats] = useState(true);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
@@ -194,8 +198,15 @@ export function BananaToolbar({
 
     useEffect(() => {
         if (!app) return;
-        app.debugOverlayRenderSystem.setShowStationLocationDebug(showStationLocations);
+        app.debugOverlayRenderSystem.setShowStationLocationDebug(
+            showStationLocations
+        );
     }, [app, showStationLocations]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.statsDom.style.display = showStats ? 'block' : 'none';
+    }, [app, showStats]);
 
     useEffect(() => {
         if (!app) return;
@@ -354,7 +365,7 @@ export function BananaToolbar({
         uploadJson(parsed => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
-                alert(`Invalid track data: ${result.error}`);
+                alert(t('invalidTrackData', { error: result.error }));
                 return;
             }
             app.curveEngine.trackGraph.loadFromSerializedData(
@@ -367,7 +378,9 @@ export function BananaToolbar({
                     app.stationRenderSystem.removeStation(id);
                     app.stationManager.destroyStation(id);
                 }
-                const restored = StationManager.deserialize({ stations: obj.stations as SerializedStationData['stations'] });
+                const restored = StationManager.deserialize({
+                    stations: obj.stations as SerializedStationData['stations'],
+                });
                 for (const { id, station } of restored.getStations()) {
                     app.stationManager.createStationWithId(id, station);
                     app.stationRenderSystem.addStation(id);
@@ -391,7 +404,7 @@ export function BananaToolbar({
         uploadJson(parsed => {
             const result = validateSerializedTrainData(parsed);
             if (!result.valid) {
-                alert(`Invalid train data: ${result.error}`);
+                alert(t('invalidTrainData', { error: result.error }));
                 return;
             }
             deserializeTrainData(
@@ -416,7 +429,7 @@ export function BananaToolbar({
         uploadJson(parsed => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
-                alert(`Invalid scene data: ${result.error}`);
+                alert(t('invalidSceneData', { error: result.error }));
                 return;
             }
             deserializeSceneData(app, parsed as SerializedSceneData);
@@ -428,7 +441,7 @@ export function BananaToolbar({
         uploadJson(parsed => {
             const result = validateCarDefinition(parsed);
             if (!result.valid) {
-                alert(`Invalid car definition: ${result.error}`);
+                alert(t('invalidCarDefinition', { error: result.error }));
                 return;
             }
             const def = parsed as {
@@ -470,7 +483,9 @@ export function BananaToolbar({
                 {/* Main icon toolbar */}
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     <ToolbarButton
-                        tooltip={isLayoutActive ? 'End Layout' : 'Start Layout'}
+                        tooltip={
+                            isLayoutActive ? t('endLayout') : t('startLayout')
+                        }
                         active={isLayoutActive}
                         disabled={mode !== 'idle' && !isLayoutActive}
                         onClick={handleLayoutToggle}
@@ -483,8 +498,8 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={
                             mode === 'train-placement'
-                                ? 'End Placement'
-                                : 'Place Train'
+                                ? t('endPlacement')
+                                : t('placeTrain')
                         }
                         active={mode === 'train-placement'}
                         disabled={mode !== 'idle' && mode !== 'train-placement'}
@@ -495,7 +510,9 @@ export function BananaToolbar({
 
                     <ToolbarButton
                         tooltip={
-                            showTrainPanel ? 'Close Train List' : 'Train List'
+                            showTrainPanel
+                                ? t('closeTrainList')
+                                : t('trainList')
                         }
                         active={showTrainPanel}
                         disabled={
@@ -508,7 +525,7 @@ export function BananaToolbar({
                     </ToolbarButton>
 
                     <ToolbarButton
-                        tooltip={showDepot ? 'Close Depot' : 'Open Depot'}
+                        tooltip={showDepot ? t('closeDepot') : t('openDepot')}
                         active={showDepot}
                         onClick={() => setShowDepot(v => !v)}
                     >
@@ -518,8 +535,8 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={
                             showFormationEditor
-                                ? 'Close Formations'
-                                : 'Edit Formations'
+                                ? t('closeFormations')
+                                : t('editFormations')
                         }
                         active={showFormationEditor}
                         onClick={() => setShowFormationEditor(v => !v)}
@@ -527,11 +544,11 @@ export function BananaToolbar({
                         <ListOrdered />
                     </ToolbarButton>
 
-                    <ToolbarButton
+                    {/* <ToolbarButton
                         tooltip={
                             mode === 'building-placement'
-                                ? 'End Placement'
-                                : 'Place Building'
+                                ? t('endPlacement')
+                                : t('placeBuilding')
                         }
                         active={mode === 'building-placement'}
                         disabled={
@@ -540,12 +557,12 @@ export function BananaToolbar({
                         onClick={handleBuildingPlacementToggle}
                     >
                         <Building2 />
-                    </ToolbarButton>
-                    <ToolbarButton
+                    </ToolbarButton> */}
+                    {/* <ToolbarButton
                         tooltip={
                             mode === 'building-deletion'
-                                ? 'End Deletion'
-                                : 'Delete Building'
+                                ? t('endDeletion')
+                                : t('deleteBuilding')
                         }
                         active={mode === 'building-deletion'}
                         destructive={mode === 'building-deletion'}
@@ -555,12 +572,12 @@ export function BananaToolbar({
                         onClick={handleBuildingDeletionToggle}
                     >
                         <Trash2 />
-                    </ToolbarButton>
+                    </ToolbarButton> */}
                     <ToolbarButton
                         tooltip={
                             mode === 'station-placement'
-                                ? 'End Station Placement'
-                                : 'Place Station'
+                                ? t('endStationPlacement')
+                                : t('placeStation')
                         }
                         active={mode === 'station-placement'}
                         disabled={
@@ -571,7 +588,11 @@ export function BananaToolbar({
                         <Warehouse />
                     </ToolbarButton>
                     <ToolbarButton
-                        tooltip={showStationList ? 'Close Station List' : 'Open Station List'}
+                        tooltip={
+                            showStationList
+                                ? t('closeStationList')
+                                : t('openStationList')
+                        }
                         active={showStationList}
                         onClick={() => setShowStationList(v => !v)}
                     >
@@ -583,8 +604,8 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={
                             showElevationGradient
-                                ? 'Hide Elevation Gradient'
-                                : 'Show Elevation Gradient'
+                                ? t('hideElevationGradient')
+                                : t('showElevationGradient')
                         }
                         active={showElevationGradient}
                         onClick={() => setShowElevationGradient(v => !v)}
@@ -595,8 +616,8 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={
                             showPreviewCurveArcs
-                                ? 'Hide Preview Curve Arcs'
-                                : 'Show Preview Curve Arcs'
+                                ? t('hidePreviewCurveArcs')
+                                : t('showPreviewCurveArcs')
                         }
                         active={showPreviewCurveArcs}
                         onClick={() => setShowPreviewCurveArcs(v => !v)}
@@ -622,7 +643,7 @@ export function BananaToolbar({
 
                     {onToggleMap && (
                         <ToolbarButton
-                            tooltip={showMap ? 'Hide Map' : 'Show Map'}
+                            tooltip={showMap ? t('hideMap') : t('showMap')}
                             active={showMap}
                             onClick={onToggleMap}
                         >
@@ -631,7 +652,9 @@ export function BananaToolbar({
                     )}
 
                     <ToolbarButton
-                        tooltip={showDebugPanel ? 'Close Debug' : 'Open Debug'}
+                        tooltip={
+                            showDebugPanel ? t('closeDebug') : t('openDebug')
+                        }
                         active={showDebugPanel}
                         onClick={() => setShowDebugPanel(v => !v)}
                     >
@@ -717,7 +740,9 @@ export function BananaToolbar({
                     trackGraph={app.curveEngine.trackGraph}
                     cameraRig={app.cameraRig}
                     onClose={() => setShowStationList(false)}
-                    onStationChange={() => app.debugOverlayRenderSystem.refresh()}
+                    onStationChange={() =>
+                        app.debugOverlayRenderSystem.refresh()
+                    }
                 />
             )}
 
@@ -733,13 +758,17 @@ export function BananaToolbar({
                     onShowStationStopsChange={setShowStationStops}
                     showStationLocations={showStationLocations}
                     onShowStationLocationsChange={setShowStationLocations}
+                    showStats={showStats}
+                    onShowStatsChange={setShowStats}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}
 
+            <LanguageSwitcher />
+
             <div className="pointer-events-none absolute right-3 bottom-10">
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
-                    Elev: {elevation} · T: {tension}
+                    {t('elevation')}: {elevation} · T: {tension}
                 </span>
             </div>
         </TooltipProvider>

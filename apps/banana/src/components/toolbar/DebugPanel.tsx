@@ -1,4 +1,5 @@
-import { Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
+import { Activity, Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +16,8 @@ type DebugPanelProps = {
     onShowStationStopsChange: (value: boolean) => void;
     showStationLocations: boolean;
     onShowStationLocationsChange: (value: boolean) => void;
+    showStats: boolean;
+    onShowStatsChange: (value: boolean) => void;
     onClose: () => void;
 };
 
@@ -29,18 +32,21 @@ export function DebugPanel({
     onShowStationStopsChange,
     showStationLocations,
     onShowStationLocationsChange,
+    showStats,
+    onShowStatsChange,
     onClose,
 }: DebugPanelProps) {
+    const { t } = useTranslation();
     return (
         <DraggablePanel
-            title="Debug"
+            title={t('debug')}
             onClose={onClose}
             className="w-56"
         >
             <Separator className="mb-2" />
             <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground">Joint numbers</span>
+                    <span className="text-foreground">{t('jointNumbers')}</span>
                     <Toggle
                         size="sm"
                         pressed={showJointNumbers}
@@ -51,7 +57,7 @@ export function DebugPanel({
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground">Segment IDs</span>
+                    <span className="text-foreground">{t('segmentIds')}</span>
                     <Toggle
                         size="sm"
                         pressed={showSegmentIds}
@@ -62,7 +68,7 @@ export function DebugPanel({
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground">Formation IDs</span>
+                    <span className="text-foreground">{t('formationIds')}</span>
                     <Toggle
                         size="sm"
                         pressed={showFormationIds}
@@ -73,7 +79,7 @@ export function DebugPanel({
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground">Station stops</span>
+                    <span className="text-foreground">{t('stationStops')}</span>
                     <Toggle
                         size="sm"
                         pressed={showStationStops}
@@ -84,7 +90,7 @@ export function DebugPanel({
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-foreground">Station locations</span>
+                    <span className="text-foreground">{t('stationLocations')}</span>
                     <Toggle
                         size="sm"
                         pressed={showStationLocations}
@@ -92,6 +98,18 @@ export function DebugPanel({
                         aria-label="Toggle station locations"
                     >
                         <Landmark className="size-3.5" />
+                    </Toggle>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">{t('fpsStats')}</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showStats}
+                        onPressedChange={onShowStatsChange}
+                        aria-label="Toggle FPS stats"
+                    >
+                        <Activity className="size-3.5" />
                     </Toggle>
                 </div>
             </div>

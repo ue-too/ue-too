@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useCallback, useSyncExternalStore } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -33,10 +34,11 @@ export function DepotPanel({
         [carStockManager]
     );
     const availableCars = useSyncExternalStore(subscribe, getSnapshot);
+    const { t } = useTranslation();
 
     return (
         <DraggablePanel
-            title="Depot"
+            title={t('depot')}
             onClose={onClose}
             className="w-56"
             headerActions={
@@ -53,7 +55,7 @@ export function DepotPanel({
             <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
                 {availableCars.length === 0 ? (
                     <span className="text-muted-foreground py-4 text-center text-xs">
-                        No cars in stock
+                        {t('noCarsInStock')}
                     </span>
                 ) : (
                     availableCars.map(entry => (
@@ -66,7 +68,7 @@ export function DepotPanel({
                                     {entry.id}
                                 </span>
                                 <span className="text-muted-foreground text-[10px]">
-                                    {entry.car.bogieOffsets().length + 1} bogies
+                                    {t('bogieCount', { count: entry.car.bogieOffsets().length + 1 })}
                                     {' · '}
                                     {entry.car.edgeToBogie +
                                         entry.car
@@ -94,7 +96,7 @@ export function DepotPanel({
                 <>
                     <Separator className="my-2" />
                     <span className="text-muted-foreground mb-1 text-[10px] font-medium uppercase tracking-wider">
-                        Templates
+                        {t('templates')}
                     </span>
                     <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
                         {carTemplates.map(tpl => (
@@ -111,7 +113,7 @@ export function DepotPanel({
                                         />
                                     )}
                                     <span className="text-muted-foreground text-[10px]">
-                                        {tpl.bogieOffsets.length + 1} bogies
+                                        {t('bogieCount', { count: tpl.bogieOffsets.length + 1 })}
                                         {' · '}
                                         {tpl.edgeToBogie +
                                             tpl.bogieOffsets.reduce(
