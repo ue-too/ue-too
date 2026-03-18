@@ -223,6 +223,6 @@ export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, orig
         },
         positiveOffsets,
         negativeOffsets,
-        ballastWidth: originalTrackSegment.ballastWidth,
+        bedWidth: originalTrackSegment.bedWidth,
     }
 };

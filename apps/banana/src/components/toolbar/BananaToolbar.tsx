@@ -99,8 +99,9 @@ export function BananaToolbar({
     const [showStationList, setShowStationList] = useState(false);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
-    const [ballastWidth, setBallastWidth] = useState(1.5);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
+    const [bed, setBed] = useState(false);
+    const [bedWidth, setBedWidth] = useState(3);
     const [showExportSubmenu, setShowExportSubmenu] = useState(false);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
     const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
@@ -156,14 +157,19 @@ export function BananaToolbar({
 
     useEffect(() => {
         if (!app) return;
-        app.trackRenderSystem.ballastWidth = ballastWidth;
-        app.curveEngine.trackGraph.ballastWidth = ballastWidth;
-    }, [app, ballastWidth]);
+        app.curveEngine.trackGraph.projectionBuffer = projectionBuffer;
+    }, [app, projectionBuffer]);
 
     useEffect(() => {
         if (!app) return;
-        app.curveEngine.trackGraph.projectionBuffer = projectionBuffer;
-    }, [app, projectionBuffer]);
+        app.trackRenderSystem.bed = bed;
+    }, [app, bed]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.trackRenderSystem.bedWidth = bedWidth;
+        app.curveEngine.trackGraph.bedWidth = bedWidth;
+    }, [app, bedWidth]);
 
     useEffect(() => {
         if (!app) return;
@@ -655,10 +661,12 @@ export function BananaToolbar({
                         onChange={setTrackStyle}
                         electrified={electrified}
                         onElectrifiedChange={setElectrified}
-                        ballastWidth={ballastWidth}
-                        onBallastWidthChange={setBallastWidth}
                         projectionBuffer={projectionBuffer}
                         onProjectionBufferChange={setProjectionBuffer}
+                        bed={bed}
+                        onBedChange={setBed}
+                        bedWidth={bedWidth}
+                        onBedWidthChange={setBedWidth}
                     />
                 </>
             )}

@@ -28,8 +28,8 @@ export type TrackSegment = {
     curve: BCurve;
     gauge: number;
     gauges?: number[];
-    /** Total visual width of the ballast/slab bed (meters). Used for snapping and rendering. */
-    ballastWidth?: number;
+    /** Total width of the gravel bed foundation (meters). Used for snapping when bed is enabled. */
+    bedWidth?: number;
     splits: number[];
     splitCurves: {
         curve: BCurve;
@@ -94,8 +94,10 @@ export type TrackSegmentDrawData = {
     trackStyle?: TrackStyle;
     /** Whether this track segment has overhead catenary electrification. */
     electrified?: boolean;
-    /** Total visual width of the ballast/slab bed in world units (meters). */
-    ballastWidth?: number;
+    /** Total width of the gravel bed foundation in world units (meters). Used for snapping. */
+    bedWidth?: number;
+    /** Whether this track segment should render a bed (gravel foundation below the ballast). */
+    bed?: boolean;
 };
 
 export type TrackSegmentSplit = {

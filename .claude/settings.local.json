@@ -36,7 +36,9 @@
       "Bash(cd /Users/vincent.yy.chang/dev/ue-too/map/apps/banana && bun run scripts/generate-track-textures.ts 2>&1)",
       "Bash(bun run:*)",
       "Bash(pkill -f \"generate-track-textures\" 2>&1 || true)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(wc -l /Users/vincent.yy.chang/dev/ue-too/map/apps/banana/src/**/*.ts)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")"
     ]
   }
 }

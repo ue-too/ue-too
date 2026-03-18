@@ -241,22 +241,22 @@ export class TrainRenderSystem {
   }
 
   cleanup(): void {
-    for (const [trainId, pool] of this._actualPools) {
+    for (const [trainId] of this._actualPools) {
       const count = this._activeCounts.get(trainId) ?? 0;
       for (let i = 0; i < count; i++) {
         const key = bogieKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
     }
     this._actualPools.clear();
     this._activeCounts.clear();
 
-    for (const [trainId, pool] of this._actualCarPools) {
+    for (const [trainId] of this._actualCarPools) {
       const count = this._activeCarCounts.get(trainId) ?? 0;
       for (let i = 0; i < count; i++) {
         const key = carKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
     }
@@ -304,7 +304,7 @@ export class TrainRenderSystem {
       }
       this._syncActualPoolForTrain(id, positions.length);
       const pool = this._actualPools.get(id)!;
-      const headZIndex = this._resolveZIndex(positions[0]);
+      const headBand = this._resolveBandIndex(positions[0]);
 
       for (let i = 0; i < positions.length; i++) {
         const g = pool[i];
@@ -312,9 +312,10 @@ export class TrainRenderSystem {
         g.position.set(positions[i].point.x, positions[i].point.y);
         g.visible = true;
 
-        const zIndex = i === 0 ? headZIndex : (this._resolveZIndex(positions[i]) ?? headZIndex);
-        if (zIndex !== null) {
-          this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+        const bandIndex = i === 0 ? headBand : (this._resolveBandIndex(positions[i]) ?? headBand);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(key, g, bandIndex, 'onTrack');
+          this._worldRenderSystem.setOrderInBand(key, 1);
         }
       }
     }
@@ -361,9 +362,11 @@ export class TrainRenderSystem {
         sprite.scale.set(h.length / texW, CAR_WIDTH / texH);
         sprite.visible = true;
 
-        const bogieZ = this._resolveZIndex(positions[h.bogiePositionIndex]);
-        if (bogieZ !== null) {
-          this._worldRenderSystem.setDrawableZIndex(carKey(id, i), bogieZ - 1);
+        const bandIndex = this._resolveBandIndex(positions[h.bogiePositionIndex]);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(carKey(id, i), sprite, bandIndex, 'onTrack');
+          // Car bodies draw below bogies (order 0 vs bogie order 1).
+          this._worldRenderSystem.setOrderInBand(carKey(id, i), 0);
         }
       }
     }
@@ -495,7 +498,7 @@ export class TrainRenderSystem {
       const texture = idx % 2 === 0 ? textures.rear : textures.front;
       const sprite = createCarSprite(texture);
       pool.push(sprite);
-      this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite);
+      // Car will be added to the correct band in _updateActualCars.
     }
 
     for (let i = count; i < currentActive; i++) {
@@ -510,7 +513,7 @@ export class TrainRenderSystem {
     if (pool) {
       for (let i = 0; i < count; i++) {
         const key = bogieKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
       this._actualPools.delete(trainId);
@@ -522,7 +525,7 @@ export class TrainRenderSystem {
     if (carPool) {
       for (let i = 0; i < carCount; i++) {
         const key = carKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
       this._actualCarPools.delete(trainId);
@@ -530,13 +533,13 @@ export class TrainRenderSystem {
     this._activeCarCounts.delete(trainId);
   }
 
-  private _resolveZIndex(position: TrainPosition): number | null {
+  private _resolveBandIndex(position: TrainPosition): number | null {
     const id = this._trackGraph.getDrawDataIdentifier(
       position.trackSegment,
       position.tValue,
     );
     if (id === null) return null;
-    return this._trackRenderSystem.getOnTrackObjectZIndex(id);
+    return this._trackRenderSystem.getTrackBandIndex(id);
   }
 
   private _hideActualBogiesForTrain(trainId: number): void {
@@ -562,7 +565,7 @@ export class TrainRenderSystem {
       const color = BOGIE_COLORS[idx % BOGIE_COLORS.length];
       const g = createBogieGraphics(color);
       pool.push(g);
-      this._worldRenderSystem.addDrawable(bogieKey(trainId, idx), g);
+      // Bogie will be added to the correct band in _updateActualBogies.
     }
 
     for (let i = count; i < currentActive; i++) {

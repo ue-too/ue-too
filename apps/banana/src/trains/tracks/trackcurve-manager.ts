@@ -48,8 +48,8 @@ export class TrackCurveManager {
      */
     private _projectionBuffer: number = 0.5;
 
-    /** Total visual width of the ballast/slab bed for newly created tracks. Used for snapping. */
-    private _ballastWidth: number = 1.5;
+    /** Total width of the gravel bed foundation for newly created tracks. Used for snapping when bed is enabled. */
+    private _bedWidth: number = 3;
 
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
@@ -71,14 +71,14 @@ export class TrackCurveManager {
         this._projectionBuffer = Math.max(0, value);
     }
 
-    /** Get the current ballast/slab width for newly created tracks. */
-    get ballastWidth(): number {
-        return this._ballastWidth;
+    /** Get the current bed width for newly created tracks. */
+    get bedWidth(): number {
+        return this._bedWidth;
     }
 
-    /** Set the ballast/slab width for newly created tracks (affects rendering and snapping). */
-    set ballastWidth(value: number) {
-        this._ballastWidth = Math.max(0.5, value);
+    /** Set the bed width for newly created tracks (affects snapping). */
+    set bedWidth(value: number) {
+        this._bedWidth = Math.max(1, value);
     }
 
     get persistedDrawData(): (TrackSegmentDrawData & {
@@ -246,9 +246,9 @@ export class TrackCurveManager {
                     position,
                     res.projection
                 );
-                const existingBw = trackSegment.ballastWidth ?? trackSegment.gauge;
-                const newBw = this._ballastWidth;
-                const maxSnapDistance = existingBw / 2 + newBw / 2 + this._projectionBuffer;
+                const existingWidth = trackSegment.bedWidth ?? trackSegment.gauge;
+                const newWidth = this._bedWidth;
+                const maxSnapDistance = existingWidth / 2 + newWidth / 2 + this._projectionBuffer;
                 if (
                     distance < minDistance &&
                     distance < maxSnapDistance &&
@@ -278,7 +278,7 @@ export class TrackCurveManager {
                         res.projection,
                         PointCal.multiplyVectorByScalar(
                             orthogonalDirection,
-                            existingBw / 2 + newBw / 2
+                            existingWidth / 2 + newWidth / 2
                         )
                     );
                     if (projectionInfo === null) {
@@ -385,7 +385,7 @@ export class TrackCurveManager {
         t1Elevation: ELEVATION,
         gauge: number = 1.067,
         excludeSegmentsForCollisionCheck: Set<number> = new Set(),
-        ballastWidth?: number
+        bedWidth?: number
     ): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -566,7 +566,7 @@ export class TrackCurveManager {
             },
             collision: collisions,
             gauge,
-            ballastWidth: ballastWidth ?? this._ballastWidth,
+            bedWidth: bedWidth ?? this._bedWidth,
             splits: insertionT,
             splitCurves: splits,
         };

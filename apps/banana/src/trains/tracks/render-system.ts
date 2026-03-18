@@ -36,9 +36,8 @@ const normalizeElevation = (rawElevation: number): number =>
 /** Size of the tiny solid-black texture used for shadow meshes. */
 const SHADOW_TEX_SIZE = 4;
 
-/** Compute the ballast/slab half-width for a draw data entry. Uses ballastWidth if set, otherwise derives from gauge. */
+/** Compute the ballast/slab half-width for a draw data entry. Always derived from gauge. */
 const ballastHalfWidth = (drawData: TrackSegmentDrawData): number => {
-    if (drawData.ballastWidth !== undefined) return drawData.ballastWidth / 2;
     const tieOverhang = 4;
     const tieHw = (drawData.gauge / 2) * ((TRACK_TEX_SIZE + tieOverhang * 2) / TRACK_TEX_SIZE);
     return tieHw + 0.15;
@@ -105,8 +104,11 @@ export class TrackRenderSystem {
     /** Whether newly laid tracks are electrified (catenary poles). */
     private _electrified: boolean = false;
 
-    /** Total visual width of the ballast/slab bed in world units. Stamped per track when laid. */
-    private _ballastWidth: number = 1.5;
+    /** Total width of the gravel bed foundation in world units. Stamped per track when laid. */
+    private _bedWidth: number = 3;
+
+    /** Whether newly laid tracks will have a bed (gravel foundation below ballast). */
+    private _bed: boolean = false;
 
     /** Catenary pole containers keyed by draw data key. */
     private _catenaryMap: Map<string, Container> = new Map();
@@ -128,6 +130,12 @@ export class TrackRenderSystem {
 
     /** Tiny solid-black texture for shadow meshes; created lazily. */
     private _shadowTexture: Texture | null = null;
+
+    /** Shared bed (gravel foundation) texture; created lazily. */
+    private _bedTexture: Texture | null = null;
+
+    /** Bed mesh containers keyed by draw data key. */
+    private _bedMeshMap: Map<string, MeshSimple> = new Map();
 
     /**
      * Per-key shadow state retained for efficient sun-angle updates.
@@ -228,13 +236,22 @@ export class TrackRenderSystem {
         this._electrified = value;
     }
 
-    /** Total visual width of the ballast/slab bed for newly laid tracks (meters). */
-    get ballastWidth(): number {
-        return this._ballastWidth;
+    /** Total width of the gravel bed foundation for newly laid tracks (meters). */
+    get bedWidth(): number {
+        return this._bedWidth;
     }
 
-    set ballastWidth(value: number) {
-        this._ballastWidth = Math.max(0.5, value);
+    set bedWidth(value: number) {
+        this._bedWidth = Math.max(1, value);
+    }
+
+    /** Whether newly laid tracks will have a bed (gravel foundation below ballast). */
+    get bed(): boolean {
+        return this._bed;
+    }
+
+    set bed(value: boolean) {
+        this._bed = value;
     }
 
     get sunAngle(): number {
@@ -293,6 +310,10 @@ export class TrackRenderSystem {
 
         for (const [, record] of this._shadowRecords) {
             record.mesh.visible = useDetailed;
+        }
+
+        for (const [, bedMesh] of this._bedMeshMap) {
+            bedMesh.visible = useDetailed;
         }
     }
 
@@ -376,32 +397,32 @@ export class TrackRenderSystem {
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
-        this._previewRailContainers.forEach(c => {
-            this._worldRenderSystem.removeRail(c);
-            c.destroy({ children: true });
+        this._previewRailContainers.forEach((c, idx) => {
+            const removed = this._worldRenderSystem.removeDrawable(`__preview_rail__${idx}`);
+            removed?.destroy({ children: true });
         });
         this._previewRailContainers = [];
 
         this._drawableKeys.forEach(key => {
-            const container = this._worldRenderSystem.removeDrawable(key);
+            const container = this._worldRenderSystem.removeFromBand(key);
             container?.destroy({ children: true });
             this._worldRenderSystem.removeShadow(key);
+            this._worldRenderSystem.removeBed(key);
+            // Remove associated rail
+            const railRemoved = this._worldRenderSystem.removeFromBand(`__rail__${key}`);
+            railRemoved?.destroy({ children: true });
         });
         this._drawableKeys.clear();
         this._shadowRecords.clear();
+        this._bedMeshMap.clear();
+        this._offsetRailMap.clear();
 
         this._previewStartProjection.destroy();
         this._previewEndProjection.destroy();
 
-        this._offsetRailMap.forEach((railContainer) => {
-            this._worldRenderSystem.removeRail(railContainer);
-            railContainer.destroy({ children: true });
-        });
-        this._offsetRailMap.clear();
-
         this._catenaryMap.forEach((catenaryContainer, key) => {
-            this._worldRenderSystem.removeDrawable(`__catenary__${key}`);
-            catenaryContainer.destroy({ children: true });
+            const removed = this._worldRenderSystem.removeFromBand(`__catenary__${key}`);
+            removed?.destroy({ children: true });
         });
         this._catenaryMap.clear();
 
@@ -432,6 +453,10 @@ export class TrackRenderSystem {
         if (this._shadowTexture !== null) {
             this._shadowTexture.destroy(true);
             this._shadowTexture = null;
+        }
+        if (this._bedTexture !== null) {
+            this._bedTexture.destroy(true);
+            this._bedTexture = null;
         }
     }
 
@@ -507,7 +532,7 @@ export class TrackRenderSystem {
 
     private _onDelete(key: string) {
         this._ballastStyleNodes.delete(key);
-        const container = this._worldRenderSystem.removeDrawable(key);
+        const container = this._worldRenderSystem.removeFromBand(key);
         if (container !== undefined) {
             container.destroy({ children: true });
             this._drawableKeys.delete(key);
@@ -516,17 +541,20 @@ export class TrackRenderSystem {
         this._worldRenderSystem.removeShadow(key);
         this._shadowRecords.delete(key);
 
+        this._worldRenderSystem.removeBed(key);
+        this._bedMeshMap.delete(key);
+
         const railContainer = this._offsetRailMap.get(key);
         if (railContainer !== undefined) {
-            this._worldRenderSystem.removeRail(railContainer);
-            railContainer.destroy({ children: true });
+            const removed = this._worldRenderSystem.removeFromBand(`__rail__${key}`);
+            removed?.destroy({ children: true });
             this._offsetRailMap.delete(key);
         }
 
         const catenaryContainer = this._catenaryMap.get(key);
         if (catenaryContainer !== undefined) {
-            this._worldRenderSystem.removeDrawable(`__catenary__${key}`);
-            catenaryContainer.destroy({ children: true });
+            const removed = this._worldRenderSystem.removeFromBand(`__catenary__${key}`);
+            removed?.destroy({ children: true });
             this._catenaryMap.delete(key);
         }
 
@@ -874,6 +902,97 @@ export class TrackRenderSystem {
         return this._shadowTexture;
     }
 
+    /** Create or return the shared bed texture (wider gravel/dirt foundation). */
+    private _getOrCreateBedTexture(): Texture | null {
+        if (this._bedTexture !== null) return this._bedTexture;
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+
+        const size = 256;
+        const g = new Graphics();
+        g.rect(0, 0, size, size);
+        g.fill(0x5a5248);
+
+        const rng = seededRng(59);
+        const bedRockColors = [0x4a4238, 0x3e3830, 0x524a40, 0x605850, 0x3a3228];
+        for (let r = 0; r < 350; r++) {
+            const rw = 3 + rng() * 6;
+            const rh = 2 + rng() * 5;
+            const rx = rng() * size;
+            const ry = rng() * size;
+            const cw = Math.min(rw, size - rx);
+            const ch = Math.min(rh, size - ry);
+            if (cw > 0 && ch > 0) {
+                const color = bedRockColors[Math.floor(rng() * bedRockColors.length)];
+                g.rect(rx, ry, cw, ch);
+                g.fill(color);
+            }
+        }
+
+        this._bedTexture = renderer.generateTexture({ target: g });
+        const source = this._bedTexture.source;
+        if ('addressMode' in source) {
+            (source as { addressMode: string }).addressMode = 'repeat';
+        }
+        return this._bedTexture;
+    }
+
+    /**
+     * Build a bed mesh strip along the curve. The bed is wider than the ballast
+     * to create a visible foundation/shoulder on each side.
+     */
+    private _buildBedMeshForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
+        const texture = this._getOrCreateBedTexture();
+        if (texture === null) return null;
+
+        const { curve } = drawData;
+        const hw = (drawData.bedWidth ?? 3) / 2;
+        const steps = Math.max(2, Math.ceil(curve.fullLength / 2));
+        const verts: number[] = [];
+        const uvs: number[] = [];
+        let arcLen = 0;
+
+        const controlPoints = curve.getControlPoints();
+        const startPoint = controlPoints[0];
+        const endPoint = controlPoints[controlPoints.length - 1];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = i === 0 ? startPoint : i === steps ? endPoint : curve.getPointbyPercentage(t);
+            const derivative = curve.derivativeByPercentage(t);
+            const tangent = PointCal.unitVector(derivative);
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            if (i > 0) {
+                const prevT = (i - 1) / steps;
+                const prev = i === 1 ? startPoint : curve.getPointbyPercentage(prevT);
+                const dx = point.x - prev.x;
+                const dy = point.y - prev.y;
+                arcLen += Math.sqrt(dx * dx + dy * dy);
+            }
+            const v = arcLen / BALLAST_TEXTURE_TILE_LEN;
+
+            verts.push(point.x - nx * hw, point.y - ny * hw);
+            uvs.push(0, v);
+            verts.push(point.x + nx * hw, point.y + ny * hw);
+            uvs.push(1, v);
+        }
+
+        const indices: number[] = [];
+        for (let i = 0; i < steps; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        return new MeshSimple({
+            texture,
+            vertices: new Float32Array(verts),
+            uvs: new Float32Array(uvs),
+            indices: new Uint32Array(indices),
+        });
+    }
+
     /**
      * Build a shadow mesh strip along a curve.
      *
@@ -1048,8 +1167,11 @@ export class TrackRenderSystem {
             if (drawData.electrified === undefined) {
                 drawData.electrified = this._electrified;
             }
-            if (drawData.ballastWidth === undefined) {
-                drawData.ballastWidth = this._ballastWidth;
+            if (drawData.bedWidth === undefined) {
+                drawData.bedWidth = this._bedWidth;
+            }
+            if (drawData.bed === undefined) {
+                drawData.bed = this._bed;
             }
 
             const key = JSON.stringify({ trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber, tValInterval: drawData.originalTrackSegment.tValInterval });
@@ -1079,7 +1201,6 @@ export class TrackRenderSystem {
             if (railMesh !== null) {
                 const railContainer = new Container();
                 railContainer.addChild(railMesh);
-                this._worldRenderSystem.addRail(railContainer);
                 this._offsetRailMap.set(key, railContainer);
             }
 
@@ -1133,14 +1254,37 @@ export class TrackRenderSystem {
                 this._worldRenderSystem.addShadow(key, shadowMesh, shadowElevation);
             }
 
+            // Build bed mesh (gravel foundation) if enabled for this segment.
+            if (drawData.bed) {
+                const bedMesh = this._buildBedMeshForDrawData(drawData);
+                if (bedMesh !== null) {
+                    const bedElevation = this._worldRenderSystem.resolveElevationLevel(
+                        Math.max(drawData.elevation.from, drawData.elevation.to)
+                    );
+                    this._worldRenderSystem.addBed(key, bedMesh, bedElevation);
+                    this._bedMeshMap.set(key, bedMesh);
+                }
+            }
+
             this._drawableKeys.add(key);
-            this._worldRenderSystem.addDrawable(key, segmentsContainer);
+
+            // Determine band index for this segment.
+            const rawElevation = Math.max(drawData.elevation.from, drawData.elevation.to);
+            const bandIndex = this._worldRenderSystem.getElevationBandIndex(rawElevation);
+
+            this._worldRenderSystem.addToBand(key, segmentsContainer, bandIndex, 'drawable');
+
+            // Add rail to same band.
+            const railContainer = this._offsetRailMap.get(key);
+            if (railContainer !== undefined) {
+                this._worldRenderSystem.addToBand(`__rail__${key}`, railContainer, bandIndex, 'rail');
+            }
 
             // Build catenary poles if this segment is electrified.
             if (drawData.electrified) {
                 const catenaryContainer = this._buildCatenaryForDrawData(drawData);
                 const catenaryKey = `__catenary__${key}`;
-                this._worldRenderSystem.addDrawable(catenaryKey, catenaryContainer);
+                this._worldRenderSystem.addToBand(catenaryKey, catenaryContainer, bandIndex, 'catenary');
                 this._catenaryMap.set(key, catenaryContainer);
             }
         });
@@ -1153,13 +1297,11 @@ export class TrackRenderSystem {
      * Recompute z-indices for all persisted track drawables based on the
      * current draw order from the track curve manager.
      *
-     * Also updates the per-band track counts in {@link WorldRenderSystem} so
-     * that on-track objects (train bogies, etc.) can be placed above all
-     * track drawables in the same elevation band.
+     * Within each elevation band, drawables and rails are sorted by minimum
+     * elevation so ramps draw below constant-elevation tracks.
      */
     private _reindexDrawData() {
         const drawDataOrder = this._trackCurveManager.persistedDrawData;
-        const orderInElevation = new Map<number, number>();
         this._drawDataBandMap.clear();
 
         // Group draw data by elevation band, then sort within each band
@@ -1184,25 +1326,12 @@ export class TrackRenderSystem {
             group.sort((a, b) => a.minElevation - b.minElevation);
             for (let n = 0; n < group.length; n++) {
                 const { key } = group[n];
-                const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, n);
-                this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+                // Set draw order within the band's drawable and rail sublayers.
+                this._worldRenderSystem.setOrderInBand(key, n);
                 this._drawDataBandMap.set(key, bandIndex);
-                const railContainer = this._offsetRailMap.get(key);
-                if (railContainer !== undefined) {
-                    railContainer.zIndex = this._worldRenderSystem.computeRailZIndex(bandIndex, n);
-                }
-                // Catenary renders above trains in the same elevation band.
-                if (this._catenaryMap.has(key)) {
-                    const catenaryZIndex = this._worldRenderSystem.computeCatenaryZIndex(bandIndex);
-                    this._worldRenderSystem.setDrawableZIndex(`__catenary__${key}`, catenaryZIndex);
-                }
+                this._worldRenderSystem.setOrderInBand(`__rail__${key}`, n);
             }
-            orderInElevation.set(bandIndex, group.length);
         }
-
-        orderInElevation.forEach((count, bandIndex) => {
-            this._worldRenderSystem.setBandTrackCount(bandIndex, count);
-        });
 
         this._worldRenderSystem.sortChildren();
     }
@@ -1214,9 +1343,9 @@ export class TrackRenderSystem {
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
-        this._previewRailContainers.forEach(c => {
-            this._worldRenderSystem.removeRail(c);
-            c.destroy({ children: true });
+        this._previewRailContainers.forEach((c, idx) => {
+            const removed = this._worldRenderSystem.removeDrawable(`__preview_rail__${idx}`);
+            removed?.destroy({ children: true });
         });
         this._previewRailContainers = [];
 
@@ -1234,8 +1363,8 @@ export class TrackRenderSystem {
             if (drawData.electrified === undefined) {
                 drawData.electrified = this._electrified;
             }
-            if (drawData.ballastWidth === undefined) {
-                drawData.ballastWidth = this._ballastWidth;
+            if (drawData.bedWidth === undefined) {
+                drawData.bedWidth = this._bedWidth;
             }
 
             const segmentsContainer = new Container();
@@ -1265,7 +1394,8 @@ export class TrackRenderSystem {
             if (railMesh !== null) {
                 const railContainer = new Container();
                 railContainer.addChild(railMesh);
-                this._worldRenderSystem.addRail(railContainer);
+                const railKey = `__preview_rail__${this._previewRailContainers.length}`;
+                this._worldRenderSystem.addDrawable(railKey, railContainer);
                 this._previewRailContainers.push(railContainer);
             }
 
@@ -1338,24 +1468,18 @@ export class TrackRenderSystem {
         });
     }
 
-    getZIndexOf(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number {
-        const key = JSON.stringify(drawDataIdentifier);
-        return this._worldRenderSystem.getDrawableZIndex(key);
-    }
-
     /**
-     * Return a z-index for an on-track object (e.g. a train bogie) that sits
-     * above every track drawable in the same elevation band as the given draw data.
+     * Return the elevation band index for the given draw data identifier.
+     *
+     * Used by the train render system to place on-track objects (bogies, cars)
+     * in the correct elevation band's onTrack sublayer.
      *
      * @param drawDataIdentifier - Identifier of the draw data the object sits on
-     * @returns A z-index above all tracks in that elevation band, or null if the
-     *          identifier is unknown
+     * @returns The elevation band index, or null if the identifier is unknown
      */
-    getOnTrackObjectZIndex(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number | null {
+    getTrackBandIndex(drawDataIdentifier: { trackSegmentNumber: number, tValInterval: { start: number, end: number } }): number | null {
         const key = JSON.stringify(drawDataIdentifier);
-        const bandIndex = this._drawDataBandMap.get(key);
-        if (bandIndex === undefined) return null;
-        return this._worldRenderSystem.computeOnTrackObjectZIndex(bandIndex);
+        return this._drawDataBandMap.get(key) ?? null;
     }
 }
 

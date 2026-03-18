@@ -2,9 +2,6 @@ import { Container } from 'pixi.js';
 import { ELEVATION, ELEVATION_VALUES } from './trains/tracks/types';
 import { LEVEL_HEIGHT } from './trains/tracks/constants';
 
-/** zIndex range per elevation so shadow at elevation E draws after segments at elevations < E. */
-const LAYERS_PER_ELEVATION = 1000;
-
 const getElevationIndex = (elevation: ELEVATION): number => {
     const i = ELEVATION_VALUES.indexOf(elevation);
     return i >= 0 ? i : 0;
@@ -45,45 +42,76 @@ export const findElevationInterval = (elevation: number): { interval: [ELEVATION
 };
 
 /**
- * Generic render system that manages elevation-based draw ordering and shadows
- * for all world objects (tracks, buildings, etc.).
+ * Sublayer types within each elevation band.
  *
- * Objects are sorted into elevation bands. Within each band, shadow containers
- * draw first (zIndex = bandIndex * LAYERS_PER_ELEVATION), followed by drawable
- * containers (zIndex = bandIndex * LAYERS_PER_ELEVATION + 1 + n).
- *
- * Sub-renderers (TrackRenderSystem, future BuildingRenderSystem, etc.) create
- * their own Graphics/Containers and register them here for unified draw ordering.
+ * Draw order (bottom to top): shadow → bed → drawable → rail → onTrack → catenary.
  */
-/** Draw order (bottom to top): below (tracks, rails, shadows, buildings) → above (bogies) → other overlays. */
-const Z_INDEX_BELOW = 0;
-const Z_INDEX_ABOVE = 2;
-const Z_INDEX_OVERLAYS = 3;
+export type BandSublayer = 'drawable' | 'rail' | 'onTrack' | 'catenary';
+
+/** Z-index constants for band sublayers. Shadow and bed are shared containers; the rest are sortable. */
+const SUBLAYER_SHADOW = 0;
+const SUBLAYER_BED = 1;
+const SUBLAYER_DRAWABLE = 2;
+const SUBLAYER_RAIL = 3;
+const SUBLAYER_ON_TRACK = 4;
+const SUBLAYER_CATENARY = 5;
+
+const SUBLAYER_MAP: Record<BandSublayer, number> = {
+    drawable: SUBLAYER_DRAWABLE,
+    rail: SUBLAYER_RAIL,
+    onTrack: SUBLAYER_ON_TRACK,
+    catenary: SUBLAYER_CATENARY,
+};
 
 /**
- * Within each elevation band (LAYERS_PER_ELEVATION slots), the sub-ranges are:
- *   0          : shadow container
- *   1..499     : ballast / track drawables
- *   500..999   : rail overlay drawables (above ballast, below next band's shadows)
+ * An elevation band groups all render layers for a single elevation level.
+ *
+ * Each sublayer is a separate Container with its own z-index space,
+ * so there is no hard cap on the number of items per sublayer.
  */
-const RAIL_OFFSET_WITHIN_BAND = 500;
+type ElevationBand = {
+    container: Container;
+    shadow: Container;
+    bed: Container;
+    drawable: Container;
+    rail: Container;
+    onTrack: Container;
+    catenary: Container;
+};
 
-export type DrawableLayer = 'below' | 'above';
+/**
+ * Generic render system that manages elevation-based draw ordering for all
+ * world objects (tracks, buildings, trains, etc.).
+ *
+ * Objects are organized into elevation bands. Each band contains sublayer
+ * containers (shadow, bed, drawable, rail, onTrack, catenary) that enforce
+ * draw order within the band. Band containers are sorted relative to each
+ * other so higher-elevation content draws on top of lower-elevation content.
+ *
+ * Sub-renderers (TrackRenderSystem, BuildingRenderSystem, etc.) create
+ * their own Graphics/Containers and register them here for unified draw ordering.
+ */
+/** Draw order (bottom to top): below (bands) → overlays. */
+const Z_INDEX_BELOW = 0;
+const Z_INDEX_OVERLAYS = 3;
 
 export class WorldRenderSystem {
 
     private _mainContainer: Container;
-    /** Tracks, shadows, buildings. Draws below offset rails. */
+    /** Contains all elevation band containers. */
     private _drawDataBelow: Container;
-    /** Bogies and other on-track objects. Draws above offset rails. */
-    private _drawDataAbove: Container;
+    /** Non-banded drawables (previews, etc.) keyed by string. */
     private _drawableMap: Map<string, Container> = new Map();
-    private _drawableLayer: Map<string, DrawableLayer> = new Map();
+    /** Shadow items keyed by string. */
     private _shadowMap: Map<string, { container: Container; elevation: ELEVATION }> = new Map();
-    private _shadowContainerMap: Map<ELEVATION, Container> = new Map();
-
-    /** Number of track drawables registered in each elevation band (updated by sub-renderers after reindexing). */
-    private _bandTrackCount: Map<number, number> = new Map();
+    /** Bed items keyed by string (shared per elevation, renders before rails). */
+    private _bedMap: Map<string, { container: Container; elevation: ELEVATION }> = new Map();
+    /** Band items keyed by string. */
+    private _bandItemMap: Map<string, { container: Container; bandIndex: number; sublayer: BandSublayer }> = new Map();
+    /** Elevation bands indexed by band index. */
+    private _bands: ElevationBand[] = [];
+    /** Map from ELEVATION enum value to band index. */
+    private _elevationToBandIndex: Map<ELEVATION, number> = new Map();
 
     get container(): Container {
         return this._mainContainer;
@@ -96,17 +124,49 @@ export class WorldRenderSystem {
         this._drawDataBelow.sortableChildren = true;
         this._drawDataBelow.zIndex = Z_INDEX_BELOW;
         this._mainContainer.addChild(this._drawDataBelow);
-        this._drawDataAbove = new Container();
-        this._drawDataAbove.sortableChildren = true;
-        this._drawDataAbove.zIndex = Z_INDEX_ABOVE;
-        this._mainContainer.addChild(this._drawDataAbove);
 
         ELEVATION_VALUES.forEach((elevation, i) => {
-            const container = new Container();
-            container.zIndex = i * LAYERS_PER_ELEVATION;
-            this._drawDataBelow.addChild(container);
-            this._shadowContainerMap.set(elevation as ELEVATION, container);
+            const band = this._createBand(i);
+            this._drawDataBelow.addChild(band.container);
+            this._bands.push(band);
+            this._elevationToBandIndex.set(elevation as ELEVATION, i);
         });
+    }
+
+    private _createBand(bandIndex: number): ElevationBand {
+        const bandContainer = new Container();
+        bandContainer.sortableChildren = true;
+        bandContainer.zIndex = bandIndex;
+
+        const shadow = new Container();
+        shadow.zIndex = SUBLAYER_SHADOW;
+        bandContainer.addChild(shadow);
+
+        const bed = new Container();
+        bed.zIndex = SUBLAYER_BED;
+        bandContainer.addChild(bed);
+
+        const drawable = new Container();
+        drawable.sortableChildren = true;
+        drawable.zIndex = SUBLAYER_DRAWABLE;
+        bandContainer.addChild(drawable);
+
+        const rail = new Container();
+        rail.sortableChildren = true;
+        rail.zIndex = SUBLAYER_RAIL;
+        bandContainer.addChild(rail);
+
+        const onTrack = new Container();
+        onTrack.sortableChildren = true;
+        onTrack.zIndex = SUBLAYER_ON_TRACK;
+        bandContainer.addChild(onTrack);
+
+        const catenary = new Container();
+        catenary.sortableChildren = true;
+        catenary.zIndex = SUBLAYER_CATENARY;
+        bandContainer.addChild(catenary);
+
+        return { container: bandContainer, shadow, bed, drawable, rail, onTrack, catenary };
     }
 
     /**
@@ -124,46 +184,36 @@ export class WorldRenderSystem {
         this._mainContainer.removeChild(container);
     }
 
+    // -------------------------------------------------------------------------
+    // Non-banded drawables (previews, ephemeral items)
+    // -------------------------------------------------------------------------
+
     /**
-     * Add a drawable to the elevation-sorted layers.
+     * Add a non-banded drawable directly to the below layer.
      *
-     * @param options.layer - 'below' (default): tracks, buildings, shadows. 'above': bogies and
-     *   other on-track objects, drawn above offset rails.
+     * Use this for ephemeral items (previews) that don't belong to a
+     * specific elevation band. For elevation-aware items, use {@link addToBand}.
      */
-    addDrawable(key: string, container: Container, options?: { layer?: DrawableLayer }): void {
-        const layer = options?.layer ?? 'below';
+    addDrawable(key: string, container: Container): void {
         this._drawableMap.set(key, container);
-        this._drawableLayer.set(key, layer);
-        const parent = layer === 'below' ? this._drawDataBelow : this._drawDataAbove;
-        parent.addChild(container);
+        this._drawDataBelow.addChild(container);
     }
 
-    /**
-     * Get a drawable container by key (e.g. for visibility or other updates).
-     */
     getDrawable(key: string): Container | undefined {
-        return this._drawableMap.get(key);
+        return this._drawableMap.get(key) ?? this._bandItemMap.get(key)?.container;
     }
 
     /**
-     * Remove a drawable container. Returns the container so the caller can
-     * decide whether to destroy it.
+     * Remove a non-banded drawable. Returns the container so the caller
+     * can decide whether to destroy it.
      */
     removeDrawable(key: string): Container | undefined {
         const container = this._drawableMap.get(key);
-        const layer = this._drawableLayer.get(key);
-        if (container !== undefined && layer !== undefined) {
-            const parent = layer === 'below' ? this._drawDataBelow : this._drawDataAbove;
-            parent.removeChild(container);
+        if (container !== undefined) {
+            this._drawDataBelow.removeChild(container);
             this._drawableMap.delete(key);
-            this._drawableLayer.delete(key);
         }
         return container;
-    }
-
-    getDrawableZIndex(key: string): number {
-        const container = this._drawableMap.get(key);
-        return container?.zIndex ?? 0;
     }
 
     setDrawableZIndex(key: string, zIndex: number): void {
@@ -173,6 +223,76 @@ export class WorldRenderSystem {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Band-based items (tracks, buildings, stations, trains, catenary)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Add a container to a specific elevation band and sublayer.
+     *
+     * If the key already exists, the container is moved to the new band/sublayer
+     * (efficient reparenting for items that change elevation, e.g. moving trains).
+     *
+     * @param key - Unique identifier for the item
+     * @param container - The pixi container to add
+     * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
+     * @param sublayer - Which sublayer within the band
+     */
+    addToBand(key: string, container: Container, bandIndex: number, sublayer: BandSublayer): void {
+        const existing = this._bandItemMap.get(key);
+        if (existing) {
+            if (existing.bandIndex === bandIndex && existing.sublayer === sublayer) {
+                return; // Already in the right place
+            }
+            const oldBand = this._bands[existing.bandIndex];
+            if (oldBand) {
+                oldBand[existing.sublayer].removeChild(existing.container);
+            }
+        }
+
+        const band = this._bands[bandIndex];
+        if (band) {
+            band[sublayer].addChild(container);
+        }
+        this._bandItemMap.set(key, { container, bandIndex, sublayer });
+    }
+
+    /**
+     * Remove a band item. Returns the container so the caller can destroy it.
+     */
+    removeFromBand(key: string): Container | undefined {
+        const item = this._bandItemMap.get(key);
+        if (item === undefined) return undefined;
+
+        const band = this._bands[item.bandIndex];
+        if (band) {
+            band[item.sublayer].removeChild(item.container);
+        }
+        this._bandItemMap.delete(key);
+        return item.container;
+    }
+
+    /**
+     * Set the draw order of a band item within its sublayer.
+     */
+    setOrderInBand(key: string, order: number): void {
+        const item = this._bandItemMap.get(key);
+        if (item !== undefined) {
+            item.container.zIndex = order;
+        }
+    }
+
+    /**
+     * Get the band index of an item added via {@link addToBand}.
+     */
+    getBandIndex(key: string): number | undefined {
+        return this._bandItemMap.get(key)?.bandIndex;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shadow (shared container per elevation)
+    // -------------------------------------------------------------------------
+
     /**
      * Add shadow graphics to the shadow container at the given elevation level.
      *
@@ -181,9 +301,9 @@ export class WorldRenderSystem {
      * the ground next to the building, below elevated objects).
      */
     addShadow(key: string, container: Container, elevation: ELEVATION): void {
-        const shadowContainer = this._shadowContainerMap.get(elevation);
-        if (shadowContainer !== undefined) {
-            shadowContainer.addChild(container);
+        const bandIndex = this._elevationToBandIndex.get(elevation);
+        if (bandIndex !== undefined) {
+            this._bands[bandIndex].shadow.addChild(container);
         }
         this._shadowMap.set(key, { container, elevation });
     }
@@ -191,11 +311,49 @@ export class WorldRenderSystem {
     removeShadow(key: string): void {
         const shadow = this._shadowMap.get(key);
         if (shadow !== undefined) {
-            this._shadowContainerMap.get(shadow.elevation)?.removeChild(shadow.container);
+            const bandIndex = this._elevationToBandIndex.get(shadow.elevation);
+            if (bandIndex !== undefined) {
+                this._bands[bandIndex].shadow.removeChild(shadow.container);
+            }
             shadow.container.destroy({ children: true });
             this._shadowMap.delete(key);
         }
     }
+
+    // -------------------------------------------------------------------------
+    // Bed (shared container per elevation)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Add a bed container to the shared bed layer at the given elevation.
+     *
+     * All bed items at the same elevation render together before any track
+     * drawables, preventing one track's bed from covering another track's
+     * rails at junctions.
+     */
+    addBed(key: string, container: Container, elevation: ELEVATION): void {
+        const bandIndex = this._elevationToBandIndex.get(elevation);
+        if (bandIndex !== undefined) {
+            this._bands[bandIndex].bed.addChild(container);
+        }
+        this._bedMap.set(key, { container, elevation });
+    }
+
+    removeBed(key: string): void {
+        const bed = this._bedMap.get(key);
+        if (bed !== undefined) {
+            const bandIndex = this._elevationToBandIndex.get(bed.elevation);
+            if (bandIndex !== undefined) {
+                this._bands[bandIndex].bed.removeChild(bed.container);
+            }
+            bed.container.destroy({ children: true });
+            this._bedMap.delete(key);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Elevation helpers
+    // -------------------------------------------------------------------------
 
     /**
      * Map a raw elevation value (world units) to the elevation band index
@@ -209,103 +367,62 @@ export class WorldRenderSystem {
 
     /**
      * Resolve a raw elevation value to the ELEVATION enum level.
-     * Useful for determining which shadow container to use.
+     * Useful for determining which shadow/bed container to use.
      */
     resolveElevationLevel(rawElevation: number): ELEVATION {
         const interval = findElevationInterval(rawElevation);
         return getElevationForLayer(interval);
     }
 
-    /**
-     * Compute the z-index for a drawable in the given elevation band.
-     *
-     * @param elevationBandIndex - Index of the elevation band (from {@link getElevationBandIndex})
-     * @param orderWithinBand - Order of this drawable within the band (0-based)
-     */
-    computeZIndex(elevationBandIndex: number, orderWithinBand: number): number {
-        return elevationBandIndex * LAYERS_PER_ELEVATION + 1 + orderWithinBand;
-    }
-
-    /**
-     * Compute the z-index for a rail overlay in the given elevation band.
-     * Rails sit above ballast drawables but below the next elevation band's shadows.
-     */
-    computeRailZIndex(elevationBandIndex: number, orderWithinBand: number): number {
-        return elevationBandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + orderWithinBand;
-    }
-
-    /** Add a rail container to the elevation-sorted below layer. */
-    addRail(container: Container): void {
-        this._drawDataBelow.addChild(container);
-    }
-
-    /** Remove a rail container from the below layer. */
-    removeRail(container: Container): void {
-        this._drawDataBelow.removeChild(container);
-    }
-
-    /**
-     * Record the number of track drawables in a given elevation band.
-     * Call after reindexing so that {@link computeOnTrackObjectZIndex} can
-     * place on-track objects (e.g. train bogies) above all tracks in the band.
-     *
-     * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
-     * @param count - Total number of track drawables in this band
-     */
-    setBandTrackCount(bandIndex: number, count: number): void {
-        this._bandTrackCount.set(bandIndex, count);
-    }
-
-    /**
-     * Compute a z-index for an on-track object (e.g. a train bogie) that is
-     * guaranteed to be above every track drawable in the same elevation band.
-     *
-     * The returned value leaves a gap of 2 above the highest track so that
-     * callers can place sub-layers (e.g. car bodies at bogieZ − 1) that are
-     * still above all tracks.
-     *
-     * @param bandIndex - Elevation band index (from {@link getElevationBandIndex})
-     * @returns A z-index above all track drawables in that band
-     */
-    computeOnTrackObjectZIndex(bandIndex: number): number {
-        const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
-        return bandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + trackCount + 2;
-    }
-
-    /**
-     * Compute a z-index for catenary (overhead wire) elements that renders
-     * above trains in the same elevation band.
-     */
-    computeCatenaryZIndex(bandIndex: number): number {
-        const trackCount = this._bandTrackCount.get(bandIndex) ?? 0;
-        // +10 above on-track objects (+2) to leave room for car bodies etc.
-        return bandIndex * LAYERS_PER_ELEVATION + RAIL_OFFSET_WITHIN_BAND + trackCount + 10;
-    }
+    // -------------------------------------------------------------------------
+    // Sort / cleanup
+    // -------------------------------------------------------------------------
 
     sortChildren(): void {
+        for (const band of this._bands) {
+            band.drawable.sortChildren();
+            band.rail.sortChildren();
+            band.onTrack.sortChildren();
+            band.catenary.sortChildren();
+        }
         this._drawDataBelow.sortChildren();
-        this._drawDataAbove.sortChildren();
     }
 
     cleanup(): void {
         this._shadowMap.forEach(({ container, elevation }) => {
-            this._shadowContainerMap.get(elevation)?.removeChild(container);
+            const bandIndex = this._elevationToBandIndex.get(elevation);
+            if (bandIndex !== undefined) {
+                this._bands[bandIndex].shadow.removeChild(container);
+            }
             container.destroy({ children: true });
         });
         this._shadowMap.clear();
 
-        this._drawableMap.forEach((container, key) => {
-            const layer = this._drawableLayer.get(key);
-            const parent = layer === 'above' ? this._drawDataAbove : this._drawDataBelow;
-            parent.removeChild(container);
+        this._bedMap.forEach(({ container, elevation }) => {
+            const bandIndex = this._elevationToBandIndex.get(elevation);
+            if (bandIndex !== undefined) {
+                this._bands[bandIndex].bed.removeChild(container);
+            }
+            container.destroy({ children: true });
+        });
+        this._bedMap.clear();
+
+        this._bandItemMap.forEach(({ container, bandIndex, sublayer }) => {
+            const band = this._bands[bandIndex];
+            if (band) {
+                band[sublayer].removeChild(container);
+            }
+            container.destroy({ children: true });
+        });
+        this._bandItemMap.clear();
+
+        this._drawableMap.forEach((container) => {
+            this._drawDataBelow.removeChild(container);
             container.destroy({ children: true });
         });
         this._drawableMap.clear();
-        this._drawableLayer.clear();
-        this._bandTrackCount.clear();
 
         this._drawDataBelow.destroy({ children: true });
-        this._drawDataAbove.destroy({ children: true });
         this._mainContainer.destroy({ children: true });
     }
 }

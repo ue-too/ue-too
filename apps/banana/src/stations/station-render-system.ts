@@ -81,11 +81,9 @@ export class StationRenderSystem {
     const key = stationKey(id);
     const elevationRaw = (station.elevation as number) * LEVEL_HEIGHT;
     const bandIndex = this._worldRenderSystem.getElevationBandIndex(elevationRaw);
-    // Place platform above track ballast (order 450 — below rails at 500).
-    const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, 450);
-    container.zIndex = zIndex;
-
-    this._worldRenderSystem.addDrawable(key, container);
+    // Place platform above track ballast in the drawable sublayer.
+    this._worldRenderSystem.addToBand(key, container, bandIndex, 'drawable');
+    this._worldRenderSystem.setOrderInBand(key, 450);
     this._worldRenderSystem.sortChildren();
 
     this._records.set(id, { container });
@@ -96,8 +94,8 @@ export class StationRenderSystem {
     if (record === undefined) return;
 
     const key = stationKey(id);
-    this._worldRenderSystem.removeDrawable(key);
-    record.container.destroy({ children: true });
+    const removed = this._worldRenderSystem.removeFromBand(key);
+    removed?.destroy({ children: true });
     this._records.delete(id);
   }
 
@@ -208,9 +206,8 @@ export class StationRenderSystem {
     g.lineTo(center.x + dir.x * halfLen, center.y + dir.y * halfLen);
     g.stroke({ color: 0xffffff, alpha: 0.6, width: 0.1 });
 
-    const bandIndex = this._worldRenderSystem.getElevationBandIndex(0);
-    const zIndex = this._worldRenderSystem.computeZIndex(bandIndex, 499);
-    g.zIndex = zIndex;
+    // Preview is a non-banded drawable with a high z-index to render on top.
+    g.zIndex = 9999;
     this._worldRenderSystem.sortChildren();
   }
 

@@ -122,7 +122,7 @@ export class TrackGraph {
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
         const originalGauge = segment.gauge;
-        const originalBallastWidth = segment.ballastWidth;
+        const originalBedWidth = segment.bedWidth;
 
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
@@ -135,7 +135,7 @@ export class TrackGraph {
                 newJoint.elevation,
                 originalGauge,
                 new Set(),
-                originalBallastWidth
+                originalBedWidth
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -146,7 +146,7 @@ export class TrackGraph {
                 t1Joint.elevation,
                 originalGauge,
                 new Set(),
-                originalBallastWidth
+                originalBedWidth
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
@@ -280,7 +280,7 @@ export class TrackGraph {
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
         const originalGauge = segment.gauge;
-        const originalBallastWidth = segment.ballastWidth;
+        const originalBedWidth = segment.bedWidth;
 
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
@@ -293,7 +293,7 @@ export class TrackGraph {
                 newJoint.elevation,
                 originalGauge,
                 new Set(),
-                originalBallastWidth
+                originalBedWidth
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -304,7 +304,7 @@ export class TrackGraph {
                 t1Joint.elevation,
                 originalGauge,
                 new Set(),
-                originalBallastWidth
+                originalBedWidth
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
@@ -899,7 +899,7 @@ export class TrackGraph {
             if (curve === null) {
                 continue;
             }
-            const bw = curve.ballastWidth ?? curve.gauge;
+            const bw = curve.bedWidth ?? curve.gauge;
             const maxSnapDistance = bw / 2 + buffer;
             if (distance < minDistance && distance < maxSnapDistance) {
                 minDistance = distance;
@@ -1215,13 +1215,13 @@ export class TrackGraph {
         this._trackCurveManager.projectionBuffer = value;
     }
 
-    /** Total visual width of the ballast/slab bed for newly laid tracks (meters). Affects rendering and snapping. */
-    get ballastWidth(): number {
-        return this._trackCurveManager.ballastWidth;
+    /** Total width of the gravel bed foundation for newly laid tracks (meters). Affects snapping. */
+    get bedWidth(): number {
+        return this._trackCurveManager.bedWidth;
     }
 
-    set ballastWidth(value: number) {
-        this._trackCurveManager.ballastWidth = value;
+    set bedWidth(value: number) {
+        this._trackCurveManager.bedWidth = value;
     }
 
     /**
