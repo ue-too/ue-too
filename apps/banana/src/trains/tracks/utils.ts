@@ -224,5 +224,8 @@ export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, orig
         positiveOffsets,
         negativeOffsets,
         bedWidth: originalTrackSegment.bedWidth,
+        trackStyle: originalTrackSegment.trackStyle,
+        electrified: originalTrackSegment.electrified,
+        bed: originalTrackSegment.bed,
     }
 };

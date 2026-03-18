@@ -30,6 +30,12 @@ export type TrackSegment = {
     gauges?: number[];
     /** Total width of the gravel bed foundation (meters). Used for snapping when bed is enabled. */
     bedWidth?: number;
+    /** Visual style for this track segment. Preserved through splits so branching doesn't alter appearance. */
+    trackStyle?: TrackStyle;
+    /** Whether this track segment has overhead catenary electrification. */
+    electrified?: boolean;
+    /** Whether this track segment should render a bed (gravel foundation below the ballast). */
+    bed?: boolean;
     splits: number[];
     splitCurves: {
         curve: BCurve;

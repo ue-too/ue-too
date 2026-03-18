@@ -123,6 +123,7 @@ export class TrackGraph {
 
         const originalGauge = segment.gauge;
         const originalBedWidth = segment.bedWidth;
+        const originalVisualProps = this._trackCurveManager.getVisualPropsForSegment(trackSegmentNumber);
 
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
@@ -135,7 +136,8 @@ export class TrackGraph {
                 newJoint.elevation,
                 originalGauge,
                 new Set(),
-                originalBedWidth
+                originalBedWidth,
+                originalVisualProps
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -146,7 +148,8 @@ export class TrackGraph {
                 t1Joint.elevation,
                 originalGauge,
                 new Set(),
-                originalBedWidth
+                originalBedWidth,
+                originalVisualProps
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
@@ -281,6 +284,7 @@ export class TrackGraph {
 
         const originalGauge = segment.gauge;
         const originalBedWidth = segment.bedWidth;
+        const originalVisualProps = this._trackCurveManager.getVisualPropsForSegment(trackSegmentNumber);
 
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
@@ -293,7 +297,8 @@ export class TrackGraph {
                 newJoint.elevation,
                 originalGauge,
                 new Set(),
-                originalBedWidth
+                originalBedWidth,
+                originalVisualProps
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -304,7 +309,8 @@ export class TrackGraph {
                 t1Joint.elevation,
                 originalGauge,
                 new Set(),
-                originalBedWidth
+                originalBedWidth,
+                originalVisualProps
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));

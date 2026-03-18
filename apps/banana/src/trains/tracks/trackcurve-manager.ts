@@ -6,7 +6,7 @@ import {
 
 import { RTree, Rectangle } from '../r-tree';
 import { GenericEntityManager } from '../../utils';
-import { ELEVATION, ProjectionInfo, SerializedTrackSegment, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
+import { ELEVATION, ProjectionInfo, SerializedTrackSegment, TrackSegmentDrawData, TrackSegmentSplit, TrackStyle, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { getElevationAtT, makeTrackSegmentDrawDataFromSplit, orderTest, trackSegmentDrawDataInsertIndex } from './utils';
 import { Observable, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
@@ -97,6 +97,14 @@ export class TrackCurveManager {
         callback(index: number): void;
     })[] {
         return this._persistedDrawData;
+    }
+
+    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean } | undefined {
+        const drawData = this._persistedDrawData.find(
+            entry => entry.originalTrackSegment.trackSegmentNumber === segmentNumber
+        );
+        if (drawData === undefined) return undefined;
+        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, bed: drawData.bed };
     }
 
     getTrackSegment(segmentNumber: number): BCurve | null {
@@ -397,7 +405,8 @@ export class TrackCurveManager {
         t1Elevation: ELEVATION,
         gauge: number = 1.067,
         excludeSegmentsForCollisionCheck: Set<number> = new Set(),
-        bedWidth?: number
+        bedWidth?: number,
+        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean }
     ): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -578,7 +587,10 @@ export class TrackCurveManager {
             },
             collision: collisions,
             gauge,
-            bedWidth: bedWidth ?? this._bedWidth,
+            bedWidth: bedWidth ?? (this._bedEnabled ? this._bedWidth : undefined),
+            trackStyle: visualProps?.trackStyle,
+            electrified: visualProps?.electrified,
+            bed: visualProps?.bed,
             splits: insertionT,
             splitCurves: splits,
         };
@@ -599,17 +611,16 @@ export class TrackCurveManager {
         const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
 
         splits.forEach(split => {
-            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber);
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber) as
+                TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[]; callback(index: number): void };
+            drawDataForSplit.callback = ((index: number) => {
+                this._trackOrderMap.set(
+                    JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }),
+                    index
+                );
+            }).bind(this);
             const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
-            this._persistedDrawData.splice(insertIndex, 0, {
-                ...drawDataForSplit,
-                callback: ((index: number) => {
-                    this._trackOrderMap.set(
-                        JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }),
-                        index
-                    );
-                }).bind(this),
-            });
+            this._persistedDrawData.splice(insertIndex, 0, drawDataForSplit);
             drawDataForSplits.push(drawDataForSplit);
         });
 
@@ -1084,17 +1095,16 @@ export class TrackCurveManager {
         const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
 
         splits.forEach(split => {
-            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, segmentNumber);
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, segmentNumber) as
+                TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[]; callback(index: number): void };
+            drawDataForSplit.callback = ((index: number) => {
+                this._trackOrderMap.set(
+                    JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
+                    index
+                );
+            }).bind(this);
             const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
-            this._persistedDrawData.splice(insertIndex, 0, {
-                ...drawDataForSplit,
-                callback: ((index: number) => {
-                    this._trackOrderMap.set(
-                        JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
-                        index
-                    );
-                }).bind(this),
-            });
+            this._persistedDrawData.splice(insertIndex, 0, drawDataForSplit);
             drawDataForSplits.push(drawDataForSplit);
         });
 
