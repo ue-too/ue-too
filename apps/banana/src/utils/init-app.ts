@@ -16,6 +16,8 @@ import { CarStockManager } from '@/trains/car-stock-manager';
 import { FormationManager } from '@/trains/formation-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
+import { TerrainData } from '@/terrain/terrain-data';
+import { TerrainRenderSystem } from '@/terrain/terrain-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 import { CarImageRegistry } from '@/trains/car-image-registry';
@@ -29,6 +31,8 @@ const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 export type BananaAppComponents = BaseAppComponents & {
   curveEngine: CurveCreationEngine;
   worldRenderSystem: WorldRenderSystem;
+  terrainData: TerrainData;
+  terrainRenderSystem: TerrainRenderSystem;
   trackRenderSystem: TrackRenderSystem;
   trainRenderSystem: TrainRenderSystem;
   buildingManager: BuildingManager;
@@ -100,6 +104,21 @@ export const initApp = async (
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
   const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
   const worldRenderSystem = new WorldRenderSystem();
+
+  // Terrain: 2000x2000m grid centered on origin, 5m cell size, flat at height 0
+  const terrainData = TerrainData.createFlat({
+    originX: -1000,
+    originY: -1000,
+    cellsX: 400,
+    cellsY: 400,
+    cellSize: 5,
+  }, 0);
+  const terrainRenderSystem = new TerrainRenderSystem(
+    worldRenderSystem,
+    terrainData,
+    { renderer: baseComponents.app.renderer },
+  );
+
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,
     curveEngine.trackGraph.trackCurveManager,
@@ -234,6 +253,8 @@ export const initApp = async (
     ...baseComponents,
     curveEngine,
     worldRenderSystem,
+    terrainData,
+    terrainRenderSystem,
     trackRenderSystem,
     trainRenderSystem,
     buildingManager,
