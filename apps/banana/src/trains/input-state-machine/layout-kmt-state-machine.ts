@@ -148,7 +148,7 @@ export class LayoutHoverForCurveDeletionState extends TemplateState<
                 action: (context, event) => {
                     context.cancelCurrentDeletion();
                 },
-                defaultTargetState: 'IDLE',
+                defaultTargetState: 'HOVER_FOR_STARTING_POINT',
             },
         };
 }

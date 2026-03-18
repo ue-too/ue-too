@@ -1,5 +1,8 @@
 import { BCurve, Point } from "@ue-too/curve";
 
+/** Visual style applied to track rendering. */
+export type TrackStyle = 'ballasted' | 'slab';
+
 export enum ELEVATION {
     SUB_3 = -3,
     SUB_2,
@@ -25,6 +28,14 @@ export type TrackSegment = {
     curve: BCurve;
     gauge: number;
     gauges?: number[];
+    /** Total width of the gravel bed foundation (meters). Used for snapping when bed is enabled. */
+    bedWidth?: number;
+    /** Visual style for this track segment. Preserved through splits so branching doesn't alter appearance. */
+    trackStyle?: TrackStyle;
+    /** Whether this track segment has overhead catenary electrification. */
+    electrified?: boolean;
+    /** Whether this track segment should render a bed (gravel foundation below the ballast). */
+    bed?: boolean;
     splits: number[];
     splitCurves: {
         curve: BCurve;
@@ -85,6 +96,14 @@ export type TrackSegmentDrawData = {
         to: ELEVATION;
     };
     excludeSegmentsForCollisionCheck: Set<number>;
+    /** Visual style for this track segment. Defaults to 'ballasted' if not set. */
+    trackStyle?: TrackStyle;
+    /** Whether this track segment has overhead catenary electrification. */
+    electrified?: boolean;
+    /** Total width of the gravel bed foundation in world units (meters). Used for snapping. */
+    bedWidth?: number;
+    /** Whether this track segment should render a bed (gravel foundation below the ballast). */
+    bed?: boolean;
 };
 
 export type TrackSegmentSplit = {

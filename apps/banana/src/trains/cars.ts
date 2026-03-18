@@ -48,6 +48,8 @@ export interface TrainUnit {
     get bogieToEdge(): number;
     /** Flattened list of cars in head-to-tail order. */
     flatCars(): readonly Car[];
+    /** Flattened list of cars in head-to-tail order, including the path to the car. */
+    _flatCars(): readonly { car: Car, path: string[] }[];
     /** Reverse internal ordering for direction switch. */
     switchDirection(): void;
     /** Whether this unit is flipped from its original orientation. */
@@ -84,6 +86,10 @@ export class Car implements TrainUnit {
 
     flatCars(): readonly Car[] {
         return [this];
+    }
+
+    _flatCars(): readonly { car: Car, path: string[] }[] {
+        return [{ car: this, path: [] }];
     }
 
     get edgeToBogie(): number {

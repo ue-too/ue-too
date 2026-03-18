@@ -34,13 +34,8 @@ const createLayouyStateMachineWithDefaultContext = (canvas: Canvas, camera: Obse
     return createLayoutStateMachine(context);
 }
 
-const createTrainPlacementEngine = (trackGraph: TrackGraph): TrainPlacementEngine => {
-    return new TrainPlacementEngine(trackGraph);
-};
-
 export {
     createCurveCreationEngine,
     createLayoutStateMachine,
     createLayouyStateMachineWithDefaultContext,
-    createTrainPlacementEngine,
 };

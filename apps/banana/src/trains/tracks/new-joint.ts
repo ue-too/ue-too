@@ -2,7 +2,7 @@ import { BCurve } from '@ue-too/curve';
 import type { Point } from '@ue-too/math';
 import { PointCal, normalizeAngleZero2TwoPI } from '@ue-too/math';
 
-import { BrandNewJoint, NewJointType } from '../input-state-machine/layout-kmt-state-machine';
+import type { BrandNewJoint, NewJointType } from '../input-state-machine/types';
 
 type PreviewCurveType =
     | PreviewStraightLine

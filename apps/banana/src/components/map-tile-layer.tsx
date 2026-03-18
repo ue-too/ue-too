@@ -1,9 +1,9 @@
 import { LIGHT, layers } from '@protomaps/basemaps';
 import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
+import { Info } from 'lucide-react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Protocol } from 'pmtiles';
-import { Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const USE_LOCAL_TILES = !!import.meta.env.VITE_LOCAL_TILES;
@@ -146,6 +146,9 @@ export function MapTileLayer({
             interactive: false,
             attributionControl: false,
             fadeDuration: 0,
+            maxTileCacheSize: 50,
+            maxTileCacheZoomLevels: 2,
+            pixelRatio: 1,
         });
 
         map.on('load', () => {
@@ -230,7 +233,7 @@ function MapAttribution() {
                 </div>
             )}
             <button
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => setOpen(v => !v)}
                 style={{
                     background: 'rgba(0,0,0,0.5)',
                     border: 'none',

@@ -1,4 +1,5 @@
 import { InitAppOptions, BaseAppComponents, baseInitApp } from '@ue-too/board-pixi-integration';
+import { toast } from 'sonner';
 import Stats from 'stats.js';
 
 import { Train, type TrainPosition } from '@/trains/formation';
@@ -17,6 +18,11 @@ import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
+import { CarImageRegistry } from '@/trains/car-image-registry';
+import { TimeManager } from '@/time';
+import { StationManager } from '@/stations/station-manager';
+import { StationRenderSystem } from '@/stations/station-render-system';
+import { StationPlacementEngine, StationPlacementStateMachine } from '@/stations/station-placement-state-machine';
 
 const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
 
@@ -36,6 +42,10 @@ export type BananaAppComponents = BaseAppComponents & {
   kmtStateMachineExpansion: KmtExpandedStateMachine;
   trainStateMachine: TrainPlacementStateMachine;
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
+  carImageRegistry: CarImageRegistry;
+  timeManager: TimeManager;
+  stationManager: StationManager;
+  stationRenderSystem: StationRenderSystem;
   /** Add a train at the given segment and t. For stress testing. */
   addTrainAtPosition: (
     segmentNumber: number,
@@ -83,6 +93,8 @@ export const initApp = async (
 
   baseComponents.camera.setMaxZoomLevel(30);
 
+  const timeManager = new TimeManager(baseComponents.app);
+
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
   const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
   const worldRenderSystem = new WorldRenderSystem();
@@ -96,6 +108,14 @@ export const initApp = async (
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);
 
+  const stationManager = new StationManager();
+  const stationRenderSystem = new StationRenderSystem(
+    worldRenderSystem,
+    stationManager,
+    curveEngine.trackGraph,
+    { renderer: baseComponents.app.renderer },
+  );
+
   const trainManager = new TrainManager();
   const carStockManager = new CarStockManager();
   const formationManager = new FormationManager(carStockManager);
@@ -108,9 +128,11 @@ export const initApp = async (
       trainManager.addTrain(placed);
       // Reset to default formation for next placement
       trainPlacementEngine.setFormation(null);
+      toast.success('Train placed on the simulation map');
       return new Train(null, trackGraph, jointDirectionManager);
     },
   });
+  const carImageRegistry = new CarImageRegistry();
   const trainRenderSystem = new TrainRenderSystem(
     worldRenderSystem,
     () => trainManager.getPlacedTrains(),
@@ -118,14 +140,25 @@ export const initApp = async (
     trackGraph,
     trackRenderSystem,
     { renderer: baseComponents.app.renderer },
+    carImageRegistry,
   );
   // const layoutStateMachine = createLayoutStateMachine(curveEngine);
   const trainStateMachine = new TrainPlacementStateMachine(trainPlacementEngine);
+  const stationPlacementEngine = new StationPlacementEngine(
+    baseComponents.canvasProxy,
+    trackGraph,
+    baseComponents.camera,
+    stationManager,
+    stationRenderSystem,
+  );
+  const stationStateMachine = new StationPlacementStateMachine(stationPlacementEngine);
   const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
     worldRenderSystem,
     trackGraph,
     baseComponents.camera,
   );
+  debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
+  debugOverlayRenderSystem.setStationManager(stationManager);
 
   // When a train is removed from the track, return its cars to stock
   trainManager.setOnBeforeRemove((train) => {
@@ -134,7 +167,7 @@ export const initApp = async (
     }
   });
 
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, baseComponents.observableInputTracker);
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, baseComponents.observableInputTracker);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
@@ -147,8 +180,13 @@ export const initApp = async (
 
   baseComponents.app.stage.addChild(worldRenderSystem.container);
 
-  baseComponents.app.ticker.add((ticker) => {
-    trainRenderSystem.update(ticker.deltaMS);
+  timeManager.subscribe((_, deltaTime) => {
+    trainRenderSystem.update(deltaTime);
+    debugOverlayRenderSystem.updateFormationLabels();
+  });
+
+  trainManager.subscribeToChanges(() => {
+    trainRenderSystem.forceSync();
   });
 
   const addTrainAtPosition = (
@@ -207,6 +245,10 @@ export const initApp = async (
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
     debugOverlayRenderSystem,
+    carImageRegistry,
+    timeManager,
+    stationManager,
+    stationRenderSystem,
     addTrainAtPosition,
     addStressTestTrains,
     generateProceduralTracks,

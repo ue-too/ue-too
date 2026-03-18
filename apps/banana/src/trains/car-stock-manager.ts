@@ -15,10 +15,11 @@ export class CarStockManager {
     private _listeners: (() => void)[] = [];
     private _observable: Observable<[string, { type: CarStockChangeType }]> =
         new SynchronousObservable<[string, { type: CarStockChangeType }]>();
+    private _snapshot: readonly CarStockEntry[] = [];
 
     /** All cars currently in stock. */
     getAvailableCars(): readonly CarStockEntry[] {
-        return Array.from(this._cars.entries()).map(([id, car]) => ({ id, car }));
+        return this._snapshot;
     }
 
     /** Get a specific car by its ID, or null if not in stock. */
@@ -88,6 +89,7 @@ export class CarStockManager {
     }
 
     private _notify(): void {
+        this._snapshot = Array.from(this._cars.entries()).map(([id, car]) => ({ id, car }));
         for (const fn of this._listeners) fn();
     }
 }

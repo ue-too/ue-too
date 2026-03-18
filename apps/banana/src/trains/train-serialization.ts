@@ -6,6 +6,7 @@ import type { TrackGraph } from './tracks/track';
 import type { CarStockManager } from './car-stock-manager';
 import type { FormationManager } from './formation-manager';
 import type { TrainManager } from './train-manager';
+import type { Point } from '@ue-too/math';
 
 /** JSON-safe car data for serialization. */
 export type SerializedCar = {

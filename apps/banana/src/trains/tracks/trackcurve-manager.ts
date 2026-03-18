@@ -6,7 +6,7 @@ import {
 
 import { RTree, Rectangle } from '../r-tree';
 import { GenericEntityManager } from '../../utils';
-import { ELEVATION, ProjectionInfo, SerializedTrackSegment, TrackSegmentDrawData, TrackSegmentSplit, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
+import { ELEVATION, ProjectionInfo, SerializedTrackSegment, TrackSegmentDrawData, TrackSegmentSplit, TrackStyle, TrackSegmentWithCollision, TrackSegmentWithCollisionAndNumber } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import { getElevationAtT, makeTrackSegmentDrawDataFromSplit, orderTest, trackSegmentDrawDataInsertIndex } from './utils';
 import { Observable, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
@@ -42,6 +42,17 @@ export class TrackCurveManager {
     private _addTrackSegmentObservable: Observable<[number, TrackSegmentWithCollision]> = new SynchronousObservable<[number, TrackSegmentWithCollision]>();
     private _removeTrackSegmentObservable: Observable<[number]> = new SynchronousObservable<[number]>();
 
+    /**
+     * Extra distance added to gauge-based projection thresholds.
+     * Prevents head-on train texture overlap at joints.
+     */
+    private _projectionBuffer: number = 0.5;
+
+    /** Total width of the gravel bed foundation for newly created tracks. Used for snapping when bed is enabled. */
+    private _bedWidth: number = 3;
+    /** Whether the bed layer is enabled (affects snapping distance). */
+    private _bedEnabled: boolean = false;
+
     constructor(initialCount: number) {
         this._internalTrackCurveManager = new GenericEntityManager<{
             segment: TrackSegmentWithCollision;
@@ -52,10 +63,48 @@ export class TrackCurveManager {
         }>(initialCount);
     }
 
+    /** Get the current projection buffer value. */
+    get projectionBuffer(): number {
+        return this._projectionBuffer;
+    }
+
+    /** Set the projection buffer (extra distance beyond gauge for snapping). */
+    set projectionBuffer(value: number) {
+        this._projectionBuffer = Math.max(0, value);
+    }
+
+    /** Get the current bed width for newly created tracks. */
+    get bedWidth(): number {
+        return this._bedWidth;
+    }
+
+    /** Set the bed width for newly created tracks (affects snapping). */
+    set bedWidth(value: number) {
+        this._bedWidth = Math.max(1, value);
+    }
+
+    /** Whether the bed layer is enabled for snapping. */
+    get bedEnabled(): boolean {
+        return this._bedEnabled;
+    }
+
+    /** Toggle bed layer for snapping. When off, snapping uses gauge only. */
+    set bedEnabled(value: boolean) {
+        this._bedEnabled = value;
+    }
+
     get persistedDrawData(): (TrackSegmentDrawData & {
         callback(index: number): void;
     })[] {
         return this._persistedDrawData;
+    }
+
+    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean } | undefined {
+        const drawData = this._persistedDrawData.find(
+            entry => entry.originalTrackSegment.trackSegmentNumber === segmentNumber
+        );
+        if (drawData === undefined) return undefined;
+        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, bed: drawData.bed };
     }
 
     getTrackSegment(segmentNumber: number): BCurve | null {
@@ -201,7 +250,7 @@ export class TrackCurveManager {
     }
 
     onTrackSegmentEdge(position: Point): ProjectionInfo | null {
-        let minDistance = 2;
+        let minDistance = Infinity;
         let projectionInfo: ProjectionInfo | null = null;
         const bbox = new Rectangle(
             position.x - 10,
@@ -217,8 +266,12 @@ export class TrackCurveManager {
                     position,
                     res.projection
                 );
+                const existingWidth = trackSegment.bedWidth ?? trackSegment.gauge;
+                const newWidth = this._bedEnabled ? this._bedWidth : trackSegment.gauge;
+                const maxSnapDistance = existingWidth / 2 + newWidth / 2 + this._projectionBuffer;
                 if (
                     distance < minDistance &&
+                    distance < maxSnapDistance &&
                     distance > trackSegment.gauge / 2
                 ) {
                     minDistance = distance;
@@ -245,7 +298,7 @@ export class TrackCurveManager {
                         res.projection,
                         PointCal.multiplyVectorByScalar(
                             orthogonalDirection,
-                            trackSegment.gauge
+                            existingWidth / 2 + newWidth / 2
                         )
                     );
                     if (projectionInfo === null) {
@@ -285,16 +338,16 @@ export class TrackCurveManager {
     }
 
     projectOnCurve(
-        position: Point,
-        maxDistance: number = 1
+        position: Point
     ): ProjectionInfo | null {
-        let minDistance = maxDistance;
+        let minDistance = Infinity;
         let projectionInfo: ProjectionInfo | null = null;
+        const searchRadius = 10;
         const bbox = new Rectangle(
-            position.x - 0.1,
-            position.y - 0.1,
-            position.x + 0.1,
-            position.y + 0.1
+            position.x - searchRadius,
+            position.y - searchRadius,
+            position.x + searchRadius,
+            position.y + searchRadius
         );
         const possibleTrackSegments = this._internalRTree.search(bbox);
         possibleTrackSegments.forEach(trackSegment => {
@@ -306,7 +359,7 @@ export class TrackCurveManager {
                 );
                 const tangent = trackSegment.curve.derivative(res.tVal);
                 const curvature = trackSegment.curve.curvature(res.tVal);
-                if (distance < minDistance) {
+                if (distance < minDistance && distance < trackSegment.gauge / 2) {
                     minDistance = distance;
                     if (projectionInfo === null) {
                         const curveIsSloped = trackSegment.elevation.from !== trackSegment.elevation.to;
@@ -351,7 +404,9 @@ export class TrackCurveManager {
         t0Elevation: ELEVATION,
         t1Elevation: ELEVATION,
         gauge: number = 1.067,
-        excludeSegmentsForCollisionCheck: Set<number> = new Set()
+        excludeSegmentsForCollisionCheck: Set<number> = new Set(),
+        bedWidth?: number,
+        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean }
     ): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -532,6 +587,10 @@ export class TrackCurveManager {
             },
             collision: collisions,
             gauge,
+            bedWidth: bedWidth ?? (this._bedEnabled ? this._bedWidth : undefined),
+            trackStyle: visualProps?.trackStyle,
+            electrified: visualProps?.electrified,
+            bed: visualProps?.bed,
             splits: insertionT,
             splitCurves: splits,
         };
@@ -552,17 +611,16 @@ export class TrackCurveManager {
         const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
 
         splits.forEach(split => {
-            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber);
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, curveNumber) as
+                TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[]; callback(index: number): void };
+            drawDataForSplit.callback = ((index: number) => {
+                this._trackOrderMap.set(
+                    JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }),
+                    index
+                );
+            }).bind(this);
             const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
-            this._persistedDrawData.splice(insertIndex, 0, {
-                ...drawDataForSplit,
-                callback: ((index: number) => {
-                    this._trackOrderMap.set(
-                        JSON.stringify({ trackSegmentNumber: curveNumber, tValInterval: split.tValInterval }),
-                        index
-                    );
-                }).bind(this),
-            });
+            this._persistedDrawData.splice(insertIndex, 0, drawDataForSplit);
             drawDataForSplits.push(drawDataForSplit);
         });
 
@@ -1037,17 +1095,16 @@ export class TrackCurveManager {
         const drawDataForSplits: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[] = [];
 
         splits.forEach(split => {
-            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, segmentNumber);
+            const drawDataForSplit = makeTrackSegmentDrawDataFromSplit(split, trackSegmentEntry, segmentNumber) as
+                TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[]; callback(index: number): void };
+            drawDataForSplit.callback = ((index: number) => {
+                this._trackOrderMap.set(
+                    JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
+                    index
+                );
+            }).bind(this);
             const insertIndex = trackSegmentDrawDataInsertIndex(this._persistedDrawData, drawDataForSplit);
-            this._persistedDrawData.splice(insertIndex, 0, {
-                ...drawDataForSplit,
-                callback: ((index: number) => {
-                    this._trackOrderMap.set(
-                        JSON.stringify({ trackSegmentNumber: segmentNumber, tValInterval: split.tValInterval }),
-                        index
-                    );
-                }).bind(this),
-            });
+            this._persistedDrawData.splice(insertIndex, 0, drawDataForSplit);
             drawDataForSplits.push(drawDataForSplit);
         });
 

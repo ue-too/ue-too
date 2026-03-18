@@ -110,6 +110,32 @@ export class TrainManager {
     return;
   }
 
+  /**
+   * Decouple a train at the given car indices, splitting it into two trains.
+   * The original train keeps the `inherit` side; the new train is registered
+   * and its id is returned.
+   *
+   * @param trainId - Entity id of the train to split.
+   * @param headCarIndex - Index of the last car in the head portion.
+   * @param tailCarIndex - Index of the first car in the tail portion.
+   * @param inherit - Which side the original train keeps.
+   * @returns The entity id of the newly created train, or null if the train was not found.
+   */
+  decoupleTrainAtCar(
+    trainId: number,
+    headCarIndex: number,
+    tailCarIndex: number,
+    inherit: 'head' | 'tail',
+  ): number | null {
+    const train = this._internalTrainManager.getEntity(trainId);
+    if (!train) return null;
+
+    const newTrain = train.decoupleAtCar(headCarIndex, tailCarIndex, inherit);
+    const newId = this.addTrain(newTrain);
+    this._notify();
+    return newId;
+  }
+
   /** Subscribe to list/selection changes. Returns unsubscribe. */
   subscribe(listener: () => void): () => void {
     this._listeners.push(listener);

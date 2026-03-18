@@ -121,6 +121,10 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
+        const originalGauge = segment.gauge;
+        const originalBedWidth = segment.bedWidth;
+        const originalVisualProps = this._trackCurveManager.getVisualPropsForSegment(trackSegmentNumber);
+
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
         const firstSegmentNumber =
@@ -129,7 +133,11 @@ export class TrackGraph {
                 t0JointNumber,
                 newJointNumber,
                 t0Joint.elevation,
-                newJoint.elevation
+                newJoint.elevation,
+                originalGauge,
+                new Set(),
+                originalBedWidth,
+                originalVisualProps
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -137,7 +145,11 @@ export class TrackGraph {
                 newJointNumber,
                 t1JointNumber,
                 newJoint.elevation,
-                t1Joint.elevation
+                t1Joint.elevation,
+                originalGauge,
+                new Set(),
+                originalBedWidth,
+                originalVisualProps
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
@@ -270,6 +282,10 @@ export class TrackGraph {
         const firstCurve = new BCurve(newControlPointGroups[0]);
         const secondCurve = new BCurve(newControlPointGroups[1]);
 
+        const originalGauge = segment.gauge;
+        const originalBedWidth = segment.bedWidth;
+        const originalVisualProps = this._trackCurveManager.getVisualPropsForSegment(trackSegmentNumber);
+
         this._trackCurveManager.destroyCurve(trackSegmentNumber);
 
         const firstSegmentNumber =
@@ -278,7 +294,11 @@ export class TrackGraph {
                 t0JointNumber,
                 newJointNumber,
                 t0Joint.elevation,
-                newJoint.elevation
+                newJoint.elevation,
+                originalGauge,
+                new Set(),
+                originalBedWidth,
+                originalVisualProps
             );
         const secondSegmentNumber =
             this._trackCurveManager.createCurveWithJoints(
@@ -286,7 +306,11 @@ export class TrackGraph {
                 newJointNumber,
                 t1JointNumber,
                 newJoint.elevation,
-                t1Joint.elevation
+                t1Joint.elevation,
+                originalGauge,
+                new Set(),
+                originalBedWidth,
+                originalVisualProps
             );
 
         const tangentAtNewJoint = PointCal.unitVector(firstCurve.derivative(1));
@@ -858,33 +882,33 @@ export class TrackGraph {
             curvature: number;
             endingJoint: boolean;
         } | null = null;
-        let minDistance: number = 1;
+        let minDistance: number = Infinity;
 
         const joints = this._jointManager.getJoints();
+        const buffer = this._trackCurveManager.projectionBuffer;
 
         for (const { jointNumber, joint } of joints) {
             const distance = PointCal.distanceBetweenPoints(
                 position,
                 joint.position
             );
-            if (distance < minDistance) {
+            const curveNumber: number | undefined = joint.connections
+                .values()
+                .next().value;
+            if (curveNumber === undefined) {
+                continue;
+            }
+            const curve =
+                this._trackCurveManager.getTrackSegmentWithJoints(
+                    curveNumber
+                );
+            if (curve === null) {
+                continue;
+            }
+            const bw = curve.bedWidth ?? curve.gauge;
+            const maxSnapDistance = bw / 2 + buffer;
+            if (distance < minDistance && distance < maxSnapDistance) {
                 minDistance = distance;
-                const curveNumber: number | undefined = joint.connections
-                    .values()
-                    .next().value;
-                if (curveNumber === undefined) {
-                    continue;
-                }
-                const curve =
-                    this._trackCurveManager.getTrackSegmentWithJoints(
-                        curveNumber
-                    );
-                if (curve === null) {
-                    continue;
-                }
-                if (curve === null) {
-                    continue;
-                }
                 const tVal = curve.t0Joint === jointNumber ? 0 : 1;
                 const curvature = curve.curve.curvature(tVal);
                 const endingJoint = this.jointIsEndingTrack(jointNumber);
@@ -1186,6 +1210,32 @@ export class TrackGraph {
 
     get jointManager(): TrackJointManager {
         return this._jointManager;
+    }
+
+    /** Extra distance beyond gauge for projection snapping. Adjustable to prevent train texture overlap. */
+    get projectionBuffer(): number {
+        return this._trackCurveManager.projectionBuffer;
+    }
+
+    set projectionBuffer(value: number) {
+        this._trackCurveManager.projectionBuffer = value;
+    }
+
+    /** Total width of the gravel bed foundation for newly laid tracks (meters). Affects snapping. */
+    get bedWidth(): number {
+        return this._trackCurveManager.bedWidth;
+    }
+
+    set bedWidth(value: number) {
+        this._trackCurveManager.bedWidth = value;
+    }
+
+    get bedEnabled(): boolean {
+        return this._trackCurveManager.bedEnabled;
+    }
+
+    set bedEnabled(value: boolean) {
+        this._trackCurveManager.bedEnabled = value;
     }
 
     /**

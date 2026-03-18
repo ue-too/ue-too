@@ -26,7 +26,22 @@
       "Bash(find /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public -maxdepth 1 -type f -name \"*.json\" | xargs ls -lh)",
       "Bash(head -50 /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/public/*.json 2>/dev/null | head -100)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/sprites/v4/light.json 2>&1)",
-      "Bash(grep -rn \"pointer-events-none.*bottom\\\\|bottom.*pointer-events-none\" /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)"
+      "Bash(grep -rn \"pointer-events-none.*bottom\\\\|bottom.*pointer-events-none\" /Users/vincent.yy.chang/dev/ue-too/sync-map/apps/banana/src --include=\"*.tsx\" --include=\"*.ts\" 2>/dev/null | head -20)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cd:*)",
+      "Bash(grep -n \"getOnTrackObjectZIndex\" /Users/vincent.yy.chang/dev/ue-too/map/apps/banana/src/trains/**/*.ts 2>/dev/null)",
+      "Bash(bun -e \"const { createCanvas } = require\\('canvas'\\); console.log\\('canvas available'\\)\" 2>&1 || echo \"no canvas module\")",
+      "Bash(bun -e \"import { createCanvas } from 'canvas'; console.log\\('ok'\\)\" 2>&1)",
+      "Bash(cd /Users/vincent.yy.chang/dev/ue-too/map/apps/banana && bun run scripts/generate-track-textures.ts 2>&1)",
+      "Bash(bun run:*)",
+      "Bash(pkill -f \"generate-track-textures\" 2>&1 || true)",
+      "Bash(git log:*)",
+      "Bash(wc -l /Users/vincent.yy.chang/dev/ue-too/map/apps/banana/src/**/*.ts)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(bun nx:*)",
+      "Bash(grep -E \"\\\\.ts$\")",
+      "Bash(grep:*)"
     ]
   }
 }

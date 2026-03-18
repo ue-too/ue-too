@@ -56,9 +56,9 @@ export class BuildingRenderSystem {
 
   cleanup(): void {
     this._abortController.abort();
-    for (const [id, record] of this._records) {
+    for (const [id] of this._records) {
       const key = buildingKey(id);
-      const body = this._worldRenderSystem.removeDrawable(key);
+      const body = this._worldRenderSystem.removeFromBand(key);
       body?.destroy({ children: true });
       this._worldRenderSystem.removeShadow(key);
     }
@@ -82,10 +82,10 @@ export class BuildingRenderSystem {
     );
 
     this._worldRenderSystem.addShadow(key, shadowGraphics, elevationLevel);
-    this._worldRenderSystem.addDrawable(key, bodyGraphics);
 
-    const zIndex = rooftopZIndex(elevationValue, data.height);
-    this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+    const roofBandIndex = rooftopBandIndex(elevationValue, data.height);
+    this._worldRenderSystem.addToBand(key, bodyGraphics, roofBandIndex, 'drawable');
+    this._worldRenderSystem.setOrderInBand(key, 0);
     this._worldRenderSystem.sortChildren();
   }
 
@@ -102,8 +102,9 @@ export class BuildingRenderSystem {
     drawBuilding(record.bodyGraphics, data.vertices);
 
     const key = buildingKey(id);
-    const zIndex = rooftopZIndex(data.elevation as number, data.height);
-    this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+    const roofBand = rooftopBandIndex(data.elevation as number, data.height);
+    // Move to correct band if elevation/height changed.
+    this._worldRenderSystem.addToBand(key, record.bodyGraphics, roofBand, 'drawable');
     this._worldRenderSystem.sortChildren();
   }
 
@@ -112,7 +113,7 @@ export class BuildingRenderSystem {
     const record = this._records.get(id);
     if (record === undefined) return;
 
-    const body = this._worldRenderSystem.removeDrawable(key);
+    const body = this._worldRenderSystem.removeFromBand(key);
     body?.destroy({ children: true });
     this._worldRenderSystem.removeShadow(key);
     this._records.delete(id);
@@ -131,17 +132,13 @@ export class BuildingRenderSystem {
 const buildingKey = (id: number): string => `__building__${id}`;
 
 /**
- * Compute z-index for a building's rooftop based on its total height
- * (base elevation + building height in levels).
+ * Compute the elevation band index for a building based on its rooftop height.
  *
- * Uses the same LAYERS_PER_ELEVATION spacing as WorldRenderSystem
- * so a building with roof at level N sorts above all drawables at
- * elevation N-1, even when N exceeds the ELEVATION enum range.
+ * A building with roof at level N sorts into band N so it draws above all
+ * content in lower bands.
  */
-const LAYERS_PER_ELEVATION = 1000;
-const rooftopZIndex = (elevation: number, height: number): number => {
-  const roofBandIndex = Math.ceil(elevation + height) + GROUND_BAND_INDEX;
-  return roofBandIndex * LAYERS_PER_ELEVATION + 1;
+const rooftopBandIndex = (elevation: number, height: number): number => {
+  return Math.ceil(elevation + height) + GROUND_BAND_INDEX;
 };
 
 /** Trace a closed polygon path on a Graphics object (does not fill/stroke). */

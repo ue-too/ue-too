@@ -1,10 +1,11 @@
-import { Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { Train, TrainPosition } from './formation';
 import { Car } from './cars';
 import { TrackGraph } from './tracks/track';
 import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-system';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { PlacedTrainEntry } from './train-manager';
+import type { CarImageRegistry } from './car-image-registry';
 
 const BOGIE_RADIUS = 1.067 / 2;
 
@@ -174,6 +175,11 @@ export class TrainRenderSystem {
   /** Front-half sub-texture (right half of the car texture). */
   private _carTextureFront: Texture | null = null;
 
+  /** Optional registry mapping car IDs to custom image data URLs. */
+  private _carImageRegistry: CarImageRegistry | null = null;
+  /** Cache of loaded custom car textures by car ID. */
+  private _customCarTextures: Map<string, { full: Texture; rear: Texture; front: Texture }> = new Map();
+
   constructor(
     worldRenderSystem: WorldRenderSystem,
     getPlacedTrains: () => readonly PlacedTrainEntry[],
@@ -181,6 +187,7 @@ export class TrainRenderSystem {
     trackGraph: TrackGraph,
     trackRenderSystem: TrackRenderSystem,
     textureRenderer?: TrackTextureRenderer | null,
+    carImageRegistry?: CarImageRegistry | null,
   ) {
     this._worldRenderSystem = worldRenderSystem;
     this._getPlacedTrains = getPlacedTrains;
@@ -188,6 +195,7 @@ export class TrainRenderSystem {
     this._trackGraph = trackGraph;
     this._trackRenderSystem = trackRenderSystem;
     this._textureRenderer = textureRenderer ?? null;
+    this._carImageRegistry = carImageRegistry ?? null;
 
     this._previewContainer = new Container();
     this._previewContainer.sortableChildren = true;
@@ -216,23 +224,39 @@ export class TrainRenderSystem {
     for (const { id } of placed) this._lastTrainIds.add(id);
   }
 
+  /**
+   * Force a one-shot graphics sync without advancing simulation.
+   * Call when trains are added/removed while time is paused.
+   */
+  forceSync(): void {
+    const placed = this._getPlacedTrains();
+
+    this._updatePreviewBogies();
+    this._updatePreviewCars();
+    this._updateActualBogies(placed);
+    this._updateActualCars(placed);
+
+    this._lastTrainIds.clear();
+    for (const { id } of placed) this._lastTrainIds.add(id);
+  }
+
   cleanup(): void {
-    for (const [trainId, pool] of this._actualPools) {
+    for (const [trainId] of this._actualPools) {
       const count = this._activeCounts.get(trainId) ?? 0;
       for (let i = 0; i < count; i++) {
         const key = bogieKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
     }
     this._actualPools.clear();
     this._activeCounts.clear();
 
-    for (const [trainId, pool] of this._actualCarPools) {
+    for (const [trainId] of this._actualCarPools) {
       const count = this._activeCarCounts.get(trainId) ?? 0;
       for (let i = 0; i < count; i++) {
         const key = carKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
     }
@@ -280,7 +304,7 @@ export class TrainRenderSystem {
       }
       this._syncActualPoolForTrain(id, positions.length);
       const pool = this._actualPools.get(id)!;
-      const headZIndex = this._resolveZIndex(positions[0]);
+      const headBand = this._resolveBandIndex(positions[0]);
 
       for (let i = 0; i < positions.length; i++) {
         const g = pool[i];
@@ -288,9 +312,10 @@ export class TrainRenderSystem {
         g.position.set(positions[i].point.x, positions[i].point.y);
         g.visible = true;
 
-        const zIndex = i === 0 ? headZIndex : (this._resolveZIndex(positions[i]) ?? headZIndex);
-        if (zIndex !== null) {
-          this._worldRenderSystem.setDrawableZIndex(key, zIndex);
+        const bandIndex = i === 0 ? headBand : (this._resolveBandIndex(positions[i]) ?? headBand);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(key, g, bandIndex, 'onTrack');
+          this._worldRenderSystem.setOrderInBand(key, 1);
         }
       }
     }
@@ -299,8 +324,8 @@ export class TrainRenderSystem {
   }
 
   private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
-    const textures = this._getOrCreateCarHalfTextures();
-    if (textures === null) return;
+    const defaultTextures = this._getOrCreateCarHalfTextures();
+    if (defaultTextures === null) return;
 
     for (const { id, train } of placed) {
       const positions = train.getBogiePositions();
@@ -308,21 +333,40 @@ export class TrainRenderSystem {
         this._hideActualCarsForTrain(id);
         continue;
       }
-      const halves = getCarHalfGeometries(positions, train.cars);
+      const cars = train.cars;
+      const halves = getCarHalfGeometries(positions, cars);
       this._syncActualCarPoolForTrain(id, halves.length);
       const pool = this._actualCarPools.get(id)!;
       for (let i = 0; i < halves.length; i++) {
         const sprite = pool[i];
         const h = halves[i];
 
+        // Check for custom car texture
+        const carIndex = Math.floor(i / 2);
+        const car = cars[carIndex];
+        const customTex = car ? this._getCustomCarTextures(car.id) : null;
+        const isRearHalf = i % 2 === 0;
+        const tex = customTex
+          ? (isRearHalf ? customTex.rear : customTex.front)
+          : (isRearHalf ? defaultTextures.rear : defaultTextures.front);
+
+        if (sprite.texture !== tex) {
+          sprite.texture = tex;
+        }
+
         sprite.position.set(h.x, h.y);
         sprite.rotation = h.angle;
-        sprite.scale.set(h.length / CAR_HALF_TEX_WIDTH, CAR_WIDTH / CAR_TEX_HEIGHT);
+
+        const texW = tex.width || CAR_HALF_TEX_WIDTH;
+        const texH = tex.height || CAR_TEX_HEIGHT;
+        sprite.scale.set(h.length / texW, CAR_WIDTH / texH);
         sprite.visible = true;
 
-        const bogieZ = this._resolveZIndex(positions[h.bogiePositionIndex]);
-        if (bogieZ !== null) {
-          this._worldRenderSystem.setDrawableZIndex(carKey(id, i), bogieZ - 1);
+        const bandIndex = this._resolveBandIndex(positions[h.bogiePositionIndex]);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(carKey(id, i), sprite, bandIndex, 'onTrack');
+          // Car bodies draw below bogies (order 0 vs bogie order 1).
+          this._worldRenderSystem.setOrderInBand(carKey(id, i), 0);
         }
       }
     }
@@ -405,6 +449,29 @@ export class TrainRenderSystem {
     return { rear: this._carTextureRear, front: this._carTextureFront };
   }
 
+  private _getCustomCarTextures(carId: string): { rear: Texture; front: Texture } | null {
+    const cached = this._customCarTextures.get(carId);
+    if (cached) return cached;
+
+    if (!this._carImageRegistry || !this._carImageRegistry.has(carId)) return null;
+
+    const src = this._carImageRegistry.get(carId)!;
+    // Load texture asynchronously; return null for this frame, it'll be available next frame
+    Assets.load(src).then((texture: Texture) => {
+      const frame = texture.frame;
+      const rear = new Texture({
+        source: texture.source,
+        frame: new Rectangle(frame.x, frame.y, frame.width / 2, frame.height),
+      });
+      const front = new Texture({
+        source: texture.source,
+        frame: new Rectangle(frame.x + frame.width / 2, frame.y, frame.width / 2, frame.height),
+      });
+      this._customCarTextures.set(carId, { full: texture, rear, front });
+    });
+    return null;
+  }
+
   private _hideActualCarsForTrain(trainId: number): void {
     const pool = this._actualCarPools.get(trainId);
     const count = this._activeCarCounts.get(trainId) ?? 0;
@@ -431,7 +498,7 @@ export class TrainRenderSystem {
       const texture = idx % 2 === 0 ? textures.rear : textures.front;
       const sprite = createCarSprite(texture);
       pool.push(sprite);
-      this._worldRenderSystem.addDrawable(carKey(trainId, idx), sprite);
+      // Car will be added to the correct band in _updateActualCars.
     }
 
     for (let i = count; i < currentActive; i++) {
@@ -446,7 +513,7 @@ export class TrainRenderSystem {
     if (pool) {
       for (let i = 0; i < count; i++) {
         const key = bogieKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
       this._actualPools.delete(trainId);
@@ -458,7 +525,7 @@ export class TrainRenderSystem {
     if (carPool) {
       for (let i = 0; i < carCount; i++) {
         const key = carKey(trainId, i);
-        const removed = this._worldRenderSystem.removeDrawable(key);
+        const removed = this._worldRenderSystem.removeFromBand(key);
         removed?.destroy({ children: true });
       }
       this._actualCarPools.delete(trainId);
@@ -466,13 +533,13 @@ export class TrainRenderSystem {
     this._activeCarCounts.delete(trainId);
   }
 
-  private _resolveZIndex(position: TrainPosition): number | null {
+  private _resolveBandIndex(position: TrainPosition): number | null {
     const id = this._trackGraph.getDrawDataIdentifier(
       position.trackSegment,
       position.tValue,
     );
     if (id === null) return null;
-    return this._trackRenderSystem.getOnTrackObjectZIndex(id);
+    return this._trackRenderSystem.getTrackBandIndex(id);
   }
 
   private _hideActualBogiesForTrain(trainId: number): void {
@@ -498,7 +565,7 @@ export class TrainRenderSystem {
       const color = BOGIE_COLORS[idx % BOGIE_COLORS.length];
       const g = createBogieGraphics(color);
       pool.push(g);
-      this._worldRenderSystem.addDrawable(bogieKey(trainId, idx), g);
+      // Bogie will be added to the correct band in _updateActualBogies.
     }
 
     for (let i = count; i < currentActive; i++) {

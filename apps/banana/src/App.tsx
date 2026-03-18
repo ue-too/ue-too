@@ -4,6 +4,7 @@ import {
 } from '@ue-too/board-pixi-react-integration';
 
 import { BananaToolbar } from '@/components/toolbar';
+import { TimeDisplay } from '@/components/toolbar/TimeDisplay';
 import { initApp } from '@/utils/init-app';
 
 import './App.css';
@@ -23,6 +24,7 @@ const App = (): React.ReactNode => {
             >
                 <ScrollBarDisplay />
                 <BananaToolbar />
+                <TimeDisplay />
             </Wrapper>
         </div>
     );
