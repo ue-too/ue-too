@@ -26,12 +26,16 @@ export type SerializedTerrainData = {
   config: TerrainConfig;
   /** Row-major Float32 heights, base64-encoded for compactness. */
   heightsBase64: string;
+  /** Optional per-vertex water surface elevations, base64-encoded Float32Array. NaN = no water. */
+  waterSurfaceBase64?: string;
 };
 
 export class TerrainData {
   readonly config: TerrainConfig;
   /** Row-major vertex heights. Length = (cellsX+1) * (cellsY+1). */
   private _heights: Float32Array;
+  /** Row-major water surface elevations. NaN = no water. Same dimensions as _heights. */
+  private _waterSurface: Float32Array;
 
   /** Number of vertices along X. */
   get verticesX(): number {
@@ -48,6 +52,11 @@ export class TerrainData {
     return this._heights;
   }
 
+  /** Direct access to the water surface buffer. NaN = no water at that vertex. */
+  get waterSurface(): Float32Array {
+    return this._waterSurface;
+  }
+
   /** World-space extent along X. */
   get worldWidth(): number {
     return this.config.cellsX * this.config.cellSize;
@@ -58,15 +67,28 @@ export class TerrainData {
     return this.config.cellsY * this.config.cellSize;
   }
 
-  constructor(config: TerrainConfig, heights: Float32Array) {
+  constructor(config: TerrainConfig, heights: Float32Array, waterSurface?: Float32Array) {
     const expectedLength = (config.cellsX + 1) * (config.cellsY + 1);
     if (heights.length !== expectedLength) {
       throw new Error(
         `Height array length ${heights.length} does not match expected ${expectedLength} for ${config.cellsX + 1}x${config.cellsY + 1} vertices`,
       );
     }
+    if (waterSurface !== undefined && waterSurface.length !== expectedLength) {
+      throw new Error(
+        `Water surface array length ${waterSurface.length} does not match expected ${expectedLength}`,
+      );
+    }
     this.config = config;
     this._heights = heights;
+    this._waterSurface = waterSurface ?? TerrainData._createNaNArray(expectedLength);
+  }
+
+  /** Create a Float32Array filled with NaN. */
+  private static _createNaNArray(length: number): Float32Array {
+    const arr = new Float32Array(length);
+    arr.fill(NaN);
+    return arr;
   }
 
   /**
@@ -165,6 +187,83 @@ export class TerrainData {
     this._heights[row * this.verticesX + col] = value;
   }
 
+  /** Get the water surface elevation at a grid vertex. Returns NaN if out of bounds or no water. */
+  getWaterSurfaceAtGrid(col: number, row: number): number {
+    if (col < 0 || col >= this.verticesX || row < 0 || row >= this.verticesY) {
+      return NaN;
+    }
+    return this._waterSurface[row * this.verticesX + col];
+  }
+
+  /** Set the water surface elevation at a grid vertex. Use NaN to clear water. No-op if out of bounds. */
+  setWaterSurface(col: number, row: number, value: number): void {
+    if (col < 0 || col >= this.verticesX || row < 0 || row >= this.verticesY) {
+      return;
+    }
+    this._waterSurface[row * this.verticesX + col] = value;
+  }
+
+  /** Whether a grid vertex has water (non-NaN water surface). */
+  hasWater(col: number, row: number): boolean {
+    if (col < 0 || col >= this.verticesX || row < 0 || row >= this.verticesY) {
+      return false;
+    }
+    return !isNaN(this._waterSurface[row * this.verticesX + col]);
+  }
+
+  /**
+   * Get the interpolated water surface elevation at an arbitrary world position.
+   * Returns NaN if any contributing vertex has no water (conservative boundary).
+   *
+   * @param worldX - World-space X coordinate
+   * @param worldY - World-space Y coordinate
+   * @returns Interpolated water surface elevation, or NaN if outside bounds or no water
+   */
+  getWaterSurfaceAt(worldX: number, worldY: number): number {
+    const { originX, originY, cellSize } = this.config;
+    const gx = (worldX - originX) / cellSize;
+    const gy = (worldY - originY) / cellSize;
+
+    const col = Math.floor(gx);
+    const row = Math.floor(gy);
+
+    if (col < 0 || col >= this.config.cellsX || row < 0 || row >= this.config.cellsY) {
+      return NaN;
+    }
+
+    const fx = gx - col;
+    const fy = gy - row;
+
+    const w00 = this._waterSurface[row * this.verticesX + col];
+    const w10 = this._waterSurface[row * this.verticesX + col + 1];
+    const w01 = this._waterSurface[(row + 1) * this.verticesX + col];
+    const w11 = this._waterSurface[(row + 1) * this.verticesX + col + 1];
+
+    // Conservative: if any corner has no water, return NaN
+    if (isNaN(w00) || isNaN(w10) || isNaN(w01) || isNaN(w11)) {
+      return NaN;
+    }
+
+    const w0 = w00 * (1 - fx) + w10 * fx;
+    const w1 = w01 * (1 - fx) + w11 * fx;
+
+    return w0 * (1 - fy) + w1 * fy;
+  }
+
+  /**
+   * Get the water depth at an arbitrary world position.
+   *
+   * @param worldX - World-space X coordinate
+   * @param worldY - World-space Y coordinate
+   * @returns Water depth (surface - terrain), or 0 if no water
+   */
+  getWaterDepth(worldX: number, worldY: number): number {
+    const surface = this.getWaterSurfaceAt(worldX, worldY);
+    if (isNaN(surface)) return 0;
+    const terrain = this.getHeight(worldX, worldY);
+    return Math.max(0, surface - terrain);
+  }
+
   /**
    * Get the interpolated height at an arbitrary world position using bilinear interpolation.
    *
@@ -198,28 +297,49 @@ export class TerrainData {
     return h0 * (1 - fy) + h1 * fy;
   }
 
-  /** Encode terrain data to a JSON-safe object. */
-  serialize(): SerializedTerrainData {
-    const bytes = new Uint8Array(this._heights.buffer, this._heights.byteOffset, this._heights.byteLength);
+  /** Encode a Float32Array to a base64 string. */
+  private static _encodeBase64(arr: Float32Array): string {
+    const bytes = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
     let binary = '';
     for (let i = 0; i < bytes.length; i++) {
       binary += String.fromCharCode(bytes[i]);
     }
-    return {
-      config: { ...this.config },
-      heightsBase64: btoa(binary),
-    };
+    return btoa(binary);
   }
 
-  /** Reconstruct terrain data from a serialized object. */
-  static deserialize(data: SerializedTerrainData): TerrainData {
-    const binary = atob(data.heightsBase64);
+  /** Decode a base64 string to a Float32Array. */
+  private static _decodeBase64(base64: string): Float32Array {
+    const binary = atob(base64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
-    const heights = new Float32Array(bytes.buffer);
-    return new TerrainData(data.config, heights);
+    return new Float32Array(bytes.buffer);
+  }
+
+  /** Encode terrain data to a JSON-safe object. */
+  serialize(): SerializedTerrainData {
+    const result: SerializedTerrainData = {
+      config: { ...this.config },
+      heightsBase64: TerrainData._encodeBase64(this._heights),
+    };
+
+    // Only include water data if any vertex has water
+    const hasAnyWater = this._waterSurface.some(v => !isNaN(v));
+    if (hasAnyWater) {
+      result.waterSurfaceBase64 = TerrainData._encodeBase64(this._waterSurface);
+    }
+
+    return result;
+  }
+
+  /** Reconstruct terrain data from a serialized object. */
+  static deserialize(data: SerializedTerrainData): TerrainData {
+    const heights = TerrainData._decodeBase64(data.heightsBase64);
+    const waterSurface = data.waterSurfaceBase64
+      ? TerrainData._decodeBase64(data.waterSurfaceBase64)
+      : undefined;
+    return new TerrainData(data.config, heights, waterSurface);
   }
 }
 
@@ -244,6 +364,9 @@ export function validateSerializedTerrainData(
     if (typeof cfg[key] !== 'number') {
       return { valid: false, error: `config.${key} must be a number` };
     }
+  }
+  if (obj.waterSurfaceBase64 !== undefined && typeof obj.waterSurfaceBase64 !== 'string') {
+    return { valid: false, error: '"waterSurfaceBase64" must be a string if present' };
   }
   return { valid: true };
 }

@@ -157,6 +157,7 @@ export class WorldRenderSystem {
         // Terrain base container renders below all elevation bands
         this._terrainBaseContainer = new Container();
         this._terrainBaseContainer.zIndex = -1;
+        this._terrainBaseContainer.sortableChildren = true;
         this._drawDataBelow.addChild(this._terrainBaseContainer);
 
         ELEVATION_VALUES.forEach((elevation, i) => {

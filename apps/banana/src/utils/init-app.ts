@@ -16,8 +16,9 @@ import { CarStockManager } from '@/trains/car-stock-manager';
 import { FormationManager } from '@/trains/formation-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
-import { TerrainData } from '@/terrain/terrain-data';
+import type { TerrainData } from '@/terrain/terrain-data';
 import { TerrainRenderSystem } from '@/terrain/terrain-render-system';
+import { createHillyWithWater } from '@/terrain/terrain-water';
 import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 import { CarImageRegistry } from '@/trains/car-image-registry';
@@ -106,13 +107,13 @@ export const initApp = async (
   const worldRenderSystem = new WorldRenderSystem();
 
   // Terrain: 10000x10000m grid centered on origin, 25m cell size, with varied elevation
-  const terrainData = TerrainData.createHilly({
+  const terrainData = createHillyWithWater({
     originX: -5000,
     originY: -5000,
     cellsX: 400,
     cellsY: 400,
     cellSize: 25,
-  }, { baseHeight: 0, amplitude: 30, seed: 42 });
+  }, { baseHeight: 0, amplitude: 30, seed: 42, riverCount: 3, lakeCount: 2 });
   const terrainRenderSystem = new TerrainRenderSystem(
     worldRenderSystem,
     terrainData,

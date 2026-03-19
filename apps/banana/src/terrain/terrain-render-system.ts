@@ -13,10 +13,10 @@
  * @group Terrain
  */
 
-import { Container, Graphics, MeshSimple, Texture } from 'pixi.js';
+import { CanvasSource, Container, Graphics, MeshSimple, Texture } from 'pixi.js';
 import type { WorldRenderSystem } from '@/world-render-system';
 import type { TerrainData } from './terrain-data';
-import { sampleColorRamp, hillshade, computeNormal } from './terrain-colors';
+import { sampleColorRamp, sampleWaterColor, hillshade, computeNormal } from './terrain-colors';
 import { extractContourSegments } from './contour';
 import { ELEVATION_VALUES } from '@/trains/tracks/types';
 import { LEVEL_HEIGHT } from '@/trains/tracks/constants';
@@ -36,6 +36,16 @@ export class TerrainRenderSystem {
 
   /** Base terrain mesh (hypsometric color + hillshade). */
   private _baseMesh: MeshSimple | null = null;
+  /** Canvas-backed texture source for the base mesh. */
+  private _baseCanvasSource: CanvasSource | null = null;
+  /** ImageData used for fast pixel writes on the base canvas. */
+  private _baseImageData: ImageData | null = null;
+  /** Water surface mesh (depth-tinted blue overlay). */
+  private _waterMesh: MeshSimple | null = null;
+  /** Canvas-backed texture source for the water mesh. */
+  private _waterCanvasSource: CanvasSource | null = null;
+  /** ImageData used for fast pixel writes on the water canvas. */
+  private _waterImageData: ImageData | null = null;
   /** Contour line graphics overlay. */
   private _contourGraphics: Graphics | null = null;
   /** Per-band occlusion meshes. */
@@ -126,8 +136,86 @@ export class TerrainRenderSystem {
 
     this._destroyVisuals();
     this._buildBaseMesh();
+    this._buildWaterMesh();
     this._buildContourLines();
     this._buildOcclusionMeshes();
+  }
+
+  /**
+   * Update only the pixels within a dirty region of the terrain/water textures.
+   *
+   * Uses Canvas2D `putImageData` with a dirty rect — only the affected pixels
+   * are recomputed and uploaded. Zero allocations, zero full-buffer copies.
+   *
+   * Call {@link rebuild} with `force: true` after painting ends to regenerate
+   * contour lines and occlusion meshes.
+   *
+   * @param colMin - Left column of the dirty region (inclusive)
+   * @param colMax - Right column of the dirty region (inclusive)
+   * @param rowMin - Top row of the dirty region (inclusive)
+   * @param rowMax - Bottom row of the dirty region (inclusive)
+   */
+  refreshRegion(colMin: number, colMax: number, rowMin: number, rowMax: number): void {
+    const td = this._terrainData;
+    const vx = td.verticesX;
+    const vy = td.verticesY;
+    const heights = td.heights;
+    const waterSurface = td.waterSurface;
+    const { cellSize } = td.config;
+
+    const c0 = Math.max(0, colMin);
+    const c1 = Math.min(vx - 1, colMax);
+    const r0 = Math.max(0, rowMin);
+    const r1 = Math.min(vy - 1, rowMax);
+    const dirtyW = c1 - c0 + 1;
+    const dirtyH = r1 - r0 + 1;
+    if (dirtyW <= 0 || dirtyH <= 0) return;
+
+    // Update base terrain pixels
+    if (this._baseCanvasSource && this._baseImageData) {
+      const pixels = this._baseImageData.data;
+      for (let row = r0; row <= r1; row++) {
+        for (let col = c0; col <= c1; col++) {
+          const idx = row * vx + col;
+          const h = heights[idx];
+          const color = sampleColorRamp(h);
+          const [nx, ny, nz] = computeNormal(heights, col, row, vx, vy, cellSize);
+          const shade = hillshade(nx, ny, nz);
+          const pi = idx * 4;
+          pixels[pi] = Math.round(color.r * shade);
+          pixels[pi + 1] = Math.round(color.g * shade);
+          pixels[pi + 2] = Math.round(color.b * shade);
+          pixels[pi + 3] = 255;
+        }
+      }
+      // putImageData with dirty rect — only uploads the changed region
+      const ctx = this._baseCanvasSource.context2D;
+      ctx.putImageData(this._baseImageData, 0, 0, c0, r0, dirtyW, dirtyH);
+      this._baseCanvasSource.update();
+    }
+
+    // Update water pixels
+    if (this._waterCanvasSource && this._waterImageData) {
+      const pixels = this._waterImageData.data;
+      for (let row = r0; row <= r1; row++) {
+        for (let col = c0; col <= c1; col++) {
+          const idx = row * vx + col;
+          const w = waterSurface[idx];
+          const pi = idx * 4;
+          if (isNaN(w)) {
+            pixels[pi] = 0; pixels[pi + 1] = 0; pixels[pi + 2] = 0; pixels[pi + 3] = 0;
+          } else {
+            const depth = Math.max(0, w - heights[idx]);
+            const color = sampleWaterColor(depth);
+            pixels[pi] = color.r; pixels[pi + 1] = color.g;
+            pixels[pi + 2] = color.b; pixels[pi + 3] = color.a;
+          }
+        }
+      }
+      const ctx = this._waterCanvasSource.context2D;
+      ctx.putImageData(this._waterImageData, 0, 0, c0, r0, dirtyW, dirtyH);
+      this._waterCanvasSource.update();
+    }
   }
 
   private _destroyVisuals(): void {
@@ -137,6 +225,15 @@ export class TerrainRenderSystem {
       baseContainer.removeChild(this._baseMesh);
       this._baseMesh.destroy();
       this._baseMesh = null;
+      this._baseCanvasSource = null;
+      this._baseImageData = null;
+    }
+    if (this._waterMesh) {
+      baseContainer.removeChild(this._waterMesh);
+      this._waterMesh.destroy();
+      this._waterMesh = null;
+      this._waterCanvasSource = null;
+      this._waterImageData = null;
     }
     if (this._contourGraphics) {
       baseContainer.removeChild(this._contourGraphics);
@@ -165,48 +262,44 @@ export class TerrainRenderSystem {
     const vy = td.verticesY;
     const heights = td.heights;
 
-    // Build vertex positions, UVs, and vertex colors
     const vertCount = vx * vy;
     const positions = new Float32Array(vertCount * 2);
     const uvs = new Float32Array(vertCount * 2);
 
-    // We'll bake color + hillshade into a per-pixel texture via ImageData,
-    // but for simplicity we use a white texture and tint via vertex colors.
-    // PixiJS MeshSimple doesn't support per-vertex colors directly,
-    // so we generate a texture from the heightmap.
-
-    const texWidth = vx;
-    const texHeight = vy;
-    const pixelData = new Uint8Array(texWidth * texHeight * 4);
+    // Create an offscreen canvas for the texture
+    const canvas = document.createElement('canvas');
+    canvas.width = vx;
+    canvas.height = vy;
+    const ctx = canvas.getContext('2d')!;
+    const imageData = ctx.createImageData(vx, vy);
+    const pixels = imageData.data; // RGBA order
 
     for (let row = 0; row < vy; row++) {
       for (let col = 0; col < vx; col++) {
         const idx = row * vx + col;
         const h = heights[idx];
 
-        // Vertex positions in world space
         positions[idx * 2] = originX + col * cellSize;
         positions[idx * 2 + 1] = originY + row * cellSize;
 
-        // UVs map vertex to texture pixel center
-        uvs[idx * 2] = (col + 0.5) / texWidth;
-        uvs[idx * 2 + 1] = (row + 0.5) / texHeight;
+        uvs[idx * 2] = (col + 0.5) / vx;
+        uvs[idx * 2 + 1] = (row + 0.5) / vy;
 
-        // Compute color with hillshading
         const color = sampleColorRamp(h);
         const [nx, ny, nz] = computeNormal(heights, col, row, vx, vy, cellSize);
         const shade = hillshade(nx, ny, nz);
 
-        // Write as BGRA — PixiJS v8 on WebGPU expects bgra8unorm pixel order.
         const pi = idx * 4;
-        pixelData[pi] = Math.round(color.b * shade);
-        pixelData[pi + 1] = Math.round(color.g * shade);
-        pixelData[pi + 2] = Math.round(color.r * shade);
-        pixelData[pi + 3] = 255;
+        pixels[pi] = Math.round(color.r * shade);
+        pixels[pi + 1] = Math.round(color.g * shade);
+        pixels[pi + 2] = Math.round(color.b * shade);
+        pixels[pi + 3] = 255;
       }
     }
 
-    // Build triangle indices (two triangles per cell)
+    ctx.putImageData(imageData, 0, 0);
+
+    // Build triangle indices
     const cellCount = td.config.cellsX * td.config.cellsY;
     const indices = new Uint32Array(cellCount * 6);
     let ii = 0;
@@ -225,12 +318,10 @@ export class TerrainRenderSystem {
       }
     }
 
-    // Create texture from pixel data
-    const texture = Texture.from({
-      resource: new Uint8Array(pixelData),
-      width: texWidth,
-      height: texHeight,
-    });
+    // Canvas-backed texture — PixiJS auto-uploads on draw
+    this._baseCanvasSource = new CanvasSource({ resource: canvas, resolution: 1 });
+    this._baseImageData = imageData;
+    const texture = new Texture(this._baseCanvasSource);
 
     this._baseMesh = new MeshSimple({
       texture,
@@ -240,6 +331,92 @@ export class TerrainRenderSystem {
     });
 
     this._worldRenderSystem.terrainBaseContainer.addChild(this._baseMesh);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Water surface mesh
+  // ---------------------------------------------------------------------------
+
+  private _buildWaterMesh(): void {
+    const td = this._terrainData;
+    const { cellSize, originX, originY } = td.config;
+    const vx = td.verticesX;
+    const vy = td.verticesY;
+    const heights = td.heights;
+    const waterSurface = td.waterSurface;
+
+    // Always build the water mesh so refreshRegion can paint water later
+    const vertCount = vx * vy;
+    const positions = new Float32Array(vertCount * 2);
+    const uvs = new Float32Array(vertCount * 2);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = vx;
+    canvas.height = vy;
+    const ctx = canvas.getContext('2d')!;
+    const imageData = ctx.createImageData(vx, vy);
+    const pixels = imageData.data; // RGBA order
+
+    for (let row = 0; row < vy; row++) {
+      for (let col = 0; col < vx; col++) {
+        const idx = row * vx + col;
+
+        positions[idx * 2] = originX + col * cellSize;
+        positions[idx * 2 + 1] = originY + row * cellSize;
+
+        uvs[idx * 2] = (col + 0.5) / vx;
+        uvs[idx * 2 + 1] = (row + 0.5) / vy;
+
+        const w = waterSurface[idx];
+        const pi = idx * 4;
+
+        if (isNaN(w)) {
+          pixels[pi] = 0; pixels[pi + 1] = 0; pixels[pi + 2] = 0; pixels[pi + 3] = 0;
+        } else {
+          const depth = Math.max(0, w - heights[idx]);
+          const color = sampleWaterColor(depth);
+          pixels[pi] = color.r; pixels[pi + 1] = color.g;
+          pixels[pi + 2] = color.b; pixels[pi + 3] = color.a;
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // Build triangle indices
+    const cellCount = td.config.cellsX * td.config.cellsY;
+    const indices = new Uint32Array(cellCount * 6);
+    let ii = 0;
+    for (let row = 0; row < td.config.cellsY; row++) {
+      for (let col = 0; col < td.config.cellsX; col++) {
+        const tl = row * vx + col;
+        const tr = tl + 1;
+        const bl = (row + 1) * vx + col;
+        const br = bl + 1;
+        indices[ii++] = tl;
+        indices[ii++] = tr;
+        indices[ii++] = bl;
+        indices[ii++] = tr;
+        indices[ii++] = br;
+        indices[ii++] = bl;
+      }
+    }
+
+    this._waterCanvasSource = new CanvasSource({ resource: canvas, resolution: 1 });
+    this._waterImageData = imageData;
+    const texture = new Texture(this._waterCanvasSource);
+
+    this._waterMesh = new MeshSimple({
+      texture,
+      vertices: positions,
+      uvs,
+      indices,
+    });
+
+    // Place water above base terrain but below contour lines
+    this._waterMesh.zIndex = 0.5;
+
+    this._worldRenderSystem.terrainBaseContainer.addChild(this._waterMesh);
   }
 
   // ---------------------------------------------------------------------------
@@ -400,17 +577,19 @@ export class TerrainRenderSystem {
     }
   }
 
-  /** Show/hide the terrain fill (base mesh + occlusion). */
+  /** Show/hide the terrain fill (base mesh + water + occlusion). */
   private _applyFillVisibility(): void {
     if (this._baseMesh) this._baseMesh.visible = this._fillVisible;
+    if (this._waterMesh) this._waterMesh.visible = this._fillVisible;
     for (const mesh of this._occlusionMeshes) {
       if (mesh) mesh.visible = this._fillVisible;
     }
   }
 
-  /** Apply fill opacity to base mesh and occlusion meshes. */
+  /** Apply fill opacity to base mesh, water mesh, and occlusion meshes. */
   private _applyFillAlpha(): void {
     if (this._baseMesh) this._baseMesh.alpha = this._fillOpacity;
+    if (this._waterMesh) this._waterMesh.alpha = this._fillOpacity;
     this._applyOcclusionAlpha();
   }
 

@@ -41,7 +41,8 @@
       "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
       "Bash(bun nx:*)",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(bun test:*)"
     ]
   }
 }

@@ -23,6 +23,16 @@ export const COLOR_STOPS: { height: number; color: RGBA }[] = [
   { height: 30, color: { r: 140, g: 105, b: 75, a: 255 } },    // dark brown
 ];
 
+/**
+ * Color stops for water depth tinting. Depth is in world units (meters).
+ * Shallow water is lighter and more transparent; deep water is darker and opaque.
+ */
+export const WATER_COLOR_STOPS: { depth: number; color: RGBA }[] = [
+  { depth: 0, color: { r: 140, g: 200, b: 230, a: 160 } },   // shallow: light blue, semi-transparent
+  { depth: 5, color: { r: 70, g: 130, b: 190, a: 200 } },     // medium
+  { depth: 15, color: { r: 30, g: 60, b: 120, a: 230 } },     // deep: dark blue, nearly opaque
+];
+
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
@@ -58,6 +68,40 @@ export function sampleColorRamp(height: number): RGBA {
     }
   }
   return { ...COLOR_STOPS[COLOR_STOPS.length - 1].color };
+}
+
+/**
+ * Sample the water color ramp at a given depth.
+ *
+ * @param depth - Water depth in world units (meters), clamped to >= 0
+ * @returns RGBA color with depth-dependent alpha
+ */
+export function sampleWaterColor(depth: number): RGBA {
+  const d = Math.max(0, depth);
+  if (WATER_COLOR_STOPS.length === 0) {
+    return { r: 100, g: 150, b: 200, a: 180 };
+  }
+  if (d <= WATER_COLOR_STOPS[0].depth) {
+    return { ...WATER_COLOR_STOPS[0].color };
+  }
+  if (d >= WATER_COLOR_STOPS[WATER_COLOR_STOPS.length - 1].depth) {
+    return { ...WATER_COLOR_STOPS[WATER_COLOR_STOPS.length - 1].color };
+  }
+
+  for (let i = 0; i < WATER_COLOR_STOPS.length - 1; i++) {
+    const a = WATER_COLOR_STOPS[i];
+    const b = WATER_COLOR_STOPS[i + 1];
+    if (d >= a.depth && d <= b.depth) {
+      const t = (d - a.depth) / (b.depth - a.depth);
+      return {
+        r: Math.round(lerp(a.color.r, b.color.r, t)),
+        g: Math.round(lerp(a.color.g, b.color.g, t)),
+        b: Math.round(lerp(a.color.b, b.color.b, t)),
+        a: Math.round(lerp(a.color.a, b.color.a, t)),
+      };
+    }
+  }
+  return { ...WATER_COLOR_STOPS[WATER_COLOR_STOPS.length - 1].color };
 }
 
 /**
