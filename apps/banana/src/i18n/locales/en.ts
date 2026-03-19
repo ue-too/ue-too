@@ -36,6 +36,8 @@ const en = {
         openDebug: 'Open Debug',
         closeDebug: 'Close Debug',
         sunAngle: 'Sun Angle',
+        terrainFill: 'Terrain',
+        terrainOpacity: 'Terrain Opacity',
         elevation: 'Elev',
 
         // Export/Import

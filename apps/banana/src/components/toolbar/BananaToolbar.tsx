@@ -58,6 +58,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
 import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
+import { TerrainControl } from './TerrainControl';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TerrainLegend } from './TerrainLegend';
@@ -103,6 +104,8 @@ export function BananaToolbar({
     const [showStationList, setShowStationList] = useState(false);
     const [showStats, setShowStats] = useState(true);
     const [terrainXray, setTerrainXray] = useState(false);
+    const [terrainFillVisible, setTerrainFillVisible] = useState(true);
+    const [terrainOpacity, setTerrainOpacity] = useState(1);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
@@ -182,6 +185,16 @@ export function BananaToolbar({
         if (!app) return;
         app.terrainRenderSystem.xray = terrainXray;
     }, [app, terrainXray]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.fillVisible = terrainFillVisible;
+    }, [app, terrainFillVisible]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.fillOpacity = terrainOpacity;
+    }, [app, terrainOpacity]);
 
     useEffect(() => {
         if (!app) return;
@@ -670,6 +683,12 @@ export function BananaToolbar({
                 </div>
 
                 <SunAngleControl value={sunAngle} onChange={setSunAngle} />
+                <TerrainControl
+                    visible={terrainFillVisible}
+                    onVisibleChange={setTerrainFillVisible}
+                    opacity={terrainOpacity}
+                    onOpacityChange={setTerrainOpacity}
+                />
             </div>
 
             {mode === 'train-placement' && (

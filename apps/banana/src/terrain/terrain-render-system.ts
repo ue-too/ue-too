@@ -49,6 +49,11 @@ export class TerrainRenderSystem {
   /** Alpha applied to occlusion meshes when X-ray is active. */
   private static readonly XRAY_ALPHA = 0.35;
 
+  /** Whether the terrain fill (base mesh + occlusion) is visible. Contour lines remain. */
+  private _fillVisible = true;
+  /** Opacity of the terrain fill [0, 1]. Applied on top of X-ray alpha for occlusion. */
+  private _fillOpacity = 1;
+
   constructor(
     worldRenderSystem: WorldRenderSystem,
     terrainData: TerrainData,
@@ -74,6 +79,29 @@ export class TerrainRenderSystem {
     if (this._xray === value) return;
     this._xray = value;
     this._applyOcclusionAlpha();
+  }
+
+  /** Whether the terrain fill is visible. Contour lines always remain. */
+  get fillVisible(): boolean {
+    return this._fillVisible;
+  }
+
+  set fillVisible(value: boolean) {
+    if (this._fillVisible === value) return;
+    this._fillVisible = value;
+    this._applyFillVisibility();
+  }
+
+  /** Opacity of the terrain fill [0, 1]. */
+  get fillOpacity(): number {
+    return this._fillOpacity;
+  }
+
+  set fillOpacity(value: number) {
+    const clamped = Math.max(0, Math.min(1, value));
+    if (this._fillOpacity === clamped) return;
+    this._fillOpacity = clamped;
+    this._applyFillAlpha();
   }
 
   /** Mark terrain for rebuild on next call to {@link rebuild}. */
@@ -363,12 +391,27 @@ export class TerrainRenderSystem {
     });
   }
 
-  /** Apply the current X-ray alpha to all occlusion meshes. */
+  /** Apply the current X-ray alpha to all occlusion meshes, factoring in fill opacity. */
   private _applyOcclusionAlpha(): void {
-    const alpha = this._xray ? TerrainRenderSystem.XRAY_ALPHA : 1;
+    const baseAlpha = this._xray ? TerrainRenderSystem.XRAY_ALPHA : 1;
+    const alpha = baseAlpha * this._fillOpacity;
     for (const mesh of this._occlusionMeshes) {
       if (mesh) mesh.alpha = alpha;
     }
+  }
+
+  /** Show/hide the terrain fill (base mesh + occlusion). */
+  private _applyFillVisibility(): void {
+    if (this._baseMesh) this._baseMesh.visible = this._fillVisible;
+    for (const mesh of this._occlusionMeshes) {
+      if (mesh) mesh.visible = this._fillVisible;
+    }
+  }
+
+  /** Apply fill opacity to base mesh and occlusion meshes. */
+  private _applyFillAlpha(): void {
+    if (this._baseMesh) this._baseMesh.alpha = this._fillOpacity;
+    this._applyOcclusionAlpha();
   }
 
   /** Clean up all PixiJS resources. */

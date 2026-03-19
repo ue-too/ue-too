@@ -36,6 +36,8 @@ const zhTW = {
         openDebug: '開啟除錯',
         closeDebug: '關閉除錯',
         sunAngle: '日照角度',
+        terrainFill: '地形',
+        terrainOpacity: '地形透明度',
         elevation: '高度',
 
         // Export/Import
