@@ -44,6 +44,11 @@ export class TerrainRenderSystem {
   /** Whether terrain visuals need rebuilding. */
   private _dirty = true;
 
+  /** Whether X-ray mode is active (terrain occlusion becomes semi-transparent). */
+  private _xray = false;
+  /** Alpha applied to occlusion meshes when X-ray is active. */
+  private static readonly XRAY_ALPHA = 0.35;
+
   constructor(
     worldRenderSystem: WorldRenderSystem,
     terrainData: TerrainData,
@@ -58,6 +63,17 @@ export class TerrainRenderSystem {
   /** Get the associated terrain data. */
   get terrainData(): TerrainData {
     return this._terrainData;
+  }
+
+  /** Whether X-ray mode is active (occlusion becomes semi-transparent). */
+  get xray(): boolean {
+    return this._xray;
+  }
+
+  set xray(value: boolean) {
+    if (this._xray === value) return;
+    this._xray = value;
+    this._applyOcclusionAlpha();
   }
 
   /** Mark terrain for rebuild on next call to {@link rebuild}. */
@@ -153,10 +169,11 @@ export class TerrainRenderSystem {
         const [nx, ny, nz] = computeNormal(heights, col, row, vx, vy, cellSize);
         const shade = hillshade(nx, ny, nz);
 
+        // Write as BGRA — PixiJS v8 on WebGPU expects bgra8unorm pixel order.
         const pi = idx * 4;
-        pixelData[pi] = Math.round(color.r * shade);
+        pixelData[pi] = Math.round(color.b * shade);
         pixelData[pi + 1] = Math.round(color.g * shade);
-        pixelData[pi + 2] = Math.round(color.b * shade);
+        pixelData[pi + 2] = Math.round(color.r * shade);
         pixelData[pi + 3] = 255;
       }
     }
@@ -267,6 +284,7 @@ export class TerrainRenderSystem {
 
       const mesh = this._buildOcclusionMeshForThreshold(threshold);
       if (mesh) {
+        if (this._xray) mesh.alpha = TerrainRenderSystem.XRAY_ALPHA;
         const oc = this._worldRenderSystem.getTerrainOcclusionContainer(bandIdx);
         if (oc) {
           oc.addChild(mesh);
@@ -324,12 +342,12 @@ export class TerrainRenderSystem {
     // For simplicity, use a single color based on the threshold level
     const color = sampleColorRamp(threshold);
 
-    // Create a 2x2 solid-color texture
+    // Create a 2x2 solid-color texture (BGRA order for WebGPU).
     const texData = new Uint8Array([
-      color.r, color.g, color.b, 255,
-      color.r, color.g, color.b, 255,
-      color.r, color.g, color.b, 255,
-      color.r, color.g, color.b, 255,
+      color.b, color.g, color.r, 255,
+      color.b, color.g, color.r, 255,
+      color.b, color.g, color.r, 255,
+      color.b, color.g, color.r, 255,
     ]);
     const texture = Texture.from({
       resource: texData,
@@ -343,6 +361,14 @@ export class TerrainRenderSystem {
       uvs: new Float32Array(uvs),
       indices: new Uint32Array(indices),
     });
+  }
+
+  /** Apply the current X-ray alpha to all occlusion meshes. */
+  private _applyOcclusionAlpha(): void {
+    const alpha = this._xray ? TerrainRenderSystem.XRAY_ALPHA : 1;
+    for (const mesh of this._occlusionMeshes) {
+      if (mesh) mesh.alpha = alpha;
+    }
   }
 
   /** Clean up all PixiJS resources. */

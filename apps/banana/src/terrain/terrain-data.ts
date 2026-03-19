@@ -84,6 +84,71 @@ export class TerrainData {
     return new TerrainData(config, heights);
   }
 
+  /**
+   * Create terrain with varied elevation using layered sine waves.
+   *
+   * Produces rolling hills, ridges, and valleys suitable for testing
+   * elevation-based track systems (tunnels, viaducts, etc.).
+   *
+   * @param config - Grid configuration
+   * @param options - Height variation options
+   */
+  static createHilly(config: TerrainConfig, options: {
+    /** Base height offset applied everywhere (default 0). */
+    baseHeight?: number;
+    /** Peak amplitude of the tallest hills in world units (default 20). */
+    amplitude?: number;
+    /** Random seed for reproducible terrain (default 42). */
+    seed?: number;
+  } = {}): TerrainData {
+    const { baseHeight = 0, amplitude = 20, seed = 42 } = options;
+    const vx = config.cellsX + 1;
+    const vy = config.cellsY + 1;
+    const count = vx * vy;
+    const heights = new Float32Array(count);
+
+    // Simple seeded pseudo-random for reproducibility.
+    const seededRandom = (n: number): number => {
+      const x = Math.sin(n * 127.1 + seed * 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    // Layer several sine-wave octaves to create natural-looking terrain.
+    const worldW = config.cellsX * config.cellSize;
+    const worldH = config.cellsY * config.cellSize;
+
+    for (let row = 0; row < vy; row++) {
+      for (let col = 0; col < vx; col++) {
+        const wx = config.originX + col * config.cellSize;
+        const wy = config.originY + row * config.cellSize;
+
+        // Normalise to [0, 1] over the grid.
+        const nx = (wx - config.originX) / worldW;
+        const ny = (wy - config.originY) / worldH;
+
+        // Octave 1: broad rolling hills
+        let h = Math.sin(nx * Math.PI * 2.3 + 0.5) * Math.cos(ny * Math.PI * 1.7 + 0.3) * 0.5;
+
+        // Octave 2: medium ridges
+        h += Math.sin(nx * Math.PI * 5.1 + 1.2) * Math.sin(ny * Math.PI * 4.3 + 0.8) * 0.25;
+
+        // Octave 3: fine detail
+        h += Math.sin(nx * Math.PI * 11.0 + 2.0) * Math.cos(ny * Math.PI * 9.7 + 1.5) * 0.12;
+
+        // Octave 4: asymmetric ridge line running roughly NE-SW
+        h += Math.sin((nx + ny) * Math.PI * 3.0 + seed * 0.1) * 0.18;
+
+        // Per-vertex jitter to break up regularity
+        h += (seededRandom(row * vx + col) - 0.5) * 0.06;
+
+        // Scale to target amplitude and add base offset
+        heights[row * vx + col] = baseHeight + h * amplitude;
+      }
+    }
+
+    return new TerrainData(config, heights);
+  }
+
   /** Get the height at a grid vertex. Returns 0 if out of bounds. */
   getHeightAtGrid(col: number, row: number): number {
     if (col < 0 || col >= this.verticesX || row < 0 || row >= this.verticesY) {

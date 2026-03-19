@@ -105,14 +105,14 @@ export const initApp = async (
   const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
   const worldRenderSystem = new WorldRenderSystem();
 
-  // Terrain: 2000x2000m grid centered on origin, 5m cell size, flat at height 0
-  const terrainData = TerrainData.createFlat({
-    originX: -1000,
-    originY: -1000,
+  // Terrain: 10000x10000m grid centered on origin, 25m cell size, with varied elevation
+  const terrainData = TerrainData.createHilly({
+    originX: -5000,
+    originY: -5000,
     cellsX: 400,
     cellsY: 400,
-    cellSize: 5,
-  }, 0);
+    cellSize: 25,
+  }, { baseHeight: 0, amplitude: 30, seed: 42 });
   const terrainRenderSystem = new TerrainRenderSystem(
     worldRenderSystem,
     terrainData,
@@ -125,6 +125,7 @@ export const initApp = async (
     curveEngine,
     baseComponents.camera,
     { renderer: baseComponents.app.renderer },
+    terrainData,
   );
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);

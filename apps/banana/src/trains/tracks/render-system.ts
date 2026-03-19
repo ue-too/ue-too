@@ -3,8 +3,9 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
-import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
+import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
 import { LEVEL_HEIGHT } from './constants';
+import type { TerrainData } from '@/terrain/terrain-data';
 import { clearShadowCache } from '@/utils';
 import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
@@ -63,7 +64,7 @@ export class TrackRenderSystem {
     private _simplifiedTrack: Container;
     private _topLevelContainer: Container;
     private _trackCurveManager: TrackCurveManager;
-    private _simplifiedTrackGraphicsMap: Map<number, Graphics> = new Map();
+    private _simplifiedTrackGraphicsMap: Map<number, { graphics: Graphics; bandKey: string }> = new Map();
     /** Rail mesh containers in the offset layer (between ballast and bogies), keyed by draw data key. */
     private _offsetRailMap: Map<string, Container> = new Map();
 
@@ -78,6 +79,15 @@ export class TrackRenderSystem {
 
     /** Rail containers added to the offset layer for preview curves (cleaned up on each preview change). */
     private _previewRailContainers: Container[] = [];
+
+    /** Cutting-wall keys for preview curves (cleaned up on each preview change). */
+    private _previewCuttingKeys: string[] = [];
+
+    /** Tunnel cover-cap keys for preview curves (cleaned up on each preview change). */
+    private _previewCoverKeys: string[] = [];
+
+    /** Bed keys for preview curves (cleaned up on each preview change). */
+    private _previewBedKeys: string[] = [];
 
     private _previewStartProjection: Graphics = new Graphics();
     private _previewEndProjection: Graphics = new Graphics();
@@ -112,6 +122,23 @@ export class TrackRenderSystem {
 
     /** Catenary pole containers keyed by draw data key. */
     private _catenaryMap: Map<string, Container> = new Map();
+
+    /** Cutting wall graphics keyed by draw data key (for tracks that go below terrain). */
+    private _cuttingMap: Map<string, Graphics> = new Map();
+
+    /** Tunnel cover-cap graphics keyed by draw data key (rendered above rails). */
+    private _cuttingCoverMap: Map<string, Graphics> = new Map();
+
+    /** Dashed underground-track indicators keyed by curve number. */
+    private _undergroundIndicatorMap: Map<number, { graphics: Graphics; bandKey: string }> = new Map();
+
+    /** Tunnel enclosure graphics (walls + ceiling) for fully underground segments, keyed by draw data key. */
+    private _tunnelWallMap: Map<string, Graphics> = new Map();
+    private _tunnelCeilingMap: Map<string, Graphics> = new Map();
+
+    /** Tunnel enclosure keys for preview curves (cleaned up on each preview change). */
+    private _previewTunnelWallKeys: string[] = [];
+    private _previewTunnelCeilingKeys: string[] = [];
 
     /** Shared solid ballast texture (used when elevation gradient is off); created lazily. */
     private _solidBallastTexture: Texture | null = null;
@@ -151,14 +178,19 @@ export class TrackRenderSystem {
 
     private _abortController: AbortController = new AbortController();
 
+    /** Terrain heightmap used to determine if tracks are underground. */
+    private _terrainData: TerrainData | null = null;
+
     constructor(
         worldRenderSystem: WorldRenderSystem,
         trackCurveManager: TrackCurveManager,
         curveCreationEngine: CurveCreationEngine,
         camera: ObservableBoardCamera,
         textureRenderer?: TrackTextureRenderer | null,
+        terrainData?: TerrainData | null,
     ) {
         this._worldRenderSystem = worldRenderSystem;
+        this._terrainData = terrainData ?? null;
         this._topLevelContainer = new Container();
         this._simplifiedTrack = new Container();
 
@@ -291,7 +323,9 @@ export class TrackRenderSystem {
     private _applyZoomLod(zoomLevel: number): void {
         const useDetailed = zoomLevel >= ZOOM_THRESHOLD_DETAILED_TRACK;
 
-        this._simplifiedTrack.visible = !useDetailed;
+        for (const [, entry] of this._simplifiedTrackGraphicsMap) {
+            entry.graphics.visible = !useDetailed;
+        }
 
         for (const key of this._drawableKeys) {
             const container = this._worldRenderSystem.getDrawable(key);
@@ -393,15 +427,39 @@ export class TrackRenderSystem {
         this._abortController.abort();
 
         this._previewKeys.forEach(key => {
-            const container = this._worldRenderSystem.removeDrawable(key);
+            const container = this._worldRenderSystem.removeFromBand(key);
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
         this._previewRailContainers.forEach((c, idx) => {
-            const removed = this._worldRenderSystem.removeDrawable(`__preview_rail__${idx}`);
+            const removed = this._worldRenderSystem.removeFromBand(`__preview_rail__${idx}`);
             removed?.destroy({ children: true });
         });
         this._previewRailContainers = [];
+        this._previewCuttingKeys.forEach(ck => {
+            const removed = this._worldRenderSystem.removeFromBand(ck);
+            removed?.destroy({ children: true });
+        });
+        this._previewCuttingKeys = [];
+        this._previewCoverKeys.forEach(ck => {
+            const removed = this._worldRenderSystem.removeFromBand(ck);
+            removed?.destroy({ children: true });
+        });
+        this._previewCoverKeys = [];
+        this._previewTunnelWallKeys.forEach(tk => {
+            const removed = this._worldRenderSystem.removeFromBand(tk);
+            removed?.destroy({ children: true });
+        });
+        this._previewTunnelWallKeys = [];
+        this._previewTunnelCeilingKeys.forEach(tk => {
+            const removed = this._worldRenderSystem.removeFromBand(tk);
+            removed?.destroy({ children: true });
+        });
+        this._previewTunnelCeilingKeys = [];
+        this._previewBedKeys.forEach(bk => {
+            this._worldRenderSystem.removeBed(bk);
+        });
+        this._previewBedKeys = [];
 
         this._drawableKeys.forEach(key => {
             const container = this._worldRenderSystem.removeFromBand(key);
@@ -426,8 +484,47 @@ export class TrackRenderSystem {
         });
         this._catenaryMap.clear();
 
+        this._cuttingMap.forEach((cuttingGraphics, key) => {
+            const removed = this._worldRenderSystem.removeFromBand(`__cutting__${key}`);
+            removed?.destroy({ children: true });
+        });
+        this._cuttingMap.clear();
+
+        this._cuttingCoverMap.forEach((coverGraphics, key) => {
+            const removed = this._worldRenderSystem.removeFromBand(`__cutting_cover__${key}`);
+            removed?.destroy({ children: true });
+        });
+        this._cuttingCoverMap.clear();
+
+        this._tunnelWallMap.forEach((_g, key) => {
+            const removed = this._worldRenderSystem.removeFromBand(`__tunnel_wall__${key}`);
+            removed?.destroy({ children: true });
+        });
+        this._tunnelWallMap.clear();
+
+        this._tunnelCeilingMap.forEach((_g, key) => {
+            const removed = this._worldRenderSystem.removeFromBand(`__tunnel_ceiling__${key}`);
+            removed?.destroy({ children: true });
+        });
+        this._tunnelCeilingMap.clear();
+
+        this._simplifiedTrackGraphicsMap.forEach((entry) => {
+            const removed = this._worldRenderSystem.removeFromBand(entry.bandKey);
+            removed?.destroy({ children: true });
+        });
+        this._simplifiedTrackGraphicsMap.clear();
+
+        this._undergroundIndicatorMap.forEach((entry) => {
+            const removed = this._worldRenderSystem.removeFromBand(entry.bandKey);
+            removed?.destroy({ children: true });
+        });
+        this._undergroundIndicatorMap.clear();
+
         this._worldRenderSystem.removeOverlayContainer(this._topLevelContainer);
         this._topLevelContainer.destroy({ children: true });
+
+        this._worldRenderSystem.removeOverlayContainer(this._simplifiedTrack);
+        this._simplifiedTrack.destroy({ children: true });
 
         this._ballastStyleNodes.clear();
         if (this._solidBallastTexture !== null) {
@@ -530,6 +627,291 @@ export class TrackRenderSystem {
         return container;
     }
 
+    /**
+     * Shared geometry computation for tunnel entrance walls and cover.
+     *
+     * Only applies to sloped segments (elevation.from !== elevation.to) where
+     * at least one end is below terrain.
+     *
+     * @returns Edge point arrays and metadata, or null when not applicable.
+     */
+    private _computeTunnelEntranceGeometry(drawData: TrackSegmentDrawData): {
+        leftInner: { x: number; y: number }[];
+        leftOuter: { x: number; y: number }[];
+        rightInner: { x: number; y: number }[];
+        rightOuter: { x: number; y: number }[];
+        coverEnd: 'start' | 'end' | 'both';
+        coverSteps: number;
+        surfaceBandIndex: number;
+    } | null {
+        const { curve, elevation } = drawData;
+        // Only draw on ramped tracks (not flat underground tracks).
+        if (elevation.from === elevation.to) return null;
+
+        // Sample terrain height at both ends of the track segment.
+        const startPoint = curve.getPointbyPercentage(0);
+        const endPoint = curve.getPointbyPercentage(1);
+        const startTerrainH = this._terrainData?.getHeight(startPoint.x, startPoint.y) ?? 0;
+        const endTerrainH = this._terrainData?.getHeight(endPoint.x, endPoint.y) ?? 0;
+
+        // Compute relative elevation (track elevation minus terrain height).
+        const relFrom = elevation.from - startTerrainH;
+        const relTo = elevation.to - endTerrainH;
+
+        // At least one end must be below terrain.
+        if (relFrom >= 0 && relTo >= 0) return null;
+
+        const ballastHw = ballastHalfWidth(drawData);
+        const hw = drawData.bed ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2) : ballastHw;
+        /** Width of each retaining wall strip in world units (meters). */
+        const wallThickness = 0.4;
+        /** How far the walls extend beyond the terrain crossing (meters). */
+        const overshootDistance = 5;
+        const overshootT = curve.fullLength > 0
+            ? Math.min(0.15, overshootDistance / curve.fullLength)
+            : 0;
+
+        let tStart = 0;
+        let tEnd = 1;
+        let coverEnd: 'start' | 'end' | 'both';
+
+        if (relFrom >= 0 && relTo < 0) {
+            // Track goes from above terrain into underground.
+            const crossingT = relFrom / (relFrom - relTo);
+            tStart = Math.max(0, crossingT - overshootT);
+            tEnd = 1;
+            coverEnd = 'end';
+        } else if (relFrom < 0 && relTo >= 0) {
+            // Track goes from underground up to above terrain.
+            const crossingT = relFrom / (relFrom - relTo);
+            tStart = 0;
+            tEnd = Math.min(1, crossingT + overshootT);
+            coverEnd = 'start';
+        } else {
+            // Both ends below terrain (still a ramp).
+            tStart = 0;
+            tEnd = 1;
+            coverEnd = 'both';
+        }
+
+        // Place at the terrain surface elevation band.
+        const surfaceElev = Math.max(startTerrainH, endTerrainH);
+        const surfaceBandIndex = this._worldRenderSystem.getElevationBandIndex(surfaceElev);
+
+        const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
+        const innerOffset = hw + 0.1;
+        const outerOffset = innerOffset + wallThickness;
+
+        const leftInner: { x: number; y: number }[] = [];
+        const leftOuter: { x: number; y: number }[] = [];
+        const rightInner: { x: number; y: number }[] = [];
+        const rightOuter: { x: number; y: number }[] = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = tStart + (tEnd - tStart) * (i / steps);
+            const point = curve.getPointbyPercentage(t);
+            const tangent = PointCal.unitVector(curve.derivativeByPercentage(t));
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            leftInner.push({ x: point.x - nx * innerOffset, y: point.y - ny * innerOffset });
+            leftOuter.push({ x: point.x - nx * outerOffset, y: point.y - ny * outerOffset });
+            rightInner.push({ x: point.x + nx * innerOffset, y: point.y + ny * innerOffset });
+            rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
+        }
+
+        /** How far the cover extends along the ramp from the underground end (meters). */
+        const coverLength = 10;
+        const coverSteps = Math.max(1, Math.round(
+            (coverLength / curve.fullLength) * steps / (tEnd - tStart)
+        ));
+
+        return { leftInner, leftOuter, rightInner, rightOuter, coverEnd, coverSteps, surfaceBandIndex };
+    }
+
+    /**
+     * Build the retaining-wall graphics (two thin parallel strips) for a
+     * ramped track that goes below terrain.
+     *
+     * Placed in the GROUND band's drawable sublayer.
+     */
+    private _buildCuttingForDrawData(drawData: TrackSegmentDrawData): { graphics: Graphics; surfaceBandIndex: number } | null {
+        const geo = this._computeTunnelEntranceGeometry(drawData);
+        if (geo === null) return null;
+
+        const { leftInner, leftOuter, rightInner, rightOuter, surfaceBandIndex } = geo;
+        const g = new Graphics();
+
+        const drawWall = (inner: { x: number; y: number }[], outer: { x: number; y: number }[]) => {
+            if (inner.length < 2) return;
+            g.moveTo(inner[0].x, inner[0].y);
+            for (let i = 1; i < inner.length; i++) {
+                g.lineTo(inner[i].x, inner[i].y);
+            }
+            for (let i = outer.length - 1; i >= 0; i--) {
+                g.lineTo(outer[i].x, outer[i].y);
+            }
+            g.closePath();
+            g.fill({ color: 0xA0A0A0, alpha: 0.9 });
+            g.stroke({ color: 0x707070, width: 0.15 });
+        };
+
+        drawWall(leftInner, leftOuter);
+        drawWall(rightInner, rightOuter);
+
+        return { graphics: g, surfaceBandIndex };
+    }
+
+    /**
+     * Build the tunnel cover-cap graphics for a ramped track that goes below
+     * terrain. The cover spans the full width between the outer wall edges at
+     * the underground end of the ramp.
+     *
+     * Placed in the GROUND band's onTrack sublayer so it renders above rails.
+     */
+    private _buildCuttingCoverForDrawData(drawData: TrackSegmentDrawData): { graphics: Graphics; surfaceBandIndex: number } | null {
+        const geo = this._computeTunnelEntranceGeometry(drawData);
+        if (geo === null) return null;
+
+        const { leftOuter, rightOuter, coverEnd, coverSteps, surfaceBandIndex } = geo;
+        const g = new Graphics();
+        const lastIdx = leftOuter.length - 1;
+
+        const drawCover = (fromIdx: number, toIdx: number) => {
+            const lo = Math.min(fromIdx, toIdx);
+            const hi = Math.max(fromIdx, toIdx);
+            g.moveTo(leftOuter[lo].x, leftOuter[lo].y);
+            for (let i = lo + 1; i <= hi; i++) {
+                g.lineTo(leftOuter[i].x, leftOuter[i].y);
+            }
+            for (let i = hi; i >= lo; i--) {
+                g.lineTo(rightOuter[i].x, rightOuter[i].y);
+            }
+            g.closePath();
+            g.fill({ color: 0x888888, alpha: 0.95 });
+            g.stroke({ color: 0x606060, width: 0.2 });
+        };
+
+        if (coverEnd === 'start' || coverEnd === 'both') {
+            drawCover(0, Math.min(coverSteps, lastIdx));
+        }
+        if (coverEnd === 'end' || coverEnd === 'both') {
+            drawCover(Math.max(0, lastIdx - coverSteps), lastIdx);
+        }
+
+        return { graphics: g, surfaceBandIndex };
+    }
+
+    /**
+     * Determine whether a draw-data segment is fully underground (both ends
+     * below terrain). Returns the band index to place tunnel visuals, or null.
+     */
+    private _isFullyUnderground(drawData: TrackSegmentDrawData): { bandIndex: number } | null {
+        const { curve, elevation } = drawData;
+        const startPoint = curve.getPointbyPercentage(0);
+        const endPoint = curve.getPointbyPercentage(1);
+        const startTerrainH = this._terrainData?.getHeight(startPoint.x, startPoint.y) ?? 0;
+        const endTerrainH = this._terrainData?.getHeight(endPoint.x, endPoint.y) ?? 0;
+
+        if (elevation.from >= startTerrainH || elevation.to >= endTerrainH) return null;
+
+        const rawElevation = Math.max(elevation.from, elevation.to);
+        return { bandIndex: this._worldRenderSystem.getElevationBandIndex(rawElevation) };
+    }
+
+    /**
+     * Build tunnel wall graphics (two parallel concrete strips) for a fully
+     * underground track segment. Placed in the track's own elevation band.
+     */
+    private _buildTunnelWallsForDrawData(drawData: TrackSegmentDrawData): Graphics | null {
+        const ugInfo = this._isFullyUnderground(drawData);
+        if (ugInfo === null) return null;
+
+        const { curve } = drawData;
+        const ballastHw = ballastHalfWidth(drawData);
+        const hw = drawData.bed ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2) : ballastHw;
+        const wallThickness = 0.4;
+        const innerOffset = hw + 0.1;
+        const outerOffset = innerOffset + wallThickness;
+
+        const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
+        const g = new Graphics();
+
+        const leftInner: { x: number; y: number }[] = [];
+        const leftOuter: { x: number; y: number }[] = [];
+        const rightInner: { x: number; y: number }[] = [];
+        const rightOuter: { x: number; y: number }[] = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = curve.getPointbyPercentage(t);
+            const tangent = PointCal.unitVector(curve.derivativeByPercentage(t));
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            leftInner.push({ x: point.x - nx * innerOffset, y: point.y - ny * innerOffset });
+            leftOuter.push({ x: point.x - nx * outerOffset, y: point.y - ny * outerOffset });
+            rightInner.push({ x: point.x + nx * innerOffset, y: point.y + ny * innerOffset });
+            rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
+        }
+
+        const drawWall = (inner: { x: number; y: number }[], outer: { x: number; y: number }[]) => {
+            if (inner.length < 2) return;
+            g.moveTo(inner[0].x, inner[0].y);
+            for (let i = 1; i < inner.length; i++) g.lineTo(inner[i].x, inner[i].y);
+            for (let i = outer.length - 1; i >= 0; i--) g.lineTo(outer[i].x, outer[i].y);
+            g.closePath();
+            g.fill({ color: 0x808080, alpha: 0.7 });
+            g.stroke({ color: 0x606060, width: 0.15 });
+        };
+
+        drawWall(leftInner, leftOuter);
+        drawWall(rightInner, rightOuter);
+
+        return g;
+    }
+
+    /**
+     * Build a tunnel ceiling (cover slab) for a fully underground track.
+     * Spans the full length of the segment between outer wall edges.
+     * Placed in the catenary sublayer so it renders above the track.
+     */
+    private _buildTunnelCeilingForDrawData(drawData: TrackSegmentDrawData): Graphics | null {
+        const ugInfo = this._isFullyUnderground(drawData);
+        if (ugInfo === null) return null;
+
+        const { curve } = drawData;
+        const ballastHw = ballastHalfWidth(drawData);
+        const hw = drawData.bed ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2) : ballastHw;
+        const outerOffset = hw + 0.1 + 0.4;
+
+        const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
+        const g = new Graphics();
+
+        const leftOuter: { x: number; y: number }[] = [];
+        const rightOuter: { x: number; y: number }[] = [];
+
+        for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const point = curve.getPointbyPercentage(t);
+            const tangent = PointCal.unitVector(curve.derivativeByPercentage(t));
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            leftOuter.push({ x: point.x - nx * outerOffset, y: point.y - ny * outerOffset });
+            rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
+        }
+
+        g.moveTo(leftOuter[0].x, leftOuter[0].y);
+        for (let i = 1; i < leftOuter.length; i++) g.lineTo(leftOuter[i].x, leftOuter[i].y);
+        for (let i = rightOuter.length - 1; i >= 0; i--) g.lineTo(rightOuter[i].x, rightOuter[i].y);
+        g.closePath();
+        g.fill({ color: 0x707070, alpha: 0.6 });
+        g.stroke({ color: 0x505050, width: 0.2 });
+
+        return g;
+    }
+
     private _onDelete(key: string) {
         this._ballastStyleNodes.delete(key);
         const container = this._worldRenderSystem.removeFromBand(key);
@@ -556,6 +938,34 @@ export class TrackRenderSystem {
             const removed = this._worldRenderSystem.removeFromBand(`__catenary__${key}`);
             removed?.destroy({ children: true });
             this._catenaryMap.delete(key);
+        }
+
+        const cuttingGraphics = this._cuttingMap.get(key);
+        if (cuttingGraphics !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(`__cutting__${key}`);
+            removed?.destroy({ children: true });
+            this._cuttingMap.delete(key);
+        }
+
+        const coverGraphics = this._cuttingCoverMap.get(key);
+        if (coverGraphics !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(`__cutting_cover__${key}`);
+            removed?.destroy({ children: true });
+            this._cuttingCoverMap.delete(key);
+        }
+
+        const tunnelWall = this._tunnelWallMap.get(key);
+        if (tunnelWall !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(`__tunnel_wall__${key}`);
+            removed?.destroy({ children: true });
+            this._tunnelWallMap.delete(key);
+        }
+
+        const tunnelCeiling = this._tunnelCeilingMap.get(key);
+        if (tunnelCeiling !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(`__tunnel_ceiling__${key}`);
+            removed?.destroy({ children: true });
+            this._tunnelCeilingMap.delete(key);
         }
 
         this._reindexDrawData();
@@ -1132,11 +1542,18 @@ export class TrackRenderSystem {
     }
 
     private _onRemoveTrackSegment(curveNumber: number) {
-        const simplifiedTrackGraphics = this._simplifiedTrackGraphicsMap.get(curveNumber);
-        if (simplifiedTrackGraphics !== undefined) {
-            this._simplifiedTrack.removeChild(simplifiedTrackGraphics);
-            simplifiedTrackGraphics.destroy();
+        const entry = this._simplifiedTrackGraphicsMap.get(curveNumber);
+        if (entry !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(entry.bandKey);
+            removed?.destroy({ children: true });
             this._simplifiedTrackGraphicsMap.delete(curveNumber);
+        }
+
+        const ugEntry = this._undergroundIndicatorMap.get(curveNumber);
+        if (ugEntry !== undefined) {
+            const removed = this._worldRenderSystem.removeFromBand(ugEntry.bandKey);
+            removed?.destroy({ children: true });
+            this._undergroundIndicatorMap.delete(curveNumber);
         }
     }
 
@@ -1152,8 +1569,62 @@ export class TrackRenderSystem {
         }
         simplifiedTrackGraphics.stroke({ color: 0x000000, pixelLine: true });
 
-        this._simplifiedTrack.addChild(simplifiedTrackGraphics);
-        this._simplifiedTrackGraphicsMap.set(curveNumber, simplifiedTrackGraphics);
+        const rawElevation = Math.max(
+            trackSegment.elevation.from * LEVEL_HEIGHT,
+            trackSegment.elevation.to * LEVEL_HEIGHT,
+        );
+        const bandIndex = this._worldRenderSystem.getElevationBandIndex(rawElevation);
+        const bandKey = `__simplified__${curveNumber}`;
+        this._worldRenderSystem.addToBand(bandKey, simplifiedTrackGraphics, bandIndex, 'rail');
+        this._simplifiedTrackGraphicsMap.set(curveNumber, { graphics: simplifiedTrackGraphics, bandKey });
+
+        // Draw a dashed outline for underground track segments (where track
+        // elevation is below terrain height) so tunnels/subways are visible
+        // from the surface. The indicator is placed at the terrain surface band.
+        {
+            const curve = trackSegment.curve;
+            const startPoint = curve.getPointbyPercentage(0);
+            const endPoint = curve.getPointbyPercentage(1);
+            const startTerrainH = this._terrainData?.getHeight(startPoint.x, startPoint.y) ?? 0;
+            const endTerrainH = this._terrainData?.getHeight(endPoint.x, endPoint.y) ?? 0;
+            const startTrackElev = trackSegment.elevation.from * LEVEL_HEIGHT;
+            const endTrackElev = trackSegment.elevation.to * LEVEL_HEIGHT;
+
+            // Track is underground when its elevation is below terrain at that point.
+            if (startTrackElev < startTerrainH && endTrackElev < endTerrainH) {
+                const undergroundGraphics = new Graphics();
+                const dashLen = 3;
+                const gapLen = 2;
+                const cycleLen = dashLen + gapLen;
+                const totalLen = curve.fullLength;
+                let dist = 0;
+
+                while (dist < totalLen) {
+                    const segEnd = Math.min(dist + dashLen, totalLen);
+                    const tStart = dist / totalLen;
+                    const tEnd = segEnd / totalLen;
+                    const steps = Math.max(2, Math.ceil((segEnd - dist) / 1));
+
+                    const p0 = curve.getPointbyPercentage(tStart);
+                    undergroundGraphics.moveTo(p0.x, p0.y);
+                    for (let s = 1; s <= steps; s++) {
+                        const t = tStart + (tEnd - tStart) * (s / steps);
+                        const p = curve.getPointbyPercentage(t);
+                        undergroundGraphics.lineTo(p.x, p.y);
+                    }
+
+                    dist += cycleLen;
+                }
+                undergroundGraphics.stroke({ color: 0x555555, width: 0.8, pixelLine: true });
+
+                // Place at the terrain surface elevation band so it appears on top of the terrain.
+                const surfaceElev = Math.max(startTerrainH, endTerrainH);
+                const surfaceBandIndex = this._worldRenderSystem.getElevationBandIndex(surfaceElev);
+                const ugKey = `__underground__${curveNumber}`;
+                this._worldRenderSystem.addToBand(ugKey, undergroundGraphics, surfaceBandIndex, 'rail');
+                this._undergroundIndicatorMap.set(curveNumber, { graphics: undergroundGraphics, bandKey: ugKey });
+            }
+        }
     }
 
     private _onNewTrackData(index: number, drawDataList: (TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] })[]) {
@@ -1248,9 +1719,14 @@ export class TrackRenderSystem {
                     });
                 }
 
-                const shadowElevation = this._worldRenderSystem.resolveElevationLevel(
+                // Place shadow one elevation band below the track so terrain
+                // occlusion at the track's own level properly hides it.
+                // e.g. ABOVE_2 track shadow → ABOVE_1 band; hidden by ABOVE_2+ terrain.
+                const trackBandIndex = this._worldRenderSystem.getElevationBandIndex(
                     Math.max(drawData.elevation.from, drawData.elevation.to)
                 );
+                const shadowBandIndex = Math.max(0, trackBandIndex - 1);
+                const shadowElevation = ELEVATION_VALUES[shadowBandIndex] as ELEVATION;
                 this._worldRenderSystem.addShadow(key, shadowMesh, shadowElevation);
             }
 
@@ -1286,6 +1762,34 @@ export class TrackRenderSystem {
                 const catenaryKey = `__catenary__${key}`;
                 this._worldRenderSystem.addToBand(catenaryKey, catenaryContainer, bandIndex, 'catenary');
                 this._catenaryMap.set(key, catenaryContainer);
+            }
+
+            // Build tunnel-entrance graphics for ramp segments that go below terrain.
+            const cuttingResult = this._buildCuttingForDrawData(drawData);
+            if (cuttingResult !== null) {
+                const cuttingKey = `__cutting__${key}`;
+                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.graphics, cuttingResult.surfaceBandIndex, 'drawable');
+                this._cuttingMap.set(key, cuttingResult.graphics);
+            }
+            const coverResult = this._buildCuttingCoverForDrawData(drawData);
+            if (coverResult !== null) {
+                const coverKey = `__cutting_cover__${key}`;
+                this._worldRenderSystem.addToBand(coverKey, coverResult.graphics, coverResult.surfaceBandIndex, 'catenary');
+                this._cuttingCoverMap.set(key, coverResult.graphics);
+            }
+
+            // Build tunnel enclosure for fully underground segments.
+            const tunnelWalls = this._buildTunnelWallsForDrawData(drawData);
+            if (tunnelWalls !== null) {
+                const wallKey = `__tunnel_wall__${key}`;
+                this._worldRenderSystem.addToBand(wallKey, tunnelWalls, bandIndex, 'drawable');
+                this._tunnelWallMap.set(key, tunnelWalls);
+            }
+            const tunnelCeiling = this._buildTunnelCeilingForDrawData(drawData);
+            if (tunnelCeiling !== null) {
+                const ceilingKey = `__tunnel_ceiling__${key}`;
+                this._worldRenderSystem.addToBand(ceilingKey, tunnelCeiling, bandIndex, 'catenary');
+                this._tunnelCeilingMap.set(key, tunnelCeiling);
             }
         });
 
@@ -1339,15 +1843,39 @@ export class TrackRenderSystem {
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {
         this._latestPreviewDrawDataList = drawDataList;
         this._previewKeys.forEach(key => {
-            const container = this._worldRenderSystem.removeDrawable(key);
+            const container = this._worldRenderSystem.removeFromBand(key);
             container?.destroy({ children: true });
         });
         this._previewKeys = [];
         this._previewRailContainers.forEach((c, idx) => {
-            const removed = this._worldRenderSystem.removeDrawable(`__preview_rail__${idx}`);
+            const removed = this._worldRenderSystem.removeFromBand(`__preview_rail__${idx}`);
             removed?.destroy({ children: true });
         });
         this._previewRailContainers = [];
+        this._previewCuttingKeys.forEach(ck => {
+            const removed = this._worldRenderSystem.removeFromBand(ck);
+            removed?.destroy({ children: true });
+        });
+        this._previewCuttingKeys = [];
+        this._previewCoverKeys.forEach(ck => {
+            const removed = this._worldRenderSystem.removeFromBand(ck);
+            removed?.destroy({ children: true });
+        });
+        this._previewCoverKeys = [];
+        this._previewTunnelWallKeys.forEach(tk => {
+            const removed = this._worldRenderSystem.removeFromBand(tk);
+            removed?.destroy({ children: true });
+        });
+        this._previewTunnelWallKeys = [];
+        this._previewTunnelCeilingKeys.forEach(tk => {
+            const removed = this._worldRenderSystem.removeFromBand(tk);
+            removed?.destroy({ children: true });
+        });
+        this._previewTunnelCeilingKeys = [];
+        this._previewBedKeys.forEach(bk => {
+            this._worldRenderSystem.removeBed(bk);
+        });
+        this._previewBedKeys = [];
 
         if (drawDataList == undefined) {
             return;
@@ -1365,6 +1893,9 @@ export class TrackRenderSystem {
             }
             if (drawData.bedWidth === undefined) {
                 drawData.bedWidth = this._bedWidth;
+            }
+            if (drawData.bed === undefined) {
+                drawData.bed = this._bed;
             }
 
             const segmentsContainer = new Container();
@@ -1389,13 +1920,29 @@ export class TrackRenderSystem {
 
             segmentsContainer.addChild(ballastNode);
 
+            // Build bed mesh for preview if enabled.
+            if (drawData.bed) {
+                const bedMesh = this._buildBedMeshForDrawData(drawData);
+                if (bedMesh !== null) {
+                    const bedKey = `__preview_bed__${this._previewBedKeys.length}`;
+                    const bedElevation = this._worldRenderSystem.resolveElevationLevel(
+                        Math.max(drawData.elevation.from, drawData.elevation.to)
+                    );
+                    this._worldRenderSystem.addBed(bedKey, bedMesh, bedElevation);
+                    this._previewBedKeys.push(bedKey);
+                }
+            }
+
             // Build textured rail mesh.
             const railMesh = this._buildRailMeshForDrawData(drawData);
             if (railMesh !== null) {
                 const railContainer = new Container();
                 railContainer.addChild(railMesh);
                 const railKey = `__preview_rail__${this._previewRailContainers.length}`;
-                this._worldRenderSystem.addDrawable(railKey, railContainer);
+                const railBandIndex = this._worldRenderSystem.getElevationBandIndex(
+                    Math.max(drawData.elevation.from, drawData.elevation.to)
+                );
+                this._worldRenderSystem.addToBand(railKey, railContainer, railBandIndex, 'rail');
                 this._previewRailContainers.push(railContainer);
             }
 
@@ -1462,9 +2009,40 @@ export class TrackRenderSystem {
                 segmentsContainer.addChildAt(arcFanContainer, 0);
             }
 
-            this._worldRenderSystem.addDrawable(key, segmentsContainer);
-            this._worldRenderSystem.setDrawableZIndex(key, index);
+            const bandIndex = this._worldRenderSystem.getElevationBandIndex(
+                Math.max(drawData.elevation.from, drawData.elevation.to)
+            );
+            this._worldRenderSystem.addToBand(key, segmentsContainer, bandIndex, 'drawable');
+            this._worldRenderSystem.setOrderInBand(key, index);
             this._previewKeys.push(key);
+
+            // Build tunnel-entrance graphics for preview segments that go below terrain.
+            const cuttingResult = this._buildCuttingForDrawData(drawData);
+            if (cuttingResult !== null) {
+                const cuttingKey = `__preview_cutting__${i}`;
+                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.graphics, cuttingResult.surfaceBandIndex, 'drawable');
+                this._previewCuttingKeys.push(cuttingKey);
+            }
+            const coverResult = this._buildCuttingCoverForDrawData(drawData);
+            if (coverResult !== null) {
+                const coverKey = `__preview_cover__${i}`;
+                this._worldRenderSystem.addToBand(coverKey, coverResult.graphics, coverResult.surfaceBandIndex, 'catenary');
+                this._previewCoverKeys.push(coverKey);
+            }
+
+            // Build tunnel enclosure for fully underground preview segments.
+            const tunnelWalls = this._buildTunnelWallsForDrawData(drawData);
+            if (tunnelWalls !== null) {
+                const wallKey = `__preview_tunnel_wall__${i}`;
+                this._worldRenderSystem.addToBand(wallKey, tunnelWalls, bandIndex, 'drawable');
+                this._previewTunnelWallKeys.push(wallKey);
+            }
+            const tunnelCeiling = this._buildTunnelCeilingForDrawData(drawData);
+            if (tunnelCeiling !== null) {
+                const ceilingKey = `__preview_tunnel_ceiling__${i}`;
+                this._worldRenderSystem.addToBand(ceilingKey, tunnelCeiling, bandIndex, 'catenary');
+                this._previewTunnelCeilingKeys.push(ceilingKey);
+            }
         });
     }
 

@@ -119,6 +119,7 @@ const en = {
         formationIds: 'Formation IDs',
         stationStops: 'Station stops',
         stationLocations: 'Station locations',
+        terrainXray: 'Terrain X-ray',
         fpsStats: 'FPS stats',
 
         // Layout Deletion Toolbar (deleteTrack / endDeletion already defined above)

@@ -1,4 +1,4 @@
-import { Activity, Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
+import { Activity, Eye, Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -18,6 +18,8 @@ type DebugPanelProps = {
     onShowStationLocationsChange: (value: boolean) => void;
     showStats: boolean;
     onShowStatsChange: (value: boolean) => void;
+    terrainXray: boolean;
+    onTerrainXrayChange: (value: boolean) => void;
     onClose: () => void;
 };
 
@@ -34,6 +36,8 @@ export function DebugPanel({
     onShowStationLocationsChange,
     showStats,
     onShowStatsChange,
+    terrainXray,
+    onTerrainXrayChange,
     onClose,
 }: DebugPanelProps) {
     const { t } = useTranslation();
@@ -98,6 +102,17 @@ export function DebugPanel({
                         aria-label="Toggle station locations"
                     >
                         <Landmark className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">{t('terrainXray')}</span>
+                    <Toggle
+                        size="sm"
+                        pressed={terrainXray}
+                        onPressedChange={onTerrainXrayChange}
+                        aria-label="Toggle terrain X-ray"
+                    >
+                        <Eye className="size-3.5" />
                     </Toggle>
                 </div>
                 <Separator />

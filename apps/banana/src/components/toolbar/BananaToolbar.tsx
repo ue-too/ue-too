@@ -60,6 +60,7 @@ import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
+import { TerrainLegend } from './TerrainLegend';
 import { TrainPanel } from './TrainPanel';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
@@ -101,6 +102,7 @@ export function BananaToolbar({
     const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showStationList, setShowStationList] = useState(false);
     const [showStats, setShowStats] = useState(true);
+    const [terrainXray, setTerrainXray] = useState(false);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
@@ -175,6 +177,11 @@ export function BananaToolbar({
         app.trackRenderSystem.bedWidth = bedWidth;
         app.curveEngine.trackGraph.bedWidth = bedWidth;
     }, [app, bedWidth]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.xray = terrainXray;
+    }, [app, terrainXray]);
 
     useEffect(() => {
         if (!app) return;
@@ -760,13 +767,16 @@ export function BananaToolbar({
                     onShowStationLocationsChange={setShowStationLocations}
                     showStats={showStats}
                     onShowStatsChange={setShowStats}
+                    terrainXray={terrainXray}
+                    onTerrainXrayChange={setTerrainXray}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}
 
             <LanguageSwitcher />
 
-            <div className="pointer-events-none absolute right-3 bottom-10">
+            <div className="absolute right-3 bottom-10 flex flex-col items-end gap-1">
+                <TerrainLegend />
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
                     {t('elevation')}: {elevation} · T: {tension}
                 </span>

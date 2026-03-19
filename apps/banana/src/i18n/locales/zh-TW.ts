@@ -119,6 +119,7 @@ const zhTW = {
         formationIds: '編組 ID',
         stationStops: '停靠站',
         stationLocations: '車站位置',
+        terrainXray: '地形透視',
         fpsStats: 'FPS 統計',
 
         // Train Editor
