@@ -1,10 +1,16 @@
-import { useCallback, useMemo, useState } from 'react';
 import {
     ScrollBarDisplay,
     Wrapper,
 } from '@ue-too/board-pixi-react-integration';
+import { useCallback, useMemo, useState } from 'react';
+
+import {
+    type MapInstance,
+    MapTileLayer,
+    MapTileLayerSync,
+} from '@/components/map-tile-layer';
 import { BananaToolbar } from '@/components/toolbar';
-import { MapTileLayer, MapTileLayerSync, type MapInstance } from '@/components/map-tile-layer';
+import { TimeDisplay } from '@/components/toolbar/TimeDisplay';
 import { initApp } from '@/utils/init-app';
 
 import '../App.css';
@@ -25,7 +31,7 @@ export function ExpPage(): React.ReactNode {
                 max: { x: 5000, y: 5000 },
             },
         }),
-        [],
+        []
     );
 
     return (
@@ -35,18 +41,16 @@ export function ExpPage(): React.ReactNode {
                 onMapReady={setMapInstance}
                 onMapDestroy={handleMapDestroy}
             />
-            <Wrapper
-                option={wrapperOption}
-                initFunction={initApp}
-            >
+            <Wrapper option={wrapperOption} initFunction={initApp}>
                 {showMap && mapInstance && (
                     <MapTileLayerSync map={mapInstance} />
                 )}
                 <ScrollBarDisplay />
                 <BananaToolbar
                     showMap={showMap}
-                    onToggleMap={() => setShowMap((s) => !s)}
+                    onToggleMap={() => setShowMap(s => !s)}
                 />
+                <TimeDisplay />
             </Wrapper>
         </div>
     );

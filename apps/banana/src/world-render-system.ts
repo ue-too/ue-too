@@ -113,8 +113,37 @@ export class WorldRenderSystem {
     /** Map from ELEVATION enum value to band index. */
     private _elevationToBandIndex: Map<ELEVATION, number> = new Map();
 
+    /** Container for the base terrain visual (shading + contour lines). Renders below all bands. */
+    private _terrainBaseContainer: Container;
+    /**
+     * Per-band terrain occlusion containers. Each sits between band[i-1] and band[i]
+     * in the z-order, drawing opaque terrain to hide lower-elevation content.
+     */
+    private _terrainOcclusionContainers: Container[] = [];
+
     get container(): Container {
         return this._mainContainer;
+    }
+
+    /** Container for the base terrain layer (rendered below all elevation bands). */
+    get terrainBaseContainer(): Container {
+        return this._terrainBaseContainer;
+    }
+
+    /**
+     * Get the terrain occlusion container for a given band index.
+     * Content added here renders between band[index-1] and band[index],
+     * hiding tracks at lower elevations where terrain is higher.
+     *
+     * @param bandIndex - Elevation band index (0 to bands.length - 1)
+     */
+    getTerrainOcclusionContainer(bandIndex: number): Container | undefined {
+        return this._terrainOcclusionContainers[bandIndex];
+    }
+
+    /** Number of elevation bands. */
+    get bandCount(): number {
+        return this._bands.length;
     }
 
     constructor() {
@@ -125,7 +154,19 @@ export class WorldRenderSystem {
         this._drawDataBelow.zIndex = Z_INDEX_BELOW;
         this._mainContainer.addChild(this._drawDataBelow);
 
+        // Terrain base container renders below all elevation bands
+        this._terrainBaseContainer = new Container();
+        this._terrainBaseContainer.zIndex = -1;
+        this._terrainBaseContainer.sortableChildren = true;
+        this._drawDataBelow.addChild(this._terrainBaseContainer);
+
         ELEVATION_VALUES.forEach((elevation, i) => {
+            // Terrain occlusion container sits between band[i-1] and band[i]
+            const occlusionContainer = new Container();
+            occlusionContainer.zIndex = i - 0.5;
+            this._drawDataBelow.addChild(occlusionContainer);
+            this._terrainOcclusionContainers.push(occlusionContainer);
+
             const band = this._createBand(i);
             this._drawDataBelow.addChild(band.container);
             this._bands.push(band);
@@ -421,6 +462,12 @@ export class WorldRenderSystem {
             container.destroy({ children: true });
         });
         this._drawableMap.clear();
+
+        this._terrainBaseContainer.destroy({ children: true });
+        for (const oc of this._terrainOcclusionContainers) {
+            oc.destroy({ children: true });
+        }
+        this._terrainOcclusionContainers = [];
 
         this._drawDataBelow.destroy({ children: true });
         this._mainContainer.destroy({ children: true });

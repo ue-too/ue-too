@@ -36,6 +36,8 @@ const zhTW = {
         openDebug: '開啟除錯',
         closeDebug: '關閉除錯',
         sunAngle: '日照角度',
+        terrainFill: '地形',
+        terrainOpacity: '地形透明度',
         elevation: '高度',
 
         // Export/Import
@@ -45,6 +47,8 @@ const zhTW = {
         importTrains: '匯入列車',
         exportAll: '匯出全部（軌道 + 列車 + 車站）',
         importAll: '匯入全部（軌道 + 列車 + 車站）',
+        importTerrain: '匯入地形',
+        invalidTerrainData: '無效的地形資料：{{error}}',
         importCarDefinitionFromEditor: '匯入車輛定義（從列車編輯器）',
 
         // Validation errors
@@ -119,6 +123,7 @@ const zhTW = {
         formationIds: '編組 ID',
         stationStops: '停靠站',
         stationLocations: '車站位置',
+        terrainXray: '地形透視',
         fpsStats: 'FPS 統計',
 
         // Train Editor

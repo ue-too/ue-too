@@ -9,11 +9,14 @@ import {
 import type { SerializedStationData } from '@/stations/types';
 import { StationManager } from '@/stations/station-manager';
 import type { BananaAppComponents } from '@/utils/init-app';
+import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
+import type { SerializedTerrainData } from '@/terrain/terrain-data';
 
 export type SerializedSceneData = {
   tracks: SerializedTrackData;
   trains: SerializedTrainData;
   stations?: SerializedStationData;
+  terrain?: SerializedTerrainData;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
@@ -21,6 +24,7 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
     tracks: app.curveEngine.trackGraph.serialize(),
     trains: serializeTrainData(app.trainManager, app.formationManager, app.carStockManager),
     stations: app.stationManager.serialize(),
+    terrain: app.terrainData.serialize(),
   };
 }
 
@@ -35,6 +39,12 @@ export function deserializeSceneData(app: BananaAppComponents, data: SerializedS
     app.formationManager,
     app.carStockManager,
   );
+
+  // Load terrain data if present
+  if (data.terrain) {
+    const restoredTerrain = TerrainData.deserialize(data.terrain);
+    app.terrainRenderSystem.setTerrainData(restoredTerrain);
+  }
 
   // Load stations and rebuild their render visuals
   if (data.stations) {
@@ -68,6 +78,11 @@ export function validateSerializedSceneData(
   if (obj.stations !== undefined) {
     const stationRes = validateSerializedStationData(obj.stations);
     if (!stationRes.valid) return { valid: false, error: `stations: ${stationRes.error}` };
+  }
+  // terrain is optional for backwards compatibility
+  if (obj.terrain !== undefined) {
+    const terrainRes = validateSerializedTerrainData(obj.terrain);
+    if (!terrainRes.valid) return { valid: false, error: `terrain: ${terrainRes.error}` };
   }
   return { valid: true };
 }

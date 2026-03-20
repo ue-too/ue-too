@@ -32,6 +32,8 @@ import {
     serializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
+import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
+import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
 import {
@@ -58,8 +60,10 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
 import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
+import { TerrainControl } from './TerrainControl';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
+import { TerrainLegend } from './TerrainLegend';
 import { TrainPanel } from './TrainPanel';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
@@ -101,6 +105,9 @@ export function BananaToolbar({
     const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showStationList, setShowStationList] = useState(false);
     const [showStats, setShowStats] = useState(true);
+    const [terrainXray, setTerrainXray] = useState(false);
+    const [terrainFillVisible, setTerrainFillVisible] = useState(true);
+    const [terrainOpacity, setTerrainOpacity] = useState(1);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
@@ -175,6 +182,21 @@ export function BananaToolbar({
         app.trackRenderSystem.bedWidth = bedWidth;
         app.curveEngine.trackGraph.bedWidth = bedWidth;
     }, [app, bedWidth]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.xray = terrainXray;
+    }, [app, terrainXray]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.fillVisible = terrainFillVisible;
+    }, [app, terrainFillVisible]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.fillOpacity = terrainOpacity;
+    }, [app, terrainOpacity]);
 
     useEffect(() => {
         if (!app) return;
@@ -436,6 +458,28 @@ export function BananaToolbar({
         });
     }, [app]);
 
+    const handleImportTerrain = useCallback(() => {
+        if (!app) return;
+        uploadJson(parsed => {
+            // Accept both standalone terrain files and scene files with a terrain field
+            let terrainObj: unknown = parsed;
+            if (
+                parsed != null &&
+                typeof parsed === 'object' &&
+                'terrain' in (parsed as Record<string, unknown>)
+            ) {
+                terrainObj = (parsed as Record<string, unknown>).terrain;
+            }
+            const result = validateSerializedTerrainData(terrainObj);
+            if (!result.valid) {
+                alert(t('invalidTerrainData', { error: result.error }));
+                return;
+            }
+            const restored = TerrainData.deserialize(terrainObj as SerializedTerrainData);
+            app.terrainRenderSystem.setTerrainData(restored);
+        });
+    }, [app, t]);
+
     const handleImportCarDefinition = useCallback(() => {
         if (!app) return;
         uploadJson(parsed => {
@@ -636,6 +680,7 @@ export function BananaToolbar({
                         onImportTrains={handleImportTrains}
                         onExportAll={handleExportAll}
                         onImportAll={handleImportAll}
+                        onImportTerrain={handleImportTerrain}
                         onImportCarDefinition={handleImportCarDefinition}
                     />
 
@@ -663,6 +708,12 @@ export function BananaToolbar({
                 </div>
 
                 <SunAngleControl value={sunAngle} onChange={setSunAngle} />
+                <TerrainControl
+                    visible={terrainFillVisible}
+                    onVisibleChange={setTerrainFillVisible}
+                    opacity={terrainOpacity}
+                    onOpacityChange={setTerrainOpacity}
+                />
             </div>
 
             {mode === 'train-placement' && (
@@ -760,13 +811,16 @@ export function BananaToolbar({
                     onShowStationLocationsChange={setShowStationLocations}
                     showStats={showStats}
                     onShowStatsChange={setShowStats}
+                    terrainXray={terrainXray}
+                    onTerrainXrayChange={setTerrainXray}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}
 
             <LanguageSwitcher />
 
-            <div className="pointer-events-none absolute right-3 bottom-10">
+            <div className="absolute right-3 bottom-10 flex flex-col items-end gap-1">
+                <TerrainLegend />
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
                     {t('elevation')}: {elevation} · T: {tension}
                 </span>

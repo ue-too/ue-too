@@ -1,4 +1,4 @@
-import { Download, Gauge } from 'lucide-react';
+import { Download, Gauge, Mountain } from 'lucide-react';
 import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -23,6 +23,7 @@ type ExportSubmenuProps = {
     onImportTrains: () => void;
     onExportAll: () => void;
     onImportAll: () => void;
+    onImportTerrain: () => void;
     onImportCarDefinition: () => void;
 };
 
@@ -35,6 +36,7 @@ export function ExportSubmenu({
     onImportTrains,
     onExportAll,
     onImportAll,
+    onImportTerrain,
     onImportCarDefinition,
 }: ExportSubmenuProps) {
     const { t } = useTranslation();
@@ -105,6 +107,13 @@ export function ExportSubmenu({
                         onClick={onImportAll}
                     >
                         <ImportSceneIcon />
+                    </ToolbarButton>
+                    <Separator />
+                    <ToolbarButton
+                        tooltip={t('importTerrain')}
+                        onClick={onImportTerrain}
+                    >
+                        <Mountain />
                     </ToolbarButton>
                     <Separator />
                     <ToolbarButton

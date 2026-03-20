@@ -36,6 +36,8 @@ const en = {
         openDebug: 'Open Debug',
         closeDebug: 'Close Debug',
         sunAngle: 'Sun Angle',
+        terrainFill: 'Terrain',
+        terrainOpacity: 'Terrain Opacity',
         elevation: 'Elev',
 
         // Export/Import
@@ -45,6 +47,8 @@ const en = {
         importTrains: 'Import Trains',
         exportAll: 'Export All (tracks + trains + stations)',
         importAll: 'Import All (tracks + trains + stations)',
+        importTerrain: 'Import Terrain',
+        invalidTerrainData: 'Invalid terrain data: {{error}}',
         importCarDefinitionFromEditor: 'Import Car Definition (from Train Editor)',
 
         // Validation errors
@@ -119,6 +123,7 @@ const en = {
         formationIds: 'Formation IDs',
         stationStops: 'Station stops',
         stationLocations: 'Station locations',
+        terrainXray: 'Terrain X-ray',
         fpsStats: 'FPS stats',
 
         // Layout Deletion Toolbar (deleteTrack / endDeletion already defined above)
