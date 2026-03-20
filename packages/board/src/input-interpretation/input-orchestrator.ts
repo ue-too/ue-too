@@ -245,7 +245,11 @@ export class InputOrchestrator {
      */
     private processZoomMuxOutput(output: CameraMuxZoomOutput): void {
         if (output.allowPassThrough) {
-            this._cameraRig.zoomByAt(output.delta, output.anchorPoint);
+            if (output.anchorPoint) {
+                this._cameraRig.zoomByAt(output.delta, output.anchorPoint);
+            } else {
+                this._cameraRig.zoomBy(output.delta);
+            }
         }
     }
 

@@ -8,7 +8,9 @@ import {
     TouchEventParser,
     TouchInputTracker,
     VanillaTouchEventParser,
+    createDefaultCameraMux,
     createDefaultCameraRig,
+    createDefaultPanByHandler,
     createTouchInputStateMachine,
     minZoomLevelBaseOnDimensions,
     zoomLevelBoundariesShouldUpdate,
@@ -72,8 +74,9 @@ export const baseInitApp = async (
 
     const canvasProxy = new CanvasProxy(canvasElement);
     const cameraRig = createDefaultCameraRig(camera);
+    const cameraMux = createDefaultCameraMux();
     const inputOrchestrator = new InputOrchestrator(
-        createCameraMuxWithAnimationAndLock(),
+        cameraMux,
         cameraRig,
         new RawUserInputPublisher()
     );
