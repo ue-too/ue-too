@@ -1,15 +1,17 @@
 import { BoardCamera } from '@ue-too/board';
 import type { Point } from '@ue-too/math';
-import { ArrowLeftRight, Crosshair, Focus, Gauge, Pause, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowLeftRight, Crosshair, Focus, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import type { ThrottleSteps } from '@/trains/formation';
 import type { TrainManager } from '@/trains/train-manager';
 import type { FocusAnimationParams } from '@/utils/init-app';
 
+import { ThrottleIndicator } from './ThrottleIndicator';
 import { ToolbarButton } from './ToolbarButton';
 
 type TrainPanelProps = {
@@ -40,16 +42,40 @@ export function TrainPanel({
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
+    // Poll train throttle/speed at animation-frame rate
+    const [throttle, setThrottle] = useState<ThrottleSteps>('N');
+    const [speed, setSpeed] = useState(0);
+    const rafRef = useRef<number>(0);
+
+    useEffect(() => {
+        if (!selectedTrain) return;
+        const tick = () => {
+            setThrottle(selectedTrain.throttleStep);
+            setSpeed(selectedTrain.speed);
+            rafRef.current = requestAnimationFrame(tick);
+        };
+        rafRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafRef.current);
+    }, [selectedTrain]);
+
+    const handleThrottleChange = useCallback(
+        (step: ThrottleSteps) => {
+            selectedTrain?.setThrottleStep(step);
+        },
+        [selectedTrain]
+    );
+
     return (
-        <DraggablePanel title={t('trains')} onClose={onClose} className="w-60">
+        <DraggablePanel title={t('trains')} onClose={onClose} className="w-52">
             <Separator className="mb-2" />
             <div className="flex flex-col gap-2">
+                {/* Train list */}
                 {placedTrains.length > 0 && (
                     <div className="flex flex-col gap-1">
                         <span className="text-muted-foreground text-xs font-medium">
                             {t('placedTrains')}
                         </span>
-                        <div className="flex max-h-60 flex-col gap-1 overflow-y-auto">
+                        <div className="flex max-h-32 flex-col gap-0.5 overflow-y-auto">
                             {placedTrains.map((entry, index) => {
                                 const formation = entry.train.formation;
                                 const carCount = formation.flatCars().length;
@@ -58,39 +84,31 @@ export function TrainPanel({
                                         key={entry.id}
                                         type="button"
                                         onClick={() =>
-                                            trainManager.setSelectedIndex(
-                                                entry.id
-                                            )
+                                            trainManager.setSelectedIndex(entry.id)
                                         }
                                         className={cn(
-                                            'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left transition-colors',
+                                            'flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors',
                                             entry.id === selectedIndex
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'bg-muted/50 hover:bg-muted'
                                         )}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-mono text-xs font-medium">
-                                                {index + 1}
-                                            </span>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs">
-                                                    {formation.id}
-                                                </span>
-                                                <span
-                                                    className={
-                                                        entry.id ===
-                                                        selectedIndex
-                                                            ? 'text-primary-foreground/80'
-                                                            : 'text-muted-foreground'
-                                                    }
-                                                >
-                                                    {t('car', {
-                                                        count: carCount,
-                                                    })}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <span className="font-mono font-medium">
+                                            {index + 1}
+                                        </span>
+                                        <span className="truncate">
+                                            {formation.id}
+                                        </span>
+                                        <span
+                                            className={cn(
+                                                'ml-auto shrink-0 text-[10px]',
+                                                entry.id === selectedIndex
+                                                    ? 'text-primary-foreground/70'
+                                                    : 'text-muted-foreground'
+                                            )}
+                                        >
+                                            {t('car', { count: carCount })}
+                                        </span>
                                     </button>
                                 );
                             })}
@@ -98,39 +116,22 @@ export function TrainPanel({
                     </div>
                 )}
 
-                {placedTrains.length > 0 && (
-                    <div className="flex w-full flex-col gap-1">
-                        <span className="text-muted-foreground text-xs font-medium">
-                            {t('controls')}
-                        </span>
-                        <div className="flex w-full flex-wrap gap-1">
-                            <ToolbarButton
-                                tooltip={t('throttleP5')}
-                                disabled={!selectedTrain}
-                                onClick={() =>
-                                    selectedTrain?.setThrottleStep('p5')
-                                }
-                            >
-                                <Gauge />
-                            </ToolbarButton>
-                            <ToolbarButton
-                                tooltip={t('neutral')}
-                                disabled={!selectedTrain}
-                                onClick={() =>
-                                    selectedTrain?.setThrottleStep('N')
-                                }
-                            >
-                                <Pause />
-                            </ToolbarButton>
+                {/* Selected train: throttle + controls */}
+                {selectedTrain && (
+                    <>
+                        <Separator />
+                        <ThrottleIndicator
+                            currentStep={throttle}
+                            speed={speed}
+                            onThrottleChange={handleThrottleChange}
+                        />
+                        <Separator />
+                        <div className="flex flex-wrap gap-1">
                             <ToolbarButton
                                 tooltip={t('focusOnSelectedTrain')}
-                                disabled={!selectedTrain}
                                 onClick={() => {
-                                    const point =
-                                        selectedTrain?.position?.point;
-
+                                    const point = selectedTrain.position?.point;
                                     if (!point) return;
-
                                     startFocusAnimation({
                                         startWorldPoint: camera.position,
                                         targetWorldPoint: point,
@@ -148,19 +149,14 @@ export function TrainPanel({
                                         : t('followSelectedTrain')
                                 }
                                 active={following}
-                                disabled={!selectedTrain && !following}
                                 onClick={() => {
                                     if (following) {
                                         stopFollowing();
                                         setFollowing(false);
                                         return;
                                     }
-
-                                    const point =
-                                        selectedTrain?.position?.point;
-
+                                    const point = selectedTrain.position?.point;
                                     if (!point) return;
-
                                     startFollowAnimation(
                                         {
                                             startWorldPoint: camera.position,
@@ -169,7 +165,7 @@ export function TrainPanel({
                                             targetZoom: 5,
                                         },
                                         () =>
-                                            selectedTrain?.position?.point ??
+                                            selectedTrain.position?.point ??
                                             null
                                     );
                                     setFollowing(true);
@@ -179,8 +175,7 @@ export function TrainPanel({
                             </ToolbarButton>
                             <ToolbarButton
                                 tooltip={t('switchDirection')}
-                                disabled={!selectedTrain}
-                                onClick={() => selectedTrain?.switchDirection()}
+                                onClick={() => selectedTrain.switchDirection()}
                             >
                                 <ArrowLeftRight />
                             </ToolbarButton>
@@ -194,7 +189,14 @@ export function TrainPanel({
                                 <Trash2 />
                             </ToolbarButton>
                         </div>
-                    </div>
+                    </>
+                )}
+
+                {/* Controls shown when no train selected but trains exist */}
+                {!selectedTrain && placedTrains.length > 0 && (
+                    <span className="text-muted-foreground text-center text-xs">
+                        {t('placedTrains')}
+                    </span>
                 )}
             </div>
         </DraggablePanel>

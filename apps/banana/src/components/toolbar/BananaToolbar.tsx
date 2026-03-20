@@ -62,6 +62,7 @@ import { ExportSubmenu } from './ExportSubmenu';
 import { FormationSelector } from './FormationSelector';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
+import { ScaleRuler } from './ScaleRuler';
 import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
@@ -868,6 +869,7 @@ export function BananaToolbar({
                 <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-[10px] backdrop-blur-sm">
                     {t('elevation')}: {elevation} · T: {tension}
                 </span>
+                <ScaleRuler />
             </div>
         </TooltipProvider>
     );
