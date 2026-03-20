@@ -29,7 +29,7 @@ export function SunAngleControl({ value, onChange }: SunAngleControlProps) {
                             onChange={e => onChange(Number(e.target.value))}
                             className="h-20 w-1.5 appearance-none [writing-mode:vertical-lr]"
                         />
-                        <span className="text-muted-foreground text-[10px]">
+                        <span className="text-muted-foreground w-10 shrink-0 text-center text-[10px] tabular-nums">
                             {value}°
                         </span>
                     </div>

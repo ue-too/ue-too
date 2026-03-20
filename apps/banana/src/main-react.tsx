@@ -1,18 +1,17 @@
 import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-
-import '@/i18n';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
 import { Toaster } from '@/components/ui/sonner';
+import '@/i18n';
 import { ExpPage } from '@/pages/exp';
 import { MapOverlayPage } from '@/pages/map-overlay';
 import { BananaAppComponents } from '@/utils/init-app';
 
 import App from './App';
-import { TrainEditor } from './pages/train-editor';
 import { TerrainEditorPage } from './pages/terrain-editor';
+import { TrainEditor } from './pages/train-editor';
 
 declare module '@ue-too/board-pixi-react-integration' {
     interface PixiCanvasRegistry {
@@ -35,14 +34,17 @@ root.render(
         <ThemeProvider attribute="class" defaultTheme="light">
             <Toaster />
             <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<App />} />
-                <Route path="/map-overlay" element={<MapOverlayPage />} />
-                <Route path="/exp" element={<ExpPage />} />
-                <Route path="/train-editor" element={<TrainEditor />} />
-                <Route path="/terrain-editor" element={<TerrainEditorPage />} />
-            </Routes>
-        </BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<App />} />
+                    <Route path="/map-overlay" element={<MapOverlayPage />} />
+                    <Route path="/exp" element={<ExpPage />} />
+                    <Route path="/train-editor" element={<TrainEditor />} />
+                    <Route
+                        path="/terrain-editor"
+                        element={<TerrainEditorPage />}
+                    />
+                </Routes>
+            </BrowserRouter>
         </ThemeProvider>
     </StrictMode>
 );
