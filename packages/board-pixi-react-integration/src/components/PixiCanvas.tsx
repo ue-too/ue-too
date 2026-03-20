@@ -38,14 +38,17 @@ export const OverlayContainer = ({
 }) => {
     const { width, height } = useCanvasSize();
 
+    // Before Pixi initializes, useCanvasSize returns 0x0. Use 100% to fill the
+    // parent so overlay children (e.g. TimeDisplay) are positioned correctly.
+    const isReady = width > 0 && height > 0;
+
     return (
         <div
             style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                width,
-                height,
+                ...(isReady ? { width, height } : { width: '100%', height: '100%' }),
                 pointerEvents: 'none',
             }}
         >
