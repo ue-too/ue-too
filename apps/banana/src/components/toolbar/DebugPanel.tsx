@@ -1,6 +1,7 @@
 import { Activity, Eye, Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
 import { Toggle } from '@/components/ui/toggle';
@@ -20,6 +21,8 @@ type DebugPanelProps = {
     onShowStatsChange: (value: boolean) => void;
     terrainXray: boolean;
     onTerrainXrayChange: (value: boolean) => void;
+    onSpawnStressTest?: (count: number) => void;
+    onThrottleAll?: (step: string) => void;
     onClose: () => void;
 };
 
@@ -38,6 +41,8 @@ export function DebugPanel({
     onShowStatsChange,
     terrainXray,
     onTerrainXrayChange,
+    onSpawnStressTest,
+    onThrottleAll,
     onClose,
 }: DebugPanelProps) {
     const { t } = useTranslation();
@@ -127,6 +132,67 @@ export function DebugPanel({
                         <Activity className="size-3.5" />
                     </Toggle>
                 </div>
+                {onSpawnStressTest && (
+                    <>
+                        <Separator />
+                        <span className="text-muted-foreground text-[10px]">
+                            Stress Test
+                        </span>
+                        <div className="flex gap-1">
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onSpawnStressTest(30)}
+                            >
+                                30 trains
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onSpawnStressTest(50)}
+                            >
+                                50 trains
+                            </Button>
+                        </div>
+                    </>
+                )}
+                {onThrottleAll && (
+                    <>
+                        <span className="text-muted-foreground text-[10px]">
+                            Throttle All
+                        </span>
+                        <div className="flex gap-1">
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onThrottleAll('N')}
+                            >
+                                N
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onThrottleAll('p1')}
+                            >
+                                P1
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onThrottleAll('p3')}
+                            >
+                                P3
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onThrottleAll('p5')}
+                            >
+                                P5
+                            </Button>
+                        </div>
+                    </>
+                )}
             </div>
         </DraggablePanel>
     );

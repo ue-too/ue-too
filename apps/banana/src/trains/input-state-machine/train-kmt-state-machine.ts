@@ -105,10 +105,11 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
         // train occupies, prefer the branch whose segment is already occupied.
         let selectedNextJointNumber: number | undefined;
         if (possibleNextJoints.size > 1 && occupiedTrackSegments && occupiedTrackSegments.length > 0) {
+            const occupiedSet = new Set(occupiedTrackSegments.map(s => s.trackNumber));
             for (const nextJoint of possibleNextJoints) {
                 const segNumber = joint.connections.get(nextJoint);
                 if (segNumber === undefined) continue;
-                if (occupiedTrackSegments.some(s => s.trackNumber === segNumber)) {
+                if (occupiedSet.has(segNumber)) {
                     selectedNextJointNumber = nextJoint;
                     break;
                 }

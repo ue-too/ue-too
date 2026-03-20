@@ -97,3 +97,57 @@ export function generateProceduralTrackPath(
 
   return created;
 }
+
+export type ParallelTrackOptions = {
+  /** Number of parallel tracks to create. */
+  count: number;
+  /** Length of each track segment in world units. Default 100. */
+  length?: number;
+  /** Perpendicular spacing between adjacent tracks. Default 5. */
+  gap?: number;
+  /** Start position X. Default 0. */
+  startX?: number;
+  /** Start position Y. Default 0. */
+  startY?: number;
+};
+
+/**
+ * Generate a grid of parallel straight tracks for stress testing.
+ * Each track is an independent segment (not connected to others).
+ *
+ * @returns Array of created segment numbers.
+ */
+export function generateParallelTracks(
+  trackGraph: TrackGraph,
+  options: ParallelTrackOptions,
+): number[] {
+  const {
+    count,
+    length = 100,
+    gap = 5,
+    startX = 0,
+    startY = 0,
+  } = options;
+
+  const created: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const y = startY + i * gap;
+    const start: Point = { x: startX, y };
+    const end: Point = { x: startX + length, y };
+    const mid: Point = { x: startX + length / 2, y };
+
+    const idsBefore = new Set(trackGraph.trackCurveManager.livingEntities);
+    const ok = trackGraph.createNewTrackSegment(start, end, [mid]);
+    if (!ok) continue;
+
+    // Find the newly created segment number.
+    for (const id of trackGraph.trackCurveManager.livingEntities) {
+      if (!idsBefore.has(id)) {
+        created.push(id);
+        break;
+      }
+    }
+  }
+
+  return created;
+}

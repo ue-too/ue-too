@@ -9,7 +9,7 @@ import { LayoutStateMachine } from '@/trains/input-state-machine/layout-kmt-stat
 import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
-import { generateProceduralTrackPath, type ProceduralTrackOptions } from '@/trains/tracks/procedural-tracks';
+import { generateProceduralTrackPath, generateParallelTracks, type ProceduralTrackOptions, type ParallelTrackOptions } from '@/trains/tracks/procedural-tracks';
 import { TrackRenderSystem } from '@/trains/tracks/render-system';
 import { TrainManager } from '@/trains/train-manager';
 import { CarStockManager } from '@/trains/car-stock-manager';
@@ -62,6 +62,8 @@ export type BananaAppComponents = BaseAppComponents & {
   addStressTestTrains: (count: number) => number;
   /** Generate a procedural track path for stress testing. Returns number of segments created. */
   generateProceduralTracks: (options: ProceduralTrackOptions) => number;
+  /** Spawn N parallel straight tracks, each with one train. Returns number spawned. */
+  spawnParallelTracksWithTrains: (count: number) => number;
 };
 
 /**
@@ -250,6 +252,16 @@ export const initApp = async (
     return generateProceduralTrackPath(trackGraph, options);
   };
 
+  const spawnParallelTracksWithTrains = (count: number): number => {
+    const segmentIds = generateParallelTracks(trackGraph, { count, length: 500 });
+    let placed = 0;
+    for (const segId of segmentIds) {
+      if (addTrainAtPosition(segId, 0.5, 'tangent')) placed += 1;
+    }
+    trainRenderSystem.forceSync();
+    return placed;
+  };
+
   return {
     ...baseComponents,
     curveEngine,
@@ -277,5 +289,6 @@ export const initApp = async (
     addTrainAtPosition,
     addStressTestTrains,
     generateProceduralTracks,
+    spawnParallelTracksWithTrains,
   };
 };

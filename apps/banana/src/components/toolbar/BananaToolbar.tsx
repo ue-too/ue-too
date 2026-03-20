@@ -65,6 +65,7 @@ import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TerrainLegend } from './TerrainLegend';
 import { TrainPanel } from './TrainPanel';
+import type { ThrottleSteps } from '@/trains/formation';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
 import { downloadJson, uploadJson } from './utils';
@@ -510,6 +511,27 @@ export function BananaToolbar({
         });
     }, [app]);
 
+    const handleSpawnStressTest = useCallback(
+        (count: number) => {
+            if (!app) return;
+            const placed = app.spawnParallelTracksWithTrains(count);
+            console.log(`Stress test: spawned ${placed} trains on parallel tracks`);
+        },
+        [app]
+    );
+
+    const handleThrottleAll = useCallback(
+        (step: string) => {
+            if (!app) return;
+            const placed = app.trainManager.getPlacedTrains();
+            for (const { train } of placed) {
+                train.setThrottleStep(step as ThrottleSteps);
+            }
+            console.log(`Set throttle to ${step} on ${placed.length} trains`);
+        },
+        [app]
+    );
+
     if (!app) return null;
 
     const trainManager = app.trainManager;
@@ -813,6 +835,8 @@ export function BananaToolbar({
                     onShowStatsChange={setShowStats}
                     terrainXray={terrainXray}
                     onTerrainXrayChange={setTerrainXray}
+                    onSpawnStressTest={handleSpawnStressTest}
+                    onThrottleAll={handleThrottleAll}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}

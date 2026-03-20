@@ -32,7 +32,7 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                         <span className="text-muted-foreground text-xs font-medium">
                             {t('placedTrains')}
                         </span>
-                        <div className="flex flex-col gap-1">
+                        <div className="flex max-h-60 flex-col gap-1 overflow-y-auto">
                             {placedTrains.map((entry, index) => {
                                 const formation = entry.train.formation;
                                 const carCount = formation.flatCars().length;
