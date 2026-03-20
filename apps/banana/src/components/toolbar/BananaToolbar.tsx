@@ -109,6 +109,7 @@ export function BananaToolbar({
     const [terrainXray, setTerrainXray] = useState(false);
     const [terrainFillVisible, setTerrainFillVisible] = useState(true);
     const [terrainOpacity, setTerrainOpacity] = useState(1);
+    const [whiteOcclusion, setWhiteOcclusion] = useState(false);
     const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
     const [electrified, setElectrified] = useState(false);
     const [projectionBuffer, setProjectionBuffer] = useState(0.5);
@@ -198,6 +199,11 @@ export function BananaToolbar({
         if (!app) return;
         app.terrainRenderSystem.fillOpacity = terrainOpacity;
     }, [app, terrainOpacity]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.terrainRenderSystem.whiteOcclusion = whiteOcclusion;
+    }, [app, whiteOcclusion]);
 
     useEffect(() => {
         if (!app) return;
@@ -735,6 +741,8 @@ export function BananaToolbar({
                     onVisibleChange={setTerrainFillVisible}
                     opacity={terrainOpacity}
                     onOpacityChange={setTerrainOpacity}
+                    whiteOcclusion={whiteOcclusion}
+                    onWhiteOcclusionChange={setWhiteOcclusion}
                 />
             </div>
 

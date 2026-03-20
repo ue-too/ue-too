@@ -38,6 +38,7 @@ const en = {
         sunAngle: 'Sun Angle',
         terrainFill: 'Terrain',
         terrainOpacity: 'Terrain Opacity',
+        whiteOcclusion: 'White Occlusion',
         elevation: 'Elev',
 
         // Export/Import

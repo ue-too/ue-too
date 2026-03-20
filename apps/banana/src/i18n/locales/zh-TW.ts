@@ -38,6 +38,7 @@ const zhTW = {
         sunAngle: '日照角度',
         terrainFill: '地形',
         terrainOpacity: '地形透明度',
+        whiteOcclusion: '白色遮擋',
         elevation: '高度',
 
         // Export/Import
