@@ -219,6 +219,7 @@ export class TrainRenderSystem {
     this._updatePreviewCars();
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
+    this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
     for (const { id } of placed) this._lastTrainIds.add(id);
@@ -235,6 +236,7 @@ export class TrainRenderSystem {
     this._updatePreviewCars();
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
+    this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
     for (const { id } of placed) this._lastTrainIds.add(id);
@@ -320,7 +322,6 @@ export class TrainRenderSystem {
       }
     }
 
-    this._worldRenderSystem.sortChildren();
   }
 
   private _updateActualCars(placed: readonly PlacedTrainEntry[]): void {
@@ -371,7 +372,6 @@ export class TrainRenderSystem {
       }
     }
 
-    this._worldRenderSystem.sortChildren();
   }
 
   private _updatePreviewCars(): void {
