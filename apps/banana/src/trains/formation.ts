@@ -518,6 +518,14 @@ export class Train {
         return this._previewPositionCache;
     }
 
+    get throttleStep(): ThrottleSteps {
+        return this._throttle;
+    }
+
+    get speed(): number {
+        return this._speed;
+    }
+
     setThrottleStep(throttleStep: ThrottleSteps) {
         this._throttle = throttleStep;
     }
