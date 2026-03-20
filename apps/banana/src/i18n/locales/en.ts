@@ -67,6 +67,7 @@ const en = {
         neutral: 'Neutral',
         switchDirection: 'Switch Direction',
         removeSelectedTrain: 'Remove Selected Train',
+        focusOnSelectedTrain: 'Focus on Selected Train',
 
         // Depot Panel
         depot: 'Depot',

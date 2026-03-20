@@ -1,30 +1,35 @@
+import { BoardCamera } from '@ue-too/board';
 import { ArrowLeftRight, Gauge, Pause, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
-import type { TrainManager } from '@/trains/train-manager';
 import { cn } from '@/lib/utils';
+import type { TrainManager } from '@/trains/train-manager';
+import type { FocusAnimationParams } from '@/utils/init-app';
 
 import { ToolbarButton } from './ToolbarButton';
 
 type TrainPanelProps = {
     trainManager: TrainManager;
     onClose: () => void;
+    startFocusAnimation: (params: FocusAnimationParams) => void;
+    camera: BoardCamera;
 };
 
-export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
+export function TrainPanel({
+    trainManager,
+    startFocusAnimation,
+    onClose,
+    camera,
+}: TrainPanelProps) {
     const { t } = useTranslation();
     const placedTrains = trainManager.getPlacedTrains();
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
     return (
-        <DraggablePanel
-            title={t('trains')}
-            onClose={onClose}
-            className="w-56"
-        >
+        <DraggablePanel title={t('trains')} onClose={onClose} className="w-56">
             <Separator className="mb-2" />
             <div className="flex flex-col gap-2">
                 {placedTrains.length > 0 && (
@@ -62,12 +67,15 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                                 </span>
                                                 <span
                                                     className={
-                                                        entry.id === selectedIndex
+                                                        entry.id ===
+                                                        selectedIndex
                                                             ? 'text-primary-foreground/80'
                                                             : 'text-muted-foreground'
                                                     }
                                                 >
-                                                    {t('car', { count: carCount })}
+                                                    {t('car', {
+                                                        count: carCount,
+                                                    })}
                                                 </span>
                                             </div>
                                         </div>
@@ -103,11 +111,28 @@ export function TrainPanel({ trainManager, onClose }: TrainPanelProps) {
                                 <Pause />
                             </ToolbarButton>
                             <ToolbarButton
+                                tooltip={t('focusOnSelectedTrain')}
+                                disabled={!selectedTrain}
+                                onClick={() => {
+                                    const point =
+                                        selectedTrain?.position?.point;
+
+                                    if (!point) return;
+
+                                    startFocusAnimation({
+                                        startWorldPoint: camera.position,
+                                        targetWorldPoint: point,
+                                        startZoom: camera.zoomLevel,
+                                        targetZoom: 5,
+                                    });
+                                }}
+                            >
+                                <ArrowLeftRight />
+                            </ToolbarButton>
+                            <ToolbarButton
                                 tooltip={t('switchDirection')}
                                 disabled={!selectedTrain}
-                                onClick={() =>
-                                    selectedTrain?.switchDirection()
-                                }
+                                onClick={() => selectedTrain?.switchDirection()}
                             >
                                 <ArrowLeftRight />
                             </ToolbarButton>

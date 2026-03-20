@@ -32,15 +32,19 @@ import {
     serializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
-import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
-import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
+import {
+    TerrainData,
+    validateSerializedTerrainData,
+} from '@/terrain/terrain-data';
+import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import {
     type CarTemplate,
     generateTemplateId,
     validateCarDefinition,
 } from '@/trains/car-template';
+import type { ThrottleSteps } from '@/trains/formation';
 import { ELEVATION } from '@/trains/tracks/types';
 import type { SerializedTrackData, TrackStyle } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
@@ -61,11 +65,10 @@ import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
 import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
+import { TerrainLegend } from './TerrainLegend';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
-import { TerrainLegend } from './TerrainLegend';
 import { TrainPanel } from './TrainPanel';
-import type { ThrottleSteps } from '@/trains/formation';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
 import { downloadJson, uploadJson } from './utils';
@@ -476,7 +479,9 @@ export function BananaToolbar({
                 alert(t('invalidTerrainData', { error: result.error }));
                 return;
             }
-            const restored = TerrainData.deserialize(terrainObj as SerializedTerrainData);
+            const restored = TerrainData.deserialize(
+                terrainObj as SerializedTerrainData
+            );
             app.terrainRenderSystem.setTerrainData(restored);
         });
     }, [app, t]);
@@ -515,7 +520,9 @@ export function BananaToolbar({
         (count: number) => {
             if (!app) return;
             const placed = app.spawnParallelTracksWithTrains(count);
-            console.log(`Stress test: spawned ${placed} trains on parallel tracks`);
+            console.log(
+                `Stress test: spawned ${placed} trains on parallel tracks`
+            );
         },
         [app]
     );
@@ -772,6 +779,8 @@ export function BananaToolbar({
                 (mode === 'train-placement' || placedTrains.length > 0) && (
                     <TrainPanel
                         trainManager={trainManager}
+                        startFocusAnimation={app.startFocusAnimation}
+                        camera={app.camera}
                         onClose={() => setShowTrainPanel(false)}
                     />
                 )}

@@ -25,8 +25,196 @@ import { TimeManager } from '@/time';
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
 import { StationPlacementEngine, StationPlacementStateMachine } from '@/stations/station-placement-state-machine';
+import { CameraMuxWithAnimationAndLock, createCameraMuxWithAnimationAndLock } from '@ue-too/board';
+import { Animator, NumberAnimationHelper, Animation } from '@ue-too/animate';
+import { Point } from '@ue-too/math';
 
-const DEFAULT_BOGIE_OFFSETS = [40, 10, 40];
+
+export type FocusAnimationParams = {
+  startWorldPoint: Point;
+  targetWorldPoint: Point;
+  startZoom: number;
+  targetZoom: number;
+};
+
+// ===========================================================================
+// Combined pan+zoom camera animation
+// ===========================================================================
+//
+// --- Why naive linear interpolation breaks ---
+//
+// The viewport position of a world point T is:
+//
+//   screenPos(T) = (T - cameraPos) * zoomLevel
+//
+// If we interpolate camera position and zoom independently at the same rate:
+//
+//   p(t) = S + (T - S) * t          (S = start camera pos)
+//   z(t) = z0 + (z1 - z0) * t       (z0 = start zoom, z1 = target zoom)
+//
+// Then the target's viewport position during the animation is:
+//
+//   screenPos(T, t) = (T - p(t)) * z(t)
+//                    = (T - S)(1 - t) * z(t)
+//
+// At t = 0.5 with z0 = 1, z1 = 5:  z(0.5) = 3, giving (T-S) * 0.5 * 3 = 1.5(T-S).
+// That is LARGER than at t = 0, which was (T-S) * 1 * 1 = (T-S).
+// The target moves AWAY from center before snapping back — visually, "zoom outruns pan."
+//
+// --- Monotonic viewport-space interpolation (simple solution) ---
+//
+// One fix is to ensure the target's screen position decreases monotonically
+// toward center:
+//
+//   screenPos(T, t) = (T - S) * z0 * (1 - t)
+//
+// This is monotonically decreasing from (T-S)*z0 at t=0 to 0 at t=1.
+// Solving for the required camera position p(t):
+//
+//   (T - p(t)) * z(t) = (T - S) * z0 * (1 - t)
+//   T - p(t) = (T - S) * z0 * (1 - t) / z(t)
+//   p(t) = T - (T - S) * z0 * (1 - t) / z(t)
+//
+// Verification:
+//   t=0: p(0) = T - (T-S) * z0 / z0       = T - (T-S) = S  ✓
+//   t=1: p(1) = T - (T-S) * z0 * 0 / z1   = T              ✓
+//
+// This works well for close targets where zoom barely changes. However, it
+// does NOT handle the case where the start and target are far apart and the
+// camera should zoom out first to show the journey, then zoom back in. For
+// that we need a fundamentally different path shape — which is what the
+// Van Wijk & Nuij paper provides below.
+//
+// ---------------------------------------------------------------------------
+// Van Wijk & Nuij (2003) "Smooth and efficient zooming and panning"
+// ---------------------------------------------------------------------------
+//
+// The paper defines an optimal camera path through (u, w) space where:
+//   u = 1-D pan parameter along the straight line between start and target (world units)
+//   w = width of the visible world region = viewportPixelWidth / zoomLevel
+//
+// A metric on (u, w) space captures the perceived cost of combined panning
+// and zooming:
+//
+//   ds² = (ρ²/w²) du² + (1/(ρ²w²)) dw²
+//
+// where ρ is a free parameter controlling zoom/pan trade-off (higher ρ →
+// more zooming, less panning). The paper's user study found ρ ≈ 1.42.
+//
+// The optimal path is the geodesic (shortest arc-length path) in this metric
+// that connects (u₀, w₀) to (u₁, w₁), satisfying:
+//   1. Arc-length parameterisation (constant perceived velocity):
+//        ρ²u̇² + ẇ²/ρ² = w²
+//   2. Geodesic equations (shortest path):
+//        ü − 2u̇ẇ/w = 0
+//        ẅ + ρ⁴u̇²/w − ẇ²/w = 0
+//
+// --- Analytic solution (for u₀ ≠ u₁) ---
+//
+//   u(s) = (w₀/ρ²) cosh(r₀) tanh(ρs + r₀) − (w₀/ρ²) sinh(r₀) + u₀
+//   w(s) = w₀ cosh(r₀) / cosh(ρs + r₀)
+//   S    = (r₁ − r₀) / ρ                          (total arc length)
+//
+//   rᵢ = ln(−bᵢ + √(bᵢ² + 1))    (i.e. arcsinh(−bᵢ))
+//   b₀ = (w₁² − w₀² + ρ⁴Δu²) / (2w₀ρ²Δu)
+//   b₁ = (w₁² − w₀² − ρ⁴Δu²) / (2w₁ρ²Δu)
+//   Δu = u₁ − u₀ = ‖targetPoint − startPoint‖
+//
+// The path traces an ellipse in (u, w) space: the camera zooms out,
+// pans across, and zooms back in — with the zoom-out height determined
+// automatically by the metric so that no unnecessary detour is taken.
+//
+// For u₀ = u₁ (pure zoom, no pan):
+//   u(s) = u₀
+//   w(s) = w₀ exp(k ρ s)
+//   S    = |ln(w₁/w₀)| / ρ
+//   k    = −1 if w₁ < w₀, else 1
+//
+// --- Mapping to our coordinate system ---
+//
+//   w = viewportPixelWidth / zoomLevel   ⟹   zoom(s) = vpW / w(s)
+//   Camera position along the 2D line:
+//     pos(s) = startPoint + direction × u(s)
+//   where direction = (targetPoint − startPoint) / ‖targetPoint − startPoint‖
+//
+// --- Easing ---
+//
+// The arc-length parameterisation gives constant perceived velocity.
+// We layer an ease-in-out on top (mapping normalised time t ∈ [0,1]
+// to s = ease(t) × S) for pleasant acceleration/deceleration at the
+// start and end of the animation. The paper notes this as a valid
+// extension (§7).
+// ---------------------------------------------------------------------------
+
+/** ρ: zoom/pan trade-off. Paper user study average ≈ 1.42. */
+const VAN_WIJK_RHO = 1.42;
+
+type OptimalPath = {
+  /** Total arc length of the geodesic. */
+  S: number;
+  /** Pan parameter u at arc-length s. */
+  u: (s: number) => number;
+  /** Width parameter w at arc-length s. */
+  w: (s: number) => number;
+};
+
+/**
+ * Compute the Van Wijk & Nuij optimal camera path between two views.
+ *
+ * @param panDistance - ‖target − start‖ in world units (= u₁, with u₀ = 0)
+ * @param w0 - start visible width (viewportPixelWidth / startZoom)
+ * @param w1 - end visible width   (viewportPixelWidth / targetZoom)
+ * @param rho - zoom/pan trade-off parameter (default {@link VAN_WIJK_RHO})
+ */
+function computeOptimalPath(
+  panDistance: number,
+  w0: number,
+  w1: number,
+  rho: number = VAN_WIJK_RHO,
+): OptimalPath {
+  const u1 = panDistance;
+
+  // --- Special case: pure zoom (no pan) ---
+  if (Math.abs(u1) < 1e-6) {
+    const k = w1 < w0 ? -1 : 1;
+    const S = Math.abs(Math.log(w1 / w0)) / rho;
+    return {
+      S,
+      u: () => 0,
+      w: (s: number) => w0 * Math.exp(k * rho * s),
+    };
+  }
+
+  // --- General case: combined pan + zoom ---
+  const rho2 = rho * rho;
+  const rho4 = rho2 * rho2;
+
+  // b₀ = (w₁² − w₀² + ρ⁴Δu²) / (2 w₀ ρ² Δu)
+  const b0 = (w1 * w1 - w0 * w0 + rho4 * u1 * u1) / (2 * w0 * rho2 * u1);
+  // b₁ = (w₁² − w₀² − ρ⁴Δu²) / (2 w₁ ρ² Δu)
+  const b1 = (w1 * w1 - w0 * w0 - rho4 * u1 * u1) / (2 * w1 * rho2 * u1);
+
+  // rᵢ = arcsinh(−bᵢ) = ln(−bᵢ + √(bᵢ²+1))
+  const r0 = Math.log(-b0 + Math.sqrt(b0 * b0 + 1));
+  const r1 = Math.log(-b1 + Math.sqrt(b1 * b1 + 1));
+
+  const S = (r1 - r0) / rho;
+  const coshr0 = Math.cosh(r0);
+  const sinhr0 = Math.sinh(r0);
+
+  return {
+    S,
+    u: (s: number) => {
+      // u(s) = (w₀/ρ²) cosh(r₀) tanh(ρs + r₀) − (w₀/ρ²) sinh(r₀) + u₀
+      return (w0 / rho2) * coshr0 * Math.tanh(rho * s + r0)
+           - (w0 / rho2) * sinhr0;
+    },
+    w: (s: number) => {
+      // w(s) = w₀ cosh(r₀) / cosh(ρs + r₀)
+      return w0 * coshr0 / Math.cosh(rho * s + r0);
+    },
+  };
+}
 
 export type BananaAppComponents = BaseAppComponents & {
   curveEngine: CurveCreationEngine;
@@ -48,6 +236,9 @@ export type BananaAppComponents = BaseAppComponents & {
   debugOverlayRenderSystem: DebugOverlayRenderSystem;
   carImageRegistry: CarImageRegistry;
   timeManager: TimeManager;
+  cameraMux: CameraMuxWithAnimationAndLock;
+  startFocusAnimation: (params: FocusAnimationParams) => void;
+  animations: Animator[];
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
   /** The stats.js DOM element for toggling visibility. */
@@ -102,6 +293,77 @@ export const initApp = async (
   baseComponents.camera.setMaxZoomLevel(30);
 
   const timeManager = new TimeManager(baseComponents.app);
+
+  const animations: Animator[] = [];
+
+  // Mutable state captured by the animation callback closure.
+  let focusStartWorldPoint: Point = { x: 0, y: 0 };
+  let focusTargetWorldPoint: Point = { x: 0, y: 0 };
+  let focusPanDistance = 0;
+  let currentPath: OptimalPath = { S: 1, u: () => 0, w: () => 1 };
+
+  // The Animation<number> drives a normalised progress t ∈ [0, 1].
+  // The ease function provides acceleration/deceleration on top of
+  // the paper's arc-length parameterisation.
+  // On each frame we map t → s = t × S, then sample the Van Wijk path.
+  const focusAnimation = new Animation([
+    { percentage: 0, value: 0 },
+    { percentage: 1, value: 1 },
+  ], (t: number) => {
+    const s = t * currentPath.S;
+    const u = currentPath.u(s);
+    const w = currentPath.w(s);
+
+    // Convert w back to zoom level: w = vpW / zoom  ⟹  zoom = vpW / w
+    const vpW = baseComponents.camera.viewPortWidth;
+    const zoom = vpW / w;
+
+    // Convert 1-D pan parameter u back to 2-D world position.
+    // u is the distance along the line from startPoint to targetPoint.
+    const fraction = focusPanDistance > 1e-6 ? u / focusPanDistance : 0;
+    const dx = focusTargetWorldPoint.x - focusStartWorldPoint.x;
+    const dy = focusTargetWorldPoint.y - focusStartWorldPoint.y;
+    const pos = {
+      x: focusStartWorldPoint.x + dx * fraction,
+      y: focusStartWorldPoint.y + dy * fraction,
+    };
+
+    cameraMux.notifyZoomInputAnimation(zoom);
+    baseComponents.cameraRig.zoomTo(zoom);
+    cameraMux.notifyPanToAnimationInput(pos);
+    baseComponents.cameraRig.panToWorld(pos);
+  }, new NumberAnimationHelper(), 1000);
+
+  focusAnimation.easeFunction = (x: number): number => {
+    return -(Math.cos(Math.PI * x) - 1) / 2;
+  };
+
+  const startFocusAnimation = (params: FocusAnimationParams): void => {
+    const { startWorldPoint, targetWorldPoint, startZoom, targetZoom } = params;
+    focusStartWorldPoint = startWorldPoint;
+    focusTargetWorldPoint = targetWorldPoint;
+
+    const vpW = baseComponents.camera.viewPortWidth;
+    const w0 = vpW / startZoom;
+    const w1 = vpW / targetZoom;
+
+    const dx = targetWorldPoint.x - startWorldPoint.x;
+    const dy = targetWorldPoint.y - startWorldPoint.y;
+    focusPanDistance = Math.sqrt(dx * dx + dy * dy);
+
+    currentPath = computeOptimalPath(focusPanDistance, w0, w1);
+
+    cameraMux.initatePanTransition();
+    cameraMux.initateZoomTransition();
+    focusAnimation.start();
+  };
+
+  baseComponents.app.ticker.add((time) => {
+    for (const animation of animations) {
+      animation.animate(time.deltaMS);
+    }
+    focusAnimation.animate(time.deltaMS);
+  });
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
   const layoutSubStateMachine = createLayoutStateMachine(curveEngine);
@@ -213,6 +475,9 @@ export const initApp = async (
     trainRenderSystem.forceSync();
   });
 
+  const cameraMux = createCameraMuxWithAnimationAndLock();
+  baseComponents.inputOrchestrator.cameraMux = cameraMux;
+
   const addTrainAtPosition = (
     segmentNumber: number,
     tValue: number,
@@ -277,6 +542,8 @@ export const initApp = async (
     carStockManager,
     formationManager,
     jointDirectionManager,
+    cameraMux,
+    startFocusAnimation,
     layoutStateMachine: layoutSubStateMachine,
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,
@@ -290,5 +557,6 @@ export const initApp = async (
     addStressTestTrains,
     generateProceduralTracks,
     spawnParallelTracksWithTrains,
+    animations,
   };
 };

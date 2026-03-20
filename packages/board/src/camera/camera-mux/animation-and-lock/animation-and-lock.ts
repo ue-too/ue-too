@@ -428,7 +428,7 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
  * @see {@link CameraMuxWithAnimationAndLock} for the implementation
  * @see {@link createCameraMuxWithAnimationAndLockWithCameraRig} for custom rig version
  */
-export function createCameraMuxWithAnimationAndLock(): CameraMux {
+export function createCameraMuxWithAnimationAndLock(): CameraMuxWithAnimationAndLock {
     const panStateMachine = createDefaultPanControlStateMachine();
     const zoomStateMachine = createDefaultZoomControlStateMachine();
     const rotateStateMachine = createDefaultRotateControlStateMachine();
