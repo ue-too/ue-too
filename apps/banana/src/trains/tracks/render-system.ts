@@ -37,6 +37,9 @@ const normalizeElevation = (rawElevation: number): number =>
 /** Size of the tiny solid-black texture used for shadow meshes. */
 const SHADOW_TEX_SIZE = 4;
 
+/** Size of the tiny solid-color textures used for tunnel meshes. */
+const TUNNEL_TEX_SIZE = 4;
+
 /** Compute the ballast/slab half-width for a draw data entry. Always derived from gauge. */
 const ballastHalfWidth = (drawData: TrackSegmentDrawData): number => {
     const tieOverhang = 4;
@@ -123,18 +126,18 @@ export class TrackRenderSystem {
     /** Catenary pole containers keyed by draw data key. */
     private _catenaryMap: Map<string, Container> = new Map();
 
-    /** Cutting wall graphics keyed by draw data key (for tracks that go below terrain). */
-    private _cuttingMap: Map<string, Graphics> = new Map();
+    /** Cutting wall meshes keyed by draw data key (for tracks that go below terrain). */
+    private _cuttingMap: Map<string, Container> = new Map();
 
-    /** Tunnel cover-cap graphics keyed by draw data key (rendered above rails). */
-    private _cuttingCoverMap: Map<string, Graphics> = new Map();
+    /** Tunnel cover-cap meshes keyed by draw data key (rendered above rails). */
+    private _cuttingCoverMap: Map<string, Container> = new Map();
 
     /** Dashed underground-track indicators keyed by curve number. */
     private _undergroundIndicatorMap: Map<number, { graphics: Graphics; bandKey: string }> = new Map();
 
-    /** Tunnel enclosure graphics (walls + ceiling) for fully underground segments, keyed by draw data key. */
-    private _tunnelWallMap: Map<string, Graphics> = new Map();
-    private _tunnelCeilingMap: Map<string, Graphics> = new Map();
+    /** Tunnel enclosure meshes (walls + ceiling) for fully underground segments, keyed by draw data key. */
+    private _tunnelWallMap: Map<string, MeshSimple> = new Map();
+    private _tunnelCeilingMap: Map<string, MeshSimple> = new Map();
 
     /** Tunnel enclosure keys for preview curves (cleaned up on each preview change). */
     private _previewTunnelWallKeys: string[] = [];
@@ -157,6 +160,12 @@ export class TrackRenderSystem {
 
     /** Tiny solid-black texture for shadow meshes; created lazily. */
     private _shadowTexture: Texture | null = null;
+
+    /** Shared solid-color textures for tunnel meshes; created lazily. */
+    private _tunnelWallTexture: Texture | null = null;
+    private _tunnelCeilingTexture: Texture | null = null;
+    private _cuttingWallTexture: Texture | null = null;
+    private _cuttingCoverTexture: Texture | null = null;
 
     /** Shared bed (gravel foundation) texture; created lazily. */
     private _bedTexture: Texture | null = null;
@@ -327,6 +336,11 @@ export class TrackRenderSystem {
             entry.graphics.visible = !useDetailed;
         }
 
+        // Dashed underground indicators: only when zoomed out (simplified view)
+        for (const [, entry] of this._undergroundIndicatorMap) {
+            entry.graphics.visible = !useDetailed;
+        }
+
         for (const key of this._drawableKeys) {
             const container = this._worldRenderSystem.getDrawable(key);
             if (container !== undefined) {
@@ -348,6 +362,23 @@ export class TrackRenderSystem {
 
         for (const [, bedMesh] of this._bedMeshMap) {
             bedMesh.visible = useDetailed;
+        }
+
+        // Tunnel meshes (cutting walls/covers, tunnel walls/ceiling): only when zoomed in
+        for (const [, g] of this._cuttingMap) {
+            g.visible = useDetailed;
+        }
+
+        for (const [, g] of this._cuttingCoverMap) {
+            g.visible = useDetailed;
+        }
+
+        for (const [, g] of this._tunnelWallMap) {
+            g.visible = useDetailed;
+        }
+
+        for (const [, g] of this._tunnelCeilingMap) {
+            g.visible = useDetailed;
         }
     }
 
@@ -730,76 +761,62 @@ export class TrackRenderSystem {
     }
 
     /**
-     * Build the retaining-wall graphics (two thin parallel strips) for a
+     * Build the retaining-wall meshes (two thin parallel strips) for a
      * ramped track that goes below terrain.
      *
      * Placed in the GROUND band's drawable sublayer.
      */
-    private _buildCuttingForDrawData(drawData: TrackSegmentDrawData): { graphics: Graphics; surfaceBandIndex: number } | null {
+    private _buildCuttingForDrawData(drawData: TrackSegmentDrawData): { mesh: Container; surfaceBandIndex: number } | null {
         const geo = this._computeTunnelEntranceGeometry(drawData);
         if (geo === null) return null;
+        const texture = this._getOrCreateCuttingWallTexture();
+        if (texture === null) return null;
 
         const { leftInner, leftOuter, rightInner, rightOuter, surfaceBandIndex } = geo;
-        const g = new Graphics();
+        const container = new Container();
 
-        const drawWall = (inner: { x: number; y: number }[], outer: { x: number; y: number }[]) => {
-            if (inner.length < 2) return;
-            g.moveTo(inner[0].x, inner[0].y);
-            for (let i = 1; i < inner.length; i++) {
-                g.lineTo(inner[i].x, inner[i].y);
-            }
-            for (let i = outer.length - 1; i >= 0; i--) {
-                g.lineTo(outer[i].x, outer[i].y);
-            }
-            g.closePath();
-            g.fill({ color: 0xA0A0A0, alpha: 0.9 });
-            g.stroke({ color: 0x707070, width: 0.15 });
-        };
+        const leftWall = TrackRenderSystem._buildStripMesh(leftInner, leftOuter, texture, 0.9);
+        if (leftWall) container.addChild(leftWall);
+        const rightWall = TrackRenderSystem._buildStripMesh(rightInner, rightOuter, texture, 0.9);
+        if (rightWall) container.addChild(rightWall);
 
-        drawWall(leftInner, leftOuter);
-        drawWall(rightInner, rightOuter);
-
-        return { graphics: g, surfaceBandIndex };
+        return { mesh: container, surfaceBandIndex };
     }
 
     /**
-     * Build the tunnel cover-cap graphics for a ramped track that goes below
+     * Build the tunnel cover-cap mesh for a ramped track that goes below
      * terrain. The cover spans the full width between the outer wall edges at
      * the underground end of the ramp.
      *
      * Placed in the GROUND band's onTrack sublayer so it renders above rails.
      */
-    private _buildCuttingCoverForDrawData(drawData: TrackSegmentDrawData): { graphics: Graphics; surfaceBandIndex: number } | null {
+    private _buildCuttingCoverForDrawData(drawData: TrackSegmentDrawData): { mesh: Container; surfaceBandIndex: number } | null {
         const geo = this._computeTunnelEntranceGeometry(drawData);
         if (geo === null) return null;
+        const texture = this._getOrCreateCuttingCoverTexture();
+        if (texture === null) return null;
 
         const { leftOuter, rightOuter, coverEnd, coverSteps, surfaceBandIndex } = geo;
-        const g = new Graphics();
+        const container = new Container();
         const lastIdx = leftOuter.length - 1;
 
-        const drawCover = (fromIdx: number, toIdx: number) => {
+        const buildCover = (fromIdx: number, toIdx: number) => {
             const lo = Math.min(fromIdx, toIdx);
             const hi = Math.max(fromIdx, toIdx);
-            g.moveTo(leftOuter[lo].x, leftOuter[lo].y);
-            for (let i = lo + 1; i <= hi; i++) {
-                g.lineTo(leftOuter[i].x, leftOuter[i].y);
-            }
-            for (let i = hi; i >= lo; i--) {
-                g.lineTo(rightOuter[i].x, rightOuter[i].y);
-            }
-            g.closePath();
-            g.fill({ color: 0x888888, alpha: 0.95 });
-            g.stroke({ color: 0x606060, width: 0.2 });
+            const left = leftOuter.slice(lo, hi + 1);
+            const right = rightOuter.slice(lo, hi + 1);
+            const mesh = TrackRenderSystem._buildStripMesh(left, right, texture, 0.95);
+            if (mesh) container.addChild(mesh);
         };
 
         if (coverEnd === 'start' || coverEnd === 'both') {
-            drawCover(0, Math.min(coverSteps, lastIdx));
+            buildCover(0, Math.min(coverSteps, lastIdx));
         }
         if (coverEnd === 'end' || coverEnd === 'both') {
-            drawCover(Math.max(0, lastIdx - coverSteps), lastIdx);
+            buildCover(Math.max(0, lastIdx - coverSteps), lastIdx);
         }
 
-        return { graphics: g, surfaceBandIndex };
+        return { mesh: container, surfaceBandIndex };
     }
 
     /**
@@ -820,12 +837,14 @@ export class TrackRenderSystem {
     }
 
     /**
-     * Build tunnel wall graphics (two parallel concrete strips) for a fully
+     * Build tunnel wall meshes (two parallel concrete strips) for a fully
      * underground track segment. Placed in the track's own elevation band.
      */
-    private _buildTunnelWallsForDrawData(drawData: TrackSegmentDrawData): Graphics | null {
+    private _buildTunnelWallsForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
         const ugInfo = this._isFullyUnderground(drawData);
         if (ugInfo === null) return null;
+        const texture = this._getOrCreateTunnelWallTexture();
+        if (texture === null) return null;
 
         const { curve } = drawData;
         const ballastHw = ballastHalfWidth(drawData);
@@ -835,7 +854,6 @@ export class TrackRenderSystem {
         const outerOffset = innerOffset + wallThickness;
 
         const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
-        const g = new Graphics();
 
         const leftInner: { x: number; y: number }[] = [];
         const leftOuter: { x: number; y: number }[] = [];
@@ -855,20 +873,14 @@ export class TrackRenderSystem {
             rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
         }
 
-        const drawWall = (inner: { x: number; y: number }[], outer: { x: number; y: number }[]) => {
-            if (inner.length < 2) return;
-            g.moveTo(inner[0].x, inner[0].y);
-            for (let i = 1; i < inner.length; i++) g.lineTo(inner[i].x, inner[i].y);
-            for (let i = outer.length - 1; i >= 0; i--) g.lineTo(outer[i].x, outer[i].y);
-            g.closePath();
-            g.fill({ color: 0x808080, alpha: 0.7 });
-            g.stroke({ color: 0x606060, width: 0.15 });
-        };
+        // Combine both walls into a single mesh by concatenating vertex data.
+        const leftWall = TrackRenderSystem._buildStripMesh(leftInner, leftOuter, texture, 0.7);
+        if (leftWall === null) return null;
+        // For the right wall, build a second mesh parented to the left one.
+        const rightWall = TrackRenderSystem._buildStripMesh(rightInner, rightOuter, texture, 0.7);
+        if (rightWall) leftWall.addChild(rightWall);
 
-        drawWall(leftInner, leftOuter);
-        drawWall(rightInner, rightOuter);
-
-        return g;
+        return leftWall;
     }
 
     /**
@@ -876,9 +888,11 @@ export class TrackRenderSystem {
      * Spans the full length of the segment between outer wall edges.
      * Placed in the catenary sublayer so it renders above the track.
      */
-    private _buildTunnelCeilingForDrawData(drawData: TrackSegmentDrawData): Graphics | null {
+    private _buildTunnelCeilingForDrawData(drawData: TrackSegmentDrawData): MeshSimple | null {
         const ugInfo = this._isFullyUnderground(drawData);
         if (ugInfo === null) return null;
+        const texture = this._getOrCreateTunnelCeilingTexture();
+        if (texture === null) return null;
 
         const { curve } = drawData;
         const ballastHw = ballastHalfWidth(drawData);
@@ -886,7 +900,6 @@ export class TrackRenderSystem {
         const outerOffset = hw + 0.1 + 0.4;
 
         const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
-        const g = new Graphics();
 
         const leftOuter: { x: number; y: number }[] = [];
         const rightOuter: { x: number; y: number }[] = [];
@@ -902,14 +915,7 @@ export class TrackRenderSystem {
             rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
         }
 
-        g.moveTo(leftOuter[0].x, leftOuter[0].y);
-        for (let i = 1; i < leftOuter.length; i++) g.lineTo(leftOuter[i].x, leftOuter[i].y);
-        for (let i = rightOuter.length - 1; i >= 0; i--) g.lineTo(rightOuter[i].x, rightOuter[i].y);
-        g.closePath();
-        g.fill({ color: 0x707070, alpha: 0.6 });
-        g.stroke({ color: 0x505050, width: 0.2 });
-
-        return g;
+        return TrackRenderSystem._buildStripMesh(leftOuter, rightOuter, texture, 0.6);
     }
 
     private _onDelete(key: string) {
@@ -1310,6 +1316,76 @@ export class TrackRenderSystem {
 
         this._shadowTexture = renderer.generateTexture({ target: g });
         return this._shadowTexture;
+    }
+
+    /** Create a tiny solid-color texture, or return null if the renderer is not ready. */
+    private _createSolidTexture(color: number): Texture | null {
+        const renderer = this._textureRenderer?.renderer?.textureGenerator;
+        if (renderer === undefined) return null;
+        const g = new Graphics();
+        g.rect(0, 0, TUNNEL_TEX_SIZE, TUNNEL_TEX_SIZE);
+        g.fill(color);
+        return renderer.generateTexture({ target: g });
+    }
+
+    private _getOrCreateTunnelWallTexture(): Texture | null {
+        return (this._tunnelWallTexture ??= this._createSolidTexture(0x808080));
+    }
+
+    private _getOrCreateTunnelCeilingTexture(): Texture | null {
+        return (this._tunnelCeilingTexture ??= this._createSolidTexture(0x707070));
+    }
+
+    private _getOrCreateCuttingWallTexture(): Texture | null {
+        return (this._cuttingWallTexture ??= this._createSolidTexture(0xA0A0A0));
+    }
+
+    private _getOrCreateCuttingCoverTexture(): Texture | null {
+        return (this._cuttingCoverTexture ??= this._createSolidTexture(0x888888));
+    }
+
+    /**
+     * Build a MeshSimple triangle strip from two parallel point arrays (left and right edges).
+     * Returns null if the texture is unavailable or there are fewer than 2 points.
+     */
+    private static _buildStripMesh(
+        left: { x: number; y: number }[],
+        right: { x: number; y: number }[],
+        texture: Texture,
+        alpha = 1,
+    ): MeshSimple | null {
+        const count = Math.min(left.length, right.length);
+        if (count < 2) return null;
+
+        const verts = new Float32Array(count * 4);
+        const uvs = new Float32Array(count * 4);
+        for (let i = 0; i < count; i++) {
+            const vi = i * 4;
+            verts[vi] = left[i].x;
+            verts[vi + 1] = left[i].y;
+            verts[vi + 2] = right[i].x;
+            verts[vi + 3] = right[i].y;
+            uvs[vi] = 0;
+            uvs[vi + 1] = i / (count - 1);
+            uvs[vi + 2] = 1;
+            uvs[vi + 3] = i / (count - 1);
+        }
+
+        const indices = new Uint32Array((count - 1) * 6);
+        for (let i = 0; i < count - 1; i++) {
+            const b = i * 2;
+            const ii = i * 6;
+            indices[ii] = b;
+            indices[ii + 1] = b + 1;
+            indices[ii + 2] = b + 2;
+            indices[ii + 3] = b + 1;
+            indices[ii + 4] = b + 3;
+            indices[ii + 5] = b + 2;
+        }
+
+        const mesh = new MeshSimple({ texture, vertices: verts, uvs, indices });
+        mesh.alpha = alpha;
+        return mesh;
     }
 
     /** Create or return the shared bed texture (wider gravel/dirt foundation). */
@@ -1768,14 +1844,14 @@ export class TrackRenderSystem {
             const cuttingResult = this._buildCuttingForDrawData(drawData);
             if (cuttingResult !== null) {
                 const cuttingKey = `__cutting__${key}`;
-                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.graphics, cuttingResult.surfaceBandIndex, 'drawable');
-                this._cuttingMap.set(key, cuttingResult.graphics);
+                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.mesh, cuttingResult.surfaceBandIndex, 'drawable');
+                this._cuttingMap.set(key, cuttingResult.mesh);
             }
             const coverResult = this._buildCuttingCoverForDrawData(drawData);
             if (coverResult !== null) {
                 const coverKey = `__cutting_cover__${key}`;
-                this._worldRenderSystem.addToBand(coverKey, coverResult.graphics, coverResult.surfaceBandIndex, 'catenary');
-                this._cuttingCoverMap.set(key, coverResult.graphics);
+                this._worldRenderSystem.addToBand(coverKey, coverResult.mesh, coverResult.surfaceBandIndex, 'catenary');
+                this._cuttingCoverMap.set(key, coverResult.mesh);
             }
 
             // Build tunnel enclosure for fully underground segments.
@@ -2020,13 +2096,13 @@ export class TrackRenderSystem {
             const cuttingResult = this._buildCuttingForDrawData(drawData);
             if (cuttingResult !== null) {
                 const cuttingKey = `__preview_cutting__${i}`;
-                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.graphics, cuttingResult.surfaceBandIndex, 'drawable');
+                this._worldRenderSystem.addToBand(cuttingKey, cuttingResult.mesh, cuttingResult.surfaceBandIndex, 'drawable');
                 this._previewCuttingKeys.push(cuttingKey);
             }
             const coverResult = this._buildCuttingCoverForDrawData(drawData);
             if (coverResult !== null) {
                 const coverKey = `__preview_cover__${i}`;
-                this._worldRenderSystem.addToBand(coverKey, coverResult.graphics, coverResult.surfaceBandIndex, 'catenary');
+                this._worldRenderSystem.addToBand(coverKey, coverResult.mesh, coverResult.surfaceBandIndex, 'catenary');
                 this._previewCoverKeys.push(coverKey);
             }
 
