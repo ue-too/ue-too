@@ -63,6 +63,8 @@ export class TerrainRenderSystem {
   private _fillVisible = true;
   /** Opacity of the terrain fill [0, 1]. Applied on top of X-ray alpha for occlusion. */
   private _fillOpacity = 1;
+  /** Whether occlusion meshes use white instead of terrain colors. */
+  private _whiteOcclusion = false;
 
   constructor(
     worldRenderSystem: WorldRenderSystem,
@@ -112,6 +114,17 @@ export class TerrainRenderSystem {
     if (this._fillOpacity === clamped) return;
     this._fillOpacity = clamped;
     this._applyFillAlpha();
+  }
+
+  /** Whether occlusion meshes use white instead of terrain colors. */
+  get whiteOcclusion(): boolean {
+    return this._whiteOcclusion;
+  }
+
+  set whiteOcclusion(value: boolean) {
+    if (this._whiteOcclusion === value) return;
+    this._whiteOcclusion = value;
+    this._rebuildOcclusionMeshes();
   }
 
   /** Mark terrain for rebuild on next call to {@link rebuild}. */
@@ -545,7 +558,9 @@ export class TerrainRenderSystem {
 
     // Build a small texture from the cell colors (average height per cell)
     // For simplicity, use a single color based on the threshold level
-    const color = sampleColorRamp(threshold);
+    const color = this._whiteOcclusion
+      ? { r: 255, g: 255, b: 255 }
+      : sampleColorRamp(threshold);
 
     // Create a 2x2 solid-color texture (BGRA order for WebGPU).
     const texData = new Uint8Array([
@@ -566,6 +581,21 @@ export class TerrainRenderSystem {
       uvs: new Float32Array(uvs),
       indices: new Uint32Array(indices),
     });
+  }
+
+  /** Destroy and rebuild occlusion meshes (e.g. after color mode change). */
+  private _rebuildOcclusionMeshes(): void {
+    for (let i = 0; i < this._occlusionMeshes.length; i++) {
+      const mesh = this._occlusionMeshes[i];
+      if (mesh) {
+        const oc = this._worldRenderSystem.getTerrainOcclusionContainer(i);
+        if (oc) oc.removeChild(mesh);
+        mesh.destroy();
+      }
+    }
+    this._occlusionMeshes = [];
+    this._buildOcclusionMeshes();
+    this._applyFillVisibility();
   }
 
   /** Apply the current X-ray alpha to all occlusion meshes, factoring in fill opacity. */

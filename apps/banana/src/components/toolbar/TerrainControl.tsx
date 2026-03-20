@@ -1,4 +1,4 @@
-import { Mountain } from 'lucide-react';
+import { Mountain, Snowflake } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -12,6 +12,8 @@ type TerrainControlProps = {
     onVisibleChange: (value: boolean) => void;
     opacity: number;
     onOpacityChange: (value: number) => void;
+    whiteOcclusion: boolean;
+    onWhiteOcclusionChange: (value: boolean) => void;
 };
 
 export function TerrainControl({
@@ -19,6 +21,8 @@ export function TerrainControl({
     onVisibleChange,
     opacity,
     onOpacityChange,
+    whiteOcclusion,
+    onWhiteOcclusionChange,
 }: TerrainControlProps) {
     const { t } = useTranslation();
     return (
@@ -54,6 +58,22 @@ export function TerrainControl({
                 </TooltipTrigger>
                 <TooltipContent side="right">
                     {t('terrainOpacity')}
+                </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        onClick={() => onWhiteOcclusionChange(!whiteOcclusion)}
+                        className="flex items-center justify-center"
+                    >
+                        <Snowflake
+                            className={`size-4 ${whiteOcclusion ? 'text-foreground' : 'text-muted-foreground/40'}`}
+                        />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                    {t('whiteOcclusion')}
                 </TooltipContent>
             </Tooltip>
         </div>
