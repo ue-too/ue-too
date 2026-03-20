@@ -238,6 +238,9 @@ export type BananaAppComponents = BaseAppComponents & {
   timeManager: TimeManager;
   cameraMux: CameraMuxWithAnimationAndLock;
   startFocusAnimation: (params: FocusAnimationParams) => void;
+  startFollowAnimation: (params: FocusAnimationParams, getPosition: () => Point | null) => void;
+  stopFollowing: () => void;
+  isFollowing: () => boolean;
   animations: Animator[];
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
@@ -358,11 +361,57 @@ export const initApp = async (
     focusAnimation.start();
   };
 
+  // --- Lock-on / follow train ---
+  // After the focus animation completes, the pan state machine transitions to
+  // LOCKED_ON_OBJECT. On each tick we feed the train's current position via
+  // lockedOnObjectPanToInput, which keeps the camera centered on the moving
+  // train while blocking normal user panning.
+  let followPositionGetter: (() => Point | null) | null = null;
+
+  const stopFollowing = (): void => {
+    followPositionGetter = null;
+    cameraMux.panStateMachine.happens('unlock');
+  };
+
+  const startFollowAnimation = (
+    _params: FocusAnimationParams,
+    getPosition: () => Point | null,
+  ): void => {
+    // If already following, stop first.
+    if (followPositionGetter) {
+      stopFollowing();
+    }
+
+    followPositionGetter = getPosition;
+
+    // Directly lock onto the train — no transition animation.
+    // Set camera to the train's current position and enter LOCKED_ON_OBJECT.
+    const pos = getPosition();
+    if (pos) {
+      baseComponents.cameraRig.panToWorld(pos);
+      baseComponents.cameraRig.zoomTo(_params.targetZoom);
+      cameraMux.panStateMachine.happens('lockedOnObjectPanToInput', { target: pos });
+    }
+  };
+
+  const isFollowing = (): boolean => followPositionGetter !== null;
+
   baseComponents.app.ticker.add((time) => {
     for (const animation of animations) {
       animation.animate(time.deltaMS);
     }
     focusAnimation.animate(time.deltaMS);
+
+    // While locked on, continuously update camera to follow the train.
+    if (followPositionGetter) {
+      const pos = followPositionGetter();
+      if (pos) {
+        const res = cameraMux.panStateMachine.happens('lockedOnObjectPanToInput', { target: pos });
+        if (res.handled) {
+          baseComponents.cameraRig.panToWorld(pos);
+        }
+      }
+    }
   });
 
   const curveEngine = new CurveCreationEngine(baseComponents.canvasProxy, baseComponents.camera);
@@ -544,6 +593,9 @@ export const initApp = async (
     jointDirectionManager,
     cameraMux,
     startFocusAnimation,
+    startFollowAnimation,
+    stopFollowing,
+    isFollowing,
     layoutStateMachine: layoutSubStateMachine,
     kmtStateMachineExpansion: kmtInputStateMachine,
     trainStateMachine,

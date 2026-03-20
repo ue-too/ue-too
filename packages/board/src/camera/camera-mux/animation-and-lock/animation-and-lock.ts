@@ -207,13 +207,15 @@ export class CameraMuxWithAnimationAndLock implements CameraMux {
         });
         if (result.handled && 'output' in result && result.output) {
             const output = result.output as ZoomControlOutputEvent;
-            if (output.type !== 'none') {
-                return {
-                    allowPassThrough: true,
-                    delta: delta,
-                    anchorPoint: at,
-                };
+            if (output.type === 'none') {
+                return { allowPassThrough: false };
             }
+            // When pan is locked on an object, force center-only zoom so the
+            // anchor doesn't fight the lock-on repositioning.
+            if (this._panStateMachine.currentState === 'LOCKED_ON_OBJECT') {
+                return { allowPassThrough: true, delta };
+            }
+            return { allowPassThrough: true, delta, anchorPoint: at };
         }
         return { allowPassThrough: false };
     }

@@ -780,6 +780,9 @@ export function BananaToolbar({
                     <TrainPanel
                         trainManager={trainManager}
                         startFocusAnimation={app.startFocusAnimation}
+                        startFollowAnimation={app.startFollowAnimation}
+                        stopFollowing={app.stopFollowing}
+                        isFollowing={app.isFollowing}
                         camera={app.camera}
                         onClose={() => setShowTrainPanel(false)}
                     />

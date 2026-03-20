@@ -1,5 +1,7 @@
 import { BoardCamera } from '@ue-too/board';
-import { ArrowLeftRight, Gauge, Pause, Trash2 } from 'lucide-react';
+import type { Point } from '@ue-too/math';
+import { ArrowLeftRight, Crosshair, Focus, Gauge, Pause, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DraggablePanel } from '@/components/ui/draggable-panel';
@@ -14,22 +16,32 @@ type TrainPanelProps = {
     trainManager: TrainManager;
     onClose: () => void;
     startFocusAnimation: (params: FocusAnimationParams) => void;
+    startFollowAnimation: (
+        params: FocusAnimationParams,
+        getPosition: () => Point | null
+    ) => void;
+    stopFollowing: () => void;
+    isFollowing: () => boolean;
     camera: BoardCamera;
 };
 
 export function TrainPanel({
     trainManager,
     startFocusAnimation,
+    startFollowAnimation,
+    stopFollowing,
+    isFollowing,
     onClose,
     camera,
 }: TrainPanelProps) {
     const { t } = useTranslation();
+    const [following, setFollowing] = useState(isFollowing());
     const placedTrains = trainManager.getPlacedTrains();
     const selectedTrain = trainManager.getSelectedTrain();
     const selectedIndex = trainManager.selectedIndex;
 
     return (
-        <DraggablePanel title={t('trains')} onClose={onClose} className="w-56">
+        <DraggablePanel title={t('trains')} onClose={onClose} className="w-60">
             <Separator className="mb-2" />
             <div className="flex flex-col gap-2">
                 {placedTrains.length > 0 && (
@@ -87,11 +99,11 @@ export function TrainPanel({
                 )}
 
                 {placedTrains.length > 0 && (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex w-full flex-col gap-1">
                         <span className="text-muted-foreground text-xs font-medium">
                             {t('controls')}
                         </span>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex w-full flex-wrap gap-1">
                             <ToolbarButton
                                 tooltip={t('throttleP5')}
                                 disabled={!selectedTrain}
@@ -127,7 +139,43 @@ export function TrainPanel({
                                     });
                                 }}
                             >
-                                <ArrowLeftRight />
+                                <Focus />
+                            </ToolbarButton>
+                            <ToolbarButton
+                                tooltip={
+                                    following
+                                        ? t('stopFollowing')
+                                        : t('followSelectedTrain')
+                                }
+                                active={following}
+                                disabled={!selectedTrain && !following}
+                                onClick={() => {
+                                    if (following) {
+                                        stopFollowing();
+                                        setFollowing(false);
+                                        return;
+                                    }
+
+                                    const point =
+                                        selectedTrain?.position?.point;
+
+                                    if (!point) return;
+
+                                    startFollowAnimation(
+                                        {
+                                            startWorldPoint: camera.position,
+                                            targetWorldPoint: point,
+                                            startZoom: camera.zoomLevel,
+                                            targetZoom: 5,
+                                        },
+                                        () =>
+                                            selectedTrain?.position?.point ??
+                                            null
+                                    );
+                                    setFollowing(true);
+                                }}
+                            >
+                                <Crosshair />
                             </ToolbarButton>
                             <ToolbarButton
                                 tooltip={t('switchDirection')}

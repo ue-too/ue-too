@@ -63,6 +63,7 @@ export type CameraMuxPanOutput =
  */
 export type CameraMuxZoomOutput =
     | { allowPassThrough: true; delta: number; anchorPoint: Point }
+    | { allowPassThrough: true; delta: number; anchorPoint?: undefined }
     | { allowPassThrough: false };
 
 /**
