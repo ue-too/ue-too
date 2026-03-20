@@ -33,6 +33,13 @@ const ORIGIN_LNG = 121.5654;
 const ORIGIN_LAT = 25.033;
 
 /**
+ * Maximum MapLibre zoom level. Vector tiles can overzoom past the tile
+ * source's native max — geometries just render at a larger scale without
+ * blurring, unlike raster tiles. MapLibre supports up to 24.
+ */
+const MAX_MAP_ZOOM = 21;
+
+/**
  * Origin in MapLibre's normalised Mercator space ([0,1] × [0,1]).
  * Pre-computed once so every sync call is a cheap add + divide.
  */
@@ -64,7 +71,7 @@ function syncBoardToMapLibre(
     // Board zoom 1× = BASE_ZOOM in 256 px-tile convention.
     // MapLibre internally uses 512 px tiles, so its zoom is offset by −1.
     const mapZoom = Math.log2(boardZoom) + BASE_ZOOM - 1;
-    const clampedZoom = Math.max(0, Math.min(19, mapZoom));
+    const clampedZoom = Math.max(0, Math.min(MAX_MAP_ZOOM, mapZoom));
 
     map.jumpTo({ center, zoom: clampedZoom });
 }
@@ -143,6 +150,7 @@ export function MapTileLayer({
             style: STYLE,
             center: [ORIGIN_LNG, ORIGIN_LAT],
             zoom: BASE_ZOOM,
+            maxZoom: MAX_MAP_ZOOM,
             interactive: false,
             attributionControl: false,
             fadeDuration: 0,
@@ -273,10 +281,9 @@ export function MapTileLayerSync({ map }: { map: MapInstance }) {
         // Save original max zoom so we can restore it on unmount
         const originalMaxZoom = camera.zoomBoundaries?.max;
 
-        // Clamp board zoom so map zoom never exceeds max (19).
+        // Clamp board zoom so map zoom never exceeds the vector tile max.
         // MapLibre zoom = log2(boardZoom) + BASE_ZOOM − 1, so
-        // boardZoom_max = 2^(19 − BASE_ZOOM + 1).
-        const MAX_MAP_ZOOM = 19;
+        // boardZoom_max = 2^(MAX_MAP_ZOOM − BASE_ZOOM + 1).
         const maxBoardZoom = Math.pow(2, MAX_MAP_ZOOM - BASE_ZOOM + 1);
         camera.setMaxZoomLevel(maxBoardZoom);
 
