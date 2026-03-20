@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Graphics } from 'pixi.js';
+import { CanvasSource, Graphics, MeshSimple, Texture } from 'pixi.js';
 import { toast } from 'sonner';
 import {
     ScrollBarDisplay,
@@ -18,16 +18,17 @@ import {
     convertFromViewport2World,
 } from '@ue-too/board';
 import {
-    Download, Upload, Mountain, Layers, Eye, EyeOff, Package,
-    ArrowUp, ArrowDown, Minus, Droplets, Eraser,
+    Download, Upload, Layers, Package, Eraser,
 } from 'lucide-react';
 
-import { WorldRenderSystem } from '@/world-render-system';
 import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
-import type { SerializedTerrainData } from '@/terrain/terrain-data';
-import { TerrainRenderSystem } from '@/terrain/terrain-render-system';
-import { createHillyWithWater } from '@/terrain/terrain-water';
-import { applyBrush, type BrushMode, type BrushParams, type DirtyRegion } from '@/terrain/terrain-brush';
+import type { TerrainConfig, SerializedTerrainData } from '@/terrain/terrain-data';
+import {
+    TerrainPaintCanvas,
+    TERRAIN_PALETTE,
+    WATER_PALETTE,
+    GROUND_PALETTE_INDEX,
+} from '@/terrain/terrain-paint-canvas';
 import { MapTileLayer, MapTileLayerSync, type MapInstance } from '@/components/map-tile-layer';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,56 +41,128 @@ import {
 import '../App.css';
 
 // ---------------------------------------------------------------------------
+// Terrain grid config (shared between editor and export)
+// ---------------------------------------------------------------------------
+
+const TERRAIN_CONFIG: TerrainConfig = {
+    originX: -5000,
+    originY: -5000,
+    cellsX: 400,
+    cellsY: 400,
+    cellSize: 25,
+};
+
+// ---------------------------------------------------------------------------
+// Brush mode types
+// ---------------------------------------------------------------------------
+
+/** What the brush is currently painting. */
+type BrushTarget =
+    | { layer: 'terrain'; paletteIndex: number }
+    | { layer: 'water'; paletteIndex: number }
+    | { layer: 'water-erase' };
+
+// ---------------------------------------------------------------------------
 // Types & init
 // ---------------------------------------------------------------------------
 
-/** Components returned by the terrain editor init function. */
-export type TerrainEditorComponents = BaseAppComponents & {
-    worldRenderSystem: WorldRenderSystem;
-    terrainData: TerrainData;
-    terrainRenderSystem: TerrainRenderSystem;
-    /** Brush cursor graphic shown on the terrain. */
+type PaintEditorComponents = BaseAppComponents & {
+    paintCanvas: TerrainPaintCanvas;
+    terrainCanvasSource: CanvasSource;
+    waterCanvasSource: CanvasSource;
+    terrainMesh: MeshSimple;
+    waterMesh: MeshSimple;
     brushCursor: Graphics;
+    terrainConfig: TerrainConfig;
 };
 
-const initTerrainEditor = async (
+/**
+ * Build the shared mesh geometry (positions, UVs, indices) for a grid.
+ * Both terrain and water meshes use identical geometry.
+ */
+function buildGridGeometry(config: TerrainConfig) {
+    const vx = config.cellsX + 1;
+    const vy = config.cellsY + 1;
+    const vertCount = vx * vy;
+
+    const positions = new Float32Array(vertCount * 2);
+    const uvs = new Float32Array(vertCount * 2);
+
+    for (let row = 0; row < vy; row++) {
+        for (let col = 0; col < vx; col++) {
+            const idx = row * vx + col;
+            positions[idx * 2] = config.originX + col * config.cellSize;
+            positions[idx * 2 + 1] = config.originY + row * config.cellSize;
+            uvs[idx * 2] = (col + 0.5) / vx;
+            uvs[idx * 2 + 1] = (row + 0.5) / vy;
+        }
+    }
+
+    const cellCount = config.cellsX * config.cellsY;
+    const indices = new Uint32Array(cellCount * 6);
+    let ii = 0;
+    for (let row = 0; row < config.cellsY; row++) {
+        for (let col = 0; col < config.cellsX; col++) {
+            const tl = row * vx + col;
+            const tr = tl + 1;
+            const bl = (row + 1) * vx + col;
+            const br = bl + 1;
+            indices[ii++] = tl;
+            indices[ii++] = tr;
+            indices[ii++] = bl;
+            indices[ii++] = tr;
+            indices[ii++] = br;
+            indices[ii++] = bl;
+        }
+    }
+
+    return { positions, uvs, indices };
+}
+
+const initPaintEditor = async (
     canvas: HTMLCanvasElement,
     option: Partial<InitAppOptions>,
-): Promise<TerrainEditorComponents> => {
+): Promise<PaintEditorComponents> => {
     const baseComponents = await baseInitApp(canvas, option);
+    const config = TERRAIN_CONFIG;
+    const vx = config.cellsX + 1;
+    const vy = config.cellsY + 1;
 
-    const worldRenderSystem = new WorldRenderSystem();
+    const paintCanvas = new TerrainPaintCanvas(vx, vy);
+    const { positions, uvs, indices } = buildGridGeometry(config);
 
-    const terrainData = createHillyWithWater(
-        {
-            originX: -5000,
-            originY: -5000,
-            cellsX: 400,
-            cellsY: 400,
-            cellSize: 25,
-        },
-        { baseHeight: 0, amplitude: 30, seed: 42, riverCount: 3, lakeCount: 2 },
-    );
+    // Terrain mesh (opaque base layer)
+    const terrainCanvasSource = new CanvasSource({ resource: paintCanvas.terrainCanvas, resolution: 1 });
+    const terrainTexture = new Texture(terrainCanvasSource);
+    const terrainMesh = new MeshSimple({ texture: terrainTexture, vertices: positions, uvs, indices });
+    baseComponents.app.stage.addChild(terrainMesh);
 
-    const terrainRenderSystem = new TerrainRenderSystem(
-        worldRenderSystem,
-        terrainData,
-        { renderer: baseComponents.app.renderer },
-    );
+    // Water mesh (semi-transparent overlay)
+    // Clone positions/uvs since MeshSimple takes ownership
+    const waterCanvasSource = new CanvasSource({ resource: paintCanvas.waterCanvas, resolution: 1 });
+    const waterTexture = new Texture(waterCanvasSource);
+    const waterMesh = new MeshSimple({
+        texture: waterTexture,
+        vertices: new Float32Array(positions),
+        uvs: new Float32Array(uvs),
+        indices: new Uint32Array(indices),
+    });
+    baseComponents.app.stage.addChild(waterMesh);
 
-    // Brush cursor: a circle drawn in world space
+    // Brush cursor overlay (on top of everything)
     const brushCursor = new Graphics();
     brushCursor.visible = false;
-    worldRenderSystem.container.addChild(brushCursor);
-
-    baseComponents.app.stage.addChild(worldRenderSystem.container);
+    baseComponents.app.stage.addChild(brushCursor);
 
     return {
         ...baseComponents,
-        worldRenderSystem,
-        terrainData,
-        terrainRenderSystem,
+        paintCanvas,
+        terrainCanvasSource,
+        waterCanvasSource,
+        terrainMesh,
+        waterMesh,
         brushCursor,
+        terrainConfig: config,
     };
 };
 
@@ -97,34 +170,23 @@ const initTerrainEditor = async (
 // Hooks
 // ---------------------------------------------------------------------------
 
-function useTerrainEditor(): TerrainEditorComponents | null {
+function usePaintEditor(): PaintEditorComponents | null {
     const { result } = usePixiCanvas();
     return useMemo(() => {
         const check = appIsReady(result);
         if (!check.ready) return null;
-        return check.components as unknown as TerrainEditorComponents;
+        return check.components as unknown as PaintEditorComponents;
     }, [result]);
 }
 
 // ---------------------------------------------------------------------------
-// Brush input handler (React hook)
+// Brush input handler
 // ---------------------------------------------------------------------------
 
-function useBrushInput(
-    activeTool: BrushMode | null,
-    brushRadius: number,
-    brushStrength: number,
-    waterDepth: number,
-) {
-    const app = useTerrainEditor();
+function useBrushInput(brushTarget: BrushTarget, brushRadius: number) {
+    const app = usePaintEditor();
     const paintingRef = useRef(false);
-    const flattenTargetRef = useRef(0);
-    const lastTimeRef = useRef(0);
-    const rafRef = useRef<number | null>(null);
-    /** Accumulated dirty region across multiple pointer moves within one frame. */
-    const dirtyRef = useRef<DirtyRegion | null>(null);
 
-    /** Convert a DOM pointer event to world coordinates. */
     const toWorld = useCallback(
         (e: PointerEvent) => {
             if (!app) return null;
@@ -147,102 +209,81 @@ function useBrushInput(
         [app],
     );
 
-    /** Flush accumulated dirty region to the render system once per frame. */
-    const scheduleRefresh = useCallback(() => {
-        if (!app) return;
-        if (rafRef.current !== null) return;
-        rafRef.current = requestAnimationFrame(() => {
-            rafRef.current = null;
-            const d = dirtyRef.current;
-            if (d) {
-                app.terrainRenderSystem.refreshRegion(d.colMin, d.colMax, d.rowMin, d.rowMax);
-                dirtyRef.current = null;
-            }
-        });
-    }, [app]);
+    const toCanvasPixel = useCallback(
+        (worldX: number, worldY: number) => {
+            if (!app) return null;
+            const { originX, originY, cellSize } = app.terrainConfig;
+            return {
+                x: (worldX - originX) / cellSize,
+                y: (worldY - originY) / cellSize,
+            };
+        },
+        [app],
+    );
 
-    // Draw brush cursor
+    const radiusPixels = useMemo(() => {
+        if (!app) return 0;
+        return brushRadius / app.terrainConfig.cellSize;
+    }, [app, brushRadius]);
+
+    const cursorColor = useMemo(() => {
+        if (brushTarget.layer === 'terrain') return 0xffffff;
+        return 0x4488ff;
+    }, [brushTarget]);
+
     const updateCursor = useCallback(
         (e: PointerEvent) => {
-            if (!app || !activeTool) return;
+            if (!app) return;
             const world = toWorld(e);
             if (!world) return;
-
             const g = app.brushCursor;
             g.clear();
             g.circle(world.x, world.y, brushRadius);
             g.stroke({
                 width: 2 / app.camera.zoomLevel,
-                color: activeTool.startsWith('water') ? 0x4488ff : 0xffffff,
+                color: cursorColor,
                 alpha: 0.6,
             });
             g.visible = true;
         },
-        [app, activeTool, brushRadius, toWorld],
+        [app, brushRadius, cursorColor, toWorld],
     );
 
     const applyStroke = useCallback(
         (e: PointerEvent) => {
-            if (!app || !activeTool) return;
+            if (!app) return;
             const world = toWorld(e);
             if (!world) return;
+            const pixel = toCanvasPixel(world.x, world.y);
+            if (!pixel) return;
 
-            const now = performance.now() / 1000;
-            const dt = lastTimeRef.current > 0 ? Math.min(now - lastTimeRef.current, 0.1) : 0.016;
-            lastTimeRef.current = now;
-
-            const params: BrushParams = {
-                mode: activeTool,
-                radius: brushRadius,
-                strength: brushStrength,
-                flattenTarget: flattenTargetRef.current,
-                waterDepth,
-            };
-
-            const region = applyBrush(app.terrainData, world.x, world.y, params, dt);
-
-            // Merge into accumulated dirty region
-            const prev = dirtyRef.current;
-            if (prev) {
-                prev.colMin = Math.min(prev.colMin, region.colMin);
-                prev.colMax = Math.max(prev.colMax, region.colMax);
-                prev.rowMin = Math.min(prev.rowMin, region.rowMin);
-                prev.rowMax = Math.max(prev.rowMax, region.rowMax);
-            } else {
-                dirtyRef.current = { ...region };
+            switch (brushTarget.layer) {
+                case 'terrain':
+                    app.paintCanvas.paintTerrain(pixel.x, pixel.y, radiusPixels, brushTarget.paletteIndex);
+                    app.terrainCanvasSource.update();
+                    break;
+                case 'water':
+                    app.paintCanvas.paintWater(pixel.x, pixel.y, radiusPixels, brushTarget.paletteIndex);
+                    app.waterCanvasSource.update();
+                    break;
+                case 'water-erase':
+                    app.paintCanvas.eraseWater(pixel.x, pixel.y, radiusPixels);
+                    app.waterCanvasSource.update();
+                    break;
             }
-
-            scheduleRefresh();
         },
-        [app, activeTool, brushRadius, brushStrength, waterDepth, toWorld, scheduleRefresh],
+        [app, brushTarget, radiusPixels, toWorld, toCanvasPixel],
     );
 
     useEffect(() => {
         if (!app) return;
-
         const canvasEl = app.app.canvas;
         if (!canvasEl) return;
 
-        // Hide cursor when no tool active
-        if (!activeTool) {
-            app.brushCursor.visible = false;
-            return;
-        }
-
         const onPointerDown = (e: PointerEvent) => {
-            if (e.button !== 0) return; // left click only
+            if (e.button !== 0) return;
             e.stopPropagation();
             paintingRef.current = true;
-            lastTimeRef.current = 0;
-
-            // Sample flatten target at click position
-            if (activeTool === 'flatten') {
-                const world = toWorld(e);
-                if (world) {
-                    flattenTargetRef.current = app.terrainData.getHeight(world.x, world.y);
-                }
-            }
-
             applyStroke(e);
         };
 
@@ -255,17 +296,7 @@ function useBrushInput(
 
         const onPointerUp = (e: PointerEvent) => {
             if (e.button !== 0) return;
-            if (paintingRef.current) {
-                paintingRef.current = false;
-                if (rafRef.current !== null) {
-                    cancelAnimationFrame(rafRef.current);
-                    rafRef.current = null;
-                }
-                dirtyRef.current = null;
-                // Full rebuild for contours + occlusion
-                app.terrainRenderSystem.markDirty();
-                app.terrainRenderSystem.rebuild(true);
-            }
+            paintingRef.current = false;
         };
 
         const onPointerLeave = () => {
@@ -284,56 +315,34 @@ function useBrushInput(
             canvasEl.removeEventListener('pointerup', onPointerUp);
             canvasEl.removeEventListener('pointerleave', onPointerLeave);
             app.brushCursor.visible = false;
-            if (rafRef.current !== null) {
-                cancelAnimationFrame(rafRef.current);
-                rafRef.current = null;
-            }
-            dirtyRef.current = null;
         };
-    }, [app, activeTool, applyStroke, updateCursor, toWorld]);
+    }, [app, applyStroke, updateCursor]);
 }
 
 // ---------------------------------------------------------------------------
 // Toolbar
 // ---------------------------------------------------------------------------
 
-const TOOLS: { mode: BrushMode; icon: typeof ArrowUp; label: string }[] = [
-    { mode: 'raise', icon: ArrowUp, label: 'Raise terrain' },
-    { mode: 'lower', icon: ArrowDown, label: 'Lower terrain' },
-    { mode: 'flatten', icon: Minus, label: 'Flatten terrain' },
-    { mode: 'water-paint', icon: Droplets, label: 'Paint water' },
-    { mode: 'water-erase', icon: Eraser, label: 'Erase water' },
-];
-
-function TerrainEditorToolbar({
-    activeTool,
-    onToolChange,
+function PaintEditorToolbar({
+    brushTarget,
+    onBrushTargetChange,
     brushRadius,
     onBrushRadiusChange,
-    brushStrength,
-    onBrushStrengthChange,
-    waterDepth,
-    onWaterDepthChange,
 }: {
-    activeTool: BrushMode | null;
-    onToolChange: (tool: BrushMode | null) => void;
+    brushTarget: BrushTarget;
+    onBrushTargetChange: (target: BrushTarget) => void;
     brushRadius: number;
     onBrushRadiusChange: (v: number) => void;
-    brushStrength: number;
-    onBrushStrengthChange: (v: number) => void;
-    waterDepth: number;
-    onWaterDepthChange: (v: number) => void;
 }) {
-    const app = useTerrainEditor();
+    const app = usePaintEditor();
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [fillVisible, setFillVisible] = useState(true);
-    const [fillOpacity, setFillOpacity] = useState(1);
 
-    // ---- Export / Import ----
+    // ---- Export ----
 
     const handleExport = useCallback(() => {
         if (!app) return;
-        const data = app.terrainData.serialize();
+        const terrainData = app.paintCanvas.exportToTerrainData(app.terrainConfig);
+        const data = terrainData.serialize();
         const json = JSON.stringify(data);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -347,11 +356,12 @@ function TerrainEditorToolbar({
 
     const handleExportAsScene = useCallback(() => {
         if (!app) return;
+        const terrainData = app.paintCanvas.exportToTerrainData(app.terrainConfig);
         const sceneData = {
             tracks: { joints: [], segments: [] },
             trains: { trains: [], formations: [], carStocks: [] },
             stations: { stations: [] },
-            terrain: app.terrainData.serialize(),
+            terrain: terrainData.serialize(),
         };
         const json = JSON.stringify(sceneData);
         const blob = new Blob([json], { type: 'application/json' });
@@ -363,6 +373,8 @@ function TerrainEditorToolbar({
         URL.revokeObjectURL(url);
         toast.success('Terrain exported as scene');
     }, [app]);
+
+    // ---- Import ----
 
     const handleImport = useCallback(() => {
         fileInputRef.current?.click();
@@ -383,8 +395,9 @@ function TerrainEditorToolbar({
                         return;
                     }
                     const restored = TerrainData.deserialize(data as SerializedTerrainData);
-                    app.terrainRenderSystem.setTerrainData(restored);
-                    (app as { terrainData: TerrainData }).terrainData = restored;
+                    app.paintCanvas.importFromTerrainData(restored);
+                    app.terrainCanvasSource.update();
+                    app.waterCanvasSource.update();
                     toast.success('Terrain imported');
                 } catch (err) {
                     toast.error(`Failed to parse terrain file: ${err}`);
@@ -396,155 +409,99 @@ function TerrainEditorToolbar({
         [app],
     );
 
-    // ---- Visibility / opacity ----
+    // ---- Palette selection helpers ----
 
-    const handleToggleVisibility = useCallback(() => {
-        if (!app) return;
-        const next = !fillVisible;
-        setFillVisible(next);
-        app.terrainRenderSystem.fillVisible = next;
-    }, [app, fillVisible]);
+    const isTerrainSelected = (index: number) =>
+        brushTarget.layer === 'terrain' && brushTarget.paletteIndex === index;
 
-    const handleOpacityChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            if (!app) return;
-            const v = Number(e.target.value) / 100;
-            setFillOpacity(v);
-            app.terrainRenderSystem.fillOpacity = v;
-        },
-        [app],
-    );
+    const isWaterSelected = (index: number) =>
+        brushTarget.layer === 'water' && brushTarget.paletteIndex === index;
+
+    const isWaterEraseSelected = brushTarget.layer === 'water-erase';
 
     return (
         <div className="pointer-events-auto absolute top-4 left-4 z-50 flex flex-col gap-2">
-            {/* Brush tools */}
+            {/* Elevation palette */}
             <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
-                {TOOLS.map(({ mode, icon: Icon, label }) => (
-                    <Tooltip key={mode}>
+                <span className="text-muted-foreground text-[9px] uppercase tracking-wider">Land</span>
+                {TERRAIN_PALETTE.map((entry, index) => (
+                    <Tooltip key={entry.height}>
                         <TooltipTrigger asChild>
-                            <Button
-                                variant={activeTool === mode ? 'default' : 'ghost'}
-                                size="icon"
-                                onClick={() =>
-                                    onToolChange(activeTool === mode ? null : mode)
-                                }
-                            >
-                                <Icon className="size-4" />
-                            </Button>
+                            <button
+                                className={`size-8 rounded-md border-2 transition-all ${
+                                    isTerrainSelected(index)
+                                        ? 'border-white scale-110 shadow-md'
+                                        : 'border-transparent hover:border-white/40'
+                                }`}
+                                style={{ backgroundColor: entry.css }}
+                                onClick={() => onBrushTargetChange({ layer: 'terrain', paletteIndex: index })}
+                            />
                         </TooltipTrigger>
-                        <TooltipContent side="right">{label}</TooltipContent>
+                        <TooltipContent side="right">
+                            {entry.height}m
+                        </TooltipContent>
+                    </Tooltip>
+                ))}
+            </div>
+
+            {/* Water palette */}
+            <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                <span className="text-muted-foreground text-[9px] uppercase tracking-wider">Water</span>
+                {WATER_PALETTE.map((entry, index) => (
+                    <Tooltip key={entry.depth}>
+                        <TooltipTrigger asChild>
+                            <button
+                                className={`size-8 rounded-md border-2 transition-all ${
+                                    isWaterSelected(index)
+                                        ? 'border-white scale-110 shadow-md'
+                                        : 'border-transparent hover:border-white/40'
+                                }`}
+                                style={{ backgroundColor: entry.css }}
+                                onClick={() => onBrushTargetChange({ layer: 'water', paletteIndex: index })}
+                            />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                            {entry.depth}m deep
+                        </TooltipContent>
                     </Tooltip>
                 ))}
 
-                {/* Brush size */}
-                {activeTool && (
-                    <>
-                        <div className="bg-border my-0.5 h-px w-full" />
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="text-muted-foreground text-[9px]">Size</span>
-                                    <input
-                                        type="range"
-                                        min={25}
-                                        max={500}
-                                        step={25}
-                                        value={brushRadius}
-                                        onChange={e => onBrushRadiusChange(Number(e.target.value))}
-                                        className="h-16 w-1.5 appearance-none [writing-mode:vertical-lr]"
-                                    />
-                                    <span className="text-muted-foreground text-[9px]">
-                                        {brushRadius}m
-                                    </span>
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">Brush size</TooltipContent>
-                        </Tooltip>
-
-                        {/* Brush strength */}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="text-muted-foreground text-[9px]">Str</span>
-                                    <input
-                                        type="range"
-                                        min={5}
-                                        max={100}
-                                        step={5}
-                                        value={Math.round(brushStrength * 100)}
-                                        onChange={e => onBrushStrengthChange(Number(e.target.value) / 100)}
-                                        className="h-16 w-1.5 appearance-none [writing-mode:vertical-lr]"
-                                    />
-                                    <span className="text-muted-foreground text-[9px]">
-                                        {Math.round(brushStrength * 100)}%
-                                    </span>
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">Brush strength</TooltipContent>
-                        </Tooltip>
-
-                        {/* Water depth (only for water-paint) */}
-                        {activeTool === 'water-paint' && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <div className="flex flex-col items-center gap-0.5">
-                                        <span className="text-muted-foreground text-[9px]">Dep</span>
-                                        <input
-                                            type="range"
-                                            min={1}
-                                            max={20}
-                                            step={1}
-                                            value={waterDepth}
-                                            onChange={e => onWaterDepthChange(Number(e.target.value))}
-                                            className="h-16 w-1.5 appearance-none [writing-mode:vertical-lr]"
-                                        />
-                                        <span className="text-muted-foreground text-[9px]">
-                                            {waterDepth}m
-                                        </span>
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="right">Water depth</TooltipContent>
-                            </Tooltip>
-                        )}
-                    </>
-                )}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant={isWaterEraseSelected ? 'default' : 'ghost'}
+                            size="icon"
+                            className="size-8"
+                            onClick={() => onBrushTargetChange({ layer: 'water-erase' })}
+                        >
+                            <Eraser className="size-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Erase water</TooltipContent>
+                </Tooltip>
             </div>
 
-            {/* Visibility & export/import */}
+            {/* Brush size + export/import */}
             <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={handleToggleVisibility}>
-                            {fillVisible ? (
-                                <Eye className="size-4" />
-                            ) : (
-                                <EyeOff className="size-4 text-muted-foreground/40" />
-                            )}
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Toggle terrain fill</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div className="flex flex-col items-center gap-1">
-                            <Mountain className="size-4" />
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-muted-foreground text-[9px]">Size</span>
                             <input
                                 type="range"
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={Math.round(fillOpacity * 100)}
-                                onChange={handleOpacityChange}
-                                disabled={!fillVisible}
-                                className="h-20 w-1.5 appearance-none disabled:opacity-30 [writing-mode:vertical-lr]"
+                                min={25}
+                                max={500}
+                                step={25}
+                                value={brushRadius}
+                                onChange={e => onBrushRadiusChange(Number(e.target.value))}
+                                className="h-16 w-1.5 appearance-none [writing-mode:vertical-lr]"
                             />
-                            <span className="text-muted-foreground text-[10px]">
-                                {Math.round(fillOpacity * 100)}%
+                            <span className="text-muted-foreground text-[9px]">
+                                {brushRadius}m
                             </span>
                         </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Terrain opacity</TooltipContent>
+                    <TooltipContent side="right">Brush size</TooltipContent>
                 </Tooltip>
 
                 <div className="bg-border my-0.5 h-px w-full" />
@@ -593,17 +550,13 @@ function TerrainEditorToolbar({
 // ---------------------------------------------------------------------------
 
 function BrushInputWiring({
-    activeTool,
+    brushTarget,
     brushRadius,
-    brushStrength,
-    waterDepth,
 }: {
-    activeTool: BrushMode | null;
+    brushTarget: BrushTarget;
     brushRadius: number;
-    brushStrength: number;
-    waterDepth: number;
 }) {
-    useBrushInput(activeTool, brushRadius, brushStrength, waterDepth);
+    useBrushInput(brushTarget, brushRadius);
     return null;
 }
 
@@ -616,11 +569,11 @@ export function TerrainEditorPage(): React.ReactNode {
     const [mapInstance, setMapInstance] = useState<MapInstance | null>(null);
     const handleMapDestroy = useCallback(() => setMapInstance(null), []);
 
-    // Brush state — lifted to page level so toolbar + input handler share it
-    const [activeTool, setActiveTool] = useState<BrushMode | null>(null);
+    const [brushTarget, setBrushTarget] = useState<BrushTarget>({
+        layer: 'terrain',
+        paletteIndex: GROUND_PALETTE_INDEX,
+    });
     const [brushRadius, setBrushRadius] = useState(100);
-    const [brushStrength, setBrushStrength] = useState(0.5);
-    const [waterDepth, setWaterDepth] = useState(3);
 
     const wrapperOption = useMemo(
         () => ({
@@ -643,7 +596,7 @@ export function TerrainEditorPage(): React.ReactNode {
                 />
                 <Wrapper
                     option={wrapperOption}
-                    initFunction={initTerrainEditor}
+                    initFunction={initPaintEditor}
                 >
                     {showMap && mapInstance && (
                         <MapTileLayerSync map={mapInstance} />
@@ -651,21 +604,15 @@ export function TerrainEditorPage(): React.ReactNode {
                     <ScrollBarDisplay />
 
                     <BrushInputWiring
-                        activeTool={activeTool}
+                        brushTarget={brushTarget}
                         brushRadius={brushRadius}
-                        brushStrength={brushStrength}
-                        waterDepth={waterDepth}
                     />
 
-                    <TerrainEditorToolbar
-                        activeTool={activeTool}
-                        onToolChange={setActiveTool}
+                    <PaintEditorToolbar
+                        brushTarget={brushTarget}
+                        onBrushTargetChange={setBrushTarget}
                         brushRadius={brushRadius}
                         onBrushRadiusChange={setBrushRadius}
-                        brushStrength={brushStrength}
-                        onBrushStrengthChange={setBrushStrength}
-                        waterDepth={waterDepth}
-                        onWaterDepthChange={setWaterDepth}
                     />
 
                     {/* Map toggle — bottom-left */}

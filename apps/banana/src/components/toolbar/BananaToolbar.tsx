@@ -32,6 +32,8 @@ import {
     serializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
+import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
+import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
 import {
@@ -456,6 +458,28 @@ export function BananaToolbar({
         });
     }, [app]);
 
+    const handleImportTerrain = useCallback(() => {
+        if (!app) return;
+        uploadJson(parsed => {
+            // Accept both standalone terrain files and scene files with a terrain field
+            let terrainObj: unknown = parsed;
+            if (
+                parsed != null &&
+                typeof parsed === 'object' &&
+                'terrain' in (parsed as Record<string, unknown>)
+            ) {
+                terrainObj = (parsed as Record<string, unknown>).terrain;
+            }
+            const result = validateSerializedTerrainData(terrainObj);
+            if (!result.valid) {
+                alert(t('invalidTerrainData', { error: result.error }));
+                return;
+            }
+            const restored = TerrainData.deserialize(terrainObj as SerializedTerrainData);
+            app.terrainRenderSystem.setTerrainData(restored);
+        });
+    }, [app, t]);
+
     const handleImportCarDefinition = useCallback(() => {
         if (!app) return;
         uploadJson(parsed => {
@@ -656,6 +680,7 @@ export function BananaToolbar({
                         onImportTrains={handleImportTrains}
                         onExportAll={handleExportAll}
                         onImportAll={handleImportAll}
+                        onImportTerrain={handleImportTerrain}
                         onImportCarDefinition={handleImportCarDefinition}
                     />
 

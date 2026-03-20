@@ -47,6 +47,8 @@ const en = {
         importTrains: 'Import Trains',
         exportAll: 'Export All (tracks + trains + stations)',
         importAll: 'Import All (tracks + trains + stations)',
+        importTerrain: 'Import Terrain',
+        invalidTerrainData: 'Invalid terrain data: {{error}}',
         importCarDefinitionFromEditor: 'Import Car Definition (from Train Editor)',
 
         // Validation errors

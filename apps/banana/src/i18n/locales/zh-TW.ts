@@ -47,6 +47,8 @@ const zhTW = {
         importTrains: '匯入列車',
         exportAll: '匯出全部（軌道 + 列車 + 車站）',
         importAll: '匯入全部（軌道 + 列車 + 車站）',
+        importTerrain: '匯入地形',
+        invalidTerrainData: '無效的地形資料：{{error}}',
         importCarDefinitionFromEditor: '匯入車輛定義（從列車編輯器）',
 
         // Validation errors
