@@ -1246,7 +1246,7 @@ export class BCurve {
             const mid = Math.floor((low + high) / 2);
             const midLength = points[mid].length;
 
-            if (approximately(midLength, targetLength, 0.01)) {
+            if (approximately(midLength, targetLength, 1e-6)) {
                 // Found exact match
                 const resultTVal = points[mid].tVal;
                 const point = this.get(resultTVal);

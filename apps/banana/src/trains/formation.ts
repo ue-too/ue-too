@@ -735,7 +735,7 @@ export class Train {
         this._acceleration = 0;
         this._acceleration += DEFAULT_THROTTLE_STEPS[this._throttle];
         if (this._speed > 0 && this._acceleration > -0.5) {
-            this._acceleration -= 0.1;
+            this._acceleration -= 0.1 * this._speed;
         }
         this._speed += this._acceleration * deltaTime;
         if (this._speed < 0) {
@@ -743,7 +743,7 @@ export class Train {
             this._speed = 0;
         }
         let distanceToAdvance = this._speed * deltaTime;
-        if (approximately(distanceToAdvance, 0, 0.01)) {
+        if (approximately(distanceToAdvance, 0, 1e-6)) {
             return;
         }
         const nextPosition = getPosition(
