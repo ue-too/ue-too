@@ -482,7 +482,7 @@ export const TRAIN_LINEAR_DRAG_COEFFICIENT: number = 0;
  *
  * @group Train physics
  */
-export const TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT: number = 0.03;
+export const TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT: number = 0.015;
 
 /**
  * Default upper speed limit in world units per second when none is passed to {@link Train}'s constructor.
