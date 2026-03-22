@@ -457,6 +457,51 @@ export const DEFAULT_THROTTLE_STEPS: ThrottleAccelerationMap = {
     p5: 0.7,
 };
 
+/**
+ * Linear drag while **not** in neutral: each `Train.update` tick, after throttle acceleration is applied,
+ * if speed is positive and raw acceleration is greater than `-0.5`, subtract `coefficient * speed`.
+ *
+ * Default **`0`** avoids a cruise equilibrium under power (e.g. old `0.1` gave ~7 world units/s at `p5`).
+ * Use {@link TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT} for coast-down in neutral instead.
+ *
+ * @remarks
+ * If positive and a finite `maxSpeed` is set, the lower of drag equilibrium and `maxSpeed` wins.
+ *
+ * @group Train physics
+ */
+export const TRAIN_LINEAR_DRAG_COEFFICIENT: number = 0;
+
+/**
+ * Linear coast-down in **neutral** (`N`): while moving, subtract `coefficient * speed` from acceleration
+ * each tick so the train slows smoothly without power.
+ *
+ * Does not apply on power notches (`p1`–`p5`), so it does not recreate the old full-throttle speed cap.
+ *
+ * @remarks
+ * Default is intentionally modest (`0.03`); `0.1` matches the legacy combined drag and feels harsh in neutral.
+ *
+ * @group Train physics
+ */
+export const TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT: number = 0.03;
+
+/**
+ * Default upper speed limit in world units per second when none is passed to {@link Train}'s constructor.
+ * `Infinity` means no cap from this field (stops and track still apply; a positive {@link TRAIN_LINEAR_DRAG_COEFFICIENT} can still create a cruise equilibrium below this value).
+ *
+ * @group Train physics
+ */
+export const DEFAULT_TRAIN_MAX_SPEED: number = Number.POSITIVE_INFINITY;
+
+function normalizeTrainMaxSpeed(value: number | undefined): number {
+    if (value === undefined) {
+        return DEFAULT_TRAIN_MAX_SPEED;
+    }
+    if (!Number.isFinite(value)) {
+        return DEFAULT_TRAIN_MAX_SPEED;
+    }
+    return Math.max(0, value);
+}
+
 export class Train {
     private _position: TrainPosition | null;
     private _trackGraph: TrackGraph;
@@ -464,6 +509,7 @@ export class Train {
     private _speed: number = 0;
     private _acceleration: number = 0;
     private _throttle: ThrottleSteps = 'N';
+    private _maxSpeed: number;
     private _previewPositions: TrainPosition[] | null = null;
     private _previewPositionCache: TrainPosition | null = null;
     private _occupiedJointNumbers: {
@@ -497,16 +543,21 @@ export class Train {
         return this._formation.bogieOffsets().slice(1);
     }
 
+    /**
+     * @param maxSpeed - Upper bound on speed (world units per second). Omit or use `Infinity` for no limit from this field.
+     */
     constructor(
         position: TrainPosition | null,
         trackGraph: TrackGraph,
         jointDirectionManager: JointDirectionManager,
         formation?: Formation,
+        maxSpeed?: number,
     ) {
         this._position = position;
         this._trackGraph = trackGraph;
         this._jointDirectionManager = jointDirectionManager;
         this._formation = formation ?? Formation.createDefault();
+        this._maxSpeed = normalizeTrainMaxSpeed(maxSpeed);
     }
 
     clearPreviewPosition() {
@@ -524,6 +575,23 @@ export class Train {
 
     get speed(): number {
         return this._speed;
+    }
+
+    /**
+     * Speed ceiling in world units per second. `Infinity` means no clamp from this property.
+     */
+    get maxSpeed(): number {
+        return this._maxSpeed;
+    }
+
+    /**
+     * @param value - Finite values clamp to `>= 0`. Non-finite values mean no speed cap (`Infinity`). `0` freezes the train at zero speed.
+     */
+    setMaxSpeed(value: number): void {
+        this._maxSpeed = normalizeTrainMaxSpeed(value);
+        if (this._speed > this._maxSpeed) {
+            this._speed = this._maxSpeed;
+        }
     }
 
     setThrottleStep(throttleStep: ThrottleSteps) {
@@ -735,12 +803,24 @@ export class Train {
         this._acceleration = 0;
         this._acceleration += DEFAULT_THROTTLE_STEPS[this._throttle];
         if (this._speed > 0 && this._acceleration > -0.5) {
-            this._acceleration -= 0.1 * this._speed;
+            this._acceleration -=
+                TRAIN_LINEAR_DRAG_COEFFICIENT * this._speed;
+        }
+        if (
+            this._speed > 0 &&
+            this._throttle === 'N' &&
+            TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT !== 0
+        ) {
+            this._acceleration -=
+                TRAIN_NEUTRAL_COAST_DRAG_COEFFICIENT * this._speed;
         }
         this._speed += this._acceleration * deltaTime;
         if (this._speed < 0) {
             this._acceleration = 0;
             this._speed = 0;
+        }
+        if (this._speed > this._maxSpeed) {
+            this._speed = this._maxSpeed;
         }
         let distanceToAdvance = this._speed * deltaTime;
         if (approximately(distanceToAdvance, 0, 1e-6)) {
@@ -884,6 +964,7 @@ export class Train {
             this._trackGraph,
             this._jointDirectionManager,
             otherFormation,
+            this._maxSpeed,
         );
 
         return newTrain;

@@ -41,6 +41,8 @@ export type SerializedPlacedTrain = {
   id: number;
   position: SerializedTrainPosition;
   formationId: string;
+  /** Optional finite cap in world units per second; omit for default (no cap). */
+  maxSpeed?: number;
 };
 
 /** Full train data for export/import (cars, formations, stock, manager, placed trains). */
@@ -124,11 +126,15 @@ export function serializeTrainData(
     .map(({ id, train }) => {
       const pos = train.position;
       if (pos === null) return null;
-      return {
+      const entry: SerializedPlacedTrain = {
         id,
         position: serializePosition(pos),
         formationId: train.formation.id,
       };
+      if (Number.isFinite(train.maxSpeed)) {
+        entry.maxSpeed = train.maxSpeed;
+      }
+      return entry;
     })
     .filter((t): t is SerializedPlacedTrain => t !== null);
 
@@ -254,7 +260,8 @@ export function deserializeTrainData(
       position,
       trackGraph,
       jointDirectionManager,
-      formation
+      formation,
+      pt.maxSpeed,
     );
     trainManager.addTrainWithId(pt.id, train);
   }
@@ -308,6 +315,11 @@ export function validateSerializedTrainData(
       return { valid: false, error: `placedTrains[${i}].position must be { trackSegment, tValue, direction }` };
     }
     if (typeof pt?.formationId !== 'string') return { valid: false, error: `placedTrains[${i}].formationId must be a string` };
+    if (pt?.maxSpeed !== undefined) {
+      if (typeof pt.maxSpeed !== 'number' || !Number.isFinite(pt.maxSpeed) || pt.maxSpeed < 0) {
+        return { valid: false, error: `placedTrains[${i}].maxSpeed must be a finite number >= 0 when present` };
+      }
+    }
   }
   return { valid: true };
 }

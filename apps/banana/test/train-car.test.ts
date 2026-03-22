@@ -710,6 +710,46 @@ describe('Train decoupleAtCar', () => {
             expect(newTrain.formation.flatCars().map(c => c.id)).toEqual(['B', 'C']);
         });
 
+        it('should copy maxSpeed onto the new train when decoupling', () => {
+            const A = new Car('A', [20], 2.5, 2.5);
+            const B = new Car('B', [20], 2.5, 2.5);
+            const formation = new Formation('f', [A, B]);
+            const train = makeTrain(formation);
+            train.setMaxSpeed(42);
+
+            const newTrain = train.decoupleAtCar(0, 1, 'head');
+
+            expect(train.maxSpeed).toBe(42);
+            expect(newTrain.maxSpeed).toBe(42);
+        });
+
     });
 
+});
+
+describe('Train maxSpeed', () => {
+    const mockTrackGraph = {} as unknown as TrackGraph;
+    const mockJointDirectionManager = {} as unknown as JointDirectionManager;
+
+    it('uses constructor fifth argument', () => {
+        const car = new Car('A', [20], 2.5, 2.5);
+        const formation = new Formation('f', [car]);
+        const train = new Train(
+            null,
+            mockTrackGraph,
+            mockJointDirectionManager,
+            formation,
+            12,
+        );
+        expect(train.maxSpeed).toBe(12);
+    });
+
+    it('setMaxSpeed clamps current speed down to the new cap', () => {
+        const car = new Car('A', [20], 2.5, 2.5);
+        const formation = new Formation('f', [car]);
+        const train = new Train(null, mockTrackGraph, mockJointDirectionManager, formation);
+        (train as unknown as { _speed: number })._speed = 30;
+        train.setMaxSpeed(8);
+        expect(train.speed).toBe(8);
+    });
 });
