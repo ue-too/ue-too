@@ -1,5 +1,6 @@
 import en from './en';
 import zhTW from './zh-TW';
+import DOMPurify from 'dompurify';
 
 type Translations = typeof en;
 type TranslationKey = keyof Translations;
@@ -65,7 +66,7 @@ export function applyTranslations(): void {
     });
     document.querySelectorAll<HTMLElement>('[data-i18n-html]').forEach(el => {
         const key = el.getAttribute('data-i18n-html') as TranslationKey;
-        if (key) el.innerHTML = t(key);
+        if (key) el.innerHTML = DOMPurify.sanitize(t(key));
     });
     document.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title') as TranslationKey;
