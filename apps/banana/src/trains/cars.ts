@@ -61,6 +61,7 @@ export interface TrainUnit {
 export class Car implements TrainUnit {
 
     readonly id: string;
+    private _name: string;
     private _bogieOffsets: number[];
 
     private _edgeToBogie: number;
@@ -69,9 +70,19 @@ export class Car implements TrainUnit {
 
     constructor(id: string, bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number) {
         this.id = id;
+        this._name = id;
         this._bogieOffsets = bogieOffsets;
         this._edgeToBogie = edgeToBogie;
         this._bogieToEdge = bogieToEdge;
+    }
+
+    /** Display name for UI. Defaults to the car id. */
+    get name(): string {
+        return this._name;
+    }
+
+    set name(value: string) {
+        this._name = value;
     }
 
     bogieOffsets(): number[] {

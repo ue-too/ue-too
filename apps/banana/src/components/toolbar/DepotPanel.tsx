@@ -1,5 +1,5 @@
-import { Plus, Trash2 } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useCallback, useSyncExternalStore } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { type Dispatch, type SetStateAction, useCallback, useRef, useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -59,35 +59,11 @@ export function DepotPanel({
                     </span>
                 ) : (
                     availableCars.map(entry => (
-                        <div
+                        <DepotCarRow
                             key={entry.id}
-                            className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
-                        >
-                            <div className="flex flex-col">
-                                <span className="text-foreground font-mono text-xs">
-                                    {entry.id}
-                                </span>
-                                <span className="text-muted-foreground text-[10px]">
-                                    {t('bogieCount', { count: entry.car.bogieOffsets().length + 1 })}
-                                    {' · '}
-                                    {entry.car.edgeToBogie +
-                                        entry.car
-                                            .bogieOffsets()
-                                            .reduce((a, b) => a + b, 0) +
-                                        entry.car.bogieToEdge}
-                                    m
-                                </span>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={() =>
-                                    carStockManager.removeCar(entry.id)
-                                }
-                            >
-                                <Trash2 className="size-3" />
-                            </Button>
-                        </div>
+                            entry={entry}
+                            carStockManager={carStockManager}
+                        />
                     ))
                 )}
             </div>
@@ -163,5 +139,88 @@ export function DepotPanel({
                 </>
             )}
         </DraggablePanel>
+    );
+}
+
+function DepotCarRow({
+    entry,
+    carStockManager,
+}: {
+    entry: CarStockEntry;
+    carStockManager: CarStockManager;
+}) {
+    const { t } = useTranslation();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const startEditing = useCallback(() => {
+        setEditValue(entry.car.name);
+        setIsEditing(true);
+        setTimeout(() => inputRef.current?.focus(), 0);
+    }, [entry.car.name]);
+
+    const commitRename = useCallback(() => {
+        const trimmed = editValue.trim();
+        if (trimmed && trimmed !== entry.car.name) {
+            carStockManager.renameCar(entry.id, trimmed);
+        }
+        setIsEditing(false);
+    }, [editValue, entry.car.name, entry.id, carStockManager]);
+
+    return (
+        <div className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5">
+            <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1 min-w-0">
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            className="text-foreground text-xs font-mono bg-background border border-primary/40 rounded px-1 py-0 w-24 outline-none"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitRename}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') commitRename();
+                                if (e.key === 'Escape') setIsEditing(false);
+                            }}
+                        />
+                    ) : (
+                        <span
+                            className="text-foreground font-mono text-xs truncate"
+                            title={t('renameCar')}
+                            onDoubleClick={startEditing}
+                        >
+                            {entry.car.name}
+                        </span>
+                    )}
+                    {!isEditing && (
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={startEditing}
+                        >
+                            <Pencil className="size-2.5" />
+                        </Button>
+                    )}
+                </div>
+                <span className="text-muted-foreground text-[10px]">
+                    {t('bogieCount', { count: entry.car.bogieOffsets().length + 1 })}
+                    {' · '}
+                    {entry.car.edgeToBogie +
+                        entry.car
+                            .bogieOffsets()
+                            .reduce((a, b) => a + b, 0) +
+                        entry.car.bogieToEdge}
+                    m
+                </span>
+            </div>
+            <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => carStockManager.removeCar(entry.id)}
+            >
+                <Trash2 className="size-3" />
+            </Button>
+        </div>
     );
 }

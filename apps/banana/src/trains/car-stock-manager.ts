@@ -3,7 +3,7 @@ import { Car, generateCarId } from './cars';
 
 export type CarStockEntry = { id: string; car: Car };
 
-type CarStockChangeType = 'add' | 'remove';
+type CarStockChangeType = 'add' | 'remove' | 'update';
 
 /**
  * Manages a pool of available cars not currently assigned to any formation.
@@ -56,6 +56,17 @@ export class CarStockManager {
         this._observable.notify(id, { type: 'remove' });
         this._notify();
         return car;
+    }
+
+    /** Rename a car's display name. */
+    renameCar(carId: string, name: string): void {
+        const car = this._cars.get(carId);
+        if (car === undefined) {
+            throw new Error(`Car ${carId} is not in stock`);
+        }
+        car.name = name;
+        this._observable.notify(carId, { type: 'update' });
+        this._notify();
     }
 
     /** Whether a car with the given ID exists in stock. */

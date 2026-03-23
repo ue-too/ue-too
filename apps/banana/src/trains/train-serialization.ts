@@ -11,6 +11,8 @@ import type { Point } from '@ue-too/math';
 /** JSON-safe car data for serialization. */
 export type SerializedCar = {
   id: string;
+  /** Display name. Omitted when equal to id for backwards compatibility. */
+  name?: string;
   bogieOffsets: number[];
   edgeToBogie: number;
   bogieToEdge: number;
@@ -59,6 +61,7 @@ export type SerializedTrainData = {
 function serializeCar(car: Car): SerializedCar {
   return {
     id: car.id,
+    ...(car.name !== car.id ? { name: car.name } : {}),
     bogieOffsets: car.bogieOffsets(),
     edgeToBogie: car.edgeToBogie,
     bogieToEdge: car.bogieToEdge,
@@ -157,6 +160,9 @@ function deserializeCar(data: SerializedCar): Car {
     data.edgeToBogie,
     data.bogieToEdge
   );
+  if (data.name !== undefined) {
+    car.name = data.name;
+  }
   if (data.flipped) {
     car.switchDirection();
   }
