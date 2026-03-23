@@ -114,24 +114,27 @@ Refer to the read me of each libary and application for more detail.
 
 ```
 ue-too/
-├── packages/           # Individual packages
-│   ├── board/         # Canvas viewport management
-│   ├── board-react/   # React integration for the board package
-│   ├── board-vue/     # Vue integration for the board package
-│   ├── math/          # Mathematical utilities
-│   ├── animate/       # Animation system
-│   ├── dynamics/      # Physics engine
-│   ├── curve/         # Curve and path tools
-│   ├── border/        # Geographic projections
-│   ├── being/         # Entity interfaces
-│   └── ecs/           # ECS architecture
-├── apps/              # Example applications
-│   ├── examples/      # Interactive examples
-│   ├── board-react/   # React integration for the board package
-│   ├── board-vue/     # Vue integration for the board package
-│   ├── banana/        # A simulation of a railway system using bezier curves.
-│   └── blast/         # A tabletop game prototype maker.
-└── scripts/           # Build and deployment scripts
+├── packages/                         # Individual packages
+│   ├── board/                        # Canvas viewport management
+│   ├── board-react-adapter/          # React integration for the board package
+│   ├── board-vue-adapter/            # Vue integration for the board package
+│   ├── board-pixi-integration/       # PixiJS integration for the board package
+│   ├── board-pixi-react-integration/ # PixiJS integration for the board package with React
+│   ├── board-konva-integration/      # Konva integration for the board package
+│   ├── board-fabric-integration/     # Fabric integration for the board package
+│   ├── math/                         # Mathematical utilities
+│   ├── animate/                      # Animation system
+│   ├── dynamics/                     # Physics engine
+│   ├── curve/                        # Curve and path tools
+│   ├── border/                       # Geographic projections
+│   ├── being/                        # Finite state machine
+│   └── ecs/                          # Entity Component System
+├── apps/                             # Example applications
+│   ├── examples/                     # Interactive examples
+│   ├── banana/                       # A simulation of a railway system using bezier curves. (WIP)
+│   ├── blast/                        # A tabletop game prototype maker. (WIP)
+│   └── knit/                         # A knitting pattern editor. (WIP)
+└── scripts/                          # Build and deployment scripts
 ```
 
 ## License
