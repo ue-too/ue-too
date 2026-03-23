@@ -159,6 +159,28 @@ const en = {
         nestedFormation: 'Nested formation',
         composition: 'Composition',
         addFromStock: 'Add from stock',
+
+        // Landing Page
+        nextStop: 'Next Stop',
+        landingTagline1:
+            'A 2D top-down railway simulator right in the browser.',
+        landingTagline2: 'tracks, stations, trains, and more.',
+        openSimulator: 'Open Simulator',
+        build: 'Build',
+        simulate: 'Simulate',
+        featureTrackDrawing: 'Bézier Track Drawing provides high flexibility',
+        featureTerrain: '2D but not flat, subway? checked!',
+        featureStations: 'Stations & Buildings (WIP)',
+        featureTrainSim: 'Train Simulation, want to drive the train yourself? Not a problem!',
+        featureFormations: 'Flexible Train Formations',
+        featureNavigation: 'Smooth Navigation',
+        featureImportExport: 'Import & Export, cloud and browser-side auto-save in development',
+        builtWithFooter:
+            'Built with <ueToo>ue-too</ueToo> · <issues>Feedback</issues>',
+        motionOn: 'Motion: on',
+        motionOff: 'Motion: off',
+        enableAnimations: 'Enable animations',
+        reduceAnimations: 'Reduce animations',
     },
 } as const;
 

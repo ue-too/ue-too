@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
 import { ExpPage } from '@/pages/exp';
+import { LandingPage } from '@/pages/landing';
 import { MapOverlayPage } from '@/pages/map-overlay';
 import { BananaAppComponents } from '@/utils/init-app';
 
@@ -35,7 +36,8 @@ root.render(
             <Toaster />
             <BrowserRouter>
                 <Routes>
-                    <Route path="/" element={<App />} />
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/app" element={<App />} />
                     <Route path="/map-overlay" element={<MapOverlayPage />} />
                     <Route path="/exp" element={<ExpPage />} />
                     <Route path="/train-editor" element={<TrainEditor />} />
