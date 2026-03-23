@@ -50,14 +50,19 @@ export function LandingPage(): React.ReactNode {
 
             {/* Hero */}
             <section className="flex flex-col items-center justify-center px-6 pt-40 pb-8">
-                <LedMarquee
-                    text="Banana"
-                    rows={24}
-                    visibleCols={80}
-                    height={120}
-                    speed={12}
-                    scroll={!reduceMotion}
-                />
+                <div className="relative">
+                    <span className="text-muted-foreground absolute -top-6 left-0 text-xs tracking-wide">
+                        {t('nextStop')}
+                    </span>
+                    <LedMarquee
+                        text="Banana"
+                        rows={24}
+                        visibleCols={80}
+                        height={120}
+                        speed={12}
+                        scroll={!reduceMotion}
+                    />
+                </div>
                 <p className="text-muted-foreground mt-8 text-center text-lg">
                     {t('landingTagline1')}
                 </p>
@@ -73,6 +78,7 @@ export function LandingPage(): React.ReactNode {
                         height={isCJK ? 36 : 24}
                         dotSize={isCJK ? 3 : undefined}
                         scroll={false}
+                        pulse={!reduceMotion}
                         usePixelFont
                     />
                 </Link>
@@ -85,7 +91,7 @@ export function LandingPage(): React.ReactNode {
                         <h3 className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
                             {group.label}
                         </h3>
-                        <ul className="mt-4 space-y-2">
+                        <ul className="mt-4 list-disc space-y-2 text-left">
                             {group.items.map(item => (
                                 <li
                                     key={item}

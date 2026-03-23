@@ -161,6 +161,7 @@ const en = {
         addFromStock: 'Add from stock',
 
         // Landing Page
+        nextStop: 'Next Stop',
         landingTagline1:
             'A 2D top-down railway simulator right in the browser.',
         landingTagline2: 'tracks, stations, trains, and more.',
@@ -170,7 +171,7 @@ const en = {
         featureTrackDrawing: 'Bézier Track Drawing provides high flexibility',
         featureTerrain: '2D but not flat, subway? checked!',
         featureStations: 'Stations & Buildings (WIP)',
-        featureTrainSim: 'Train Simulation, want to drive the train yourself? Ok!',
+        featureTrainSim: 'Train Simulation, want to drive the train yourself? Not a problem!',
         featureFormations: 'Flexible Train Formations',
         featureNavigation: 'Smooth Navigation',
         featureImportExport: 'Import & Export, cloud and browser-side auto-save in development',

@@ -159,6 +159,7 @@ const zhTW = {
         addFromStock: '從車庫加入',
 
         // Landing Page
+        nextStop: '下一站',
         landingTagline1: '直接在瀏覽器裡面就能使用的 2D 俯視鐵道模擬器。',
         landingTagline2: '軌道、車站、列車、自由組合',
         openSimulator: '開啟模擬器',

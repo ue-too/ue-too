@@ -29,6 +29,8 @@ interface LedMarqueeProps {
     /** Fixed dot diameter in pixels. When set, overrides height-based
      *  calculation — the component sizes itself from the grid dimensions. */
     dotSize?: number;
+    /** When true, lit dots gently pulse in opacity. */
+    pulse?: boolean;
 }
 
 /**
@@ -187,7 +189,7 @@ function textToDotMatrix(
 export function LedMarquee({
     text,
     rows = 16,
-    visibleCols = 80,
+    visibleCols,
     litColor,
     unlitColor,
     font = 'system-ui, sans-serif',
@@ -197,6 +199,7 @@ export function LedMarquee({
     usePixelFont = false,
     nativePx,
     dotSize,
+    pulse = false,
 }: LedMarqueeProps): React.ReactNode {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -218,7 +221,9 @@ export function LedMarquee({
 
             const actualRows = grid.length;
             const textCols = grid[0].length;
-            const displayCols = scroll ? visibleCols : textCols;
+            const displayCols = visibleCols
+                ? Math.max(visibleCols, textCols)
+                : textCols;
             const totalCols = displayCols + textCols;
 
             const dpr = window.devicePixelRatio || 1;
@@ -251,7 +256,7 @@ export function LedMarquee({
 
             let colorsCache = getColors();
 
-            function draw(offset: number) {
+            function draw(offset: number, litOpacity = 1) {
                 const ctx = canvas!.getContext('2d');
                 if (!ctx) return;
 
@@ -278,10 +283,17 @@ export function LedMarquee({
 
                         ctx.beginPath();
                         ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
-                        ctx.fillStyle = isLit
-                            ? colorsCache.lit
-                            : colorsCache.unlit;
-                        ctx.fill();
+                        if (isLit && litOpacity < 1) {
+                            ctx.globalAlpha = litOpacity;
+                            ctx.fillStyle = colorsCache.lit;
+                            ctx.fill();
+                            ctx.globalAlpha = 1;
+                        } else {
+                            ctx.fillStyle = isLit
+                                ? colorsCache.lit
+                                : colorsCache.unlit;
+                            ctx.fill();
+                        }
                     }
                 }
             }
@@ -305,6 +317,17 @@ export function LedMarquee({
                 }
 
                 animId = requestAnimationFrame(tick);
+            } else if (pulse) {
+                function pulseTick(now: number) {
+                    if (cancelled) return;
+                    // Gentle sine pulse: opacity oscillates between 0.4 and 1.0
+                    const opacity =
+                        0.7 + 0.3 * Math.sin((now / 1000) * Math.PI);
+                    draw(0, opacity);
+                    animId = requestAnimationFrame(pulseTick);
+                }
+
+                animId = requestAnimationFrame(pulseTick);
             } else {
                 draw(0);
             }
@@ -327,7 +350,7 @@ export function LedMarquee({
             cancelAnimationFrame(animId);
             observer?.disconnect();
         };
-    }, [text, rows, visibleCols, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize]);
+    }, [text, rows, visibleCols, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize, pulse]);
 
     return <canvas ref={canvasRef} />;
 }

@@ -159,6 +159,7 @@ const ja = {
         addFromStock: '車庫から追加',
 
         // Landing Page
+        nextStop: '次は',
         landingTagline1: 'ブラウザで動く2D俯瞰鉄道シミュレーター。',
         landingTagline2: '線路、駅、列車、そしてもっと。',
         openSimulator: 'シミュレーターを開く',
