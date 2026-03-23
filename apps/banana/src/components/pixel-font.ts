@@ -1,7 +1,12 @@
+import { CJK_GLYPHS } from './pixel-font-cjk.generated';
+
 /**
  * 5-wide × 7-tall bitmap font for LED dot-matrix rendering.
  * Each character is an array of 7 strings, each string 5 chars wide.
  * '#' = lit, '.' = unlit.
+ *
+ * CJK characters are auto-generated from the Cubic 11 SFD file and
+ * merged at the bottom. Regenerate with: bun run scripts/extract-sfd-bitmaps.ts
  */
 const GLYPHS: Record<string, string[]> = {
     A: [
@@ -625,10 +630,13 @@ const GLYPHS: Record<string, string[]> = {
         '....#',
         '.###.',
     ],
+
+    ...CJK_GLYPHS,
 };
 
 /**
- * Converts a string into a 7-row boolean grid using the built-in pixel font.
+ * Converts a string into a boolean grid using the built-in pixel font.
+ * Handles mixed glyph heights by padding shorter glyphs vertically.
  * Each character is separated by 1 column of spacing.
  */
 export function pixelFontToGrid(text: string): boolean[][] {
@@ -652,12 +660,8 @@ export function pixelFontToGrid(text: string): boolean[][] {
 
     if (charGrids.length === 0) return [];
 
-    // Combine with 1-col spacing between characters
-    const totalRows = 7;
-    const totalCols = charGrids.reduce(
-        (sum, g) => sum + g[0].length,
-        0
-    ) + (charGrids.length - 1);
+    // Use the tallest glyph to determine total rows
+    const totalRows = Math.max(...charGrids.map((g) => g.length));
 
     const result: boolean[][] = [];
     for (let r = 0; r < totalRows; r++) {
@@ -665,8 +669,12 @@ export function pixelFontToGrid(text: string): boolean[][] {
         for (let gi = 0; gi < charGrids.length; gi++) {
             if (gi > 0) row.push(false); // spacing
             const g = charGrids[gi];
-            for (let c = 0; c < g[0].length; c++) {
-                row.push(g[r][c]);
+            const cols = g[0].length;
+            // Vertically center shorter glyphs
+            const offsetY = Math.floor((totalRows - g.length) / 2);
+            const gr = r - offsetY;
+            for (let c = 0; c < cols; c++) {
+                row.push(gr >= 0 && gr < g.length && g[gr][c]);
             }
         }
         result.push(row);

@@ -862,7 +862,9 @@ export function BananaToolbar({
                 />
             )}
 
-            <LanguageSwitcher />
+            <div className="pointer-events-auto absolute top-3 right-3">
+                <LanguageSwitcher />
+            </div>
 
             <div className="absolute right-3 bottom-10 flex flex-col items-end gap-1">
                 <TerrainLegend />

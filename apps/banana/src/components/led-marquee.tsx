@@ -23,6 +23,12 @@ interface LedMarqueeProps {
     scroll?: boolean;
     /** Use the built-in pixel font instead of canvas text rendering. */
     usePixelFont?: boolean;
+    /** Native pixel size for bitmap fonts. When set, renders at this exact
+     *  size and samples 1:1 instead of downsampling from a large render. */
+    nativePx?: number;
+    /** Fixed dot diameter in pixels. When set, overrides height-based
+     *  calculation — the component sizes itself from the grid dimensions. */
+    dotSize?: number;
 }
 
 /**
@@ -33,13 +39,100 @@ interface LedMarqueeProps {
 function textToDotMatrix(
     text: string,
     rows: number,
-    font: string
+    font: string,
+    nativePx?: number
 ): boolean[][] {
-    const fontSize = 256;
     const offscreen = document.createElement('canvas');
     const ctx = offscreen.getContext('2d');
     if (!ctx) return [];
 
+    if (nativePx) {
+        // Bitmap font path: render at an integer multiple of native size,
+        // then sample the center of each native pixel to avoid subpixel AA.
+        const scale = 32;
+        const fontSize = nativePx * scale;
+        ctx.font = `${fontSize}px ${font}`;
+        ctx.imageSmoothingEnabled = false;
+        const metrics = ctx.measureText(text);
+        const textWidth = Math.ceil(metrics.width);
+
+        offscreen.width = textWidth + scale * 2;
+        offscreen.height = fontSize + scale * 4;
+
+        ctx.font = `${fontSize}px ${font}`;
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = 'black';
+        ctx.textBaseline = 'top';
+        ctx.fillText(text, scale, scale);
+
+        const imgData = ctx.getImageData(
+            0,
+            0,
+            offscreen.width,
+            offscreen.height
+        );
+
+        // RMS sample each native-pixel-sized cell
+        const nativeW = Math.ceil(offscreen.width / scale);
+        const nativeH = Math.ceil(offscreen.height / scale);
+        const grid: boolean[][] = [];
+        for (let ny = 0; ny < nativeH; ny++) {
+            const row: boolean[] = [];
+            const sy = ny * scale;
+            const eyEnd = Math.min((ny + 1) * scale, offscreen.height);
+            for (let nx = 0; nx < nativeW; nx++) {
+                const sx = nx * scale;
+                const exEnd = Math.min((nx + 1) * scale, offscreen.width);
+                let alphaSquareSum = 0;
+                let count = 0;
+                for (let py = sy; py < eyEnd; py++) {
+                    for (let px = sx; px < exEnd; px++) {
+                        const idx = (py * offscreen.width + px) * 4 + 3;
+                        alphaSquareSum +=
+                            imgData.data[idx] * imgData.data[idx];
+                        count++;
+                    }
+                }
+                const rms =
+                    count > 0 ? Math.sqrt(alphaSquareSum / count) : 0;
+                row.push(rms > 80);
+            }
+            grid.push(row);
+        }
+
+        // Trim empty rows
+        let firstRow = 0;
+        while (
+            firstRow < grid.length &&
+            grid[firstRow].every((v) => !v)
+        ) {
+            firstRow++;
+        }
+        let lastRow = grid.length - 1;
+        while (lastRow > firstRow && grid[lastRow].every((v) => !v)) {
+            lastRow--;
+        }
+
+        const trimmed = grid.slice(firstRow, lastRow + 1);
+        if (trimmed.length === 0) return [];
+
+        // Trim empty cols
+        let firstCol = trimmed[0].length;
+        let lastCol = 0;
+        for (const row of trimmed) {
+            for (let c = 0; c < row.length; c++) {
+                if (row[c]) {
+                    firstCol = Math.min(firstCol, c);
+                    lastCol = Math.max(lastCol, c);
+                }
+            }
+        }
+
+        return trimmed.map((row) => row.slice(firstCol, lastCol + 1));
+    }
+
+    // Vector font path: render large, downsample via RMS
+    const fontSize = 256;
     ctx.font = `bold ${fontSize}px ${font}`;
     const metrics = ctx.measureText(text);
 
@@ -102,6 +195,8 @@ export function LedMarquee({
     speed = 15,
     scroll = true,
     usePixelFont = false,
+    nativePx,
+    dotSize,
 }: LedMarqueeProps): React.ReactNode {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -109,113 +204,130 @@ export function LedMarquee({
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const grid = usePixelFont
-            ? pixelFontToGrid(text)
-            : textToDotMatrix(text, rows, font);
-        if (grid.length === 0) return;
+        let cancelled = false;
+        let animId = 0;
+        let observer: MutationObserver | null = null;
 
-        const actualRows = grid.length;
-        const textCols = grid[0].length;
-        const displayCols = scroll ? visibleCols : textCols;
-        const totalCols = displayCols + textCols;
+        function start() {
+            if (cancelled || !canvas) return;
 
-        const dpr = window.devicePixelRatio || 1;
-        const spaceRatio = 0.15;
-        const dotDiameter = height / (actualRows + spaceRatio * (actualRows - 1));
-        const space = dotDiameter * spaceRatio;
-        const canvasWidth =
-            displayCols * dotDiameter + (displayCols - 1) * space;
-        const canvasHeight =
-            actualRows * dotDiameter + (actualRows - 1) * space;
+            const grid = usePixelFont
+                ? pixelFontToGrid(text)
+                : textToDotMatrix(text, rows, font, nativePx);
+            if (grid.length === 0) return;
 
-        canvas.width = Math.ceil(canvasWidth * dpr);
-        canvas.height = Math.ceil(canvasHeight * dpr);
-        canvas.style.width = `${canvasWidth}px`;
-        canvas.style.height = `${canvasHeight}px`;
+            const actualRows = grid.length;
+            const textCols = grid[0].length;
+            const displayCols = scroll ? visibleCols : textCols;
+            const totalCols = displayCols + textCols;
 
-        function getColors() {
-            const s = getComputedStyle(document.documentElement);
-            return {
-                lit: litColor ?? s.getPropertyValue('--foreground').trim(),
-                unlit: unlitColor ?? s.getPropertyValue('--border').trim(),
-            };
-        }
+            const dpr = window.devicePixelRatio || 1;
+            const spaceRatio = 0.15;
+            const dotDiameter =
+                dotSize ??
+                height / (actualRows + spaceRatio * (actualRows - 1));
+            const space = dotDiameter * spaceRatio;
+            const canvasWidth =
+                displayCols * dotDiameter + (displayCols - 1) * space;
+            const canvasHeight =
+                actualRows * dotDiameter + (actualRows - 1) * space;
 
-        let colorsCache = getColors();
+            canvas.width = Math.ceil(canvasWidth * dpr);
+            canvas.height = Math.ceil(canvasHeight * dpr);
+            canvas.style.width = `${canvasWidth}px`;
+            canvas.style.height = `${canvasHeight}px`;
 
-        function draw(offset: number) {
-            const ctx = canvas!.getContext('2d');
-            if (!ctx) return;
+            function getColors() {
+                const s = getComputedStyle(document.documentElement);
+                return {
+                    lit:
+                        litColor ??
+                        s.getPropertyValue('--foreground').trim(),
+                    unlit:
+                        unlitColor ??
+                        s.getPropertyValue('--border').trim(),
+                };
+            }
 
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            let colorsCache = getColors();
 
-            const radius = dotDiameter / 2;
+            function draw(offset: number) {
+                const ctx = canvas!.getContext('2d');
+                if (!ctx) return;
 
-            for (let r = 0; r < actualRows; r++) {
-                for (let vc = 0; vc < displayCols; vc++) {
-                    const cx = radius + vc * (dotDiameter + space);
-                    const cy = radius + r * (dotDiameter + space);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-                    let isLit: boolean;
-                    if (scroll) {
-                        const srcCol = vc + offset - displayCols;
-                        isLit =
-                            srcCol >= 0 &&
-                            srcCol < textCols &&
-                            grid[r][srcCol];
-                    } else {
-                        isLit = vc < textCols && grid[r][vc];
+                const radius = dotDiameter / 2;
+
+                for (let r = 0; r < actualRows; r++) {
+                    for (let vc = 0; vc < displayCols; vc++) {
+                        const cx = radius + vc * (dotDiameter + space);
+                        const cy = radius + r * (dotDiameter + space);
+
+                        let isLit: boolean;
+                        if (scroll) {
+                            const srcCol = vc + offset - displayCols;
+                            isLit =
+                                srcCol >= 0 &&
+                                srcCol < textCols &&
+                                grid[r][srcCol];
+                        } else {
+                            isLit = vc < textCols && grid[r][vc];
+                        }
+
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
+                        ctx.fillStyle = isLit
+                            ? colorsCache.lit
+                            : colorsCache.unlit;
+                        ctx.fill();
+                    }
+                }
+            }
+
+            if (scroll) {
+                let lastTime = performance.now();
+                let floatOffset = 0;
+
+                function tick(now: number) {
+                    if (cancelled) return;
+                    const dt = (now - lastTime) / 1000;
+                    lastTime = now;
+                    floatOffset += speed * dt;
+
+                    if (floatOffset >= totalCols) {
+                        floatOffset -= totalCols;
                     }
 
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
-                    ctx.fillStyle = isLit
-                        ? colorsCache.lit
-                        : colorsCache.unlit;
-                    ctx.fill();
-                }
-            }
-        }
-
-        let animId = 0;
-
-        if (scroll) {
-            let lastTime = performance.now();
-            let floatOffset = 0;
-
-            function tick(now: number) {
-                const dt = (now - lastTime) / 1000;
-                lastTime = now;
-                floatOffset += speed * dt;
-
-                if (floatOffset >= totalCols) {
-                    floatOffset -= totalCols;
+                    draw(Math.floor(floatOffset));
+                    animId = requestAnimationFrame(tick);
                 }
 
-                draw(Math.floor(floatOffset));
                 animId = requestAnimationFrame(tick);
+            } else {
+                draw(0);
             }
 
-            animId = requestAnimationFrame(tick);
-        } else {
-            draw(0);
+            observer = new MutationObserver(() => {
+                colorsCache = getColors();
+                if (!scroll) draw(0);
+            });
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class'],
+            });
         }
 
-        const observer = new MutationObserver(() => {
-            colorsCache = getColors();
-            if (!scroll) draw(0);
-        });
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['class'],
-        });
+        // Wait for fonts to load before sampling
+        document.fonts.ready.then(start);
 
         return () => {
+            cancelled = true;
             cancelAnimationFrame(animId);
-            observer.disconnect();
+            observer?.disconnect();
         };
-    }, [text, rows, visibleCols, font, height, litColor, unlitColor, speed, scroll, usePixelFont]);
+    }, [text, rows, visibleCols, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize]);
 
     return <canvas ref={canvasRef} />;
 }

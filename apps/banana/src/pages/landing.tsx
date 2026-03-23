@@ -1,40 +1,50 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { LedMarquee } from '@/components/led-marquee';
-
-const groups = [
-    {
-        label: 'Build',
-        items: [
-            'Bézier Track Drawing',
-            'Terrain & Heightmaps',
-            'Stations & Buildings',
-        ],
-    },
-    {
-        label: 'Simulate',
-        items: ['Train Simulation', 'Smooth Navigation', 'Import & Export'],
-    },
-];
+import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
 
 export function LandingPage(): React.ReactNode {
+    const { t, i18n } = useTranslation();
     const [reduceMotion, setReduceMotion] = useState(false);
+    const isCJK =
+        i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
+
+    const groups = [
+        {
+            label: t('build'),
+            items: [
+                t('featureTrackDrawing'),
+                t('featureTerrain'),
+                t('featureStations'),
+            ],
+        },
+        {
+            label: t('simulate'),
+            items: [
+                t('featureTrainSim'),
+                t('featureFormations'),
+                t('featureImportExport'),
+            ],
+        },
+    ];
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            {/* Reduce motion toggle */}
-            <div className="fixed top-4 right-4 z-10">
+        <div className="bg-background text-foreground min-h-screen">
+            {/* Controls */}
+            <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
+                <LanguageSwitcher />
                 <button
-                    onClick={() => setReduceMotion((v) => !v)}
-                    className="rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => setReduceMotion(v => !v)}
+                    className="border-border text-muted-foreground hover:text-foreground rounded-md border px-2 py-1 text-xs transition-colors"
                     title={
                         reduceMotion
-                            ? 'Enable animations'
-                            : 'Reduce animations'
+                            ? t('enableAnimations')
+                            : t('reduceAnimations')
                     }
                 >
-                    {reduceMotion ? 'Motion: off' : 'Motion: on'}
+                    {reduceMotion ? t('motionOff') : t('motionOn')}
                 </button>
             </div>
 
@@ -48,19 +58,20 @@ export function LandingPage(): React.ReactNode {
                     speed={12}
                     scroll={!reduceMotion}
                 />
-                <p className="mt-8 text-center text-lg text-muted-foreground">
-                    A 2D top-down railway simulator built with React and PixiJS.
+                <p className="text-muted-foreground mt-8 text-center text-lg">
+                    {t('landingTagline1')}
                 </p>
-                <p className="mt-2 text-center text-lg text-muted-foreground">
-                    Draw tracks, sculpt terrain, and run trains.
+                <p className="text-muted-foreground mt-2 text-center text-lg">
+                    {t('landingTagline2')}
                 </p>
                 <Link
                     to="/app"
                     className="mt-8 transition-opacity hover:opacity-75"
                 >
                     <LedMarquee
-                        text="Open Simulator →"
-                        height={24}
+                        text={t('openSimulator') + ' →'}
+                        height={isCJK ? 36 : 24}
+                        dotSize={isCJK ? 3 : undefined}
                         scroll={false}
                         usePixelFont
                     />
@@ -69,16 +80,16 @@ export function LandingPage(): React.ReactNode {
 
             {/* Features */}
             <section className="flex flex-col items-center gap-10 px-6 py-8">
-                {groups.map((group) => (
+                {groups.map(group => (
                     <div key={group.label} className="text-center">
-                        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        <h3 className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
                             {group.label}
                         </h3>
                         <ul className="mt-4 space-y-2">
-                            {group.items.map((item) => (
+                            {group.items.map(item => (
                                 <li
                                     key={item}
-                                    className="text-sm text-foreground"
+                                    className="text-foreground text-sm"
                                 >
                                     {item}
                                 </li>
@@ -89,26 +100,29 @@ export function LandingPage(): React.ReactNode {
             </section>
 
             {/* Footer */}
-            <footer className="px-6 pt-16 pb-8 text-center text-xs text-muted-foreground">
+            <footer className="text-muted-foreground px-6 pt-16 pb-8 text-center text-xs">
                 <p>
-                    Built with{' '}
-                    <a
-                        href="https://github.com/ue-too/ue-too"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2 hover:text-foreground"
-                    >
-                        ue-too
-                    </a>
-                    {' · '}
-                    <a
-                        href="https://github.com/ue-too/ue-too/issues"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline underline-offset-2 hover:text-foreground"
-                    >
-                        Feedback
-                    </a>
+                    <Trans
+                        i18nKey="builtWithFooter"
+                        components={{
+                            ueToo: (
+                                <a
+                                    href="https://github.com/ue-too/ue-too"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-foreground underline underline-offset-2"
+                                />
+                            ),
+                            issues: (
+                                <a
+                                    href="https://github.com/ue-too/ue-too/issues"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-foreground underline underline-offset-2"
+                                />
+                            ),
+                        }}
+                    />
                 </p>
             </footer>
         </div>

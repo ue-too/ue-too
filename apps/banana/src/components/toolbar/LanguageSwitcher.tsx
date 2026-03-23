@@ -1,5 +1,12 @@
 import { useTranslation } from 'react-i18next';
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 const LANGUAGES = [
     { code: 'en', label: 'EN' },
     { code: 'zh-TW', label: '中' },
@@ -9,23 +16,41 @@ export function LanguageSwitcher() {
     const { i18n } = useTranslation();
 
     return (
-        <div className="pointer-events-auto absolute top-3 right-3">
-            <div className="bg-background/60 flex gap-0.5 rounded-lg p-0.5 backdrop-blur-sm">
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button className="border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors">
+                    {LANGUAGES.find(l => l.code === i18n.language)?.label ??
+                        'EN'}
+                    <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 10 10"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M2.5 4L5 6.5L7.5 4"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
                 {LANGUAGES.map(({ code, label }) => (
-                    <button
+                    <DropdownMenuItem
                         key={code}
-                        type="button"
                         onClick={() => i18n.changeLanguage(code)}
-                        className={`rounded px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                            i18n.language === code
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                        className={
+                            i18n.language === code ? 'font-semibold' : ''
+                        }
                     >
                         {label}
-                    </button>
+                    </DropdownMenuItem>
                 ))}
-            </div>
-        </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

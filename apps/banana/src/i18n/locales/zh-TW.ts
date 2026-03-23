@@ -27,18 +27,18 @@ const zhTW = {
         closeStationList: '關閉車站清單',
 
         // Toolbar - Visualization
-        showElevationGradient: '顯示高程漸層',
-        hideElevationGradient: '隱藏高程漸層',
+        showElevationGradient: '顯示高度漸層',
+        hideElevationGradient: '隱藏高度漸層',
         showPreviewCurveArcs: '顯示預覽曲線弧',
         hidePreviewCurveArcs: '隱藏預覽曲線弧',
         showMap: '顯示地圖',
         hideMap: '隱藏地圖',
-        openDebug: '開啟除錯',
-        closeDebug: '關閉除錯',
+        openDebug: '開啟除錯選項',
+        closeDebug: '關閉除錯選項',
         sunAngle: '日照角度',
         terrainFill: '地形',
         terrainOpacity: '地形透明度',
-        whiteOcclusion: '白色遮擋',
+        whiteOcclusion: '白色遮罩',
         elevation: '高度',
 
         // Export/Import
@@ -157,6 +157,26 @@ const zhTW = {
         nestedFormation: '巢狀編組',
         composition: '組成',
         addFromStock: '從車庫加入',
+
+        // Landing Page
+        landingTagline1: '直接在瀏覽器裡面就能使用的 2D 俯視鐵道模擬器。',
+        landingTagline2: '軌道、車站、列車、自由組合',
+        openSimulator: '開啟模擬器',
+        build: '建造',
+        simulate: '模擬',
+        featureTrackDrawing: '高自由度的佈軌系統',
+        featureTerrain: '平面但不扁平，分層的高度系統，想要地下鐵？沒問題！',
+        featureStations: '車站與建築（施工中）',
+        featureTrainSim: '列車運行模擬，想要親自駕駛列車也 Ok!',
+        featureFormations: '靈活的列車編組',
+        featureNavigation: '平滑導覽',
+        featureImportExport: '匯入與匯出，雲端與瀏覽器端自動儲存開發中',
+        builtWithFooter:
+            '基於 <ueToo>ue-too</ueToo> 打造 · <issues>回饋</issues>',
+        motionOn: '動態效果：開',
+        motionOff: '動態效果：關',
+        enableAnimations: '啟用動畫',
+        reduceAnimations: '減少動畫',
     },
 } as const;
 
