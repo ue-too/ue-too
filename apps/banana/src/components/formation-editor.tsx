@@ -9,7 +9,7 @@ import type { CarStockManager } from '@/trains/car-stock-manager';
 import type { FormationManager } from '@/trains/formation-manager';
 import type { TrainManager } from '@/trains/train-manager';
 import type { Formation } from '@/trains/formation';
-import type { TrainUnit } from '@/trains/cars';
+import type { Car, TrainUnit } from '@/trains/cars';
 
 type FormationEditorProps = {
     formationManager: FormationManager;
@@ -519,7 +519,7 @@ function FormationCard({
                                                 {index + 1}
                                             </span>
                                             <span className="text-foreground text-[11px] font-mono">
-                                                {child.id}
+                                                {isNested ? child.id : (child as Car).name}
                                             </span>
                                             {isNested && (
                                                 <span
@@ -578,7 +578,7 @@ function FormationCard({
                                                     className="flex items-center gap-1.5 px-1 py-0.5"
                                                 >
                                                     <span className="text-muted-foreground text-[10px] font-mono">
-                                                        {subCar.id}
+                                                        {subCar.name}
                                                     </span>
                                                 </div>
                                             ))}
@@ -625,7 +625,7 @@ function FormationCard({
                                         }
                                     >
                                         <span className="text-foreground text-[11px] font-mono">
-                                            {entry.id}
+                                            {entry.car.name}
                                         </span>
                                         {selectedStockCarId === entry.id && (
                                             <div className="flex gap-0.5">
@@ -687,7 +687,7 @@ function FormationCard({
                                     >
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-foreground text-[11px] font-mono">
-                                                {entry.id}
+                                                {entry.formation.name}
                                             </span>
                                             <span className="text-muted-foreground text-[9px]">
                                                 ({t('car', { count: entry.formation.flatCars().length })})

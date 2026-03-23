@@ -40,7 +40,7 @@ export function FormationSelector({
                     <option value="">{t('defaultFormation')}</option>
                     {formationManager.getFormations().map(entry => (
                         <option key={entry.id} value={entry.id}>
-                            {entry.id} (
+                            {entry.formation.name} (
                             {t('car', { count: entry.formation.flatCars().length })}
                             )
                         </option>
