@@ -161,6 +161,13 @@ export class Formation implements TrainUnit {
         this._invalidateCache();
     }
 
+    /** Reverse the order of direct children in both operational and original lists. */
+    reverseChildren(): void {
+        this._children.reverse();
+        this._originalChildren.reverse();
+        this._invalidateCache();
+    }
+
     /** Couple a unit to the tail of this formation. */
     append(unit: TrainUnit): void {
         this._validateDepth(unit);

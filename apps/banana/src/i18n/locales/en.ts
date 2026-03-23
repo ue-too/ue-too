@@ -160,6 +160,7 @@ const en = {
         composition: 'Composition',
         consolidate: 'Consolidate',
         consolidateTooltip: 'Flatten nested formations into individual cars',
+        reverseTooltip: 'Reverse the order of children',
         renameFormation: 'Click to rename',
         addFromStock: 'Add from stock',
         addFormation: 'Add formation',

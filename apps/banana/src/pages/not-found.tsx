@@ -12,7 +12,7 @@ export function NotFoundPage(): React.ReactNode {
         i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
 
     return (
-        <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-8 px-6">
+        <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center gap-6 px-4 sm:gap-8 sm:px-6">
             {/* Controls */}
             <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
                 <LanguageSwitcher />
@@ -38,10 +38,10 @@ export function NotFoundPage(): React.ReactNode {
                 scroll={!reduceMotion}
                 scrollDirection="vertical"
             />
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-center text-base sm:text-lg">
                 {t('notFoundMessage')}
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
                 <Link
                     to="/"
                     className="transition-opacity hover:opacity-75"

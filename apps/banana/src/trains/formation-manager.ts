@@ -204,6 +204,19 @@ export class FormationManager {
     }
 
     /**
+     * Reverse the children order of a formation (switch direction).
+     */
+    reverseChildren(formationId: string): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        formation.reverseChildren();
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
      * Swap two adjacent children in a formation (index with index + 1).
      */
     swapChildren(formationId: string, index: number): void {

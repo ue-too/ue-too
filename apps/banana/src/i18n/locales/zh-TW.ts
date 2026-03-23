@@ -158,6 +158,7 @@ const zhTW = {
         composition: '組成',
         consolidate: '合併',
         consolidateTooltip: '將巢狀編組扁平展開為個別車輛',
+        reverseTooltip: '反轉子車輛順序',
         renameFormation: '點擊以重新命名',
         addFromStock: '從車庫加入',
         addFormation: '加入編組',

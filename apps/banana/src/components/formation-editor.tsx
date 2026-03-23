@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Layers, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -144,6 +144,13 @@ export function FormationEditor({
         [formationManager]
     );
 
+    const handleReverseChildren = useCallback(
+        (formationId: string) => {
+            formationManager.reverseChildren(formationId);
+        },
+        [formationManager]
+    );
+
     const handleRenameFormation = useCallback(
         (formationId: string, name: string) => {
             formationManager.renameFormation(formationId, name);
@@ -274,6 +281,7 @@ export function FormationEditor({
                                     handleRenameFormation(id, name)
                                 }
                                 onConsolidate={() => handleConsolidate(id)}
+                                onReverseChildren={() => handleReverseChildren(id)}
                                 onSwapChildren={index =>
                                     handleSwapChildren(id, index)
                                 }
@@ -315,6 +323,8 @@ type FormationCardProps = {
     onRename?: (name: string) => void;
     /** Called to flatten all nested formations into direct cars. */
     onConsolidate?: () => void;
+    /** Called to reverse the order of children. */
+    onReverseChildren?: () => void;
     /** Swap child at index with child at index+1. */
     onSwapChildren?: (index: number) => void;
     /** Other depot formations available to nest into this one. */
@@ -341,6 +351,7 @@ function FormationCard({
     onDecouple,
     onRename,
     onConsolidate,
+    onReverseChildren,
     onSwapChildren,
     otherFormations,
     onAppendFormation,
@@ -465,16 +476,28 @@ function FormationCard({
                         <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
                             {t('composition')}
                         </span>
-                        {!readOnly && hasNestedFormations && onConsolidate && (
-                            <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={onConsolidate}
-                                title={t('consolidateTooltip')}
-                            >
-                                <Merge className="size-3" />
-                            </Button>
-                        )}
+                        <div className="flex items-center gap-0.5">
+                            {!readOnly && onReverseChildren && children.length > 1 && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={onReverseChildren}
+                                    title={t('reverseTooltip')}
+                                >
+                                    <ArrowLeftRight className="size-3" />
+                                </Button>
+                            )}
+                            {!readOnly && hasNestedFormations && onConsolidate && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={onConsolidate}
+                                    title={t('consolidateTooltip')}
+                                >
+                                    <Merge className="size-3" />
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     <div className="flex flex-col gap-0.5">
                         {children.map((child, index) => {

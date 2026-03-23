@@ -374,5 +374,5 @@ export function LedMarquee({
         };
     }, [text, rows, visibleCols, visibleRows, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize, pulse, scrollDirection]);
 
-    return <canvas ref={canvasRef} />;
+    return <canvas ref={canvasRef} className="max-w-full h-auto" />;
 }
