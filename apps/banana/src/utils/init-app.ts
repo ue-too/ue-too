@@ -495,11 +495,9 @@ export const initApp = async (
   debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
   debugOverlayRenderSystem.setStationManager(stationManager);
 
-  // When a train is removed from the track, return its cars to stock
+  // When a train is removed from the track, return its formation to the depot
   trainManager.setOnBeforeRemove((train) => {
-    for (const car of train.formation.flatCars()) {
-      carStockManager.addCar(car);
-    }
+    formationManager.addFormation(train.formation);
   });
 
   const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, baseComponents.observableInputTracker);

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Layers, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -130,6 +130,48 @@ export function FormationEditor({
         [formationManager]
     );
 
+    const handleConsolidate = useCallback(
+        (formationId: string) => {
+            formationManager.consolidateFormation(formationId);
+        },
+        [formationManager]
+    );
+
+    const handleSwapChildren = useCallback(
+        (formationId: string, index: number) => {
+            formationManager.swapChildren(formationId, index);
+        },
+        [formationManager]
+    );
+
+    const handleReverseChildren = useCallback(
+        (formationId: string) => {
+            formationManager.reverseChildren(formationId);
+        },
+        [formationManager]
+    );
+
+    const handleRenameFormation = useCallback(
+        (formationId: string, name: string) => {
+            formationManager.renameFormation(formationId, name);
+        },
+        [formationManager]
+    );
+
+    const handleAppendFormation = useCallback(
+        (targetId: string, sourceId: string) => {
+            formationManager.appendFormation(targetId, sourceId);
+        },
+        [formationManager]
+    );
+
+    const handlePrependFormation = useCallback(
+        (targetId: string, sourceId: string) => {
+            formationManager.prependFormation(targetId, sourceId);
+        },
+        [formationManager]
+    );
+
     return (
         <DraggablePanel
             title={t('formations')}
@@ -235,6 +277,23 @@ export function FormationEditor({
                                 onRemoveChild={childIndex =>
                                     handleRemoveChild(id, childIndex)
                                 }
+                                onRename={name =>
+                                    handleRenameFormation(id, name)
+                                }
+                                onConsolidate={() => handleConsolidate(id)}
+                                onReverseChildren={() => handleReverseChildren(id)}
+                                onSwapChildren={index =>
+                                    handleSwapChildren(id, index)
+                                }
+                                otherFormations={unplacedFormations
+                                    .filter(f => f.id !== id)
+                                    .map(f => ({ id: f.id, formation: f.formation }))}
+                                onAppendFormation={sourceId =>
+                                    handleAppendFormation(id, sourceId)
+                                }
+                                onPrependFormation={sourceId =>
+                                    handlePrependFormation(id, sourceId)
+                                }
                             />
                         ))
                     )}
@@ -260,6 +319,20 @@ type FormationCardProps = {
     onRemoveChild: (childIndex: number) => void;
     /** When set, decouple buttons appear between children. Args: (headCarIndex, tailCarIndex). */
     onDecouple?: (headCarIndex: number, tailCarIndex: number) => void;
+    /** Called to rename the formation. */
+    onRename?: (name: string) => void;
+    /** Called to flatten all nested formations into direct cars. */
+    onConsolidate?: () => void;
+    /** Called to reverse the order of children. */
+    onReverseChildren?: () => void;
+    /** Swap child at index with child at index+1. */
+    onSwapChildren?: (index: number) => void;
+    /** Other depot formations available to nest into this one. */
+    otherFormations?: readonly { id: string; formation: Formation }[];
+    /** Append another formation as a nested child. */
+    onAppendFormation?: (sourceId: string) => void;
+    /** Prepend another formation as a nested child. */
+    onPrependFormation?: (sourceId: string) => void;
 };
 
 function FormationCard({
@@ -276,12 +349,39 @@ function FormationCard({
     onPrependCar,
     onRemoveChild,
     onDecouple,
+    onRename,
+    onConsolidate,
+    onReverseChildren,
+    onSwapChildren,
+    otherFormations,
+    onAppendFormation,
+    onPrependFormation,
 }: FormationCardProps) {
     const { t } = useTranslation();
+    const [selectedFormationId, setSelectedFormationId] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editValue, setEditValue] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
     const cars = formation.flatCars();
     // Use operational order when decouple is available so indices match flatCars()
     const children = onDecouple ? formation.children : formation.originalChildren;
     const hasNestedFormations = children.some(isNestedFormation);
+
+    const startEditing = useCallback(() => {
+        if (readOnly || !onRename) return;
+        setEditValue(formation.name);
+        setIsEditing(true);
+        // Focus after render
+        setTimeout(() => inputRef.current?.focus(), 0);
+    }, [readOnly, onRename, formation.name]);
+
+    const commitRename = useCallback(() => {
+        const trimmed = editValue.trim();
+        if (trimmed && trimmed !== formation.name && onRename) {
+            onRename(trimmed);
+        }
+        setIsEditing(false);
+    }, [editValue, formation.name, onRename]);
 
     return (
         <div className="bg-muted/50 rounded-lg border">
@@ -290,44 +390,80 @@ function FormationCard({
                 className="flex cursor-pointer items-center justify-between px-2.5 py-1.5"
                 onClick={onSelect}
             >
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                     {isSelected ? (
-                        <ChevronUp className="text-muted-foreground size-3" />
+                        <ChevronUp className="text-muted-foreground size-3 shrink-0" />
                     ) : (
-                        <ChevronDown className="text-muted-foreground size-3" />
+                        <ChevronDown className="text-muted-foreground size-3 shrink-0" />
                     )}
                     {trainLabel !== undefined && (
-                        <span className="text-muted-foreground text-[10px]">
+                        <span className="text-muted-foreground text-[10px] shrink-0">
                             {t('trainLabel', { number: trainLabel })}
                         </span>
                     )}
-                    <span className="text-foreground text-xs font-mono">
-                        {formation.id}
-                    </span>
-                    <span className="text-muted-foreground text-[10px]">
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            className="text-foreground text-xs font-mono bg-background border border-primary/40 rounded px-1 py-0 w-24 outline-none"
+                            value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={commitRename}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') commitRename();
+                                if (e.key === 'Escape') setIsEditing(false);
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        />
+                    ) : (
+                        <span
+                            className="text-foreground text-xs font-mono truncate"
+                            title={onRename ? t('renameFormation') : formation.name}
+                            onDoubleClick={e => {
+                                e.stopPropagation();
+                                startEditing();
+                            }}
+                        >
+                            {formation.name}
+                        </span>
+                    )}
+                    <span className="text-muted-foreground text-[10px] shrink-0">
                         ({t('car', { count: cars.length })})
                     </span>
                     {hasNestedFormations && (
                         <span
-                            className="text-muted-foreground rounded bg-muted px-1 text-[9px]"
+                            className="text-muted-foreground rounded bg-muted px-1 text-[9px] shrink-0"
                             title={t('containsNestedFormations')}
                         >
                             {t('nested')}
                         </span>
                     )}
                 </div>
-                {!readOnly && (
-                    <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={e => {
-                            e.stopPropagation();
-                            onDelete();
-                        }}
-                    >
-                        <Trash2 className="size-3" />
-                    </Button>
-                )}
+                <div className="flex items-center gap-0.5 shrink-0">
+                    {!readOnly && onRename && (
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={e => {
+                                e.stopPropagation();
+                                startEditing();
+                            }}
+                        >
+                            <Pencil className="size-2.5" />
+                        </Button>
+                    )}
+                    {!readOnly && (
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={e => {
+                                e.stopPropagation();
+                                onDelete();
+                            }}
+                        >
+                            <Trash2 className="size-3" />
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Expanded detail */}
@@ -335,10 +471,34 @@ function FormationCard({
                 <div className="flex flex-col gap-1.5 px-2.5 pb-2.5">
                     <Separator />
 
-                    {/* Car composition list */}
-                    <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
-                        {t('composition')}
-                    </span>
+                    {/* Composition header with consolidate button */}
+                    <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+                            {t('composition')}
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                            {!readOnly && onReverseChildren && children.length > 1 && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={onReverseChildren}
+                                    title={t('reverseTooltip')}
+                                >
+                                    <ArrowLeftRight className="size-3" />
+                                </Button>
+                            )}
+                            {!readOnly && hasNestedFormations && onConsolidate && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={onConsolidate}
+                                    title={t('consolidateTooltip')}
+                                >
+                                    <Merge className="size-3" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                     <div className="flex flex-col gap-0.5">
                         {children.map((child, index) => {
                             const isNested = isNestedFormation(child);
@@ -371,18 +531,59 @@ function FormationCard({
                                             )}
                                         </div>
                                         {!readOnly && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-xs"
-                                                disabled={children.length <= 1}
-                                                onClick={() =>
-                                                    onRemoveChild(index)
-                                                }
-                                            >
-                                                <Trash2 className="size-2.5" />
-                                            </Button>
+                                            <div className="flex items-center gap-0.5">
+                                                {onSwapChildren && (
+                                                    <>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-xs"
+                                                            disabled={index === 0}
+                                                            onClick={() =>
+                                                                onSwapChildren(index - 1)
+                                                            }
+                                                        >
+                                                            <ArrowUp className="size-2.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-xs"
+                                                            disabled={index >= children.length - 1}
+                                                            onClick={() =>
+                                                                onSwapChildren(index)
+                                                            }
+                                                        >
+                                                            <ArrowDown className="size-2.5" />
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-xs"
+                                                    disabled={children.length <= 1}
+                                                    onClick={() =>
+                                                        onRemoveChild(index)
+                                                    }
+                                                >
+                                                    <Trash2 className="size-2.5" />
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
+                                    {/* Show nested formation's sub-children */}
+                                    {isNested && (
+                                        <div className="border-l border-border ml-5 pl-2 my-0.5">
+                                            {child.flatCars().map(subCar => (
+                                                <div
+                                                    key={subCar.id}
+                                                    className="flex items-center gap-1.5 px-1 py-0.5"
+                                                >
+                                                    <span className="text-muted-foreground text-[10px] font-mono">
+                                                        {subCar.id}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                     {onDecouple && index < children.length - 1 && (
                                         <button
                                             className="group flex w-full items-center gap-1 py-0.5 px-2"
@@ -448,6 +649,70 @@ function FormationCard({
                                                         onAppendCar(
                                                             entry.id
                                                         );
+                                                    }}
+                                                >
+                                                    <ChevronDown className="size-2.5" />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Add formation from depot */}
+                    {!readOnly && otherFormations && otherFormations.length > 0 && onAppendFormation && onPrependFormation && (
+                        <>
+                            <Separator />
+                            <span className="text-muted-foreground text-[10px] font-medium uppercase tracking-wider">
+                                {t('addFormation')}
+                            </span>
+                            <div className="flex flex-col gap-0.5">
+                                {otherFormations.map(entry => (
+                                    <div
+                                        key={entry.id}
+                                        className={`flex items-center justify-between rounded px-2 py-1 cursor-pointer transition-colors ${
+                                            selectedFormationId === entry.id
+                                                ? 'bg-primary/20 border border-primary/40'
+                                                : 'bg-background/60 hover:bg-background/80'
+                                        }`}
+                                        onClick={() =>
+                                            setSelectedFormationId(
+                                                selectedFormationId === entry.id
+                                                    ? null
+                                                    : entry.id
+                                            )
+                                        }
+                                    >
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-foreground text-[11px] font-mono">
+                                                {entry.id}
+                                            </span>
+                                            <span className="text-muted-foreground text-[9px]">
+                                                ({t('car', { count: entry.formation.flatCars().length })})
+                                            </span>
+                                        </div>
+                                        {selectedFormationId === entry.id && (
+                                            <div className="flex gap-0.5">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon-xs"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        onPrependFormation(entry.id);
+                                                        setSelectedFormationId(null);
+                                                    }}
+                                                >
+                                                    <ChevronUp className="size-2.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon-xs"
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        onAppendFormation(entry.id);
+                                                        setSelectedFormationId(null);
                                                     }}
                                                 >
                                                     <ChevronDown className="size-2.5" />

@@ -25,6 +25,8 @@ export type SerializedFormationChild =
 /** JSON-safe formation tree for serialization. */
 export type SerializedFormation = {
   id: string;
+  /** Display name. Omitted when equal to id for backwards compatibility. */
+  name?: string;
   children: SerializedFormationChild[];
   flipped: boolean;
 };
@@ -73,6 +75,7 @@ function serializeFormation(formation: Formation): SerializedFormation {
   });
   return {
     id: formation.id,
+    ...(formation.name !== formation.id ? { name: formation.name } : {}),
     children,
     flipped: formation.flipped,
   };
@@ -177,6 +180,9 @@ function deserializeFormation(
   });
   const depth = 1 + Math.max(0, ...children.map((c) => c.depth));
   const formation = new Formation(data.id, children, depth);
+  if (data.name !== undefined) {
+    formation.name = data.name;
+  }
   if (data.flipped) {
     formation.switchDirection();
   }

@@ -14,6 +14,7 @@
 
 <p align="center">
   <a href="#overview">Overview</a> •
+  <a href="https://ue-too.github.io/documentation/">Documentation</a> •
   <a href="#packages">Packages</a> •
   <a href="#examples">Examples</a> •
   <a href="#development">Development</a>
@@ -23,14 +24,14 @@
 
 ue-too is organized into modular packages:
 
-- [**`@ue-too/being`**](./packages/being/README.md) - Finite state machine <a href="https://www.npmjs.com/package/@ue-too/being"><img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="package being's npm version" style="vertical-align: middle"></a>
-- [**`@ue-too/board`**](./packages/board/README.md) - Canvas viewport management with pan, zoom, and rotate functionality <a href="https://www.npmjs.com/package/@ue-too/board"><img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="package board's npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/being`**](./packages/being/README.md) - Finite state machine <a href="https://www.npmjs.com/package/@ue-too/being"><img src="https://img.shields.io/npm/v/@ue-too/being.svg" alt="package being's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/being/)
+- [**`@ue-too/board`**](./packages/board/README.md) - Canvas viewport management with pan, zoom, and rotate functionality <a href="https://www.npmjs.com/package/@ue-too/board"><img src="https://img.shields.io/npm/v/@ue-too/board.svg" alt="package board's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/board/)
 - [**`@ue-too/math`**](./packages/math/README.md) - Mathematical utilities for 2D point operations, transformations, and calculations <a href="https://www.npmjs.com/package/@ue-too/math"><img src="https://img.shields.io/npm/v/@ue-too/math.svg" alt="package math's npm version" style="vertical-align: middle"></a>
-- [**`@ue-too/animate`**](./packages/animate/README.md) - Animation system for smooth transitions and keyframe animations <a href="https://www.npmjs.com/package/@ue-too/animate"><img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="package animate's npm version" style="vertical-align: middle"></a>
-- [**`@ue-too/dynamics`**](./packages/dynamics/README.md) - 2D physics engine with collision detection, rigid bodies, and constraints <a href="https://www.npmjs.com/package/@ue-too/dynamics"><img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="package dynamics's npm version" style="vertical-align: middle"></a>
-- [**`@ue-too/curve`**](./packages/curve/README.md) - Curve and path tools including Bézier curves, lines, and composite paths <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="package curve's npm version" style="vertical-align: middle">
-- [**`@ue-too/border`**](./packages/border/README.md) - Geographic projection utilities (great circle, rhumb line, map projections) <a href="https://www.npmjs.com/package/@ue-too/border"><img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="package border's npm version" style="vertical-align: middle"></a>
-- [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="package ecs's npm version" style="vertical-align: middle"></a>
+- [**`@ue-too/animate`**](./packages/animate/README.md) - Animation system for smooth transitions and keyframe animations <a href="https://www.npmjs.com/package/@ue-too/animate"><img src="https://img.shields.io/npm/v/@ue-too/animate.svg" alt="package animate's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/animate/)
+- [**`@ue-too/dynamics`**](./packages/dynamics/README.md) - 2D physics engine with collision detection, rigid bodies, and constraints <a href="https://www.npmjs.com/package/@ue-too/dynamics"><img src="https://img.shields.io/npm/v/@ue-too/dynamics.svg" alt="package dynamics's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/dynamics/)
+- [**`@ue-too/curve`**](./packages/curve/README.md) - Curve and path tools including Bézier curves, lines, and composite paths <img src="https://img.shields.io/npm/v/@ue-too/curve.svg" alt="package curve's npm version" style="vertical-align: middle"> [Documentation](https://ue-too.github.io/documentation/curve/)
+- [**`@ue-too/border`**](./packages/border/README.md) - Geographic projection utilities (great circle, rhumb line, map projections) <a href="https://www.npmjs.com/package/@ue-too/border"><img src="https://img.shields.io/npm/v/@ue-too/border.svg" alt="package border's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/border/)
+- [**`@ue-too/ecs`**](./packages/ecs/README.md) - Entity Component System architecture support <a href="https://www.npmjs.com/package/@ue-too/ecs"><img src="https://img.shields.io/npm/v/@ue-too/ecs.svg" alt="package ecs's npm version" style="vertical-align: middle"></a> [Documentation](https://ue-too.github.io/documentation/ecs/)
 
 ## Install Individual Packages
 
@@ -113,24 +114,27 @@ Refer to the read me of each libary and application for more detail.
 
 ```
 ue-too/
-├── packages/           # Individual packages
-│   ├── board/         # Canvas viewport management
-│   ├── board-react/   # React integration for the board package
-│   ├── board-vue/     # Vue integration for the board package
-│   ├── math/          # Mathematical utilities
-│   ├── animate/       # Animation system
-│   ├── dynamics/      # Physics engine
-│   ├── curve/         # Curve and path tools
-│   ├── border/        # Geographic projections
-│   ├── being/         # Entity interfaces
-│   └── ecs/           # ECS architecture
-├── apps/              # Example applications
-│   ├── examples/      # Interactive examples
-│   ├── board-react/   # React integration for the board package
-│   ├── board-vue/     # Vue integration for the board package
-│   ├── banana/        # A simulation of a railway system using bezier curves.
-│   └── blast/         # A tabletop game prototype maker.
-└── scripts/           # Build and deployment scripts
+├── packages/                         # Individual packages
+│   ├── board/                        # Canvas viewport management
+│   ├── board-react-adapter/          # React integration for the board package
+│   ├── board-vue-adapter/            # Vue integration for the board package
+│   ├── board-pixi-integration/       # PixiJS integration for the board package
+│   ├── board-pixi-react-integration/ # PixiJS integration for the board package with React
+│   ├── board-konva-integration/      # Konva integration for the board package
+│   ├── board-fabric-integration/     # Fabric integration for the board package
+│   ├── math/                         # Mathematical utilities
+│   ├── animate/                      # Animation system
+│   ├── dynamics/                     # Physics engine
+│   ├── curve/                        # Curve and path tools
+│   ├── border/                       # Geographic projections
+│   ├── being/                        # Finite state machine
+│   └── ecs/                          # Entity Component System
+├── apps/                             # Example applications
+│   ├── examples/                     # Interactive examples
+│   ├── banana/                       # A simulation of a railway system using bezier curves. (WIP)
+│   ├── blast/                        # A tabletop game prototype maker. (WIP)
+│   └── knit/                         # A knitting pattern editor. (WIP)
+└── scripts/                          # Build and deployment scripts
 ```
 
 ## License

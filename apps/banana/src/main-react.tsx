@@ -1,7 +1,7 @@
 import { ThemeProvider } from 'next-themes';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
@@ -11,6 +11,7 @@ import { MapOverlayPage } from '@/pages/map-overlay';
 import { BananaAppComponents } from '@/utils/init-app';
 
 import App from './App';
+import { NotFoundPage } from './pages/not-found';
 import { TerrainEditorPage } from './pages/terrain-editor';
 import { TrainEditor } from './pages/train-editor';
 
@@ -45,6 +46,8 @@ root.render(
                         path="/terrain-editor"
                         element={<TerrainEditorPage />}
                     />
+                    <Route path="/404" element={<NotFoundPage />} />
+                    <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>
             </BrowserRouter>
         </ThemeProvider>

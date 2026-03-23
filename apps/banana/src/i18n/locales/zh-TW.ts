@@ -156,7 +156,12 @@ const zhTW = {
         containsNestedFormations: '包含巢狀編組',
         nestedFormation: '巢狀編組',
         composition: '組成',
+        consolidate: '合併',
+        consolidateTooltip: '將巢狀編組扁平展開為個別車輛',
+        reverseTooltip: '反轉子車輛順序',
+        renameFormation: '點擊以重新命名',
         addFromStock: '從車庫加入',
+        addFormation: '加入編組',
 
         // Landing Page
         nextStop: '下一站',
@@ -178,6 +183,10 @@ const zhTW = {
         motionOff: '動態效果：關',
         enableAnimations: '啟用動畫',
         reduceAnimations: '減少動畫',
+
+        // 404 Page
+        notFoundMessage: '這條軌道不通往任何地方。',
+        backToHome: '首頁',
     },
 } as const;
 

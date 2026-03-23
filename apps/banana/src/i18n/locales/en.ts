@@ -158,7 +158,12 @@ const en = {
         containsNestedFormations: 'Contains nested formations',
         nestedFormation: 'Nested formation',
         composition: 'Composition',
+        consolidate: 'Consolidate',
+        consolidateTooltip: 'Flatten nested formations into individual cars',
+        reverseTooltip: 'Reverse the order of children',
+        renameFormation: 'Click to rename',
         addFromStock: 'Add from stock',
+        addFormation: 'Add formation',
 
         // Landing Page
         nextStop: 'Next Stop',
@@ -181,6 +186,10 @@ const en = {
         motionOff: 'Motion: off',
         enableAnimations: 'Enable animations',
         reduceAnimations: 'Reduce animations',
+
+        // 404 Page
+        notFoundMessage: "This track doesn't lead anywhere.",
+        backToHome: 'Home',
     },
 } as const;
 

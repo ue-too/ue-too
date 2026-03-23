@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
 
 const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
 const FLAP_PAUSE = 10000;
@@ -108,7 +109,7 @@ function SplitFlapText({
 
 export function LandingPage(): React.ReactNode {
     const { t, i18n } = useTranslation();
-    const [reduceMotion, setReduceMotion] = useState(false);
+    const [reduceMotion, setReduceMotion] = useReduceMotion();
     const [ctaHover, setCtaHover] = useState(false);
     const isCJK =
         i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
@@ -153,7 +154,7 @@ export function LandingPage(): React.ReactNode {
             </div>
 
             {/* Hero */}
-            <section className="flex flex-col items-center justify-center px-6 pt-40 pb-8">
+            <section className="flex flex-col items-center justify-center px-4 pt-20 pb-8 sm:px-6 sm:pt-40">
                 <div className="relative">
                     <span className="text-muted-foreground absolute -top-6 left-0 text-xs tracking-wide">
                         {t('nextStop')}
@@ -167,10 +168,10 @@ export function LandingPage(): React.ReactNode {
                         scroll={!reduceMotion}
                     />
                 </div>
-                <p className="text-muted-foreground mt-8 text-center text-lg">
+                <p className="text-muted-foreground mt-8 text-center text-base sm:text-lg">
                     {t('landingTagline1')}
                 </p>
-                <p className="text-muted-foreground mt-2 text-center text-lg">
+                <p className="text-muted-foreground mt-2 text-center text-base sm:text-lg">
                     {t('landingTagline2')}
                 </p>
                 <Link
@@ -191,7 +192,7 @@ export function LandingPage(): React.ReactNode {
             </section>
 
             {/* Features */}
-            <section className="flex flex-col items-center gap-10 px-6 py-8">
+            <section className="flex flex-col items-center gap-8 px-4 py-8 sm:gap-10 sm:px-6">
                 {groups.map((group, gi) => (
                     <div key={gi} className="flex flex-col items-center">
                         <div className="mb-4">
