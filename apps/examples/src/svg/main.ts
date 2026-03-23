@@ -13,8 +13,8 @@ import { PointCal } from '@ue-too/math';
 
 const svg = document.querySelector('#graph') as SVGSVGElement;
 
-const width = 300;
-const height = 150;
+const width = 800;
+const height = 600;
 svg.setAttribute('width', width.toString());
 svg.setAttribute('height', height.toString());
 svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -59,14 +59,26 @@ function step(timestamp: number) {
     requestAnimationFrame(step);
 }
 
-const toggleCamera = document.querySelector(
-    '#toggle-camera'
+// Camera controls
+const inputX = document.querySelector('#input-x') as HTMLInputElement;
+const inputY = document.querySelector('#input-y') as HTMLInputElement;
+const inputRotation = document.querySelector(
+    '#input-rotation'
+) as HTMLInputElement;
+const inputZoom = document.querySelector('#input-zoom') as HTMLInputElement;
+const applyButton = document.querySelector(
+    '#apply-camera'
 ) as HTMLButtonElement;
-toggleCamera.addEventListener('click', () => {
-    camera.setRotation(-Math.PI / 8);
-    // camera.setPosition({x: 10, y: 10});
-    // camera.setZoomLevel(1.5);
-    cameraRig.zoomByAtWorld(1.5, { x: 10, y: 10 });
+
+applyButton.addEventListener('click', () => {
+    const x = parseFloat(inputX.value) || 0;
+    const y = parseFloat(inputY.value) || 0;
+    const rotationDeg = parseFloat(inputRotation.value) || 0;
+    const zoom = parseFloat(inputZoom.value) || 1;
+
+    camera.setPosition({ x, y });
+    camera.setRotation((rotationDeg * Math.PI) / 180);
+    camera.setZoomLevel(zoom);
 });
 
 svg.addEventListener('pointerdown', e => {
