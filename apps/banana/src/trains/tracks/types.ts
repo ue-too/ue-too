@@ -210,6 +210,9 @@ export type SerializedTrackSegment = {
     elevation: { from: ELEVATION; to: ELEVATION };
     gauge: number;
     splits: number[];
+    trackStyle?: TrackStyle;
+    electrified?: boolean;
+    bed?: boolean;
 };
 
 export type SerializedTrackData = {

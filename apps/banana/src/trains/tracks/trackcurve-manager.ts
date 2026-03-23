@@ -938,18 +938,24 @@ export class TrackCurveManager {
     serialize(): SerializedTrackSegment[] {
         return this._internalTrackCurveManager
             .getLivingEntitiesWithIndex()
-            .map(({ index, entity }) => ({
-                segmentNumber: index,
-                controlPoints: entity.segment.curve.getControlPoints().map(p => ({ x: p.x, y: p.y })),
-                t0Joint: entity.segment.t0Joint,
-                t1Joint: entity.segment.t1Joint,
-                elevation: {
-                    from: entity.segment.elevation.from,
-                    to: entity.segment.elevation.to,
-                },
-                gauge: entity.segment.gauge,
-                splits: [...entity.segment.splits],
-            }));
+            .map(({ index, entity }) => {
+                const visualProps = this.getVisualPropsForSegment(index);
+                return {
+                    segmentNumber: index,
+                    controlPoints: entity.segment.curve.getControlPoints().map(p => ({ x: p.x, y: p.y })),
+                    t0Joint: entity.segment.t0Joint,
+                    t1Joint: entity.segment.t1Joint,
+                    elevation: {
+                        from: entity.segment.elevation.from,
+                        to: entity.segment.elevation.to,
+                    },
+                    gauge: entity.segment.gauge,
+                    splits: [...entity.segment.splits],
+                    trackStyle: entity.segment.trackStyle ?? visualProps?.trackStyle,
+                    electrified: entity.segment.electrified ?? visualProps?.electrified,
+                    bed: entity.segment.bed ?? visualProps?.bed,
+                };
+            });
     }
 
     /**
@@ -965,7 +971,8 @@ export class TrackCurveManager {
         t0Elevation: ELEVATION,
         t1Elevation: ELEVATION,
         gauge: number,
-        splitTValues: number[]
+        splitTValues: number[],
+        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean }
     ): void {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -1073,6 +1080,9 @@ export class TrackCurveManager {
             },
             collision: [],
             gauge,
+            trackStyle: visualProps?.trackStyle,
+            electrified: visualProps?.electrified,
+            bed: visualProps?.bed,
             splits: splitTValues,
             splitCurves: splits,
         };
@@ -1131,7 +1141,8 @@ export class TrackCurveManager {
                 segment.elevation.from,
                 segment.elevation.to,
                 segment.gauge,
-                segment.splits
+                segment.splits,
+                { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
             );
         }
         return manager;

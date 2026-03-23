@@ -1289,7 +1289,8 @@ export class TrackGraph {
                 segment.elevation.from,
                 segment.elevation.to,
                 segment.gauge,
-                segment.splits
+                segment.splits,
+                { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
             );
         }
 
