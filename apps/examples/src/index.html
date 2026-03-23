@@ -2,9 +2,9 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>UE-Too Development Server</title>
+        <title data-i18n-title="index.title">uē-tôo Examples</title>
         <style>
             body {
                 margin: 0;
@@ -24,6 +24,11 @@
             }
             .header h1 {
                 color: #333;
+                margin-bottom: 10px;
+            }
+            .lang-bar {
+                display: flex;
+                justify-content: flex-end;
                 margin-bottom: 10px;
             }
             .nav {
@@ -105,126 +110,131 @@
     </head>
     <body>
         <div class="container">
+            <div class="lang-bar">
+                <div id="lang-switcher-container"></div>
+            </div>
             <div class="header">
-                <h1>UE-Too Development Server</h1>
-                <p>Interactive examples and demos</p>
+                <h1 data-i18n="index.title">uē-tôo Examples</h1>
+                <p data-i18n="index.subtitle">Interactive examples and demos</p>
             </div>
 
             <div class="nav">
-                <a href="base/index.html">Base</a>
-                <a href="ruler/index.html">Ruler</a>
-                <a href="navigation/index.html">Navigation</a>
-                <a href="pixi-integration/index.html">Pixi Integration</a>
-                <a href="konva-integration/index.html">Konva Integration</a>
-                <a href="fabric-integration/index.html">Fabric Integration</a>
-                <a href="camera-animation/index.html">Camera Animation</a>
-                <a href="image-example/index.html">Image Example</a>
-                <a href="svg/index.html">SVG Example</a>
+                <a href="base/index.html" data-i18n="nav.base">Base</a>
+                <a href="attach-detach/index.html" data-i18n="nav.attach-detach">Attach / Detach</a>
+                <a href="ruler/index.html" data-i18n="nav.ruler">Ruler</a>
+                <a href="navigation/index.html" data-i18n="nav.navigation">Navigation</a>
+                <a href="pixi-integration/index.html" data-i18n="nav.pixi">Pixi Integration</a>
+                <a href="konva-integration/index.html" data-i18n="nav.konva">Konva Integration</a>
+                <a href="fabric-integration/index.html" data-i18n="nav.fabric">Fabric Integration</a>
+                <a href="camera-animation/index.html" data-i18n="nav.camera-animation">Camera Animation</a>
+                <a href="image-example/index.html" data-i18n="nav.image">Image Example</a>
+                <a href="svg/index.html" data-i18n="nav.svg">SVG Example</a>
             </div>
 
-            <div class="description">
-                Welcome to UE-Too Development Server. Explore different features
-                and integrations below.
+            <div class="description" data-i18n="index.description">
+                Explore different features and integrations below.
             </div>
 
             <div class="examples-grid">
                 <div class="example-card">
-                    <h3>Base Example</h3>
-                    <p>
+                    <h3 data-i18n="card.base.title">Base Example</h3>
+                    <p data-i18n="card.base.desc">
                         Basic canvas with pan, zoom, and rotate functionality. A
                         simple starting point to understand the core features.
                     </p>
-                    <a href="base/index.html">View Example</a>
+                    <a href="base/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Ruler Example</h3>
-                    <p>
+                    <h3 data-i18n="card.attach-detach.title">Attach / Detach Example</h3>
+                    <p data-i18n="card.attach-detach.desc">
+                        Demonstrates how to dynamically attach and detach a
+                        canvas from the board at runtime.
+                    </p>
+                    <a href="attach-detach/index.html" data-i18n="card.view">View Example</a>
+                </div>
+
+                <div class="example-card">
+                    <h3 data-i18n="card.ruler.title">Ruler Example</h3>
+                    <p data-i18n="card.ruler.desc">
                         Ruler overlay with measurement tools. Demonstrates how
                         to add measurement and grid overlays.
                     </p>
-                    <a href="ruler/index.html">View Example</a>
+                    <a href="ruler/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Navigation Example</h3>
-                    <p>
+                    <h3 data-i18n="card.navigation.title">Navigation Example</h3>
+                    <p data-i18n="card.navigation.desc">
                         Advanced navigation controls. Shows more sophisticated
                         camera and input handling.
                     </p>
-                    <a href="navigation/index.html">View Example</a>
+                    <a href="navigation/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Pixi Integration</h3>
-                    <p>
-                        Integration with PixiJS. Demonstrates how to use UE-Too
+                    <h3 data-i18n="card.pixi.title">Pixi Integration</h3>
+                    <p data-i18n="card.pixi.desc">
+                        Integration with PixiJS. Demonstrates how to use uē-tôo
                         with PixiJS for high-performance graphics.
                     </p>
-                    <a href="pixi-integration/index.html">View Example</a>
+                    <a href="pixi-integration/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Konva Integration</h3>
-                    <p>
-                        Integration with Konva.js. Shows how to integrate UE-Too
+                    <h3 data-i18n="card.konva.title">Konva Integration</h3>
+                    <p data-i18n="card.konva.desc">
+                        Integration with Konva.js. Shows how to integrate uē-tôo
                         with Konva.js for canvas-based graphics.
                     </p>
-                    <a href="konva-integration/index.html">View Example</a>
+                    <a href="konva-integration/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Fabric Integration</h3>
-                    <p>
-                        Integration with Fabric.js. Demonstrates UE-Too
+                    <h3 data-i18n="card.fabric.title">Fabric Integration</h3>
+                    <p data-i18n="card.fabric.desc">
+                        Integration with Fabric.js. Demonstrates uē-tôo
                         integration with Fabric.js for interactive canvas
                         objects.
                     </p>
-                    <a href="fabric-integration/index.html">View Example</a>
+                    <a href="fabric-integration/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Camera Animation</h3>
-                    <p>
+                    <h3 data-i18n="card.camera-animation.title">Camera Animation</h3>
+                    <p data-i18n="card.camera-animation.desc">
                         Camera animation examples. Shows how to create smooth
                         camera transitions and animations.
                     </p>
-                    <a href="camera-animation/index.html">View Example</a>
+                    <a href="camera-animation/index.html" data-i18n="card.view">View Example</a>
                 </div>
                 <div class="example-card">
-                    <h3>SVG Example</h3>
-                    <p>
+                    <h3 data-i18n="card.svg.title">SVG Example</h3>
+                    <p data-i18n="card.svg.desc">
                         SVG examples. Demonstrates how to work with SVG in
-                        UE-Too.
+                        uē-tôo.
                     </p>
-                    <a href="svg/index.html">View Example</a>
+                    <a href="svg/index.html" data-i18n="card.view">View Example</a>
                 </div>
 
                 <div class="example-card">
-                    <h3>Image Example</h3>
-                    <p>
+                    <h3 data-i18n="card.image.title">Image Example</h3>
+                    <p data-i18n="card.image.desc">
                         Image manipulation examples. Demonstrates how to work
-                        with images in UE-Too.
+                        with images in uē-tôo.
                     </p>
-                    <a href="image-example/index.html">View Example</a>
+                    <a href="image-example/index.html" data-i18n="card.view">View Example</a>
                 </div>
                 <div class="example-card">
-                    <h3>Physics Example</h3>
-                    <p>
+                    <h3 data-i18n="card.physics.title">Physics Example</h3>
+                    <p data-i18n="card.physics.desc">
                         Physics examples. Demonstrates how to work with physics
-                        in UE-Too.
+                        in uē-tôo.
                     </p>
-                    <a href="physics/index.html">View Example</a>
-                </div>
-                <div class="example-card">
-                    <h3>Collision Example</h3>
-                    <p>
-                        Collision examples. Demonstrates how to work with
-                        collision in UE-Too.
-                    </p>
-                    <a href="collision/index.html">View Example</a>
+                    <a href="physics/index.html" data-i18n="card.view">View Example</a>
                 </div>
             </div>
         </div>
+        <script type="module" src="./i18n/setup.ts"></script>
     </body>
 </html>

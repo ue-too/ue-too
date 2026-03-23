@@ -2,30 +2,114 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Vite + TS</title>
-    </head>
-    <body style="overflow: hidden">
-        <div
-            style="
+        <title data-i18n-title="svg.title">SVG Example</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                    Roboto, sans-serif;
+                background-color: #f5f5f5;
+            }
+            .container {
                 display: flex;
                 justify-content: center;
                 flex-direction: column;
                 align-items: center;
-            "
-        >
-            <!-- <canvas id="graph" width="800" height="600" style="border: 1px solid black; background-color: white;"></canvas> -->
-            <svg
-                id="graph"
-                style="border: 1px solid black; background-color: white"
+                height: 100vh;
+                gap: 16px;
+            }
+            .instructions {
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 12px 20px;
+                max-width: 600px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                position: relative;
+            }
+            .instructions h2 { margin: 0 0 8px 0; font-size: 16px; color: #333; }
+            .instructions p { margin: 0 0 6px 0; font-size: 13px; color: #555; line-height: 1.4; }
+            .instructions ul { margin: 4px 0 0 0; padding-left: 20px; font-size: 13px; color: #555; line-height: 1.6; }
+            .instructions kbd { background: #eee; border: 1px solid #ccc; border-radius: 3px; padding: 1px 5px; font-size: 12px; font-family: monospace; }
+            .lang-bar { position: absolute; top: 12px; right: 16px; }
+            .controls {
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .controls label { font-size: 13px; color: #555; display: flex; align-items: center; gap: 4px; }
+            .controls input[type='number'] { width: 70px; padding: 4px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+            .controls button {
+                padding: 8px 16px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background: white;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .controls button:hover { background: #f0f0f0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="instructions">
+                <div class="lang-bar" id="lang-switcher-container"></div>
+                <h2 data-i18n="svg.title">SVG Example</h2>
+                <p data-i18n-html="svg.desc">
+                    Uses the board camera system with an SVG element instead
+                    of a canvas. The camera transform (translate, scale,
+                    rotate) is applied to an SVG <code>&lt;g&gt;</code> group.
+                </p>
+                <ul>
+                    <li data-i18n-html="controls.scroll-and-pan">
+                        <kbd>Scroll</kbd> to zoom,
+                        <kbd>Middle Mouse Drag</kbd> or
+                        <kbd>Space + Left Drag</kbd> to pan
+                    </li>
+                    <li data-i18n-html="controls.trackpad">
+                        <strong>Trackpad:</strong> <kbd>Two-finger drag</kbd> to pan, <kbd>Pinch</kbd> to zoom
+                    </li>
+                    <li data-i18n-html="controls.touch">
+                        <strong>Touch:</strong> <kbd>Two-finger drag</kbd> to pan, <kbd>Pinch</kbd> to zoom
+                    </li>
+                    <li data-i18n="svg.inputs">
+                        Use the inputs below to set camera position, rotation, and zoom
+                    </li>
+                    <li data-i18n-html="svg.click-log">
+                        <kbd>Click</kbd> to log viewport and world coordinates to the console
+                    </li>
+                </ul>
+            </div>
+            <svg id="graph"
+                style="border: 1px solid #ccc; background-color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"
             >
                 <g id="camera">
-                    <rect x="10" y="10" width="100" height="100" fill="red" />
+                    <line x1="0" y1="0" x2="200" y2="0" stroke="#2ecc71" stroke-width="2" />
+                    <polygon points="200,0 190,-5 190,5" fill="#2ecc71" />
+                    <text x="205" y="4" font-size="12" fill="#2ecc71">X</text>
+                    <line x1="0" y1="0" x2="0" y2="200" stroke="#e74c3c" stroke-width="2" />
+                    <polygon points="0,200 -5,190 5,190" fill="#e74c3c" />
+                    <text x="5" y="215" font-size="12" fill="#e74c3c">Y</text>
+                    <circle cx="0" cy="0" r="4" fill="#333" />
+                    <rect x="30" y="30" width="100" height="100" fill="red" opacity="0.7" />
                 </g>
             </svg>
+            <div class="controls">
+                <label>X <input type="number" id="input-x" value="0" /></label>
+                <label>Y <input type="number" id="input-y" value="0" /></label>
+                <label data-i18n="svg.rotation">Rotation</label>
+                <input type="number" id="input-rotation" value="0" step="5" style="width:70px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;" />
+                <label data-i18n="svg.zoom">Zoom</label>
+                <input type="number" id="input-zoom" value="1" step="0.1" min="0.1" style="width:70px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;" />
+                <button id="apply-camera" data-i18n="svg.apply">Apply</button>
+            </div>
         </div>
-        <button id="toggle-camera">Reset Camera</button>
+        <script type="module" src="/i18n/setup.ts"></script>
         <script type="module" src="./main.ts"></script>
     </body>
 </html>

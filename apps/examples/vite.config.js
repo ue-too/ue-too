@@ -13,6 +13,10 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'src/index.html'),
                 base: resolve(__dirname, 'src/base/index.html'),
+                'attach-detach': resolve(
+                    __dirname,
+                    'src/attach-detach/index.html'
+                ),
                 ruler: resolve(__dirname, 'src/ruler/index.html'),
                 navigation: resolve(__dirname, 'src/navigation/index.html'),
                 'pixi-integration': resolve(
@@ -49,7 +53,6 @@ export default defineConfig({
         '**/*.webp',
     ],
     server: {
-        host: true,
         strictPort: false,
     },
 });

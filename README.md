@@ -47,22 +47,23 @@ This monorepo includes comprehensive examples demonstrating various packages and
 
 ### Core Examples
 
-- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport management functionality
-- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Advanced navigation controls with keyboard shortcuts
-- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement tools and overlays
-- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth camera transitions on mouse click
-- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Drawing an image on the pannable and zoomable canvas
+- [**Base Example**](https://ue-too.github.io/ue-too/base/) - Basic canvas viewport with pan, zoom, and rotate
+- [**Attach / Detach Example**](https://ue-too.github.io/ue-too/attach-detach/) - Dynamically attach and detach a canvas from the board
+- [**Navigation Example**](https://ue-too.github.io/ue-too/navigation/) - Keyboard-driven camera panning via `panByViewPort()`
+- [**Ruler Example**](https://ue-too.github.io/ue-too/ruler/) - Measurement ruler overlay that updates with pan and zoom
+- [**Camera Animation**](https://ue-too.github.io/ue-too/camera-animation/) - Smooth animated camera transitions on click
+- [**Image Example**](https://ue-too.github.io/ue-too/image-example/) - Upload and display an image on the pannable canvas
+- [**SVG Example**](https://ue-too.github.io/ue-too/svg/) - Board camera system applied to SVG elements
 
 ### Framework Integrations
 
-- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/)
-- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/)
-- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/)
+- [**PixiJS Integration**](https://ue-too.github.io/ue-too/pixi-integration/) - Full-screen PixiJS canvas with board camera controls
+- [**Konva Integration**](https://ue-too.github.io/ue-too/konva-integration/) - Konva.js stage synchronized with board camera transforms
+- [**Fabric Integration**](https://ue-too.github.io/ue-too/fabric-integration/) - Fabric.js with toggleable movement/selection modes
 
 ### Advanced Features
 
-- [**Physics Example**](https://ue-too.github.io/ue-too/physics/) - 2D physics simulation (WIP)
-- [**Collision Example**](https://ue-too.github.io/ue-too/collision/) - Collision detection and response (WIP)
+- [**Physics Example**](https://ue-too.github.io/ue-too/physics/) - Four-bar linkage with rigid body physics and constraints
 
 ### Running Examples
 

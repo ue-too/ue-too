@@ -1,23 +1,28 @@
-// import the Board Class
-import { Board } from '@ue-too/board';
-import { drawArrow } from '@ue-too/board';
+import { Board, drawArrow } from '@ue-too/board';
 
 const canvas = document.getElementById('graph') as HTMLCanvasElement;
-
-// Create an image object
-const tileImage = new Image();
-tileImage.src = new URL('./tile.png', import.meta.url).href;
-
-// instantiate the board by passing in the canvas element
 const board = new Board(canvas);
 
+let userImage: HTMLImageElement | null = null;
+
+const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.onload = () => {
+        userImage = img;
+        URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
+});
+
 function draw(timestamp: number) {
-    // step the board
     board.step(timestamp);
 
-    // Draw the image if it's loaded
-    if (tileImage.complete) {
-        board.context.drawImage(tileImage, 0, 0, 300, 300, 200, 200, 300, 300);
+    if (userImage) {
+        board.context.drawImage(userImage, 0, 0);
     }
 
     // draw the axis arrow as reference
@@ -45,7 +50,6 @@ function draw(timestamp: number) {
     );
     board.context.restore();
 
-    // request the next frame
     requestAnimationFrame(draw);
 }
 

@@ -2,30 +2,61 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Vite + TS</title>
+        <title data-i18n-title="pixi.title">PixiJS Integration</title>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { width: 100%; height: 100%; overflow: hidden; }
+            #graph { width: 100%; height: 100%; display: block; }
+            .instructions-overlay {
+                position: fixed;
+                top: 16px;
+                left: 16px;
+                background: rgba(255, 255, 255, 0.92);
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 12px 16px;
+                max-width: 340px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                z-index: 10;
             }
-            html,
-            body {
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-            }
-            #graph {
-                width: 100%;
-                height: 100%;
-                display: block;
-            }
+            .instructions-overlay h2 { margin: 0 0 6px 0; font-size: 14px; color: #333; }
+            .instructions-overlay p { margin: 0 0 6px 0; font-size: 12px; color: #555; line-height: 1.4; }
+            .instructions-overlay ul { margin: 0; padding-left: 16px; font-size: 12px; color: #555; line-height: 1.6; }
+            .instructions-overlay kbd { background: #eee; border: 1px solid #ccc; border-radius: 3px; padding: 1px 4px; font-size: 11px; font-family: monospace; }
+            .lang-bar { margin-bottom: 8px; }
         </style>
     </head>
     <body>
+        <div class="instructions-overlay">
+            <div class="lang-bar" id="lang-switcher-container"></div>
+            <h2 data-i18n="pixi.title">PixiJS Integration</h2>
+            <p data-i18n="pixi.desc">
+                Full-screen PixiJS canvas with uē-tôo camera controls. A
+                bunny sprite and a circle are rendered using PixiJS while the
+                board camera handles viewport transforms.
+            </p>
+            <ul>
+                <li data-i18n-html="controls.scroll-and-pan">
+                    <kbd>Scroll</kbd> to zoom,
+                    <kbd>Middle Mouse Drag</kbd> or
+                    <kbd>Space + Left Drag</kbd> to pan
+                </li>
+                <li data-i18n-html="controls.trackpad">
+                    <strong>Trackpad:</strong> <kbd>Two-finger drag</kbd> to pan, <kbd>Pinch</kbd> to zoom
+                </li>
+                <li data-i18n-html="controls.touch">
+                    <strong>Touch:</strong> <kbd>Two-finger drag</kbd> to pan, <kbd>Pinch</kbd> to zoom
+                </li>
+                <li data-i18n="pixi.camera-info">
+                    Camera starts at position (100, 100) with 2x zoom and 45-degree rotation
+                </li>
+            </ul>
+        </div>
         <canvas id="graph"></canvas>
+        <script type="module" src="/i18n/setup.ts"></script>
         <script type="module" src="main.ts"></script>
     </body>
 </html>

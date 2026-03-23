@@ -4,7 +4,7 @@
         <meta charset="UTF-8" />
         <link rel="icon" type="image/png" href="/favicon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title data-i18n-title="base.title">Base Example</title>
+        <title data-i18n-title="attach-detach.title">Attach / Detach Example</title>
         <style>
             body {
                 margin: 0;
@@ -61,38 +61,44 @@
                 top: 12px;
                 right: 16px;
             }
+            .controls {
+                display: flex;
+                gap: 8px;
+            }
+            .controls button {
+                padding: 8px 16px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                background: white;
+                cursor: pointer;
+                font-size: 13px;
+            }
+            .controls button:hover {
+                background: #f0f0f0;
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="instructions">
                 <div class="lang-bar" id="lang-switcher-container"></div>
-                <h2 data-i18n="base.title">Base Example</h2>
-                <p data-i18n="base.desc">
-                    The simplest setup: a Board attached to a canvas with
-                    built-in pan, zoom, and rotate.
+                <h2 data-i18n="attach-detach.title">Attach / Detach Example</h2>
+                <p data-i18n="attach-detach.desc">
+                    Demonstrates the Board lifecycle: dynamically attaching and
+                    detaching a canvas at runtime. The board starts detached
+                    — nothing renders until you attach it.
                 </p>
                 <ul>
-                    <li data-i18n-html="controls.scroll-zoom">
-                        <kbd>Scroll</kbd> to zoom in and out
+                    <li data-i18n-html="attach-detach.attach-instruction">
+                        Click <strong>Attach</strong> to connect the board to
+                        the canvas and start rendering
                     </li>
-                    <li data-i18n-html="controls.pan-viewport">
-                        <kbd>Middle Mouse Drag</kbd> or
-                        <kbd>Space + Left Drag</kbd> to pan the viewport
+                    <li data-i18n-html="attach-detach.detach-instruction">
+                        Click <strong>Detach</strong> to disconnect — the
+                        canvas goes blank and input stops
                     </li>
-                    <li data-i18n-html="controls.trackpad">
-                        <strong>Trackpad:</strong>
-                        <kbd>Two-finger drag</kbd> to pan,
-                        <kbd>Pinch</kbd> to zoom
-                    </li>
-                    <li data-i18n-html="controls.touch">
-                        <strong>Touch:</strong>
-                        <kbd>Two-finger drag</kbd> to pan,
-                        <kbd>Pinch</kbd> to zoom
-                    </li>
-                    <li data-i18n-html="base.click-log">
-                        <kbd>Click</kbd> on the canvas to log the world
-                        coordinates to the console
+                    <li data-i18n="attach-detach.reattach">
+                        Re-attach at any time to resume
                     </li>
                 </ul>
             </div>
@@ -106,8 +112,12 @@
                     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
                 "
             ></canvas>
+            <div class="controls">
+                <button id="attach-canvas" data-i18n="attach-detach.attach">Attach</button>
+                <button id="detach-canvas" data-i18n="attach-detach.detach">Detach</button>
+            </div>
         </div>
         <script type="module" src="/i18n/setup.ts"></script>
-        <script type="module" src="/base/main.ts"></script>
+        <script type="module" src="/attach-detach/main.ts"></script>
     </body>
 </html>
