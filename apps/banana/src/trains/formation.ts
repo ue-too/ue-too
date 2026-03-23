@@ -36,6 +36,7 @@ function wrapIfMultiple(units: TrainUnit[], original: Formation): TrainUnit[] {
 export class Formation implements TrainUnit {
 
     readonly id: string;
+    private _name: string;
     private _children: TrainUnit[];
     /** Stable insertion-order list for UI display. Not affected by switchDirection. */
     private _originalChildren: TrainUnit[];
@@ -54,9 +55,19 @@ export class Formation implements TrainUnit {
             throw new Error('Formation must have at least one child');
         }
         this.id = id;
+        this._name = id;
         this._children = children;
         this._originalChildren = [...children];
         this._depth = depth;
+    }
+
+    /** Display name for UI. Defaults to the formation id. */
+    get name(): string {
+        return this._name;
+    }
+
+    set name(value: string) {
+        this._name = value;
     }
 
     get edgeToBogie(): number {
@@ -328,6 +339,36 @@ export class Formation implements TrainUnit {
         }
 
         return { head, tail };
+    }
+
+    /**
+     * Flatten all nested formations so every child is a direct Car.
+     * After consolidation the formation has depth 1 with only Car children.
+     */
+    consolidate(): void {
+        const flatCars = this.flatCars();
+        this._children = [...flatCars];
+        this._originalChildren = [...flatCars];
+        this._invalidateCache();
+    }
+
+    /**
+     * Swap two adjacent children. `index` is swapped with `index + 1`.
+     * @param index - Index of the first child to swap (0-based).
+     */
+    swapChildren(index: number): void {
+        if (index < 0 || index >= this._children.length - 1) {
+            throw new Error(
+                `Cannot swap at index ${index}: need two adjacent children (length ${this._children.length})`
+            );
+        }
+        [this._children[index], this._children[index + 1]] = [
+            this._children[index + 1], this._children[index],
+        ];
+        [this._originalChildren[index], this._originalChildren[index + 1]] = [
+            this._originalChildren[index + 1], this._originalChildren[index],
+        ];
+        this._invalidateCache();
     }
 
     /** Decouple and return the child at the given index. */

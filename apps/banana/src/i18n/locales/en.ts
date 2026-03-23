@@ -158,7 +158,11 @@ const en = {
         containsNestedFormations: 'Contains nested formations',
         nestedFormation: 'Nested formation',
         composition: 'Composition',
+        consolidate: 'Consolidate',
+        consolidateTooltip: 'Flatten nested formations into individual cars',
+        renameFormation: 'Click to rename',
         addFromStock: 'Add from stock',
+        addFormation: 'Add formation',
 
         // Landing Page
         nextStop: 'Next Stop',

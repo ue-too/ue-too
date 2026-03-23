@@ -138,6 +138,85 @@ export class FormationManager {
     }
 
     /**
+     * Append another depot formation as a nested child of the target formation.
+     * The source formation is removed from the manager (not returned to stock).
+     */
+    appendFormation(targetId: string, sourceId: string): void {
+        const target = this._formations.get(targetId);
+        if (target === undefined) {
+            throw new Error(`Target formation ${targetId} not found`);
+        }
+        const source = this._formations.get(sourceId);
+        if (source === undefined) {
+            throw new Error(`Source formation ${sourceId} not found`);
+        }
+        target.append(source);
+        this._formations.delete(sourceId);
+        this._observable.notify(sourceId, { type: 'remove' });
+        this._observable.notify(targetId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Prepend another depot formation as a nested child of the target formation.
+     * The source formation is removed from the manager (not returned to stock).
+     */
+    prependFormation(targetId: string, sourceId: string): void {
+        const target = this._formations.get(targetId);
+        if (target === undefined) {
+            throw new Error(`Target formation ${targetId} not found`);
+        }
+        const source = this._formations.get(sourceId);
+        if (source === undefined) {
+            throw new Error(`Source formation ${sourceId} not found`);
+        }
+        target.prepend(source);
+        this._formations.delete(sourceId);
+        this._observable.notify(sourceId, { type: 'remove' });
+        this._observable.notify(targetId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Consolidate a formation, flattening all nested formations into direct Car children.
+     */
+    consolidateFormation(formationId: string): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        formation.consolidate();
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Rename a formation's display name.
+     */
+    renameFormation(formationId: string, name: string): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        formation.name = name;
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Swap two adjacent children in a formation (index with index + 1).
+     */
+    swapChildren(formationId: string, index: number): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        formation.swapChildren(index);
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
      * Remove a child at the given index from a formation and return it to stock.
      */
     removeChild(formationId: string, childIndex: number): void {
