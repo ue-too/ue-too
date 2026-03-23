@@ -31,6 +31,10 @@ interface LedMarqueeProps {
     dotSize?: number;
     /** When true, lit dots gently pulse in opacity. */
     pulse?: boolean;
+    /** Scroll direction: 'horizontal' (default) or 'vertical'. */
+    scrollDirection?: 'horizontal' | 'vertical';
+    /** Number of visible LED rows (used for vertical scroll). */
+    visibleRows?: number;
 }
 
 /**
@@ -200,6 +204,8 @@ export function LedMarquee({
     nativePx,
     dotSize,
     pulse = false,
+    scrollDirection = 'horizontal',
+    visibleRows,
 }: LedMarqueeProps): React.ReactNode {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -221,21 +227,29 @@ export function LedMarquee({
 
             const actualRows = grid.length;
             const textCols = grid[0].length;
+            const isVertical = scrollDirection === 'vertical';
             const displayCols = visibleCols
                 ? Math.max(visibleCols, textCols)
                 : textCols;
             const totalCols = displayCols + textCols;
+            const displayRows =
+                isVertical && visibleRows
+                    ? Math.max(visibleRows, actualRows)
+                    : actualRows;
+            const totalVRows = displayRows + actualRows;
+            const drawCols = isVertical ? textCols : displayCols;
+            const drawRows = isVertical ? displayRows : actualRows;
 
             const dpr = window.devicePixelRatio || 1;
             const spaceRatio = 0.15;
             const dotDiameter =
                 dotSize ??
-                height / (actualRows + spaceRatio * (actualRows - 1));
+                height / (drawRows + spaceRatio * (drawRows - 1));
             const space = dotDiameter * spaceRatio;
             const canvasWidth =
-                displayCols * dotDiameter + (displayCols - 1) * space;
+                drawCols * dotDiameter + (drawCols - 1) * space;
             const canvasHeight =
-                actualRows * dotDiameter + (actualRows - 1) * space;
+                drawRows * dotDiameter + (drawRows - 1) * space;
 
             canvas.width = Math.ceil(canvasWidth * dpr);
             canvas.height = Math.ceil(canvasHeight * dpr);
@@ -265,13 +279,20 @@ export function LedMarquee({
 
                 const radius = dotDiameter / 2;
 
-                for (let r = 0; r < actualRows; r++) {
-                    for (let vc = 0; vc < displayCols; vc++) {
+                for (let r = 0; r < drawRows; r++) {
+                    for (let vc = 0; vc < drawCols; vc++) {
                         const cx = radius + vc * (dotDiameter + space);
                         const cy = radius + r * (dotDiameter + space);
 
                         let isLit: boolean;
-                        if (scroll) {
+                        if (scroll && isVertical) {
+                            const srcRow = r - offset + actualRows;
+                            isLit =
+                                srcRow >= 0 &&
+                                srcRow < actualRows &&
+                                vc < textCols &&
+                                grid[srcRow][vc];
+                        } else if (scroll) {
                             const srcCol = vc + offset - displayCols;
                             isLit =
                                 srcCol >= 0 &&
@@ -308,8 +329,9 @@ export function LedMarquee({
                     lastTime = now;
                     floatOffset += speed * dt;
 
-                    if (floatOffset >= totalCols) {
-                        floatOffset -= totalCols;
+                    const total = isVertical ? totalVRows : totalCols;
+                    if (floatOffset >= total) {
+                        floatOffset -= total;
                     }
 
                     draw(Math.floor(floatOffset));
@@ -350,7 +372,7 @@ export function LedMarquee({
             cancelAnimationFrame(animId);
             observer?.disconnect();
         };
-    }, [text, rows, visibleCols, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize, pulse]);
+    }, [text, rows, visibleCols, visibleRows, font, height, litColor, unlitColor, speed, scroll, usePixelFont, nativePx, dotSize, pulse, scrollDirection]);
 
     return <canvas ref={canvasRef} />;
 }

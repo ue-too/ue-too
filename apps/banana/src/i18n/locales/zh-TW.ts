@@ -182,6 +182,10 @@ const zhTW = {
         motionOff: '動態效果：關',
         enableAnimations: '啟用動畫',
         reduceAnimations: '減少動畫',
+
+        // 404 Page
+        notFoundMessage: '這條軌道不通往任何地方。',
+        backToHome: '首頁',
     },
 } as const;
 

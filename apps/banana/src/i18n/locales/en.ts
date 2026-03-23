@@ -185,6 +185,10 @@ const en = {
         motionOff: 'Motion: off',
         enableAnimations: 'Enable animations',
         reduceAnimations: 'Reduce animations',
+
+        // 404 Page
+        notFoundMessage: "This track doesn't lead anywhere.",
+        backToHome: 'Home',
     },
 } as const;
 

@@ -178,6 +178,10 @@ const ja = {
         motionOff: 'モーション：オフ',
         enableAnimations: 'アニメーションを有効にする',
         reduceAnimations: 'アニメーションを減らす',
+
+        // 404 Page
+        notFoundMessage: 'この線路はどこにも繋がっていません。',
+        backToHome: 'ホーム',
     },
 } as const;
 

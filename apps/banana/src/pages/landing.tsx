@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
+import { useReduceMotion } from '@/hooks/use-reduce-motion';
 
 const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
 const FLAP_PAUSE = 10000;
@@ -108,7 +109,7 @@ function SplitFlapText({
 
 export function LandingPage(): React.ReactNode {
     const { t, i18n } = useTranslation();
-    const [reduceMotion, setReduceMotion] = useState(false);
+    const [reduceMotion, setReduceMotion] = useReduceMotion();
     const [ctaHover, setCtaHover] = useState(false);
     const isCJK =
         i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
