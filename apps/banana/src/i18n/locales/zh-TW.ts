@@ -193,6 +193,10 @@ const zhTW = {
         enableAnimations: '啟用動畫',
         reduceAnimations: '減少動畫',
 
+        // Analytics Notice
+        analyticsNotice:
+            '本網站僅使用基本事件追蹤來改善使用體驗，不會收集任何個人資料。',
+
         // 404 Page
         notFoundMessage: '這條軌道不通往任何地方。',
         backToHome: '首頁',

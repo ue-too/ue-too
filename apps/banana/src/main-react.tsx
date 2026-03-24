@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 
+import { AnalyticsNotice } from '@/components/analytics-notice';
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
 import { ExpPage } from '@/pages/exp';
@@ -35,6 +36,7 @@ root.render(
     <StrictMode>
         <ThemeProvider attribute="class" defaultTheme="light">
             <Toaster />
+            <AnalyticsNotice />
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<LandingPage />} />

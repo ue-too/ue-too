@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { trackEvent } from '@/utils/analytics';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -42,7 +43,7 @@ export function LanguageSwitcher() {
                 {LANGUAGES.map(({ code, label }) => (
                     <DropdownMenuItem
                         key={code}
-                        onClick={() => i18n.changeLanguage(code)}
+                        onClick={() => { i18n.changeLanguage(code); trackEvent('switch-language', { language: code }); }}
                         className={
                             i18n.language === code ? 'font-semibold' : ''
                         }
