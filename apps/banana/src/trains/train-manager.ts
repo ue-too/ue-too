@@ -51,6 +51,15 @@ export class TrainManager {
     return this._proximityDetector.getMatchesForTrain(trainId);
   }
 
+  /**
+   * Subscribe to proximity match changes. The listener fires only when the set
+   * of couplable pairs actually changes. Returns an unsubscribe function.
+   */
+  subscribeToProximityChanges(listener: () => void): () => void {
+    if (!this._proximityDetector) return () => {};
+    return this._proximityDetector.subscribe(listener);
+  }
+
   /** Current list of placed trains (do not mutate). */
   getPlacedTrains(): readonly PlacedTrainEntry[] {
     return this._internalTrainManager.getLivingEntitiesWithIndex().map(({ index, entity }) => ({
@@ -180,6 +189,7 @@ export class TrainManager {
     let keepTrain: Train;
     let removeTrain: Train;
     let needsFlip = false;
+    let needsKeepFlip = false;
 
     const endA = match.trainA.end;
     const endB = match.trainB.end;
@@ -195,15 +205,22 @@ export class TrainManager {
       keepTrain = trainA; removeTrain = trainB;
       needsFlip = true;
     } else {
-      // head-head
-      keepId = match.trainB.id; removeId = match.trainA.id;
-      keepTrain = trainB; removeTrain = trainA;
-      needsFlip = true;
+      // head-head: keep A, flip A so its old head becomes the tail,
+      // then append B (unflipped) — B's head connects to A's new tail
+      keepId = match.trainA.id; removeId = match.trainB.id;
+      keepTrain = trainA; removeTrain = trainB;
+      needsKeepFlip = true;
     }
 
     // Check depth before merging
     if (keepTrain.formation.depth + removeTrain.formation.depth >= MAX_FORMATION_DEPTH) {
       return { success: false, reason: 'depth_exceeded' };
+    }
+
+    // For head-to-head: flip the kept train so its head position moves to the
+    // old tail end, making the old head the new tail where the other train attaches
+    if (needsKeepFlip) {
+      keepTrain.switchDirection();
     }
 
     // Flip the removed train's formation if endpoints face the same way

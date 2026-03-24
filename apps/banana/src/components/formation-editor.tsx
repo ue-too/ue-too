@@ -51,10 +51,14 @@ export function FormationEditor({
         const unsub3 = trainManager.subscribe(() =>
             setVersion(v => v + 1)
         );
+        const unsub4 = trainManager.subscribeToProximityChanges(() =>
+            setVersion(v => v + 1)
+        );
         return () => {
             unsub1();
             unsub2();
             unsub3();
+            unsub4();
         };
     }, [formationManager, carStockManager, trainManager]);
 

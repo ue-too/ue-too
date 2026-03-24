@@ -107,11 +107,12 @@ describe('TrainManager.coupleTrains', () => {
         });
     });
 
-    describe('head-head (flip needed)', () => {
-        it('should keep train B, flip A, and append A as nested child', () => {
+    describe('head-head (keep train flipped)', () => {
+        it('should keep train A (flipped), append B unflipped', () => {
             const fA = makeFormation(2);
             const fB = makeFormation(2);
             const aCarsBeforeFlip = [...fA.flatCars()];
+            const bCarsOriginal = [...fB.flatCars()];
             const idA = tm.addTrain(makeTrain(fA));
             const idB = tm.addTrain(makeTrain(fB));
 
@@ -119,14 +120,18 @@ describe('TrainManager.coupleTrains', () => {
 
             expect(result.success).toBe(true);
             if (!result.success) return;
-            expect(result.keepTrainId).toBe(idB);
+            expect(result.keepTrainId).toBe(idA);
 
-            const keepTrain = tm.getPlacedTrains().find(e => e.id === idB)!;
+            const keepTrain = tm.getPlacedTrains().find(e => e.id === idA)!;
             expect(keepTrain.train.formation.flatCars()).toHaveLength(4);
-            // A's formation was flipped
+            // A's formation was flipped (switchDirection on kept train)
             const aChildren = fA.flatCars();
             expect(aChildren[0]).toBe(aCarsBeforeFlip[1]);
             expect(aChildren[1]).toBe(aCarsBeforeFlip[0]);
+            // B's formation was NOT flipped
+            const bChildren = fB.flatCars();
+            expect(bChildren[0]).toBe(bCarsOriginal[0]);
+            expect(bChildren[1]).toBe(bCarsOriginal[1]);
         });
     });
 

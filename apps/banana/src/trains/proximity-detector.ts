@@ -31,6 +31,37 @@ export type ProximityMatch = {
  */
 export class ProximityDetector {
     private _matches: ProximityMatch[] = [];
+    private _lastFingerprint = '';
+    private _listeners: (() => void)[] = [];
+
+    /**
+     * Subscribe to proximity match changes. The listener is called only when
+     * the set of couplable pairs actually changes between frames.
+     * Returns an unsubscribe function.
+     */
+    subscribe(listener: () => void): () => void {
+        this._listeners.push(listener);
+        return () => {
+            const i = this._listeners.indexOf(listener);
+            if (i >= 0) this._listeners.splice(i, 1);
+        };
+    }
+
+    private _notifyListeners(): void {
+        for (const fn of this._listeners) fn();
+    }
+
+    /**
+     * Build a fingerprint string from the current matches so we can detect
+     * when the couplable set actually changes between frames.
+     */
+    private _computeFingerprint(): string {
+        if (this._matches.length === 0) return '';
+        return this._matches
+            .map(m => `${m.trainA.id}:${m.trainA.end}-${m.trainB.id}:${m.trainB.end}`)
+            .sort()
+            .join('|');
+    }
 
     /**
      * Re-evaluate proximity for all colocated train pairs.
@@ -44,7 +75,13 @@ export class ProximityDetector {
         this._matches.length = 0;
 
         const colocatedPairs = registry.getColocatedPairs();
-        if (colocatedPairs.size === 0) return;
+        if (colocatedPairs.size === 0) {
+            if (this._lastFingerprint !== '') {
+                this._lastFingerprint = '';
+                this._notifyListeners();
+            }
+            return;
+        }
 
         // Build id → entry lookup
         const trainMap = new Map<number, PlacedTrainEntry>();
@@ -90,6 +127,12 @@ export class ProximityDetector {
             this._checkEndpoints(idA, 'head', headA, idB, 'tail', tailB, headCouplerA + tailCouplerB + COUPLING_GAP_TOLERANCE);
             this._checkEndpoints(idA, 'tail', tailA, idB, 'tail', tailB, tailCouplerA + tailCouplerB + COUPLING_GAP_TOLERANCE);
             this._checkEndpoints(idA, 'head', headA, idB, 'head', headB, headCouplerA + headCouplerB + COUPLING_GAP_TOLERANCE);
+        }
+
+        const fingerprint = this._computeFingerprint();
+        if (fingerprint !== this._lastFingerprint) {
+            this._lastFingerprint = fingerprint;
+            this._notifyListeners();
         }
     }
 
