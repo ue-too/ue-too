@@ -55,6 +55,8 @@ import {
     validateSerializedTrainData,
 } from '@/trains/train-serialization';
 
+import { trackEvent } from '@/utils/analytics';
+
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
 import { DebugPanel } from './DebugPanel';
 import { DepotPanel } from './DepotPanel';
@@ -290,6 +292,7 @@ export function BananaToolbar({
             exitAllModes();
             app.kmtStateMachineExpansion.happens('switchToLayout');
             setMode('layout');
+            trackEvent('start-track-drawing');
         }
     }, [app, mode, exitAllModes]);
 
@@ -313,6 +316,7 @@ export function BananaToolbar({
             exitAllModes();
             app.kmtStateMachineExpansion.happens('switchToTrain');
             setMode('train-placement');
+            trackEvent('start-train-placement');
         }
     }, [app, mode, exitAllModes]);
 
@@ -324,6 +328,7 @@ export function BananaToolbar({
             exitAllModes();
             toggleKmtInput(false);
             setMode('building-placement');
+            trackEvent('start-building-placement');
         }
     }, [app, mode, exitAllModes, toggleKmtInput]);
 
@@ -346,6 +351,7 @@ export function BananaToolbar({
             exitAllModes();
             app.kmtStateMachineExpansion.happens('switchToStation');
             setMode('station-placement');
+            trackEvent('start-station-placement');
         }
     }, [app, mode, exitAllModes]);
 
@@ -392,6 +398,7 @@ export function BananaToolbar({
 
     const handleExportTracks = useCallback(() => {
         if (!app) return;
+        trackEvent('export-tracks');
         const data = {
             ...app.curveEngine.trackGraph.serialize(),
             stations: app.stationManager.serialize().stations,
@@ -401,6 +408,7 @@ export function BananaToolbar({
 
     const handleImportTracks = useCallback(() => {
         if (!app) return;
+        trackEvent('import-tracks');
         uploadJson(parsed => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
@@ -430,6 +438,7 @@ export function BananaToolbar({
 
     const handleExportTrains = useCallback(() => {
         if (!app) return;
+        trackEvent('export-trains');
         const data = serializeTrainData(
             app.trainManager,
             app.formationManager,
@@ -440,6 +449,7 @@ export function BananaToolbar({
 
     const handleImportTrains = useCallback(() => {
         if (!app) return;
+        trackEvent('import-trains');
         uploadJson(parsed => {
             const result = validateSerializedTrainData(parsed);
             if (!result.valid) {
@@ -459,12 +469,14 @@ export function BananaToolbar({
 
     const handleExportAll = useCallback(() => {
         if (!app) return;
+        trackEvent('export-scene');
         const data = serializeSceneData(app);
         downloadJson(`scene-data-${Date.now()}.json`, data);
     }, [app]);
 
     const handleImportAll = useCallback(() => {
         if (!app) return;
+        trackEvent('import-scene');
         uploadJson(parsed => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
@@ -477,6 +489,7 @@ export function BananaToolbar({
 
     const handleImportTerrain = useCallback(() => {
         if (!app) return;
+        trackEvent('import-terrain');
         uploadJson(parsed => {
             // Accept both standalone terrain files and scene files with a terrain field
             let terrainObj: unknown = parsed;
@@ -501,6 +514,7 @@ export function BananaToolbar({
 
     const handleImportCarDefinition = useCallback(() => {
         if (!app) return;
+        trackEvent('import-car-definition');
         uploadJson(parsed => {
             const result = validateCarDefinition(parsed);
             if (!result.valid) {
@@ -605,7 +619,7 @@ export function BananaToolbar({
                             placedTrains.length === 0 &&
                             mode !== 'train-placement'
                         }
-                        onClick={() => setShowTrainPanel(v => !v)}
+                        onClick={() => { if (!showTrainPanel) trackEvent('open-train-panel'); setShowTrainPanel(v => !v); }}
                     >
                         <List />
                     </ToolbarButton>
@@ -613,7 +627,7 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={showDepot ? t('closeDepot') : t('openDepot')}
                         active={showDepot}
-                        onClick={() => setShowDepot(v => !v)}
+                        onClick={() => { if (!showDepot) trackEvent('open-depot'); setShowDepot(v => !v); }}
                     >
                         <Warehouse />
                     </ToolbarButton>
@@ -625,7 +639,7 @@ export function BananaToolbar({
                                 : t('editFormations')
                         }
                         active={showFormationEditor}
-                        onClick={() => setShowFormationEditor(v => !v)}
+                        onClick={() => { if (!showFormationEditor) trackEvent('open-formation-editor'); setShowFormationEditor(v => !v); }}
                     >
                         <ListOrdered />
                     </ToolbarButton>
@@ -680,7 +694,7 @@ export function BananaToolbar({
                                 : t('openStationList')
                         }
                         active={showStationList}
-                        onClick={() => setShowStationList(v => !v)}
+                        onClick={() => { if (!showStationList) trackEvent('open-station-list'); setShowStationList(v => !v); }}
                     >
                         <Landmark />
                     </ToolbarButton>
@@ -743,7 +757,7 @@ export function BananaToolbar({
                             showDebugPanel ? t('closeDebug') : t('openDebug')
                         }
                         active={showDebugPanel}
-                        onClick={() => setShowDebugPanel(v => !v)}
+                        onClick={() => { if (!showDebugPanel) trackEvent('open-debug-panel'); setShowDebugPanel(v => !v); }}
                     >
                         <Bug />
                     </ToolbarButton>

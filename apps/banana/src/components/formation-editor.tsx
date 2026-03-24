@@ -12,6 +12,7 @@ import type { Formation } from '@/trains/formation';
 import type { Car, TrainUnit } from '@/trains/cars';
 import type { ProximityMatch } from '@/trains/proximity-detector';
 import { toast } from 'sonner';
+import { trackEvent } from '@/utils/analytics';
 
 type FormationEditorProps = {
     formationManager: FormationManager;
@@ -97,11 +98,13 @@ export function FormationEditor({
         const firstCar = availableCars[0];
         const formation = formationManager.createFormation([firstCar.id]);
         setSelectedKey(formation.id);
+        trackEvent('create-formation');
     }, [formationManager, availableCars]);
 
     const handleDeleteFormation = useCallback(
         (id: string) => {
             formationManager.deleteFormation(id);
+            trackEvent('delete-formation');
             if (selectedKey === id) {
                 setSelectedKey(null);
             }
@@ -112,6 +115,7 @@ export function FormationEditor({
     const handleAppendCar = useCallback(
         (formationId: string, carId: string) => {
             formationManager.appendCar(formationId, carId);
+            trackEvent('add-car-to-formation');
             setSelectedStockCarId(null);
         },
         [formationManager]
@@ -120,6 +124,7 @@ export function FormationEditor({
     const handlePrependCar = useCallback(
         (formationId: string, carId: string) => {
             formationManager.prependCar(formationId, carId);
+            trackEvent('add-car-to-formation');
             setSelectedStockCarId(null);
         },
         [formationManager]
@@ -128,6 +133,7 @@ export function FormationEditor({
     const handleRemoveChild = useCallback(
         (formationId: string, childIndex: number) => {
             formationManager.removeChild(formationId, childIndex);
+            trackEvent('remove-car-from-formation');
         },
         [formationManager]
     );

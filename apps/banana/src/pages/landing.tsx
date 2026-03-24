@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
 import { useReduceMotion } from '@/hooks/use-reduce-motion';
+import { trackEvent } from '@/utils/analytics';
 
 const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
 const FLAP_PAUSE = 10000;
@@ -183,6 +184,7 @@ export function LandingPage(): React.ReactNode {
                     className="mt-8 transition-opacity hover:opacity-75"
                     onMouseEnter={() => setCtaHover(true)}
                     onMouseLeave={() => setCtaHover(false)}
+                    onClick={() => trackEvent('landing-open-simulator')}
                 >
                     <LedMarquee
                         text={t('openSimulator') + ' →'}
@@ -198,6 +200,7 @@ export function LandingPage(): React.ReactNode {
                     className="mt-8 transition-opacity hover:opacity-75"
                     onMouseEnter={() => setCtaHover(true)}
                     onMouseLeave={() => setCtaHover(false)}
+                    onClick={() => trackEvent('landing-open-tutorial')}
                 >
                     <LedMarquee
                         text={t('openTutorial') + ' →'}
