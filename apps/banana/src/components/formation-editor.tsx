@@ -10,6 +10,8 @@ import type { FormationManager } from '@/trains/formation-manager';
 import type { TrainManager } from '@/trains/train-manager';
 import type { Formation } from '@/trains/formation';
 import type { Car, TrainUnit } from '@/trains/cars';
+import type { ProximityMatch } from '@/trains/proximity-detector';
+import { toast } from 'sonner';
 
 type FormationEditorProps = {
     formationManager: FormationManager;
@@ -233,7 +235,13 @@ export function FormationEditor({
                                             }
                                             : undefined
                                     }
-                                    couplableCount={trainManager.getCouplableCandidates(trainId).length}
+                                    couplableCandidates={trainManager.getCouplableCandidates(trainId)}
+                                    onCouple={(match) => {
+                                        const result = trainManager.coupleTrains(match);
+                                        if (!result.success && result.reason === 'depth_exceeded') {
+                                            toast.warning(t('couplingDepthExceeded'));
+                                        }
+                                    }}
                                 />
                             );
                         })}
@@ -320,8 +328,10 @@ type FormationCardProps = {
     onRemoveChild: (childIndex: number) => void;
     /** When set, decouple buttons appear between children. Args: (headCarIndex, tailCarIndex). */
     onDecouple?: (headCarIndex: number, tailCarIndex: number) => void;
-    /** Number of coupling candidates detected for this placed train. */
-    couplableCount?: number;
+    /** Proximity matches for coupling candidates. */
+    couplableCandidates?: readonly ProximityMatch[];
+    /** Called when user clicks the couple button. */
+    onCouple?: (match: ProximityMatch) => void;
     /** Called to rename the formation. */
     onRename?: (name: string) => void;
     /** Called to flatten all nested formations into direct cars. */
@@ -352,7 +362,8 @@ function FormationCard({
     onPrependCar,
     onRemoveChild,
     onDecouple,
-    couplableCount,
+    couplableCandidates,
+    onCouple,
     onRename,
     onConsolidate,
     onReverseChildren,
@@ -441,7 +452,7 @@ function FormationCard({
                             {t('nested')}
                         </span>
                     )}
-                    {couplableCount != null && couplableCount > 0 && (
+                    {couplableCandidates != null && couplableCandidates.length > 0 && (
                         <span
                             className="inline-flex items-center gap-0.5 rounded bg-emerald-500/20 px-1 text-[9px] text-emerald-600 dark:text-emerald-400 shrink-0"
                             title={t('couplable')}
@@ -452,6 +463,20 @@ function FormationCard({
                     )}
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
+                    {onCouple && couplableCandidates && couplableCandidates.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                            title={t('couple')}
+                            onClick={e => {
+                                e.stopPropagation();
+                                onCouple(couplableCandidates[0]);
+                            }}
+                        >
+                            <Link2 className="size-3" />
+                        </Button>
+                    )}
                     {!readOnly && onRename && (
                         <Button
                             variant="ghost"

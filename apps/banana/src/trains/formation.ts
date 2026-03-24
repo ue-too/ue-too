@@ -17,7 +17,7 @@ import { Car, TrainUnit, generateCarId, generateFormationId } from './cars';
 //     bogieOffsets: number[];
 // };
 
-const MAX_FORMATION_DEPTH = 3;
+export const MAX_FORMATION_DEPTH = 3;
 
 /**
  * If `units` has more than one element, wrap them in a new Formation
@@ -116,19 +116,38 @@ export class Formation implements TrainUnit {
         for (let i = 0; i < this._children.length; i++) {
             const child = this._children[i];
             const childOffsets = child.bogieOffsets();
+            // A Formation child's bogieOffsets() already starts with its edgeToBogie,
+            // so we must avoid double-counting it.
+            const isNestedFormation = child.depth > 0;
 
             if (i === 0) {
-                // First child: include its leading edgeToBogie + its bogie offsets
-                res.push(child.edgeToBogie);
-                for (const offset of childOffsets) {
-                    res.push(offset);
+                if (isNestedFormation) {
+                    // Formation child: bogieOffsets already starts with edgeToBogie
+                    for (const offset of childOffsets) {
+                        res.push(offset);
+                    }
+                } else {
+                    // Car child: manually prepend edgeToBogie
+                    res.push(child.edgeToBogie);
+                    for (const offset of childOffsets) {
+                        res.push(offset);
+                    }
                 }
             } else {
                 const prevChild = this._children[i - 1];
-                // Gap between previous child's trailing edge and this child's leading edge
-                res.push(prevChild.bogieToEdge + child.edgeToBogie);
-                for (const offset of childOffsets) {
-                    res.push(offset);
+                if (isNestedFormation) {
+                    // Formation child: gap from prev's last bogie to this child's edge,
+                    // then skip first childOffset (edgeToBogie, folded into the gap)
+                    res.push(prevChild.bogieToEdge + child.edgeToBogie);
+                    for (let j = 1; j < childOffsets.length; j++) {
+                        res.push(childOffsets[j]);
+                    }
+                } else {
+                    // Car child: gap + all bogie offsets
+                    res.push(prevChild.bogieToEdge + child.edgeToBogie);
+                    for (const offset of childOffsets) {
+                        res.push(offset);
+                    }
                 }
             }
         }
@@ -1024,6 +1043,19 @@ export class Train {
         );
 
         return newTrain;
+    }
+
+    /**
+     * Reset speed, acceleration, throttle, and invalidate cached position/occupancy data.
+     * Used after coupling to clear stale state on the train that keeps its formation.
+     */
+    resetMotionState(): void {
+        this._speed = 0;
+        this._acceleration = 0;
+        this._throttle = 'N';
+        this._cachedBogiePositions = null;
+        this._occupiedJointNumbers = [];
+        this._occupiedTrackSegments = [];
     }
 
     /**

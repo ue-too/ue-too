@@ -1,9 +1,19 @@
 import { GenericEntityManager } from '@/utils';
-import { Train } from './formation';
+import { MAX_FORMATION_DEPTH, Train } from './formation';
 import { Observable, SynchronousObservable } from '@ue-too/board';
 import type { ProximityDetector, ProximityMatch } from './proximity-detector';
 
 export type PlacedTrainEntry = { id: number; train: Train };
+
+/**
+ * Result of a coupling operation.
+ *
+ * @group Train System
+ */
+export type CoupleResult =
+  | { success: true; keepTrainId: number }
+  | { success: false; reason: 'depth_exceeded' }
+  | { success: false; reason: 'invalid' };
 
 type TrainChangeType = 'add' | 'remove' | 'select';
 
@@ -150,6 +160,81 @@ export class TrainManager {
     const newId = this.addTrain(newTrain);
     this._notify();
     return newId;
+  }
+
+  /**
+   * Couple two trains identified by a proximity match. The train whose tail
+   * is at the coupling point keeps its head position; the other train's
+   * formation is appended as a nested child and its entity is removed.
+   *
+   * Returns a typed result — check `success` and `reason` to handle errors.
+   */
+  coupleTrains(match: ProximityMatch): CoupleResult {
+    const trainA = this._internalTrainManager.getEntity(match.trainA.id);
+    const trainB = this._internalTrainManager.getEntity(match.trainB.id);
+    if (!trainA || !trainB) return { success: false, reason: 'invalid' };
+
+    // Determine which train keeps its head position (the one whose tail is at the junction)
+    let keepId: number;
+    let removeId: number;
+    let keepTrain: Train;
+    let removeTrain: Train;
+    let needsFlip = false;
+
+    const endA = match.trainA.end;
+    const endB = match.trainB.end;
+
+    if (endA === 'tail' && endB === 'head') {
+      keepId = match.trainA.id; removeId = match.trainB.id;
+      keepTrain = trainA; removeTrain = trainB;
+    } else if (endA === 'head' && endB === 'tail') {
+      keepId = match.trainB.id; removeId = match.trainA.id;
+      keepTrain = trainB; removeTrain = trainA;
+    } else if (endA === 'tail' && endB === 'tail') {
+      keepId = match.trainA.id; removeId = match.trainB.id;
+      keepTrain = trainA; removeTrain = trainB;
+      needsFlip = true;
+    } else {
+      // head-head
+      keepId = match.trainB.id; removeId = match.trainA.id;
+      keepTrain = trainB; removeTrain = trainA;
+      needsFlip = true;
+    }
+
+    // Check depth before merging
+    if (keepTrain.formation.depth + removeTrain.formation.depth >= MAX_FORMATION_DEPTH) {
+      return { success: false, reason: 'depth_exceeded' };
+    }
+
+    // Flip the removed train's formation if endpoints face the same way
+    if (needsFlip) {
+      removeTrain.formation.switchDirection();
+    }
+
+    // Append the removed train's entire formation as a nested sub-formation
+    keepTrain.formation.append(removeTrain.formation);
+    keepTrain.resetMotionState();
+
+    // Remove the other train without returning its formation to depot
+    this._destroyTrainEntity(removeId, keepId);
+
+    return { success: true, keepTrainId: keepId };
+  }
+
+  /**
+   * Remove a train entity without calling _onBeforeRemove.
+   * Used by coupleTrains where the formation has been merged, not returned to depot.
+   */
+  private _destroyTrainEntity(id: number, fallbackSelectionId: number): void {
+    const entryIndex = this._placedTrains.findIndex((e) => e.id === id);
+    if (entryIndex === -1) return;
+    this._internalTrainManager.destroyEntity(id);
+    this._placedTrains.splice(entryIndex, 1);
+    if (this._selectedIndex === id) {
+      this._selectedIndex = fallbackSelectionId;
+    }
+    this._observable.notify(id, { type: 'remove' });
+    this._notify();
   }
 
   /** Subscribe to list/selection changes. Returns unsubscribe. */
