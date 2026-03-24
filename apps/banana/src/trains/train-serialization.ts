@@ -1,4 +1,4 @@
-import { Car, seedIdGeneratorsFromSerialized } from './cars';
+import { Car, CarType, getDefaultGangway, seedIdGeneratorsFromSerialized } from './cars';
 import type { TrainPosition } from './formation';
 import { Formation, Train } from './formation';
 import type { JointDirectionManager } from './input-state-machine/train-kmt-state-machine';
@@ -18,6 +18,12 @@ export type SerializedCar = {
   bogieToEdge: number;
   /** Distance from bogie to coupler tip. Omitted when 0 for backwards compatibility. */
   couplerLength?: number;
+  /** Car category. Omitted when 'coach' for backwards compatibility. */
+  type?: string;
+  /** Head-end gangway override. Omitted when matching the type default. */
+  headHasGangway?: boolean;
+  /** Tail-end gangway override. Omitted when matching the type default. */
+  tailHasGangway?: boolean;
   flipped: boolean;
 };
 
@@ -61,6 +67,7 @@ export type SerializedTrainData = {
 };
 
 function serializeCar(car: Car): SerializedCar {
+  const gangwayDefaults = getDefaultGangway(car.type);
   return {
     id: car.id,
     ...(car.name !== car.id ? { name: car.name } : {}),
@@ -68,6 +75,9 @@ function serializeCar(car: Car): SerializedCar {
     edgeToBogie: car.edgeToBogie,
     bogieToEdge: car.bogieToEdge,
     ...(car.couplerLength !== 0 ? { couplerLength: car.couplerLength } : {}),
+    ...(car.type !== CarType.COACH ? { type: car.type } : {}),
+    ...(car.headHasGangway !== gangwayDefaults.head ? { headHasGangway: car.headHasGangway } : {}),
+    ...(car.tailHasGangway !== gangwayDefaults.tail ? { tailHasGangway: car.tailHasGangway } : {}),
     flipped: car.flipped,
   };
 }
@@ -157,15 +167,24 @@ export function serializeTrainData(
 }
 
 function deserializeCar(data: SerializedCar): Car {
+  const type = (data.type as CarType | undefined) ?? CarType.COACH;
   const car = new Car(
     data.id,
     [...data.bogieOffsets],
     data.edgeToBogie,
     data.bogieToEdge,
-    data.couplerLength
+    data.couplerLength,
+    type,
   );
   if (data.name !== undefined) {
     car.name = data.name;
+  }
+  // Apply gangway overrides (if present they differ from the type default)
+  if (data.headHasGangway !== undefined) {
+    car.headHasGangway = data.headHasGangway;
+  }
+  if (data.tailHasGangway !== undefined) {
+    car.tailHasGangway = data.tailHasGangway;
   }
   if (data.flipped) {
     car.switchDirection();

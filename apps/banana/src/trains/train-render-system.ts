@@ -47,6 +47,87 @@ function carKey(trainId: number | 'preview', carIndex: number): string {
   return `__train_${trainId}_car_${carIndex}`;
 }
 
+function gangwayKey(trainId: number, index: number): string {
+  return `__train_${trainId}_gangway_${index}`;
+}
+
+/** World-space width of the gangway rectangle (meters). */
+const GANGWAY_WIDTH = 1.2;
+
+type GangwayGeometry = {
+  x: number;
+  y: number;
+  angle: number;
+  length: number;
+  /** Bogie position index for z-order band resolution. */
+  bogiePositionIndex: number;
+};
+
+/**
+ * Compute gangway geometries between adjacent cars whose touching sides
+ * both have gangway enabled. Derives positions from pre-computed car
+ * geometries so all flip logic is handled in one place.
+ *
+ * Gangway flags are read directly — switchDirection() already swaps them
+ * so `tailHasGangway` always refers to the current trailing side.
+ *
+ * When a car is flipped, getCarGeometries reverses the angle direction
+ * (rearIdx = 2k+1, frontIdx = 2k), so the geometry's rear edge faces the
+ * next car and the front edge faces the previous car — opposite of the
+ * non-flipped case. We pick the gap-side edge accordingly.
+ */
+function getGangwayGeometries(carGeoms: CarGeometry[], cars: readonly Car[]): GangwayGeometry[] {
+  const out: GangwayGeometry[] = [];
+  for (let k = 0; k + 1 < cars.length; k++) {
+    // switchDirection already swaps the flags, so no flip conditional needed
+    if (!cars[k].tailHasGangway || !cars[k + 1].headHasGangway) continue;
+
+    const gA = carGeoms[k];
+    const gB = carGeoms[k + 1];
+
+    // Car A's gap-side edge (facing car B):
+    //   not flipped → front edge (end of sprite)
+    //   flipped → rear edge (start of sprite, since angle is reversed)
+    let gapAx: number, gapAy: number;
+    if (cars[k].flipped) {
+      gapAx = gA.x;
+      gapAy = gA.y;
+    } else {
+      gapAx = gA.x + Math.cos(gA.angle) * gA.length;
+      gapAy = gA.y + Math.sin(gA.angle) * gA.length;
+    }
+
+    // Car B's gap-side edge (facing car A):
+    //   not flipped → rear edge (start of sprite)
+    //   flipped → front edge (end of sprite, since angle is reversed)
+    let gapBx: number, gapBy: number;
+    if (cars[k + 1].flipped) {
+      gapBx = gB.x + Math.cos(gB.angle) * gB.length;
+      gapBy = gB.y + Math.sin(gB.angle) * gB.length;
+    } else {
+      gapBx = gB.x;
+      gapBy = gB.y;
+    }
+
+    const dx = gapBx - gapAx;
+    const dy = gapBy - gapAy;
+    const gangwayLength = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+
+    // Use the bogie closest to the gap for z-order band resolution
+    const gapBogieIdx = 2 * k + 1;
+
+    out.push({
+      x: gapAx,
+      y: gapAy,
+      angle,
+      length: Math.max(gangwayLength, 0),
+      bogiePositionIndex: gapBogieIdx,
+    });
+  }
+  return out;
+}
+
 /**
  * Car geometry: car k connects bogie 2k and bogie 2k+1. Train position is the first bogie.
  * Both bogies are inset from the car rectangle edges by the car's edgeToBogie/bogieToEdge distances.
@@ -167,6 +248,12 @@ export class TrainRenderSystem {
   private _actualCarPools: Map<number, Sprite[]> = new Map();
   /** Per-train-id: number of active car drawables. */
   private _activeCarCounts: Map<number, number> = new Map();
+  /** Per-train-id: pool of Sprites for gangway connectors. */
+  private _gangwayPools: Map<number, Sprite[]> = new Map();
+  /** Per-train-id: number of active gangway drawables. */
+  private _activeGangwayCounts: Map<number, number> = new Map();
+  /** Cached procedural gangway texture. */
+  private _gangwayTexture: Texture | null = null;
   /** Train ids we had last frame (to remove drawables when a train is removed). */
   private _lastTrainIds: Set<number> = new Set();
 
@@ -227,6 +314,7 @@ export class TrainRenderSystem {
     this._updatePreviewCars();
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
+    this._updateGangways(placed);
     this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
@@ -254,6 +342,7 @@ export class TrainRenderSystem {
     this._updatePreviewCars();
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
+    this._updateGangways(placed);
     this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
@@ -282,6 +371,17 @@ export class TrainRenderSystem {
     }
     this._actualCarPools.clear();
     this._activeCarCounts.clear();
+
+    for (const [trainId] of this._gangwayPools) {
+      const count = this._activeGangwayCounts.get(trainId) ?? 0;
+      for (let i = 0; i < count; i++) {
+        const key = gangwayKey(trainId, i);
+        const removed = this._worldRenderSystem.removeFromBand(key);
+        removed?.destroy({ children: true });
+      }
+    }
+    this._gangwayPools.clear();
+    this._activeGangwayCounts.clear();
     this._lastTrainIds.clear();
 
     this._worldRenderSystem.removeOverlayContainer(this._previewContainer);
@@ -390,6 +490,84 @@ export class TrainRenderSystem {
       }
     }
 
+  }
+
+  private _getOrCreateGangwayTexture(): Texture | null {
+    if (this._gangwayTexture) return this._gangwayTexture;
+    const renderer = this._textureRenderer?.renderer?.textureGenerator;
+    if (renderer === undefined) return null;
+    const w = 16;
+    const h = 16;
+    const g = new Graphics();
+    g.rect(0, 0, w, h);
+    g.fill({ color: 0x3d3d3d });
+    this._gangwayTexture = renderer.generateTexture({ target: g });
+    g.destroy();
+    return this._gangwayTexture;
+  }
+
+  private _updateGangways(placed: readonly PlacedTrainEntry[]): void {
+    const texture = this._getOrCreateGangwayTexture();
+    if (texture === null) return;
+
+    for (const { id, train } of placed) {
+      const positions = train.getBogiePositions();
+      if (positions === null || positions.length < 2) {
+        this._hideGangwaysForTrain(id);
+        continue;
+      }
+      const cars = train.cars;
+      const carGeoms = getCarGeometries(positions, cars);
+      const geoms = getGangwayGeometries(carGeoms, cars);
+      this._syncGangwayPoolForTrain(id, geoms.length, texture);
+      const pool = this._gangwayPools.get(id)!;
+
+      for (let i = 0; i < geoms.length; i++) {
+        const sprite = pool[i];
+        const g = geoms[i];
+
+        sprite.position.set(g.x, g.y);
+        sprite.rotation = g.angle;
+        sprite.scale.set(g.length / texture.width, GANGWAY_WIDTH / texture.height);
+        sprite.visible = true;
+
+        const bandIndex = this._resolveBandIndex(positions[g.bogiePositionIndex]);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(gangwayKey(id, i), sprite, bandIndex, 'onTrack');
+          this._worldRenderSystem.setOrderInBand(gangwayKey(id, i), 0);
+        }
+      }
+
+      // Hide excess sprites from previous frame
+      const prevCount = this._activeGangwayCounts.get(id) ?? 0;
+      for (let i = geoms.length; i < prevCount; i++) {
+        pool[i].visible = false;
+      }
+      this._activeGangwayCounts.set(id, Math.max(prevCount, geoms.length));
+    }
+  }
+
+  private _hideGangwaysForTrain(trainId: number): void {
+    const pool = this._gangwayPools.get(trainId);
+    const count = this._activeGangwayCounts.get(trainId) ?? 0;
+    if (pool) {
+      for (let i = 0; i < count; i++) {
+        pool[i].visible = false;
+      }
+    }
+  }
+
+  private _syncGangwayPoolForTrain(trainId: number, count: number, texture: Texture): void {
+    let pool = this._gangwayPools.get(trainId);
+    if (!pool) {
+      pool = [];
+      this._gangwayPools.set(trainId, pool);
+    }
+    while (pool.length < count) {
+      const sprite = new Sprite({ texture });
+      sprite.anchor.set(0, 0.5);
+      pool.push(sprite);
+    }
   }
 
   private _updatePreviewCars(): void {
@@ -549,6 +727,18 @@ export class TrainRenderSystem {
       this._actualCarPools.delete(trainId);
     }
     this._activeCarCounts.delete(trainId);
+
+    const gangwayPool = this._gangwayPools.get(trainId);
+    const gangwayCount = this._activeGangwayCounts.get(trainId) ?? 0;
+    if (gangwayPool) {
+      for (let i = 0; i < gangwayCount; i++) {
+        const key = gangwayKey(trainId, i);
+        const removed = this._worldRenderSystem.removeFromBand(key);
+        removed?.destroy({ children: true });
+      }
+      this._gangwayPools.delete(trainId);
+    }
+    this._activeGangwayCounts.delete(trainId);
   }
 
   private _resolveBandIndex(position: TrainPosition): number | null {

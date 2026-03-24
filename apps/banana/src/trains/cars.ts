@@ -1,3 +1,36 @@
+/**
+ * Categorizes a car for default behaviour (e.g. gangway presence).
+ * Uses string values so the enum is extensible without breaking serialization.
+ *
+ * @group Train System
+ */
+export enum CarType {
+    LOCOMOTIVE = 'locomotive',
+    COACH = 'coach',
+    MOTOR = 'motor',
+    TRAILER = 'trailer',
+    FREIGHT = 'freight',
+    CAB_CAR = 'cab_car',
+}
+
+/** Per-type gangway defaults (head side, tail side). */
+const DEFAULT_GANGWAY: Record<CarType, { head: boolean; tail: boolean }> = {
+    [CarType.LOCOMOTIVE]: { head: false, tail: false },
+    [CarType.COACH]:      { head: true,  tail: true },
+    [CarType.MOTOR]:      { head: true,  tail: true },
+    [CarType.TRAILER]:    { head: true,  tail: true },
+    [CarType.FREIGHT]:    { head: false, tail: false },
+    [CarType.CAB_CAR]:    { head: false, tail: true },
+};
+
+/**
+ * Return the default gangway flags for a given car type.
+ * Falls back to no gangway for unknown types.
+ */
+export function getDefaultGangway(type: CarType): { head: boolean; tail: boolean } {
+    return DEFAULT_GANGWAY[type] ?? { head: false, tail: false };
+}
+
 let _nextCarId = 0;
 let _nextFormationId = 0;
 
@@ -72,14 +105,21 @@ export class Car implements TrainUnit {
     private _bogieToEdge: number;
     private _couplerLength: number;
     private _flipped: boolean = false;
+    private _type: CarType;
+    private _headHasGangway: boolean;
+    private _tailHasGangway: boolean;
 
-    constructor(id: string, bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number, couplerLength?: number) {
+    constructor(id: string, bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number, couplerLength?: number, type?: CarType) {
         this.id = id;
         this._name = id;
         this._bogieOffsets = bogieOffsets;
         this._edgeToBogie = edgeToBogie;
         this._bogieToEdge = bogieToEdge;
         this._couplerLength = couplerLength ?? bogieToEdge + 1;
+        this._type = type ?? CarType.COACH;
+        const gangway = getDefaultGangway(this._type);
+        this._headHasGangway = gangway.head;
+        this._tailHasGangway = gangway.tail;
     }
 
     /** Display name for UI. Defaults to the car id. */
@@ -98,6 +138,7 @@ export class Car implements TrainUnit {
     switchDirection(): void {
         this._bogieOffsets = this._bogieOffsets.reverse();
         [this._edgeToBogie, this._bogieToEdge] = [this._bogieToEdge, this._edgeToBogie];
+        [this._headHasGangway, this._tailHasGangway] = [this._tailHasGangway, this._headHasGangway];
         this._flipped = !this._flipped;
     }
 
@@ -135,6 +176,37 @@ export class Car implements TrainUnit {
 
     get flipped(): boolean {
         return this._flipped;
+    }
+
+    /** Car category — determines default gangway flags. */
+    get type(): CarType {
+        return this._type;
+    }
+
+    /** Setting the type resets gangway flags to the new type's defaults. */
+    set type(value: CarType) {
+        this._type = value;
+        const gangway = getDefaultGangway(value);
+        this._headHasGangway = gangway.head;
+        this._tailHasGangway = gangway.tail;
+    }
+
+    /** Whether the head (leading) end has a gangway connector. */
+    get headHasGangway(): boolean {
+        return this._headHasGangway;
+    }
+
+    set headHasGangway(value: boolean) {
+        this._headHasGangway = value;
+    }
+
+    /** Whether the tail (trailing) end has a gangway connector. */
+    get tailHasGangway(): boolean {
+        return this._tailHasGangway;
+    }
+
+    set tailHasGangway(value: boolean) {
+        this._tailHasGangway = value;
     }
 
     get depth(): number {

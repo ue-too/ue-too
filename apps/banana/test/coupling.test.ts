@@ -1,6 +1,6 @@
 import { TrainManager } from '../src/trains/train-manager';
 import { Formation, Train, MAX_FORMATION_DEPTH } from '../src/trains/formation';
-import { Car, generateCarId, generateFormationId } from '../src/trains/cars';
+import { Car, CarType, generateCarId, generateFormationId } from '../src/trains/cars';
 import type { TrackGraph } from '../src/trains/tracks/track';
 import type { JointDirectionManager } from '../src/trains/input-state-machine/train-kmt-state-machine';
 import type { ProximityMatch } from '../src/trains/proximity-detector';
@@ -294,5 +294,58 @@ describe('TrainManager.coupleTrains', () => {
             if (result.success) return;
             expect(result.reason).toBe('invalid');
         });
+    });
+});
+
+describe('Car gangway flags', () => {
+
+    it('should default to type-based gangway flags', () => {
+        const coach = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.COACH);
+        expect(coach.headHasGangway).toBe(true);
+        expect(coach.tailHasGangway).toBe(true);
+
+        const loco = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.LOCOMOTIVE);
+        expect(loco.headHasGangway).toBe(false);
+        expect(loco.tailHasGangway).toBe(false);
+
+        const cab = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.CAB_CAR);
+        expect(cab.headHasGangway).toBe(false);
+        expect(cab.tailHasGangway).toBe(true);
+    });
+
+    it('should swap gangway flags on switchDirection', () => {
+        const cab = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.CAB_CAR);
+        expect(cab.headHasGangway).toBe(false);
+        expect(cab.tailHasGangway).toBe(true);
+
+        cab.switchDirection();
+
+        expect(cab.headHasGangway).toBe(true);
+        expect(cab.tailHasGangway).toBe(false);
+    });
+
+    it('should allow per-side overrides', () => {
+        const coach = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.COACH);
+        coach.headHasGangway = false;
+        expect(coach.headHasGangway).toBe(false);
+        expect(coach.tailHasGangway).toBe(true);
+    });
+
+    it('should reset gangway flags when type changes', () => {
+        const car = new Car(generateCarId(), [20], 2.5, 2.5, undefined, CarType.COACH);
+        car.headHasGangway = false; // override
+        expect(car.headHasGangway).toBe(false);
+
+        car.type = CarType.LOCOMOTIVE;
+        expect(car.headHasGangway).toBe(false);
+        expect(car.tailHasGangway).toBe(false);
+        expect(car.type).toBe(CarType.LOCOMOTIVE);
+    });
+
+    it('should default to COACH when no type specified', () => {
+        const car = new Car(generateCarId(), [20], 2.5, 2.5);
+        expect(car.type).toBe(CarType.COACH);
+        expect(car.headHasGangway).toBe(true);
+        expect(car.tailHasGangway).toBe(true);
     });
 });
