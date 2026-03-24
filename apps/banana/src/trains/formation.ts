@@ -78,6 +78,14 @@ export class Formation implements TrainUnit {
         return this._children[this._children.length - 1].bogieToEdge;
     }
 
+    get headCouplerLength(): number {
+        return this._children[0].headCouplerLength;
+    }
+
+    get tailCouplerLength(): number {
+        return this._children[this._children.length - 1].tailCouplerLength;
+    }
+
     get flipped(): boolean {
         return this._flipped;
     }

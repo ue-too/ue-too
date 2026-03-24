@@ -3,12 +3,10 @@ import type { OccupancyRegistry } from './occupancy-registry';
 import type { PlacedTrainEntry } from './train-manager';
 
 /**
- * Distance threshold (world units) for coupling proximity.
- * Must cover bogieToEdge + physical gap + edgeToBogie between two trains.
- * Default cars have 2.5 + 2.5 = 5m of bogie-to-edge clearance alone.
+ * Base gap tolerance (world units) added on top of the two coupler lengths.
+ * Accounts for placement imprecision and the physical gap between couplers.
  */
-const COUPLING_THRESHOLD = 8;
-const COUPLING_THRESHOLD_SQ = COUPLING_THRESHOLD * COUPLING_THRESHOLD;
+const COUPLING_GAP_TOLERANCE = 2;
 
 /**
  * Describes a proximity match between two train endpoints that are
@@ -80,11 +78,18 @@ export class ProximityDetector {
             const headB = posB.point;
             const tailB = bogiesB[bogiesB.length - 1].point;
 
-            // Check all 4 endpoint combinations, record closest per pair
-            this._checkEndpoints(idA, 'tail', tailA, idB, 'head', headB);
-            this._checkEndpoints(idA, 'head', headA, idB, 'tail', tailB);
-            this._checkEndpoints(idA, 'tail', tailA, idB, 'tail', tailB);
-            this._checkEndpoints(idA, 'head', headA, idB, 'head', headB);
+            const formA = trainA.formation;
+            const formB = trainB.formation;
+            const headCouplerA = formA.headCouplerLength;
+            const tailCouplerA = formA.tailCouplerLength;
+            const headCouplerB = formB.headCouplerLength;
+            const tailCouplerB = formB.tailCouplerLength;
+
+            // Check all 4 endpoint combinations with per-pair dynamic thresholds
+            this._checkEndpoints(idA, 'tail', tailA, idB, 'head', headB, tailCouplerA + headCouplerB + COUPLING_GAP_TOLERANCE);
+            this._checkEndpoints(idA, 'head', headA, idB, 'tail', tailB, headCouplerA + tailCouplerB + COUPLING_GAP_TOLERANCE);
+            this._checkEndpoints(idA, 'tail', tailA, idB, 'tail', tailB, tailCouplerA + tailCouplerB + COUPLING_GAP_TOLERANCE);
+            this._checkEndpoints(idA, 'head', headA, idB, 'head', headB, headCouplerA + headCouplerB + COUPLING_GAP_TOLERANCE);
         }
     }
 
@@ -103,11 +108,12 @@ export class ProximityDetector {
     private _checkEndpoints(
         idA: number, endA: 'head' | 'tail', ptA: { x: number; y: number },
         idB: number, endB: 'head' | 'tail', ptB: { x: number; y: number },
+        threshold: number,
     ): void {
         const dx = ptA.x - ptB.x;
         const dy = ptA.y - ptB.y;
         const distSq = dx * dx + dy * dy;
-        if (distSq <= COUPLING_THRESHOLD_SQ) {
+        if (distSq <= threshold * threshold) {
             this._matches.push({
                 trainA: { id: idA, end: endA },
                 trainB: { id: idB, end: endB },

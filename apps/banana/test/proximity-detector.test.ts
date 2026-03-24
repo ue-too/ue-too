@@ -9,12 +9,15 @@ function makePosition(x: number, y: number, segment = 0, tValue = 0, direction: 
 
 /**
  * Minimal mock train for proximity detection tests.
- * Trains are spread 50+ units apart so only the intended endpoint pair is within the 8-unit threshold.
+ * Trains are spread 50+ units apart so only the intended endpoint pair is within threshold.
+ * Default couplerLength is 0; the base gap tolerance (2 units) is the effective threshold.
  */
 function mockTrain(opts: {
     headPosition: TrainPosition | null;
     bogiePositions: TrainPosition[] | null;
     speed?: number;
+    headCouplerLength?: number;
+    tailCouplerLength?: number;
     occupiedSegments?: { trackNumber: number; inTrackDirection: 'tangent' | 'reverseTangent' }[];
     occupiedJoints?: { jointNumber: number; direction: 'tangent' | 'reverseTangent' }[];
 }): Train {
@@ -24,6 +27,10 @@ function mockTrain(opts: {
         speed: opts.speed ?? 0,
         occupiedTrackSegments: opts.occupiedSegments ?? [],
         occupiedJointNumbers: opts.occupiedJoints ?? [],
+        formation: {
+            headCouplerLength: opts.headCouplerLength ?? 0,
+            tailCouplerLength: opts.tailCouplerLength ?? 0,
+        },
     } as unknown as Train;
 }
 
@@ -332,6 +339,55 @@ describe('ProximityDetector', () => {
 
             // Non-existent train has no matches
             expect(detector.getMatchesForTrain(99)).toHaveLength(0);
+        });
+    });
+
+    describe('coupler length extends threshold', () => {
+
+        it('should match at greater distance when couplerLength is set', () => {
+            // Tails 10 units apart — with default couplerLength=0, threshold=2, no match
+            // With couplerLength=5 on each, threshold = 5+5+2 = 12 → match
+            const t1 = mockTrain({
+                headPosition: makePosition(0, 0, 1),
+                bogiePositions: [makePosition(0, 0, 1), makePosition(50, 0, 1)],
+                tailCouplerLength: 5,
+                occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+            });
+            const t2 = mockTrain({
+                headPosition: makePosition(110, 0, 1),
+                bogiePositions: [makePosition(110, 0, 1), makePosition(60, 0, 1)],
+                tailCouplerLength: 5,
+                occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+            });
+            const entries = [entry(1, t1), entry(2, t2)];
+            registry.updateFromTrains(entries);
+            detector.update(entries, registry);
+
+            const matches = detector.getMatches();
+            expect(matches).toHaveLength(1);
+            expect(matches[0].trainA.end).toBe('tail');
+            expect(matches[0].trainB.end).toBe('tail');
+        });
+
+        it('should not match beyond combined coupler reach', () => {
+            // Tails 20 units apart — threshold = 5+5+2 = 12 → no match
+            const t1 = mockTrain({
+                headPosition: makePosition(0, 0, 1),
+                bogiePositions: [makePosition(0, 0, 1), makePosition(50, 0, 1)],
+                tailCouplerLength: 5,
+                occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+            });
+            const t2 = mockTrain({
+                headPosition: makePosition(120, 0, 1),
+                bogiePositions: [makePosition(120, 0, 1), makePosition(70, 0, 1)],
+                tailCouplerLength: 5,
+                occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+            });
+            const entries = [entry(1, t1), entry(2, t2)];
+            registry.updateFromTrains(entries);
+            detector.update(entries, registry);
+
+            expect(detector.getMatches()).toHaveLength(0);
         });
     });
 
