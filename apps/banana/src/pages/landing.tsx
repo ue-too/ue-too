@@ -9,13 +9,7 @@ import { useReduceMotion } from '@/hooks/use-reduce-motion';
 const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
 const FLAP_PAUSE = 10000;
 
-function SplitFlapText({
-    text,
-    animate,
-}: {
-    text: string;
-    animate: boolean;
-}) {
+function SplitFlapText({ text, animate }: { text: string; animate: boolean }) {
     const target = text.toUpperCase();
     const [displayed, setDisplayed] = useState(target);
 
@@ -114,9 +108,16 @@ export function LandingPage(): React.ReactNode {
     const isCJK =
         i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
 
+    const BULLET_COLORS = [
+        'border-blue-400 text-blue-400',
+        'border-emerald-400 text-emerald-400',
+        'border-amber-400 text-amber-400',
+    ];
+
     const groups = [
         {
-            label: t('build'),
+            label: 'Build',
+            i18nLabel: t('build'),
             prefix: 'B',
             items: [
                 t('featureTrackDrawing'),
@@ -125,12 +126,15 @@ export function LandingPage(): React.ReactNode {
             ],
         },
         {
-            label: t('simulate'),
+            label: 'Simulate',
+            i18nLabel: t('simulate'),
             prefix: 'S',
             items: [
                 t('featureTrainSim'),
                 t('featureFormations'),
                 t('featureImportExport'),
+                t('featureGranularity'),
+                t('featureDynamicFormations'),
             ],
         },
     ];
@@ -189,26 +193,54 @@ export function LandingPage(): React.ReactNode {
                         usePixelFont
                     />
                 </Link>
+                <Link
+                    to="/app"
+                    className="mt-8 transition-opacity hover:opacity-75"
+                    onMouseEnter={() => setCtaHover(true)}
+                    onMouseLeave={() => setCtaHover(false)}
+                >
+                    <LedMarquee
+                        text={t('openTutorial') + ' →'}
+                        height={isCJK ? 36 : 24}
+                        dotSize={isCJK ? 3 : undefined}
+                        scroll={false}
+                        pulse={!reduceMotion && !ctaHover}
+                        usePixelFont
+                    />
+                </Link>
             </section>
 
             {/* Features */}
             <section className="flex flex-col items-center gap-8 px-4 py-8 sm:gap-10 sm:px-6">
                 {groups.map((group, gi) => (
-                    <div key={gi} className="flex flex-col items-center">
-                        <div className="mb-4">
+                    <div
+                        key={gi}
+                        className="flex w-full max-w-lg flex-col items-center"
+                    >
+                        <div className="mb-4 flex flex-col items-center gap-1.5">
                             <SplitFlapText
                                 text={group.label}
                                 animate={!reduceMotion}
                             />
+                            {group.i18nLabel.toLowerCase() !==
+                                group.label.toLowerCase() && (
+                                <SplitFlapText
+                                    text={group.i18nLabel}
+                                    animate={!reduceMotion}
+                                />
+                            )}
                         </div>
-                        <ul className="space-y-2 pl-2">
+                        <ul className="space-y-2 self-start pl-2">
                             {group.items.map((item, ii) => (
                                 <li
                                     key={ii}
                                     className="text-foreground flex items-start gap-2.5 text-sm"
                                 >
-                                    <span className="border-muted-foreground text-muted-foreground mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[8px] font-medium">
-                                        {group.prefix}{ii + 1}
+                                    <span
+                                        className={`${BULLET_COLORS[ii % BULLET_COLORS.length]} mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[8px] font-medium`}
+                                    >
+                                        {group.prefix}
+                                        {ii + 1}
                                     </span>
                                     {item}
                                 </li>

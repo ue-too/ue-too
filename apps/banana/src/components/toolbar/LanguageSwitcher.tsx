@@ -9,7 +9,7 @@ import {
 
 const LANGUAGES = [
     { code: 'en', label: 'EN' },
-    { code: 'zh-TW', label: '中' },
+    { code: 'zh-TW', label: '繁體中文' },
 ] as const;
 
 export function LanguageSwitcher() {
