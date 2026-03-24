@@ -184,6 +184,10 @@ const ja = {
         enableAnimations: 'アニメーションを有効にする',
         reduceAnimations: 'アニメーションを減らす',
 
+        // Analytics Notice
+        analyticsNotice:
+            'このサイトでは体験向上のため基本的なイベントトラッキングを使用しています。個人データは収集されません。',
+
         // 404 Page
         notFoundMessage: 'この線路はどこにも繋がっていません。',
         backToHome: 'ホーム',

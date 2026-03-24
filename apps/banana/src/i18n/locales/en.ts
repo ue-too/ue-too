@@ -196,6 +196,10 @@ const en = {
         enableAnimations: 'Enable animations',
         reduceAnimations: 'Reduce animations',
 
+        // Analytics Notice
+        analyticsNotice:
+            'This site uses basic event tracking to improve the experience. No personal data is collected.',
+
         // 404 Page
         notFoundMessage: "This track doesn't lead anywhere.",
         backToHome: 'Home',
