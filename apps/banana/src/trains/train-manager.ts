@@ -1,6 +1,7 @@
 import { GenericEntityManager } from '@/utils';
 import { Train } from './formation';
 import { Observable, SynchronousObservable } from '@ue-too/board';
+import type { ProximityDetector, ProximityMatch } from './proximity-detector';
 
 export type PlacedTrainEntry = { id: number; train: Train };
 
@@ -19,10 +20,25 @@ export class TrainManager {
   private _listeners: (() => void)[] = [];
   private _observable: Observable<[number, { type: TrainChangeType }]> = new SynchronousObservable<[number, { type: TrainChangeType }]>();
   private _onBeforeRemove: ((train: Train) => void) | null = null;
+  private _proximityDetector: ProximityDetector | null = null;
 
   /** Register a callback invoked before a train is removed. */
   setOnBeforeRemove(callback: (train: Train) => void): void {
     this._onBeforeRemove = callback;
+  }
+
+  /** Set the proximity detector (owned by TrainRenderSystem, shared here for queries). */
+  setProximityDetector(detector: ProximityDetector): void {
+    this._proximityDetector = detector;
+  }
+
+  /**
+   * Get proximity matches for a specific train — trains close enough to couple.
+   * Returns an empty array if no proximity detector is set or no matches exist.
+   */
+  getCouplableCandidates(trainId: number): readonly ProximityMatch[] {
+    if (!this._proximityDetector) return [];
+    return this._proximityDetector.getMatchesForTrain(trainId);
   }
 
   /** Current list of placed trains (do not mutate). */

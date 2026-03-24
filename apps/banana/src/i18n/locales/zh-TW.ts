@@ -152,6 +152,8 @@ const zhTW = {
         clickPlusToCreate: '按下 + 建立一個。',
         addCarsToDepotFirst: '請先將車輛加入車庫。',
         trainLabel: '列車 {{number}}',
+        couplable: '可連結',
+        proximityLines: '連結近接顯示',
         nested: '巢狀',
         containsNestedFormations: '包含巢狀編組',
         nestedFormation: '巢狀編組',

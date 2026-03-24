@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Link2, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -233,6 +233,7 @@ export function FormationEditor({
                                             }
                                             : undefined
                                     }
+                                    couplableCount={trainManager.getCouplableCandidates(trainId).length}
                                 />
                             );
                         })}
@@ -319,6 +320,8 @@ type FormationCardProps = {
     onRemoveChild: (childIndex: number) => void;
     /** When set, decouple buttons appear between children. Args: (headCarIndex, tailCarIndex). */
     onDecouple?: (headCarIndex: number, tailCarIndex: number) => void;
+    /** Number of coupling candidates detected for this placed train. */
+    couplableCount?: number;
     /** Called to rename the formation. */
     onRename?: (name: string) => void;
     /** Called to flatten all nested formations into direct cars. */
@@ -349,6 +352,7 @@ function FormationCard({
     onPrependCar,
     onRemoveChild,
     onDecouple,
+    couplableCount,
     onRename,
     onConsolidate,
     onReverseChildren,
@@ -435,6 +439,15 @@ function FormationCard({
                             title={t('containsNestedFormations')}
                         >
                             {t('nested')}
+                        </span>
+                    )}
+                    {couplableCount != null && couplableCount > 0 && (
+                        <span
+                            className="inline-flex items-center gap-0.5 rounded bg-emerald-500/20 px-1 text-[9px] text-emerald-600 dark:text-emerald-400 shrink-0"
+                            title={t('couplable')}
+                        >
+                            <Link2 className="size-2" />
+                            {t('couplable')}
                         </span>
                     )}
                 </div>

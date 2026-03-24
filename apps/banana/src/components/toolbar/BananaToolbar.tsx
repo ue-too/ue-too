@@ -103,6 +103,7 @@ export function BananaToolbar({
     const [showFormationIds, setShowFormationIds] = useState(false);
     const [showStationStops, setShowStationStops] = useState(false);
     const [showStationLocations, setShowStationLocations] = useState(false);
+    const [showProximityLines, setShowProximityLines] = useState(false);
     const [, setTrainListVersion] = useState(0);
     const [showDepot, setShowDepot] = useState(false);
     const [showTrainPanel, setShowTrainPanel] = useState(false);
@@ -235,6 +236,11 @@ export function BananaToolbar({
             showStationLocations
         );
     }, [app, showStationLocations]);
+
+    useEffect(() => {
+        if (!app) return;
+        app.debugOverlayRenderSystem.setShowProximityDebug(showProximityLines);
+    }, [app, showProximityLines]);
 
     useEffect(() => {
         if (!app) return;
@@ -852,6 +858,8 @@ export function BananaToolbar({
                     onShowStationStopsChange={setShowStationStops}
                     showStationLocations={showStationLocations}
                     onShowStationLocationsChange={setShowStationLocations}
+                    showProximityLines={showProximityLines}
+                    onShowProximityLinesChange={setShowProximityLines}
                     showStats={showStats}
                     onShowStatsChange={setShowStats}
                     terrainXray={terrainXray}

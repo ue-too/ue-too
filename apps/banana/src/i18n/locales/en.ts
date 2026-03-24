@@ -161,6 +161,8 @@ const en = {
         consolidate: 'Consolidate',
         consolidateTooltip: 'Flatten nested formations into individual cars',
         reverseTooltip: 'Reverse the order of children',
+        couplable: 'couplable',
+        proximityLines: 'Coupling proximity',
         renameFormation: 'Click to rename',
         renameCar: 'Click to rename',
         addFromStock: 'Add from stock',

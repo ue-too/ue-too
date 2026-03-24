@@ -152,6 +152,8 @@ const ja = {
         clickPlusToCreate: '+ を押して作成してください。',
         addCarsToDepotFirst: '先に車庫に車両を追加してください。',
         trainLabel: '列車 {{number}}',
+        couplable: '連結可能',
+        proximityLines: '連結近接表示',
         nested: 'ネスト',
         containsNestedFormations: 'ネストされた編成を含む',
         nestedFormation: 'ネストされた編成',

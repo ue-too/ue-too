@@ -6,6 +6,8 @@ import { TrackRenderSystem, type TrackTextureRenderer } from './tracks/render-sy
 import { WorldRenderSystem } from '@/world-render-system';
 import type { PlacedTrainEntry } from './train-manager';
 import type { CarImageRegistry } from './car-image-registry';
+import { OccupancyRegistry } from './occupancy-registry';
+import { ProximityDetector } from './proximity-detector';
 
 const BOGIE_RADIUS = 1.067 / 2;
 
@@ -168,6 +170,9 @@ export class TrainRenderSystem {
   /** Train ids we had last frame (to remove drawables when a train is removed). */
   private _lastTrainIds: Set<number> = new Set();
 
+  private _occupancyRegistry: OccupancyRegistry = new OccupancyRegistry();
+  private _proximityDetector: ProximityDetector = new ProximityDetector();
+
   /** Cached procedural car body texture; created lazily when texture renderer is available. */
   private _carTexture: Texture | null = null;
   /** Rear-half sub-texture (left half of the car texture). */
@@ -215,6 +220,9 @@ export class TrainRenderSystem {
     }
     this._getPreviewTrain().update(deltaTime);
 
+    this._occupancyRegistry.updateFromTrains(placed);
+    this._proximityDetector.update(placed, this._occupancyRegistry);
+
     this._updatePreviewBogies();
     this._updatePreviewCars();
     this._updateActualBogies(placed);
@@ -223,6 +231,16 @@ export class TrainRenderSystem {
 
     this._lastTrainIds.clear();
     for (const { id } of placed) this._lastTrainIds.add(id);
+  }
+
+  /** The centralized occupancy registry, updated each frame. */
+  get occupancyRegistry(): OccupancyRegistry {
+    return this._occupancyRegistry;
+  }
+
+  /** The proximity detector, updated each frame. */
+  get proximityDetector(): ProximityDetector {
+    return this._proximityDetector;
   }
 
   /**
