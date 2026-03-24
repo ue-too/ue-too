@@ -171,7 +171,7 @@ const zhTW = {
 
         // Landing Page
         nextStop: '下一站',
-        landingTagline1: '直接在瀏覽器裡面就能使用的 2D 俯視鐵道模擬器。',
+        landingTagline1: '直接在瀏覽器裡面就能使用的 2D 俯視角鐵道模擬器。',
         landingTagline2: '軌道、車站、列車、自由組合',
         openSimulator: '開啟模擬器',
         openTutorial: '教學（製作中）',
@@ -184,10 +184,12 @@ const zhTW = {
         featureFormations: '靈活的列車編組',
         featureNavigation: '平滑導覽',
         featureImportExport: '匯入與匯出，雲端與瀏覽器端自動儲存開發中',
-        featureDynamicFormations: '直接在模擬中聯掛與解聯，PP 在苗栗要臨時要掛補機？你該換車了！',
+        featureDynamicFormations: '直接模擬聯掛與解聯，PP 在苗栗臨時要掛補機？沒問題，不過你確定要嗎？（施工中）',
         featureGranularity: '細粒度的時刻表編排（施工中）',
         builtWithFooter:
             '基於 <ueToo>ue-too</ueToo> 打造 · <issues>回饋</issues>',
+        cjkFontCreditFooter:
+            'CJK 點陣字型：<cubic11>Cubic 11</cubic11> by ACh-K',
         motionOn: '動態效果：開',
         motionOff: '動態效果：關',
         enableAnimations: '啟用動畫',

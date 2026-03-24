@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
+import { Github } from 'lucide-react';
 
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
@@ -9,6 +10,9 @@ import { trackEvent } from '@/utils/analytics';
 
 const FLAP_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ ';
 const FLAP_PAUSE = 10000;
+
+/** Minimum scale so text stays somewhat readable on tiny viewports. */
+const FIT_SCALE_MIN = 0.28;
 
 function SplitFlapText({ text, animate }: { text: string; animate: boolean }) {
     const target = text.toUpperCase();
@@ -31,7 +35,6 @@ function SplitFlapText({ text, animate }: { text: string; animate: boolean }) {
 
             const timers: ReturnType<typeof setTimeout>[] = [];
 
-            // Calculate total animation duration
             let maxDelay = 0;
 
             for (let i = 0; i < chars.length; i++) {
@@ -69,7 +72,6 @@ function SplitFlapText({ text, animate }: { text: string; animate: boolean }) {
                 }
             }
 
-            // Schedule next cycle after animation completes + pause
             timers.push(
                 setTimeout(() => {
                     if (!cancelled) runCycle();
@@ -106,8 +108,62 @@ export function LandingPage(): React.ReactNode {
     const { t, i18n } = useTranslation();
     const [reduceMotion, setReduceMotion] = useReduceMotion();
     const [ctaHover, setCtaHover] = useState(false);
+    const [fitScale, setFitScale] = useState(1);
+    const measureRef = useRef<HTMLDivElement>(null);
     const isCJK =
         i18n.language.startsWith('zh') || i18n.language.startsWith('ja');
+
+    useLayoutEffect(() => {
+        const el = measureRef.current;
+        if (!el) return;
+
+        const update = () => {
+            requestAnimationFrame(() => {
+                const node = measureRef.current;
+                if (!node) return;
+
+                const padTop = 72;
+                const padSides = 16;
+                const padBottom = 12;
+                const vh = window.visualViewport?.height ?? window.innerHeight;
+                const vw = window.visualViewport?.width ?? window.innerWidth;
+                const maxH = vh - padTop - padBottom;
+                const maxW = vw - padSides * 2;
+                const nh = node.offsetHeight;
+                const nw = node.offsetWidth;
+
+                if (nh < 1 || nw < 1 || maxH < 1 || maxW < 1) return;
+
+                const s = Math.min(1, maxH / nh, maxW / nw);
+                setFitScale(Math.max(FIT_SCALE_MIN, s));
+            });
+        };
+
+        update();
+
+        const ro = new ResizeObserver(update);
+        ro.observe(el);
+        window.addEventListener('resize', update);
+        window.visualViewport?.addEventListener('resize', update);
+        document.fonts.ready.then(update);
+
+        return () => {
+            ro.disconnect();
+            window.removeEventListener('resize', update);
+            window.visualViewport?.removeEventListener('resize', update);
+        };
+    }, [i18n.language, reduceMotion]);
+
+    useEffect(() => {
+        const prevHtml = document.documentElement.style.overflow;
+        const prevBody = document.body.style.overflow;
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.documentElement.style.overflow = prevHtml;
+            document.body.style.overflow = prevBody;
+        };
+    }, []);
 
     const BULLET_COLORS = [
         'border-blue-400 text-blue-400',
@@ -141,8 +197,7 @@ export function LandingPage(): React.ReactNode {
     ];
 
     return (
-        <div className="bg-background text-foreground flex min-h-screen flex-col">
-            {/* Controls */}
+        <div className="bg-background text-foreground relative h-dvh max-h-dvh w-full overflow-hidden">
             <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
                 <LanguageSwitcher />
                 <button
@@ -158,128 +213,169 @@ export function LandingPage(): React.ReactNode {
                 </button>
             </div>
 
-            {/* Hero */}
-            <section className="flex flex-col items-center justify-center px-4 pt-20 pb-8 sm:px-6 sm:pt-40">
-                <div className="relative">
-                    <span className="text-muted-foreground absolute -top-6 left-0 text-xs tracking-wide">
-                        {t('nextStop')}
-                    </span>
-                    <LedMarquee
-                        text="Banana"
-                        rows={24}
-                        visibleCols={80}
-                        height={120}
-                        speed={12}
-                        scroll={!reduceMotion}
-                    />
-                </div>
-                <p className="text-muted-foreground mt-8 text-center text-base sm:text-lg">
-                    {t('landingTagline1')}
-                </p>
-                <p className="text-muted-foreground mt-2 text-center text-base sm:text-lg">
-                    {t('landingTagline2')}
-                </p>
-                <Link
-                    to="/app"
-                    className="mt-8 transition-opacity hover:opacity-75"
-                    onMouseEnter={() => setCtaHover(true)}
-                    onMouseLeave={() => setCtaHover(false)}
-                    onClick={() => trackEvent('landing-open-simulator')}
+            <div className="flex h-full w-full items-center justify-center px-3 pb-3 pt-[4.5rem]">
+                <div
+                    className="flex justify-center"
+                    style={{
+                        transform: `scale(${fitScale})`,
+                        transformOrigin: 'center center',
+                    }}
                 >
-                    <LedMarquee
-                        text={t('openSimulator') + ' →'}
-                        height={isCJK ? 36 : 24}
-                        dotSize={isCJK ? 3 : undefined}
-                        scroll={false}
-                        pulse={!reduceMotion && !ctaHover}
-                        usePixelFont
-                    />
-                </Link>
-                <Link
-                    to="/app"
-                    className="mt-8 transition-opacity hover:opacity-75"
-                    onMouseEnter={() => setCtaHover(true)}
-                    onMouseLeave={() => setCtaHover(false)}
-                    onClick={() => trackEvent('landing-open-tutorial')}
-                >
-                    <LedMarquee
-                        text={t('openTutorial') + ' →'}
-                        height={isCJK ? 36 : 24}
-                        dotSize={isCJK ? 3 : undefined}
-                        scroll={false}
-                        pulse={!reduceMotion && !ctaHover}
-                        usePixelFont
-                    />
-                </Link>
-            </section>
-
-            {/* Features */}
-            <section className="flex flex-col items-center gap-8 px-4 py-8 sm:gap-10 sm:px-6">
-                {groups.map((group, gi) => (
                     <div
-                        key={gi}
-                        className="flex w-full max-w-lg flex-col items-center"
+                        ref={measureRef}
+                        className="flex w-[min(100vw-1.5rem,56rem)] flex-col items-stretch"
                     >
-                        <div className="mb-4 flex flex-col items-center gap-1.5">
-                            <SplitFlapText
-                                text={group.label}
-                                animate={!reduceMotion}
-                            />
-                            {group.i18nLabel.toLowerCase() !==
-                                group.label.toLowerCase() && (
-                                <SplitFlapText
-                                    text={group.i18nLabel}
-                                    animate={!reduceMotion}
+                        <section className="flex flex-col items-center px-4 pb-6 pt-4 sm:px-6">
+                            <div className="relative">
+                                <span className="text-muted-foreground absolute -top-6 left-0 text-xs tracking-wide">
+                                    {t('nextStop')}
+                                </span>
+                                <LedMarquee
+                                    text="Banana"
+                                    rows={24}
+                                    visibleCols={80}
+                                    height={120}
+                                    speed={12}
+                                    scroll={!reduceMotion}
                                 />
-                            )}
-                        </div>
-                        <ul className="space-y-2 self-start pl-2">
-                            {group.items.map((item, ii) => (
-                                <li
-                                    key={ii}
-                                    className="text-foreground flex items-start gap-2.5 text-sm"
-                                >
-                                    <span
-                                        className={`${BULLET_COLORS[ii % BULLET_COLORS.length]} mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[8px] font-medium`}
-                                    >
-                                        {group.prefix}
-                                        {ii + 1}
-                                    </span>
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                ))}
-            </section>
+                            </div>
+                            <p className="text-muted-foreground mt-7 text-center text-base sm:text-lg">
+                                {t('landingTagline1')}
+                            </p>
+                            <p className="text-muted-foreground mt-2 text-center text-base sm:text-lg">
+                                {t('landingTagline2')}
+                            </p>
+                            <Link
+                                to="/app"
+                                className="mt-7 transition-opacity hover:opacity-75"
+                                onMouseEnter={() => setCtaHover(true)}
+                                onMouseLeave={() => setCtaHover(false)}
+                                onClick={() =>
+                                    trackEvent('landing-open-simulator')
+                                }
+                            >
+                                <LedMarquee
+                                    text={t('openSimulator') + ' →'}
+                                    height={isCJK ? 36 : 24}
+                                    dotSize={isCJK ? 3 : undefined}
+                                    scroll={false}
+                                    pulse={!reduceMotion && !ctaHover}
+                                    usePixelFont
+                                />
+                            </Link>
+                            <Link
+                                to="/app"
+                                className="mt-7 transition-opacity hover:opacity-75"
+                                onMouseEnter={() => setCtaHover(true)}
+                                onMouseLeave={() => setCtaHover(false)}
+                                onClick={() =>
+                                    trackEvent('landing-open-tutorial')
+                                }
+                            >
+                                <LedMarquee
+                                    text={t('openTutorial') + ' →'}
+                                    height={isCJK ? 36 : 24}
+                                    dotSize={isCJK ? 3 : undefined}
+                                    scroll={false}
+                                    pulse={!reduceMotion && !ctaHover}
+                                    usePixelFont
+                                />
+                            </Link>
+                        </section>
 
-            <div className="grow" />
-            {/* Footer */}
-            <footer className="text-muted-foreground px-6 pt-16 pb-4 text-center text-xs">
-                <p>
-                    <Trans
-                        i18nKey="builtWithFooter"
-                        components={{
-                            ueToo: (
+                        <section className="flex flex-col items-center gap-8 px-4 py-6 sm:gap-10 sm:px-6">
+                            {groups.map((group, gi) => (
+                                <div
+                                    key={gi}
+                                    className="flex w-full max-w-lg flex-col items-center"
+                                >
+                                    <div className="mb-4 flex flex-col items-center gap-1.5">
+                                        <SplitFlapText
+                                            text={group.label}
+                                            animate={!reduceMotion}
+                                        />
+                                        {group.i18nLabel.toLowerCase() !==
+                                            group.label.toLowerCase() && (
+                                            <SplitFlapText
+                                                text={group.i18nLabel}
+                                                animate={!reduceMotion}
+                                            />
+                                        )}
+                                    </div>
+                                    <ul className="w-full space-y-2 self-start pl-2">
+                                        {group.items.map((item, ii) => (
+                                            <li
+                                                key={ii}
+                                                className="text-foreground flex items-start gap-2.5 text-sm leading-snug"
+                                            >
+                                                <span
+                                                    className={`${BULLET_COLORS[ii % BULLET_COLORS.length]} mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[8px] font-medium`}
+                                                >
+                                                    {group.prefix}
+                                                    {ii + 1}
+                                                </span>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </section>
+
+                        <footer className="text-muted-foreground px-6 pb-2 pt-8 text-center text-xs">
+                            <p>
+                                <Trans
+                                    i18nKey="builtWithFooter"
+                                    components={{
+                                        ueToo: (
+                                            <a
+                                                href="https://github.com/ue-too/ue-too"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-foreground underline underline-offset-2"
+                                            />
+                                        ),
+                                        issues: (
+                                            <a
+                                                href="https://github.com/ue-too/ue-too/issues"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="hover:text-foreground underline underline-offset-2"
+                                            />
+                                        ),
+                                    }}
+                                />
                                 <a
-                                    href="https://github.com/ue-too/ue-too"
+                                    href="https://github.com/ue-too/ue-too/tree/main/apps/banana"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="hover:text-foreground underline underline-offset-2"
-                                />
-                            ),
-                            issues: (
-                                <a
-                                    href="https://github.com/ue-too/ue-too/issues"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:text-foreground underline underline-offset-2"
-                                />
-                            ),
-                        }}
-                    />
-                </p>
-            </footer>
+                                    aria-label="Banana source on GitHub"
+                                    className="hover:text-foreground ml-1 inline-flex items-center align-middle transition-colors whitespace-nowrap"
+                                >
+                                    <Github className="h-3.5 w-3.5" />
+                                </a>
+                            </p>
+                            {isCJK && (
+                                <p className="mt-1">
+                                    <Trans
+                                        i18nKey="cjkFontCreditFooter"
+                                        components={{
+                                            cubic11: (
+                                                <a
+                                                    href="https://github.com/ACh-K/Cubic-11"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="hover:text-foreground underline underline-offset-2"
+                                                />
+                                            ),
+                                        }}
+                                    />
+                                </p>
+                            )}
+                        </footer>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

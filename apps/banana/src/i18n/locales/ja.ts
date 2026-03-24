@@ -168,6 +168,7 @@ const ja = {
         landingTagline1: 'ブラウザで動く2D俯瞰鉄道シミュレーター。',
         landingTagline2: '線路、駅、列車、そしてもっと。',
         openSimulator: 'シミュレーターを開く',
+        openTutorial: 'チュートリアル（作成中）',
         build: '建設',
         simulate: 'シミュレート',
         featureTrackDrawing: 'ベジエ曲線による線路敷設',
@@ -179,6 +180,8 @@ const ja = {
         featureImportExport: 'インポートとエクスポート',
         builtWithFooter:
             '<ueToo>ue-too</ueToo> をベースに構築 · <issues>フィードバック</issues>',
+        cjkFontCreditFooter:
+            'CJK ピクセルフォント: <cubic11>Cubic 11</cubic11> by ACh-K',
         motionOn: 'モーション：オン',
         motionOff: 'モーション：オフ',
         enableAnimations: 'アニメーションを有効にする',
