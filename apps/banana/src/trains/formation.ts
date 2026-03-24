@@ -939,6 +939,7 @@ export class Train {
 
     switchDirection() {
         if (this._position == null) {
+            this._formation.switchDirection();
             return;
         }
         const bogiePositions = this.getBogiePositions(false);

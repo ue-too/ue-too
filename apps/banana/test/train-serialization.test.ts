@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { Car, seedIdGeneratorsFromSerialized } from '../src/trains/cars';
+import { Car, CarType, getDefaultGangway, seedIdGeneratorsFromSerialized } from '../src/trains/cars';
 import { Formation } from '../src/trains/formation';
 import type {
     SerializedCar,
@@ -16,12 +16,16 @@ import {
  * test runner because of heavy PixiJS / Canvas dependencies).
  */
 function serializeCar(car: Car): SerializedCar {
+    const gangwayDefaults = getDefaultGangway(car.type);
     return {
         id: car.id,
         ...(car.name !== car.id ? { name: car.name } : {}),
         bogieOffsets: car.bogieOffsets(),
         edgeToBogie: car.edgeToBogie,
         bogieToEdge: car.bogieToEdge,
+        ...(car.type !== CarType.COACH ? { type: car.type } : {}),
+        ...(car.headHasGangway !== gangwayDefaults.head ? { headHasGangway: car.headHasGangway } : {}),
+        ...(car.tailHasGangway !== gangwayDefaults.tail ? { tailHasGangway: car.tailHasGangway } : {}),
         flipped: car.flipped,
     };
 }
@@ -42,9 +46,16 @@ function serializeFormation(formation: Formation): SerializedFormation {
 }
 
 function deserializeCar(data: SerializedCar): Car {
-    const car = new Car(data.id, [...data.bogieOffsets], data.edgeToBogie, data.bogieToEdge);
+    const type = (data.type as CarType | undefined) ?? CarType.COACH;
+    const car = new Car(data.id, [...data.bogieOffsets], data.edgeToBogie, data.bogieToEdge, undefined, type);
     if (data.name !== undefined) {
         car.name = data.name;
+    }
+    if (data.headHasGangway !== undefined) {
+        car.headHasGangway = data.headHasGangway;
+    }
+    if (data.tailHasGangway !== undefined) {
+        car.tailHasGangway = data.tailHasGangway;
     }
     if (data.flipped) {
         car.switchDirection();
@@ -337,5 +348,58 @@ describe('validateSerializedTrainData with names', () => {
             placedTrains: [],
         };
         expect(validateSerializedTrainData(data)).toEqual({ valid: true });
+    });
+});
+
+describe('Car type and gangway serialization', () => {
+
+    it('should omit type when COACH (default)', () => {
+        const car = new Car('car-0', [20], 2.5, 2.5);
+        const serialized = serializeCar(car);
+        expect(serialized.type).toBeUndefined();
+    });
+
+    it('should include type when not COACH', () => {
+        const car = new Car('car-0', [20], 2.5, 2.5, undefined, CarType.LOCOMOTIVE);
+        const serialized = serializeCar(car);
+        expect(serialized.type).toBe('locomotive');
+    });
+
+    it('should omit gangway flags when matching type defaults', () => {
+        const coach = new Car('car-0', [20], 2.5, 2.5, undefined, CarType.COACH);
+        const serialized = serializeCar(coach);
+        expect(serialized.headHasGangway).toBeUndefined();
+        expect(serialized.tailHasGangway).toBeUndefined();
+    });
+
+    it('should include gangway flags when overridden from type defaults', () => {
+        const coach = new Car('car-0', [20], 2.5, 2.5, undefined, CarType.COACH);
+        coach.headHasGangway = false; // override from default true
+        const serialized = serializeCar(coach);
+        expect(serialized.headHasGangway).toBe(false);
+        expect(serialized.tailHasGangway).toBeUndefined(); // still default
+    });
+
+    it('should round-trip car type and gangway overrides', () => {
+        const car = new Car('car-0', [20], 2.5, 2.5, undefined, CarType.CAB_CAR);
+        car.tailHasGangway = false; // override from default true
+
+        const json = JSON.stringify(serializeCar(car));
+        const parsed: SerializedCar = JSON.parse(json);
+        const restored = deserializeCar(parsed);
+
+        expect(restored.type).toBe(CarType.CAB_CAR);
+        expect(restored.headHasGangway).toBe(false); // type default
+        expect(restored.tailHasGangway).toBe(false); // overridden
+    });
+
+    it('should default to COACH when type is absent (backwards compatibility)', () => {
+        const data: SerializedCar = {
+            id: 'car-0', bogieOffsets: [20], edgeToBogie: 2.5, bogieToEdge: 2.5, flipped: false,
+        };
+        const car = deserializeCar(data);
+        expect(car.type).toBe(CarType.COACH);
+        expect(car.headHasGangway).toBe(true);
+        expect(car.tailHasGangway).toBe(true);
     });
 });

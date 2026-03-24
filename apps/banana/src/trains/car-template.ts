@@ -1,10 +1,13 @@
 import type { Point } from '@ue-too/math';
+import type { CarType } from './cars';
 
 export type CarTemplate = {
     id: string;
     bogieOffsets: number[];
     edgeToBogie: number;
     bogieToEdge: number;
+    /** Car category — determines default gangway flags when a Car is created from this template. */
+    type?: CarType;
     image?: {
         src: string;
         position: Point;
