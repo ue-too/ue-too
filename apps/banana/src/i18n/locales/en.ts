@@ -172,6 +172,7 @@ const en = {
             'A 2D top-down railway simulator right in the browser.',
         landingTagline2: 'tracks, stations, trains, and more.',
         openSimulator: 'Open Simulator',
+        openTutorial: 'tutorial (WIP)',
         build: 'Build',
         simulate: 'Simulate',
         featureTrackDrawing: 'Bézier Track Drawing provides high flexibility',
@@ -181,6 +182,8 @@ const en = {
         featureFormations: 'Flexible Train Formations',
         featureNavigation: 'Smooth Navigation',
         featureImportExport: 'Import & Export, cloud and browser-side auto-save in development',
+        featureDynamicFormations: 'Couple and decouple trains dynamically',
+        featureGranularity: 'Granular timetable editing (WIP)',
         builtWithFooter:
             'Built with <ueToo>ue-too</ueToo> · <issues>Feedback</issues>',
         motionOn: 'Motion: on',
