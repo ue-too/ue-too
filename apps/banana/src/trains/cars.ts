@@ -46,6 +46,10 @@ export interface TrainUnit {
     get edgeToBogie(): number;
     /** Distance from last bogie to trailing edge. */
     get bogieToEdge(): number;
+    /** Distance from the head-end bogie to the tip of the coupler. */
+    get headCouplerLength(): number;
+    /** Distance from the tail-end bogie to the tip of the coupler. */
+    get tailCouplerLength(): number;
     /** Flattened list of cars in head-to-tail order. */
     flatCars(): readonly Car[];
     /** Flattened list of cars in head-to-tail order, including the path to the car. */
@@ -66,14 +70,16 @@ export class Car implements TrainUnit {
 
     private _edgeToBogie: number;
     private _bogieToEdge: number;
+    private _couplerLength: number;
     private _flipped: boolean = false;
 
-    constructor(id: string, bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number) {
+    constructor(id: string, bogieOffsets: number[], edgeToBogie: number, bogieToEdge: number, couplerLength?: number) {
         this.id = id;
         this._name = id;
         this._bogieOffsets = bogieOffsets;
         this._edgeToBogie = edgeToBogie;
         this._bogieToEdge = bogieToEdge;
+        this._couplerLength = couplerLength ?? bogieToEdge + 1;
     }
 
     /** Display name for UI. Defaults to the car id. */
@@ -109,6 +115,22 @@ export class Car implements TrainUnit {
 
     get bogieToEdge(): number {
         return this._bogieToEdge;
+    }
+
+    get couplerLength(): number {
+        return this._couplerLength;
+    }
+
+    set couplerLength(value: number) {
+        this._couplerLength = value;
+    }
+
+    get headCouplerLength(): number {
+        return this._couplerLength;
+    }
+
+    get tailCouplerLength(): number {
+        return this._couplerLength;
     }
 
     get flipped(): boolean {

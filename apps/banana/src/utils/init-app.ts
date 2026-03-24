@@ -494,6 +494,10 @@ export const initApp = async (
   );
   debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
   debugOverlayRenderSystem.setStationManager(stationManager);
+  debugOverlayRenderSystem.setProximityDetector(trainRenderSystem.proximityDetector);
+
+  // Share the proximity detector with the train manager for coupling queries
+  trainManager.setProximityDetector(trainRenderSystem.proximityDetector);
 
   // When a train is removed from the track, return its formation to the depot
   trainManager.setOnBeforeRemove((train) => {
@@ -516,6 +520,7 @@ export const initApp = async (
   timeManager.subscribe((_, deltaTime) => {
     trainRenderSystem.update(deltaTime);
     debugOverlayRenderSystem.updateFormationLabels();
+    debugOverlayRenderSystem.updateProximityLines();
   });
 
   trainManager.subscribeToChanges(() => {

@@ -4,6 +4,7 @@ import { PointCal } from '@ue-too/math';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { TrackGraph } from './track';
 import type { PlacedTrainEntry } from '@/trains/train-manager';
+import type { ProximityDetector } from '@/trains/proximity-detector';
 import type { StationManager } from '@/stations/station-manager';
 
 /** Base radius of the circle (world units); effective size = this / zoomLevel for constant screen size. */
@@ -36,6 +37,12 @@ const STATION_STOP_CIRCLE_FILL = 0xdc2626;
 /** Fill color for station location label circles (debug). */
 const STATION_LOCATION_CIRCLE_FILL = 0x7c3aed;
 
+/** Color for coupling proximity lines (debug). */
+const PROXIMITY_LINE_COLOR = 0x22c55e;
+
+/** Radius of proximity endpoint dots (world units, scaled by 1/zoom). */
+const PROXIMITY_DOT_RADIUS = 6;
+
 /**
  * Renders debug overlays for joints (joint number in a circle) and track segments
  * (segment id in a circle) on the world overlay layer. For debug only; can be
@@ -51,13 +58,16 @@ export class DebugOverlayRenderSystem {
     private _formationContainer: Container;
     private _stationStopContainer: Container;
     private _stationLocationContainer: Container;
+    private _proximityContainer: Container;
     private _showJointNumbers = false;
     private _showSegmentIds = false;
     private _showFormationIds = false;
     private _showStationStops = false;
     private _showStationLocations = false;
+    private _showProximityLines = false;
     private _getPlacedTrains: (() => readonly PlacedTrainEntry[]) | null = null;
     private _stationManager: StationManager | null = null;
+    private _proximityDetector: ProximityDetector | null = null;
     private _zoomLevel = 1;
     private _abortController = new AbortController();
 
@@ -75,14 +85,17 @@ export class DebugOverlayRenderSystem {
         this._formationContainer = new Container();
         this._stationStopContainer = new Container();
         this._stationLocationContainer = new Container();
+        this._proximityContainer = new Container();
         this._formationContainer.visible = false;
         this._stationStopContainer.visible = false;
         this._stationLocationContainer.visible = false;
+        this._proximityContainer.visible = false;
         this._overlayContainer.addChild(this._jointContainer);
         this._overlayContainer.addChild(this._segmentContainer);
         this._overlayContainer.addChild(this._formationContainer);
         this._overlayContainer.addChild(this._stationStopContainer);
         this._overlayContainer.addChild(this._stationLocationContainer);
+        this._overlayContainer.addChild(this._proximityContainer);
         this._worldRenderSystem.addOverlayContainer(this._overlayContainer);
 
         this._zoomLevel = this._camera.zoomLevel;
@@ -115,6 +128,9 @@ export class DebugOverlayRenderSystem {
             child.scale.set(scale);
         }
         for (const child of this._stationLocationContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._proximityContainer.children) {
             child.scale.set(scale);
         }
     }
@@ -178,6 +194,23 @@ export class DebugOverlayRenderSystem {
         if (show) this._rebuildStationLocationLabels();
     }
 
+    /** Provide the proximity detector for coupling debug lines. */
+    setProximityDetector(detector: ProximityDetector): void {
+        this._proximityDetector = detector;
+    }
+
+    /** Whether proximity lines are visible. */
+    get showProximityLines(): boolean {
+        return this._showProximityLines;
+    }
+
+    /** Show or hide coupling proximity debug lines. */
+    setShowProximityDebug(show: boolean): void {
+        if (this._showProximityLines === show) return;
+        this._showProximityLines = show;
+        this._proximityContainer.visible = show;
+    }
+
     /**
      * Update formation ID labels each frame (cars move with trains).
      * Call this from the render loop after train positions have been updated.
@@ -185,6 +218,15 @@ export class DebugOverlayRenderSystem {
     updateFormationLabels(): void {
         if (!this._showFormationIds || this._getPlacedTrains === null) return;
         this._rebuildFormationLabels();
+    }
+
+    /**
+     * Update proximity debug lines each frame.
+     * Call this from the render loop after train positions and proximity detector have been updated.
+     */
+    updateProximityLines(): void {
+        if (!this._showProximityLines) return;
+        this._rebuildProximityLines();
     }
 
     /**
@@ -266,6 +308,61 @@ export class DebugOverlayRenderSystem {
                 );
                 this._formationContainer.addChild(node);
             }
+        }
+    }
+
+    private _rebuildProximityLines(): void {
+        const removed = this._proximityContainer.removeChildren();
+        removed.forEach(c => c.destroy({ children: true }));
+        if (this._proximityDetector === null || this._getPlacedTrains === null) return;
+
+        const placed = this._getPlacedTrains();
+        const trainMap = new Map<number, PlacedTrainEntry>();
+        for (const entry of placed) trainMap.set(entry.id, entry);
+
+        const matches = this._proximityDetector.getMatches();
+        const scale = 1 / this._zoomLevel;
+
+        for (const match of matches) {
+            const entryA = trainMap.get(match.trainA.id);
+            const entryB = trainMap.get(match.trainB.id);
+            if (!entryA || !entryB) continue;
+
+            const bogiesA = entryA.train.getBogiePositions();
+            const bogiesB = entryB.train.getBogiePositions();
+            if (!bogiesA || bogiesA.length === 0 || !bogiesB || bogiesB.length === 0) continue;
+
+            const ptA = match.trainA.end === 'head'
+                ? bogiesA[0].point
+                : bogiesA[bogiesA.length - 1].point;
+            const ptB = match.trainB.end === 'head'
+                ? bogiesB[0].point
+                : bogiesB[bogiesB.length - 1].point;
+
+            // Draw a dashed-style line between endpoints with dots at each end
+            const midX = (ptA.x + ptB.x) / 2;
+            const midY = (ptA.y + ptB.y) / 2;
+
+            const container = new Container();
+            container.position.set(midX, midY);
+            container.scale.set(scale);
+
+            // Line (in local coordinates relative to midpoint)
+            const line = new Graphics();
+            const halfDx = (ptB.x - ptA.x) / 2 / scale;
+            const halfDy = (ptB.y - ptA.y) / 2 / scale;
+            line.moveTo(-halfDx, -halfDy);
+            line.lineTo(halfDx, halfDy);
+            line.stroke({ color: PROXIMITY_LINE_COLOR, width: 2, alpha: 0.8 });
+
+            // Dots at each endpoint
+            line.circle(-halfDx, -halfDy, PROXIMITY_DOT_RADIUS);
+            line.fill({ color: PROXIMITY_LINE_COLOR, alpha: 0.6 });
+            line.circle(halfDx, halfDy, PROXIMITY_DOT_RADIUS);
+            line.fill({ color: PROXIMITY_LINE_COLOR, alpha: 0.6 });
+
+            container.addChild(line);
+            this._proximityContainer.addChild(container);
         }
     }
 

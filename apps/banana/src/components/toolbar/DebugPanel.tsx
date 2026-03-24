@@ -1,4 +1,4 @@
-import { Activity, Eye, Hash, Landmark, ListOrdered, TrainFront, MapPin } from 'lucide-react';
+import { Activity, Eye, Hash, Landmark, Link2, ListOrdered, TrainFront, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ type DebugPanelProps = {
     onShowStationStopsChange: (value: boolean) => void;
     showStationLocations: boolean;
     onShowStationLocationsChange: (value: boolean) => void;
+    showProximityLines: boolean;
+    onShowProximityLinesChange: (value: boolean) => void;
     showStats: boolean;
     onShowStatsChange: (value: boolean) => void;
     terrainXray: boolean;
@@ -37,6 +39,8 @@ export function DebugPanel({
     onShowStationStopsChange,
     showStationLocations,
     onShowStationLocationsChange,
+    showProximityLines,
+    onShowProximityLinesChange,
     showStats,
     onShowStatsChange,
     terrainXray,
@@ -107,6 +111,17 @@ export function DebugPanel({
                         aria-label="Toggle station locations"
                     >
                         <Landmark className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">{t('proximityLines')}</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showProximityLines}
+                        onPressedChange={onShowProximityLinesChange}
+                        aria-label="Toggle coupling proximity lines"
+                    >
+                        <Link2 className="size-3.5" />
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">

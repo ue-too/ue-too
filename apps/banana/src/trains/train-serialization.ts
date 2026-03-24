@@ -16,6 +16,8 @@ export type SerializedCar = {
   bogieOffsets: number[];
   edgeToBogie: number;
   bogieToEdge: number;
+  /** Distance from bogie to coupler tip. Omitted when 0 for backwards compatibility. */
+  couplerLength?: number;
   flipped: boolean;
 };
 
@@ -65,6 +67,7 @@ function serializeCar(car: Car): SerializedCar {
     bogieOffsets: car.bogieOffsets(),
     edgeToBogie: car.edgeToBogie,
     bogieToEdge: car.bogieToEdge,
+    ...(car.couplerLength !== 0 ? { couplerLength: car.couplerLength } : {}),
     flipped: car.flipped,
   };
 }
@@ -158,7 +161,8 @@ function deserializeCar(data: SerializedCar): Car {
     data.id,
     [...data.bogieOffsets],
     data.edgeToBogie,
-    data.bogieToEdge
+    data.bogieToEdge,
+    data.couplerLength
   );
   if (data.name !== undefined) {
     car.name = data.name;
