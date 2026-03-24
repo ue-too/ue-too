@@ -191,6 +191,8 @@ const en = {
         featureGranularity: 'Granular timetable editing (WIP)',
         builtWithFooter:
             'Built with <ueToo>ue-too</ueToo> · <issues>Feedback</issues>',
+        cjkFontCreditFooter:
+            'CJK pixel font: <cubic11>Cubic 11</cubic11> by ACh-K',
         motionOn: 'Motion: on',
         motionOff: 'Motion: off',
         enableAnimations: 'Enable animations',

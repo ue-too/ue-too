@@ -17,7 +17,7 @@ export function LanguageSwitcher() {
     const { i18n } = useTranslation();
 
     return (
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
                 <button className="border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors">
                     {LANGUAGES.find(l => l.code === i18n.language)?.label ??
