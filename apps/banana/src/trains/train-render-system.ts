@@ -408,11 +408,15 @@ export class TrainRenderSystem {
   }
 
   private _updateActualBogies(placed: readonly PlacedTrainEntry[]): void {
-    const currentIds = new Set(placed.map(p => p.id));
-
-    for (const id of this._lastTrainIds) {
-      if (!currentIds.has(id)) {
-        this._removeTrainDrawables(id);
+    // Check for removed trains by diffing against last frame's IDs.
+    // Reuse _lastTrainIds (previous frame) — no need to allocate a new Set.
+    if (this._lastTrainIds.size > 0) {
+      for (const id of this._lastTrainIds) {
+        let found = false;
+        for (let i = 0; i < placed.length; i++) {
+          if (placed[i].id === id) { found = true; break; }
+        }
+        if (!found) this._removeTrainDrawables(id);
       }
     }
 
@@ -538,12 +542,13 @@ export class TrainRenderSystem {
         }
       }
 
-      // Hide excess sprites from previous frame
+      // Hide excess sprites from previous frame and remove from band
       const prevCount = this._activeGangwayCounts.get(id) ?? 0;
       for (let i = geoms.length; i < prevCount; i++) {
         pool[i].visible = false;
+        this._worldRenderSystem.removeFromBand(gangwayKey(id, i));
       }
-      this._activeGangwayCounts.set(id, Math.max(prevCount, geoms.length));
+      this._activeGangwayCounts.set(id, geoms.length);
     }
   }
 
@@ -699,8 +704,10 @@ export class TrainRenderSystem {
 
     for (let i = count; i < currentActive; i++) {
       pool[i].visible = false;
+      const key = carKey(trainId, i);
+      this._worldRenderSystem.removeFromBand(key);
     }
-    this._activeCarCounts.set(trainId, Math.max(currentActive, count));
+    this._activeCarCounts.set(trainId, count);
   }
 
   private _removeTrainDrawables(trainId: number): void {
@@ -776,10 +783,13 @@ export class TrainRenderSystem {
       // Bogie will be added to the correct band in _updateActualBogies.
     }
 
+    // Hide excess sprites and destroy+remove those beyond the pool's needs
     for (let i = count; i < currentActive; i++) {
       pool[i].visible = false;
+      const key = bogieKey(trainId, i);
+      this._worldRenderSystem.removeFromBand(key);
     }
-    this._activeCounts.set(trainId, Math.max(currentActive, count));
+    this._activeCounts.set(trainId, count);
   }
 
   private _syncPreviewPool(count: number): void {

@@ -14,10 +14,14 @@ class TimeManager {
     private _speed: number = 1;
 
     private _fixDeltaTime: number = 16.667;
+    private _visibilityHandler: () => void;
+    private _tickerCallback: (time: { deltaMS: number }) => void;
+    private _app: Application;
 
     constructor(pixixApp: Application) {
+        this._app = pixixApp;
 
-        document.addEventListener('visibilitychange', () => {
+        this._visibilityHandler = () => {
             if (document.hidden) {
                 this._lastTime = performance.now();
                 this._interval = setInterval(() => {
@@ -29,12 +33,13 @@ class TimeManager {
             } else {
                 clearInterval(this._interval);
             }
-        });
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
 
-        pixixApp.ticker.add((time) => {
+        this._tickerCallback = (time) => {
             this.update(time.deltaMS);
-        });
-
+        };
+        pixixApp.ticker.add(this._tickerCallback);
     }
 
     get paused(): boolean {
@@ -80,6 +85,13 @@ class TimeManager {
 
     subscribeSpeed(observer: Observer<[number]>, options?: SubscriptionOptions): () => void {
         return this._speedObservable.subscribe(observer, options);
+    }
+
+    /** Remove the visibilitychange listener and ticker callback. */
+    dispose(): void {
+        document.removeEventListener('visibilitychange', this._visibilityHandler);
+        clearInterval(this._interval);
+        this._app.ticker.remove(this._tickerCallback);
     }
 }
 

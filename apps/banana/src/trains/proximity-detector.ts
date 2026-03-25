@@ -33,6 +33,8 @@ export class ProximityDetector {
     private _matches: ProximityMatch[] = [];
     private _lastFingerprint = '';
     private _listeners: (() => void)[] = [];
+    /** Reusable map to avoid per-frame allocation in update(). */
+    private _trainMap: Map<number, PlacedTrainEntry> = new Map();
 
     /**
      * Subscribe to proximity match changes. The listener is called only when
@@ -55,12 +57,18 @@ export class ProximityDetector {
      * Build a fingerprint string from the current matches so we can detect
      * when the couplable set actually changes between frames.
      */
+    private _fingerprintParts: string[] = [];
+
     private _computeFingerprint(): string {
         if (this._matches.length === 0) return '';
-        return this._matches
-            .map(m => `${m.trainA.id}:${m.trainA.end}-${m.trainB.id}:${m.trainB.end}`)
-            .sort()
-            .join('|');
+        // Reuse array to avoid per-frame allocation
+        this._fingerprintParts.length = this._matches.length;
+        for (let i = 0; i < this._matches.length; i++) {
+            const m = this._matches[i];
+            this._fingerprintParts[i] = `${m.trainA.id}:${m.trainA.end}-${m.trainB.id}:${m.trainB.end}`;
+        }
+        this._fingerprintParts.sort();
+        return this._fingerprintParts.join('|');
     }
 
     /**
@@ -83,17 +91,17 @@ export class ProximityDetector {
             return;
         }
 
-        // Build id → entry lookup
-        const trainMap = new Map<number, PlacedTrainEntry>();
-        for (const e of trains) trainMap.set(e.id, e);
+        // Build id → entry lookup (reuse map to avoid allocation)
+        this._trainMap.clear();
+        for (const e of trains) this._trainMap.set(e.id, e);
 
         for (const pairKey of colocatedPairs) {
             const colonIdx = pairKey.indexOf(':');
             const idA = parseInt(pairKey.slice(0, colonIdx), 10);
             const idB = parseInt(pairKey.slice(colonIdx + 1), 10);
 
-            const entryA = trainMap.get(idA);
-            const entryB = trainMap.get(idB);
+            const entryA = this._trainMap.get(idA);
+            const entryB = this._trainMap.get(idB);
             if (!entryA || !entryB) continue;
 
             const trainA = entryA.train;

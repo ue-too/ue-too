@@ -535,7 +535,7 @@ export const initApp = async (
 
   baseComponents.app.stage.addChild(worldRenderSystem.container);
 
-  timeManager.subscribe((currentTime: number, deltaTime: number) => {
+  const unsubTimeManager = timeManager.subscribe((currentTime: number, deltaTime: number) => {
     // Timetable auto-drivers set throttle before physics update
     timetableRef.current.update(currentTime, deltaTime);
     trainRenderSystem.update(deltaTime);
@@ -543,8 +543,15 @@ export const initApp = async (
     debugOverlayRenderSystem.updateProximityLines();
   });
 
-  trainManager.subscribeToChanges(() => {
+  const unsubTrainChanges = trainManager.subscribeToChanges(() => {
     trainRenderSystem.forceSync();
+  });
+
+  baseComponents.cleanups.push(() => {
+    unsubTimeManager();
+    unsubTrainChanges();
+    timeManager.dispose();
+    timetableRef.current.dispose();
   });
 
   const cameraMux = createCameraMuxWithAnimationAndLock();

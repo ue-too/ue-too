@@ -614,8 +614,13 @@ export class Train {
         return this._formation.flatCars();
     }
 
+    private _carOffsetsCache: number[] | null = null;
+
     get carOffsets(): number[] {
-        return this._formation.bogieOffsets().slice(1);
+        if (this._carOffsetsCache === null) {
+            this._carOffsetsCache = this._formation.bogieOffsets().slice(1);
+        }
+        return this._carOffsetsCache;
     }
 
     /**
@@ -688,6 +693,14 @@ export class Train {
 
         let accuOffset = 0;
 
+        // Reuse a single expanded position object to avoid per-bogie allocations
+        const expandedPosition: TrainPosition = {
+            trackSegment: position.trackSegment,
+            tValue: position.tValue,
+            direction: expandDirection,
+            point: position.point,
+        };
+
         const testOffsets = this.carOffsets
 
         for (let index = 0; index < testOffsets.length; index++) {
@@ -695,7 +708,7 @@ export class Train {
             const bogiePosition = !preview
                 ? getPosition(
                     accuOffset,
-                    { ...position, direction: expandDirection },
+                    expandedPosition,
                     this._trackGraph,
                     this._jointDirectionManager,
                     this._occupiedJointNumbers,
@@ -703,7 +716,7 @@ export class Train {
                 )
                 : getPosition(
                     accuOffset,
-                    { ...position, direction: expandDirection },
+                    expandedPosition,
                     this._trackGraph,
                     this._jointDirectionManager
                 );
@@ -917,23 +930,23 @@ export class Train {
             this._throttle = 'N';
             return;
         }
-        const flipped = nextPosition.passedJointNumbers.map(joint => {
-            return {
+        // Prepend passed joints with flipped direction (mutate in-place to avoid allocations)
+        for (let i = nextPosition.passedJointNumbers.length - 1; i >= 0; i--) {
+            const joint = nextPosition.passedJointNumbers[i];
+            this._occupiedJointNumbers.unshift({
                 jointNumber: joint.jointNumber,
                 direction: flipDirection(joint.direction),
-            };
-        });
-        this._occupiedJointNumbers = flipped.concat(this._occupiedJointNumbers);
-
-        const flippedEnteringTrackSegments =
-            nextPosition.enteringTrackSegments.map(track => {
-                return {
-                    trackNumber: track.trackNumber,
-                    inTrackDirection: flipDirection(track.inTrackDirection),
-                };
             });
+        }
 
-        this._occupiedTrackSegments.unshift(...flippedEnteringTrackSegments);
+        // Prepend entering track segments with flipped direction
+        for (let i = nextPosition.enteringTrackSegments.length - 1; i >= 0; i--) {
+            const track = nextPosition.enteringTrackSegments[i];
+            this._occupiedTrackSegments.unshift({
+                trackNumber: track.trackNumber,
+                inTrackDirection: flipDirection(track.inTrackDirection),
+            });
+        }
 
         this._position = nextPosition;
         this._cachedBogiePositions = this._getBogiePositions(
@@ -954,23 +967,15 @@ export class Train {
         const lastBogiePosition = bogiePositions[bogiePositions.length - 1];
         this._position = lastBogiePosition;
         this._formation.switchDirection();
-        // this._occupiedJointNumbers = this._occupiedJointNumbers.reverse();
-        this._occupiedJointNumbers = this._occupiedJointNumbers
-            .reverse()
-            .map(joint => {
-                return {
-                    ...joint,
-                    direction: flipDirection(joint.direction),
-                };
-            });
-        this._occupiedTrackSegments = this._occupiedTrackSegments
-            .reverse()
-            .map(track => {
-                return {
-                    ...track,
-                    inTrackDirection: flipDirection(track.inTrackDirection),
-                };
-            });
+        // Reverse in place and flip directions without allocating new arrays
+        this._occupiedJointNumbers.reverse();
+        for (let i = 0; i < this._occupiedJointNumbers.length; i++) {
+            this._occupiedJointNumbers[i].direction = flipDirection(this._occupiedJointNumbers[i].direction);
+        }
+        this._occupiedTrackSegments.reverse();
+        for (let i = 0; i < this._occupiedTrackSegments.length; i++) {
+            this._occupiedTrackSegments[i].inTrackDirection = flipDirection(this._occupiedTrackSegments[i].inTrackDirection);
+        }
         this._cachedBogiePositions = this._getBogiePositions(
             this._position,
             false
@@ -1036,6 +1041,7 @@ export class Train {
         this._acceleration = 0;
         this._throttle = 'N';
         this._cachedBogiePositions = null;
+        this._carOffsetsCache = null;
         this._occupiedJointNumbers = [];
         this._occupiedTrackSegments = [];
 
@@ -1060,6 +1066,7 @@ export class Train {
         this._acceleration = 0;
         this._throttle = 'N';
         this._cachedBogiePositions = null;
+        this._carOffsetsCache = null;
         this._occupiedJointNumbers = [];
         this._occupiedTrackSegments = [];
     }

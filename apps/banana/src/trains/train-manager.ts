@@ -62,10 +62,7 @@ export class TrainManager {
 
   /** Current list of placed trains (do not mutate). */
   getPlacedTrains(): readonly PlacedTrainEntry[] {
-    return this._internalTrainManager.getLivingEntitiesWithIndex().map(({ index, entity }) => ({
-      id: index,
-      train: entity,
-    }));
+    return this._placedTrains;
   }
 
   /** Index of the currently selected train, or 0 if none. */

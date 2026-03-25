@@ -153,7 +153,7 @@ export function DebugPanel({
                         <span className="text-muted-foreground text-[10px]">
                             Stress Test
                         </span>
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                             <Button
                                 variant="outline"
                                 size="xs"
@@ -167,6 +167,13 @@ export function DebugPanel({
                                 onClick={() => onSpawnStressTest(50)}
                             >
                                 50 trains
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => onSpawnStressTest(100)}
+                            >
+                                100 trains
                             </Button>
                         </div>
                     </>

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from '@/assets/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBananaApp } from '@/contexts/pixi';
 import { DayOfWeek } from '@/timetable/types';
@@ -47,10 +47,16 @@ export function TimeDisplay() {
     const [paused, setPaused] = useState(false);
     const [speed, setSpeed] = useState(1);
 
+    const lastTimeUpdate = useRef(0);
+
     useEffect(() => {
         if (!app) return;
         const unsubTime = app.timeManager.subscribe((currentTime: number) => {
-            setTime(currentTime);
+            const now = performance.now();
+            if (now - lastTimeUpdate.current >= 250) {
+                lastTimeUpdate.current = now;
+                setTime(currentTime);
+            }
         });
         const unsubPause = app.timeManager.subscribePause((isPaused: boolean) => {
             setPaused(isPaused);
