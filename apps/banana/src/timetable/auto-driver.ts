@@ -58,8 +58,6 @@ const DEPARTING_SPEED_THRESHOLD = 1.0;
 export class AutoDriver {
   private _state: ActiveShiftState;
   private _jdm: TimetableJointDirectionManager;
-  /** Cached distance to next stop, recomputed per driveStep call. */
-  private _cachedDistanceToStop: number | null = null;
 
   constructor(
     state: ActiveShiftState,
@@ -93,13 +91,6 @@ export class AutoDriver {
     stationManager: StationManager,
     trackGraph: TrackGraph,
   ): void {
-    // Pre-compute distance for phases that need it (avoids duplicate work)
-    if (this._state.phase === 'running' || this._state.phase === 'approaching') {
-      this._cachedDistanceToStop = this._getDistanceToStop(
-        train, shift, route, stationManager, trackGraph,
-      );
-    }
-
     switch (this._state.phase) {
       case 'waiting_departure':
         this._handleWaitingDeparture(train, virtualTime, shift);
@@ -108,10 +99,10 @@ export class AutoDriver {
         this._handleDeparting(train);
         break;
       case 'running':
-        this._handleRunning(train, shift);
+        this._handleRunning(train, shift, route, stationManager, trackGraph);
         break;
       case 'approaching':
-        this._handleApproaching(train, shift);
+        this._handleApproaching(train, shift, route, stationManager, trackGraph);
         break;
       case 'stopped':
         this._handleStopped(train, shift);
@@ -125,24 +116,21 @@ export class AutoDriver {
    *
    * @param passedJoints - Joint numbers the train just passed.
    */
-  onJointsPassed(passedJoints: readonly { jointNumber: number }[]): void {
+  onJointsPassed(passedJoints: { jointNumber: number }[]): void {
     if (passedJoints.length === 0) return;
 
-    // Advance route joint progress for the distance calculation.
-    // NOTE: Do NOT advance _jdm.setCurrentIndex() here — the JDM's index
-    // is already advanced naturally as the train moves through junctions
-    // during Train.update() → getPosition() → getNextJoint(). Advancing
-    // it here would cause a double-advance, putting the JDM ahead of the
-    // actual train position.
+    // Advance route progress
     const routeJoints = this._currentRouteJoints();
     for (const passed of passedJoints) {
       for (let i = this._state.routeJointProgress; i < routeJoints.length; i++) {
         if (routeJoints[i].jointNumber === passed.jointNumber) {
           this._state.routeJointProgress = i + 1;
+          this._jdm.setCurrentIndex(i + 1);
           break;
         }
       }
     }
+
   }
 
   // -----------------------------------------------------------------------
@@ -179,8 +167,17 @@ export class AutoDriver {
   private _handleRunning(
     train: Train,
     shift: ShiftTemplate,
+    route: Route,
+    stationManager: StationManager,
+    trackGraph: TrackGraph,
   ): void {
-    const distanceToStop = this._cachedDistanceToStop;
+    const distanceToStop = this._getDistanceToStop(
+      train,
+      shift,
+      route,
+      stationManager,
+      trackGraph,
+    );
 
     if (distanceToStop === null) {
       // Can't compute distance — maintain current speed cautiously
@@ -192,7 +189,7 @@ export class AutoDriver {
 
     if (distanceToStop <= brakingDistance * BRAKING_SAFETY_MARGIN) {
       this._transition('approaching');
-      this._handleApproaching(train, shift);
+      this._handleApproaching(train, shift, route, stationManager, trackGraph);
       return;
     }
 
@@ -203,8 +200,17 @@ export class AutoDriver {
   private _handleApproaching(
     train: Train,
     shift: ShiftTemplate,
+    route: Route,
+    stationManager: StationManager,
+    trackGraph: TrackGraph,
   ): void {
-    const distanceToStop = this._cachedDistanceToStop;
+    const distanceToStop = this._getDistanceToStop(
+      train,
+      shift,
+      route,
+      stationManager,
+      trackGraph,
+    );
 
     if (distanceToStop === null) {
       train.setThrottleStep('b3');
@@ -341,34 +347,7 @@ export class AutoDriver {
       return diff > 0 ? diff : null;
     }
 
-    // Walk forward through route joints to find intermediate segments.
-    // Start from routeJointProgress to skip segments behind the train.
-    const result = this._walkRouteForDistance(
-      from, to, route, trackGraph, this._state.routeJointProgress,
-    );
-    if (result !== null) return result;
-
-    // If the walk from routeJointProgress didn't find the target (e.g.
-    // progress advanced past the stop's joints), fall back to walking
-    // from the beginning. This is less efficient but always correct.
-    if (this._state.routeJointProgress > 0) {
-      return this._walkRouteForDistance(from, to, route, trackGraph, 0);
-    }
-
-    return null;
-  }
-
-  /**
-   * Walk route joints starting from `startIndex` to compute distance
-   * from `from` to `to`. Returns null if the target segment is not found.
-   */
-  private _walkRouteForDistance(
-    from: TrainPosition,
-    to: StopPosition,
-    route: Route,
-    trackGraph: TrackGraph,
-    startIndex: number,
-  ): number | null {
+    // Walk forward through segments from current position
     let totalDistance = 0;
 
     // Distance from current position to end of current segment
@@ -382,10 +361,11 @@ export class AutoDriver {
       totalDistance += currentPosLength;
     }
 
+    // Walk through route joints to find intermediate segments
     const routeJoints = route.joints;
     let foundTarget = false;
 
-    for (let i = startIndex; i < routeJoints.length - 1; i++) {
+    for (let i = this._state.routeJointProgress; i < routeJoints.length - 1; i++) {
       const fromJoint = routeJoints[i];
       const toJoint = routeJoints[i + 1];
 
@@ -395,7 +375,7 @@ export class AutoDriver {
       const segNumber = joint.connections.get(toJoint.jointNumber);
       if (segNumber === undefined) return null;
 
-      // Skip the current segment (already accounted for via partial length)
+      // Skip the current segment (already accounted for)
       if (segNumber === from.trackSegment) continue;
 
       const seg = trackGraph.getTrackSegmentWithJoints(segNumber);
