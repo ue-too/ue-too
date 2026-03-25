@@ -12,15 +12,15 @@ export type RGBA = { r: number; g: number; b: number; a: number };
  * The ramp transitions smoothly between stops via linear interpolation.
  */
 export const COLOR_STOPS: { height: number; color: RGBA }[] = [
-  { height: -20, color: { r: 45, g: 80, b: 50, a: 255 } },    // deep green (valley floor)
-  { height: -10, color: { r: 65, g: 115, b: 65, a: 255 } },   // dark green
-  { height: -3, color: { r: 80, g: 140, b: 80, a: 255 } },    // green
-  { height: 0, color: { r: 100, g: 160, b: 90, a: 255 } },     // green (ground level)
-  { height: 3, color: { r: 140, g: 175, b: 90, a: 255 } },     // yellow-green
-  { height: 8, color: { r: 180, g: 185, b: 100, a: 255 } },    // light olive
-  { height: 15, color: { r: 195, g: 170, b: 105, a: 255 } },   // tan
-  { height: 20, color: { r: 165, g: 130, b: 85, a: 255 } },    // brown
-  { height: 30, color: { r: 140, g: 105, b: 75, a: 255 } },    // dark brown
+  { height: -20, color: { r: 75, g: 95, b: 78, a: 255 } },     // muted deep green (valley floor)
+  { height: -10, color: { r: 95, g: 120, b: 95, a: 255 } },    // muted dark green
+  { height: -3, color: { r: 115, g: 140, b: 110, a: 255 } },   // muted sage
+  { height: 0, color: { r: 135, g: 155, b: 120, a: 255 } },    // soft sage (ground level)
+  { height: 3, color: { r: 155, g: 165, b: 125, a: 255 } },    // muted yellow-green
+  { height: 8, color: { r: 175, g: 175, b: 140, a: 255 } },    // soft khaki
+  { height: 15, color: { r: 185, g: 170, b: 140, a: 255 } },   // muted tan
+  { height: 20, color: { r: 165, g: 145, b: 120, a: 255 } },   // soft brown
+  { height: 30, color: { r: 145, g: 125, b: 110, a: 255 } },   // muted dark brown
 ];
 
 /**
