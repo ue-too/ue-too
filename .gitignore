@@ -148,6 +148,8 @@ README-for-docusaurus.md
 vite.config.*.timestamp*
 
 docs
+# Allow package-level locale doc sources (used by projectDocuments)
+!packages/*/docs/
 
 .tanstack
 
