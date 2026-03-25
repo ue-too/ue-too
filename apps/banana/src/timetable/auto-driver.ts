@@ -341,7 +341,34 @@ export class AutoDriver {
       return diff > 0 ? diff : null;
     }
 
-    // Walk forward through segments from current position
+    // Walk forward through route joints to find intermediate segments.
+    // Start from routeJointProgress to skip segments behind the train.
+    const result = this._walkRouteForDistance(
+      from, to, route, trackGraph, this._state.routeJointProgress,
+    );
+    if (result !== null) return result;
+
+    // If the walk from routeJointProgress didn't find the target (e.g.
+    // progress advanced past the stop's joints), fall back to walking
+    // from the beginning. This is less efficient but always correct.
+    if (this._state.routeJointProgress > 0) {
+      return this._walkRouteForDistance(from, to, route, trackGraph, 0);
+    }
+
+    return null;
+  }
+
+  /**
+   * Walk route joints starting from `startIndex` to compute distance
+   * from `from` to `to`. Returns null if the target segment is not found.
+   */
+  private _walkRouteForDistance(
+    from: TrainPosition,
+    to: StopPosition,
+    route: Route,
+    trackGraph: TrackGraph,
+    startIndex: number,
+  ): number | null {
     let totalDistance = 0;
 
     // Distance from current position to end of current segment
@@ -355,11 +382,10 @@ export class AutoDriver {
       totalDistance += currentPosLength;
     }
 
-    // Walk through route joints to find intermediate segments
     const routeJoints = route.joints;
     let foundTarget = false;
 
-    for (let i = this._state.routeJointProgress; i < routeJoints.length - 1; i++) {
+    for (let i = startIndex; i < routeJoints.length - 1; i++) {
       const fromJoint = routeJoints[i];
       const toJoint = routeJoints[i + 1];
 
