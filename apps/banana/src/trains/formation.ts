@@ -599,6 +599,21 @@ export class Train {
 
     private _cachedBogiePositions: TrainPosition[] | null = null;
 
+    /** Joints the train passed through on the most recent update() call. */
+    private _lastPassedJoints: { jointNumber: number }[] = [];
+
+    /** Reusable result object for getPosition() in update() to avoid per-frame allocation. */
+    private _reusableUpdateResult: AdvancedTrainPositionRes = {
+        stop: false, trackSegment: 0, tValue: 0, direction: 'tangent',
+        point: { x: 0, y: 0 }, passedJointNumbers: [], enteringTrackSegments: [],
+    };
+
+    /** Reusable result object for getPosition() in _getBogiePositions() to avoid per-bogie allocation. */
+    private _reusableBogieResult: AdvancedTrainPositionRes = {
+        stop: false, trackSegment: 0, tValue: 0, direction: 'tangent',
+        point: { x: 0, y: 0 }, passedJointNumbers: [], enteringTrackSegments: [],
+    };
+
     private _formation: Formation;
 
     get formation(): Formation {
@@ -712,13 +727,17 @@ export class Train {
                     this._trackGraph,
                     this._jointDirectionManager,
                     this._occupiedJointNumbers,
-                    this._occupiedTrackSegments
+                    this._occupiedTrackSegments,
+                    this._reusableBogieResult,
                 )
                 : getPosition(
                     accuOffset,
                     expandedPosition,
                     this._trackGraph,
-                    this._jointDirectionManager
+                    this._jointDirectionManager,
+                    undefined,
+                    undefined,
+                    this._reusableBogieResult,
                 );
             if (bogiePosition === null || bogiePosition.stop) {
                 // console.warn('cannot put the whole train at the current position');
@@ -804,7 +823,13 @@ export class Train {
                     });
                 }
             }
-            positions.push(bogiePosition);
+            // Copy position fields (the reusable result is shared across iterations)
+            positions.push({
+                trackSegment: bogiePosition.trackSegment,
+                tValue: bogiePosition.tValue,
+                direction: bogiePosition.direction,
+                point: bogiePosition.point,
+            });
         }
         return positions;
     }
@@ -845,6 +870,11 @@ export class Train {
         inTrackDirection: 'tangent' | 'reverseTangent';
     }[] {
         return this._occupiedTrackSegments;
+    }
+
+    /** Joints the train passed through on the most recent update() call. Empty if none. */
+    get lastPassedJoints(): readonly { jointNumber: number }[] {
+        return this._lastPassedJoints;
     }
 
     getPreviewBogiePositions(
@@ -917,19 +947,32 @@ export class Train {
         }
         let distanceToAdvance = this._speed * deltaTime;
         if (approximately(distanceToAdvance, 0, 1e-6)) {
+            this._lastPassedJoints.length = 0;
             return;
         }
         const nextPosition = getPosition(
             distanceToAdvance,
             this._position,
             this._trackGraph,
-            this._jointDirectionManager
+            this._jointDirectionManager,
+            undefined,
+            undefined,
+            this._reusableUpdateResult,
         );
         if (nextPosition === null || nextPosition.stop) {
             this._speed = 0;
             this._throttle = 'N';
+            this._lastPassedJoints.length = 0;
             return;
         }
+        // Store passed joints for external consumers (e.g. AutoDriver).
+        // Copy since the reusable result's array gets cleared next frame.
+        if (nextPosition.passedJointNumbers.length > 0) {
+            this._lastPassedJoints = nextPosition.passedJointNumbers.slice();
+        } else {
+            this._lastPassedJoints.length = 0;
+        }
+
         // Prepend passed joints with flipped direction (mutate in-place to avoid allocations)
         for (let i = nextPosition.passedJointNumbers.length - 1; i >= 0; i--) {
             const joint = nextPosition.passedJointNumbers[i];
@@ -948,9 +991,15 @@ export class Train {
             });
         }
 
-        this._position = nextPosition;
+        // Copy position fields (nextPosition is the reusable result object)
+        this._position = {
+            trackSegment: nextPosition.trackSegment,
+            tValue: nextPosition.tValue,
+            direction: nextPosition.direction,
+            point: nextPosition.point,
+        };
         this._cachedBogiePositions = this._getBogiePositions(
-            nextPosition,
+            this._position,
             false
         );
     }
@@ -1136,7 +1185,9 @@ export function getPosition(
     occupiedTrackSegments?: {
         trackNumber: number;
         inTrackDirection: 'tangent' | 'reverseTangent';
-    }[]
+    }[],
+    /** Optional reusable result to avoid per-call allocations. Arrays are cleared and reused. */
+    reusableResult?: AdvancedTrainPositionRes,
 ): AdvancedTrainPositionRes | null {
     let distanceToAdvance = distance;
 
@@ -1150,17 +1201,18 @@ export function getPosition(
         return null;
     }
 
-    const passedJointNumbers: {
-        jointNumber: number;
-        direction: 'tangent' | 'reverseTangent';
-    }[] = [];
-
-    const enteringTrackSegment: {
-        trackNumber: number;
-        fromJointNumber: number;
-        toJointNumber: number;
-        inTrackDirection: 'tangent' | 'reverseTangent';
-    }[] = [];
+    // Reuse arrays from previous result if provided, otherwise allocate new ones
+    let passedJointNumbers: AdvancedTrainPositionRes['passedJointNumbers'];
+    let enteringTrackSegment: AdvancedTrainPositionRes['enteringTrackSegments'];
+    if (reusableResult) {
+        passedJointNumbers = reusableResult.passedJointNumbers;
+        passedJointNumbers.length = 0;
+        enteringTrackSegment = reusableResult.enteringTrackSegments;
+        enteringTrackSegment.length = 0;
+    } else {
+        passedJointNumbers = [];
+        enteringTrackSegment = [];
+    }
 
     const advanceLength =
         distanceToAdvance * (xDirection === 'tangent' ? 1 : -1);
@@ -1199,15 +1251,15 @@ export function getPosition(
             // console.warn("end of the track");
 
             xTValue = xDirection === 'tangent' ? 1 : 0;
-            return {
-                stop: true,
-                trackSegment: xTrackSegment,
-                tValue: xTValue,
-                direction: xDirection,
-                point: trackSegment.curve.get(xTValue),
-                passedJointNumbers: passedJointNumbers,
-                enteringTrackSegments: enteringTrackSegment,
-            };
+            const stopResult = reusableResult ?? {} as AdvancedTrainPositionRes;
+            stopResult.stop = true;
+            stopResult.trackSegment = xTrackSegment;
+            stopResult.tValue = xTValue;
+            stopResult.direction = xDirection;
+            stopResult.point = trackSegment.curve.get(xTValue);
+            stopResult.passedJointNumbers = passedJointNumbers;
+            stopResult.enteringTrackSegments = enteringTrackSegment;
+            return stopResult;
         }
 
         enteringTrackSegment.unshift({
@@ -1258,13 +1310,13 @@ export function getPosition(
                 ? 1
                 : 0;
 
-    return {
-        stop: false,
-        trackSegment: xTrackSegment,
-        tValue: xTValue,
-        direction: xDirection,
-        point: nextPosition.point,
-        passedJointNumbers: passedJointNumbers,
-        enteringTrackSegments: enteringTrackSegment,
-    };
+    const result = reusableResult ?? {} as AdvancedTrainPositionRes;
+    result.stop = false;
+    result.trackSegment = xTrackSegment;
+    result.tValue = xTValue;
+    result.direction = xDirection;
+    result.point = nextPosition.point;
+    result.passedJointNumbers = passedJointNumbers;
+    result.enteringTrackSegments = enteringTrackSegment;
+    return result;
 }

@@ -212,6 +212,12 @@ export class TimetableManager {
       const route = this._routeManager.getRoute(shift.legs[legIndex].routeId);
       if (route === null) continue;
 
+      // Feed joints passed on the previous frame to advance route progress
+      const passedJoints = train.lastPassedJoints;
+      if (passedJoints.length > 0) {
+        driver.onJointsPassed(passedJoints);
+      }
+
       driver.driveStep(
         train,
         virtualTime,
