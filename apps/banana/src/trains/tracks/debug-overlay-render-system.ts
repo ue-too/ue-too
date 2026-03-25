@@ -289,7 +289,7 @@ export class DebugOverlayRenderSystem {
         for (const { train } of placed) {
             const positions = train.getBogiePositions();
             if (positions === null || positions.length < 2) continue;
-            const formationId = train.formation.id;
+            const formationId = train.formation.name;
             const cars = train.cars;
             for (let k = 0; 2 * k + 1 < positions.length; k++) {
                 const car = cars[k];

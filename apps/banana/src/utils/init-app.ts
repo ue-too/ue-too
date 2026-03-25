@@ -22,6 +22,7 @@ import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 import { CarImageRegistry } from '@/trains/car-image-registry';
 import { TimeManager } from '@/time';
+import { ScheduleClock, DayOfWeek, TimetableManager } from '@/timetable';
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
 import { StationPlacementEngine, StationPlacementStateMachine } from '@/stations/station-placement-state-machine';
@@ -217,6 +218,10 @@ function computeOptimalPath(
 }
 
 export type BananaAppComponents = BaseAppComponents & {
+  scheduleClock: ScheduleClock;
+  timetableManager: TimetableManager;
+  /** Mutable ref so the TimeManager callback always uses the current timetable manager. */
+  timetableRef: { current: TimetableManager };
   curveEngine: CurveCreationEngine;
   worldRenderSystem: WorldRenderSystem;
   terrainData: TerrainData;
@@ -396,7 +401,7 @@ export const initApp = async (
 
   const isFollowing = (): boolean => followPositionGetter !== null;
 
-  baseComponents.app.ticker.add((time) => {
+  baseComponents.app.ticker.add((time: { deltaMS: number }) => {
     for (const animation of animations) {
       animation.animate(time.deltaMS);
     }
@@ -499,6 +504,19 @@ export const initApp = async (
   // Share the proximity detector with the train manager for coupling queries
   trainManager.setProximityDetector(trainRenderSystem.proximityDetector);
 
+  // Timetable: schedule clock starts at Monday 06:00
+  const scheduleClock = new ScheduleClock(DayOfWeek.Monday, { hours: 6, minutes: 0, seconds: 0 });
+  // Mutable ref so that the TimeManager callback always uses the current
+  // timetable manager, even after deserialization replaces it.
+  const timetableRef: { current: TimetableManager } = { current: null! };
+  let timetableManager = new TimetableManager(
+    scheduleClock,
+    trackGraph,
+    trainManager,
+    stationManager,
+  );
+  timetableRef.current = timetableManager;
+
   // When a train is removed from the track, return its formation to the depot
   trainManager.setOnBeforeRemove((train) => {
     formationManager.addFormation(train.formation);
@@ -517,7 +535,9 @@ export const initApp = async (
 
   baseComponents.app.stage.addChild(worldRenderSystem.container);
 
-  timeManager.subscribe((_, deltaTime) => {
+  timeManager.subscribe((currentTime: number, deltaTime: number) => {
+    // Timetable auto-drivers set throttle before physics update
+    timetableRef.current.update(currentTime, deltaTime);
     trainRenderSystem.update(deltaTime);
     debugOverlayRenderSystem.updateFormationLabels();
     debugOverlayRenderSystem.updateProximityLines();
@@ -605,6 +625,9 @@ export const initApp = async (
     debugOverlayRenderSystem,
     carImageRegistry,
     timeManager,
+    scheduleClock,
+    timetableManager,
+    timetableRef,
     stationManager,
     stationRenderSystem,
     statsDom: stats.dom,

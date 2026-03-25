@@ -673,6 +673,11 @@ export class Train {
         this._throttle = throttleStep;
     }
 
+    /** Replace the junction direction manager (e.g. to use a route-aware manager for timetable driving). */
+    setJointDirectionManager(manager: JointDirectionManager): void {
+        this._jointDirectionManager = manager;
+    }
+
     _getBogiePositions(
         position: TrainPosition,
         preview: boolean = false
