@@ -5,7 +5,7 @@ import {
     MousePointer2,
     Plus,
     Upload,
-} from 'lucide-react';
+} from '@/assets/icons';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -16,7 +16,7 @@ import {
     TrainTrack,
     Trash2,
     Warehouse,
-} from 'lucide-react';
+} from '@/assets/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

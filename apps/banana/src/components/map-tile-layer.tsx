@@ -1,6 +1,6 @@
 import { LIGHT, layers } from '@protomaps/basemaps';
 import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
-import { Info } from 'lucide-react';
+import { Info } from '@/assets/icons';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Protocol } from 'pmtiles';

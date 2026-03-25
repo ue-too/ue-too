@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none" aria-hidden="true">
+  <rect x="1" y="1" width="62" height="62" rx="6" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 4" fill="#f1f5f9"/>
+  <text x="32" y="30" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" fill="#64748b">Designer</text>
+  <text x="32" y="40" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" fill="#64748b">placeholder</text>
+</svg>

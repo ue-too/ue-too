@@ -1,4 +1,4 @@
-import { Sun } from 'lucide-react';
+import { Sun } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import {

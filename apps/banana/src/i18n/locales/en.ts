@@ -1,3 +1,5 @@
+import { iconHandoff as iconHandoffStringsEn } from './icon-handoff-en';
+
 const en = {
     translation: {
         // Toolbar - Layout
@@ -205,6 +207,9 @@ const en = {
         // 404 Page
         notFoundMessage: "This track doesn't lead anywhere.",
         backToHome: 'Home',
+
+        // Icon handoff (/icon-handoff)
+        iconHandoff: iconHandoffStringsEn,
     },
 } as const;
 

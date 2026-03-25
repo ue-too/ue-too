@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { X } from '@/assets/icons';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
 

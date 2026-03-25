@@ -1,4 +1,4 @@
-import { Mountain, Snowflake } from 'lucide-react';
+import { Mountain, Snowflake } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import {

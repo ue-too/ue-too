@@ -1,6 +1,6 @@
 import { BoardCamera } from '@ue-too/board';
 import type { Point } from '@ue-too/math';
-import { ArrowLeftRight, Crosshair, Focus, Trash2 } from 'lucide-react';
+import { ArrowLeftRight, Crosshair, Focus, Trash2 } from '@/assets/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 

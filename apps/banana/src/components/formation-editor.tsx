@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Link2, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Link2, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';

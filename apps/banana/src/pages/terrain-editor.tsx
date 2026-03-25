@@ -19,7 +19,7 @@ import {
 } from '@ue-too/board';
 import {
     Download, Upload, Layers, Package, Eraser,
-} from 'lucide-react';
+} from '@/assets/icons';
 
 import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
 import type { TerrainConfig, SerializedTerrainData } from '@/terrain/terrain-data';

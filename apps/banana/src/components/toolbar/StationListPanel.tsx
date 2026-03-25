@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Crosshair, Settings2, Trash2, X } from 'lucide-react';
+import { Check, Crosshair, Settings2, Trash2, X } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
