@@ -384,9 +384,6 @@ export class AutoDriver {
 
     const routeJoints = route.joints;
     let foundTarget = false;
-    // Skip segments at or before the train's current segment.
-    // Once we pass the current segment in the route, start accumulating.
-    let passedCurrentSegment = false;
 
     for (let i = startIndex; i < routeJoints.length - 1; i++) {
       const fromJoint = routeJoints[i];
@@ -398,15 +395,8 @@ export class AutoDriver {
       const segNumber = joint.connections.get(toJoint.jointNumber);
       if (segNumber === undefined) return null;
 
-      if (segNumber === from.trackSegment) {
-        // This is the train's current segment — already accounted for
-        // above via partial length. Mark that we've found it.
-        passedCurrentSegment = true;
-        continue;
-      }
-
-      // Skip segments before the train's current segment in the route
-      if (!passedCurrentSegment) continue;
+      // Skip the current segment (already accounted for via partial length)
+      if (segNumber === from.trackSegment) continue;
 
       const seg = trackGraph.getTrackSegmentWithJoints(segNumber);
       if (seg === null) return null;
