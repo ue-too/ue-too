@@ -81,6 +81,11 @@ export class TrainManager {
     return this._internalTrainManager.getEntity(this._selectedIndex);
   }
 
+  /** O(1) train lookup by entity id. Returns null if not found. */
+  getTrainById(id: number): Train | null {
+    return this._internalTrainManager.getEntity(id);
+  }
+
   /** Add a train to the list (e.g. after placement). Returns the assigned id. */
   addTrain(train: Train): number {
     const id = this._internalTrainManager.createEntity(train);

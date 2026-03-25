@@ -58,6 +58,8 @@ const DEPARTING_SPEED_THRESHOLD = 1.0;
 export class AutoDriver {
   private _state: ActiveShiftState;
   private _jdm: TimetableJointDirectionManager;
+  /** Cached distance to next stop, recomputed per driveStep call. */
+  private _cachedDistanceToStop: number | null = null;
 
   constructor(
     state: ActiveShiftState,
@@ -91,6 +93,13 @@ export class AutoDriver {
     stationManager: StationManager,
     trackGraph: TrackGraph,
   ): void {
+    // Pre-compute distance for phases that need it (avoids duplicate work)
+    if (this._state.phase === 'running' || this._state.phase === 'approaching') {
+      this._cachedDistanceToStop = this._getDistanceToStop(
+        train, shift, route, stationManager, trackGraph,
+      );
+    }
+
     switch (this._state.phase) {
       case 'waiting_departure':
         this._handleWaitingDeparture(train, virtualTime, shift);
@@ -99,10 +108,10 @@ export class AutoDriver {
         this._handleDeparting(train);
         break;
       case 'running':
-        this._handleRunning(train, shift, route, stationManager, trackGraph);
+        this._handleRunning(train, shift);
         break;
       case 'approaching':
-        this._handleApproaching(train, shift, route, stationManager, trackGraph);
+        this._handleApproaching(train, shift);
         break;
       case 'stopped':
         this._handleStopped(train, shift);
@@ -167,17 +176,8 @@ export class AutoDriver {
   private _handleRunning(
     train: Train,
     shift: ShiftTemplate,
-    route: Route,
-    stationManager: StationManager,
-    trackGraph: TrackGraph,
   ): void {
-    const distanceToStop = this._getDistanceToStop(
-      train,
-      shift,
-      route,
-      stationManager,
-      trackGraph,
-    );
+    const distanceToStop = this._cachedDistanceToStop;
 
     if (distanceToStop === null) {
       // Can't compute distance — maintain current speed cautiously
@@ -189,7 +189,7 @@ export class AutoDriver {
 
     if (distanceToStop <= brakingDistance * BRAKING_SAFETY_MARGIN) {
       this._transition('approaching');
-      this._handleApproaching(train, shift, route, stationManager, trackGraph);
+      this._handleApproaching(train, shift);
       return;
     }
 
@@ -200,17 +200,8 @@ export class AutoDriver {
   private _handleApproaching(
     train: Train,
     shift: ShiftTemplate,
-    route: Route,
-    stationManager: StationManager,
-    trackGraph: TrackGraph,
   ): void {
-    const distanceToStop = this._getDistanceToStop(
-      train,
-      shift,
-      route,
-      stationManager,
-      trackGraph,
-    );
+    const distanceToStop = this._cachedDistanceToStop;
 
     if (distanceToStop === null) {
       train.setThrottleStep('b3');
