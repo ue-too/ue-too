@@ -125,21 +125,24 @@ export class AutoDriver {
    *
    * @param passedJoints - Joint numbers the train just passed.
    */
-  onJointsPassed(passedJoints: { jointNumber: number }[]): void {
+  onJointsPassed(passedJoints: readonly { jointNumber: number }[]): void {
     if (passedJoints.length === 0) return;
 
-    // Advance route progress
+    // Advance route joint progress for the distance calculation.
+    // NOTE: Do NOT advance _jdm.setCurrentIndex() here — the JDM's index
+    // is already advanced naturally as the train moves through junctions
+    // during Train.update() → getPosition() → getNextJoint(). Advancing
+    // it here would cause a double-advance, putting the JDM ahead of the
+    // actual train position.
     const routeJoints = this._currentRouteJoints();
     for (const passed of passedJoints) {
       for (let i = this._state.routeJointProgress; i < routeJoints.length; i++) {
         if (routeJoints[i].jointNumber === passed.jointNumber) {
           this._state.routeJointProgress = i + 1;
-          this._jdm.setCurrentIndex(i + 1);
           break;
         }
       }
     }
-
   }
 
   // -----------------------------------------------------------------------
