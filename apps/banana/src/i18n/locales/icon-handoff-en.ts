@@ -57,6 +57,8 @@ export const iconHandoff = {
             'Station list: confirm finished picking platforms for a station (exit platform-assignment mode).',
         CheckIcon:
             'Dropdown menu: shows selected item in selectable menu rows (shadcn pattern).',
+        Clock:
+            'Main toolbar: open / close timetable panel (shift scheduling, routes, and auto-driving assignments).',
         ChevronDown:
             'Formation editor: collapsed state chevron on formation cards; append selected stock car / depot formation to the end of the composition.',
         ChevronLeft:
