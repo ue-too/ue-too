@@ -148,6 +148,8 @@ README-for-docusaurus.md
 vite.config.*.timestamp*
 
 docs
+# Allow package-level locale doc sources (used by projectDocuments)
+!packages/*/docs/
 
 .tanstack
 
@@ -157,3 +159,6 @@ apps/banana/public/tiles/
 
 # Font source files (large SFD files used for bitmap extraction)
 *.sfd
+
+# TypeDoc i18n temporary config files
+.typedoc-i18n-*.json
