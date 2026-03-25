@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { Github } from 'lucide-react';
+import { Github } from '@/assets/icons';
 
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';

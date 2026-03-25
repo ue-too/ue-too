@@ -56,7 +56,8 @@
         "dev:local": "VITE_LOCAL_TILES=1 vite",
         "build": "vite build",
         "preview": "vite preview",
-        "test": "jest"
+        "test": "jest",
+        "generate:designer-icons": "bun run scripts/generate-designer-icon-placeholders.ts"
     },
     "devDependencies": {
         "@napi-rs/canvas": "^0.1.96",

@@ -1,3 +1,5 @@
+import { iconHandoff as iconHandoffStringsZhTW } from './icon-handoff-zh-TW';
+
 const zhTW = {
     translation: {
         // Toolbar - Layout
@@ -202,6 +204,9 @@ const zhTW = {
         // 404 Page
         notFoundMessage: '這條軌道不通往任何地方。',
         backToHome: '首頁',
+
+        // Icon handoff (/icon-handoff)
+        iconHandoff: iconHandoffStringsZhTW,
     },
 } as const;
 

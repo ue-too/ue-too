@@ -1,4 +1,4 @@
-import { Activity, Eye, Hash, Landmark, Link2, ListOrdered, TrainFront, MapPin } from 'lucide-react';
+import { Activity, Eye, Hash, Landmark, Link2, ListOrdered, TrainFront, MapPin } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';

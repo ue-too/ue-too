@@ -1,13 +1,17 @@
-import { Download, Gauge, Mountain } from 'lucide-react';
 import { useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ExportSceneIcon } from '@/assets/icons/export-scene';
-import { ExportTrackIcon } from '@/assets/icons/export-track';
-import { ExportTrainIcon } from '@/assets/icons/export-train';
-import { ImportSceneIcon } from '@/assets/icons/import-scene';
-import { ImportTrackIcon } from '@/assets/icons/import-track';
-import { ImportTrainIcon } from '@/assets/icons/import-train';
+import {
+    Download,
+    ExportSceneIcon,
+    ExportTrackIcon,
+    ExportTrainIcon,
+    Gauge,
+    ImportSceneIcon,
+    ImportTrackIcon,
+    ImportTrainIcon,
+    Mountain,
+} from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';

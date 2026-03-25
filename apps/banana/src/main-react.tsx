@@ -7,6 +7,7 @@ import { AnalyticsNotice } from '@/components/analytics-notice';
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
 import { ExpPage } from '@/pages/exp';
+import { IconHandoffPage } from '@/pages/icon-handoff/icon-handoff-page';
 import { LandingPage } from '@/pages/landing';
 import { MapOverlayPage } from '@/pages/map-overlay';
 import { BananaAppComponents } from '@/utils/init-app';
@@ -47,6 +48,10 @@ root.render(
                     <Route
                         path="/terrain-editor"
                         element={<TerrainEditorPage />}
+                    />
+                    <Route
+                        path="/icon-handoff"
+                        element={<IconHandoffPage />}
                     />
                     <Route path="/404" element={<NotFoundPage />} />
                     <Route path="*" element={<Navigate to="/404" replace />} />

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { BulldozerIcon } from '@/assets/icons/bulldozer';
+import { BulldozerIcon } from '@/assets/icons';
 import { TOOLBAR_LEFT } from '@/components/toolbar/types';
 import { cn } from '@/lib/utils';
 

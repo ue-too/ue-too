@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from '@/assets/icons';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useBananaApp } from '@/contexts/pixi';

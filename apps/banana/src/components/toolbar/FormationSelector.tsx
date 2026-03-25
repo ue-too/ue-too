@@ -1,4 +1,4 @@
-import { TrainFront } from 'lucide-react';
+import { TrainFront } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import type { FormationManager } from '@/trains/formation-manager';

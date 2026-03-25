@@ -1,3 +1,5 @@
+import { iconHandoff as iconHandoffStringsEn } from './icon-handoff-en';
+
 const ja = {
     translation: {
         // Toolbar - Layout
@@ -194,6 +196,9 @@ const ja = {
         // 404 Page
         notFoundMessage: 'この線路はどこにも繋がっていません。',
         backToHome: 'ホーム',
+
+        // Icon handoff (/icon-handoff) — English until localized
+        iconHandoff: iconHandoffStringsEn,
     },
 } as const;
 
