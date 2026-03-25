@@ -157,3 +157,6 @@ apps/banana/public/tiles/
 
 # Font source files (large SFD files used for bitmap extraction)
 *.sfd
+
+# TypeDoc i18n temporary config files
+.typedoc-i18n-*.json

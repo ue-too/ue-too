@@ -35,7 +35,7 @@
         "docs:build": {
             "executor": "nx:run-commands",
             "options": {
-                "command": "rm -rf ../../docs/board-konva-integration && bun run typedoc --options typedoc.json --skipErrorChecking",
+                "command": "bun run ../../scripts/docs-build-i18n.ts",
                 "cwd": "packages/board-konva-integration"
             }
         },
