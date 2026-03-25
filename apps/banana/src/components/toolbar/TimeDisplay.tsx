@@ -2,22 +2,43 @@ import { ChevronLeft, ChevronRight, Pause, Play } from '@/assets/icons';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useBananaApp } from '@/contexts/pixi';
-
-/** Midnight of 2026-03-16 UTC. */
-const START_EPOCH = Date.UTC(2026, 2, 16); // month is 0-indexed
+import { DayOfWeek } from '@/timetable/types';
 
 const SPEED_STEPS = [1, 2, 5, 10, 50, 100];
 
-/** Format an epoch-offset time (ms) into YYYY/MM/DD HH:MM:SS. */
-function formatDateTime(ms: number): string {
-    const date = new Date(START_EPOCH + ms);
+/** Base Monday date for the virtual calendar. */
+const BASE_MONDAY = Date.UTC(2026, 2, 16); // 2026-03-16 is a Monday
+
+const DAY_NAMES: Record<DayOfWeek, string> = {
+    [DayOfWeek.Monday]: 'Mon',
+    [DayOfWeek.Tuesday]: 'Tue',
+    [DayOfWeek.Wednesday]: 'Wed',
+    [DayOfWeek.Thursday]: 'Thu',
+    [DayOfWeek.Friday]: 'Fri',
+    [DayOfWeek.Saturday]: 'Sat',
+    [DayOfWeek.Sunday]: 'Sun',
+};
+
+/** Format elapsed ms into the virtual schedule clock time with date. */
+function formatScheduleTime(
+    elapsedMs: number,
+    toVirtualDateTime: (ms: number) => { day: DayOfWeek; time: { hours: number; minutes: number; seconds: number } },
+    epochOffsetMs: number,
+): string {
+    const vdt = toVirtualDateTime(elapsedMs);
+    const day = DAY_NAMES[vdt.day] ?? '???';
+
+    // Compute a calendar date by adding elapsed + epoch offset to the base Monday
+    const totalMs = epochOffsetMs + elapsedMs;
+    const date = new Date(BASE_MONDAY + totalMs);
     const y = date.getUTCFullYear();
     const mo = String(date.getUTCMonth() + 1).padStart(2, '0');
     const d = String(date.getUTCDate()).padStart(2, '0');
-    const h = String(date.getUTCHours()).padStart(2, '0');
-    const mi = String(date.getUTCMinutes()).padStart(2, '0');
-    const s = String(date.getUTCSeconds()).padStart(2, '0');
-    return `${y}/${mo}/${d} ${h}:${mi}:${s}`;
+
+    const h = String(vdt.time.hours).padStart(2, '0');
+    const mi = String(vdt.time.minutes).padStart(2, '0');
+    const s = String(vdt.time.seconds).padStart(2, '0');
+    return `${y}/${mo}/${d} ${day} ${h}:${mi}:${s}`;
 }
 
 export function TimeDisplay() {
@@ -28,13 +49,13 @@ export function TimeDisplay() {
 
     useEffect(() => {
         if (!app) return;
-        const unsubTime = app.timeManager.subscribe((currentTime) => {
+        const unsubTime = app.timeManager.subscribe((currentTime: number) => {
             setTime(currentTime);
         });
-        const unsubPause = app.timeManager.subscribePause((isPaused) => {
+        const unsubPause = app.timeManager.subscribePause((isPaused: boolean) => {
             setPaused(isPaused);
         });
-        const unsubSpeed = app.timeManager.subscribeSpeed((s) => {
+        const unsubSpeed = app.timeManager.subscribeSpeed((s: number) => {
             setSpeed(s);
         });
         setPaused(app.timeManager.paused);
@@ -73,7 +94,7 @@ export function TimeDisplay() {
                 <ChevronLeft size={14} />
             </button>
             <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-xs font-mono backdrop-blur-sm">
-                {formatDateTime(time)} <span className="text-[10px]">x{speed}</span>
+                {app ? formatScheduleTime(time, (ms) => app.scheduleClock.toVirtualDateTime(ms), app.scheduleClock.epochOffsetMs) : '--'} <span className="text-[10px]">x{speed}</span>
             </span>
             <button
                 onClick={faster}

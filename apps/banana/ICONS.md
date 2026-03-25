@@ -41,6 +41,7 @@ Use the **exact export name** when matching [lucide.dev](https://lucide.dev/icon
 | `Building2` | *Reserved:* main toolbar button for **building placement** is **commented out** in code; icon kept for when that mode returns. |
 | `Check` | Station list: confirm **finished picking platforms** for a station (exit platform-assignment mode). |
 | `CheckIcon` | Dropdown menu: shows **selected item** in selectable menu rows (shadcn pattern). |
+| `Clock` | Main toolbar: open / close **timetable panel** (shift scheduling, routes, and auto-driving assignments). |
 | `ChevronDown` | Formation editor: **collapsed** state chevron on formation cards; **append** selected stock car / depot formation to the end of the composition. |
 | `ChevronLeft` | Simulation time control: **decrease time speed** (step down through speed presets). |
 | `ChevronRight` | Simulation time control: **increase time speed** (step up through speed presets). |
@@ -90,14 +91,14 @@ Use the **exact export name** when matching [lucide.dev](https://lucide.dev/icon
 | `Warehouse` | Main toolbar: **depot** panel (car stock). Second button uses same icon for **station placement** mode (warehouse / yard metaphor). |
 | `X` | **Close** draggable panels (generic). Station list: **cancel** platform-picking mode. |
 
-**Quick alphabetical index (56):**  
-`Activity`, `ArrowDown`, `ArrowLeftRight`, `ArrowUp`, `Bug`, `Building2`, `Check`, `CheckIcon`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronRightIcon`, `ChevronUp`, `CircleCheckIcon`, `CircleIcon`, `Crosshair`, `Download`, `Eraser`, `Eye`, `Focus`, `Gauge`, `Github`, `GripHorizontal`, `Hash`, `Image`, `Info`, `InfoIcon`, `Landmark`, `Layers`, `Link2`, `List`, `ListOrdered`, `Loader2Icon`, `Map`, `MapPin`, `Merge`, `Mountain`, `MousePointer2`, `OctagonXIcon`, `Package`, `Pause`, `Pencil`, `Play`, `Plus`, `Scissors`, `Settings2`, `Snowflake`, `Spline`, `Sun`, `TrainFront`, `TrainTrack`, `Trash2`, `TriangleAlertIcon`, `Upload`, `Warehouse`, `X`
+**Quick alphabetical index (57):**
+`Activity`, `ArrowDown`, `ArrowLeftRight`, `ArrowUp`, `Bug`, `Building2`, `Check`, `CheckIcon`, `Clock`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronRightIcon`, `ChevronUp`, `CircleCheckIcon`, `CircleIcon`, `Crosshair`, `Download`, `Eraser`, `Eye`, `Focus`, `Gauge`, `Github`, `GripHorizontal`, `Hash`, `Image`, `Info`, `InfoIcon`, `Landmark`, `Layers`, `Link2`, `List`, `ListOrdered`, `Loader2Icon`, `Map`, `MapPin`, `Merge`, `Mountain`, `MousePointer2`, `OctagonXIcon`, `Package`, `Pause`, `Pencil`, `Play`, `Plus`, `Scissors`, `Settings2`, `Snowflake`, `Spline`, `Sun`, `TrainFront`, `TrainTrack`, `Trash2`, `TriangleAlertIcon`, `Upload`, `Warehouse`, `X`
 
 ### Rough grouping by feature (for briefs)
 
 | Area | Lucide names |
 |------|----------------|
-| Main toolbar / modes | `Bug`, `Building2`, `Landmark`, `Layers`, `List`, `ListOrdered`, `Map`, `Spline`, `TrainFront`, `TrainTrack`, `Trash2`, `Warehouse` |
+| Main toolbar / modes | `Bug`, `Building2`, `Clock`, `Landmark`, `Layers`, `List`, `ListOrdered`, `Map`, `Spline`, `TrainFront`, `TrainTrack`, `Trash2`, `Warehouse` |
 | Time / playback | `ChevronLeft`, `ChevronRight`, `Pause`, `Play` |
 | Terrain / environment | `Eraser`, `Layers`, `Mountain`, `Package`, `Snowflake`, `Sun` |
 | Stations / depots / trains | `ArrowLeftRight`, `Crosshair`, `Focus`, `Pencil`, `Plus`, `Settings2`, `TrainFront`, `Trash2` |

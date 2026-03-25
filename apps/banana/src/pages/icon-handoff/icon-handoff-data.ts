@@ -43,6 +43,7 @@ const CUSTOM_ROWS: IconHandoffComponentRow[] = [
 const LUCIDE_ROWS: IconHandoffComponentRow[] = [
     componentRow('Activity', 'lucide'),
     componentRow('ArrowDown', 'lucide'),
+    componentRow('Clock', 'lucide'),
     componentRow('ArrowLeftRight', 'lucide'),
     componentRow('ArrowUp', 'lucide'),
     componentRow('Bug', 'lucide'),

@@ -97,7 +97,7 @@ export function TrainPanel({
                                             {index + 1}
                                         </span>
                                         <span className="truncate">
-                                            {formation.id}
+                                            {formation.name}
                                         </span>
                                         <span
                                             className={cn(

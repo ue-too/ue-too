@@ -6,6 +6,7 @@ import {
 import {
     Bug,
     Building2,
+    Clock,
     Landmark,
     Layers,
     List,
@@ -71,6 +72,7 @@ import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
+import { TimetablePanel } from './TimetablePanel';
 import { TrainPanel } from './TrainPanel';
 import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
@@ -112,6 +114,7 @@ export function BananaToolbar({
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [showStationList, setShowStationList] = useState(false);
+    const [showTimetable, setShowTimetable] = useState(false);
     const [showStats, setShowStats] = useState(true);
     const [terrainXray, setTerrainXray] = useState(false);
     const [terrainFillVisible, setTerrainFillVisible] = useState(true);
@@ -124,8 +127,6 @@ export function BananaToolbar({
     const [bedWidth, setBedWidth] = useState(3);
     const [showExportSubmenu, setShowExportSubmenu] = useState(false);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
-    const [selectedPlacementFormationId, setSelectedPlacementFormationId] =
-        useState<string | null>(null);
 
     const selectedBuildingRef = useRef<number | null>(null);
     const modeRef = useRef(mode);
@@ -699,6 +700,18 @@ export function BananaToolbar({
                         <Landmark />
                     </ToolbarButton>
 
+                    <ToolbarButton
+                        tooltip={
+                            showTimetable
+                                ? t('closeTimetable')
+                                : t('openTimetable')
+                        }
+                        active={showTimetable}
+                        onClick={() => setShowTimetable(v => !v)}
+                    >
+                        <Clock />
+                    </ToolbarButton>
+
                     <Separator />
 
                     <ToolbarButton
@@ -778,8 +791,6 @@ export function BananaToolbar({
                 <FormationSelector
                     formationManager={app.formationManager}
                     trainPlacementEngine={app.trainPlacementEngine}
-                    selectedFormationId={selectedPlacementFormationId}
-                    onFormationChange={setSelectedPlacementFormationId}
                 />
             )}
 
@@ -857,6 +868,12 @@ export function BananaToolbar({
                     onStationChange={() =>
                         app.debugOverlayRenderSystem.refresh()
                     }
+                />
+            )}
+
+            {showTimetable && (
+                <TimetablePanel
+                    onClose={() => setShowTimetable(false)}
                 />
             )}
 

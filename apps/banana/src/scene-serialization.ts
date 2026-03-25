@@ -11,12 +11,15 @@ import { StationManager } from '@/stations/station-manager';
 import type { BananaAppComponents } from '@/utils/init-app';
 import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
 import type { SerializedTerrainData } from '@/terrain/terrain-data';
+import type { SerializedTimetableData } from '@/timetable/types';
+import { TimetableManager } from '@/timetable';
 
 export type SerializedSceneData = {
   tracks: SerializedTrackData;
   trains: SerializedTrainData;
   stations?: SerializedStationData;
   terrain?: SerializedTerrainData;
+  timetable?: SerializedTimetableData;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
@@ -25,6 +28,7 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
     trains: serializeTrainData(app.trainManager, app.formationManager, app.carStockManager),
     stations: app.stationManager.serialize(),
     terrain: app.terrainData.serialize(),
+    timetable: app.timetableManager.serialize(),
   };
 }
 
@@ -44,6 +48,22 @@ export function deserializeSceneData(app: BananaAppComponents, data: SerializedS
   if (data.terrain) {
     const restoredTerrain = TerrainData.deserialize(data.terrain);
     app.terrainRenderSystem.setTerrainData(restoredTerrain);
+  }
+
+  // Load timetable data if present
+  if (data.timetable) {
+    // Dispose the current timetable manager's subscriptions
+    app.timetableManager.dispose();
+    const restored = TimetableManager.deserialize(
+      data.timetable,
+      app.curveEngine.trackGraph,
+      app.trainManager,
+      app.stationManager,
+    );
+    // Replace the timetable manager on the app components and the mutable ref
+    // so the TimeManager callback uses the new instance.
+    (app as { timetableManager: TimetableManager }).timetableManager = restored;
+    app.timetableRef.current = restored;
   }
 
   // Load stations and rebuild their render visuals

@@ -4,6 +4,7 @@
  */
 export {
     Activity,
+    Clock,
     ArrowDown,
     ArrowLeftRight,
     ArrowUp,
