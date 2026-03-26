@@ -113,6 +113,8 @@ export function BananaToolbar({
     const [showTrainPanel, setShowTrainPanel] = useState(false);
     const [showFormationEditor, setShowFormationEditor] = useState(false);
     const [showDebugPanel, setShowDebugPanel] = useState(false);
+    const [stressStartX, setStressStartX] = useState(0);
+    const [stressStartY, setStressStartY] = useState(0);
     const [showStationList, setShowStationList] = useState(false);
     const [showTimetable, setShowTimetable] = useState(false);
     const [showStats, setShowStats] = useState(true);
@@ -390,6 +392,10 @@ export function BananaToolbar({
                     }
                     app.buildingManager.removeBuilding(hit);
                 }
+            } else if (currentMode === 'stress-pick') {
+                setStressStartX(Math.round(worldPosition.x));
+                setStressStartY(Math.round(worldPosition.y));
+                setMode('idle');
             }
         },
         [app, convertCoords]
@@ -545,15 +551,19 @@ export function BananaToolbar({
     }, [app]);
 
     const handleSpawnStressTest = useCallback(
-        (count: number) => {
+        (count: number, startX?: number, startY?: number) => {
             if (!app) return;
-            const placed = app.spawnParallelTracksWithTrains(count);
+            const placed = app.spawnParallelTracksWithTrains(count, startX, startY);
             console.log(
-                `Stress test: spawned ${placed} trains on parallel tracks`
+                `Stress test: spawned ${placed} trains at (${startX ?? 0}, ${startY ?? 0})`
             );
         },
         [app]
     );
+
+    const handlePickStressStart = useCallback(() => {
+        setMode('stress-pick');
+    }, []);
 
     const handleThrottleAll = useCallback(
         (step: string) => {
@@ -563,6 +573,27 @@ export function BananaToolbar({
                 train.setThrottleStep(step as ThrottleSteps);
             }
             console.log(`Set throttle to ${step} on ${placed.length} trains`);
+        },
+        [app]
+    );
+
+    const handleSwitchDirectionAll = useCallback(() => {
+        if (!app) return;
+        const placed = app.trainManager.getPlacedTrains();
+        for (const { train } of placed) {
+            train.switchDirection();
+        }
+        console.log(`Switched direction on ${placed.length} trains`);
+    }, [app]);
+
+    const handleBrakeAll = useCallback(
+        (step: string) => {
+            if (!app) return;
+            const placed = app.trainManager.getPlacedTrains();
+            for (const { train } of placed) {
+                train.setThrottleStep(step as ThrottleSteps);
+            }
+            console.log(`Brake ${step} on ${placed.length} trains`);
         },
         [app]
     );
@@ -897,6 +928,14 @@ export function BananaToolbar({
                     onTerrainXrayChange={setTerrainXray}
                     onSpawnStressTest={handleSpawnStressTest}
                     onThrottleAll={handleThrottleAll}
+                    onSwitchDirectionAll={handleSwitchDirectionAll}
+                    onBrakeAll={handleBrakeAll}
+                    stressStartX={stressStartX}
+                    stressStartY={stressStartY}
+                    onStressStartXChange={setStressStartX}
+                    onStressStartYChange={setStressStartY}
+                    onPickStressStart={handlePickStressStart}
+                    isPicking={mode === 'stress-pick'}
                     onClose={() => setShowDebugPanel(false)}
                 />
             )}

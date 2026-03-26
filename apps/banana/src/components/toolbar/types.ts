@@ -6,7 +6,8 @@ export type AppMode =
     | 'train-placement'
     | 'building-placement'
     | 'building-deletion'
-    | 'station-placement';
+    | 'station-placement'
+    | 'stress-pick';
 
 /** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar). */
 export const TOOLBAR_LEFT = 'left-6';

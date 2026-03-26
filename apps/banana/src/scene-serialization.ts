@@ -13,6 +13,7 @@ import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-da
 import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import type { SerializedTimetableData } from '@/timetable/types';
 import { TimetableManager } from '@/timetable';
+import { clearShadowCache } from '@/utils';
 
 export type SerializedSceneData = {
   tracks: SerializedTrackData;
@@ -33,6 +34,9 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
 }
 
 export function deserializeSceneData(app: BananaAppComponents, data: SerializedSceneData): void {
+  // Clear caches that reference old track geometry before replacing tracks.
+  clearShadowCache();
+
   // Load tracks first so train positions can resolve to points
   app.curveEngine.trackGraph.loadFromSerializedData(data.tracks);
   deserializeTrainData(

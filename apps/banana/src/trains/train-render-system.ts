@@ -384,6 +384,11 @@ export class TrainRenderSystem {
     this._activeGangwayCounts.clear();
     this._lastTrainIds.clear();
 
+    for (const cached of this._customCarTextures.values()) {
+      cached.full.destroy(true);
+    }
+    this._customCarTextures.clear();
+
     this._worldRenderSystem.removeOverlayContainer(this._previewContainer);
     this._previewContainer.destroy({ children: true });
     this._previewGraphicsPool = [];

@@ -13,7 +13,7 @@
  * @group Terrain
  */
 
-import { CanvasSource, Container, Graphics, MeshSimple, Texture } from 'pixi.js';
+import { CanvasSource, Container, Graphics, Mesh, MeshGeometry, MeshSimple, Texture } from 'pixi.js';
 import type { WorldRenderSystem } from '@/world-render-system';
 import type { TerrainData } from './terrain-data';
 import { sampleColorRamp, sampleWaterColor, hillshade, computeNormal } from './terrain-colors';
@@ -34,14 +34,16 @@ export class TerrainRenderSystem {
   private _terrainData: TerrainData;
   private _renderer: { renderer: { textureGenerator?: { generateTexture: (options: { target: Graphics; resolution: number }) => Texture } } } | null;
 
+  /** Shared grid geometry (positions + UVs + indices) used by both base and water meshes. */
+  private _sharedGridGeometry: MeshGeometry | null = null;
   /** Base terrain mesh (hypsometric color + hillshade). */
-  private _baseMesh: MeshSimple | null = null;
+  private _baseMesh: Mesh | null = null;
   /** Canvas-backed texture source for the base mesh. */
   private _baseCanvasSource: CanvasSource | null = null;
   /** ImageData used for fast pixel writes on the base canvas. */
   private _baseImageData: ImageData | null = null;
   /** Water surface mesh (depth-tinted blue overlay). */
-  private _waterMesh: MeshSimple | null = null;
+  private _waterMesh: Mesh | null = null;
   /** Canvas-backed texture source for the water mesh. */
   private _waterCanvasSource: CanvasSource | null = null;
   /** ImageData used for fast pixel writes on the water canvas. */
@@ -148,6 +150,7 @@ export class TerrainRenderSystem {
     this._dirty = false;
 
     this._destroyVisuals();
+    this._buildSharedGridGeometry();
     this._buildBaseMesh();
     this._buildWaterMesh();
     this._buildContourLines();
@@ -248,6 +251,10 @@ export class TerrainRenderSystem {
       this._waterCanvasSource = null;
       this._waterImageData = null;
     }
+    if (this._sharedGridGeometry) {
+      this._sharedGridGeometry.destroy();
+      this._sharedGridGeometry = null;
+    }
     if (this._contourGraphics) {
       baseContainer.removeChild(this._contourGraphics);
       this._contourGraphics.destroy();
@@ -265,19 +272,70 @@ export class TerrainRenderSystem {
   }
 
   // ---------------------------------------------------------------------------
+  // Shared grid geometry (used by both base and water meshes)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Build a single MeshGeometry for the full terrain grid.  Both the base
+   * terrain mesh and the water mesh share this geometry — they only differ
+   * in their textures.  Sharing avoids duplicating ~6.4 MB of typed arrays
+   * and their corresponding WebGPU staging buffers.
+   */
+  private _buildSharedGridGeometry(): void {
+    const td = this._terrainData;
+    const { cellsX, cellsY, cellSize, originX, originY } = td.config;
+    const vx = td.verticesX;
+    const vy = td.verticesY;
+
+    const vertCount = vx * vy;
+    const positions = new Float32Array(vertCount * 2);
+    const uvs = new Float32Array(vertCount * 2);
+
+    for (let row = 0; row < vy; row++) {
+      for (let col = 0; col < vx; col++) {
+        const idx = row * vx + col;
+        positions[idx * 2] = originX + col * cellSize;
+        positions[idx * 2 + 1] = originY + row * cellSize;
+        uvs[idx * 2] = (col + 0.5) / vx;
+        uvs[idx * 2 + 1] = (row + 0.5) / vy;
+      }
+    }
+
+    const cellCount = cellsX * cellsY;
+    const indices = new Uint32Array(cellCount * 6);
+    let ii = 0;
+    for (let row = 0; row < cellsY; row++) {
+      for (let col = 0; col < cellsX; col++) {
+        const tl = row * vx + col;
+        const tr = tl + 1;
+        const bl = (row + 1) * vx + col;
+        const br = bl + 1;
+        indices[ii++] = tl;
+        indices[ii++] = tr;
+        indices[ii++] = bl;
+        indices[ii++] = tr;
+        indices[ii++] = br;
+        indices[ii++] = bl;
+      }
+    }
+
+    this._sharedGridGeometry = new MeshGeometry({
+      positions,
+      uvs,
+      indices,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Base terrain mesh
   // ---------------------------------------------------------------------------
 
   private _buildBaseMesh(): void {
     const td = this._terrainData;
-    const { cellSize, originX, originY } = td.config;
+    const { cellSize } = td.config;
     const vx = td.verticesX;
     const vy = td.verticesY;
     const heights = td.heights;
-
-    const vertCount = vx * vy;
-    const positions = new Float32Array(vertCount * 2);
-    const uvs = new Float32Array(vertCount * 2);
 
     // Create an offscreen canvas for the texture
     const canvas = document.createElement('canvas');
@@ -291,12 +349,6 @@ export class TerrainRenderSystem {
       for (let col = 0; col < vx; col++) {
         const idx = row * vx + col;
         const h = heights[idx];
-
-        positions[idx * 2] = originX + col * cellSize;
-        positions[idx * 2 + 1] = originY + row * cellSize;
-
-        uvs[idx * 2] = (col + 0.5) / vx;
-        uvs[idx * 2 + 1] = (row + 0.5) / vy;
 
         const color = sampleColorRamp(h);
         const [nx, ny, nz] = computeNormal(heights, col, row, vx, vy, cellSize);
@@ -312,35 +364,14 @@ export class TerrainRenderSystem {
 
     ctx.putImageData(imageData, 0, 0);
 
-    // Build triangle indices
-    const cellCount = td.config.cellsX * td.config.cellsY;
-    const indices = new Uint32Array(cellCount * 6);
-    let ii = 0;
-    for (let row = 0; row < td.config.cellsY; row++) {
-      for (let col = 0; col < td.config.cellsX; col++) {
-        const tl = row * vx + col;
-        const tr = tl + 1;
-        const bl = (row + 1) * vx + col;
-        const br = bl + 1;
-        indices[ii++] = tl;
-        indices[ii++] = tr;
-        indices[ii++] = bl;
-        indices[ii++] = tr;
-        indices[ii++] = br;
-        indices[ii++] = bl;
-      }
-    }
-
     // Canvas-backed texture — PixiJS auto-uploads on draw
     this._baseCanvasSource = new CanvasSource({ resource: canvas, resolution: 1 });
     this._baseImageData = imageData;
     const texture = new Texture(this._baseCanvasSource);
 
-    this._baseMesh = new MeshSimple({
+    this._baseMesh = new Mesh({
+      geometry: this._sharedGridGeometry!,
       texture,
-      vertices: positions,
-      uvs,
-      indices,
     });
 
     this._worldRenderSystem.terrainBaseContainer.addChild(this._baseMesh);
@@ -352,17 +383,12 @@ export class TerrainRenderSystem {
 
   private _buildWaterMesh(): void {
     const td = this._terrainData;
-    const { cellSize, originX, originY } = td.config;
     const vx = td.verticesX;
     const vy = td.verticesY;
     const heights = td.heights;
     const waterSurface = td.waterSurface;
 
     // Always build the water mesh so refreshRegion can paint water later
-    const vertCount = vx * vy;
-    const positions = new Float32Array(vertCount * 2);
-    const uvs = new Float32Array(vertCount * 2);
-
     const canvas = document.createElement('canvas');
     canvas.width = vx;
     canvas.height = vy;
@@ -373,12 +399,6 @@ export class TerrainRenderSystem {
     for (let row = 0; row < vy; row++) {
       for (let col = 0; col < vx; col++) {
         const idx = row * vx + col;
-
-        positions[idx * 2] = originX + col * cellSize;
-        positions[idx * 2 + 1] = originY + row * cellSize;
-
-        uvs[idx * 2] = (col + 0.5) / vx;
-        uvs[idx * 2 + 1] = (row + 0.5) / vy;
 
         const w = waterSurface[idx];
         const pi = idx * 4;
@@ -396,34 +416,13 @@ export class TerrainRenderSystem {
 
     ctx.putImageData(imageData, 0, 0);
 
-    // Build triangle indices
-    const cellCount = td.config.cellsX * td.config.cellsY;
-    const indices = new Uint32Array(cellCount * 6);
-    let ii = 0;
-    for (let row = 0; row < td.config.cellsY; row++) {
-      for (let col = 0; col < td.config.cellsX; col++) {
-        const tl = row * vx + col;
-        const tr = tl + 1;
-        const bl = (row + 1) * vx + col;
-        const br = bl + 1;
-        indices[ii++] = tl;
-        indices[ii++] = tr;
-        indices[ii++] = bl;
-        indices[ii++] = tr;
-        indices[ii++] = br;
-        indices[ii++] = bl;
-      }
-    }
-
     this._waterCanvasSource = new CanvasSource({ resource: canvas, resolution: 1 });
     this._waterImageData = imageData;
     const texture = new Texture(this._waterCanvasSource);
 
-    this._waterMesh = new MeshSimple({
+    this._waterMesh = new Mesh({
+      geometry: this._sharedGridGeometry!,
       texture,
-      vertices: positions,
-      uvs,
-      indices,
     });
 
     // Place water above base terrain but below contour lines
