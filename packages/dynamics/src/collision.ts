@@ -233,7 +233,8 @@ export function intersects(
 export function narrowPhaseWithRigidBody(
     bodies: RigidBody[],
     combinationsToCheck: { bodyA: RigidBody; bodyB: RigidBody }[],
-    resolveCollisionFlag: boolean
+    resolveCollisionFlag: boolean,
+    useLinearCollisionResolution: boolean = false
 ): Point[] {
     if (!resolveCollisionFlag) {
         return [];
@@ -424,11 +425,14 @@ export function narrowPhaseWithRigidBody(
                 }
             }
             if (resolveCollisionFlag) {
-                resolveCollisionWithRotation(bodyA, bodyB, {
-                    normal: normalAxis,
-                    contactPoints: contactPoints,
-                });
-                // resolveCollision(bodyA, bodyB, normalAxis);
+                if (useLinearCollisionResolution) {
+                    resolveCollision(bodyA, bodyB, normalAxis);
+                } else {
+                    resolveCollisionWithRotation(bodyA, bodyB, {
+                        normal: normalAxis,
+                        contactPoints: contactPoints,
+                    });
+                }
             }
         }
     });
@@ -583,7 +587,8 @@ export function broadPhaseWithSpatialIndexFiltered(
 export function narrowPhaseWithRigidBodyAndPairs(
     bodies: RigidBody[],
     combinationsToCheck: { bodyA: RigidBody; bodyB: RigidBody }[],
-    resolveCollisionFlag: boolean
+    resolveCollisionFlag: boolean,
+    useLinearCollisionResolution: boolean = false
 ): {
     contactPoints: Point[];
     collisions: {
@@ -655,11 +660,14 @@ export function narrowPhaseWithRigidBodyAndPairs(
                     bodyA.move(moveDisplacement);
                 }
 
-                // Resolve collision with rotation
-                resolveCollisionWithRotation(bodyA, bodyB, {
-                    normal: normalAxis,
-                    contactPoints: collisionContactPoints,
-                });
+                if (useLinearCollisionResolution) {
+                    resolveCollision(bodyA, bodyB, normalAxis);
+                } else {
+                    resolveCollisionWithRotation(bodyA, bodyB, {
+                        normal: normalAxis,
+                        contactPoints: collisionContactPoints,
+                    });
+                }
             }
         }
     });

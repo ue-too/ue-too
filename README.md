@@ -133,7 +133,8 @@ ue-too/
 │   ├── examples/                     # Interactive examples
 │   ├── banana/                       # A simulation of a railway system using bezier curves. (WIP)
 │   ├── blast/                        # A tabletop game prototype maker. (WIP)
-│   └── knit/                         # A knitting pattern editor. (WIP)
+│   ├── knit/                         # A knitting pattern editor. (WIP)
+│   └── horse-racing/                 # Horse racing canvas prototype. (WIP)
 └── scripts/                          # Build and deployment scripts
 ```
 

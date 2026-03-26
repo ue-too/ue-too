@@ -179,6 +179,42 @@
         "pixi.js": "8.14.0",
       },
     },
+    "apps/horse-racing": {
+      "name": "@ue-too/horse-racing",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tailwindcss/vite": "^4.1.18",
+        "@ue-too/being": "workspace:*",
+        "@ue-too/board": "workspace:*",
+        "@ue-too/board-pixi-integration": "workspace:*",
+        "@ue-too/board-pixi-react-integration": "workspace:*",
+        "@ue-too/dynamics": "workspace:*",
+        "@ue-too/math": "workspace:*",
+        "clsx": "^2.1.1",
+        "i18next": "^25.8.18",
+        "lucide-react": "^0.563.0",
+        "next-themes": "^0.4.6",
+        "pixi.js": "8.14.0",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "react-i18next": "^16.5.8",
+        "react-router": "^7.13.0",
+        "sonner": "^2.0.7",
+        "tailwind-merge": "^3.4.0",
+        "tailwindcss": "^4.1.18",
+      },
+      "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "@types/react": "^19.2.9",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.2",
+        "identity-obj-proxy": "^3.0.0",
+        "jest": "^30.2.0",
+        "jest-environment-jsdom": "^30.2.0",
+        "ts-jest": "^29.4.5",
+        "tw-animate-css": "^1.4.0",
+      },
+    },
     "apps/knit": {
       "name": "@ue-too/knit",
       "version": "0.5.0",
@@ -216,18 +252,18 @@
     },
     "packages/animate": {
       "name": "@ue-too/animate",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/being": {
       "name": "@ue-too/being",
-      "version": "0.15.0",
+      "version": "0.16.0",
     },
     "packages/board": {
       "name": "@ue-too/board",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -235,7 +271,7 @@
     },
     "packages/board-fabric-integration": {
       "name": "@ue-too/board-fabric-integration",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -261,7 +297,7 @@
     },
     "packages/board-konva-integration": {
       "name": "@ue-too/board-konva-integration",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -276,7 +312,7 @@
     },
     "packages/board-pixi-integration": {
       "name": "@ue-too/board-pixi-integration",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
@@ -291,7 +327,7 @@
     },
     "packages/board-pixi-react-integration": {
       "name": "@ue-too/board-pixi-react-integration",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
         "@ue-too/board-pixi-integration": "workspace:*",
@@ -308,7 +344,7 @@
     },
     "packages/board-react-adapter": {
       "name": "@ue-too/board-react-adapter",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -324,7 +360,7 @@
     },
     "packages/board-vue-adapter": {
       "name": "@ue-too/board-vue-adapter",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/board": "workspace:*",
       },
@@ -337,14 +373,14 @@
     },
     "packages/border": {
       "name": "@ue-too/border",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
     },
     "packages/curve": {
       "name": "@ue-too/curve",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/math": "workspace:*",
       },
@@ -356,7 +392,7 @@
     },
     "packages/dynamics": {
       "name": "@ue-too/dynamics",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@ue-too/ecs": "workspace:*",
         "@ue-too/math": "workspace:*",
@@ -364,11 +400,11 @@
     },
     "packages/ecs": {
       "name": "@ue-too/ecs",
-      "version": "0.15.0",
+      "version": "0.16.0",
     },
     "packages/math": {
       "name": "@ue-too/math",
-      "version": "0.15.0",
+      "version": "0.16.0",
     },
   },
   "packages": {
@@ -1547,6 +1583,8 @@
     "@ue-too/ecs": ["@ue-too/ecs@workspace:packages/ecs"],
 
     "@ue-too/examples": ["@ue-too/examples@workspace:apps/examples"],
+
+    "@ue-too/horse-racing": ["@ue-too/horse-racing@workspace:apps/horse-racing"],
 
     "@ue-too/knit": ["@ue-too/knit@workspace:apps/knit"],
 
@@ -3564,6 +3602,14 @@
 
     "@ue-too/board-react/pixi.js": ["pixi.js@8.14.3", "", { "dependencies": { "@pixi/colord": "^2.9.6", "@types/css-font-loading-module": "^0.0.12", "@types/earcut": "^3.0.0", "@webgpu/types": "^0.1.40", "@xmldom/xmldom": "^0.8.10", "earcut": "^3.0.2", "eventemitter3": "^5.0.1", "gifuct-js": "^2.1.2", "ismobilejs": "^1.1.1", "parse-svg-path": "^0.1.2", "tiny-lru": "^11.4.5" } }, "sha512-6xGYARV8D9E/fO1c2NmYn+k2dQ5oZldVm5tNlLQJ8obTlOQXdL5QpMc217qTpRyHVDFaw5eoFCLF1gr6p5ZcjQ=="],
 
+    "@ue-too/horse-racing/@types/react": ["@types/react@19.2.9", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-Lpo8kgb/igvMIPeNV2rsYKTgaORYdO1XGVZ4Qz3akwOj0ySGYMPlQWa8BaLn0G63D1aSaAQ5ldR06wCpChQCjA=="],
+
+    "@ue-too/horse-racing/@vitejs/plugin-react": ["@vitejs/plugin-react@5.1.2", "", { "dependencies": { "@babel/core": "^7.28.5", "@babel/plugin-transform-react-jsx-self": "^7.27.1", "@babel/plugin-transform-react-jsx-source": "^7.27.1", "@rolldown/pluginutils": "1.0.0-beta.53", "@types/babel__core": "^7.20.5", "react-refresh": "^0.18.0" }, "peerDependencies": { "vite": "^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0" } }, "sha512-EcA07pHJouywpzsoTUqNh5NwGayl2PPVEJKUSinGGSxFGYn+shYbqMGBg6FXDqgXum9Ou/ecb+411ssw8HImJQ=="],
+
+    "@ue-too/horse-racing/react": ["react@19.2.3", "", {}, "sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA=="],
+
+    "@ue-too/horse-racing/react-dom": ["react-dom@19.2.3", "", { "dependencies": { "scheduler": "^0.27.0" }, "peerDependencies": { "react": "^19.2.3" } }, "sha512-yELu4WmLPw5Mr/lmeEpox5rw3RETacE++JgHqQzd2dg+YbJuat3jH4ingc+WPZhxaoFzdv9y33G+F7Nl5O0GBg=="],
+
     "@ue-too/knit/@types/react": ["@types/react@19.2.9", "", { "dependencies": { "csstype": "^3.2.2" } }, "sha512-Lpo8kgb/igvMIPeNV2rsYKTgaORYdO1XGVZ4Qz3akwOj0ySGYMPlQWa8BaLn0G63D1aSaAQ5ldR06wCpChQCjA=="],
 
     "@ue-too/knit/@vitejs/plugin-react": ["@vitejs/plugin-react@5.1.2", "", { "dependencies": { "@babel/core": "^7.28.5", "@babel/plugin-transform-react-jsx-self": "^7.27.1", "@babel/plugin-transform-react-jsx-source": "^7.27.1", "@rolldown/pluginutils": "1.0.0-beta.53", "@types/babel__core": "^7.20.5", "react-refresh": "^0.18.0" }, "peerDependencies": { "vite": "^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0" } }, "sha512-EcA07pHJouywpzsoTUqNh5NwGayl2PPVEJKUSinGGSxFGYn+shYbqMGBg6FXDqgXum9Ou/ecb+411ssw8HImJQ=="],
@@ -3959,6 +4005,10 @@
     "@ue-too/banana/@vitejs/plugin-react/react-refresh": ["react-refresh@0.18.0", "", {}, "sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw=="],
 
     "@ue-too/board-react/pixi.js/@types/css-font-loading-module": ["@types/css-font-loading-module@0.0.12", "", {}, "sha512-x2tZZYkSxXqWvTDgveSynfjq/T2HyiZHXb00j/+gy19yp70PHCizM48XFdjBCWH7eHBD0R5i/pw9yMBP/BH5uA=="],
+
+    "@ue-too/horse-racing/@vitejs/plugin-react/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.53", "", {}, "sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ=="],
+
+    "@ue-too/horse-racing/@vitejs/plugin-react/react-refresh": ["react-refresh@0.18.0", "", {}, "sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw=="],
 
     "@ue-too/knit/@vitejs/plugin-react/@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-beta.53", "", {}, "sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ=="],
 
