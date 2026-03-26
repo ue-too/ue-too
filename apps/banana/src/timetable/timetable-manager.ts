@@ -370,9 +370,7 @@ export class TimetableManager {
   // -----------------------------------------------------------------------
 
   private _getTrainById(trainId: number): Train | null {
-    const entries = this._trainManager.getPlacedTrains();
-    const entry = entries.find((e) => e.id === trainId);
-    return entry?.train ?? null;
+    return this._trainManager.getTrainById(trainId);
   }
 
   // -----------------------------------------------------------------------

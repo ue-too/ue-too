@@ -236,11 +236,24 @@ type ShadowCacheEntry = {
     endPoint: Point;
 };
 
+/** Maximum number of entries retained in the shadow cache before oldest entries are evicted. */
+const MAX_SHADOW_CACHE_SIZE = 500;
+
 /**
  * Global cache for shadow calculations
  * Key format: `${sunAngle}_${curveHash}_${elevationFrom}_${elevationTo}`
  */
 const shadowCache = new Map<ShadowCacheKey, ShadowCacheEntry>();
+
+/** Insert into the shadow cache, evicting the oldest entry if the cache exceeds its max size. */
+function shadowCacheSet(key: ShadowCacheKey, value: ShadowCacheEntry): void {
+    shadowCache.set(key, value);
+    if (shadowCache.size > MAX_SHADOW_CACHE_SIZE) {
+        // Map iteration order is insertion order — delete the first (oldest) key.
+        const oldest = shadowCache.keys().next().value;
+        if (oldest !== undefined) shadowCache.delete(oldest);
+    }
+}
 
 /**
  * Generate a hash string from curve control points for cache key
@@ -332,7 +345,7 @@ export const shadows = (
             startPoint,
             endPoint,
         };
-        shadowCache.set(cacheKey, cacheEntry);
+        shadowCacheSet(cacheKey, cacheEntry);
         return cacheEntry;
     }
 
@@ -402,7 +415,7 @@ export const shadows = (
     };
 
     // Store in cache
-    shadowCache.set(cacheKey, {
+    shadowCacheSet(cacheKey, {
         positive,
         negative,
         startPoint,

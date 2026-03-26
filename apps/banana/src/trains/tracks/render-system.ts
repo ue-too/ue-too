@@ -594,8 +594,8 @@ export class TrackRenderSystem {
      * Poles are placed at regular intervals along the curve. Each pole is a
      * vertical mast with an outrigger arm and a contact wire line.
      */
-    private _buildCatenaryForDrawData(drawData: TrackSegmentDrawData): Container {
-        const container = new Container();
+    private _buildCatenaryForDrawData(drawData: TrackSegmentDrawData): Graphics {
+        const g = new Graphics();
         const curve = drawData.curve;
         const curveLength = curve.fullLength;
 
@@ -622,40 +622,34 @@ export class TrackRenderSystem {
             const mastX = point.x + nx * mastOffset * side;
             const mastY = point.y + ny * mastOffset * side;
 
-            const pole = new Graphics();
-
             // Mast — vertical pole (drawn as a thick line in 2D top-down view).
-            pole.circle(mastX, mastY, 0.12);
-            pole.fill(0x707070);
+            g.circle(mastX, mastY, 0.12);
+            g.fill(0x707070);
 
             // Outrigger arm from mast to above track center.
-            pole.moveTo(mastX, mastY);
-            pole.lineTo(point.x, point.y);
-            pole.stroke({ color: 0x888888, width: 0.06 });
+            g.moveTo(mastX, mastY);
+            g.lineTo(point.x, point.y);
+            g.stroke({ color: 0x888888, width: 0.06 });
 
             // Contact wire dot at track center.
-            pole.circle(point.x, point.y, 0.04);
-            pole.fill(0x404040);
-
-            container.addChild(pole);
+            g.circle(point.x, point.y, 0.04);
+            g.fill(0x404040);
 
             side *= -1;
         }
 
         // Draw the catenary wire along the full curve.
-        const wire = new Graphics();
         const wireSteps = Math.max(10, Math.ceil(curveLength / 1));
         const controlPoints = curve.getControlPoints();
-        wire.moveTo(controlPoints[0].x, controlPoints[0].y);
+        g.moveTo(controlPoints[0].x, controlPoints[0].y);
         for (let i = 1; i <= wireSteps; i++) {
             const t = i / wireSteps;
             const p = i === wireSteps ? controlPoints[controlPoints.length - 1] : curve.getPointbyPercentage(t);
-            wire.lineTo(p.x, p.y);
+            g.lineTo(p.x, p.y);
         }
-        wire.stroke({ color: 0x505050, width: 0.04 });
-        container.addChild(wire);
+        g.stroke({ color: 0x505050, width: 0.04 });
 
-        return container;
+        return g;
     }
 
     /**

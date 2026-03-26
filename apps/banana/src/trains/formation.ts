@@ -915,6 +915,20 @@ export class Train {
         if (nextPosition === null || nextPosition.stop) {
             this._speed = 0;
             this._throttle = 'N';
+            if (nextPosition !== null && nextPosition.stop) {
+                const flipped = nextPosition.passedJointNumbers.map(joint => ({
+                    jointNumber: joint.jointNumber,
+                    direction: flipDirection(joint.direction),
+                }));
+                this._occupiedJointNumbers = flipped.concat(this._occupiedJointNumbers);
+                const flippedEntering = nextPosition.enteringTrackSegments.map(track => ({
+                    trackNumber: track.trackNumber,
+                    inTrackDirection: flipDirection(track.inTrackDirection),
+                }));
+                this._occupiedTrackSegments.unshift(...flippedEntering);
+                this._position = nextPosition;
+                this._cachedBogiePositions = this._getBogiePositions(nextPosition, false);
+            }
             return;
         }
         const flipped = nextPosition.passedJointNumbers.map(joint => {

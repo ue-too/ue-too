@@ -262,7 +262,7 @@ export type BananaAppComponents = BaseAppComponents & {
   /** Generate a procedural track path for stress testing. Returns number of segments created. */
   generateProceduralTracks: (options: ProceduralTrackOptions) => number;
   /** Spawn N parallel straight tracks, each with one train. Returns number spawned. */
-  spawnParallelTracksWithTrains: (count: number) => number;
+  spawnParallelTracksWithTrains: (count: number, startX?: number, startY?: number) => number;
 };
 
 /**
@@ -291,11 +291,23 @@ export const initApp = async (
     stats.update();
   };
   baseComponents.app.ticker.add(statsTick);
+  // In dev mode, React's profiler accumulates PerformanceMeasure/PerformanceMark
+  // entries indefinitely, consuming ~120 MB+ in long sessions with many trains.
+  // Periodically clear them so they don't bloat the heap.
+  let perfCleanupInterval: ReturnType<typeof setInterval> | undefined;
+  if (import.meta.env.DEV) {
+    perfCleanupInterval = setInterval(() => {
+      performance.clearMeasures();
+      performance.clearMarks();
+    }, 60_000);
+  }
+
   baseComponents.cleanups.push(() => {
     baseComponents.app.ticker.remove(statsTick);
     if (stats.dom.parentElement) {
       stats.dom.parentElement.removeChild(stats.dom);
     }
+    if (perfCleanupInterval !== undefined) clearInterval(perfCleanupInterval);
   });
 
   baseComponents.camera.setMaxZoomLevel(30);
@@ -535,7 +547,7 @@ export const initApp = async (
 
   baseComponents.app.stage.addChild(worldRenderSystem.container);
 
-  timeManager.subscribe((currentTime: number, deltaTime: number) => {
+  const unsubTimeManager = timeManager.subscribe((currentTime: number, deltaTime: number) => {
     // Timetable auto-drivers set throttle before physics update
     timetableRef.current.update(currentTime, deltaTime);
     trainRenderSystem.update(deltaTime);
@@ -543,8 +555,15 @@ export const initApp = async (
     debugOverlayRenderSystem.updateProximityLines();
   });
 
-  trainManager.subscribeToChanges(() => {
+  const unsubTrainChanges = trainManager.subscribeToChanges(() => {
     trainRenderSystem.forceSync();
+  });
+
+  baseComponents.cleanups.push(() => {
+    unsubTimeManager();
+    unsubTrainChanges();
+    timeManager.dispose();
+    timetableRef.current.dispose();
   });
 
   const cameraMux = createCameraMuxWithAnimationAndLock();
@@ -589,8 +608,15 @@ export const initApp = async (
     return generateProceduralTrackPath(trackGraph, options);
   };
 
-  const spawnParallelTracksWithTrains = (count: number): number => {
-    const segmentIds = generateParallelTracks(trackGraph, { count, length: 500 });
+  const spawnParallelTracksWithTrains = (
+    count: number,
+    startX?: number,
+    startY?: number,
+  ): number => {
+    const opts: ParallelTrackOptions = { count, length: 500 };
+    if (startX !== undefined) opts.startX = startX;
+    if (startY !== undefined) opts.startY = startY;
+    const segmentIds = generateParallelTracks(trackGraph, opts);
     let placed = 0;
     for (const segId of segmentIds) {
       if (addTrainAtPosition(segId, 0.5, 'tangent')) placed += 1;

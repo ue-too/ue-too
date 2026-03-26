@@ -1,4 +1,4 @@
-import { Activity, Eye, Hash, Landmark, Link2, ListOrdered, TrainFront, MapPin } from '@/assets/icons';
+import { Activity, ArrowLeftRight, Crosshair, Eye, Hash, Landmark, Link2, ListOrdered, OctagonXIcon, TrainFront, MapPin } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,16 @@ type DebugPanelProps = {
     onShowStatsChange: (value: boolean) => void;
     terrainXray: boolean;
     onTerrainXrayChange: (value: boolean) => void;
-    onSpawnStressTest?: (count: number) => void;
+    onSpawnStressTest?: (count: number, startX?: number, startY?: number) => void;
     onThrottleAll?: (step: string) => void;
+    onSwitchDirectionAll?: () => void;
+    onBrakeAll?: (step: string) => void;
+    stressStartX?: number;
+    stressStartY?: number;
+    onStressStartXChange?: (value: number) => void;
+    onStressStartYChange?: (value: number) => void;
+    onPickStressStart?: () => void;
+    isPicking?: boolean;
     onClose: () => void;
 };
 
@@ -47,6 +55,14 @@ export function DebugPanel({
     onTerrainXrayChange,
     onSpawnStressTest,
     onThrottleAll,
+    onSwitchDirectionAll,
+    onBrakeAll,
+    stressStartX = 0,
+    stressStartY = 0,
+    onStressStartXChange,
+    onStressStartYChange,
+    onPickStressStart,
+    isPicking = false,
     onClose,
 }: DebugPanelProps) {
     const { t } = useTranslation();
@@ -153,21 +169,53 @@ export function DebugPanel({
                         <span className="text-muted-foreground text-[10px]">
                             Stress Test
                         </span>
-                        <div className="flex gap-1">
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                onClick={() => onSpawnStressTest(30)}
-                            >
-                                30 trains
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                onClick={() => onSpawnStressTest(50)}
-                            >
-                                50 trains
-                            </Button>
+                        <div className="flex items-center gap-1 text-[10px]">
+                            <label className="text-muted-foreground w-5 shrink-0">X</label>
+                            <input
+                                type="number"
+                                className="bg-background border-input h-6 w-full rounded border px-1 text-[10px]"
+                                value={stressStartX}
+                                onChange={e => onStressStartXChange?.(parseFloat(e.target.value) || 0)}
+                            />
+                            <label className="text-muted-foreground w-5 shrink-0">Y</label>
+                            <input
+                                type="number"
+                                className="bg-background border-input h-6 w-full rounded border px-1 text-[10px]"
+                                value={stressStartY}
+                                onChange={e => onStressStartYChange?.(parseFloat(e.target.value) || 0)}
+                            />
+                            {onPickStressStart && (
+                                <Button
+                                    variant={isPicking ? 'default' : 'outline'}
+                                    size="xs"
+                                    onClick={onPickStressStart}
+                                    title="Click on viewport to pick starting point"
+                                    className="shrink-0 px-1"
+                                >
+                                    <Crosshair className="size-3" />
+                                </Button>
+                            )}
+                        </div>
+                        {isPicking && (
+                            <span className="text-[10px] text-amber-500">
+                                Click on the viewport to set start point...
+                            </span>
+                        )}
+                        <div className="flex flex-wrap gap-1">
+                            {[30, 50, 100].map(n => (
+                                <Button
+                                    key={n}
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() => onSpawnStressTest(
+                                        n,
+                                        stressStartX,
+                                        stressStartY,
+                                    )}
+                                >
+                                    {n} trains
+                                </Button>
+                            ))}
                         </div>
                     </>
                 )}
@@ -205,6 +253,47 @@ export function DebugPanel({
                             >
                                 P5
                             </Button>
+                        </div>
+                    </>
+                )}
+                {(onSwitchDirectionAll || onBrakeAll) && (
+                    <>
+                        <span className="text-muted-foreground text-[10px]">
+                            Train Controls
+                        </span>
+                        <div className="flex gap-1">
+                            {onSwitchDirectionAll && (
+                                <Button
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={onSwitchDirectionAll}
+                                    title="Switch direction for all trains"
+                                >
+                                    <ArrowLeftRight className="mr-1 size-3" />
+                                    Reverse
+                                </Button>
+                            )}
+                            {onBrakeAll && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => onBrakeAll('er')}
+                                        title="Emergency brake all trains"
+                                    >
+                                        <OctagonXIcon className="mr-1 size-3" />
+                                        EB
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="xs"
+                                        onClick={() => onBrakeAll('b3')}
+                                        title="Service brake (B3) all trains"
+                                    >
+                                        B3
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </>
                 )}

@@ -62,10 +62,7 @@ export class TrainManager {
 
   /** Current list of placed trains (do not mutate). */
   getPlacedTrains(): readonly PlacedTrainEntry[] {
-    return this._internalTrainManager.getLivingEntitiesWithIndex().map(({ index, entity }) => ({
-      id: index,
-      train: entity,
-    }));
+    return this._placedTrains;
   }
 
   /** Index of the currently selected train, or 0 if none. */
@@ -82,6 +79,11 @@ export class TrainManager {
   /** The currently selected train, or null if there are no placed trains. */
   getSelectedTrain(): Train | null {
     return this._internalTrainManager.getEntity(this._selectedIndex);
+  }
+
+  /** O(1) train lookup by entity id. Returns null if not found. */
+  getTrainById(id: number): Train | null {
+    return this._internalTrainManager.getEntity(id);
   }
 
   /** Add a train to the list (e.g. after placement). Returns the assigned id. */

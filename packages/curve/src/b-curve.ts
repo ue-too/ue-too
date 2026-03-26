@@ -139,6 +139,7 @@ export class BCurve {
         arcLengthLUT: [],
     };
     private _fullLength: number;
+    private static readonly LENGTH_CACHE_MAX_SIZE = 2048;
     private lengthCache: Map<number, number> = new Map(); // Cache for lengthAtT results
 
     /**
@@ -445,7 +446,11 @@ export class BCurve {
         }
         const result = z * sum;
 
-        // Cache the result
+        // Cache the result, evicting oldest entries if the cache is too large
+        if (this.lengthCache.size >= BCurve.LENGTH_CACHE_MAX_SIZE) {
+            const firstKey = this.lengthCache.keys().next().value!;
+            this.lengthCache.delete(firstKey);
+        }
         this.lengthCache.set(cacheKey, result);
 
         return result;

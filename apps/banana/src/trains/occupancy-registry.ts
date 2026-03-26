@@ -52,27 +52,24 @@ export class OccupancyRegistry {
             }
         }
 
-        // Build colocated pairs from segments
-        for (const occupants of this._segmentOccupants.values()) {
-            if (occupants.size < 2) continue;
-            const ids = Array.from(occupants);
-            for (let i = 0; i < ids.length; i++) {
-                for (let j = i + 1; j < ids.length; j++) {
-                    const a = Math.min(ids[i], ids[j]);
-                    const b = Math.max(ids[i], ids[j]);
-                    this._colocatedPairs.add(`${a}:${b}`);
-                }
-            }
-        }
+        // Build colocated pairs from segments and joints
+        this._collectColocatedPairs(this._segmentOccupants);
+        this._collectColocatedPairs(this._jointOccupants);
+    }
 
-        // Build colocated pairs from joints
-        for (const occupants of this._jointOccupants.values()) {
+    /** Reusable scratch array for iterating small sets without allocation. */
+    private _scratchIds: number[] = [];
+
+    private _collectColocatedPairs(map: Map<number, Set<number>>): void {
+        for (const occupants of map.values()) {
             if (occupants.size < 2) continue;
-            const ids = Array.from(occupants);
-            for (let i = 0; i < ids.length; i++) {
-                for (let j = i + 1; j < ids.length; j++) {
-                    const a = Math.min(ids[i], ids[j]);
-                    const b = Math.max(ids[i], ids[j]);
+            // Copy into scratch array to avoid Array.from() allocation
+            this._scratchIds.length = 0;
+            for (const id of occupants) this._scratchIds.push(id);
+            for (let i = 0; i < this._scratchIds.length; i++) {
+                for (let j = i + 1; j < this._scratchIds.length; j++) {
+                    const a = Math.min(this._scratchIds[i], this._scratchIds[j]);
+                    const b = Math.max(this._scratchIds[i], this._scratchIds[j]);
                     this._colocatedPairs.add(`${a}:${b}`);
                 }
             }
