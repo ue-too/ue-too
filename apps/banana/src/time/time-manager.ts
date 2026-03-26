@@ -14,6 +14,7 @@ class TimeManager {
     private _speed: number = 1;
 
     private _fixDeltaTime: number = 16.667;
+    private _maxSubStep: number = 16.667;
     private _visibilityHandler: () => void;
     private _tickerCallback: (time: { deltaMS: number }) => void;
     private _app: Application;
@@ -32,6 +33,8 @@ class TimeManager {
                 }, this._fixDeltaTime);
             } else {
                 clearInterval(this._interval);
+                // Prevent the ticker from firing a large accumulated delta
+                this._app.ticker.lastTime = performance.now();
             }
         };
         document.addEventListener('visibilitychange', this._visibilityHandler);
@@ -71,8 +74,13 @@ class TimeManager {
     update(deltaTime: number) {
         if (this._paused) return;
         const scaled = deltaTime * this._speed;
-        this._currentTime += scaled;
-        this._syncTimeObservable.notify(this._currentTime, scaled);
+        let remaining = scaled;
+        while (remaining > 0) {
+            const step = Math.min(remaining, this._maxSubStep);
+            this._currentTime += step;
+            this._syncTimeObservable.notify(this._currentTime, step);
+            remaining -= step;
+        }
     }
 
     subscribe(observer: Observer<[number, number]>, options?: SubscriptionOptions): () => void {
