@@ -75,6 +75,8 @@ export class World {
     private pinJoints: PinJointConstraint[] = [];
     private pairManager: PairManager;
     private enableSleeping: boolean = true;
+    /** When true, collision response uses linear impulses only (no torque). */
+    private _useLinearCollisionResolution: boolean = false;
     _context: CanvasRenderingContext2D | null = null;
 
     constructor(
@@ -206,7 +208,8 @@ export class World {
         let collisionResults = Collision.narrowPhaseWithRigidBodyAndPairs(
             rigidBodyList,
             possibleCombinations,
-            this._resolveCollision
+            this._resolveCollision,
+            this._useLinearCollisionResolution
         );
 
         // Update pair manager with new collisions
@@ -231,6 +234,14 @@ export class World {
 
     set resolveCollision(resolveCollision: boolean) {
         this._resolveCollision = resolveCollision;
+    }
+
+    get useLinearCollisionResolution(): boolean {
+        return this._useLinearCollisionResolution;
+    }
+
+    set useLinearCollisionResolution(value: boolean) {
+        this._useLinearCollisionResolution = value;
     }
 
     getRigidBodyList() {

@@ -188,6 +188,7 @@
  * @see {@link Constraint} for joints and constraints
  */
 
+export * from './crescent-fan';
 export * from './rigidbody';
 export * from './quadtree';
 export * from './dynamic-tree';

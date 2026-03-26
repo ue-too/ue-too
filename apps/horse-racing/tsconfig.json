@@ -1,0 +1,39 @@
+{
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "baseUrl": ".",
+        "declaration": true,
+        "jsx": "react-jsx",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "outDir": "../../dist",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "resolveJsonModule": true,
+        "strict": true,
+        "types": []
+    },
+    "extends": "../../tsconfig.base.json",
+    "include": ["src/**/*"],
+    "references": [
+        {
+            "path": "../../packages/math"
+        },
+        {
+            "path": "../../packages/board-pixi-react-integration"
+        },
+        {
+            "path": "../../packages/board-pixi-integration"
+        },
+        {
+            "path": "../../packages/board"
+        },
+        {
+            "path": "../../packages/dynamics"
+        },
+        {
+            "path": "../../packages/being"
+        }
+    ]
+}
