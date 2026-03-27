@@ -1,4 +1,3 @@
-import { Circle, World } from '@ue-too/dynamics';
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
 import { PointCal } from '@ue-too/math';
 import type { Point } from '@ue-too/math';
@@ -6,40 +5,21 @@ import { Graphics, Text } from 'pixi.js';
 
 import type { CurveSegment, StraightSegment } from './track-types';
 
-import {
-    buildTrackIntoWorld,
-    parseTrackJson,
-    trackBounds,
-    trackStartFrame,
-} from './track-from-json';
-import { TrackNavigator } from './track-navigator';
+import { parseTrackJson, trackBounds } from './track-from-json';
 import type { TrackSegment } from './track-types';
+import { HorseRacingEngine } from './horse-racing-engine';
+import type { HorseAction } from './horse-racing-engine';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Constants (rendering only — simulation constants live in the engine)
 // ---------------------------------------------------------------------------
 
 const DEFAULT_TRACK_URL = '/tracks/exp_track_8.json';
-const HORSE_COUNT = 4;
-const HORSE_RADIUS = 9;
-const HORSE_SPACING = 14;
-
-const PHYS_SUBSTEPS = 8;
-const PHYS_HZ = 240;
-
-// Centripetal control model (from Python demo)
-const TANGENTIAL_TARGET_SPEED = 13;
-const MAX_TARGET_SPEED = 20;
-const PLAYER_TANGENTIAL = 10; // player UP/DOWN acceleration
-const PLAYER_NORMAL = 5; // player LEFT/RIGHT acceleration
-const AI_ETM = 3.34; // AI extra tangential magnitude
-const AI_ENM = 3.34; // AI extra normal magnitude
-const NORMAL_DAMP = 3.0; // radial drift damping coefficient
-const NORMAL_SPRING = 0.8; // spring stiffness pulling horse toward nominal radius
-const HORSE_MASS = 500;
 
 const HORSE_COLORS = [0xc9a227, 0x8b4513, 0x4169e1, 0xffffff];
 const PLAYER_INDEX = 0;
+const PLAYER_TANGENTIAL = 10; // player UP/DOWN acceleration magnitude
+const PLAYER_NORMAL = 5; // player LEFT/RIGHT acceleration magnitude
 
 // Debug
 const DEBUG_TRAIL = true;
@@ -49,8 +29,8 @@ const DEBUG_FENCE_COLOR = 0xff4444;
 const DEBUG_CENTERLINE_COLOR = 0x00ff00;
 const DEBUG_FAN_COLOR = 0x00ccff;
 
-// Track rendering — derive from horse layout so fences contain all horses
-const TRACK_HALF_WIDTH = HORSE_SPACING * HORSE_COUNT + HORSE_RADIUS;
+// Track rendering — derive from default horse layout so fences contain all horses
+const TRACK_HALF_WIDTH = 14 * 4 + 9; // horseSpacing * horseCount + horseRadius = 65
 const RAIL_COLOR = 0xcccccc;
 const RAIL_WIDTH = 2;
 const TRACK_SURFACE_COLOR = 0x8b7355;
@@ -134,94 +114,38 @@ export async function attachHorseRacingSim(
     window.addEventListener('keyup', onKeyUp);
 
     // Ticker
-    const fixedDt = 1 / PHYS_HZ;
-
     const onTick = (): void => {
-        const map = sim.world.getRigidBodyMap();
+        const engine = sim.engine;
+        const horseCount = engine.horseIds.length;
 
-        for (let i = 0; i < sim.horseIds.length; i++) {
-            const hid = sim.horseIds[i];
-            const h = map.get(hid);
-            if (!h) continue;
-
-            const nav = sim.navigators[i];
-            const frame = nav.getTrackFrame(h.center);
-            const v = h.linearVelocity;
-
-            const tangentialVel = PointCal.dotProduct(v, frame.tangential);
-            const normalVel = PointCal.dotProduct(v, frame.normal);
-
-            // -- Centripetal + spring (shared by player & AI) --
-            const centripetal =
-                frame.turnRadius < 1e6
-                    ? (tangentialVel * tangentialVel) / frame.turnRadius
-                    : 0;
-            const displacement =
-                frame.targetRadius < 1e6
-                    ? frame.turnRadius - frame.targetRadius
-                    : 0;
-
-            let tangentialAccel: number;
-            let normalAccel: number;
-
-            // Auto-cruise toward target speed (both player & AI)
-            const speedChange = TANGENTIAL_TARGET_SPEED - tangentialVel;
-            let extraTangential = 0;
-            let extraNormal = 0;
-
+        // Map keyboard → actions
+        const actions: HorseAction[] = [];
+        for (let i = 0; i < horseCount; i++) {
             if (i === PLAYER_INDEX) {
+                let extraTangential = 0;
+                let extraNormal = 0;
                 if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
                 if (keys.ArrowDown) extraTangential = -PLAYER_TANGENTIAL;
                 if (keys.ArrowLeft) extraNormal = -PLAYER_NORMAL;
                 if (keys.ArrowRight) extraNormal = PLAYER_NORMAL;
+                actions.push({ extraTangential, extraNormal });
+            } else {
+                actions.push({ extraTangential: 0, extraNormal: 0 });
             }
-
-            tangentialAccel = speedChange + extraTangential;
-            if (tangentialVel >= MAX_TARGET_SPEED && tangentialAccel > 0) {
-                tangentialAccel = 0;
-            }
-
-            normalAccel =
-                -centripetal
-                - normalVel * NORMAL_DAMP
-                - displacement * NORMAL_SPRING
-                + extraNormal;
-
-            // Combine
-            const totalAccel = PointCal.addVector(
-                PointCal.multiplyVectorByScalar(
-                    frame.tangential,
-                    tangentialAccel,
-                ),
-                PointCal.multiplyVectorByScalar(frame.normal, normalAccel),
-            );
-            const totalForce = PointCal.multiplyVectorByScalar(
-                totalAccel,
-                HORSE_MASS,
-            );
-            h.applyForce(totalForce);
-
-            // Auto-orient horse to face tangential direction
-            // Auto-orient horse to face tangential direction.
-            // The interface only exposes a getter, so cast to access the setter.
-            (h as unknown as { setOrientationAngle(a: number): void }).setOrientationAngle(
-                Math.atan2(frame.tangential.y, frame.tangential.x),
-            );
         }
 
-        // Physics substeps
-        for (let s = 0; s < PHYS_SUBSTEPS; s++) {
-            sim.world.step(fixedDt);
-        }
+        // Step simulation
+        engine.step(actions);
 
-        // Update segment tracking + graphics
-        for (let i = 0; i < sim.horseIds.length; i++) {
-            const body = sim.world.getRigidBodyMap().get(sim.horseIds[i]);
-            const gr = sim.horseGfx.get(sim.horseIds[i]);
-            if (body && gr) {
-                sim.navigators[i].updateSegment(body.center);
-                gr.position.set(body.center.x, body.center.y);
-                gr.rotation = body.orientationAngle;
+        // Update graphics from engine state
+        const positions = engine.getHorsePositions();
+        const orientations = engine.getHorseOrientations();
+        for (let i = 0; i < horseCount; i++) {
+            const id = engine.horseIds[i];
+            const gr = sim.horseGfx.get(id);
+            if (gr) {
+                gr.position.set(positions[i].x, positions[i].y);
+                gr.rotation = orientations[i];
             }
         }
 
@@ -231,19 +155,17 @@ export async function attachHorseRacingSim(
 
             // Dot trail (sampled)
             if (sim.trailCounter % TRAIL_DOT_INTERVAL === 0) {
-                for (let i = 0; i < sim.horseIds.length; i++) {
-                    const body = sim.world.getRigidBodyMap().get(sim.horseIds[i]);
-                    if (!body) continue;
+                for (let i = 0; i < horseCount; i++) {
                     sim.trailGfx
-                        .circle(body.center.x, body.center.y, TRAIL_DOT_RADIUS)
+                        .circle(positions[i].x, positions[i].y, TRAIL_DOT_RADIUS)
                         .fill({ color: HORSE_COLORS[i % HORSE_COLORS.length], alpha: 0.7 });
                 }
             }
 
             // Target arc (redrawn each frame so it tracks the current segment)
             sim.targetArcGfx.clear();
-            for (let i = 0; i < sim.horseIds.length; i++) {
-                const nav = sim.navigators[i];
+            for (let i = 0; i < horseCount; i++) {
+                const nav = engine.navigators[i];
                 const seg = nav.segment;
                 if (seg.tracktype !== 'CURVE') continue;
                 const tR = nav.targetRadius;
@@ -675,14 +597,12 @@ function drawDebugFittedArcFan(g: Graphics, seg: CurveSegment): void {
 }
 
 // ---------------------------------------------------------------------------
-// Internal sim builder (creates world, horses, graphics for a given track)
+// Internal sim builder (creates engine + graphics for a given track)
 // ---------------------------------------------------------------------------
 
 type SimState = {
-    world: World;
-    horseIds: string[];
+    engine: HorseRacingEngine;
     horseGfx: Map<string, Graphics>;
-    navigators: TrackNavigator[];
     trailGfx: Graphics;
     targetArcGfx: Graphics;
     trailCounter: number;
@@ -693,20 +613,8 @@ function buildSim(
     stage: import('pixi.js').Container,
     segments: TrackSegment[],
 ): SimState {
+    const engine = new HorseRacingEngine(segments);
     const bounds = trackBounds(segments, 120);
-    const absMaxX =
-        Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x)) + 300;
-    const absMaxY =
-        Math.max(Math.abs(bounds.min.y), Math.abs(bounds.max.y)) + 300;
-
-    const world = new World(absMaxX, absMaxY, 'dynamictree');
-    world.useLinearCollisionResolution = true;
-    buildTrackIntoWorld(world, segments, { halfTrackWidth: TRACK_HALF_WIDTH });
-
-    const frame = trackStartFrame(segments);
-    if (!frame) {
-        throw new Error('Track has no segments');
-    }
 
     // Turf background
     const turf = new Graphics();
@@ -747,36 +655,24 @@ function buildSim(
     );
     stage.addChild(label);
 
-    // Horses
-    const horseIds: string[] = [];
+    // Horse graphics (bodies are owned by the engine)
     const horseGfx = new Map<string, Graphics>();
-    const navigators: TrackNavigator[] = [];
+    const horseRadius = engine.config.horseRadius;
+    const positions = engine.getHorsePositions();
 
-    for (let i = 0; i < HORSE_COUNT; i++) {
-        const id = `horse-${i}`;
-        const pos = PointCal.addVector(
-            frame.origin,
-            PointCal.multiplyVectorByScalar(
-                frame.outward,
-                HORSE_SPACING * (i + 1),
-            ),
-        );
-        const body = new Circle(pos, HORSE_RADIUS, 0, HORSE_MASS, false, false);
-        world.addRigidBody(id, body);
-        horseIds.push(id);
-
+    for (let i = 0; i < engine.horseIds.length; i++) {
+        const id = engine.horseIds[i];
         const g = new Graphics();
-        g.circle(0, 0, HORSE_RADIUS).fill({
+        g.circle(0, 0, horseRadius).fill({
             color: HORSE_COLORS[i % HORSE_COLORS.length],
         });
         // Direction indicator line
         g.moveTo(0, 0);
-        g.lineTo(HORSE_RADIUS * 0.8, 0);
+        g.lineTo(horseRadius * 0.8, 0);
         g.stroke({ width: 2, color: 0x000000 });
+        g.position.set(positions[i].x, positions[i].y);
         stage.addChild(g);
         horseGfx.set(id, g);
-
-        navigators.push(new TrackNavigator(segments, 0, TRACK_HALF_WIDTH));
     }
 
     // Debug trail graphics
@@ -805,5 +701,5 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { world, horseIds, horseGfx, navigators, trailGfx, targetArcGfx, trailCounter: 0, teardown };
+    return { engine, horseGfx, trailGfx, targetArcGfx, trailCounter: 0, teardown };
 }
