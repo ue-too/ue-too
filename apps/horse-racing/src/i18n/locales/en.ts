@@ -11,6 +11,8 @@ const en = {
         enableAnimations: 'Enable motion',
         motionOn: 'Motion',
         motionOff: 'Reduced motion',
+        trackLabel: 'Track',
+        uploadTrack: 'Upload',
     },
 };
 
