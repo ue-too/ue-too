@@ -114,7 +114,7 @@ const DEFAULT_CONFIG: SimConfig = {
     horseSpacing: 14,
     physHz: 240,
     physSubsteps: 8,
-    normalDamp: 3.0,
+    normalDamp: 0.5,
     normalSpring: 0.8,
     surface: 'dry',
 };
@@ -249,22 +249,21 @@ export class HorseRacingEngine {
         // Resolve effective attributes and apply forces per horse
         const effectiveAttrs: EffectiveAttributes[] = [];
 
+        // Resolve effective attributes once per tick (expensive)
+        const resolvedActions: HorseAction[] = [];
         for (let i = 0; i < ids.length; i++) {
             const h = map.get(ids[i]);
             if (!h) {
                 effectiveAttrs.push(DEFAULT_CORE_ATTRIBUTES);
+                resolvedActions.push({ extraTangential: 0, extraNormal: 0 });
                 continue;
             }
 
             const state = this._horseStates[i];
-            const nav = navs[i];
-            const frame = nav.getTrackFrame(h.center);
+            const frame = navs[i].getTrackFrame(h.center);
             const v = h.linearVelocity;
-
             const tangentialVel = PointCal.dotProduct(v, frame.tangential);
-            const normalVel = PointCal.dotProduct(v, frame.normal);
 
-            // Resolve effective attributes: base → modifiers → exhaustion
             let eff = resolveEffectiveAttributes(
                 state.baseAttributes,
                 state.activeModifiers,
@@ -273,60 +272,65 @@ export class HorseRacingEngine {
             );
             eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
             effectiveAttrs.push(eff);
+            resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
-            // Centripetal + spring (using per-horse cornering grip)
-            const centripetal =
-                frame.turnRadius < 1e6
-                    ? (tangentialVel * tangentialVel) / frame.turnRadius
-                    : 0;
-            const centripetalScaled = eff.corneringGrip > 0
-                ? centripetal / eff.corneringGrip
-                : centripetal;
-
-            const displacement =
-                frame.targetRadius < 1e6
-                    ? frame.turnRadius - frame.targetRadius
-                    : 0;
-
-            // Auto-cruise toward per-horse cruise speed
-            const action = actions[i] ?? { extraTangential: 0, extraNormal: 0 };
-            const speedChange = eff.cruiseSpeed - tangentialVel;
-
-            let tangentialAccel = speedChange + action.extraTangential * eff.forwardAccel;
-            if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
-                tangentialAccel = 0;
-            }
-
-            const normalAccel =
-                -centripetalScaled
-                - normalVel * cfg.normalDamp
-                - displacement * cfg.normalSpring
-                + action.extraNormal * eff.turnAccel;
-
-            const totalAccel = PointCal.addVector(
-                PointCal.multiplyVectorByScalar(frame.tangential, tangentialAccel),
-                PointCal.multiplyVectorByScalar(frame.normal, normalAccel),
-            );
-            const totalForce = PointCal.multiplyVectorByScalar(totalAccel, eff.weight);
-            h.applyForce(totalForce);
-
-            // Auto-orient to face tangential direction
-            (h as unknown as { setOrientationAngle(a: number): void }).setOrientationAngle(
-                Math.atan2(frame.tangential.y, frame.tangential.x),
-            );
-
-            // Update stamina
+            // Update stamina (once per tick)
             state.currentStamina = updateStamina(
                 state.currentStamina,
                 eff,
-                action.extraTangential,
+                resolvedActions[i].extraTangential,
                 tangentialVel,
                 frame.turnRadius,
             );
         }
 
-        // Physics substeps
+        // Physics substeps — recompute forces each substep so centripetal
+        // direction stays accurate and the force isn't lost after step().
         for (let s = 0; s < cfg.physSubsteps; s++) {
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+
+                const nav = navs[i];
+                const frame = nav.getTrackFrame(h.center);
+                const v = h.linearVelocity;
+                const eff = effectiveAttrs[i];
+                const action = resolvedActions[i];
+
+                const tangentialVel = PointCal.dotProduct(v, frame.tangential);
+                const normalVel = PointCal.dotProduct(v, frame.normal);
+
+                // Centripetal: v²/R using actual turn radius (Python reference)
+                const centripetal =
+                    frame.turnRadius < 1e6
+                        ? (tangentialVel * tangentialVel) / frame.turnRadius
+                        : 0;
+
+                // Auto-cruise toward cruise speed
+                const speedChange = eff.cruiseSpeed - tangentialVel;
+                let tangentialAccel = speedChange + action.extraTangential * eff.forwardAccel;
+                if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
+                    tangentialAccel = 0;
+                }
+
+                const normalAccel =
+                    -centripetal
+                    - normalVel * cfg.normalDamp
+                    + action.extraNormal * eff.turnAccel;
+
+                const totalAccel = PointCal.addVector(
+                    PointCal.multiplyVectorByScalar(frame.tangential, tangentialAccel),
+                    PointCal.multiplyVectorByScalar(frame.normal, normalAccel),
+                );
+                const totalForce = PointCal.multiplyVectorByScalar(totalAccel, eff.weight);
+                h.applyForce(totalForce);
+
+                // Auto-orient to face tangential direction
+                (h as unknown as { setOrientationAngle(a: number): void }).setOrientationAngle(
+                    Math.atan2(frame.tangential.y, frame.tangential.x),
+                );
+            }
+
             world.step(fixedDt);
         }
 

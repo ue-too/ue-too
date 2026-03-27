@@ -303,20 +303,22 @@ describe('Engine with attributes', () => {
 
     it('stamina recovers when coasting', () => {
         const engine = new HorseRacingEngine(loadTrack());
-        // Push hard first to drain stamina
+        // Push briefly to drain stamina but keep speed below cruise speed
+        // (avoiding overdrive drain that would block recovery during coast).
+        // With per-substep forces, 10 ticks of push drains ~10 stamina from
+        // the extraTangential cost while speed stays below cruiseSpeed (~6.5).
         const pushActions: HorseAction[] = Array.from({ length: 4 }, () => ({
             extraTangential: 10,
             extraNormal: 0,
         }));
-        for (let t = 0; t < 100; t++) {
+        for (let t = 0; t < 10; t++) {
             engine.step(pushActions);
         }
         const drained = engine.step(pushActions);
         const drainedStamina = drained[0].currentStamina;
 
-        // Now coast (zero actions) — horse will slow to cruise, stamina recovers
-        // Need to wait for speed to drop to cruise first
-        for (let t = 0; t < 200; t++) {
+        // Coast — speed is below cruise so drain = 0 and recovery kicks in
+        for (let t = 0; t < 100; t++) {
             engine.step(zeroActions(4));
         }
         const recovered = engine.step(zeroActions(4));
