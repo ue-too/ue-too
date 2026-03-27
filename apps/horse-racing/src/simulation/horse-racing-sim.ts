@@ -663,7 +663,7 @@ function buildSim(
     for (let i = 0; i < engine.horseIds.length; i++) {
         const id = engine.horseIds[i];
         const g = new Graphics();
-        g.circle(0, 0, horseRadius).fill({
+        g.rect(-horseRadius, -horseRadius * 0.6, horseRadius * 2, horseRadius * 1.2).fill({
             color: HORSE_COLORS[i % HORSE_COLORS.length],
         });
         // Direction indicator line

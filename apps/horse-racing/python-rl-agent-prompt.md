@@ -81,8 +81,7 @@ HORSE_SPACING = 14
 PHYS_HZ = 240          # physics timestep = 1/240 s
 PHYS_SUBSTEPS = 8       # substeps per game tick
 
-NORMAL_DAMP = 3.0       # radial velocity damping coefficient
-NORMAL_SPRING = 0.8     # spring stiffness pulling horse toward target radius
+NORMAL_DAMP = 0.5       # radial velocity damping coefficient
 
 TRACK_HALF_WIDTH = HORSE_SPACING * HORSE_COUNT + HORSE_RADIUS  # = 65
 
@@ -105,7 +104,7 @@ Instead of global constants like `HORSE_MASS` or `TANGENTIAL_TARGET_SPEED`, each
 | `max_speed` | 20.0 | 15–25 | Absolute speed ceiling |
 | `forward_accel` | 1.0 | 0.5–1.5 | Multiplier on jockey's tangential input |
 | `turn_accel` | 1.0 | 0.5–1.5 | Multiplier on jockey's normal (steering) input |
-| `cornering_grip` | 1.0 | 0.5–1.5 | Reduces centripetal speed penalty AND defines stamina drain threshold |
+| `cornering_grip` | 1.0 | 0.5–1.5 | Defines stamina drain threshold for cornering (does NOT affect centripetal physics force) |
 | `stamina` | 100.0 | 50–150 | Max energy pool |
 | `stamina_recovery` | 1.0 | 0.5–2.0 | Energy recovery per tick when not pushing |
 | `weight` | 500.0 | 400–600 | Mass in kg (affects F=ma and collision impulse) |
@@ -291,12 +290,11 @@ def compute_forces(velocity, track_frame, action, eff: CoreAttributes):
     tangential_vel = dot(velocity, frame.tangential)
     normal_vel = dot(velocity, frame.normal)
 
-    # Centripetal acceleration (only on curves), reduced by cornering grip
+    # Centripetal acceleration (only on curves)
+    # Uses actual turn_radius (horse's distance from curve center).
+    # NOT scaled by cornering_grip — centripetal force is a physical
+    # constraint for circular motion. corneringGrip only affects stamina drain.
     centripetal = (tangential_vel ** 2) / frame.turn_radius if frame.turn_radius < 1e6 else 0
-    centripetal_scaled = centripetal / eff.cornering_grip  # higher grip = less penalty
-
-    # Displacement from target lane
-    displacement = (frame.turn_radius - frame.target_radius) if frame.target_radius < 1e6 else 0
 
     # Auto-cruise toward target speed (uses per-horse cruise_speed)
     speed_change = eff.cruise_speed - tangential_vel
@@ -308,9 +306,8 @@ def compute_forces(velocity, track_frame, action, eff: CoreAttributes):
         tangential_accel = 0
 
     normal_accel = (
-        -centripetal_scaled
+        -centripetal
         - normal_vel * NORMAL_DAMP
-        - displacement * NORMAL_SPRING
         + extra_normal
     )
 
@@ -320,24 +317,31 @@ def compute_forces(velocity, track_frame, action, eff: CoreAttributes):
 ```
 
 **Per-tick pipeline:**
-1. Resolve effective attributes: `base_attrs → apply modifiers → apply exhaustion → EffectiveAttributes`
-2. Compute forces using `EffectiveAttributes`
-3. Run physics substeps
-4. Update stamina (drain from jockey push, speed overdrive, cornering threshold)
-5. Update navigators, build observations
+1. Resolve effective attributes: `base_attrs → apply modifiers → apply exhaustion → EffectiveAttributes` (once per tick, before substeps)
+2. Update stamina (once per tick)
+3. For each physics substep (8 per tick):
+   a. Recompute track frame from current horse position
+   b. Recompute forces using current velocity and track frame
+   c. Apply force to horse
+   d. Run physics step (integration + collision)
+   e. Force is cleared after each step, which is why it must be reapplied every substep
+4. Update navigators, build observations
 
 ### Physics Integration
 
 The JS engine uses `useLinearCollisionResolution = true`, meaning no angular dynamics. Each substep:
 
-1. Apply accumulated forces: `velocity += (force / mass) * dt`
-2. Integrate position: `position += velocity * dt`
-3. Resolve collisions (position-only correction, no angular impulse)
-4. Clear forces
+1. Recompute track frame and forces from current state (see Force Model above)
+2. Apply force to body
+3. Integrate: `velocity += (force / mass) * dt`, then `position += velocity * dt`
+4. Resolve collisions (position-only correction, no angular impulse)
+5. Clear forces (force is zeroed after each step — this is why forces MUST be reapplied every substep)
+
+**IMPORTANT:** Forces are cleared after each `world.step()` call. If you apply force once and step 8 times, only the first substep receives the force. You must recompute and reapply forces before every substep. This is critical for correct centripetal behavior on curves.
 
 The `dt` for each substep is `1 / PHYS_HZ` (= 1/240 s). There are `PHYS_SUBSTEPS = 8` substeps per game tick.
 
-After all substeps, auto-orient horse to face the tangential direction:
+Auto-orient horse to face tangential direction (each substep):
 ```python
 orientation = atan2(frame.tangential.y, frame.tangential.x)
 ```
