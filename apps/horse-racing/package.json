@@ -9,7 +9,7 @@
         "test": "jest"
     },
     "dependencies": {
-        "@tailwindcss/vite": "^4.1.18",
+        "@tailwindcss/vite": "^4.2.2",
         "@ue-too/being": "workspace:*",
         "@ue-too/board": "workspace:*",
         "@ue-too/board-pixi-integration": "workspace:*",
