@@ -110,8 +110,8 @@ export type SimConfig = {
 /** @internal */
 const DEFAULT_CONFIG: SimConfig = {
     horseCount: 4,
-    horseRadius: 9,
-    horseSpacing: 14,
+    horseRadius: 1.3,
+    horseSpacing: 3,
     physHz: 240,
     physSubsteps: 8,
     normalDamp: 0.5,

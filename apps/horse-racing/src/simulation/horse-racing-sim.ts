@@ -30,7 +30,7 @@ const DEBUG_CENTERLINE_COLOR = 0x00ff00;
 const DEBUG_FAN_COLOR = 0x00ccff;
 
 // Track rendering — derive from default horse layout so fences contain all horses
-const TRACK_HALF_WIDTH = 14 * 4 + 9; // horseSpacing * horseCount + horseRadius = 65
+const TRACK_HALF_WIDTH = 3 * 4 + 1.3; // horseSpacing * horseCount + horseRadius = 13.3
 const RAIL_COLOR = 0xcccccc;
 const RAIL_WIDTH = 2;
 const TRACK_SURFACE_COLOR = 0x8b7355;
