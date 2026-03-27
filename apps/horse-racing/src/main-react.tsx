@@ -5,19 +5,12 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
-import { HorseRacingAppComponents } from '@/utils/init-app';
-
 import App from './App';
 import { LandingPage } from './pages/landing';
 import { NotFoundPage } from './pages/not-found';
+import { TrackMakerPage } from './pages/track-maker';
 
 import './App.css';
-
-declare module '@ue-too/board-pixi-react-integration' {
-    interface PixiCanvasRegistry {
-        components: HorseRacingAppComponents;
-    }
-}
 
 const rootElement = document.getElementById('root');
 
@@ -37,6 +30,7 @@ root.render(
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/app" element={<App />} />
+                    <Route path="/track-maker" element={<TrackMakerPage />} />
                     <Route path="/404" element={<NotFoundPage />} />
                     <Route path="*" element={<Navigate to="/404" replace />} />
                 </Routes>

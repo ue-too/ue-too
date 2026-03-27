@@ -25,6 +25,8 @@ export type TrackFrame = {
      * `Infinity` on straights.
      */
     targetRadius: number;
+    /** Grade (rise/run) of the current segment. 0 = flat. */
+    slope: number;
 };
 
 /**
@@ -144,7 +146,7 @@ export class TrackNavigator {
         const normal = PointCal.unitVector(
             PointCal.rotatePoint(tangential, -Math.PI / 2),
         );
-        return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity };
+        return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity, slope: seg.slope ?? 0 };
     }
 
     private curveFrame(seg: CurveSegment, position: Point): TrackFrame {
@@ -184,6 +186,7 @@ export class TrackNavigator {
             turnRadius,
             nominalRadius: seg.radius,
             targetRadius: this.curveEntryRadius,
+            slope: seg.slope ?? 0,
         };
     }
 

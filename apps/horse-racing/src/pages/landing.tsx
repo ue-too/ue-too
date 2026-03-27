@@ -41,12 +41,20 @@ export function LandingPage(): React.ReactNode {
                 </p>
             </div>
 
-            <Link
-                to="/app"
-                className="bg-primary text-primary-foreground hover:opacity-90 inline-flex rounded-lg px-6 py-3 text-sm font-medium transition-opacity"
-            >
-                {t('openSimulator')}
-            </Link>
+            <div className="flex gap-3">
+                <Link
+                    to="/app"
+                    className="bg-primary text-primary-foreground hover:opacity-90 inline-flex rounded-lg px-6 py-3 text-sm font-medium transition-opacity"
+                >
+                    {t('openSimulator')}
+                </Link>
+                <Link
+                    to="/track-maker"
+                    className="border-primary text-primary hover:bg-primary/10 inline-flex rounded-lg border px-6 py-3 text-sm font-medium transition-colors"
+                >
+                    Track Maker
+                </Link>
+            </div>
         </div>
     );
 }

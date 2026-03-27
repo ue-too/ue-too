@@ -9,6 +9,8 @@ export type StraightSegment = {
     tracktype: 'STRAIGHT';
     startPoint: TrackPoint;
     endPoint: TrackPoint;
+    /** Grade (rise/run). Positive = uphill in direction of travel. */
+    slope?: number;
 };
 
 export type CurveSegment = {
@@ -18,6 +20,8 @@ export type CurveSegment = {
     center: TrackPoint;
     radius: number;
     angleSpan: number;
+    /** Grade (rise/run). Positive = uphill in direction of travel. */
+    slope?: number;
 };
 
 export type TrackSegment = StraightSegment | CurveSegment;

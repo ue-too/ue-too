@@ -50,11 +50,13 @@ export function parseTrackJson(raw: unknown): TrackSegment[] {
         if (tt !== 'STRAIGHT' && tt !== 'CURVE') {
             throw new Error(`Segment ${i}: unknown tracktype`);
         }
+        const slope = typeof item.slope === 'number' ? item.slope : undefined;
         if (tt === 'STRAIGHT') {
             out.push({
                 tracktype: 'STRAIGHT',
                 startPoint: asPoint(item.startPoint),
                 endPoint: asPoint(item.endPoint),
+                slope,
             });
         } else {
             const radius = item.radius;
@@ -69,6 +71,7 @@ export function parseTrackJson(raw: unknown): TrackSegment[] {
                 center: asPoint(item.center),
                 radius,
                 angleSpan,
+                slope,
             });
         }
     }

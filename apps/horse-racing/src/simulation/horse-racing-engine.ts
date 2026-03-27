@@ -87,6 +87,8 @@ export type HorseObservation = {
     effectiveMaxSpeed: number;
     /** Cornering force margin: positive = comfortable, negative = draining stamina. */
     corneringMargin: number;
+    /** Grade of current segment (rise/run). 0 = flat. */
+    slope: number;
 };
 
 /**
@@ -313,6 +315,13 @@ export class HorseRacingEngine {
                     tangentialAccel = 0;
                 }
 
+                // Slope gravity: uphill decelerates, downhill accelerates
+                const slopeGrade = frame.slope;
+                if (slopeGrade !== 0) {
+                    const slopeAngle = Math.atan(slopeGrade);
+                    tangentialAccel += -9.81 * Math.sin(slopeAngle);
+                }
+
                 const normalAccel =
                     -centripetal
                     - normalVel * cfg.normalDamp
@@ -378,6 +387,7 @@ export class HorseRacingEngine {
                     tangentialVel,
                     frame.turnRadius,
                 ),
+                slope: frame.slope,
             });
         }
 
@@ -539,6 +549,7 @@ export class HorseRacingEngine {
             effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 13,
             effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 20,
             corneringMargin: Infinity,
+            slope: 0,
         };
     }
 }
