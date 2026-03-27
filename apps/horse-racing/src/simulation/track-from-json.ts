@@ -94,17 +94,19 @@ function straightRailPolygons(
         PointCal.addVector(start, end),
         0.5,
     );
+    // Align with curve fences which span [hw, hw + railThick] from centerline.
+    const railOffset = opt.halfTrackWidth + opt.railThickness / 2;
     const outerCenter = PointCal.addVector(
         mid,
-        PointCal.multiplyVectorByScalar(outward, opt.halfTrackWidth),
+        PointCal.multiplyVectorByScalar(outward, railOffset),
     );
     const innerCenter = PointCal.subVector(
         mid,
-        PointCal.multiplyVectorByScalar(outward, opt.halfTrackWidth),
+        PointCal.multiplyVectorByScalar(outward, railOffset),
     );
     const angle = Math.atan2(forward.y, forward.x);
     const hw = opt.railThickness / 2;
-    const hl = len / 2 + 4;
+    const hl = len / 2;
     const local: Point[] = [
         { x: hl, y: hw },
         { x: hl, y: -hw },
@@ -129,6 +131,63 @@ function straightRailPolygons(
             false,
         ),
     };
+}
+
+const FENCE_STEP_DEG = 5;
+
+/**
+ * Builds outer-fence polygon segments for a curve.
+ *
+ * Ports the Python `add_outer_fence` algorithm: walks the arc in small angular
+ * steps and creates a thin quadrilateral strip at the outer rail radius.
+ */
+function curveOuterFencePolygons(
+    seg: CurveSegment,
+    opt: BuildTrackOptions,
+): Polygon[] {
+    const center: Point = { x: seg.center.x, y: seg.center.y };
+    const outerRadius = seg.radius + opt.halfTrackWidth;
+    const extendedRadius = outerRadius + opt.railThickness;
+
+    const fromCenterStart = PointCal.subVector(
+        { x: seg.startPoint.x, y: seg.startPoint.y },
+        center,
+    );
+    let orientAngle = PointCal.angleFromA2B({ x: 1, y: 0 }, fromCenterStart);
+    let span = seg.angleSpan;
+    if (span < 0) {
+        orientAngle += span;
+        span = -span;
+    }
+
+    const maxStep = (FENCE_STEP_DEG * Math.PI) / 180;
+    const numSteps = Math.max(Math.ceil(span / maxStep), 1);
+    const stepAngle = span / numSteps; // uniform steps that cover the full span
+
+    const polys: Polygon[] = [];
+    for (let i = 0; i < numSteps; i++) {
+        const a0 = orientAngle + stepAngle * i;
+        const a1 = orientAngle + stepAngle * (i + 1);
+
+        const p0 = PointCal.addVector(center, PointCal.rotatePoint({ x: outerRadius, y: 0 }, a0));
+        const p1 = PointCal.addVector(center, PointCal.rotatePoint({ x: outerRadius, y: 0 }, a1));
+        const p2 = PointCal.addVector(center, PointCal.rotatePoint({ x: extendedRadius, y: 0 }, a1));
+        const p3 = PointCal.addVector(center, PointCal.rotatePoint({ x: extendedRadius, y: 0 }, a0));
+
+        const cx = (p0.x + p1.x + p2.x + p3.x) / 4;
+        const cy = (p0.y + p1.y + p2.y + p3.y) / 4;
+        const centroid: Point = { x: cx, y: cy };
+
+        const local: Point[] = [
+            PointCal.subVector(p0, centroid),
+            PointCal.subVector(p1, centroid),
+            PointCal.subVector(p2, centroid),
+            PointCal.subVector(p3, centroid),
+        ];
+
+        polys.push(new Polygon(centroid, local, 0, opt.railMass, true, false));
+    }
+    return polys;
 }
 
 /**
@@ -166,7 +225,7 @@ export function buildTrackIntoWorld(
             );
             const crescent = new Crescent(
                 center,
-                c.radius,
+                c.radius - opt.halfTrackWidth,
                 c.angleSpan,
                 orientationAngle,
                 opt.railMass,
@@ -174,6 +233,10 @@ export function buildTrackIntoWorld(
                 false,
             );
             world.addRigidBody(`rail-c-${curveIndex}`, crescent);
+            const fencePolys = curveOuterFencePolygons(c, opt);
+            for (let j = 0; j < fencePolys.length; j++) {
+                world.addRigidBody(`rail-c-${curveIndex}-f-${j}`, fencePolys[j]);
+            }
             curveIndex += 1;
         }
     }

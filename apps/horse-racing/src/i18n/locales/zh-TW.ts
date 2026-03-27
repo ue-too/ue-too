@@ -11,6 +11,8 @@ const zhTW = {
         enableAnimations: '開啟動態效果',
         motionOn: '動態',
         motionOff: '精簡動態',
+        trackLabel: '賽道',
+        uploadTrack: '上傳',
     },
 };
 
