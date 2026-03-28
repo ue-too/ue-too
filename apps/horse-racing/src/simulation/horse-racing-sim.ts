@@ -8,7 +8,8 @@ import type { CurveSegment, StraightSegment } from './track-types';
 import { parseTrackJson, trackBounds } from './track-from-json';
 import type { TrackSegment } from './track-types';
 import { HorseRacingEngine } from './horse-racing-engine';
-import type { HorseAction } from './horse-racing-engine';
+import type { HorseAction, HorseObservation } from './horse-racing-engine';
+import { AIJockey } from './ai-jockey';
 
 // ---------------------------------------------------------------------------
 // Constants (rendering only — simulation constants live in the engine)
@@ -71,6 +72,12 @@ export type HorseRacingSimHandle = {
     setArcFanVisible: (visible: boolean) => void;
     /** Current visibility of the fitted-arc fan overlay. */
     arcFanVisible: () => boolean;
+    /** Enable AI control for a specific horse (or all with index -1). */
+    enableAI: (horseIndex: number) => void;
+    /** Disable AI control, revert to keyboard/idle. */
+    disableAI: (horseIndex: number) => void;
+    /** Whether AI is controlling a specific horse. */
+    isAIEnabled: (horseIndex: number) => boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -91,6 +98,19 @@ export async function attachHorseRacingSim(
 ): Promise<HorseRacingSimHandle> {
     const { app, cleanups } = components;
     const stage = app.stage;
+
+    // AI jockey for model-controlled horses
+    const aiJockey = new AIJockey();
+    const aiControlled = new Set<number>();
+    let lastObservations: HorseObservation[] = [];
+    let pendingAIActions: Map<number, HorseAction> = new Map();
+
+    // Load AI model in background (non-blocking)
+    aiJockey.load('/models/horse_jockey.onnx').then(() => {
+        console.log('[AI Jockey] Model loaded');
+    }).catch((err) => {
+        console.warn('[AI Jockey] Model not available:', err);
+    });
 
     let segments: TrackSegment[];
     if (preloadedSegments) {
@@ -135,10 +155,13 @@ export async function attachHorseRacingSim(
         const engine = sim.engine;
         const horseCount = engine.horseIds.length;
 
-        // Map keyboard → actions
+        // Map keyboard / AI → actions
         const actions: HorseAction[] = [];
         for (let i = 0; i < horseCount; i++) {
-            if (i === PLAYER_INDEX) {
+            if (aiControlled.has(i) && pendingAIActions.has(i)) {
+                // Use AI-computed action from previous tick's observation
+                actions.push(pendingAIActions.get(i)!);
+            } else if (i === PLAYER_INDEX && !aiControlled.has(i)) {
                 let extraTangential = 0;
                 let extraNormal = 0;
                 if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
@@ -152,7 +175,18 @@ export async function attachHorseRacingSim(
         }
 
         // Step simulation
-        engine.step(actions);
+        const observations = engine.step(actions);
+
+        // Queue AI inference for next tick (async, non-blocking)
+        if (aiJockey.isReady && aiControlled.size > 0) {
+            const aiIndices = [...aiControlled];
+            const aiObs = aiIndices.map(i => observations[i]);
+            aiJockey.computeActions(aiObs).then((aiActions) => {
+                for (let j = 0; j < aiIndices.length; j++) {
+                    pendingAIActions.set(aiIndices[j], aiActions[j]);
+                }
+            });
+        }
 
         // Update graphics from engine state
         const positions = engine.getHorsePositions();
@@ -164,6 +198,15 @@ export async function attachHorseRacingSim(
                 gr.position.set(positions[i].x, positions[i].y);
                 gr.rotation = orientations[i];
             }
+        }
+
+        // Update AI label position and visibility
+        if (aiControlled.size > 0) {
+            const aiIdx = [...aiControlled][0]; // show label on first AI horse
+            sim.aiLabel.visible = true;
+            sim.aiLabel.position.set(positions[aiIdx].x, positions[aiIdx].y);
+        } else {
+            sim.aiLabel.visible = false;
         }
 
         // --- Debug: racing line trail + target arc overlay ---
@@ -241,7 +284,27 @@ export async function attachHorseRacingSim(
 
     cleanups.push(cleanup);
 
-    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible };
+    const enableAI = (horseIndex: number): void => {
+        if (horseIndex === -1) {
+            for (let i = 0; i < sim.engine.horseIds.length; i++) aiControlled.add(i);
+        } else {
+            aiControlled.add(horseIndex);
+        }
+    };
+
+    const disableAI = (horseIndex: number): void => {
+        if (horseIndex === -1) {
+            aiControlled.clear();
+            pendingAIActions.clear();
+        } else {
+            aiControlled.delete(horseIndex);
+            pendingAIActions.delete(horseIndex);
+        }
+    };
+
+    const isAIEnabled = (horseIndex: number): boolean => aiControlled.has(horseIndex);
+
+    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible, enableAI, disableAI, isAIEnabled };
 }
 
 // ---------------------------------------------------------------------------
@@ -630,6 +693,7 @@ type SimState = {
     engine: HorseRacingEngine;
     trackGfx: Graphics;
     horseGfx: Map<string, Graphics>;
+    aiLabel: Text;
     trailGfx: Graphics;
     targetArcGfx: Graphics;
     debugGfx: Graphics;
@@ -706,6 +770,15 @@ function buildSim(
         horseGfx.set(id, g);
     }
 
+    // AI label — floats above AI-controlled horse
+    const aiLabel = new Text({
+        text: 'AI',
+        style: { fontSize: 4, fill: 0x00cc00, fontFamily: 'sans-serif', fontWeight: 'bold' },
+    });
+    aiLabel.anchor.set(0.5, 1.5);
+    aiLabel.visible = false;
+    stage.addChild(aiLabel);
+
     // Debug trail graphics
     const trailGfx = new Graphics();
     stage.addChild(trailGfx);
@@ -734,5 +807,5 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { engine, trackGfx, horseGfx, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
+    return { engine, trackGfx, horseGfx, aiLabel, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
 }

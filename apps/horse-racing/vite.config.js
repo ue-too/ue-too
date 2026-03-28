@@ -31,7 +31,15 @@ export default defineConfig({
         '**/*.svg',
         '**/*.webp',
     ],
+    optimizeDeps: {
+        exclude: ['onnxruntime-web'],
+    },
     server: {
         strictPort: false,
+        headers: {
+            // Required for WASM files to load correctly
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
     },
 });

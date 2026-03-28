@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Home, Upload } from 'lucide-react';
+import { Bot, BotOff, Eye, EyeOff, Home, Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -126,6 +126,49 @@ export function HorseRacingToolbar() {
                 )}
                 <span>Arc Fan</span>
             </button>
+
+            <span className="bg-border mx-1 h-4 w-px" />
+
+            <AIToggle />
         </div>
+    );
+}
+
+const AI_HORSE_INDEX = 1; // Horse 1 (brown) — horse 0 is player-controlled
+
+function AIToggle() {
+    const { result } = usePixiCanvas<HorseRacingAppComponents>();
+    const [aiEnabled, setAiEnabled] = useState(false);
+
+    const handle = result.initialized && result.success ? result.components.simHandle : null;
+
+    const toggle = () => {
+        if (!handle) return;
+        if (aiEnabled) {
+            handle.disableAI(AI_HORSE_INDEX);
+        } else {
+            handle.enableAI(AI_HORSE_INDEX);
+        }
+        setAiEnabled(!aiEnabled);
+    };
+
+    return (
+        <button
+            type="button"
+            className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                aiEnabled
+                    ? 'text-green-600'
+                    : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={toggle}
+            title="Toggle AI control for horse 1 (brown)"
+        >
+            {aiEnabled ? (
+                <Bot className="size-3.5" aria-hidden />
+            ) : (
+                <BotOff className="size-3.5" aria-hidden />
+            )}
+            <span>{aiEnabled ? 'AI (Horse 2)' : 'AI'}</span>
+        </button>
     );
 }
