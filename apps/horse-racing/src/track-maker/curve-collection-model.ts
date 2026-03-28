@@ -5,6 +5,7 @@
  * Emits change events so the render system can react.
  */
 
+import { SynchronousObservable } from '@ue-too/board';
 import { type Point, PointCal } from '@ue-too/math';
 
 import { BezierCurveModel } from './bezier-curve-model';
@@ -15,12 +16,6 @@ import {
     type PointType,
     type Track,
 } from './types';
-
-// ---------------------------------------------------------------------------
-// Change notification
-// ---------------------------------------------------------------------------
-
-type ChangeListener = () => void;
 
 // ---------------------------------------------------------------------------
 // Internal item type
@@ -52,21 +47,18 @@ export class CurveCollectionModel {
     private scale = 1;
     private nextId = 0;
 
-    private listeners: ChangeListener[] = [];
+    private observable = new SynchronousObservable<[]>();
 
     // ------------------------------------------------------------------
     // Observable
     // ------------------------------------------------------------------
 
-    onChange(listener: ChangeListener): () => void {
-        this.listeners.push(listener);
-        return () => {
-            this.listeners = this.listeners.filter((l) => l !== listener);
-        };
+    onChange(listener: () => void): () => void {
+        return this.observable.subscribe(listener);
     }
 
     private emit(): void {
-        for (const l of this.listeners) l();
+        this.observable.notify();
     }
 
     // ------------------------------------------------------------------
@@ -384,6 +376,7 @@ export class CurveCollectionModel {
             if (item.name === 'SCALE') {
                 this.scale = 100 / item.curve.getLength();
                 for (const c of this.curveMap.values()) c.curve.setScale(this.scale);
+                this.emit();
                 return true;
             }
         }

@@ -117,8 +117,21 @@ export async function attachHorseRacingSim(
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    // Track stage scale so we can mark pixelLine graphics dirty on change
+    let prevScale = stage.localTransform.a;
+
     // Ticker
     const onTick = (): void => {
+        // When zoom changes, pixelLine graphics need their context marked dirty
+        // so PixiJS rebuilds vertex data with the updated scale.
+        const curScale = stage.localTransform.a;
+        if (curScale !== prevScale) {
+            prevScale = curScale;
+            sim.trackGfx.context.dirty = true;
+            sim.debugGfx.context.dirty = true;
+            sim.arcFanGfx.context.dirty = true;
+        }
+
         const engine = sim.engine;
         const horseCount = engine.horseIds.length;
 
@@ -615,6 +628,7 @@ function drawDebugFittedArcFan(g: Graphics, seg: CurveSegment): void {
 
 type SimState = {
     engine: HorseRacingEngine;
+    trackGfx: Graphics;
     horseGfx: Map<string, Graphics>;
     trailGfx: Graphics;
     targetArcGfx: Graphics;
@@ -720,5 +734,5 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { engine, horseGfx, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
+    return { engine, trackGfx, horseGfx, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
 }
