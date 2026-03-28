@@ -1,5 +1,5 @@
-import { Home, Upload } from 'lucide-react';
-import { useRef } from 'react';
+import { Eye, EyeOff, Home, Upload } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
@@ -24,6 +24,16 @@ export function HorseRacingToolbar() {
     const { t } = useTranslation();
     const { result } = usePixiCanvas<HorseRacingAppComponents>();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handle = result.initialized && result.success ? result.components.simHandle : null;
+    const [arcFanVisible, setArcFanVisible] = useState(() => handle?.arcFanVisible() ?? true);
+
+    const toggleArcFan = useCallback(() => {
+        if (!handle) return;
+        const next = !handle.arcFanVisible();
+        handle.setArcFanVisible(next);
+        setArcFanVisible(next);
+    }, [handle]);
 
     const reload = async (url: string) => {
         if (!result.initialized || !result.success) return;
@@ -96,6 +106,26 @@ export function HorseRacingToolbar() {
                 className="hidden"
                 onChange={handleFileUpload}
             />
+
+            <span className="bg-border mx-1 h-4 w-px" />
+
+            <button
+                type="button"
+                className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                    arcFanVisible
+                        ? 'text-blue-600'
+                        : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={toggleArcFan}
+                title="Toggle fitted-arc fan overlay"
+            >
+                {arcFanVisible ? (
+                    <Eye className="size-3.5" aria-hidden />
+                ) : (
+                    <EyeOff className="size-3.5" aria-hidden />
+                )}
+                <span>Arc Fan</span>
+            </button>
         </div>
     );
 }

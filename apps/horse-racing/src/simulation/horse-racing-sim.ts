@@ -67,6 +67,10 @@ function createKeyState(): KeyState {
 export type HorseRacingSimHandle = {
     cleanup: () => void;
     reloadTrack: (segments: TrackSegment[]) => void;
+    /** Toggle visibility of the fitted-arc fan debug overlay. */
+    setArcFanVisible: (visible: boolean) => void;
+    /** Current visibility of the fitted-arc fan overlay. */
+    arcFanVisible: () => boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -216,9 +220,15 @@ export async function attachHorseRacingSim(
         app.ticker.add(onTick);
     };
 
+    const setArcFanVisible = (visible: boolean): void => {
+        sim.arcFanGfx.visible = visible;
+    };
+
+    const arcFanVisible = (): boolean => sim.arcFanGfx.visible;
+
     cleanups.push(cleanup);
 
-    return { cleanup, reloadTrack };
+    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible };
 }
 
 // ---------------------------------------------------------------------------
@@ -302,10 +312,10 @@ function drawStraightRails(
     const inner = straightOffsetLine(seg, -hw);
     g.moveTo(outer.start.x, outer.start.y);
     g.lineTo(outer.end.x, outer.end.y);
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
     g.moveTo(inner.start.x, inner.start.y);
     g.lineTo(inner.end.x, inner.end.y);
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 }
 
 function drawStraightCenterline(g: Graphics, seg: StraightSegment): void {
@@ -386,13 +396,13 @@ function drawCurveRails(g: Graphics, seg: CurveSegment, hw: number): void {
     for (let i = 1; i < outerPts.length; i++) {
         g.lineTo(outerPts[i].x, outerPts[i].y);
     }
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 
     g.moveTo(innerPts[0].x, innerPts[0].y);
     for (let i = 1; i < innerPts.length; i++) {
         g.lineTo(innerPts[i].x, innerPts[i].y);
     }
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 }
 
 function drawCurveCenterline(g: Graphics, seg: CurveSegment): void {
@@ -435,13 +445,13 @@ const DEBUG_FENCE_STEP_DEG = 5;
  * Draws debug overlay showing physics collider boundaries, the track
  * centerline, and the fitted-arc fans (Crescent coverage area).
  */
-function drawDebugOverlay(g: Graphics, segments: TrackSegment[]): void {
+function drawDebugOverlay(g: Graphics, arcFanG: Graphics, segments: TrackSegment[]): void {
     for (const seg of segments) {
         if (seg.tracktype === 'STRAIGHT') {
             drawDebugStraightFences(g, seg);
             drawDebugStraightCenterline(g, seg);
         } else {
-            drawDebugFittedArcFan(g, seg);
+            drawDebugFittedArcFan(arcFanG, seg);
             drawDebugCurveOuterFence(g, seg);
             drawDebugCurveCenterline(g, seg);
             drawDebugCurveInnerRail(g, seg);
@@ -485,7 +495,7 @@ function drawDebugStraightFences(g: Graphics, seg: StraightSegment): void {
         }
         g.closePath();
         g.fill({ color: DEBUG_FENCE_COLOR, alpha: 0.15 });
-        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5 });
+        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5, pixelLine: true });
     }
 }
 
@@ -526,7 +536,7 @@ function drawDebugCurveOuterFence(g: Graphics, seg: CurveSegment): void {
         g.lineTo(p3.x, p3.y);
         g.closePath();
         g.fill({ color: DEBUG_FENCE_COLOR, alpha: 0.15 });
-        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5 });
+        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5, pixelLine: true });
     }
 }
 
@@ -542,11 +552,14 @@ function drawDebugCurveInnerRail(g: Graphics, seg: CurveSegment): void {
         4,
     );
     const pts = arcPoints(center, innerRadius, startA, span, steps);
+    // Draw closed crescent: arc + chord
     g.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length; i++) {
         g.lineTo(pts[i].x, pts[i].y);
     }
-    g.stroke({ width: 2, color: 0xff8800, alpha: 0.7 });
+    g.closePath();
+    g.fill({ color: 0xff8800, alpha: 0.1 });
+    g.stroke({ width: 1, color: 0xff8800, alpha: 0.7, pixelLine: true });
 }
 
 // ---- Centerline (solid, for debug contrast) ----
@@ -605,6 +618,8 @@ type SimState = {
     horseGfx: Map<string, Graphics>;
     trailGfx: Graphics;
     targetArcGfx: Graphics;
+    debugGfx: Graphics;
+    arcFanGfx: Graphics;
     trailCounter: number;
     teardown: () => void;
 };
@@ -632,12 +647,14 @@ function buildSim(
     drawTrack(trackGfx, segments);
     stage.addChild(trackGfx);
 
-    // Debug overlay (fences, centerline, fitted-arc fans)
+    // Debug overlay (fences, centerline) + separate arc-fan layer
     const debugGfx = new Graphics();
+    const arcFanGfx = new Graphics();
     if (DEBUG_TRAIL) {
-        drawDebugOverlay(debugGfx, segments);
+        drawDebugOverlay(debugGfx, arcFanGfx, segments);
     }
     stage.addChild(debugGfx);
+    stage.addChild(arcFanGfx);
 
     // Label
     const label = new Text({
@@ -688,6 +705,8 @@ function buildSim(
         trackGfx.destroy();
         stage.removeChild(debugGfx);
         debugGfx.destroy();
+        stage.removeChild(arcFanGfx);
+        arcFanGfx.destroy();
         stage.removeChild(label);
         label.destroy();
         stage.removeChild(trailGfx);
@@ -701,5 +720,5 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { engine, horseGfx, trailGfx, targetArcGfx, trailCounter: 0, teardown };
+    return { engine, horseGfx, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
 }
