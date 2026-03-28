@@ -9,7 +9,7 @@
  * drawControlPoints().
  */
 
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Assets, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js';
 import { Bezier } from 'bezier-js';
 import { PointCal, type Point } from '@ue-too/math';
 
@@ -45,6 +45,7 @@ export class TrackMakerRenderSystem {
     private container: Container;
 
     // Child containers for layering
+    private referenceImageContainer: Container;
     private curvesContainer: Container;
     private controlPointsContainer: Container;
     private labelsContainer: Container;
@@ -55,6 +56,9 @@ export class TrackMakerRenderSystem {
     private pointGraphics: Graphics;
     private arcFitGraphics: Graphics;
 
+    // Reference image for tracing
+    private referenceSprite: Sprite | null = null;
+
     private unsubscribe: (() => void) | null = null;
     private isEditMode = false;
 
@@ -63,12 +67,14 @@ export class TrackMakerRenderSystem {
         this.container = new Container();
         parentContainer.addChild(this.container);
 
-        // Layer order: curves (bottom) → arc fit → labels → control points (top)
+        // Layer order: reference image (bottom) → curves → arc fit → labels → control points (top)
+        this.referenceImageContainer = new Container();
         this.curvesContainer = new Container();
         this.arcFitContainer = new Container();
         this.labelsContainer = new Container();
         this.controlPointsContainer = new Container();
 
+        this.container.addChild(this.referenceImageContainer);
         this.container.addChild(this.curvesContainer);
         this.container.addChild(this.arcFitContainer);
         this.container.addChild(this.labelsContainer);
@@ -126,6 +132,41 @@ export class TrackMakerRenderSystem {
                 this.drawGrabbedPoint(curve, grabbed.pointIndex, grabbed.pointType!);
             }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Reference image for tracing
+    // ------------------------------------------------------------------
+
+    async setReferenceImage(dataUrl: string): Promise<void> {
+        this.clearReferenceImage();
+        const texture = await Assets.load(dataUrl);
+        this.referenceSprite = new Sprite(texture);
+        this.referenceSprite.anchor.set(0.5, 0.5);
+        this.referenceSprite.alpha = 0.3;
+        this.referenceImageContainer.addChild(this.referenceSprite);
+    }
+
+    clearReferenceImage(): void {
+        if (this.referenceSprite) {
+            this.referenceImageContainer.removeChild(this.referenceSprite);
+            this.referenceSprite.destroy();
+            this.referenceSprite = null;
+        }
+    }
+
+    setReferenceImageOpacity(opacity: number): void {
+        if (this.referenceSprite) {
+            this.referenceSprite.alpha = opacity;
+        }
+    }
+
+    getReferenceImageOpacity(): number {
+        return this.referenceSprite?.alpha ?? 0.3;
+    }
+
+    hasReferenceImage(): boolean {
+        return this.referenceSprite != null;
     }
 
     cleanup(): void {

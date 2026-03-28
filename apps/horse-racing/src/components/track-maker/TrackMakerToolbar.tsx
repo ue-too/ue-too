@@ -3,10 +3,12 @@ import {
     Eye,
     Grid3x3,
     Home,
+    Image,
     Magnet,
     Plus,
     Trash2,
     Upload,
+    X,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,10 +23,14 @@ export function TrackMakerToolbar() {
     const { t } = useTranslation();
     const { result } = usePixiCanvas<TrackMakerAppComponents>();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
     const [, forceUpdate] = useState(0);
+    const [hasRefImage, setHasRefImage] = useState(false);
+    const [refImageOpacity, setRefImageOpacity] = useState(0.3);
 
     const sm = result.initialized && result.success ? result.components.stateMachine : null;
     const model = result.initialized && result.success ? result.components.model : null;
+    const renderSystem = result.initialized && result.success ? result.components.renderSystem : null;
 
     // Re-render when model changes
     useEffect(() => {
@@ -94,6 +100,32 @@ export function TrackMakerToolbar() {
         if (!file) return;
         // TODO: import existing track JSON back into the editor
         e.target.value = '';
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !renderSystem) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+            await renderSystem.setReferenceImage(reader.result as string);
+            setHasRefImage(true);
+            setRefImageOpacity(renderSystem.getReferenceImageOpacity());
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
+
+    const handleClearRefImage = () => {
+        if (!renderSystem) return;
+        renderSystem.clearReferenceImage();
+        setHasRefImage(false);
+    };
+
+    const handleRefImageOpacity = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!renderSystem) return;
+        const val = parseFloat(e.target.value);
+        renderSystem.setReferenceImageOpacity(val);
+        setRefImageOpacity(val);
     };
 
     const handleSetScale = () => {
@@ -215,6 +247,50 @@ export function TrackMakerToolbar() {
                 accept=".json"
                 className="hidden"
                 onChange={handleFileUpload}
+            />
+
+            <span className="bg-border mx-1 h-4 w-px" />
+
+            {/* Reference image */}
+            <button
+                type="button"
+                className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                    hasRefImage ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => imageInputRef.current?.click()}
+                title="Upload reference image for tracing"
+            >
+                <Image className="size-3.5" aria-hidden />
+                <span>Ref Image</span>
+            </button>
+            {hasRefImage && (
+                <>
+                    <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={refImageOpacity}
+                        onChange={handleRefImageOpacity}
+                        className="w-16"
+                        title={`Opacity: ${Math.round(refImageOpacity * 100)}%`}
+                    />
+                    <button
+                        type="button"
+                        className="text-muted-foreground hover:text-red-500 text-xs transition-colors"
+                        onClick={handleClearRefImage}
+                        title="Remove reference image"
+                    >
+                        <X className="size-3.5" aria-hidden />
+                    </button>
+                </>
+            )}
+            <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
             />
         </div>
     );
