@@ -9,7 +9,8 @@ import { parseTrackJson, trackBounds } from './track-from-json';
 import type { TrackSegment } from './track-types';
 import { HorseRacingEngine } from './horse-racing-engine';
 import type { HorseAction, HorseObservation } from './horse-racing-engine';
-import { AIJockey } from './ai-jockey';
+import { generateRandomGenome } from './horse-genome';
+import { AIJockeyManager } from './ai-jockey';
 
 // ---------------------------------------------------------------------------
 // Constants (rendering only — simulation constants live in the engine)
@@ -99,18 +100,27 @@ export async function attachHorseRacingSim(
     const { app, cleanups } = components;
     const stage = app.stage;
 
-    // AI jockey for model-controlled horses
-    const aiJockey = new AIJockey();
+    // AI jockey manager for model-controlled horses
+    const aiManager = new AIJockeyManager();
     const aiControlled = new Set<number>();
-    let lastObservations: HorseObservation[] = [];
     let pendingAIActions: Map<number, HorseAction> = new Map();
 
-    // Load AI model in background (non-blocking)
-    aiJockey.load('/models/horse_jockey.onnx').then(() => {
-        console.log('[AI Jockey] Model loaded');
-    }).catch((err) => {
-        console.warn('[AI Jockey] Model not available:', err);
+    // Load shared AI model in background (non-blocking)
+    aiManager.loadShared('/models/horse_jockey.onnx').catch((err) => {
+        console.warn('[AI] Shared model not available:', err);
     });
+
+    // Try loading per-horse archetype models, then fall back to generic per-horse
+    const ARCHETYPE_NAMES = ['front_runner', 'stalker', 'closer', 'presser'];
+    for (let i = 0; i < 4; i++) {
+        const archetype = ARCHETYPE_NAMES[i % ARCHETYPE_NAMES.length];
+        aiManager.loadForHorse(i, `/models/jockey_${archetype}.onnx`).catch(() => {
+            // Try generic per-horse model as fallback
+            aiManager.loadForHorse(i, `/models/horse_${i}.onnx`).catch(() => {
+                // Will fall back to shared model
+            });
+        });
+    }
 
     let segments: TrackSegment[];
     if (preloadedSegments) {
@@ -155,10 +165,18 @@ export async function attachHorseRacingSim(
         const engine = sim.engine;
         const horseCount = engine.horseIds.length;
 
-        // Map keyboard / AI → actions
+        // Check if race is over (all horses finished)
+        if (sim.raceFinished) return;
+
+        // Map keyboard / AI → actions (skip finished horses)
         const actions: HorseAction[] = [];
         for (let i = 0; i < horseCount; i++) {
-            if (aiControlled.has(i) && pendingAIActions.has(i)) {
+            if (sim.finishedHorses.has(i)) {
+                // Freeze finished horse — counteract auto-cruise by braking
+                actions.push({ extraTangential: -20, extraNormal: 0 });
+                continue;
+            }
+            if (aiControlled.has(i) && pendingAIActions.has(i) && aiManager.hasModel(i)) {
                 // Use AI-computed action from previous tick's observation
                 actions.push(pendingAIActions.get(i)!);
             } else if (i === PLAYER_INDEX && !aiControlled.has(i)) {
@@ -177,14 +195,40 @@ export async function attachHorseRacingSim(
         // Step simulation
         const observations = engine.step(actions);
 
+        // Detect newly finished horses via the navigator's completedLap flag,
+        // which is set when a horse exits the last track segment.
+        const navs = sim.engine.navigators;
+        const bodyMap = sim.engine.world.getRigidBodyMap();
+        for (let i = 0; i < horseCount; i++) {
+            if (sim.finishedHorses.has(i)) continue;
+            if (navs[i].completedLap) {
+                sim.finishedHorses.add(i);
+                const pos = observations[i].position;
+                sim.finishPositions.set(i, {
+                    x: pos.x, y: pos.y,
+                    rotation: observations[i].orientationAngle,
+                });
+                sim.finishOrder.push(i);
+                // Freeze the horse so it stops moving
+                const body = bodyMap.get(engine.horseIds[i]);
+                if (body) {
+                    body.linearVelocity = { x: 0, y: 0 };
+                }
+                console.log(`[Race] Horse ${i} finished in position ${sim.finishOrder.length}`);
+            }
+        }
+        if (sim.finishedHorses.size >= horseCount) {
+            sim.raceFinished = true;
+            console.log('[Race] All horses finished! Final order:', sim.finishOrder);
+        }
+
         // Queue AI inference for next tick (async, non-blocking)
-        if (aiJockey.isReady && aiControlled.size > 0) {
+        // Pass all observations so agents can compute relative horse positions
+        if (aiManager.isReady && aiControlled.size > 0) {
             const aiIndices = [...aiControlled];
             const aiObs = aiIndices.map(i => observations[i]);
-            aiJockey.computeActions(aiObs).then((aiActions) => {
-                for (let j = 0; j < aiIndices.length; j++) {
-                    pendingAIActions.set(aiIndices[j], aiActions[j]);
-                }
+            aiManager.computeActions(aiIndices, aiObs, observations).then((actionMap) => {
+                pendingAIActions = actionMap;
             });
         }
 
@@ -194,7 +238,13 @@ export async function attachHorseRacingSim(
         for (let i = 0; i < horseCount; i++) {
             const id = engine.horseIds[i];
             const gr = sim.horseGfx.get(id);
-            if (gr) {
+            if (!gr) continue;
+            // Freeze finished horses at their finish position
+            const finishPos = sim.finishPositions.get(i);
+            if (finishPos) {
+                gr.position.set(finishPos.x, finishPos.y);
+                gr.rotation = finishPos.rotation;
+            } else {
                 gr.position.set(positions[i].x, positions[i].y);
                 gr.rotation = orientations[i];
             }
@@ -698,6 +748,10 @@ type SimState = {
     targetArcGfx: Graphics;
     debugGfx: Graphics;
     arcFanGfx: Graphics;
+    finishedHorses: Set<number>;
+    finishPositions: Map<number, { x: number; y: number; rotation: number }>;
+    finishOrder: number[];
+    raceFinished: boolean;
     trailCounter: number;
     teardown: () => void;
 };
@@ -706,7 +760,9 @@ function buildSim(
     stage: import('pixi.js').Container,
     segments: TrackSegment[],
 ): SimState {
-    const engine = new HorseRacingEngine(segments);
+    // Each horse gets a random genome for varied physical attributes
+    const genomes = Array.from({ length: 4 }, () => generateRandomGenome());
+    const engine = new HorseRacingEngine(segments, undefined, genomes);
     const bounds = trackBounds(segments, 120);
 
     // Turf background
@@ -807,5 +863,5 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { engine, trackGfx, horseGfx, aiLabel, trailGfx, targetArcGfx, debugGfx, arcFanGfx, trailCounter: 0, teardown };
+    return { engine, trackGfx, horseGfx, aiLabel, trailGfx, targetArcGfx, debugGfx, arcFanGfx, finishedHorses: new Set(), finishPositions: new Map(), finishOrder: [], raceFinished: false, trailCounter: 0, teardown };
 }

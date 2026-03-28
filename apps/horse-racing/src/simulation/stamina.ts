@@ -74,12 +74,17 @@ export function updateStamina(
         }
     }
 
-    // Recovery only when no drain sources are active
-    if (drain === 0) {
-        return Math.min(eff.stamina, currentStamina + eff.staminaRecovery);
+    // Recovery: always applies, but reduced when draining (prevents
+    // binary on/off exploit where agent alternates push/coast ticks).
+    if (drain > 0) {
+        const net = drain - eff.staminaRecovery * 0.25;
+        if (net > 0) {
+            return Math.max(0, currentStamina - net);
+        }
+        return Math.min(eff.stamina, currentStamina - net);
     }
 
-    return Math.max(0, currentStamina - drain);
+    return Math.min(eff.stamina, currentStamina + eff.staminaRecovery);
 }
 
 /**

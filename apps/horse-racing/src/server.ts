@@ -44,6 +44,11 @@ type TrajectoryPoint = {
     vy: number;
     tangentialVel: number;
     normalVel: number;
+    currentStamina: number;
+    effectiveCruiseSpeed: number;
+    effectiveMaxSpeed: number;
+    trackProgress: number;
+    activeModifierIds: string[];
 };
 
 function loadTrack(name: string) {
@@ -95,6 +100,11 @@ Bun.serve({
                         vy: o.velocity.y,
                         tangentialVel: o.tangentialVel,
                         normalVel: o.normalVel,
+                        currentStamina: o.currentStamina,
+                        effectiveCruiseSpeed: o.effectiveCruiseSpeed,
+                        effectiveMaxSpeed: o.effectiveMaxSpeed,
+                        trackProgress: o.trackProgress,
+                        activeModifierIds: [...o.activeModifierIds],
                     })),
                 );
             }

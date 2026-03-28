@@ -21,6 +21,7 @@ import {
     expressGenome,
     expressModifiers,
     resolveEffectiveAttributes,
+    evaluateModifierConditions,
     DEFAULT_CORE_ATTRIBUTES,
 } from './horse-attributes';
 import type { RaceContext } from './modifiers';
@@ -89,6 +90,14 @@ export type HorseObservation = {
     corneringMargin: number;
     /** Grade of current segment (rise/run). 0 = flat. */
     slope: number;
+    /** Fraction [0, 1] of track completed. */
+    trackProgress: number;
+    /** Effective pushing power attribute. */
+    pushingPower: number;
+    /** Effective push resistance attribute. */
+    pushResistance: number;
+    /** Set of modifier IDs whose conditions are met this tick. */
+    activeModifierIds: Set<string>;
 };
 
 /**
@@ -250,6 +259,7 @@ export class HorseRacingEngine {
 
         // Resolve effective attributes and apply forces per horse
         const effectiveAttrs: EffectiveAttributes[] = [];
+        const firedModifiers: Set<string>[] = [];
 
         // Resolve effective attributes once per tick (expensive)
         const resolvedActions: HorseAction[] = [];
@@ -257,6 +267,7 @@ export class HorseRacingEngine {
             const h = map.get(ids[i]);
             if (!h) {
                 effectiveAttrs.push(DEFAULT_CORE_ATTRIBUTES);
+                firedModifiers.push(new Set());
                 resolvedActions.push({ extraTangential: 0, extraNormal: 0 });
                 continue;
             }
@@ -274,6 +285,7 @@ export class HorseRacingEngine {
             );
             eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
             effectiveAttrs.push(eff);
+            firedModifiers.push(evaluateModifierConditions(state.activeModifiers, raceCtx, i));
             resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
             // Update stamina (once per tick)
@@ -299,6 +311,8 @@ export class HorseRacingEngine {
             for (let i = 0; i < ids.length; i++) {
                 const h = map.get(ids[i]);
                 if (!h) continue;
+                // Skip force application for horses that have finished
+                if (navs[i].completedLap) continue;
 
                 const nav = navs[i];
                 const frame = nav.getTrackFrame(h.center);
@@ -370,6 +384,7 @@ export class HorseRacingEngine {
         }
 
         // Update navigators and build observations
+        const totalSegments = this._segments.length;
         const observations: HorseObservation[] = [];
         for (let i = 0; i < ids.length; i++) {
             const body = map.get(ids[i]);
@@ -378,7 +393,7 @@ export class HorseRacingEngine {
                 continue;
             }
 
-            navs[i].updateSegment(body.center);
+            if (!navs[i].completedLap) navs[i].updateSegment(body.center);
             const frame = navs[i].getTrackFrame(body.center);
             const v = body.linearVelocity;
 
@@ -414,6 +429,12 @@ export class HorseRacingEngine {
                     frame.turnRadius,
                 ),
                 slope: frame.slope,
+                trackProgress: totalSegments > 0
+                    ? navs[i].segmentIndex / totalSegments
+                    : 0,
+                pushingPower: eff.pushingPower,
+                pushResistance: eff.pushResistance,
+                activeModifierIds: firedModifiers[i] ?? new Set(),
             });
         }
 
@@ -572,10 +593,14 @@ export class HorseRacingEngine {
             normal: { x: 0, y: -1 },
             currentStamina: state?.currentStamina ?? 100,
             maxStamina: state?.baseAttributes.stamina ?? 100,
-            effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 13,
-            effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 20,
+            effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 14.25,
+            effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 18,
             corneringMargin: Infinity,
             slope: 0,
+            trackProgress: 0,
+            pushingPower: state?.baseAttributes.pushingPower ?? 0.5,
+            pushResistance: state?.baseAttributes.pushResistance ?? 0.5,
+            activeModifierIds: new Set(),
         };
     }
 }

@@ -30,14 +30,14 @@ export type CoreTraitName =
  * @group Attributes
  */
 export const TRAIT_RANGES: Record<CoreTraitName, { min: number; max: number }> = {
-    cruiseSpeed:     { min: 8,   max: 18 },
-    maxSpeed:        { min: 15,  max: 25 },
+    cruiseSpeed:     { min: 12,  max: 16.5 },
+    maxSpeed:        { min: 16,  max: 20 },
     forwardAccel:    { min: 0.5, max: 1.5 },
     turnAccel:       { min: 0.5, max: 1.5 },
     corneringGrip:   { min: 0.5, max: 1.5 },
     stamina:         { min: 50,  max: 150 },
     staminaRecovery: { min: 0.5, max: 2.0 },
-    weight:          { min: 400, max: 600 },
+    weight:          { min: 430, max: 550 },
     pushingPower:    { min: 0,   max: 1.0 },
     pushResistance:  { min: 0,   max: 1.0 },
 };
@@ -198,6 +198,32 @@ export function resolveEffectiveAttributes(
     return result as EffectiveAttributes;
 }
 
+/**
+ * Returns the set of modifier IDs whose conditions are met this tick.
+ *
+ * @param activeModifiers - Modifiers this horse has (from genome)
+ * @param ctx - Current race state for evaluating conditions
+ * @param horseIndex - Index of this horse in the race
+ * @returns Set of modifier ID strings that are active this tick
+ *
+ * @group Attributes
+ */
+export function evaluateModifierConditions(
+    activeModifiers: ActiveModifier[],
+    ctx: RaceContext,
+    horseIndex: number,
+): Set<string> {
+    const fired = new Set<string>();
+    for (const mod of activeModifiers) {
+        const defn: ModifierDefinition | undefined = MODIFIER_REGISTRY[mod.id];
+        if (!defn) continue;
+        if (defn.condition(ctx, horseIndex)) {
+            fired.add(mod.id);
+        }
+    }
+    return fired;
+}
+
 // ---------------------------------------------------------------------------
 // Default attributes (for backwards compatibility / testing)
 // ---------------------------------------------------------------------------
@@ -208,14 +234,14 @@ export function resolveEffectiveAttributes(
  * @group Attributes
  */
 export const DEFAULT_CORE_ATTRIBUTES: CoreAttributes = {
-    cruiseSpeed: 13,
-    maxSpeed: 20,
+    cruiseSpeed: 14.25,
+    maxSpeed: 18,
     forwardAccel: 1.0,
     turnAccel: 1.0,
     corneringGrip: 1.0,
     stamina: 100,
     staminaRecovery: 1.0,
-    weight: 500,
+    weight: 490,
     pushingPower: 0.5,
     pushResistance: 0.5,
 };

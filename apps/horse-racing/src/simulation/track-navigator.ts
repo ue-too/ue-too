@@ -40,6 +40,8 @@ export class TrackNavigator {
     private halfTrackWidth: number;
     /** Distance from the curve center when the horse entered the current curve segment. */
     private curveEntryRadius = NaN;
+    /** True once the horse has exited the last segment (crossed the finish line). */
+    private _completedLap = false;
 
     constructor(segments: TrackSegment[], startIndex = 0, halfTrackWidth = 15) {
         this.segments = segments;
@@ -49,6 +51,10 @@ export class TrackNavigator {
 
     get segmentIndex(): number {
         return this.currentIndex;
+    }
+
+    get completedLap(): boolean {
+        return this._completedLap;
     }
 
     get segment(): TrackSegment {
@@ -93,6 +99,9 @@ export class TrackNavigator {
         }
 
         if (exited) {
+            if (this.currentIndex === this.segments.length - 1) {
+                this._completedLap = true;
+            }
             const prevSeg = seg;
             this.currentIndex =
                 (this.currentIndex + 1) % this.segments.length;

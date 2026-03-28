@@ -134,41 +134,76 @@ export function HorseRacingToolbar() {
     );
 }
 
-const AI_HORSE_INDEX = 1; // Horse 1 (brown) — horse 0 is player-controlled
+const HORSE_NAMES = ['Gold', 'Brown', 'Blue', 'White'];
+const PLAYER_INDEX = 0;
 
 function AIToggle() {
     const { result } = usePixiCanvas<HorseRacingAppComponents>();
-    const [aiEnabled, setAiEnabled] = useState(false);
+    const [aiHorses, setAiHorses] = useState<Set<number>>(new Set());
 
     const handle = result.initialized && result.success ? result.components.simHandle : null;
 
-    const toggle = () => {
+    const toggleHorse = (idx: number) => {
         if (!handle) return;
-        if (aiEnabled) {
-            handle.disableAI(AI_HORSE_INDEX);
+        const next = new Set(aiHorses);
+        if (next.has(idx)) {
+            next.delete(idx);
+            handle.disableAI(idx);
         } else {
-            handle.enableAI(AI_HORSE_INDEX);
+            next.add(idx);
+            handle.enableAI(idx);
         }
-        setAiEnabled(!aiEnabled);
+        setAiHorses(next);
     };
 
+    const toggleAll = () => {
+        if (!handle) return;
+        // Toggle all non-player horses
+        const nonPlayer = [1, 2, 3];
+        const allEnabled = nonPlayer.every(i => aiHorses.has(i));
+        const next = new Set(aiHorses);
+        for (const i of nonPlayer) {
+            if (allEnabled) {
+                next.delete(i);
+                handle.disableAI(i);
+            } else {
+                next.add(i);
+                handle.enableAI(i);
+            }
+        }
+        setAiHorses(next);
+    };
+
+    const anyEnabled = aiHorses.size > 0;
+
     return (
-        <button
-            type="button"
-            className={`inline-flex items-center gap-1 text-xs transition-colors ${
-                aiEnabled
-                    ? 'text-green-600'
-                    : 'text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={toggle}
-            title="Toggle AI control for horse 1 (brown)"
-        >
-            {aiEnabled ? (
-                <Bot className="size-3.5" aria-hidden />
-            ) : (
-                <BotOff className="size-3.5" aria-hidden />
-            )}
-            <span>{aiEnabled ? 'AI (Horse 2)' : 'AI'}</span>
-        </button>
+        <div className="flex items-center gap-1">
+            <button
+                type="button"
+                className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                    anyEnabled ? 'text-green-600' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={toggleAll}
+                title="Toggle AI for all non-player horses"
+            >
+                {anyEnabled ? <Bot className="size-3.5" aria-hidden /> : <BotOff className="size-3.5" aria-hidden />}
+                <span>AI</span>
+            </button>
+            {[1, 2, 3].map((idx) => (
+                <button
+                    key={idx}
+                    type="button"
+                    className={`rounded px-1 py-0.5 text-[10px] font-medium transition-colors ${
+                        aiHorses.has(idx)
+                            ? 'bg-green-600 text-white'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => toggleHorse(idx)}
+                    title={`Toggle AI for ${HORSE_NAMES[idx]}`}
+                >
+                    {HORSE_NAMES[idx]}
+                </button>
+            ))}
+        </div>
     );
 }
