@@ -20,7 +20,9 @@ export type CoreTraitName =
     | 'corneringGrip'
     | 'stamina'
     | 'staminaRecovery'
-    | 'weight';
+    | 'weight'
+    | 'pushingPower'
+    | 'pushResistance';
 
 /**
  * Min/max range for each core trait.
@@ -36,12 +38,15 @@ export const TRAIT_RANGES: Record<CoreTraitName, { min: number; max: number }> =
     stamina:         { min: 50,  max: 150 },
     staminaRecovery: { min: 0.5, max: 2.0 },
     weight:          { min: 400, max: 600 },
+    pushingPower:    { min: 0,   max: 1.0 },
+    pushResistance:  { min: 0,   max: 1.0 },
 };
 
 /** All core trait names as an array for iteration. */
 export const CORE_TRAIT_NAMES: CoreTraitName[] = [
     'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
     'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+    'pushingPower', 'pushResistance',
 ];
 
 // ---------------------------------------------------------------------------
@@ -63,6 +68,8 @@ export type CoreAttributes = {
     stamina: number;
     staminaRecovery: number;
     weight: number;
+    pushingPower: number;
+    pushResistance: number;
 };
 
 /**
@@ -97,9 +104,11 @@ export type ActiveModifier = {
  */
 export function expressGenome(genome: HorseGenome): CoreAttributes {
     const attrs = {} as Record<CoreTraitName, number>;
+    const defaultGene = { sire: 0.5, dam: 0.5 };
     for (const trait of CORE_TRAIT_NAMES) {
         const range = TRAIT_RANGES[trait];
-        attrs[trait] = expressCoreTrait(genome.core[trait], range.min, range.max);
+        const gene = genome.core[trait] ?? defaultGene;
+        attrs[trait] = expressCoreTrait(gene, range.min, range.max);
     }
     return attrs as CoreAttributes;
 }
@@ -207,4 +216,6 @@ export const DEFAULT_CORE_ATTRIBUTES: CoreAttributes = {
     stamina: 100,
     staminaRecovery: 1.0,
     weight: 500,
+    pushingPower: 0.5,
+    pushResistance: 0.5,
 };

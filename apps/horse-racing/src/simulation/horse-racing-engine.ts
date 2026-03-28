@@ -286,6 +286,13 @@ export class HorseRacingEngine {
             );
         }
 
+        // Precompute collision mass multipliers (push traits scale mass for collision only)
+        const collisionMassMultipliers: number[] = [];
+        for (let i = 0; i < ids.length; i++) {
+            const eff = effectiveAttrs[i];
+            collisionMassMultipliers.push((1 + eff.pushingPower) * (1 + eff.pushResistance));
+        }
+
         // Physics substeps — recompute forces each substep so centripetal
         // direction stays accurate and the force isn't lost after step().
         for (let s = 0; s < cfg.physSubsteps; s++) {
@@ -340,7 +347,26 @@ export class HorseRacingEngine {
                 );
             }
 
+            // Swap to collision masses before world.step (collision uses body._mass).
+            // Scale force proportionally so integration (force/_mass * dt) still
+            // produces the same acceleration as with the base weight.
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                const mult = collisionMassMultipliers[i];
+                (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight * mult;
+                // Scale force by same multiplier so accel = force/(weight*mult) = originalForce/weight
+                h.force = PointCal.multiplyVectorByScalar(h.force, mult);
+            }
+
             world.step(fixedDt);
+
+            // Restore base weight for next substep's force calculation
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight;
+            }
         }
 
         // Update navigators and build observations
