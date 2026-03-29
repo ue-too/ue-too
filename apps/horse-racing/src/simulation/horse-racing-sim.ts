@@ -9,30 +9,31 @@ import { parseTrackJson, trackBounds } from './track-from-json';
 import type { TrackSegment } from './track-types';
 import { HorseRacingEngine } from './horse-racing-engine';
 import type { HorseAction, HorseObservation } from './horse-racing-engine';
-import { generateRandomGenome } from './horse-genome';
+import { generateDefaultGenome } from './horse-genome';
 import { AIJockeyManager } from './ai-jockey';
 
 // ---------------------------------------------------------------------------
 // Constants (rendering only — simulation constants live in the engine)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TRACK_URL = '/tracks/exp_track_8.json';
+const DEFAULT_TRACK_URL = '/tracks/hanshin.json';
 
 const HORSE_COLORS = [0xc9a227, 0x8b4513, 0x4169e1, 0xffffff];
+const ARCHETYPE_NAMES = ['front_runner', 'stalker', 'closer', 'presser'];
 const PLAYER_INDEX = 0;
 const PLAYER_TANGENTIAL = 10; // player UP/DOWN acceleration magnitude
 const PLAYER_NORMAL = 5; // player LEFT/RIGHT acceleration magnitude
 
 // Debug
 const DEBUG_TRAIL = true;
-const TRAIL_DOT_INTERVAL = 5; // record every N ticks
-const TRAIL_DOT_RADIUS = 1.5;
+const TRAIL_SAMPLE_INTERVAL = 5; // record every N ticks
+const TRAIL_LINE_WIDTH = 1;
 const DEBUG_FENCE_COLOR = 0xff4444;
 const DEBUG_CENTERLINE_COLOR = 0x00ff00;
 const DEBUG_FAN_COLOR = 0x00ccff;
 
 // Track rendering — derive from default horse layout so fences contain all horses
-const TRACK_HALF_WIDTH = 3 * 4 + 1.3; // horseSpacing * horseCount + horseRadius = 13.3
+const TRACK_HALF_WIDTH = 1.0 * 20 / 2 + 0.325; // horseSpacing * maxHorseCount / 2 + horseHalfWidth = 10.325
 const RAIL_COLOR = 0xcccccc;
 const RAIL_WIDTH = 2;
 const TRACK_SURFACE_COLOR = 0x8b7355;
@@ -79,6 +80,10 @@ export type HorseRacingSimHandle = {
     disableAI: (horseIndex: number) => void;
     /** Whether AI is controlling a specific horse. */
     isAIEnabled: (horseIndex: number) => boolean;
+    /** Start the race (simulation is paused until this is called). */
+    startRace: () => void;
+    /** Whether the race has been started. */
+    isRaceStarted: () => boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -104,23 +109,17 @@ export async function attachHorseRacingSim(
     const aiManager = new AIJockeyManager();
     const aiControlled = new Set<number>();
     let pendingAIActions: Map<number, HorseAction> = new Map();
+    let raceStarted = false;
 
-    // Load shared AI model in background (non-blocking)
-    aiManager.loadShared('/models/horse_jockey.onnx').catch((err) => {
-        console.warn('[AI] Shared model not available:', err);
-    });
-
-    // Try loading per-horse archetype models, then fall back to generic per-horse
-    const ARCHETYPE_NAMES = ['front_runner', 'stalker', 'closer', 'presser'];
-    for (let i = 0; i < 4; i++) {
-        const archetype = ARCHETYPE_NAMES[i % ARCHETYPE_NAMES.length];
-        aiManager.loadForHorse(i, `/models/jockey_${archetype}.onnx`).catch(() => {
-            // Try generic per-horse model as fallback
-            aiManager.loadForHorse(i, `/models/horse_${i}.onnx`).catch(() => {
-                // Will fall back to shared model
-            });
+    // Load per-archetype models (horse 0=front_runner, 1=stalker, 2=closer, 3=presser)
+    for (let i = 0; i < ARCHETYPE_NAMES.length; i++) {
+        aiManager.loadForHorse(i, `/models/jockey_${ARCHETYPE_NAMES[i]}.onnx`).catch(() => {
+            console.warn(`[AI] No model for ${ARCHETYPE_NAMES[i]}`);
         });
     }
+
+    // Enable AI for all horses by default
+    for (let i = 0; i < 4; i++) aiControlled.add(i);
 
     let segments: TrackSegment[];
     if (preloadedSegments) {
@@ -164,6 +163,9 @@ export async function attachHorseRacingSim(
 
         const engine = sim.engine;
         const horseCount = engine.horseIds.length;
+
+        // Wait for start button before running the simulation
+        if (!raceStarted) return;
 
         // Check if race is over (all horses finished)
         if (sim.raceFinished) return;
@@ -250,25 +252,34 @@ export async function attachHorseRacingSim(
             }
         }
 
-        // Update AI label position and visibility
-        if (aiControlled.size > 0) {
-            const aiIdx = [...aiControlled][0]; // show label on first AI horse
-            sim.aiLabel.visible = true;
-            sim.aiLabel.position.set(positions[aiIdx].x, positions[aiIdx].y);
-        } else {
-            sim.aiLabel.visible = false;
+        // Update per-horse archetype labels (scale inversely with zoom for consistent screen size)
+        const labelScale = 1 / curScale;
+        for (let i = 0; i < horseCount && i < sim.aiLabels.length; i++) {
+            if (aiControlled.has(i)) {
+                sim.aiLabels[i].visible = true;
+                sim.aiLabels[i].position.set(positions[i].x, positions[i].y);
+                sim.aiLabels[i].scale.set(labelScale, labelScale);
+            } else {
+                sim.aiLabels[i].visible = false;
+            }
         }
 
         // --- Debug: racing line trail + target arc overlay ---
         if (DEBUG_TRAIL) {
             sim.trailCounter += 1;
 
-            // Dot trail (sampled)
-            if (sim.trailCounter % TRAIL_DOT_INTERVAL === 0) {
+            // Line trail (sampled)
+            if (sim.trailCounter % TRAIL_SAMPLE_INTERVAL === 0) {
                 for (let i = 0; i < horseCount; i++) {
-                    sim.trailGfx
-                        .circle(positions[i].x, positions[i].y, TRAIL_DOT_RADIUS)
-                        .fill({ color: HORSE_COLORS[i % HORSE_COLORS.length], alpha: 0.7 });
+                    const prev = sim.trailPrevPos[i];
+                    const cur = positions[i];
+                    if (prev) {
+                        sim.trailGfx
+                            .moveTo(prev.x, prev.y)
+                            .lineTo(cur.x, cur.y)
+                            .stroke({ width: TRAIL_LINE_WIDTH, color: HORSE_COLORS[i % HORSE_COLORS.length], alpha: 0.7, pixelLine: true });
+                    }
+                    sim.trailPrevPos[i] = { x: cur.x, y: cur.y };
                 }
             }
 
@@ -300,6 +311,7 @@ export async function attachHorseRacingSim(
                     width: 1,
                     color: HORSE_COLORS[i % HORSE_COLORS.length],
                     alpha: 0.5,
+                    pixelLine: true,
                 });
             }
         }
@@ -354,7 +366,10 @@ export async function attachHorseRacingSim(
 
     const isAIEnabled = (horseIndex: number): boolean => aiControlled.has(horseIndex);
 
-    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible, enableAI, disableAI, isAIEnabled };
+    const startRace = (): void => { raceStarted = true; };
+    const isRaceStarted = (): boolean => raceStarted;
+
+    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible, enableAI, disableAI, isAIEnabled, startRace, isRaceStarted };
 }
 
 // ---------------------------------------------------------------------------
@@ -743,7 +758,7 @@ type SimState = {
     engine: HorseRacingEngine;
     trackGfx: Graphics;
     horseGfx: Map<string, Graphics>;
-    aiLabel: Text;
+    aiLabels: Text[];
     trailGfx: Graphics;
     targetArcGfx: Graphics;
     debugGfx: Graphics;
@@ -753,6 +768,7 @@ type SimState = {
     finishOrder: number[];
     raceFinished: boolean;
     trailCounter: number;
+    trailPrevPos: (Point | null)[];
     teardown: () => void;
 };
 
@@ -761,7 +777,7 @@ function buildSim(
     segments: TrackSegment[],
 ): SimState {
     // Each horse gets a random genome for varied physical attributes
-    const genomes = Array.from({ length: 4 }, () => generateRandomGenome());
+    const genomes = Array.from({ length: 4 }, () => generateDefaultGenome());
     const engine = new HorseRacingEngine(segments, undefined, genomes);
     const bounds = trackBounds(segments, 120);
 
@@ -808,32 +824,39 @@ function buildSim(
 
     // Horse graphics (bodies are owned by the engine)
     const horseGfx = new Map<string, Graphics>();
-    const horseRadius = engine.config.horseRadius;
+    const horseHL = engine.config.horseHalfLength;
+    const horseHW = engine.config.horseHalfWidth;
     const positions = engine.getHorsePositions();
 
     for (let i = 0; i < engine.horseIds.length; i++) {
         const id = engine.horseIds[i];
         const g = new Graphics();
-        g.rect(-horseRadius, -horseRadius * 0.6, horseRadius * 2, horseRadius * 1.2).fill({
+        g.rect(-horseHL, -horseHW, horseHL * 2, horseHW * 2).fill({
             color: HORSE_COLORS[i % HORSE_COLORS.length],
         });
         // Direction indicator line
         g.moveTo(0, 0);
-        g.lineTo(horseRadius * 0.8, 0);
-        g.stroke({ width: 2, color: 0x000000 });
+        g.lineTo(horseHL * 0.6, 0);
+        g.stroke({ width: 1, color: 0x000000 });
         g.position.set(positions[i].x, positions[i].y);
         stage.addChild(g);
         horseGfx.set(id, g);
     }
 
-    // AI label — floats above AI-controlled horse
-    const aiLabel = new Text({
-        text: 'AI',
-        style: { fontSize: 4, fill: 0x00cc00, fontFamily: 'sans-serif', fontWeight: 'bold' },
-    });
-    aiLabel.anchor.set(0.5, 1.5);
-    aiLabel.visible = false;
-    stage.addChild(aiLabel);
+    // Per-horse archetype labels
+    const aiLabels: Text[] = [];
+    for (let i = 0; i < engine.horseIds.length; i++) {
+        const archetypeName = i < ARCHETYPE_NAMES.length ? ARCHETYPE_NAMES[i] : 'AI';
+        const label = new Text({
+            text: archetypeName,
+            style: { fontSize: 14, fill: HORSE_COLORS[i % HORSE_COLORS.length], fontFamily: 'sans-serif', fontWeight: 'bold' },
+        });
+        label.anchor.set(0.5, 2.5);
+        label.visible = false;
+        label.scale.set(0.15, 0.15);
+        stage.addChild(label);
+        aiLabels.push(label);
+    }
 
     // Debug trail graphics
     const trailGfx = new Graphics();
@@ -863,5 +886,6 @@ function buildSim(
         horseGfx.clear();
     };
 
-    return { engine, trackGfx, horseGfx, aiLabel, trailGfx, targetArcGfx, debugGfx, arcFanGfx, finishedHorses: new Set(), finishPositions: new Map(), finishOrder: [], raceFinished: false, trailCounter: 0, teardown };
+    const trailPrevPos: (Point | null)[] = new Array(engine.horseIds.length).fill(null);
+    return { engine, trackGfx, horseGfx, aiLabels, trailGfx, targetArcGfx, debugGfx, arcFanGfx, finishedHorses: new Set(), finishPositions: new Map(), finishOrder: [], raceFinished: false, trailCounter: 0, trailPrevPos, teardown };
 }

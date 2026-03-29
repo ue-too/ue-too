@@ -1,4 +1,4 @@
-import { Bot, BotOff, Eye, EyeOff, Home, Upload } from 'lucide-react';
+import { Bot, BotOff, Eye, EyeOff, Home, Play, Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -9,15 +9,13 @@ import { parseTrackJson } from '@/simulation/track-from-json';
 import type { HorseRacingAppComponents } from '@/utils/init-app';
 
 const TRACK_PRESETS = [
+    { label: 'Tokyo', url: '/tracks/tokyo.json' },
+    { label: 'Hanshin', url: '/tracks/hanshin.json' },
+    { label: 'Kokura', url: '/tracks/kokura.json' },
+    { label: 'Kyoto', url: '/tracks/kyoto.json' },
+    { label: 'Tokyo 2600', url: '/tracks/tokyo_2600.json' },
+    { label: 'Test Oval', url: '/tracks/test_oval.json' },
     { label: 'exp_track_8', url: '/tracks/exp_track_8.json' },
-    { label: 'exp_track_7', url: '/tracks/exp_track_7.json' },
-    { label: 'exp_track_6', url: '/tracks/exp_track_6.json' },
-    { label: 'exp_track_5', url: '/tracks/exp_track_5.json' },
-    { label: 'exp_track_4', url: '/tracks/exp_track_4.json' },
-    { label: 'exp_track_3', url: '/tracks/exp_track_3.json' },
-    { label: 'exp_track_2', url: '/tracks/exp_track_2.json' },
-    { label: 'exp_track', url: '/tracks/exp_track.json' },
-    { label: 'track', url: '/tracks/track.json' },
 ];
 
 export function HorseRacingToolbar() {
@@ -130,6 +128,10 @@ export function HorseRacingToolbar() {
             <span className="bg-border mx-1 h-4 w-px" />
 
             <AIToggle />
+
+            <span className="bg-border mx-1 h-4 w-px" />
+
+            <StartRaceButton />
         </div>
     );
 }
@@ -137,9 +139,39 @@ export function HorseRacingToolbar() {
 const HORSE_NAMES = ['Gold', 'Brown', 'Blue', 'White'];
 const PLAYER_INDEX = 0;
 
+function StartRaceButton() {
+    const { result } = usePixiCanvas<HorseRacingAppComponents>();
+    const [started, setStarted] = useState(false);
+
+    const handle = result.initialized && result.success ? result.components.simHandle : null;
+
+    const start = () => {
+        if (!handle || started) return;
+        handle.startRace();
+        setStarted(true);
+    };
+
+    return (
+        <button
+            type="button"
+            className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                started
+                    ? 'bg-muted text-muted-foreground cursor-default'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+            onClick={start}
+            disabled={started}
+        >
+            <Play className="size-3.5" aria-hidden />
+            <span>{started ? 'Racing...' : 'Start Race'}</span>
+        </button>
+    );
+}
+
 function AIToggle() {
     const { result } = usePixiCanvas<HorseRacingAppComponents>();
-    const [aiHorses, setAiHorses] = useState<Set<number>>(new Set());
+    // All horses start AI-enabled (matching sim default)
+    const [aiHorses, setAiHorses] = useState<Set<number>>(new Set([0, 1, 2, 3]));
 
     const handle = result.initialized && result.success ? result.components.simHandle : null;
 

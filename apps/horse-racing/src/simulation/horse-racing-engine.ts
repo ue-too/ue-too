@@ -1,4 +1,4 @@
-import { Circle, World } from '@ue-too/dynamics';
+import { Polygon, World } from '@ue-too/dynamics';
 import { PointCal } from '@ue-too/math';
 import type { Point } from '@ue-too/math';
 
@@ -108,7 +108,10 @@ export type HorseObservation = {
  */
 export type SimConfig = {
     horseCount: number;
-    horseRadius: number;
+    /** Rectangle half-length (nose to center), meters. */
+    horseHalfLength: number;
+    /** Rectangle half-width (shoulder to center), meters. */
+    horseHalfWidth: number;
     horseSpacing: number;
     physHz: number;
     physSubsteps: number;
@@ -121,8 +124,9 @@ export type SimConfig = {
 /** @internal */
 const DEFAULT_CONFIG: SimConfig = {
     horseCount: 4,
-    horseRadius: 1.3,
-    horseSpacing: 3,
+    horseHalfLength: 1.25,  // 2.5 m nose-to-tail
+    horseHalfWidth: 0.325,  // 0.65 m shoulder width
+    horseSpacing: 1.0,      // 1 m lane spacing
     physHz: 240,
     physSubsteps: 8,
     normalDamp: 0.5,
@@ -190,9 +194,11 @@ export class HorseRacingEngine {
     ) {
         this._config = { ...DEFAULT_CONFIG, ...config };
         this._segments = segments;
+        // Track wide enough for max 20 horses centered + clearance
+        const maxHorseCount = 20;
         this._halfTrackWidth =
-            this._config.horseSpacing * this._config.horseCount +
-            this._config.horseRadius;
+            this._config.horseSpacing * maxHorseCount / 2 +
+            this._config.horseHalfWidth; // ~10.325 m
 
         // Resolve genomes
         this._genomes = [];
@@ -395,6 +401,7 @@ export class HorseRacingEngine {
 
             if (!navs[i].completedLap) navs[i].updateSegment(body.center);
             const frame = navs[i].getTrackFrame(body.center);
+
             const v = body.linearVelocity;
 
             const tangentialVel = PointCal.dotProduct(v, frame.tangential);
@@ -497,25 +504,42 @@ export class HorseRacingEngine {
         const startPositions: Point[] = [];
         const horseStates: HorseState[] = [];
 
+        // Spawn horses from the inner rail outward.
+        // outward points toward the outer rail, so the innermost
+        // position is at the most negative lateral offset.
+        const innerEdge = -(this._halfTrackWidth - cfg.horseSpacing);
+
+        // Rectangle vertices in local coordinates (horse-shaped)
+        const hl = cfg.horseHalfLength;
+        const hw = cfg.horseHalfWidth;
+        const rectVertices: Point[] = [
+            { x: hl, y: hw },
+            { x: hl, y: -hw },
+            { x: -hl, y: -hw },
+            { x: -hl, y: hw },
+        ];
+
         for (let i = 0; i < cfg.horseCount; i++) {
             const id = `horse-${i}`;
+            const lateral = innerEdge + cfg.horseSpacing * i;
             const pos = PointCal.addVector(
                 frame.origin,
-                PointCal.multiplyVectorByScalar(
-                    frame.outward,
-                    cfg.horseSpacing * (i + 1),
-                ),
+                PointCal.multiplyVectorByScalar(frame.outward, lateral),
             );
 
             const genome = this._genomes[i];
             const baseAttributes = expressGenome(genome);
             const activeModifiers = expressModifiers(genome);
 
-            const body = new Circle(pos, cfg.horseRadius, 0, baseAttributes.weight, false, false);
+            const nav = new TrackNavigator(segments, 0, this._halfTrackWidth);
+            // Orient each horse along the track tangent at its spawn position
+            const spawnFrame = nav.getTrackFrame(pos);
+            const orientAngle = Math.atan2(spawnFrame.tangential.y, spawnFrame.tangential.x);
+            const body = new Polygon(pos, rectVertices, orientAngle, baseAttributes.weight, false, false);
             world.addRigidBody(id, body);
             horseIds.push(id);
             startPositions.push({ x: pos.x, y: pos.y });
-            navigators.push(new TrackNavigator(segments, 0, this._halfTrackWidth));
+            navigators.push(nav);
 
             horseStates.push({
                 genome,

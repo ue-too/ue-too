@@ -1,0 +1,13 @@
+[
+  {
+    "tracktype": "STRAIGHT",
+    "startPoint": {
+      "x": 0,
+      "y": 0
+    },
+    "endPoint": {
+      "x": 400,
+      "y": 0
+    }
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "tracktype": "STRAIGHT",
+    "startPoint": {
+      "x": 0,
+      "y": 0
+    },
+    "endPoint": {
+      "x": 500,
+      "y": 0
+    }
+  },
+  {
+    "tracktype": "CURVE",
+    "startPoint": {
+      "x": 500,
+      "y": 0
+    },
+    "endPoint": {
+      "x": 500,
+      "y": 600
+    },
+    "center": {
+      "x": 500,
+      "y": 300
+    },
+    "radius": 300,
+    "angleSpan": -3.141592653589793
+  },
+  {
+    "tracktype": "STRAIGHT",
+    "startPoint": {
+      "x": 500,
+      "y": 600
+    },
+    "endPoint": {
+      "x": 0,
+      "y": 600
+    }
+  },
+  {
+    "tracktype": "CURVE",
+    "startPoint": {
+      "x": 0,
+      "y": 600
+    },
+    "endPoint": {
+      "x": 0,
+      "y": 0
+    },
+    "center": {
+      "x": 0,
+      "y": 300
+    },
+    "radius": 300,
+    "angleSpan": -3.141592653589793
+  }
+]

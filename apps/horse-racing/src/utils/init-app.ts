@@ -25,6 +25,8 @@ export async function initApp(
     option: Partial<InitAppOptions>,
 ): Promise<HorseRacingAppComponents> {
     const components = await baseInitApp(canvas, option);
+    // Allow deeper zoom for small horse rectangles (0.65m wide)
+    components.camera.setMaxZoomLevel(30);
     const simHandle = await attachHorseRacingSim(components);
     return { ...components, simHandle };
 }

@@ -13,7 +13,7 @@ export type BuildTrackOptions = {
 };
 
 const DEFAULT_BUILD: BuildTrackOptions = {
-    halfTrackWidth: 15,
+    halfTrackWidth: 10.325, // matches Python: HORSE_SPACING * MAX_HORSE_COUNT / 2 + HORSE_HALF_WIDTH
     railThickness: 3,
     railMass: 500,
 };
@@ -39,8 +39,13 @@ function asPoint(v: unknown): Point {
  * @returns Normalized segment list
  */
 export function parseTrackJson(raw: unknown): TrackSegment[] {
+    // Support both bare array and {segments: [...]} object format
     if (!Array.isArray(raw)) {
-        throw new Error('Track JSON must be an array');
+        if (raw && typeof raw === 'object' && 'segments' in raw && Array.isArray((raw as Record<string, unknown>).segments)) {
+            raw = (raw as Record<string, unknown>).segments;
+        } else {
+            throw new Error('Track JSON must be an array or an object with a "segments" key');
+        }
     }
     const out: TrackSegment[] = [];
     for (let i = 0; i < raw.length; i++) {
