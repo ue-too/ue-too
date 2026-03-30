@@ -19,12 +19,8 @@ const TRACK_PRESETS = [
     { label: 'exp_track_8', url: '/tracks/exp_track_8.json' },
 ];
 
-const AVAILABLE_MODELS = [
-    { label: 'Baseline', url: '/models/baseline_jockey.onnx' },
-    { label: 'Front Runner', url: '/models/jockey_front_runner.onnx' },
-    { label: 'Stalker', url: '/models/jockey_stalker.onnx' },
-    { label: 'Closer', url: '/models/jockey_closer.onnx' },
-    { label: 'Presser', url: '/models/jockey_presser.onnx' },
+const FALLBACK_MODELS = [
+    { label: 'Baseline Jockey', url: '/models/baseline_jockey.onnx' },
 ];
 
 const DEFAULT_MODEL_FOR_INDEX: Record<number, string> = {
@@ -33,6 +29,19 @@ const DEFAULT_MODEL_FOR_INDEX: Record<number, string> = {
     2: '/models/jockey_closer.onnx',
     3: '/models/jockey_presser.onnx',
 };
+
+function useAvailableModels() {
+    const [models, setModels] = useState<{ label: string; url: string }[]>(FALLBACK_MODELS);
+    useEffect(() => {
+        fetch('/models/manifest.json')
+            .then((r) => r.json())
+            .then((data: { label: string; url: string }[]) => {
+                if (Array.isArray(data) && data.length > 0) setModels(data);
+            })
+            .catch(() => { /* use fallback */ });
+    }, []);
+    return models;
+}
 
 const HORSE_NAMES = [
     'Gold', 'Brown', 'Blue', 'White', 'Red', 'Green',
@@ -49,6 +58,7 @@ export function HorseRacingToolbar() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handle = result.initialized && result.success ? result.components.simHandle : null;
+    const availableModels = useAvailableModels();
     const [arcFanVisible, setArcFanVisible] = useState(() => handle?.arcFanVisible() ?? true);
     const [horseCount, setHorseCount] = useState(4);
     const [raceState, setRaceState] = useState<RaceState>('idle');
@@ -192,7 +202,7 @@ export function HorseRacingToolbar() {
 
                 <span className="bg-border mx-1 h-4 w-px" />
 
-                <ModelSelector handle={handle} horseCount={horseCount} />
+                <ModelSelector handle={handle} horseCount={horseCount} availableModels={availableModels} />
             </div>
         </div>
     );
@@ -373,9 +383,11 @@ function AIToggle({
 function ModelSelector({
     handle,
     horseCount,
+    availableModels,
 }: {
     handle: HorseRacingSimHandle | null;
     horseCount: number;
+    availableModels: { label: string; url: string }[];
 }) {
     const [models, setModels] = useState<string[]>(() =>
         Array.from({ length: 20 }, (_, i) => DEFAULT_MODEL_FOR_INDEX[i] ?? '/models/baseline_jockey.onnx'),
@@ -400,7 +412,7 @@ function ModelSelector({
                         onChange={(e) => changeModel(i, e.target.value)}
                         title={`Model for ${HORSE_NAMES[i] ?? `Horse ${i}`}`}
                     >
-                        {AVAILABLE_MODELS.map(m => (
+                        {availableModels.map(m => (
                             <option key={m.url} value={m.url}>{m.label}</option>
                         ))}
                     </select>
