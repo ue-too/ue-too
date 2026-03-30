@@ -42,11 +42,14 @@ export class TrackNavigator {
     private curveEntryRadius = NaN;
     /** True once the horse has exited the last segment (crossed the finish line). */
     private _completedLap = false;
+    /** Precomputed outward normals for straight segments (null for curves). */
+    private outwardNormals: (Point | null)[];
 
     constructor(segments: TrackSegment[], startIndex = 0, halfTrackWidth = 15) {
         this.segments = segments;
         this.currentIndex = startIndex;
         this.halfTrackWidth = halfTrackWidth;
+        this.outwardNormals = this.computeOutwardNormals();
     }
 
     get segmentIndex(): number {
@@ -142,6 +145,56 @@ export class TrackNavigator {
                 this.curveEntryRadius = NaN;
             }
         }
+    }
+
+    /** Get the precomputed outward normal for a segment (null for curves). */
+    getOutwardNormal(segmentIndex: number): Point | null {
+        return this.outwardNormals[segmentIndex];
+    }
+
+    // ------------------------------------------------------------------
+    // Outward normal precomputation
+    // ------------------------------------------------------------------
+
+    private computeOutwardNormals(): (Point | null)[] {
+        return this.segments.map((seg, i) => {
+            if (seg.tracktype === 'CURVE') return null;
+            const start = seg.startPoint;
+            const end = seg.endPoint;
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) return { x: 0, y: -1 };
+            // default normal: rotate_90_cw of forward
+            let nx = dy / len;
+            let ny = -dx / len;
+            // Find nearest curve to determine direction
+            const curve = this.findNearestCurve(i);
+            if (curve) {
+                const mx = (start.x + end.x) / 2;
+                const my = (start.y + end.y) / 2;
+                const toCenterDot =
+                    (curve.center.x - mx) * nx +
+                    (curve.center.y - my) * ny;
+                if (toCenterDot > 0) {
+                    nx = -nx;
+                    ny = -ny;
+                }
+            }
+            return { x: nx, y: ny };
+        });
+    }
+
+    private findNearestCurve(idx: number): CurveSegment | null {
+        for (let j = idx + 1; j < this.segments.length; j++) {
+            if (this.segments[j].tracktype === 'CURVE')
+                return this.segments[j] as CurveSegment;
+        }
+        for (let j = idx - 1; j >= 0; j--) {
+            if (this.segments[j].tracktype === 'CURVE')
+                return this.segments[j] as CurveSegment;
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------

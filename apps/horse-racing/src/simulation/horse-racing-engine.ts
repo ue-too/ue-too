@@ -406,10 +406,20 @@ export class HorseRacingEngine {
 
             const tangentialVel = PointCal.dotProduct(v, frame.tangential);
             const normalVel = PointCal.dotProduct(v, frame.normal);
-            const displacement =
-                frame.targetRadius < 1e6
-                    ? frame.turnRadius - frame.targetRadius
-                    : 0;
+            let displacement: number;
+            if (frame.targetRadius < 1e6) {
+                displacement = frame.turnRadius - frame.targetRadius;
+            } else {
+                const outward = navs[i].getOutwardNormal(navs[i].segmentIndex);
+                if (outward) {
+                    const seg = this._segments[navs[i].segmentIndex];
+                    const dx = body.center.x - seg.startPoint.x;
+                    const dy = body.center.y - seg.startPoint.y;
+                    displacement = dx * outward.x + dy * outward.y;
+                } else {
+                    displacement = 0;
+                }
+            }
 
             const eff = effectiveAttrs[i];
             const state = this._horseStates[i];
