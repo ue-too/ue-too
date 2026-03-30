@@ -116,6 +116,10 @@ export class AIJockeyManager {
         console.log(`[AI] Horse ${horseIndex} model loaded from ${modelUrl}`);
     }
 
+    clearAll(): void {
+        this.perHorse.clear();
+    }
+
     hasModel(horseIndex: number): boolean {
         return this.perHorse.has(horseIndex) || this.shared.isReady;
     }

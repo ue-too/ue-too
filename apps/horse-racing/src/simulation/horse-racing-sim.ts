@@ -18,7 +18,12 @@ import { AIJockeyManager } from './ai-jockey';
 
 const DEFAULT_TRACK_URL = '/tracks/hanshin.json';
 
-const HORSE_COLORS = [0xc9a227, 0x8b4513, 0x4169e1, 0xffffff];
+const HORSE_COLORS = [
+    0xc9a227, 0x8b4513, 0x4169e1, 0xffffff, 0xe53935, 0x43a047,
+    0x8e24aa, 0xff9800, 0x00bcd4, 0xe91e63, 0xcddc39, 0x009688,
+    0xff7043, 0x3f51b5, 0xfa8072, 0x40e0d0, 0x800000, 0x808000,
+    0x000080, 0xff69b4,
+];
 const ARCHETYPE_NAMES = ['front_runner', 'stalker', 'closer', 'presser'];
 const PLAYER_INDEX = 0;
 const PLAYER_TANGENTIAL = 10; // player UP/DOWN acceleration magnitude
@@ -84,6 +89,16 @@ export type HorseRacingSimHandle = {
     startRace: () => void;
     /** Whether the race has been started. */
     isRaceStarted: () => boolean;
+    /** Whether the race has finished (all horses crossed the finish line). */
+    isRaceFinished: () => boolean;
+    /** Reset the race to starting positions with current settings. */
+    resetRace: () => void;
+    /** Get the current horse count. */
+    getHorseCount: () => number;
+    /** Change horse count and rebuild the sim. */
+    setHorseCount: (count: number) => void;
+    /** Assign a specific ONNX model to a horse. */
+    setModelForHorse: (horseIndex: number, modelUrl: string) => Promise<void>;
 };
 
 // ---------------------------------------------------------------------------
@@ -110,16 +125,27 @@ export async function attachHorseRacingSim(
     const aiControlled = new Set<number>();
     let pendingAIActions: Map<number, HorseAction> = new Map();
     let raceStarted = false;
+    let currentHorseCount = 4;
 
-    // Load per-archetype models (horse 0=front_runner, 1=stalker, 2=closer, 3=presser)
+    // Track which model URL each horse should use
+    const modelAssignments = new Map<number, string>();
     for (let i = 0; i < ARCHETYPE_NAMES.length; i++) {
-        aiManager.loadForHorse(i, `/models/jockey_${ARCHETYPE_NAMES[i]}.onnx`).catch(() => {
-            console.warn(`[AI] No model for ${ARCHETYPE_NAMES[i]}`);
-        });
+        modelAssignments.set(i, `/models/jockey_${ARCHETYPE_NAMES[i]}.onnx`);
     }
 
-    // Enable AI for all horses by default
-    for (let i = 0; i < 4; i++) aiControlled.add(i);
+    const reloadModels = (): void => {
+        aiManager.clearAll();
+        for (let i = 0; i < currentHorseCount; i++) {
+            const url = modelAssignments.get(i) ?? '/models/baseline_jockey.onnx';
+            aiManager.loadForHorse(i, url).catch(() => {
+                console.warn(`[AI] Failed to load model for horse ${i}`);
+            });
+        }
+    };
+
+    // Load initial models and enable AI for all horses
+    reloadModels();
+    for (let i = 0; i < currentHorseCount; i++) aiControlled.add(i);
 
     let segments: TrackSegment[];
     if (preloadedSegments) {
@@ -133,7 +159,7 @@ export async function attachHorseRacingSim(
     }
 
     // Mutable sim state — replaced on reload
-    let sim = buildSim(stage, segments);
+    let sim = buildSim(stage, segments, currentHorseCount);
 
     // Key listeners
     const keys = createKeyState();
@@ -303,16 +329,20 @@ export async function attachHorseRacingSim(
                 }
             }
 
-            // Target arc (redrawn each frame so it tracks the current segment)
+            // Target arc (redrawn each frame using the horse's current radius)
             sim.targetArcGfx.clear();
             for (let i = 0; i < horseCount; i++) {
                 const nav = engine.navigators[i];
                 const seg = nav.segment;
                 if (seg.tracktype !== 'CURVE') continue;
-                const tR = nav.targetRadius;
-                if (!isFinite(tR)) continue;
 
                 const center: Point = { x: seg.center.x, y: seg.center.y };
+                // Use the horse's actual distance from the curve center
+                const dx = positions[i].x - center.x;
+                const dy = positions[i].y - center.y;
+                const currentRadius = Math.sqrt(dx * dx + dy * dy);
+                if (currentRadius < 1e-6) continue;
+
                 const startA = Math.atan2(
                     seg.startPoint.y - seg.center.y,
                     seg.startPoint.x - seg.center.x,
@@ -322,7 +352,7 @@ export async function attachHorseRacingSim(
                     Math.ceil(Math.abs(span) * (180 / Math.PI) * ARC_STEPS_PER_DEG),
                     4,
                 );
-                const pts = arcPoints(center, tR, startA, span, steps);
+                const pts = arcPoints(center, currentRadius, startA, span, steps);
                 sim.targetArcGfx.moveTo(pts[0].x, pts[0].y);
                 for (let j = 1; j < pts.length; j++) {
                     sim.targetArcGfx.lineTo(pts[j].x, pts[j].y);
@@ -354,8 +384,14 @@ export async function attachHorseRacingSim(
     const reloadTrack = (newSegments: TrackSegment[]): void => {
         app.ticker.remove(onTick);
         teardownSim();
-        sim = buildSim(stage, newSegments);
+        segments = newSegments;
+        raceStarted = false;
+        pendingAIActions.clear();
+        sim = buildSim(stage, segments, currentHorseCount);
         simAccumulatorMs = 0;
+        reloadModels();
+        aiControlled.clear();
+        for (let i = 0; i < currentHorseCount; i++) aiControlled.add(i);
         app.ticker.add(onTick);
     };
 
@@ -389,8 +425,39 @@ export async function attachHorseRacingSim(
 
     const startRace = (): void => { raceStarted = true; };
     const isRaceStarted = (): boolean => raceStarted;
+    const isRaceFinished = (): boolean => sim.raceFinished;
 
-    return { cleanup, reloadTrack, setArcFanVisible, arcFanVisible, enableAI, disableAI, isAIEnabled, startRace, isRaceStarted };
+    const resetRace = (): void => {
+        app.ticker.remove(onTick);
+        teardownSim();
+        raceStarted = false;
+        pendingAIActions.clear();
+        sim = buildSim(stage, segments, currentHorseCount);
+        simAccumulatorMs = 0;
+        reloadModels();
+        aiControlled.clear();
+        for (let i = 0; i < currentHorseCount; i++) aiControlled.add(i);
+        app.ticker.add(onTick);
+    };
+
+    const getHorseCount = (): number => currentHorseCount;
+
+    const setHorseCount = (count: number): void => {
+        currentHorseCount = Math.max(2, Math.min(20, count));
+        resetRace();
+    };
+
+    const setModelForHorse = async (horseIndex: number, modelUrl: string): Promise<void> => {
+        modelAssignments.set(horseIndex, modelUrl);
+        await aiManager.loadForHorse(horseIndex, modelUrl);
+    };
+
+    return {
+        cleanup, reloadTrack, setArcFanVisible, arcFanVisible,
+        enableAI, disableAI, isAIEnabled,
+        startRace, isRaceStarted, isRaceFinished,
+        resetRace, getHorseCount, setHorseCount, setModelForHorse,
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -796,10 +863,11 @@ type SimState = {
 function buildSim(
     stage: import('pixi.js').Container,
     segments: TrackSegment[],
+    horseCount = 4,
 ): SimState {
     // Each horse gets a random genome for varied physical attributes
-    const genomes = Array.from({ length: 4 }, () => generateDefaultGenome());
-    const engine = new HorseRacingEngine(segments, undefined, genomes);
+    const genomes = Array.from({ length: horseCount }, () => generateDefaultGenome());
+    const engine = new HorseRacingEngine(segments, { horseCount }, genomes);
     const bounds = trackBounds(segments, 120);
 
     // Turf background
@@ -848,6 +916,7 @@ function buildSim(
     const horseHL = engine.config.horseHalfLength;
     const horseHW = engine.config.horseHalfWidth;
     const positions = engine.getHorsePositions();
+    const orientations = engine.getHorseOrientations();
 
     for (let i = 0; i < engine.horseIds.length; i++) {
         const id = engine.horseIds[i];
@@ -860,6 +929,7 @@ function buildSim(
         g.lineTo(horseHL * 0.6, 0);
         g.stroke({ width: 1, color: 0x000000 });
         g.position.set(positions[i].x, positions[i].y);
+        g.rotation = orientations[i];
         stage.addChild(g);
         horseGfx.set(id, g);
     }
@@ -905,6 +975,10 @@ function buildSim(
             g.destroy();
         }
         horseGfx.clear();
+        for (const lbl of aiLabels) {
+            stage.removeChild(lbl);
+            lbl.destroy();
+        }
     };
 
     const trailPrevPos: (Point | null)[] = new Array(engine.horseIds.length).fill(null);
