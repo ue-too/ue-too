@@ -1012,9 +1012,8 @@ export class TrackRenderSystem {
 
         this._solidBallastTexture = renderer.generateTexture({ target: g });
         const source = this._solidBallastTexture.source;
-        if ('addressMode' in source) {
-            (source as { addressMode: string }).addressMode = 'repeat';
-        }
+        source.addressMode = 'repeat';
+        source.style.update();
         return this._solidBallastTexture;
     }
 
@@ -1119,9 +1118,8 @@ export class TrackRenderSystem {
 
         this._railTexture = renderer.generateTexture({ target: g });
         const railSource = this._railTexture.source;
-        if ('addressMode' in railSource) {
-            (railSource as { addressMode: string }).addressMode = 'repeat';
-        }
+        railSource.addressMode = 'repeat';
+        railSource.style.update();
         return this._railTexture;
     }
 
@@ -1159,9 +1157,8 @@ export class TrackRenderSystem {
 
         this._slabBallastTexture = renderer.generateTexture({ target: g });
         const source = this._slabBallastTexture.source;
-        if ('addressMode' in source) {
-            (source as { addressMode: string }).addressMode = 'repeat';
-        }
+        source.addressMode = 'repeat';
+        source.style.update();
         return this._slabBallastTexture;
     }
 
@@ -1210,9 +1207,8 @@ export class TrackRenderSystem {
 
         this._slabRailTexture = renderer.generateTexture({ target: g });
         const railSource = this._slabRailTexture.source;
-        if ('addressMode' in railSource) {
-            (railSource as { addressMode: string }).addressMode = 'repeat';
-        }
+        railSource.addressMode = 'repeat';
+        railSource.style.update();
         return this._slabRailTexture;
     }
 
@@ -1411,9 +1407,8 @@ export class TrackRenderSystem {
 
         this._bedTexture = renderer.generateTexture({ target: g });
         const source = this._bedTexture.source;
-        if ('addressMode' in source) {
-            (source as { addressMode: string }).addressMode = 'repeat';
-        }
+        source.addressMode = 'repeat';
+        source.style.update();
         return this._bedTexture;
     }
 
