@@ -58,12 +58,12 @@ describe('expressGenome', () => {
     it('default genome produces midpoint attributes', () => {
         const genome = generateDefaultGenome();
         const attrs = expressGenome(genome);
-        // Midpoint of cruiseSpeed range [8, 18] = 13
-        expect(attrs.cruiseSpeed).toBeCloseTo(13);
-        // Midpoint of maxSpeed range [15, 25] = 20
-        expect(attrs.maxSpeed).toBeCloseTo(20);
-        // Midpoint of weight range [400, 600] = 500
-        expect(attrs.weight).toBeCloseTo(500);
+        // Midpoint of cruiseSpeed range [12, 16.5] = 14.25
+        expect(attrs.cruiseSpeed).toBeCloseTo(14.25);
+        // Midpoint of maxSpeed range [16, 20] = 18
+        expect(attrs.maxSpeed).toBeCloseTo(18);
+        // Midpoint of weight range [430, 550] = 490
+        expect(attrs.weight).toBeCloseTo(490);
     });
 
     it('high-allele genome produces high attributes', () => {
@@ -72,9 +72,9 @@ describe('expressGenome', () => {
             genome.core[trait] = { sire: 1.0, dam: 1.0 };
         }
         const attrs = expressGenome(genome);
-        expect(attrs.cruiseSpeed).toBeCloseTo(18);
-        expect(attrs.maxSpeed).toBeCloseTo(25);
-        expect(attrs.weight).toBeCloseTo(600);
+        expect(attrs.cruiseSpeed).toBeCloseTo(16.5);
+        expect(attrs.maxSpeed).toBeCloseTo(20);
+        expect(attrs.weight).toBeCloseTo(550);
     });
 
     it('all traits fall within their ranges', () => {
@@ -105,9 +105,9 @@ describe('resolveEffectiveAttributes', () => {
         // Horse 0 is rank 1 (condition met)
         const ctx = makeRaceContext({ rankings: [1, 2, 3, 4] });
         const eff = resolveEffectiveAttributes(base, mods, ctx, 0);
-        // frontRunner: +1.5 flat to cruiseSpeed at full strength
+        // frontRunner: +0.7 flat to cruiseSpeed at full strength
         expect(eff.cruiseSpeed).toBeGreaterThan(base.cruiseSpeed);
-        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed + 1.5);
+        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed + 0.7);
     });
 
     it('does not apply modifier when condition is not met', () => {
@@ -158,7 +158,10 @@ describe('updateStamina', () => {
     });
 
     it('drains when speed exceeds cruise', () => {
-        const newStamina = updateStamina(100, base, 0, base.cruiseSpeed + 3, Infinity);
+        // Need enough speed excess so overdrive drain exceeds partial recovery.
+        // drain = (speed - cruise) * 0.05; partial recovery = staminaRecovery * 0.25
+        // With staminaRecovery=1.0: need (excess * 0.05) > 0.25 → excess > 5
+        const newStamina = updateStamina(100, base, 0, base.cruiseSpeed + 6, Infinity);
         expect(newStamina).toBeLessThan(100);
     });
 
