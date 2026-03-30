@@ -149,6 +149,11 @@ export async function attachHorseRacingSim(
     // Track stage scale so we can mark pixelLine graphics dirty on change
     let prevScale = stage.localTransform.a;
 
+    // Fixed-rate simulation: decouple sim ticks from display refresh rate.
+    // The engine is designed to be called once per "sim tick" at ~60 Hz.
+    const SIM_TICK_MS = 1000 / 60;
+    let simAccumulatorMs = 0;
+
     // Ticker
     const onTick = (): void => {
         // When zoom changes, pixelLine graphics need their context marked dirty
@@ -170,65 +175,80 @@ export async function attachHorseRacingSim(
         // Check if race is over (all horses finished)
         if (sim.raceFinished) return;
 
-        // Map keyboard / AI → actions (skip finished horses)
-        const actions: HorseAction[] = [];
-        for (let i = 0; i < horseCount; i++) {
-            if (sim.finishedHorses.has(i)) {
-                // Freeze finished horse — counteract auto-cruise by braking
-                actions.push({ extraTangential: -20, extraNormal: 0 });
-                continue;
-            }
-            if (aiControlled.has(i) && pendingAIActions.has(i) && aiManager.hasModel(i)) {
-                // Use AI-computed action from previous tick's observation
-                actions.push(pendingAIActions.get(i)!);
-            } else if (i === PLAYER_INDEX && !aiControlled.has(i)) {
-                let extraTangential = 0;
-                let extraNormal = 0;
-                if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
-                if (keys.ArrowDown) extraTangential = -PLAYER_TANGENTIAL;
-                if (keys.ArrowLeft) extraNormal = -PLAYER_NORMAL;
-                if (keys.ArrowRight) extraNormal = PLAYER_NORMAL;
-                actions.push({ extraTangential, extraNormal });
-            } else {
-                actions.push({ extraTangential: 0, extraNormal: 0 });
-            }
+        // Accumulate real elapsed time and step at a fixed sim rate.
+        // Cap accumulator to avoid spiral-of-death on long frames.
+        simAccumulatorMs += app.ticker.deltaMS;
+        if (simAccumulatorMs > SIM_TICK_MS * 4) {
+            simAccumulatorMs = SIM_TICK_MS * 4;
         }
 
-        // Step simulation
-        const observations = engine.step(actions);
+        let observations: HorseObservation[] | undefined;
 
-        // Detect newly finished horses via the navigator's completedLap flag,
-        // which is set when a horse exits the last track segment.
-        const navs = sim.engine.navigators;
-        const bodyMap = sim.engine.world.getRigidBodyMap();
-        for (let i = 0; i < horseCount; i++) {
-            if (sim.finishedHorses.has(i)) continue;
-            if (navs[i].completedLap) {
-                sim.finishedHorses.add(i);
-                const pos = observations[i].position;
-                sim.finishPositions.set(i, {
-                    x: pos.x, y: pos.y,
-                    rotation: observations[i].orientationAngle,
-                });
-                sim.finishOrder.push(i);
-                // Freeze the horse so it stops moving
-                const body = bodyMap.get(engine.horseIds[i]);
-                if (body) {
-                    body.linearVelocity = { x: 0, y: 0 };
+        while (simAccumulatorMs >= SIM_TICK_MS) {
+            simAccumulatorMs -= SIM_TICK_MS;
+
+            if (sim.raceFinished) break;
+
+            // Map keyboard / AI → actions (skip finished horses)
+            const actions: HorseAction[] = [];
+            for (let i = 0; i < horseCount; i++) {
+                if (sim.finishedHorses.has(i)) {
+                    // Freeze finished horse — counteract auto-cruise by braking
+                    actions.push({ extraTangential: -20, extraNormal: 0 });
+                    continue;
                 }
-                console.log(`[Race] Horse ${i} finished in position ${sim.finishOrder.length}`);
+                if (aiControlled.has(i) && pendingAIActions.has(i) && aiManager.hasModel(i)) {
+                    // Use AI-computed action from previous tick's observation
+                    actions.push(pendingAIActions.get(i)!);
+                } else if (i === PLAYER_INDEX && !aiControlled.has(i)) {
+                    let extraTangential = 0;
+                    let extraNormal = 0;
+                    if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
+                    if (keys.ArrowDown) extraTangential = -PLAYER_TANGENTIAL;
+                    if (keys.ArrowLeft) extraNormal = -PLAYER_NORMAL;
+                    if (keys.ArrowRight) extraNormal = PLAYER_NORMAL;
+                    actions.push({ extraTangential, extraNormal });
+                } else {
+                    actions.push({ extraTangential: 0, extraNormal: 0 });
+                }
             }
-        }
-        if (sim.finishedHorses.size >= horseCount) {
-            sim.raceFinished = true;
-            console.log('[Race] All horses finished! Final order:', sim.finishOrder);
+
+            // Step simulation
+            observations = engine.step(actions);
+
+            // Detect newly finished horses via the navigator's completedLap flag,
+            // which is set when a horse exits the last track segment.
+            const navs = sim.engine.navigators;
+            const bodyMap = sim.engine.world.getRigidBodyMap();
+            for (let i = 0; i < horseCount; i++) {
+                if (sim.finishedHorses.has(i)) continue;
+                if (navs[i].completedLap) {
+                    sim.finishedHorses.add(i);
+                    const pos = observations[i].position;
+                    sim.finishPositions.set(i, {
+                        x: pos.x, y: pos.y,
+                        rotation: observations[i].orientationAngle,
+                    });
+                    sim.finishOrder.push(i);
+                    // Freeze the horse so it stops moving
+                    const body = bodyMap.get(engine.horseIds[i]);
+                    if (body) {
+                        body.linearVelocity = { x: 0, y: 0 };
+                    }
+                    console.log(`[Race] Horse ${i} finished in position ${sim.finishOrder.length}`);
+                }
+            }
+            if (sim.finishedHorses.size >= horseCount) {
+                sim.raceFinished = true;
+                console.log('[Race] All horses finished! Final order:', sim.finishOrder);
+            }
         }
 
         // Queue AI inference for next tick (async, non-blocking)
         // Pass all observations so agents can compute relative horse positions
-        if (aiManager.isReady && aiControlled.size > 0) {
+        if (observations && aiManager.isReady && aiControlled.size > 0) {
             const aiIndices = [...aiControlled];
-            const aiObs = aiIndices.map(i => observations[i]);
+            const aiObs = aiIndices.map(i => observations![i]);
             aiManager.computeActions(aiIndices, aiObs, observations).then((actionMap) => {
                 pendingAIActions = actionMap;
             });
@@ -335,6 +355,7 @@ export async function attachHorseRacingSim(
         app.ticker.remove(onTick);
         teardownSim();
         sim = buildSim(stage, newSegments);
+        simAccumulatorMs = 0;
         app.ticker.add(onTick);
     };
 
