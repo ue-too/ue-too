@@ -95,6 +95,18 @@ export type HorseObservation = {
     pushingPower: number;
     /** Effective push resistance attribute. */
     pushResistance: number;
+    /** Effective forward acceleration multiplier. */
+    forwardAccel: number;
+    /** Effective turn acceleration multiplier. */
+    turnAccel: number;
+    /** Effective cornering grip. */
+    corneringGrip: number;
+    /** Effective stamina recovery rate per tick. */
+    staminaRecovery: number;
+    /** Normalized placement: 0 = first, 1 = last. */
+    placementNorm: number;
+    /** Total number of horses in the race. */
+    numHorses: number;
     /** Set of modifier IDs whose conditions are met this tick. */
     activeModifierIds: Set<string>;
 };
@@ -460,6 +472,18 @@ export class HorseRacingEngine {
             }
         }
 
+        // Compute placements by track progress (higher = better rank)
+        const progresses = ids.map((id, i) => {
+            const body = map.get(id);
+            return { i, progress: body ? navs[i].computeProgress(body.center) : 0 };
+        });
+        const sorted = [...progresses].sort((a, b) => b.progress - a.progress);
+        const placements = new Array<number>(ids.length);
+        for (let rank = 0; rank < sorted.length; rank++) {
+            placements[sorted[rank].i] = rank + 1;
+        }
+        const numHorses = ids.length;
+
         // Update navigators and build observations
         const totalSegments = this._segments.length;
         const observations: HorseObservation[] = [];
@@ -520,6 +544,12 @@ export class HorseRacingEngine {
                 trackProgress: navs[i].computeProgress(body.center),
                 pushingPower: eff.pushingPower,
                 pushResistance: eff.pushResistance,
+                forwardAccel: eff.forwardAccel,
+                turnAccel: eff.turnAccel,
+                corneringGrip: eff.corneringGrip,
+                staminaRecovery: eff.staminaRecovery,
+                placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
+                numHorses,
                 activeModifierIds: firedModifiers[i] ?? new Set(),
             });
         }
@@ -704,6 +734,12 @@ export class HorseRacingEngine {
             trackProgress: 0,
             pushingPower: state?.baseAttributes.pushingPower ?? 0.5,
             pushResistance: state?.baseAttributes.pushResistance ?? 0.5,
+            forwardAccel: state?.baseAttributes.forwardAccel ?? 1.0,
+            turnAccel: state?.baseAttributes.turnAccel ?? 1.0,
+            corneringGrip: state?.baseAttributes.corneringGrip ?? 1.0,
+            staminaRecovery: state?.baseAttributes.staminaRecovery ?? 1.0,
+            placementNorm: 0,
+            numHorses: this._horseStates.length,
             activeModifierIds: new Set(),
         };
     }

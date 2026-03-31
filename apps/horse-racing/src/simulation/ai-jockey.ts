@@ -4,7 +4,7 @@
  * Supports both a single shared model (all AI horses use the same policy)
  * and per-horse models (each horse has its own specialized policy).
  *
- * The model takes a 96-dimensional observation (88 continuous features +
+ * The model takes a 102-dimensional observation (94 continuous features +
  * 8 binary modifier flags) and outputs a 2D action
  * [extraTangential, extraNormal].
  */
@@ -192,7 +192,7 @@ export class AIJockeyManager {
 // ---------------------------------------------------------------------------
 
 const MAX_REL_HORSES = 19;
-const OBS_SIZE = 96;
+const OBS_SIZE = 102;
 
 function observationToArray(
     obs: HorseObservation,
@@ -258,14 +258,20 @@ function observationToArray(
     arr[7] = obs.effectiveMaxSpeed;
     // Relative horses [8-83]
     arr.set(relFlat, 8);
-    // Track/attribute features [84-87]
+    // Track/attribute features [84-93]
     arr[84] = corneringMargin;
     arr[85] = obs.slope;
     arr[86] = obs.pushingPower;
     arr[87] = obs.pushResistance;
-    // Modifier flags [88-95]
+    arr[88] = obs.forwardAccel;
+    arr[89] = obs.turnAccel;
+    arr[90] = obs.corneringGrip;
+    arr[91] = obs.staminaRecovery;
+    arr[92] = obs.placementNorm;
+    arr[93] = obs.numHorses / 20.0; // normalize to [0, 1]
+    // Modifier flags [94-101]
     for (let k = 0; k < MODIFIER_ID_MAP.length; k++) {
-        arr[88 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
+        arr[94 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
     }
     return arr;
 }
