@@ -1,4 +1,4 @@
-import { Bot, BotOff, Eye, EyeOff, Home, Play, RotateCcw, Upload } from 'lucide-react';
+import { Bot, BotOff, Eye, EyeOff, Gamepad2, Home, Play, RotateCcw, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -196,8 +196,12 @@ export function HorseRacingToolbar() {
                 <ResetButton handle={handle} raceState={raceState} onReset={handleReset} />
             </div>
 
-            {/* Row 2: AI toggles + model selectors */}
+            {/* Row 2: Player horse selector + AI toggles + model selectors */}
             <div className="flex items-center gap-2 flex-wrap">
+                <PlayerSelector handle={handle} horseCount={horseCount} />
+
+                <span className="bg-border mx-1 h-4 w-px" />
+
                 <AIToggle handle={handle} horseCount={horseCount} />
 
                 <span className="bg-border mx-1 h-4 w-px" />
@@ -290,6 +294,70 @@ function ResetButton({
             <RotateCcw className="size-3.5" aria-hidden />
             <span>Reset</span>
         </button>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// PlayerSelector
+// ---------------------------------------------------------------------------
+
+function PlayerSelector({
+    handle,
+    horseCount,
+}: {
+    handle: HorseRacingSimHandle | null;
+    horseCount: number;
+}) {
+    const [playerHorse, setPlayerHorse] = useState(-1);
+
+    // Reset when horse count changes
+    useEffect(() => {
+        setPlayerHorse(-1);
+        handle?.setPlayerHorse(-1);
+    }, [horseCount, handle]);
+
+    const selectHorse = (idx: number) => {
+        if (!handle) return;
+        const next = idx === playerHorse ? -1 : idx; // toggle off if clicking same horse
+        setPlayerHorse(next);
+        handle.setPlayerHorse(next);
+    };
+
+    const clearPlayer = () => {
+        if (!handle) return;
+        setPlayerHorse(-1);
+        handle.setPlayerHorse(-1);
+    };
+
+    return (
+        <div className="flex items-center gap-1 flex-wrap">
+            <button
+                type="button"
+                className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                    playerHorse >= 0 ? 'text-yellow-500' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={clearPlayer}
+                title={playerHorse >= 0 ? `Controlling ${HORSE_NAMES[playerHorse] ?? `Horse ${playerHorse}`} (click to release)` : 'No player control (arrow keys)'}
+            >
+                <Gamepad2 className="size-3.5" aria-hidden />
+                <span>Player</span>
+            </button>
+            {Array.from({ length: horseCount }, (_, i) => (
+                <button
+                    key={i}
+                    type="button"
+                    className={`rounded px-1 py-0.5 text-[10px] font-medium transition-colors ${
+                        playerHorse === i
+                            ? 'bg-yellow-500 text-black'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => selectHorse(i)}
+                    title={`Control ${HORSE_NAMES[i] ?? `Horse ${i}`} with arrow keys`}
+                >
+                    {HORSE_NAMES[i] ?? `H${i}`}
+                </button>
+            ))}
+        </div>
     );
 }
 
