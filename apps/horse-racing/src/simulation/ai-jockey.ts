@@ -4,7 +4,7 @@
  * Supports both a single shared model (all AI horses use the same policy)
  * and per-horse models (each horse has its own specialized policy).
  *
- * The model takes a 26-dimensional observation (18 continuous features +
+ * The model takes a 96-dimensional observation (88 continuous features +
  * 8 binary modifier flags) and outputs a 2D action
  * [extraTangential, extraNormal].
  */
@@ -48,7 +48,7 @@ export class AIJockey {
         }
 
         const obsArray = observationToArray(obs);
-        const tensor = new ort.Tensor('float32', obsArray, [1, 26]);
+        const tensor = new ort.Tensor('float32', obsArray, [1, OBS_SIZE]);
         const results = await this.session.run({ obs: tensor });
         const actionData = results.action.data as Float32Array;
 
@@ -67,13 +67,13 @@ export class AIJockey {
         }
 
         const batchSize = observations.length;
-        const obsFlat = new Float32Array(batchSize * 26);
+        const obsFlat = new Float32Array(batchSize * OBS_SIZE);
         for (let i = 0; i < batchSize; i++) {
             const arr = observationToArray(observations[i]);
-            obsFlat.set(arr, i * 26);
+            obsFlat.set(arr, i * OBS_SIZE);
         }
 
-        const tensor = new ort.Tensor('float32', obsFlat, [batchSize, 26]);
+        const tensor = new ort.Tensor('float32', obsFlat, [batchSize, OBS_SIZE]);
         const results = await this.session.run({ obs: tensor });
         const actionData = results.action.data as Float32Array;
 
@@ -151,7 +151,7 @@ export class AIJockeyManager {
 
             if (perHorseJockey?.isReady) {
                 const obsArray = observationToArray(obs, idx, allObservations);
-                const tensor = new ort.Tensor('float32', obsArray, [1, 26]);
+                const tensor = new ort.Tensor('float32', obsArray, [1, OBS_SIZE]);
                 const results = await perHorseJockey['session']!.run({ obs: tensor });
                 const actionData = results.action.data as Float32Array;
                 result.set(idx, {
@@ -167,12 +167,12 @@ export class AIJockeyManager {
         // Batch shared model inference
         if (sharedIndices.length > 0 && this.shared.isReady) {
             const batchSize = sharedIndices.length;
-            const obsFlat = new Float32Array(batchSize * 26);
+            const obsFlat = new Float32Array(batchSize * OBS_SIZE);
             for (let j = 0; j < batchSize; j++) {
                 const arr = observationToArray(sharedObs[j], sharedIndices[j], allObservations);
-                obsFlat.set(arr, j * 26);
+                obsFlat.set(arr, j * OBS_SIZE);
             }
-            const tensor = new ort.Tensor('float32', obsFlat, [batchSize, 26]);
+            const tensor = new ort.Tensor('float32', obsFlat, [batchSize, OBS_SIZE]);
             const results = await this.shared['session']!.run({ obs: tensor });
             const actionData = results.action.data as Float32Array;
             for (let j = 0; j < batchSize; j++) {
@@ -191,6 +191,9 @@ export class AIJockeyManager {
 // Observation conversion
 // ---------------------------------------------------------------------------
 
+const MAX_REL_HORSES = 19;
+const OBS_SIZE = 96;
+
 function observationToArray(
     obs: HorseObservation,
     horseIndex?: number,
@@ -200,22 +203,32 @@ function observationToArray(
         ? 1000.0
         : Math.min(obs.corneringMargin, 1000.0);
 
-    // Compute relative positions to other horses (sorted by distance)
-    let rel: [number, number][] = [[0, 0], [0, 0], [0, 0]];
+    // Compute relative positions & velocities to other horses (sorted by track progress, ahead first)
+    const relFlat = new Float32Array(MAX_REL_HORSES * 4); // 19 × 4 = 76, initialized to 0
     if (allObs && horseIndex !== undefined) {
-        const relatives: { dist: number; tang: number; norm: number }[] = [];
+        const relatives: { progressDiff: number; tang: number; norm: number; relTangVel: number; relNormVel: number }[] = [];
         for (let j = 0; j < allObs.length; j++) {
             if (j === horseIndex) continue;
-            const dx = allObs[j].position.x - obs.position.x;
-            const dy = allObs[j].position.y - obs.position.y;
+            const other = allObs[j];
+            const dx = other.position.x - obs.position.x;
+            const dy = other.position.y - obs.position.y;
             const tang = dx * obs.tangential.x + dy * obs.tangential.y;
             const norm = dx * obs.normal.x + dy * obs.normal.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            relatives.push({ dist, tang, norm });
+            const dvx = other.velocity.x - obs.velocity.x;
+            const dvy = other.velocity.y - obs.velocity.y;
+            const relTangVel = dvx * obs.tangential.x + dvy * obs.tangential.y;
+            const relNormVel = dvx * obs.normal.x + dvy * obs.normal.y;
+            const progressDiff = other.trackProgress - obs.trackProgress;
+            relatives.push({ progressDiff, tang, norm, relTangVel, relNormVel });
         }
-        relatives.sort((a, b) => a.dist - b.dist);
-        for (let j = 0; j < 3 && j < relatives.length; j++) {
-            rel[j] = [relatives[j].tang, relatives[j].norm];
+        // Descending by progress: horses ahead come first
+        relatives.sort((a, b) => b.progressDiff - a.progressDiff);
+        for (let j = 0; j < MAX_REL_HORSES && j < relatives.length; j++) {
+            const r = relatives[j];
+            relFlat[j * 4]     = r.tang;
+            relFlat[j * 4 + 1] = r.norm;
+            relFlat[j * 4 + 2] = r.relTangVel;
+            relFlat[j * 4 + 3] = r.relNormVel;
         }
     }
 
@@ -233,25 +246,28 @@ function observationToArray(
     ];
     const activeIds = obs.activeModifierIds ?? new Set<string>();
 
-    return new Float32Array([
-        obs.tangentialVel,                       // [0]
-        obs.normalVel,                           // [1]
-        obs.displacement,                        // [2]
-        obs.trackProgress,                       // [3] track_progress
-        obs.turnRadius < 1e6 ? 1 / obs.turnRadius : 0, // [4] curvature
-        obs.currentStamina / obs.maxStamina,     // [5] stamina_ratio
-        obs.effectiveCruiseSpeed,                // [6]
-        obs.effectiveMaxSpeed,                   // [7]
-        rel[0][0], rel[0][1],                    // [8-9] rel_horse_1
-        rel[1][0], rel[1][1],                    // [10-11] rel_horse_2
-        rel[2][0], rel[2][1],                    // [12-13] rel_horse_3
-        corneringMargin,                         // [14]
-        obs.slope,                               // [15]
-        obs.pushingPower,                        // [16]
-        obs.pushResistance,                      // [17]
-        // 8 binary modifier flags [18-25]
-        ...MODIFIER_ID_MAP.map(([, browserId]) => activeIds.has(browserId) ? 1.0 : 0.0),
-    ]);
+    const arr = new Float32Array(OBS_SIZE);
+    // Ego features [0-7]
+    arr[0] = obs.tangentialVel;
+    arr[1] = obs.normalVel;
+    arr[2] = obs.displacement;
+    arr[3] = obs.trackProgress;
+    arr[4] = obs.turnRadius < 1e6 ? 1 / obs.turnRadius : 0;
+    arr[5] = obs.currentStamina / obs.maxStamina;
+    arr[6] = obs.effectiveCruiseSpeed;
+    arr[7] = obs.effectiveMaxSpeed;
+    // Relative horses [8-83]
+    arr.set(relFlat, 8);
+    // Track/attribute features [84-87]
+    arr[84] = corneringMargin;
+    arr[85] = obs.slope;
+    arr[86] = obs.pushingPower;
+    arr[87] = obs.pushResistance;
+    // Modifier flags [88-95]
+    for (let k = 0; k < MODIFIER_ID_MAP.length; k++) {
+        arr[88 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
+    }
+    return arr;
 }
 
 function clamp(v: number, min: number, max: number): number {
