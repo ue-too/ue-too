@@ -15,6 +15,7 @@ import type { Train, TrainPosition } from '@/trains/formation';
 import { DEFAULT_THROTTLE_STEPS } from '@/trains/formation';
 import type { StationManager } from '@/stations/station-manager';
 import type { StopPosition } from '@/stations/types';
+import type { SignalStateEngine } from '@/signals/signal-state-engine';
 
 import type {
   ActiveShiftState,
@@ -82,6 +83,7 @@ export class AutoDriver {
    * @param route - The route for the current leg.
    * @param stationManager - For resolving station/platform stop positions.
    * @param trackGraph - The track graph for distance computation.
+   * @param signalStateEngine - Optional signal engine for block signal awareness.
    */
   driveStep(
     train: Train,
@@ -90,19 +92,20 @@ export class AutoDriver {
     route: Route,
     stationManager: StationManager,
     trackGraph: TrackGraph,
+    signalStateEngine?: SignalStateEngine,
   ): void {
     switch (this._state.phase) {
       case 'waiting_departure':
         this._handleWaitingDeparture(train, virtualTime, shift);
         break;
       case 'departing':
-        this._handleDeparting(train);
+        this._handleDeparting(train, trackGraph, signalStateEngine);
         break;
       case 'running':
-        this._handleRunning(train, shift, route, stationManager, trackGraph);
+        this._handleRunning(train, shift, route, stationManager, trackGraph, signalStateEngine);
         break;
       case 'approaching':
-        this._handleApproaching(train, shift, route, stationManager, trackGraph);
+        this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
         break;
       case 'stopped':
         this._handleStopped(train, shift);
@@ -156,7 +159,24 @@ export class AutoDriver {
     }
   }
 
-  private _handleDeparting(train: Train): void {
+  private _handleDeparting(
+    train: Train,
+    trackGraph: TrackGraph,
+    signalStateEngine?: SignalStateEngine,
+  ): void {
+    // Don't depart into a red signal
+    if (signalStateEngine && train.position) {
+      const signalInfo = signalStateEngine.getDistanceToRestrictiveSignal(
+        train.position,
+        trackGraph,
+        this._jdm,
+      );
+      if (signalInfo && signalInfo.aspect === 'red' && signalInfo.distance < CREEP_DISTANCE) {
+        train.setThrottleStep('b1');
+        return;
+      }
+    }
+
     train.setThrottleStep('p5');
 
     if (train.speed >= DEPARTING_SPEED_THRESHOLD) {
@@ -170,6 +190,7 @@ export class AutoDriver {
     route: Route,
     stationManager: StationManager,
     trackGraph: TrackGraph,
+    signalStateEngine?: SignalStateEngine,
   ): void {
     const distanceToStop = this._getDistanceToStop(
       train,
@@ -179,7 +200,36 @@ export class AutoDriver {
       trackGraph,
     );
 
-    if (distanceToStop === null) {
+    // Check for restrictive signals ahead
+    const signalInfo = this._getSignalInfo(train, trackGraph, signalStateEngine);
+
+    // Use the closer of station stop or red signal as the effective target
+    let effectiveDistance = distanceToStop;
+    let targetIsSignal = false;
+    let signalAspect: 'red' | 'yellow' | undefined;
+
+    if (signalInfo) {
+      signalAspect = signalInfo.aspect;
+      if (signalInfo.aspect === 'red') {
+        if (effectiveDistance === null || signalInfo.distance < effectiveDistance) {
+          effectiveDistance = signalInfo.distance;
+          targetIsSignal = true;
+        }
+      } else if (signalInfo.aspect === 'yellow') {
+        // For yellow: slow to caution speed, don't treat as a hard stop
+        const cautionSpeed = train.maxSpeed * 0.5;
+        if (train.speed > cautionSpeed) {
+          const brakingDist = this._computeBrakingDistance(train.speed - cautionSpeed);
+          if (signalInfo.distance <= brakingDist * BRAKING_SAFETY_MARGIN) {
+            this._transition('approaching');
+            this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
+            return;
+          }
+        }
+      }
+    }
+
+    if (effectiveDistance === null) {
       // Can't compute distance — maintain current speed cautiously
       train.setThrottleStep('p3');
       return;
@@ -187,9 +237,9 @@ export class AutoDriver {
 
     const brakingDistance = this._computeBrakingDistance(train.speed);
 
-    if (distanceToStop <= brakingDistance * BRAKING_SAFETY_MARGIN) {
+    if (effectiveDistance <= brakingDistance * BRAKING_SAFETY_MARGIN) {
       this._transition('approaching');
-      this._handleApproaching(train, shift, route, stationManager, trackGraph);
+      this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
       return;
     }
 
@@ -203,6 +253,7 @@ export class AutoDriver {
     route: Route,
     stationManager: StationManager,
     trackGraph: TrackGraph,
+    signalStateEngine?: SignalStateEngine,
   ): void {
     const distanceToStop = this._getDistanceToStop(
       train,
@@ -212,7 +263,41 @@ export class AutoDriver {
       trackGraph,
     );
 
-    if (distanceToStop === null) {
+    // Check signals
+    const signalInfo = this._getSignalInfo(train, trackGraph, signalStateEngine);
+
+    // Determine effective stopping distance and whether we're targeting a signal
+    let effectiveDistance = distanceToStop;
+    let isYellowSignal = false;
+
+    if (signalInfo) {
+      if (signalInfo.aspect === 'red') {
+        if (effectiveDistance === null || signalInfo.distance < effectiveDistance) {
+          effectiveDistance = signalInfo.distance;
+        }
+      } else if (signalInfo.aspect === 'yellow') {
+        isYellowSignal = true;
+        // For yellow, only use signal distance if no closer station stop
+        if (effectiveDistance === null || signalInfo.distance < effectiveDistance) {
+          effectiveDistance = signalInfo.distance;
+        }
+      }
+    }
+
+    // If the signal ahead has cleared (no restrictive signal and no station stop nearby),
+    // return to running phase
+    if (effectiveDistance === null && signalInfo === null) {
+      // No signal or stop ahead — may have cleared while approaching
+      if (distanceToStop === null) {
+        train.setThrottleStep('b3');
+        if (train.speed <= STOP_SPEED_THRESHOLD) {
+          this._onArrived(train, shift);
+        }
+        return;
+      }
+    }
+
+    if (effectiveDistance === null) {
       train.setThrottleStep('b3');
       if (train.speed <= STOP_SPEED_THRESHOLD) {
         this._onArrived(train, shift);
@@ -220,32 +305,43 @@ export class AutoDriver {
       return;
     }
 
-    if (train.speed <= STOP_SPEED_THRESHOLD && distanceToStop <= CREEP_DISTANCE) {
+    // Yellow signal: slow to caution speed, then resume running
+    if (isYellowSignal && !distanceToStop) {
+      const cautionSpeed = train.maxSpeed * 0.5;
+      if (train.speed <= cautionSpeed) {
+        // Reached caution speed — hold it and return to running
+        train.setThrottleStep('N');
+        this._transition('running');
+        return;
+      }
+    }
+
+    if (train.speed <= STOP_SPEED_THRESHOLD && effectiveDistance <= CREEP_DISTANCE) {
+      // Check if this is a signal stop — if so, don't advance the station leg
+      if (signalInfo && signalInfo.aspect === 'red' &&
+          (distanceToStop === null || signalInfo.distance <= effectiveDistance)) {
+        // Stopped at signal — hold brakes, stay in approaching to re-check
+        train.setThrottleStep('b1');
+        // If the signal clears, we'll transition back to running
+        if (signalStateEngine) {
+          const freshSignal = signalStateEngine.getDistanceToRestrictiveSignal(
+            train.position!,
+            trackGraph,
+            this._jdm,
+          );
+          if (!freshSignal || freshSignal.aspect !== 'red') {
+            this._transition('running');
+          }
+        }
+        return;
+      }
       this._onArrived(train, shift);
       return;
     }
 
     // Proportional braking: the closer we are relative to ideal braking
     // distance, the harder we brake.
-    const idealBraking = this._computeBrakingDistance(train.speed);
-    const ratio = idealBraking > 0 ? distanceToStop / idealBraking : 0;
-
-    if (distanceToStop <= CREEP_DISTANCE) {
-      // Very close — strong brake to crawl to a stop
-      train.setThrottleStep('b6');
-    } else if (ratio < 0.3) {
-      // Way too close for current speed — emergency brake
-      train.setThrottleStep('er');
-    } else if (ratio < 0.6) {
-      train.setThrottleStep('b7');
-    } else if (ratio < 0.9) {
-      train.setThrottleStep('b5');
-    } else if (ratio < 1.2) {
-      train.setThrottleStep('b3');
-    } else {
-      // Still have margin — light brake to start decelerating
-      train.setThrottleStep('b2');
-    }
+    this._applyProportionalBraking(train, effectiveDistance);
   }
 
   private _handleStopped(train: Train, shift: ShiftTemplate): void {
@@ -435,5 +531,49 @@ export class AutoDriver {
     // Placeholder — the actual route joints should be sourced from the
     // TimetableManager via the JDM.  For now return empty to avoid crashes.
     return this._jdm['_routeJoints'] ?? [];
+  }
+
+  // -----------------------------------------------------------------------
+  // Signal helpers
+  // -----------------------------------------------------------------------
+
+  /**
+   * Query the signal state engine for the nearest restrictive signal ahead.
+   * Returns `null` if no signal engine or no restrictive signal found.
+   */
+  private _getSignalInfo(
+    train: Train,
+    trackGraph: TrackGraph,
+    signalStateEngine?: SignalStateEngine,
+  ): { distance: number; aspect: 'red' | 'yellow'; signalId: number } | null {
+    if (!signalStateEngine || !train.position) return null;
+    return signalStateEngine.getDistanceToRestrictiveSignal(
+      train.position,
+      trackGraph,
+      this._jdm,
+    );
+  }
+
+  /**
+   * Apply proportional braking based on distance to target.
+   * Extracted to share between station-stop and signal-stop logic.
+   */
+  private _applyProportionalBraking(train: Train, distance: number): void {
+    const idealBraking = this._computeBrakingDistance(train.speed);
+    const ratio = idealBraking > 0 ? distance / idealBraking : 0;
+
+    if (distance <= CREEP_DISTANCE) {
+      train.setThrottleStep('b6');
+    } else if (ratio < 0.3) {
+      train.setThrottleStep('er');
+    } else if (ratio < 0.6) {
+      train.setThrottleStep('b7');
+    } else if (ratio < 0.9) {
+      train.setThrottleStep('b5');
+    } else if (ratio < 1.2) {
+      train.setThrottleStep('b3');
+    } else {
+      train.setThrottleStep('b2');
+    }
   }
 }

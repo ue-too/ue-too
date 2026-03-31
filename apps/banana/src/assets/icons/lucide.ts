@@ -49,6 +49,7 @@ export {
     Play,
     Plus,
     Scissors,
+    Signal,
     Settings2,
     Snowflake,
     Spline,

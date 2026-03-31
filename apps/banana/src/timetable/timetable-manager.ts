@@ -13,6 +13,7 @@ import {
   DefaultJointDirectionManager,
   type JointDirectionManager,
 } from '@/trains/input-state-machine/train-kmt-state-machine';
+import type { SignalStateEngine } from '@/signals/signal-state-engine';
 
 import { ScheduleClock } from './schedule-clock';
 import { RouteManager } from './route-manager';
@@ -67,6 +68,7 @@ export class TimetableManager {
   private _trackGraph: TrackGraph;
   private _trainManager: TrainManager;
   private _stationManager: StationManager;
+  private _signalStateEngine: SignalStateEngine | null = null;
 
   private _unsubTrainChanges: (() => void) | null = null;
 
@@ -116,6 +118,11 @@ export class TimetableManager {
 
   get shiftTemplateManager(): ShiftTemplateManager {
     return this._shiftTemplateManager;
+  }
+
+  /** Set the signal state engine for block signal awareness. */
+  set signalStateEngine(engine: SignalStateEngine | null) {
+    this._signalStateEngine = engine;
   }
 
   /** Get all shift assignments. */
@@ -219,6 +226,7 @@ export class TimetableManager {
         route,
         this._stationManager,
         this._trackGraph,
+        this._signalStateEngine ?? undefined,
       );
     }
   }

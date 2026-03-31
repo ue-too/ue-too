@@ -13,6 +13,7 @@ import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-da
 import type { SerializedTerrainData } from '@/terrain/terrain-data';
 import type { SerializedTimetableData } from '@/timetable/types';
 import { TimetableManager } from '@/timetable';
+import type { SerializedSignalData } from '@/signals/types';
 import { clearShadowCache } from '@/utils';
 
 export type SerializedSceneData = {
@@ -21,6 +22,7 @@ export type SerializedSceneData = {
   stations?: SerializedStationData;
   terrain?: SerializedTerrainData;
   timetable?: SerializedTimetableData;
+  signals?: SerializedSignalData;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
@@ -30,6 +32,7 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
     stations: app.stationManager.serialize(),
     terrain: app.terrainData.serialize(),
     timetable: app.timetableManager.serialize(),
+    signals: app.blockSignalManager.serialize(),
   };
 }
 
@@ -68,6 +71,13 @@ export function deserializeSceneData(app: BananaAppComponents, data: SerializedS
     // so the TimeManager callback uses the new instance.
     (app as { timetableManager: TimetableManager }).timetableManager = restored;
     app.timetableRef.current = restored;
+    // Reconnect the signal state engine to the new timetable manager
+    restored.signalStateEngine = app.signalStateEngine;
+  }
+
+  // Load signal data if present
+  if (data.signals) {
+    app.blockSignalManager.deserialize(data.signals);
   }
 
   // Load stations and rebuild their render visuals
