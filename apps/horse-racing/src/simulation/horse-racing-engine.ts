@@ -3,7 +3,6 @@ import { PointCal } from '@ue-too/math';
 import type { Point } from '@ue-too/math';
 
 import {
-    buildTrackIntoWorld,
     trackBounds,
     trackStartFrame,
 } from './track-from-json';
@@ -295,10 +294,15 @@ export class HorseRacingEngine {
             resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
             // Update stamina (once per tick)
+            // Python reference: extra_t = action.extra_tangential * eff.forward_accel
+            // Python reference: speed = np.linalg.norm(velocity) (magnitude)
+            const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+            const extraT = resolvedActions[i].extraTangential * eff.forwardAccel;
             state.currentStamina = updateStamina(
                 state.currentStamina,
                 eff,
-                resolvedActions[i].extraTangential,
+                extraT,
+                speed,
                 tangentialVel,
                 frame.turnRadius,
             );
@@ -321,6 +325,8 @@ export class HorseRacingEngine {
                 if (navs[i].completedLap) continue;
 
                 const nav = navs[i];
+                // Update segment each substep (matches Python navigator.update())
+                nav.updateSegment(h.center);
                 const frame = nav.getTrackFrame(h.center);
                 const v = h.linearVelocity;
                 const eff = effectiveAttrs[i];
@@ -387,6 +393,71 @@ export class HorseRacingEngine {
                 if (!h) continue;
                 (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight;
             }
+
+            // Analytical wall collision (matches Python resolve_wall_collisions)
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                if (navs[i].completedLap) continue;
+                const seg = this._segments[navs[i].segmentIndex];
+                const pos = h.center;
+                const hw = cfg.horseHalfWidth;
+                const htw = this._halfTrackWidth;
+
+                let wallNx = 0, wallNy = 0, wallDepth = 0;
+                if (seg.tracktype === 'STRAIGHT') {
+                    const dx = seg.endPoint.x - seg.startPoint.x;
+                    const dy = seg.endPoint.y - seg.startPoint.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 1e-6) {
+                        const inv = 1 / len;
+                        const ox = dy * inv, oy = -dx * inv; // outward
+                        const thx = pos.x - seg.startPoint.x;
+                        const thy = pos.y - seg.startPoint.y;
+                        const lateral = thx * ox + thy * oy;
+                        const limit = htw - hw;
+                        if (lateral > limit) {
+                            wallNx = -ox; wallNy = -oy;
+                            wallDepth = lateral - limit;
+                        } else if (lateral < -limit) {
+                            wallNx = ox; wallNy = oy;
+                            wallDepth = -limit - lateral;
+                        }
+                    }
+                } else {
+                    const tx = pos.x - seg.center.x;
+                    const ty = pos.y - seg.center.y;
+                    const dist = Math.sqrt(tx * tx + ty * ty);
+                    if (dist > 1e-6) {
+                        const inv = 1 / dist;
+                        const nx = tx * inv, ny = ty * inv;
+                        const outerLimit = seg.radius + htw - hw;
+                        const innerLimit = seg.radius - htw + hw;
+                        if (dist > outerLimit) {
+                            wallNx = -nx; wallNy = -ny;
+                            wallDepth = dist - outerLimit;
+                        } else if (innerLimit > 0 && dist < innerLimit) {
+                            wallNx = nx; wallNy = ny;
+                            wallDepth = innerLimit - dist;
+                        }
+                    }
+                }
+
+                if (wallDepth > 0) {
+                    // Position correction
+                    h.center = {
+                        x: pos.x + wallNx * wallDepth,
+                        y: pos.y + wallNy * wallDepth,
+                    };
+                    // Velocity impulse with restitution 0.4
+                    const v = h.linearVelocity;
+                    const vn = v.x * wallNx + v.y * wallNy;
+                    h.linearVelocity = {
+                        x: v.x + wallNx * (-(1 + 0.4) * vn),
+                        y: v.y + wallNy * (-(1 + 0.4) * vn),
+                    };
+                }
+            }
         }
 
         // Update navigators and build observations
@@ -446,9 +517,7 @@ export class HorseRacingEngine {
                     frame.turnRadius,
                 ),
                 slope: frame.slope,
-                trackProgress: totalSegments > 0
-                    ? navs[i].segmentIndex / totalSegments
-                    : 0,
+                trackProgress: navs[i].computeProgress(body.center),
                 pushingPower: eff.pushingPower,
                 pushResistance: eff.pushResistance,
                 activeModifierIds: firedModifiers[i] ?? new Set(),
@@ -502,7 +571,8 @@ export class HorseRacingEngine {
 
         const world = new World(absMaxX, absMaxY, 'dynamictree');
         world.useLinearCollisionResolution = true;
-        buildTrackIntoWorld(world, segments, { halfTrackWidth: this._halfTrackWidth });
+        // Wall collision is handled analytically (matching Python) instead of
+        // via static rail bodies, which caused cross-segment interference.
 
         const frame = trackStartFrame(segments);
         if (!frame) {
@@ -586,7 +656,7 @@ export class HorseRacingEngine {
             velocities.push(body ? { x: body.linearVelocity.x, y: body.linearVelocity.y } : { x: 0, y: 0 });
             staminaLevels.push(states[i].currentStamina);
             maxStamina.push(states[i].baseAttributes.stamina);
-            trackProgress.push(totalSegments > 0 ? navs[i].segmentIndex / totalSegments : 0);
+            trackProgress.push(body ? navs[i].computeProgress(body.center) : 0);
             segmentTypes.push(navs[i].segment.tracktype);
         }
 

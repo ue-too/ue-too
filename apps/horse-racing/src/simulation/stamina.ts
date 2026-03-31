@@ -39,8 +39,10 @@ const EXHAUSTION_TURN_ACCEL_THRESHOLD = 0.15;
  *
  * @param currentStamina - Current stamina level
  * @param eff - Effective attributes (after modifiers, before exhaustion)
- * @param extraTangential - Jockey's tangential input this tick
- * @param currentSpeed - Horse's current tangential velocity
+ * @param extraTangential - Actual tangential acceleration from jockey push
+ *                          (raw input × forwardAccel, matching Python)
+ * @param currentSpeed - Horse's velocity magnitude (for overdrive check)
+ * @param tangentialVel - Horse's tangential velocity (for cornering force)
  * @param turnRadius - Current turn radius (Infinity on straights)
  * @returns Updated stamina value
  *
@@ -51,6 +53,7 @@ export function updateStamina(
     eff: EffectiveAttributes,
     extraTangential: number,
     currentSpeed: number,
+    tangentialVel: number,
     turnRadius: number,
 ): number {
     let drain = 0;
@@ -60,14 +63,14 @@ export function updateStamina(
         drain += extraTangential * STAMINA_DRAIN_RATE;
     }
 
-    // Drain from exceeding cruise speed
+    // Drain from exceeding cruise speed (uses velocity magnitude)
     if (currentSpeed > eff.cruiseSpeed) {
         drain += (currentSpeed - eff.cruiseSpeed) * OVERDRIVE_DRAIN_RATE;
     }
 
-    // Drain from cornering beyond grip threshold
+    // Drain from cornering beyond grip threshold (uses tangential velocity)
     if (turnRadius < 1e6) {
-        const requiredForce = (currentSpeed * currentSpeed) / turnRadius;
+        const requiredForce = (tangentialVel * tangentialVel) / turnRadius;
         const toleratedForce = eff.corneringGrip * GRIP_FORCE_BASELINE;
         if (requiredForce > toleratedForce) {
             drain += (requiredForce - toleratedForce) * CORNERING_DRAIN_RATE;

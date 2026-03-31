@@ -44,12 +44,35 @@ export class TrackNavigator {
     private _completedLap = false;
     /** Precomputed outward normals for straight segments (null for curves). */
     private outwardNormals: (Point | null)[];
+    /** Precomputed length of each segment. */
+    private _segmentLengths: number[];
+    /** Cumulative length up to (but not including) each segment. */
+    private _cumulativeLengths: number[];
+    /** Total track length. */
+    private _totalLength: number;
 
     constructor(segments: TrackSegment[], startIndex = 0, halfTrackWidth = 15) {
         this.segments = segments;
         this.currentIndex = startIndex;
         this.halfTrackWidth = halfTrackWidth;
         this.outwardNormals = this.computeOutwardNormals();
+
+        // Precompute segment lengths and cumulative distances
+        this._segmentLengths = segments.map((seg) => {
+            if (seg.tracktype === 'STRAIGHT') {
+                const dx = seg.endPoint.x - seg.startPoint.x;
+                const dy = seg.endPoint.y - seg.startPoint.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            return Math.abs(seg.angleSpan) * seg.radius;
+        });
+        this._cumulativeLengths = [];
+        let acc = 0;
+        for (const l of this._segmentLengths) {
+            this._cumulativeLengths.push(acc);
+            acc += l;
+        }
+        this._totalLength = acc;
     }
 
     get segmentIndex(): number {
@@ -62,6 +85,58 @@ export class TrackNavigator {
 
     get segment(): TrackSegment {
         return this.segments[this.currentIndex];
+    }
+
+    get totalLength(): number {
+        return this._totalLength;
+    }
+
+    /**
+     * Return continuous progress fraction [0, 1] along the total track length.
+     * Matches Python `TrackNavigator.compute_progress()`.
+     */
+    computeProgress(position: Point): number {
+        if (this._totalLength < 1e-6) return 0;
+
+        const seg = this.segments[this.currentIndex];
+        const base = this._cumulativeLengths[this.currentIndex];
+        const segLen = this._segmentLengths[this.currentIndex];
+        let along: number;
+
+        if (seg.tracktype === 'STRAIGHT') {
+            const dx = seg.endPoint.x - seg.startPoint.x;
+            const dy = seg.endPoint.y - seg.startPoint.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) {
+                along = 0;
+            } else {
+                const fwdX = dx / len;
+                const fwdY = dy / len;
+                const offX = position.x - seg.startPoint.x;
+                const offY = position.y - seg.startPoint.y;
+                along = offX * fwdX + offY * fwdY;
+            }
+        } else {
+            const toPosX = position.x - seg.center.x;
+            const toPosY = position.y - seg.center.y;
+            const anglePos = Math.atan2(toPosY, toPosX);
+            const toStartX = seg.startPoint.x - seg.center.x;
+            const toStartY = seg.startPoint.y - seg.center.y;
+            const angleStart = Math.atan2(toStartY, toStartX);
+
+            let delta = anglePos - angleStart;
+            if (seg.angleSpan >= 0) {
+                while (delta < 0) delta += 2 * Math.PI;
+                while (delta > 2 * Math.PI) delta -= 2 * Math.PI;
+            } else {
+                while (delta > 0) delta -= 2 * Math.PI;
+                while (delta < -2 * Math.PI) delta += 2 * Math.PI;
+            }
+            along = Math.abs(delta) * seg.radius;
+        }
+
+        along = Math.max(0, Math.min(segLen, along));
+        return (base + along) / this._totalLength;
     }
 
     /** The radius the horse should hold on the current curve, or `Infinity` on straights. */
@@ -104,10 +179,10 @@ export class TrackNavigator {
         if (exited) {
             if (this.currentIndex === this.segments.length - 1) {
                 this._completedLap = true;
+                return; // stay on last segment (race is over), matching Python
             }
             const prevSeg = seg;
-            this.currentIndex =
-                (this.currentIndex + 1) % this.segments.length;
+            this.currentIndex = this.currentIndex + 1;
             const newSeg = this.segment;
 
             if (newSeg.tracktype === 'CURVE') {

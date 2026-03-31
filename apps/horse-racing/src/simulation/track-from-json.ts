@@ -14,7 +14,7 @@ export type BuildTrackOptions = {
 
 const DEFAULT_BUILD: BuildTrackOptions = {
     halfTrackWidth: 10.325, // matches Python: HORSE_SPACING * MAX_HORSE_COUNT / 2 + HORSE_HALF_WIDTH
-    railThickness: 3,
+    railThickness: 0.5,
     railMass: 500,
 };
 
