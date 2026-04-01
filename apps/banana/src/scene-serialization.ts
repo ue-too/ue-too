@@ -66,13 +66,12 @@ export function deserializeSceneData(app: BananaAppComponents, data: SerializedS
       app.curveEngine.trackGraph,
       app.trainManager,
       app.stationManager,
+      app.signalStateEngine,
     );
     // Replace the timetable manager on the app components and the mutable ref
     // so the TimeManager callback uses the new instance.
     (app as { timetableManager: TimetableManager }).timetableManager = restored;
     app.timetableRef.current = restored;
-    // Reconnect the signal state engine to the new timetable manager
-    restored.signalStateEngine = app.signalStateEngine;
   }
 
   // Load signal data if present

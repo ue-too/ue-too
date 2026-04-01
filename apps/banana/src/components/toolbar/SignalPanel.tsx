@@ -52,12 +52,17 @@ export function SignalPanel({
 }: SignalPanelProps) {
     const { t } = useTranslation();
 
-    // -- live aspect refresh ---------------------------------------------------
+    // -- live aspect refresh (throttled to ~4 Hz) ------------------------------
     const [, setTick] = useState(0);
     const rafRef = useRef(0);
+    const lastRefreshRef = useRef(0);
     useEffect(() => {
-        const loop = () => {
-            setTick(v => v + 1);
+        const REFRESH_INTERVAL_MS = 250; // ~4 Hz
+        const loop = (now: number) => {
+            if (now - lastRefreshRef.current >= REFRESH_INTERVAL_MS) {
+                lastRefreshRef.current = now;
+                setTick(v => v + 1);
+            }
             rafRef.current = requestAnimationFrame(loop);
         };
         rafRef.current = requestAnimationFrame(loop);
