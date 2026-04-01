@@ -112,11 +112,11 @@ describe('generateDefaultGenome', () => {
         }
     });
 
-    it('has no expressed modifiers', () => {
+    it('has expressed modifiers at midpoint strength', () => {
         const genome = generateDefaultGenome();
         for (const mod of Object.values(genome.modifiers)) {
-            expect(mod.presence.sire).toBe(0);
-            expect(mod.presence.dam).toBe(0);
+            expect(mod.presence.sire).toBe(0.5);
+            expect(mod.presence.dam).toBe(0.5);
         }
     });
 });

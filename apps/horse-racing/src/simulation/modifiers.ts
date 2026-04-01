@@ -112,10 +112,11 @@ function isWithinBehindAnother(
         if (i === horseIndex) continue;
         const toOther = PointCal.subVector(positions[i], pos);
         const dist = PointCal.magnitude(toOther);
-        if (dist > radius) continue;
-        // Check if the other horse is ahead (positive projection on forward)
-        const dot = PointCal.dotProduct(toOther, forward);
-        if (dot > 0) return true;
+        if (dist > radius || dist < 1e-6) continue;
+        // Normalized dot: cos(angle) between forward and toOther.
+        // > 0.5 means roughly ahead (within ~60° cone), matching Python.
+        const dot = PointCal.dotProduct(toOther, forward) / dist;
+        if (dot > 0.5) return true;
     }
     return false;
 }
@@ -149,7 +150,7 @@ const frontRunner: ModifierDefinition = {
     id: 'frontRunner',
     name: 'Front Runner',
     condition: (ctx, i) => ctx.rankings[i] === 1,
-    effects: [{ target: 'cruiseSpeed', flat: 1.5 }], // up to +1.5 flat
+    effects: [{ target: 'cruiseSpeed', flat: 0.7 }], // up to +0.7 flat
 };
 
 const closer: ModifierDefinition = {

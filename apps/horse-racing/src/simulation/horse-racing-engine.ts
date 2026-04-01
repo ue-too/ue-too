@@ -1,9 +1,8 @@
-import { Circle, World } from '@ue-too/dynamics';
+import { Polygon, World } from '@ue-too/dynamics';
 import { PointCal } from '@ue-too/math';
 import type { Point } from '@ue-too/math';
 
 import {
-    buildTrackIntoWorld,
     trackBounds,
     trackStartFrame,
 } from './track-from-json';
@@ -21,6 +20,7 @@ import {
     expressGenome,
     expressModifiers,
     resolveEffectiveAttributes,
+    evaluateModifierConditions,
     DEFAULT_CORE_ATTRIBUTES,
 } from './horse-attributes';
 import type { RaceContext } from './modifiers';
@@ -87,6 +87,28 @@ export type HorseObservation = {
     effectiveMaxSpeed: number;
     /** Cornering force margin: positive = comfortable, negative = draining stamina. */
     corneringMargin: number;
+    /** Grade of current segment (rise/run). 0 = flat. */
+    slope: number;
+    /** Fraction [0, 1] of track completed. */
+    trackProgress: number;
+    /** Effective pushing power attribute. */
+    pushingPower: number;
+    /** Effective push resistance attribute. */
+    pushResistance: number;
+    /** Effective forward acceleration multiplier. */
+    forwardAccel: number;
+    /** Effective turn acceleration multiplier. */
+    turnAccel: number;
+    /** Effective cornering grip. */
+    corneringGrip: number;
+    /** Effective stamina recovery rate per tick. */
+    staminaRecovery: number;
+    /** Normalized placement: 0 = first, 1 = last. */
+    placementNorm: number;
+    /** Total number of horses in the race. */
+    numHorses: number;
+    /** Set of modifier IDs whose conditions are met this tick. */
+    activeModifierIds: Set<string>;
 };
 
 /**
@@ -97,7 +119,10 @@ export type HorseObservation = {
  */
 export type SimConfig = {
     horseCount: number;
-    horseRadius: number;
+    /** Rectangle half-length (nose to center), meters. */
+    horseHalfLength: number;
+    /** Rectangle half-width (shoulder to center), meters. */
+    horseHalfWidth: number;
     horseSpacing: number;
     physHz: number;
     physSubsteps: number;
@@ -110,8 +135,9 @@ export type SimConfig = {
 /** @internal */
 const DEFAULT_CONFIG: SimConfig = {
     horseCount: 4,
-    horseRadius: 9,
-    horseSpacing: 14,
+    horseHalfLength: 1.25,  // 2.5 m nose-to-tail
+    horseHalfWidth: 0.325,  // 0.65 m shoulder width
+    horseSpacing: 1.0,      // 1 m lane spacing
     physHz: 240,
     physSubsteps: 8,
     normalDamp: 0.5,
@@ -179,9 +205,11 @@ export class HorseRacingEngine {
     ) {
         this._config = { ...DEFAULT_CONFIG, ...config };
         this._segments = segments;
+        // Track wide enough for max 20 horses centered + clearance
+        const maxHorseCount = 20;
         this._halfTrackWidth =
-            this._config.horseSpacing * this._config.horseCount +
-            this._config.horseRadius;
+            this._config.horseSpacing * maxHorseCount / 2 +
+            this._config.horseHalfWidth; // ~10.325 m
 
         // Resolve genomes
         this._genomes = [];
@@ -248,6 +276,7 @@ export class HorseRacingEngine {
 
         // Resolve effective attributes and apply forces per horse
         const effectiveAttrs: EffectiveAttributes[] = [];
+        const firedModifiers: Set<string>[] = [];
 
         // Resolve effective attributes once per tick (expensive)
         const resolvedActions: HorseAction[] = [];
@@ -255,6 +284,7 @@ export class HorseRacingEngine {
             const h = map.get(ids[i]);
             if (!h) {
                 effectiveAttrs.push(DEFAULT_CORE_ATTRIBUTES);
+                firedModifiers.push(new Set());
                 resolvedActions.push({ extraTangential: 0, extraNormal: 0 });
                 continue;
             }
@@ -272,16 +302,29 @@ export class HorseRacingEngine {
             );
             eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
             effectiveAttrs.push(eff);
+            firedModifiers.push(evaluateModifierConditions(state.activeModifiers, raceCtx, i));
             resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
             // Update stamina (once per tick)
+            // Python reference: extra_t = action.extra_tangential * eff.forward_accel
+            // Python reference: speed = np.linalg.norm(velocity) (magnitude)
+            const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+            const extraT = resolvedActions[i].extraTangential * eff.forwardAccel;
             state.currentStamina = updateStamina(
                 state.currentStamina,
                 eff,
-                resolvedActions[i].extraTangential,
+                extraT,
+                speed,
                 tangentialVel,
                 frame.turnRadius,
             );
+        }
+
+        // Precompute collision mass multipliers (push traits scale mass for collision only)
+        const collisionMassMultipliers: number[] = [];
+        for (let i = 0; i < ids.length; i++) {
+            const eff = effectiveAttrs[i];
+            collisionMassMultipliers.push((1 + eff.pushingPower) * (1 + eff.pushResistance));
         }
 
         // Physics substeps — recompute forces each substep so centripetal
@@ -290,8 +333,12 @@ export class HorseRacingEngine {
             for (let i = 0; i < ids.length; i++) {
                 const h = map.get(ids[i]);
                 if (!h) continue;
+                // Skip force application for horses that have finished
+                if (navs[i].completedLap) continue;
 
                 const nav = navs[i];
+                // Update segment each substep (matches Python navigator.update())
+                nav.updateSegment(h.center);
                 const frame = nav.getTrackFrame(h.center);
                 const v = h.linearVelocity;
                 const eff = effectiveAttrs[i];
@@ -313,6 +360,13 @@ export class HorseRacingEngine {
                     tangentialAccel = 0;
                 }
 
+                // Slope gravity: uphill decelerates, downhill accelerates
+                const slopeGrade = frame.slope;
+                if (slopeGrade !== 0) {
+                    const slopeAngle = Math.atan(slopeGrade);
+                    tangentialAccel += -9.81 * Math.sin(slopeAngle);
+                }
+
                 const normalAccel =
                     -centripetal
                     - normalVel * cfg.normalDamp
@@ -331,10 +385,107 @@ export class HorseRacingEngine {
                 );
             }
 
+            // Swap to collision masses before world.step (collision uses body._mass).
+            // Scale force proportionally so integration (force/_mass * dt) still
+            // produces the same acceleration as with the base weight.
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                const mult = collisionMassMultipliers[i];
+                (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight * mult;
+                // Scale force by same multiplier so accel = force/(weight*mult) = originalForce/weight
+                h.force = PointCal.multiplyVectorByScalar(h.force, mult);
+            }
+
             world.step(fixedDt);
+
+            // Restore base weight for next substep's force calculation
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight;
+            }
+
+            // Analytical wall collision (matches Python resolve_wall_collisions)
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h) continue;
+                if (navs[i].completedLap) continue;
+                const seg = this._segments[navs[i].segmentIndex];
+                const pos = h.center;
+                const hw = cfg.horseHalfWidth;
+                const htw = this._halfTrackWidth;
+
+                let wallNx = 0, wallNy = 0, wallDepth = 0;
+                if (seg.tracktype === 'STRAIGHT') {
+                    const dx = seg.endPoint.x - seg.startPoint.x;
+                    const dy = seg.endPoint.y - seg.startPoint.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    if (len > 1e-6) {
+                        const inv = 1 / len;
+                        const ox = dy * inv, oy = -dx * inv; // outward
+                        const thx = pos.x - seg.startPoint.x;
+                        const thy = pos.y - seg.startPoint.y;
+                        const lateral = thx * ox + thy * oy;
+                        const limit = htw - hw;
+                        if (lateral > limit) {
+                            wallNx = -ox; wallNy = -oy;
+                            wallDepth = lateral - limit;
+                        } else if (lateral < -limit) {
+                            wallNx = ox; wallNy = oy;
+                            wallDepth = -limit - lateral;
+                        }
+                    }
+                } else {
+                    const tx = pos.x - seg.center.x;
+                    const ty = pos.y - seg.center.y;
+                    const dist = Math.sqrt(tx * tx + ty * ty);
+                    if (dist > 1e-6) {
+                        const inv = 1 / dist;
+                        const nx = tx * inv, ny = ty * inv;
+                        const outerLimit = seg.radius + htw - hw;
+                        const innerLimit = seg.radius - htw + hw;
+                        if (dist > outerLimit) {
+                            wallNx = -nx; wallNy = -ny;
+                            wallDepth = dist - outerLimit;
+                        } else if (innerLimit > 0 && dist < innerLimit) {
+                            wallNx = nx; wallNy = ny;
+                            wallDepth = innerLimit - dist;
+                        }
+                    }
+                }
+
+                if (wallDepth > 0) {
+                    // Position correction
+                    h.center = {
+                        x: pos.x + wallNx * wallDepth,
+                        y: pos.y + wallNy * wallDepth,
+                    };
+                    // Velocity impulse with restitution 0.4
+                    const v = h.linearVelocity;
+                    const vn = v.x * wallNx + v.y * wallNy;
+                    h.linearVelocity = {
+                        x: v.x + wallNx * (-(1 + 0.4) * vn),
+                        y: v.y + wallNy * (-(1 + 0.4) * vn),
+                    };
+                }
+            }
         }
 
+        // Compute placements by track progress (higher = better rank)
+        const progresses = ids.map((id, i) => {
+            const body = map.get(id);
+            return { i, progress: body ? navs[i].computeProgress(body.center) : 0 };
+        });
+        const sorted = [...progresses].sort((a, b) => b.progress - a.progress);
+        const placements = new Array<number>(ids.length);
+        for (let rank = 0; rank < sorted.length; rank++) {
+            placements[sorted[rank].i] = rank + 1;
+        }
+        const numHorses = ids.length;
+
         // Update navigators and build observations
+        const totalSegments = this._segments.length;
         const observations: HorseObservation[] = [];
         for (let i = 0; i < ids.length; i++) {
             const body = map.get(ids[i]);
@@ -343,16 +494,27 @@ export class HorseRacingEngine {
                 continue;
             }
 
-            navs[i].updateSegment(body.center);
+            if (!navs[i].completedLap) navs[i].updateSegment(body.center);
             const frame = navs[i].getTrackFrame(body.center);
+
             const v = body.linearVelocity;
 
             const tangentialVel = PointCal.dotProduct(v, frame.tangential);
             const normalVel = PointCal.dotProduct(v, frame.normal);
-            const displacement =
-                frame.targetRadius < 1e6
-                    ? frame.turnRadius - frame.targetRadius
-                    : 0;
+            let displacement: number;
+            if (frame.targetRadius < 1e6) {
+                displacement = frame.turnRadius - frame.targetRadius;
+            } else {
+                const outward = navs[i].getOutwardNormal(navs[i].segmentIndex);
+                if (outward) {
+                    const seg = this._segments[navs[i].segmentIndex];
+                    const dx = body.center.x - seg.startPoint.x;
+                    const dy = body.center.y - seg.startPoint.y;
+                    displacement = dx * outward.x + dy * outward.y;
+                } else {
+                    displacement = 0;
+                }
+            }
 
             const eff = effectiveAttrs[i];
             const state = this._horseStates[i];
@@ -378,6 +540,17 @@ export class HorseRacingEngine {
                     tangentialVel,
                     frame.turnRadius,
                 ),
+                slope: frame.slope,
+                trackProgress: navs[i].computeProgress(body.center),
+                pushingPower: eff.pushingPower,
+                pushResistance: eff.pushResistance,
+                forwardAccel: eff.forwardAccel,
+                turnAccel: eff.turnAccel,
+                corneringGrip: eff.corneringGrip,
+                staminaRecovery: eff.staminaRecovery,
+                placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
+                numHorses,
+                activeModifierIds: firedModifiers[i] ?? new Set(),
             });
         }
 
@@ -428,7 +601,8 @@ export class HorseRacingEngine {
 
         const world = new World(absMaxX, absMaxY, 'dynamictree');
         world.useLinearCollisionResolution = true;
-        buildTrackIntoWorld(world, segments, { halfTrackWidth: this._halfTrackWidth });
+        // Wall collision is handled analytically (matching Python) instead of
+        // via static rail bodies, which caused cross-segment interference.
 
         const frame = trackStartFrame(segments);
         if (!frame) {
@@ -440,25 +614,42 @@ export class HorseRacingEngine {
         const startPositions: Point[] = [];
         const horseStates: HorseState[] = [];
 
+        // Spawn horses from the inner rail outward.
+        // outward points toward the outer rail, so the innermost
+        // position is at the most negative lateral offset.
+        const innerEdge = -(this._halfTrackWidth - cfg.horseSpacing);
+
+        // Rectangle vertices in local coordinates (horse-shaped)
+        const hl = cfg.horseHalfLength;
+        const hw = cfg.horseHalfWidth;
+        const rectVertices: Point[] = [
+            { x: hl, y: hw },
+            { x: hl, y: -hw },
+            { x: -hl, y: -hw },
+            { x: -hl, y: hw },
+        ];
+
         for (let i = 0; i < cfg.horseCount; i++) {
             const id = `horse-${i}`;
+            const lateral = innerEdge + cfg.horseSpacing * i;
             const pos = PointCal.addVector(
                 frame.origin,
-                PointCal.multiplyVectorByScalar(
-                    frame.outward,
-                    cfg.horseSpacing * (i + 1),
-                ),
+                PointCal.multiplyVectorByScalar(frame.outward, lateral),
             );
 
             const genome = this._genomes[i];
             const baseAttributes = expressGenome(genome);
             const activeModifiers = expressModifiers(genome);
 
-            const body = new Circle(pos, cfg.horseRadius, 0, baseAttributes.weight, false, false);
+            const nav = new TrackNavigator(segments, 0, this._halfTrackWidth);
+            // Orient each horse along the track tangent at its spawn position
+            const spawnFrame = nav.getTrackFrame(pos);
+            const orientAngle = Math.atan2(spawnFrame.tangential.y, spawnFrame.tangential.x);
+            const body = new Polygon(pos, rectVertices, orientAngle, baseAttributes.weight, false, false);
             world.addRigidBody(id, body);
             horseIds.push(id);
             startPositions.push({ x: pos.x, y: pos.y });
-            navigators.push(new TrackNavigator(segments, 0, this._halfTrackWidth));
+            navigators.push(nav);
 
             horseStates.push({
                 genome,
@@ -495,7 +686,7 @@ export class HorseRacingEngine {
             velocities.push(body ? { x: body.linearVelocity.x, y: body.linearVelocity.y } : { x: 0, y: 0 });
             staminaLevels.push(states[i].currentStamina);
             maxStamina.push(states[i].baseAttributes.stamina);
-            trackProgress.push(totalSegments > 0 ? navs[i].segmentIndex / totalSegments : 0);
+            trackProgress.push(body ? navs[i].computeProgress(body.center) : 0);
             segmentTypes.push(navs[i].segment.tracktype);
         }
 
@@ -536,9 +727,20 @@ export class HorseRacingEngine {
             normal: { x: 0, y: -1 },
             currentStamina: state?.currentStamina ?? 100,
             maxStamina: state?.baseAttributes.stamina ?? 100,
-            effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 13,
-            effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 20,
+            effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 14.25,
+            effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 18,
             corneringMargin: Infinity,
+            slope: 0,
+            trackProgress: 0,
+            pushingPower: state?.baseAttributes.pushingPower ?? 0.5,
+            pushResistance: state?.baseAttributes.pushResistance ?? 0.5,
+            forwardAccel: state?.baseAttributes.forwardAccel ?? 1.0,
+            turnAccel: state?.baseAttributes.turnAccel ?? 1.0,
+            corneringGrip: state?.baseAttributes.corneringGrip ?? 1.0,
+            staminaRecovery: state?.baseAttributes.staminaRecovery ?? 1.0,
+            placementNorm: 0,
+            numHorses: this._horseStates.length,
+            activeModifierIds: new Set(),
         };
     }
 }

@@ -2,9 +2,10 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { join, resolve } from 'path';
 import { defineConfig } from 'vite';
+import modelManifestPlugin from './vite-plugin-model-manifest.js';
 
 export default defineConfig({
-    plugins: [tailwindcss(), react()],
+    plugins: [tailwindcss(), react(), modelManifestPlugin()],
     root: resolve(__dirname, './src'),
     publicDir: resolve(__dirname, 'public'),
     build: {
@@ -31,7 +32,15 @@ export default defineConfig({
         '**/*.svg',
         '**/*.webp',
     ],
+    optimizeDeps: {
+        exclude: ['onnxruntime-web'],
+    },
     server: {
         strictPort: false,
+        headers: {
+            // Required for WASM files to load correctly
+            'Cross-Origin-Opener-Policy': 'same-origin',
+            'Cross-Origin-Embedder-Policy': 'require-corp',
+        },
     },
 });

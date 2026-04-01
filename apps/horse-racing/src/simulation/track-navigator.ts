@@ -25,6 +25,8 @@ export type TrackFrame = {
      * `Infinity` on straights.
      */
     targetRadius: number;
+    /** Grade (rise/run) of the current segment. 0 = flat. */
+    slope: number;
 };
 
 /**
@@ -38,19 +40,103 @@ export class TrackNavigator {
     private halfTrackWidth: number;
     /** Distance from the curve center when the horse entered the current curve segment. */
     private curveEntryRadius = NaN;
+    /** True once the horse has exited the last segment (crossed the finish line). */
+    private _completedLap = false;
+    /** Precomputed outward normals for straight segments (null for curves). */
+    private outwardNormals: (Point | null)[];
+    /** Precomputed length of each segment. */
+    private _segmentLengths: number[];
+    /** Cumulative length up to (but not including) each segment. */
+    private _cumulativeLengths: number[];
+    /** Total track length. */
+    private _totalLength: number;
 
     constructor(segments: TrackSegment[], startIndex = 0, halfTrackWidth = 15) {
         this.segments = segments;
         this.currentIndex = startIndex;
         this.halfTrackWidth = halfTrackWidth;
+        this.outwardNormals = this.computeOutwardNormals();
+
+        // Precompute segment lengths and cumulative distances
+        this._segmentLengths = segments.map((seg) => {
+            if (seg.tracktype === 'STRAIGHT') {
+                const dx = seg.endPoint.x - seg.startPoint.x;
+                const dy = seg.endPoint.y - seg.startPoint.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            return Math.abs(seg.angleSpan) * seg.radius;
+        });
+        this._cumulativeLengths = [];
+        let acc = 0;
+        for (const l of this._segmentLengths) {
+            this._cumulativeLengths.push(acc);
+            acc += l;
+        }
+        this._totalLength = acc;
     }
 
     get segmentIndex(): number {
         return this.currentIndex;
     }
 
+    get completedLap(): boolean {
+        return this._completedLap;
+    }
+
     get segment(): TrackSegment {
         return this.segments[this.currentIndex];
+    }
+
+    get totalLength(): number {
+        return this._totalLength;
+    }
+
+    /**
+     * Return continuous progress fraction [0, 1] along the total track length.
+     * Matches Python `TrackNavigator.compute_progress()`.
+     */
+    computeProgress(position: Point): number {
+        if (this._totalLength < 1e-6) return 0;
+
+        const seg = this.segments[this.currentIndex];
+        const base = this._cumulativeLengths[this.currentIndex];
+        const segLen = this._segmentLengths[this.currentIndex];
+        let along: number;
+
+        if (seg.tracktype === 'STRAIGHT') {
+            const dx = seg.endPoint.x - seg.startPoint.x;
+            const dy = seg.endPoint.y - seg.startPoint.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) {
+                along = 0;
+            } else {
+                const fwdX = dx / len;
+                const fwdY = dy / len;
+                const offX = position.x - seg.startPoint.x;
+                const offY = position.y - seg.startPoint.y;
+                along = offX * fwdX + offY * fwdY;
+            }
+        } else {
+            const toPosX = position.x - seg.center.x;
+            const toPosY = position.y - seg.center.y;
+            const anglePos = Math.atan2(toPosY, toPosX);
+            const toStartX = seg.startPoint.x - seg.center.x;
+            const toStartY = seg.startPoint.y - seg.center.y;
+            const angleStart = Math.atan2(toStartY, toStartX);
+
+            let delta = anglePos - angleStart;
+            if (seg.angleSpan >= 0) {
+                while (delta < 0) delta += 2 * Math.PI;
+                while (delta > 2 * Math.PI) delta -= 2 * Math.PI;
+            } else {
+                while (delta > 0) delta -= 2 * Math.PI;
+                while (delta < -2 * Math.PI) delta += 2 * Math.PI;
+            }
+            along = Math.abs(delta) * seg.radius;
+        }
+
+        along = Math.max(0, Math.min(segLen, along));
+        return (base + along) / this._totalLength;
     }
 
     /** The radius the horse should hold on the current curve, or `Infinity` on straights. */
@@ -91,9 +177,12 @@ export class TrackNavigator {
         }
 
         if (exited) {
+            if (this.currentIndex === this.segments.length - 1) {
+                this._completedLap = true;
+                return; // stay on last segment (race is over), matching Python
+            }
             const prevSeg = seg;
-            this.currentIndex =
-                (this.currentIndex + 1) % this.segments.length;
+            this.currentIndex = this.currentIndex + 1;
             const newSeg = this.segment;
 
             if (newSeg.tracktype === 'CURVE') {
@@ -133,6 +222,56 @@ export class TrackNavigator {
         }
     }
 
+    /** Get the precomputed outward normal for a segment (null for curves). */
+    getOutwardNormal(segmentIndex: number): Point | null {
+        return this.outwardNormals[segmentIndex];
+    }
+
+    // ------------------------------------------------------------------
+    // Outward normal precomputation
+    // ------------------------------------------------------------------
+
+    private computeOutwardNormals(): (Point | null)[] {
+        return this.segments.map((seg, i) => {
+            if (seg.tracktype === 'CURVE') return null;
+            const start = seg.startPoint;
+            const end = seg.endPoint;
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) return { x: 0, y: -1 };
+            // default normal: rotate_90_cw of forward
+            let nx = dy / len;
+            let ny = -dx / len;
+            // Find nearest curve to determine direction
+            const curve = this.findNearestCurve(i);
+            if (curve) {
+                const mx = (start.x + end.x) / 2;
+                const my = (start.y + end.y) / 2;
+                const toCenterDot =
+                    (curve.center.x - mx) * nx +
+                    (curve.center.y - my) * ny;
+                if (toCenterDot > 0) {
+                    nx = -nx;
+                    ny = -ny;
+                }
+            }
+            return { x: nx, y: ny };
+        });
+    }
+
+    private findNearestCurve(idx: number): CurveSegment | null {
+        for (let j = idx + 1; j < this.segments.length; j++) {
+            if (this.segments[j].tracktype === 'CURVE')
+                return this.segments[j] as CurveSegment;
+        }
+        for (let j = idx - 1; j >= 0; j--) {
+            if (this.segments[j].tracktype === 'CURVE')
+                return this.segments[j] as CurveSegment;
+        }
+        return null;
+    }
+
     // ------------------------------------------------------------------
     // Frame helpers
     // ------------------------------------------------------------------
@@ -144,7 +283,7 @@ export class TrackNavigator {
         const normal = PointCal.unitVector(
             PointCal.rotatePoint(tangential, -Math.PI / 2),
         );
-        return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity };
+        return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity, slope: seg.slope ?? 0 };
     }
 
     private curveFrame(seg: CurveSegment, position: Point): TrackFrame {
@@ -184,6 +323,7 @@ export class TrackNavigator {
             turnRadius,
             nominalRadius: seg.radius,
             targetRadius: this.curveEntryRadius,
+            slope: seg.slope ?? 0,
         };
     }
 

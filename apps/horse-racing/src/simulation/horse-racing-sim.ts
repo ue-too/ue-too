@@ -8,29 +8,38 @@ import type { CurveSegment, StraightSegment } from './track-types';
 import { parseTrackJson, trackBounds } from './track-from-json';
 import type { TrackSegment } from './track-types';
 import { HorseRacingEngine } from './horse-racing-engine';
-import type { HorseAction } from './horse-racing-engine';
+import type { HorseAction, HorseObservation } from './horse-racing-engine';
+import { generateDefaultGenome } from './horse-genome';
+import { AIJockeyManager } from './ai-jockey';
 
 // ---------------------------------------------------------------------------
 // Constants (rendering only — simulation constants live in the engine)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TRACK_URL = '/tracks/exp_track_8.json';
+const DEFAULT_TRACK_URL = '/tracks/tokyo.json';
 
-const HORSE_COLORS = [0xc9a227, 0x8b4513, 0x4169e1, 0xffffff];
-const PLAYER_INDEX = 0;
+const HORSE_COLORS = [
+    0xc9a227, 0x8b4513, 0x4169e1, 0xffffff, 0xe53935, 0x43a047,
+    0x8e24aa, 0xff9800, 0x00bcd4, 0xe91e63, 0xcddc39, 0x009688,
+    0xff7043, 0x3f51b5, 0xfa8072, 0x40e0d0, 0x800000, 0x808000,
+    0x000080, 0xff69b4,
+];
+const ARCHETYPE_NAMES = ['front_runner', 'stalker', 'closer', 'presser'];
 const PLAYER_TANGENTIAL = 10; // player UP/DOWN acceleration magnitude
 const PLAYER_NORMAL = 5; // player LEFT/RIGHT acceleration magnitude
+const PLAYER_INDICATOR_COLOR = 0xffff00;
+const PLAYER_INDICATOR_RADIUS = 3.5;
 
 // Debug
 const DEBUG_TRAIL = true;
-const TRAIL_DOT_INTERVAL = 5; // record every N ticks
-const TRAIL_DOT_RADIUS = 1.5;
+const TRAIL_SAMPLE_INTERVAL = 5; // record every N ticks
+const TRAIL_LINE_WIDTH = 1;
 const DEBUG_FENCE_COLOR = 0xff4444;
 const DEBUG_CENTERLINE_COLOR = 0x00ff00;
 const DEBUG_FAN_COLOR = 0x00ccff;
 
 // Track rendering — derive from default horse layout so fences contain all horses
-const TRACK_HALF_WIDTH = 14 * 4 + 9; // horseSpacing * horseCount + horseRadius = 65
+const TRACK_HALF_WIDTH = 1.0 * 20 / 2 + 0.325; // horseSpacing * maxHorseCount / 2 + horseHalfWidth = 10.325
 const RAIL_COLOR = 0xcccccc;
 const RAIL_WIDTH = 2;
 const TRACK_SURFACE_COLOR = 0x8b7355;
@@ -67,6 +76,34 @@ function createKeyState(): KeyState {
 export type HorseRacingSimHandle = {
     cleanup: () => void;
     reloadTrack: (segments: TrackSegment[]) => void;
+    /** Toggle visibility of the fitted-arc fan debug overlay. */
+    setArcFanVisible: (visible: boolean) => void;
+    /** Current visibility of the fitted-arc fan overlay. */
+    arcFanVisible: () => boolean;
+    /** Enable AI control for a specific horse (or all with index -1). */
+    enableAI: (horseIndex: number) => void;
+    /** Disable AI control, revert to keyboard/idle. */
+    disableAI: (horseIndex: number) => void;
+    /** Whether AI is controlling a specific horse. */
+    isAIEnabled: (horseIndex: number) => boolean;
+    /** Start the race (simulation is paused until this is called). */
+    startRace: () => void;
+    /** Whether the race has been started. */
+    isRaceStarted: () => boolean;
+    /** Whether the race has finished (all horses crossed the finish line). */
+    isRaceFinished: () => boolean;
+    /** Reset the race to starting positions with current settings. */
+    resetRace: () => void;
+    /** Get the current horse count. */
+    getHorseCount: () => number;
+    /** Change horse count and rebuild the sim. */
+    setHorseCount: (count: number) => void;
+    /** Assign a specific ONNX model to a horse. */
+    setModelForHorse: (horseIndex: number, modelUrl: string) => Promise<void>;
+    /** Set which horse the player controls (-1 = none, all AI). */
+    setPlayerHorse: (horseIndex: number) => void;
+    /** Get the current player-controlled horse index (-1 = none). */
+    getPlayerHorse: () => number;
 };
 
 // ---------------------------------------------------------------------------
@@ -88,6 +125,31 @@ export async function attachHorseRacingSim(
     const { app, cleanups } = components;
     const stage = app.stage;
 
+    // AI jockey manager for model-controlled horses
+    const aiManager = new AIJockeyManager();
+    const aiControlled = new Set<number>();
+    let pendingAIActions: Map<number, HorseAction> = new Map();
+    let raceStarted = false;
+    let currentHorseCount = 4;
+    let playerIndex = -1; // -1 = no player control (all AI)
+
+    // Track which model URL each horse should use
+    const modelAssignments = new Map<number, string>();
+
+    const reloadModels = (): void => {
+        aiManager.clearAll();
+        for (let i = 0; i < currentHorseCount; i++) {
+            const url = modelAssignments.get(i) ?? '/models/v5_baseline.onnx';
+            aiManager.loadForHorse(i, url).catch(() => {
+                console.warn(`[AI] Failed to load model for horse ${i}`);
+            });
+        }
+    };
+
+    // Load initial models and enable AI for all horses
+    reloadModels();
+    for (let i = 0; i < currentHorseCount; i++) aiControlled.add(i);
+
     let segments: TrackSegment[];
     if (preloadedSegments) {
         segments = preloadedSegments;
@@ -100,7 +162,7 @@ export async function attachHorseRacingSim(
     }
 
     // Mutable sim state — replaced on reload
-    let sim = buildSim(stage, segments);
+    let sim = buildSim(stage, segments, currentHorseCount);
 
     // Key listeners
     const keys = createKeyState();
@@ -113,29 +175,114 @@ export async function attachHorseRacingSim(
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    // Track stage scale so we can mark pixelLine graphics dirty on change
+    let prevScale = stage.localTransform.a;
+
+    // Fixed-rate simulation: decouple sim ticks from display refresh rate.
+    // The engine is designed to be called once per "sim tick" at ~60 Hz.
+    const SIM_TICK_MS = 1000 / 60;
+    let simAccumulatorMs = 0;
+
     // Ticker
     const onTick = (): void => {
+        // When zoom changes, pixelLine graphics need their context marked dirty
+        // so PixiJS rebuilds vertex data with the updated scale.
+        const curScale = stage.localTransform.a;
+        if (curScale !== prevScale) {
+            prevScale = curScale;
+            sim.trackGfx.context.dirty = true;
+            sim.debugGfx.context.dirty = true;
+            sim.arcFanGfx.context.dirty = true;
+        }
+
         const engine = sim.engine;
         const horseCount = engine.horseIds.length;
 
-        // Map keyboard → actions
-        const actions: HorseAction[] = [];
-        for (let i = 0; i < horseCount; i++) {
-            if (i === PLAYER_INDEX) {
-                let extraTangential = 0;
-                let extraNormal = 0;
-                if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
-                if (keys.ArrowDown) extraTangential = -PLAYER_TANGENTIAL;
-                if (keys.ArrowLeft) extraNormal = -PLAYER_NORMAL;
-                if (keys.ArrowRight) extraNormal = PLAYER_NORMAL;
-                actions.push({ extraTangential, extraNormal });
-            } else {
-                actions.push({ extraTangential: 0, extraNormal: 0 });
+        // Wait for start button before running the simulation
+        if (!raceStarted) return;
+
+        // Check if race is over (all horses finished)
+        if (sim.raceFinished) return;
+
+        // Accumulate real elapsed time and step at a fixed sim rate.
+        // Cap accumulator to avoid spiral-of-death on long frames.
+        simAccumulatorMs += app.ticker.deltaMS;
+        if (simAccumulatorMs > SIM_TICK_MS * 4) {
+            simAccumulatorMs = SIM_TICK_MS * 4;
+        }
+
+        let observations: HorseObservation[] | undefined;
+
+        while (simAccumulatorMs >= SIM_TICK_MS) {
+            simAccumulatorMs -= SIM_TICK_MS;
+
+            if (sim.raceFinished) break;
+
+            // Map keyboard / AI → actions (skip finished horses)
+            const actions: HorseAction[] = [];
+            for (let i = 0; i < horseCount; i++) {
+                if (sim.finishedHorses.has(i)) {
+                    // Freeze finished horse — counteract auto-cruise by braking
+                    actions.push({ extraTangential: -20, extraNormal: 0 });
+                    continue;
+                }
+                if (i === playerIndex) {
+                    // Player-controlled horse: read keyboard input
+                    let extraTangential = 0;
+                    let extraNormal = 0;
+                    if (keys.ArrowUp) extraTangential = PLAYER_TANGENTIAL;
+                    if (keys.ArrowDown) extraTangential = -PLAYER_TANGENTIAL;
+                    if (keys.ArrowLeft) extraNormal = -PLAYER_NORMAL;
+                    if (keys.ArrowRight) extraNormal = PLAYER_NORMAL;
+                    actions.push({ extraTangential, extraNormal });
+                } else if (aiControlled.has(i) && pendingAIActions.has(i) && aiManager.hasModel(i)) {
+                    // Use AI-computed action from previous tick's observation
+                    actions.push(pendingAIActions.get(i)!);
+                } else {
+                    actions.push({ extraTangential: 0, extraNormal: 0 });
+                }
+            }
+
+            // Step simulation
+            observations = engine.step(actions);
+
+            // Detect newly finished horses via the navigator's completedLap flag,
+            // which is set when a horse exits the last track segment.
+            const navs = sim.engine.navigators;
+            const bodyMap = sim.engine.world.getRigidBodyMap();
+            for (let i = 0; i < horseCount; i++) {
+                if (sim.finishedHorses.has(i)) continue;
+                if (navs[i].completedLap) {
+                    sim.finishedHorses.add(i);
+                    const pos = observations[i].position;
+                    sim.finishPositions.set(i, {
+                        x: pos.x, y: pos.y,
+                        rotation: observations[i].orientationAngle,
+                    });
+                    sim.finishOrder.push(i);
+                    // Freeze the horse so it stops moving
+                    const body = bodyMap.get(engine.horseIds[i]);
+                    if (body) {
+                        body.linearVelocity = { x: 0, y: 0 };
+                    }
+                    console.log(`[Race] Horse ${i} finished in position ${sim.finishOrder.length}`);
+                }
+            }
+            if (sim.finishedHorses.size >= horseCount) {
+                sim.raceFinished = true;
+                console.log('[Race] All horses finished! Final order:', sim.finishOrder);
             }
         }
 
-        // Step simulation
-        engine.step(actions);
+        // Queue AI inference for next tick (async, non-blocking)
+        // Pass all observations so agents can compute relative horse positions
+        if (observations && aiManager.isReady && aiControlled.size > 0) {
+            const aiIndices = [...aiControlled];
+            const aiObs = aiIndices.map(i => observations![i]);
+            aiManager.computeActions(aiIndices, aiObs, observations).then((actionMap) => {
+                pendingAIActions = actionMap;
+            });
+        }
 
         // Update graphics from engine state
         const positions = engine.getHorsePositions();
@@ -143,35 +290,79 @@ export async function attachHorseRacingSim(
         for (let i = 0; i < horseCount; i++) {
             const id = engine.horseIds[i];
             const gr = sim.horseGfx.get(id);
-            if (gr) {
+            if (!gr) continue;
+            // Freeze finished horses at their finish position
+            const finishPos = sim.finishPositions.get(i);
+            if (finishPos) {
+                gr.position.set(finishPos.x, finishPos.y);
+                gr.rotation = finishPos.rotation;
+            } else {
                 gr.position.set(positions[i].x, positions[i].y);
                 gr.rotation = orientations[i];
             }
+        }
+
+        // Update per-horse archetype labels (scale inversely with zoom for consistent screen size)
+        const labelScale = 1 / curScale;
+        for (let i = 0; i < horseCount && i < sim.aiLabels.length; i++) {
+            if (aiControlled.has(i)) {
+                sim.aiLabels[i].visible = true;
+                sim.aiLabels[i].position.set(positions[i].x, positions[i].y);
+                sim.aiLabels[i].scale.set(labelScale, labelScale);
+            } else {
+                sim.aiLabels[i].visible = false;
+            }
+        }
+
+        // --- Player indicator ring ---
+        sim.playerIndicator.clear();
+        if (playerIndex >= 0 && playerIndex < horseCount && !sim.finishedHorses.has(playerIndex)) {
+            const px = positions[playerIndex].x;
+            const py = positions[playerIndex].y;
+            sim.playerIndicator.circle(px, py, PLAYER_INDICATOR_RADIUS);
+            sim.playerIndicator.stroke({ width: 2, color: PLAYER_INDICATOR_COLOR, alpha: 0.9, pixelLine: true });
+            // Small arrow above the horse (scales with zoom)
+            const arrowSize = 1.5;
+            const arrowY = py - PLAYER_INDICATOR_RADIUS - arrowSize * 0.5;
+            sim.playerIndicator.moveTo(px - arrowSize, arrowY - arrowSize);
+            sim.playerIndicator.lineTo(px, arrowY);
+            sim.playerIndicator.lineTo(px + arrowSize, arrowY - arrowSize);
+            sim.playerIndicator.stroke({ width: 2, color: PLAYER_INDICATOR_COLOR, alpha: 0.9, pixelLine: true });
         }
 
         // --- Debug: racing line trail + target arc overlay ---
         if (DEBUG_TRAIL) {
             sim.trailCounter += 1;
 
-            // Dot trail (sampled)
-            if (sim.trailCounter % TRAIL_DOT_INTERVAL === 0) {
+            // Line trail (sampled)
+            if (sim.trailCounter % TRAIL_SAMPLE_INTERVAL === 0) {
                 for (let i = 0; i < horseCount; i++) {
-                    sim.trailGfx
-                        .circle(positions[i].x, positions[i].y, TRAIL_DOT_RADIUS)
-                        .fill({ color: HORSE_COLORS[i % HORSE_COLORS.length], alpha: 0.7 });
+                    const prev = sim.trailPrevPos[i];
+                    const cur = positions[i];
+                    if (prev) {
+                        sim.trailGfx
+                            .moveTo(prev.x, prev.y)
+                            .lineTo(cur.x, cur.y)
+                            .stroke({ width: TRAIL_LINE_WIDTH, color: HORSE_COLORS[i % HORSE_COLORS.length], alpha: 0.7, pixelLine: true });
+                    }
+                    sim.trailPrevPos[i] = { x: cur.x, y: cur.y };
                 }
             }
 
-            // Target arc (redrawn each frame so it tracks the current segment)
+            // Target arc (redrawn each frame using the horse's current radius)
             sim.targetArcGfx.clear();
             for (let i = 0; i < horseCount; i++) {
                 const nav = engine.navigators[i];
                 const seg = nav.segment;
                 if (seg.tracktype !== 'CURVE') continue;
-                const tR = nav.targetRadius;
-                if (!isFinite(tR)) continue;
 
                 const center: Point = { x: seg.center.x, y: seg.center.y };
+                // Use the horse's actual distance from the curve center
+                const dx = positions[i].x - center.x;
+                const dy = positions[i].y - center.y;
+                const currentRadius = Math.sqrt(dx * dx + dy * dy);
+                if (currentRadius < 1e-6) continue;
+
                 const startA = Math.atan2(
                     seg.startPoint.y - seg.center.y,
                     seg.startPoint.x - seg.center.x,
@@ -181,7 +372,7 @@ export async function attachHorseRacingSim(
                     Math.ceil(Math.abs(span) * (180 / Math.PI) * ARC_STEPS_PER_DEG),
                     4,
                 );
-                const pts = arcPoints(center, tR, startA, span, steps);
+                const pts = arcPoints(center, currentRadius, startA, span, steps);
                 sim.targetArcGfx.moveTo(pts[0].x, pts[0].y);
                 for (let j = 1; j < pts.length; j++) {
                     sim.targetArcGfx.lineTo(pts[j].x, pts[j].y);
@@ -190,6 +381,7 @@ export async function attachHorseRacingSim(
                     width: 1,
                     color: HORSE_COLORS[i % HORSE_COLORS.length],
                     alpha: 0.5,
+                    pixelLine: true,
                 });
             }
         }
@@ -212,13 +404,101 @@ export async function attachHorseRacingSim(
     const reloadTrack = (newSegments: TrackSegment[]): void => {
         app.ticker.remove(onTick);
         teardownSim();
-        sim = buildSim(stage, newSegments);
+        segments = newSegments;
+        raceStarted = false;
+        pendingAIActions.clear();
+        sim = buildSim(stage, segments, currentHorseCount);
+        simAccumulatorMs = 0;
+        reloadModels();
+        aiControlled.clear();
+        for (let i = 0; i < currentHorseCount; i++) {
+            if (i !== playerIndex) aiControlled.add(i);
+        }
         app.ticker.add(onTick);
     };
 
+    const setArcFanVisible = (visible: boolean): void => {
+        sim.arcFanGfx.visible = visible;
+    };
+
+    const arcFanVisible = (): boolean => sim.arcFanGfx.visible;
+
     cleanups.push(cleanup);
 
-    return { cleanup, reloadTrack };
+    const enableAI = (horseIndex: number): void => {
+        if (horseIndex === -1) {
+            for (let i = 0; i < sim.engine.horseIds.length; i++) aiControlled.add(i);
+        } else {
+            aiControlled.add(horseIndex);
+        }
+    };
+
+    const disableAI = (horseIndex: number): void => {
+        if (horseIndex === -1) {
+            aiControlled.clear();
+            pendingAIActions.clear();
+        } else {
+            aiControlled.delete(horseIndex);
+            pendingAIActions.delete(horseIndex);
+        }
+    };
+
+    const isAIEnabled = (horseIndex: number): boolean => aiControlled.has(horseIndex);
+
+    const startRace = (): void => { raceStarted = true; };
+    const isRaceStarted = (): boolean => raceStarted;
+    const isRaceFinished = (): boolean => sim.raceFinished;
+
+    const resetRace = (): void => {
+        app.ticker.remove(onTick);
+        teardownSim();
+        raceStarted = false;
+        pendingAIActions.clear();
+        sim = buildSim(stage, segments, currentHorseCount);
+        simAccumulatorMs = 0;
+        reloadModels();
+        aiControlled.clear();
+        for (let i = 0; i < currentHorseCount; i++) {
+            if (i !== playerIndex) aiControlled.add(i);
+        }
+        app.ticker.add(onTick);
+    };
+
+    const getHorseCount = (): number => currentHorseCount;
+
+    const setHorseCount = (count: number): void => {
+        currentHorseCount = Math.max(2, Math.min(20, count));
+        resetRace();
+    };
+
+    const setModelForHorse = async (horseIndex: number, modelUrl: string): Promise<void> => {
+        modelAssignments.set(horseIndex, modelUrl);
+        await aiManager.loadForHorse(horseIndex, modelUrl);
+    };
+
+    const setPlayerHorse = (horseIndex: number): void => {
+        const prev = playerIndex;
+        playerIndex = horseIndex;
+        // Re-enable AI on the previously controlled horse
+        if (prev >= 0 && prev !== horseIndex) {
+            aiControlled.add(prev);
+        }
+        // Disable AI on the newly player-controlled horse
+        if (horseIndex >= 0) {
+            aiControlled.delete(horseIndex);
+            pendingAIActions.delete(horseIndex);
+        }
+    };
+
+    const getPlayerHorse = (): number => playerIndex;
+
+    return {
+        cleanup, reloadTrack, setArcFanVisible, arcFanVisible,
+        enableAI, disableAI, isAIEnabled,
+        startRace, isRaceStarted, isRaceFinished,
+        resetRace, getHorseCount, setHorseCount, setModelForHorse,
+        setPlayerHorse, getPlayerHorse,
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -302,10 +582,10 @@ function drawStraightRails(
     const inner = straightOffsetLine(seg, -hw);
     g.moveTo(outer.start.x, outer.start.y);
     g.lineTo(outer.end.x, outer.end.y);
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
     g.moveTo(inner.start.x, inner.start.y);
     g.lineTo(inner.end.x, inner.end.y);
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 }
 
 function drawStraightCenterline(g: Graphics, seg: StraightSegment): void {
@@ -386,13 +666,13 @@ function drawCurveRails(g: Graphics, seg: CurveSegment, hw: number): void {
     for (let i = 1; i < outerPts.length; i++) {
         g.lineTo(outerPts[i].x, outerPts[i].y);
     }
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 
     g.moveTo(innerPts[0].x, innerPts[0].y);
     for (let i = 1; i < innerPts.length; i++) {
         g.lineTo(innerPts[i].x, innerPts[i].y);
     }
-    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR });
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
 }
 
 function drawCurveCenterline(g: Graphics, seg: CurveSegment): void {
@@ -435,13 +715,13 @@ const DEBUG_FENCE_STEP_DEG = 5;
  * Draws debug overlay showing physics collider boundaries, the track
  * centerline, and the fitted-arc fans (Crescent coverage area).
  */
-function drawDebugOverlay(g: Graphics, segments: TrackSegment[]): void {
+function drawDebugOverlay(g: Graphics, arcFanG: Graphics, segments: TrackSegment[]): void {
     for (const seg of segments) {
         if (seg.tracktype === 'STRAIGHT') {
             drawDebugStraightFences(g, seg);
             drawDebugStraightCenterline(g, seg);
         } else {
-            drawDebugFittedArcFan(g, seg);
+            drawDebugFittedArcFan(arcFanG, seg);
             drawDebugCurveOuterFence(g, seg);
             drawDebugCurveCenterline(g, seg);
             drawDebugCurveInnerRail(g, seg);
@@ -485,7 +765,7 @@ function drawDebugStraightFences(g: Graphics, seg: StraightSegment): void {
         }
         g.closePath();
         g.fill({ color: DEBUG_FENCE_COLOR, alpha: 0.15 });
-        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5 });
+        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5, pixelLine: true });
     }
 }
 
@@ -526,7 +806,7 @@ function drawDebugCurveOuterFence(g: Graphics, seg: CurveSegment): void {
         g.lineTo(p3.x, p3.y);
         g.closePath();
         g.fill({ color: DEBUG_FENCE_COLOR, alpha: 0.15 });
-        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5 });
+        g.stroke({ width: 1, color: DEBUG_FENCE_COLOR, alpha: 0.5, pixelLine: true });
     }
 }
 
@@ -542,11 +822,14 @@ function drawDebugCurveInnerRail(g: Graphics, seg: CurveSegment): void {
         4,
     );
     const pts = arcPoints(center, innerRadius, startA, span, steps);
+    // Draw closed crescent: arc + chord
     g.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length; i++) {
         g.lineTo(pts[i].x, pts[i].y);
     }
-    g.stroke({ width: 2, color: 0xff8800, alpha: 0.7 });
+    g.closePath();
+    g.fill({ color: 0xff8800, alpha: 0.1 });
+    g.stroke({ width: 1, color: 0xff8800, alpha: 0.7, pixelLine: true });
 }
 
 // ---- Centerline (solid, for debug contrast) ----
@@ -602,18 +885,31 @@ function drawDebugFittedArcFan(g: Graphics, seg: CurveSegment): void {
 
 type SimState = {
     engine: HorseRacingEngine;
+    trackGfx: Graphics;
     horseGfx: Map<string, Graphics>;
+    aiLabels: Text[];
+    playerIndicator: Graphics;
     trailGfx: Graphics;
     targetArcGfx: Graphics;
+    debugGfx: Graphics;
+    arcFanGfx: Graphics;
+    finishedHorses: Set<number>;
+    finishPositions: Map<number, { x: number; y: number; rotation: number }>;
+    finishOrder: number[];
+    raceFinished: boolean;
     trailCounter: number;
+    trailPrevPos: (Point | null)[];
     teardown: () => void;
 };
 
 function buildSim(
     stage: import('pixi.js').Container,
     segments: TrackSegment[],
+    horseCount = 4,
 ): SimState {
-    const engine = new HorseRacingEngine(segments);
+    // Each horse gets a random genome for varied physical attributes
+    const genomes = Array.from({ length: horseCount }, () => generateDefaultGenome());
+    const engine = new HorseRacingEngine(segments, { horseCount }, genomes);
     const bounds = trackBounds(segments, 120);
 
     // Turf background
@@ -632,12 +928,14 @@ function buildSim(
     drawTrack(trackGfx, segments);
     stage.addChild(trackGfx);
 
-    // Debug overlay (fences, centerline, fitted-arc fans)
+    // Debug overlay (fences, centerline) + separate arc-fan layer
     const debugGfx = new Graphics();
+    const arcFanGfx = new Graphics();
     if (DEBUG_TRAIL) {
-        drawDebugOverlay(debugGfx, segments);
+        drawDebugOverlay(debugGfx, arcFanGfx, segments);
     }
     stage.addChild(debugGfx);
+    stage.addChild(arcFanGfx);
 
     // Label
     const label = new Text({
@@ -657,23 +955,45 @@ function buildSim(
 
     // Horse graphics (bodies are owned by the engine)
     const horseGfx = new Map<string, Graphics>();
-    const horseRadius = engine.config.horseRadius;
+    const horseHL = engine.config.horseHalfLength;
+    const horseHW = engine.config.horseHalfWidth;
     const positions = engine.getHorsePositions();
+    const orientations = engine.getHorseOrientations();
 
     for (let i = 0; i < engine.horseIds.length; i++) {
         const id = engine.horseIds[i];
         const g = new Graphics();
-        g.rect(-horseRadius, -horseRadius * 0.6, horseRadius * 2, horseRadius * 1.2).fill({
+        g.rect(-horseHL, -horseHW, horseHL * 2, horseHW * 2).fill({
             color: HORSE_COLORS[i % HORSE_COLORS.length],
         });
         // Direction indicator line
         g.moveTo(0, 0);
-        g.lineTo(horseRadius * 0.8, 0);
-        g.stroke({ width: 2, color: 0x000000 });
+        g.lineTo(horseHL * 0.6, 0);
+        g.stroke({ width: 1, color: 0x000000 });
         g.position.set(positions[i].x, positions[i].y);
+        g.rotation = orientations[i];
         stage.addChild(g);
         horseGfx.set(id, g);
     }
+
+    // Per-horse archetype labels
+    const aiLabels: Text[] = [];
+    for (let i = 0; i < engine.horseIds.length; i++) {
+        const archetypeName = i < ARCHETYPE_NAMES.length ? ARCHETYPE_NAMES[i] : 'AI';
+        const label = new Text({
+            text: archetypeName,
+            style: { fontSize: 14, fill: HORSE_COLORS[i % HORSE_COLORS.length], fontFamily: 'sans-serif', fontWeight: 'bold' },
+        });
+        label.anchor.set(0.5, 2.5);
+        label.visible = false;
+        label.scale.set(0.15, 0.15);
+        stage.addChild(label);
+        aiLabels.push(label);
+    }
+
+    // Player indicator (ring + arrow drawn around the player-controlled horse)
+    const playerIndicator = new Graphics();
+    stage.addChild(playerIndicator);
 
     // Debug trail graphics
     const trailGfx = new Graphics();
@@ -688,8 +1008,12 @@ function buildSim(
         trackGfx.destroy();
         stage.removeChild(debugGfx);
         debugGfx.destroy();
+        stage.removeChild(arcFanGfx);
+        arcFanGfx.destroy();
         stage.removeChild(label);
         label.destroy();
+        stage.removeChild(playerIndicator);
+        playerIndicator.destroy();
         stage.removeChild(trailGfx);
         trailGfx.destroy();
         stage.removeChild(targetArcGfx);
@@ -699,7 +1023,12 @@ function buildSim(
             g.destroy();
         }
         horseGfx.clear();
+        for (const lbl of aiLabels) {
+            stage.removeChild(lbl);
+            lbl.destroy();
+        }
     };
 
-    return { engine, horseGfx, trailGfx, targetArcGfx, trailCounter: 0, teardown };
+    const trailPrevPos: (Point | null)[] = new Array(engine.horseIds.length).fill(null);
+    return { engine, trackGfx, horseGfx, aiLabels, playerIndicator, trailGfx, targetArcGfx, debugGfx, arcFanGfx, finishedHorses: new Set(), finishPositions: new Map(), finishOrder: [], raceFinished: false, trailCounter: 0, trailPrevPos, teardown };
 }

@@ -205,6 +205,7 @@ export function generateDefaultGenome(): HorseGenome {
     const traits: CoreTraitName[] = [
         'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
         'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+        'pushingPower', 'pushResistance',
     ];
     for (const t of traits) {
         core[t] = uniformGene(0.5); // midpoint of range
@@ -213,7 +214,7 @@ export function generateDefaultGenome(): HorseGenome {
     const modifiers: Record<string, { presence: Gene; strength: Gene }> = {};
     for (const id of MODIFIER_IDS) {
         modifiers[id] = {
-            presence: uniformGene(0), // not expressed
+            presence: uniformGene(0.5), // expressed (above 0.4 threshold)
             strength: uniformGene(0.5),
         };
     }
@@ -222,7 +223,8 @@ export function generateDefaultGenome(): HorseGenome {
 }
 
 /**
- * Generates a random genome.
+ * Generates a random genome with varied trait alleles.
+ * Produces horses with distinct physical characteristics.
  *
  * @param rng - Optional random function for deterministic testing
  *
@@ -235,6 +237,7 @@ export function generateRandomGenome(rng: () => number = Math.random): HorseGeno
     const traits: CoreTraitName[] = [
         'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
         'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+        'pushingPower', 'pushResistance',
     ];
     for (const t of traits) {
         core[t] = randomGene();

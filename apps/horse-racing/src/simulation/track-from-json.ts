@@ -13,8 +13,8 @@ export type BuildTrackOptions = {
 };
 
 const DEFAULT_BUILD: BuildTrackOptions = {
-    halfTrackWidth: 15,
-    railThickness: 3,
+    halfTrackWidth: 10.325, // matches Python: HORSE_SPACING * MAX_HORSE_COUNT / 2 + HORSE_HALF_WIDTH
+    railThickness: 0.5,
     railMass: 500,
 };
 
@@ -39,8 +39,13 @@ function asPoint(v: unknown): Point {
  * @returns Normalized segment list
  */
 export function parseTrackJson(raw: unknown): TrackSegment[] {
+    // Support both bare array and {segments: [...]} object format
     if (!Array.isArray(raw)) {
-        throw new Error('Track JSON must be an array');
+        if (raw && typeof raw === 'object' && 'segments' in raw && Array.isArray((raw as Record<string, unknown>).segments)) {
+            raw = (raw as Record<string, unknown>).segments;
+        } else {
+            throw new Error('Track JSON must be an array or an object with a "segments" key');
+        }
     }
     const out: TrackSegment[] = [];
     for (let i = 0; i < raw.length; i++) {
@@ -50,11 +55,13 @@ export function parseTrackJson(raw: unknown): TrackSegment[] {
         if (tt !== 'STRAIGHT' && tt !== 'CURVE') {
             throw new Error(`Segment ${i}: unknown tracktype`);
         }
+        const slope = typeof item.slope === 'number' ? item.slope : undefined;
         if (tt === 'STRAIGHT') {
             out.push({
                 tracktype: 'STRAIGHT',
                 startPoint: asPoint(item.startPoint),
                 endPoint: asPoint(item.endPoint),
+                slope,
             });
         } else {
             const radius = item.radius;
@@ -69,6 +76,7 @@ export function parseTrackJson(raw: unknown): TrackSegment[] {
                 center: asPoint(item.center),
                 radius,
                 angleSpan,
+                slope,
             });
         }
     }

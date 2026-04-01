@@ -162,3 +162,6 @@ apps/banana/public/tiles/
 
 # TypeDoc i18n temporary config files
 .typedoc-i18n-*.json
+
+# Auto-generated model manifest
+apps/horse-racing/public/models/manifest.json
