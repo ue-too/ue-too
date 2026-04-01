@@ -23,6 +23,7 @@ import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/
 import { CarImageRegistry } from '@/trains/car-image-registry';
 import { TimeManager } from '@/time';
 import { ScheduleClock, DayOfWeek, TimetableManager } from '@/timetable';
+import { BlockSignalManager, SignalStateEngine, SignalRenderSystem } from '@/signals';
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
 import { StationPlacementEngine, StationPlacementStateMachine } from '@/stations/station-placement-state-machine';
@@ -249,6 +250,9 @@ export type BananaAppComponents = BaseAppComponents & {
   animations: Animator[];
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
+  blockSignalManager: BlockSignalManager;
+  signalStateEngine: SignalStateEngine;
+  signalRenderSystem: SignalRenderSystem;
   /** The stats.js DOM element for toggling visibility. */
   statsDom: HTMLDivElement;
   /** Add a train at the given segment and t. For stress testing. */
@@ -529,6 +533,18 @@ export const initApp = async (
   );
   timetableRef.current = timetableManager;
 
+  // Block signal system
+  const blockSignalManager = new BlockSignalManager();
+  const signalStateEngine = new SignalStateEngine(blockSignalManager);
+  const signalRenderSystem = new SignalRenderSystem(
+    worldRenderSystem,
+    trackGraph,
+    blockSignalManager,
+    signalStateEngine,
+    { renderer: baseComponents.app.renderer },
+  );
+  timetableManager.signalStateEngine = signalStateEngine;
+
   // When a train is removed from the track, return its formation to the depot
   trainManager.setOnBeforeRemove((train) => {
     formationManager.addFormation(train.formation);
@@ -543,6 +559,11 @@ export const initApp = async (
       train.remapOnSegmentSplit(info);
     }
     trainPlacementEngine.train.remapOnSegmentSplit(info);
+    blockSignalManager.handleSegmentSplit(info);
+  });
+
+  curveEngine.trackGraph.onSegmentRemoved((segNum) => {
+    blockSignalManager.handleSegmentRemoved(segNum);
   });
 
   baseComponents.app.stage.addChild(worldRenderSystem.container);
@@ -551,6 +572,12 @@ export const initApp = async (
     // Timetable auto-drivers set throttle before physics update
     timetableRef.current.update(currentTime, deltaTime);
     trainRenderSystem.update(deltaTime);
+    // Recompute signal aspects from fresh occupancy, then update visuals
+    signalStateEngine.update(
+      trainRenderSystem.occupancyRegistry,
+      trainManager.getPlacedTrains(),
+    );
+    signalRenderSystem.update();
     debugOverlayRenderSystem.updateFormationLabels();
     debugOverlayRenderSystem.updateProximityLines();
   });
@@ -564,6 +591,7 @@ export const initApp = async (
     unsubTrainChanges();
     timeManager.dispose();
     timetableRef.current.dispose();
+    signalRenderSystem.dispose();
   });
 
   const cameraMux = createCameraMuxWithAnimationAndLock();
@@ -656,6 +684,9 @@ export const initApp = async (
     timetableRef,
     stationManager,
     stationRenderSystem,
+    blockSignalManager,
+    signalStateEngine,
+    signalRenderSystem,
     statsDom: stats.dom,
     addTrainAtPosition,
     addStressTestTrains,
@@ -663,4 +694,11 @@ export const initApp = async (
     spawnParallelTracksWithTrains,
     animations,
   };
+
+  // Expose app components on window for console debugging
+  if (typeof window !== 'undefined') {
+    (window as unknown as Record<string, unknown>).__banana = result;
+  }
+
+  return result;
 };

@@ -12,6 +12,7 @@ import {
     List,
     ListOrdered,
     Map,
+    Signal,
     Spline,
     TrainFront,
     TrainTrack,
@@ -72,6 +73,7 @@ import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
+import { SignalPanel } from './SignalPanel';
 import { TimetablePanel } from './TimetablePanel';
 import { TrainPanel } from './TrainPanel';
 import type { AppMode } from './types';
@@ -117,6 +119,7 @@ export function BananaToolbar({
     const [stressStartY, setStressStartY] = useState(0);
     const [showStationList, setShowStationList] = useState(false);
     const [showTimetable, setShowTimetable] = useState(false);
+    const [showSignalPanel, setShowSignalPanel] = useState(false);
     const [showStats, setShowStats] = useState(true);
     const [terrainXray, setTerrainXray] = useState(false);
     const [terrainFillVisible, setTerrainFillVisible] = useState(true);
@@ -743,6 +746,18 @@ export function BananaToolbar({
                         <Clock />
                     </ToolbarButton>
 
+                    <ToolbarButton
+                        tooltip={
+                            showSignalPanel
+                                ? t('closeSignals', 'Close Signals')
+                                : t('openSignals', 'Signals')
+                        }
+                        active={showSignalPanel}
+                        onClick={() => setShowSignalPanel(v => !v)}
+                    >
+                        <Signal />
+                    </ToolbarButton>
+
                     <Separator />
 
                     <ToolbarButton
@@ -905,6 +920,16 @@ export function BananaToolbar({
             {showTimetable && (
                 <TimetablePanel
                     onClose={() => setShowTimetable(false)}
+                />
+            )}
+
+            {showSignalPanel && (
+                <SignalPanel
+                    blockSignalManager={app.blockSignalManager}
+                    signalStateEngine={app.signalStateEngine}
+                    signalRenderSystem={app.signalRenderSystem}
+                    trackGraph={app.curveEngine.trackGraph}
+                    onClose={() => setShowSignalPanel(false)}
                 />
             )}
 
