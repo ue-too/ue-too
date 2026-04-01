@@ -16,7 +16,7 @@ import { AIJockeyManager } from './ai-jockey';
 // Constants (rendering only — simulation constants live in the engine)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_TRACK_URL = '/tracks/hanshin.json';
+const DEFAULT_TRACK_URL = '/tracks/tokyo.json';
 
 const HORSE_COLORS = [
     0xc9a227, 0x8b4513, 0x4169e1, 0xffffff, 0xe53935, 0x43a047,
@@ -135,14 +135,11 @@ export async function attachHorseRacingSim(
 
     // Track which model URL each horse should use
     const modelAssignments = new Map<number, string>();
-    for (let i = 0; i < ARCHETYPE_NAMES.length; i++) {
-        modelAssignments.set(i, `/models/jockey_${ARCHETYPE_NAMES[i]}.onnx`);
-    }
 
     const reloadModels = (): void => {
         aiManager.clearAll();
         for (let i = 0; i < currentHorseCount; i++) {
-            const url = modelAssignments.get(i) ?? '/models/baseline_jockey.onnx';
+            const url = modelAssignments.get(i) ?? '/models/v5_baseline.onnx';
             aiManager.loadForHorse(i, url).catch(() => {
                 console.warn(`[AI] Failed to load model for horse ${i}`);
             });

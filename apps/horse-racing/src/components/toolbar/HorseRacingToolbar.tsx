@@ -20,15 +20,10 @@ const TRACK_PRESETS = [
 ];
 
 const FALLBACK_MODELS = [
-    { label: 'Baseline Jockey', url: '/models/baseline_jockey.onnx' },
+    { label: 'V5 Baseline', url: '/models/v5_baseline.onnx' },
 ];
 
-const DEFAULT_MODEL_FOR_INDEX: Record<number, string> = {
-    0: '/models/jockey_front_runner.onnx',
-    1: '/models/jockey_stalker.onnx',
-    2: '/models/jockey_closer.onnx',
-    3: '/models/jockey_presser.onnx',
-};
+const DEFAULT_MODEL_URL = '/models/v5_baseline.onnx';
 
 function useAvailableModels() {
     const [models, setModels] = useState<{ label: string; url: string }[]>(FALLBACK_MODELS);
@@ -458,7 +453,7 @@ function ModelSelector({
     availableModels: { label: string; url: string }[];
 }) {
     const [models, setModels] = useState<string[]>(() =>
-        Array.from({ length: 20 }, (_, i) => DEFAULT_MODEL_FOR_INDEX[i] ?? '/models/baseline_jockey.onnx'),
+        Array.from({ length: 20 }, () => DEFAULT_MODEL_URL),
     );
 
     const changeModel = (horseIndex: number, modelUrl: string) => {
