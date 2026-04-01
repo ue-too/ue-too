@@ -30,16 +30,33 @@ import type { TimetableJointDirectionManager } from './timetable-joint-direction
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Speed (world units / s) below which the train is considered stopped. */
+/**
+ * Speed below which the train is considered fully stopped.
+ * Unit: world units per second.
+ */
 const STOP_SPEED_THRESHOLD = 0.05;
 
-/** Distance (world units) at which to start creeping rather than full brake. */
+/**
+ * Distance at which the driver switches from proportional braking to a hard
+ * creep brake, allowing the train to inch up to the exact stop position.
+ * Unit: world units (≈ metres in the simulation coordinate system).
+ */
 const CREEP_DISTANCE = 3;
 
-/** Safety factor applied to the ideal braking distance. */
+/**
+ * Multiplier applied to the ideal (physics-based) braking distance so the
+ * driver begins braking earlier than the theoretical minimum, providing a
+ * safety buffer for frame-rate jitter and delayed throttle response.
+ * Dimensionless ratio.
+ */
 const BRAKING_SAFETY_MARGIN = 1.8;
 
-/** Speed threshold to transition from DEPARTING to RUNNING. */
+/**
+ * Speed the train must reach before the DEPARTING phase transitions to
+ * RUNNING. Prevents the driver from entering cruise logic while still
+ * accelerating from a standstill.
+ * Unit: world units per second.
+ */
 const DEPARTING_SPEED_THRESHOLD = 1.0;
 
 // ---------------------------------------------------------------------------
@@ -305,8 +322,11 @@ export class AutoDriver {
       return;
     }
 
-    // Yellow signal: slow to caution speed, then resume running
-    if (isYellowSignal && !distanceToStop) {
+    // Yellow signal with no station stop ahead: slow to caution speed, then
+    // resume running.  When a station stop *is* present we let the normal
+    // braking logic handle both targets together so the train doesn't ignore
+    // the station.
+    if (isYellowSignal && distanceToStop === null) {
       const cautionSpeed = train.maxSpeed * 0.5;
       if (train.speed <= cautionSpeed) {
         // Reached caution speed — hold it and return to running
@@ -323,9 +343,9 @@ export class AutoDriver {
         // Stopped at signal — hold brakes, stay in approaching to re-check
         train.setThrottleStep('b1');
         // If the signal clears, we'll transition back to running
-        if (signalStateEngine) {
+        if (signalStateEngine && train.position) {
           const freshSignal = signalStateEngine.getDistanceToRestrictiveSignal(
-            train.position!,
+            train.position,
             trackGraph,
             this._jdm,
           );
@@ -528,9 +548,7 @@ export class AutoDriver {
   }
 
   private _currentRouteJoints() {
-    // Placeholder — the actual route joints should be sourced from the
-    // TimetableManager via the JDM.  For now return empty to avoid crashes.
-    return this._jdm['_routeJoints'] ?? [];
+    return this._jdm.getRouteJoints();
   }
 
   // -----------------------------------------------------------------------

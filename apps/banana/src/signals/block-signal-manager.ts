@@ -58,6 +58,11 @@ export class BlockSignalManager {
     tValue: number,
     direction: 'tangent' | 'reverseTangent',
   ): SignalId {
+    if (tValue < 0 || tValue > 1) {
+      throw new RangeError(
+        `Signal tValue must be in [0, 1], got ${tValue}`,
+      );
+    }
     const id = this._nextSignalId++;
     const signal: SignalPlacement = { id, segmentNumber, tValue, direction };
     this._signals.set(id, signal);
@@ -294,9 +299,12 @@ export class BlockSignalManager {
     let foundNode: BfsNode | null = null;
     let foundSegDir: 'tangent' | 'reverseTangent' = 'tangent';
     const MAX_STEPS = 100;
+    /** Maximum cumulative arc-length (world units) before aborting the search. */
+    const MAX_ARC_LENGTH = 5000;
     let steps = 0;
+    let totalArcLength = 0;
 
-    while (queue.length > 0 && steps < MAX_STEPS) {
+    while (queue.length > 0 && steps < MAX_STEPS && totalArcLength < MAX_ARC_LENGTH) {
       steps++;
       const current = queue.shift()!;
       const joint = trackGraph.getJoint(current.jointNumber);
@@ -308,6 +316,12 @@ export class BlockSignalManager {
 
         const segNum = joint.connections.get(nextJointNum);
         if (segNum === undefined) continue;
+
+        // Accumulate arc-length for the distance bound
+        const segData = trackGraph.getTrackSegmentWithJoints(segNum);
+        if (segData) {
+          totalArcLength += segData.curve.fullLength;
+        }
 
         // Check if this segment is the exit signal's segment
         if (segNum === exitSig.segmentNumber) {

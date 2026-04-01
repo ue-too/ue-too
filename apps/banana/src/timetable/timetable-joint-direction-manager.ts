@@ -66,6 +66,11 @@ export class TimetableJointDirectionManager implements JointDirectionManager {
     this._currentIndex = index;
   }
 
+  /** Get the current route joint sequence. */
+  getRouteJoints(): readonly RouteJointStep[] {
+    return this._routeJoints;
+  }
+
   /** Replace the route joints (e.g. when moving to the next leg). */
   setRouteJoints(joints: RouteJointStep[], startIndex: number = 0): void {
     this._routeJoints = joints;

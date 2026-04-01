@@ -419,6 +419,7 @@ export class TimetableManager {
     trackGraph: TrackGraph,
     trainManager: TrainManager,
     stationManager: StationManager,
+    signalStateEngine?: SignalStateEngine | null,
   ): TimetableManager {
     const clock = ScheduleClock.deserialize(data.clock);
     const routeManager = RouteManager.deserialize(data.routes);
@@ -434,6 +435,12 @@ export class TimetableManager {
       routeManager,
       shiftTemplateManager,
     );
+
+    // Connect the signal engine before activating drivers so that
+    // auto-drivers have signal awareness from the first frame.
+    if (signalStateEngine) {
+      manager._signalStateEngine = signalStateEngine;
+    }
 
     // Restore assignments
     for (const sa of data.assignments) {

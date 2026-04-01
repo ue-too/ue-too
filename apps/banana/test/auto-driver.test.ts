@@ -35,12 +35,12 @@ function makeMockTrain(overrides: {
   } as unknown as Train & { calls: ThrottleSteps[] };
 }
 
-function makeMockJDM(): TimetableJointDirectionManager {
+function makeMockJDM(routeJoints: { jointNumber: number }[] = []): TimetableJointDirectionManager {
   let idx = 0;
   return {
     setCurrentIndex(i: number) { idx = i; },
     get currentIndex() { return idx; },
-    _routeJoints: [],
+    getRouteJoints() { return routeJoints; },
   } as unknown as TimetableJointDirectionManager;
 }
 
@@ -237,11 +237,10 @@ describe('AutoDriver', () => {
   describe('onJointsPassed', () => {
     it('does nothing for empty array', () => {
       const state = makeState({ routeJointProgress: 0 });
-      const jdm = makeMockJDM();
-      jdm._routeJoints = [
-        { jointNumber: 0, direction: 'tangent' as const },
-        { jointNumber: 1, direction: 'tangent' as const },
-      ];
+      const jdm = makeMockJDM([
+        { jointNumber: 0 },
+        { jointNumber: 1 },
+      ]);
       const driver = new AutoDriver(state, jdm);
       driver.onJointsPassed([]);
       expect(state.routeJointProgress).toBe(0);
@@ -249,12 +248,11 @@ describe('AutoDriver', () => {
 
     it('advances progress when passing joints in the route', () => {
       const state = makeState({ routeJointProgress: 0 });
-      const jdm = makeMockJDM();
-      jdm._routeJoints = [
-        { jointNumber: 10, direction: 'tangent' as const },
-        { jointNumber: 20, direction: 'tangent' as const },
-        { jointNumber: 30, direction: 'tangent' as const },
-      ];
+      const jdm = makeMockJDM([
+        { jointNumber: 10 },
+        { jointNumber: 20 },
+        { jointNumber: 30 },
+      ]);
       const driver = new AutoDriver(state, jdm);
       driver.onJointsPassed([{ jointNumber: 10 }]);
       expect(state.routeJointProgress).toBe(1);
@@ -262,12 +260,11 @@ describe('AutoDriver', () => {
 
     it('advances through multiple joints in order', () => {
       const state = makeState({ routeJointProgress: 0 });
-      const jdm = makeMockJDM();
-      jdm._routeJoints = [
-        { jointNumber: 10, direction: 'tangent' as const },
-        { jointNumber: 20, direction: 'tangent' as const },
-        { jointNumber: 30, direction: 'tangent' as const },
-      ];
+      const jdm = makeMockJDM([
+        { jointNumber: 10 },
+        { jointNumber: 20 },
+        { jointNumber: 30 },
+      ]);
       const driver = new AutoDriver(state, jdm);
       driver.onJointsPassed([{ jointNumber: 10 }, { jointNumber: 20 }]);
       expect(state.routeJointProgress).toBe(2);

@@ -175,7 +175,12 @@ export class SignalRenderSystem {
     if (!this._textures) return;
 
     const seg = this._trackGraph.getTrackSegmentWithJoints(signal.segmentNumber);
-    if (!seg) return;
+    if (!seg) {
+      console.warn(
+        `[SignalRenderSystem] Signal #${signal.id} references non-existent segment ${signal.segmentNumber}`,
+      );
+      return;
+    }
 
     const point = seg.curve.get(signal.tValue);
     const tangent = seg.curve.derivative(signal.tValue);
