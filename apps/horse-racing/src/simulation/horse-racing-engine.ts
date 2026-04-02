@@ -109,6 +109,8 @@ export type HorseObservation = {
     numHorses: number;
     /** Set of modifier IDs whose conditions are met this tick. */
     activeModifierIds: Set<string>;
+    /** Set of skill IDs active for this jockey (conditioning flags). */
+    activeSkillIds?: Set<string>;
 };
 
 /**

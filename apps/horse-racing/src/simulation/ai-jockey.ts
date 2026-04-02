@@ -192,7 +192,7 @@ export class AIJockeyManager {
 // ---------------------------------------------------------------------------
 
 const MAX_REL_HORSES = 19;
-const OBS_SIZE = 102;
+const OBS_SIZE = 108;
 
 function observationToArray(
     obs: HorseObservation,
@@ -272,6 +272,15 @@ function observationToArray(
     // Modifier flags [94-101]
     for (let k = 0; k < MODIFIER_ID_MAP.length; k++) {
         arr[94 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
+    }
+    // Skill flags [102-107]
+    const SKILL_IDS = [
+        'staminaManagement', 'sprintTiming', 'overtake',
+        'draftingExploit', 'corneringLine', 'pacePressure',
+    ];
+    const skillIds = obs.activeSkillIds ?? new Set<string>();
+    for (let k = 0; k < SKILL_IDS.length; k++) {
+        arr[102 + k] = skillIds.has(SKILL_IDS[k]) ? 1.0 : 0.0;
     }
     return arr;
 }
