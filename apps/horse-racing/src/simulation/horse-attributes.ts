@@ -19,7 +19,7 @@ export type CoreTraitName =
     | 'turnAccel'
     | 'corneringGrip'
     | 'stamina'
-    | 'staminaRecovery'
+    | 'drainRateMult'
     | 'weight'
     | 'pushingPower'
     | 'pushResistance';
@@ -36,7 +36,7 @@ export const TRAIT_RANGES: Record<CoreTraitName, { min: number; max: number }> =
     turnAccel:       { min: 0.5, max: 1.5 },
     corneringGrip:   { min: 0.5, max: 1.5 },
     stamina:         { min: 50,  max: 150 },
-    staminaRecovery: { min: 0.5, max: 2.0 },
+    drainRateMult: { min: 0.7, max: 1.3 },
     weight:          { min: 430, max: 550 },
     pushingPower:    { min: 0,   max: 1.0 },
     pushResistance:  { min: 0,   max: 1.0 },
@@ -45,7 +45,7 @@ export const TRAIT_RANGES: Record<CoreTraitName, { min: number; max: number }> =
 /** All core trait names as an array for iteration. */
 export const CORE_TRAIT_NAMES: CoreTraitName[] = [
     'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
-    'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+    'corneringGrip', 'stamina', 'drainRateMult', 'weight',
     'pushingPower', 'pushResistance',
 ];
 
@@ -66,7 +66,7 @@ export type CoreAttributes = {
     turnAccel: number;
     corneringGrip: number;
     stamina: number;
-    staminaRecovery: number;
+    drainRateMult: number;
     weight: number;
     pushingPower: number;
     pushResistance: number;
@@ -240,7 +240,7 @@ export const DEFAULT_CORE_ATTRIBUTES: CoreAttributes = {
     turnAccel: 1.0,
     corneringGrip: 1.0,
     stamina: 100,
-    staminaRecovery: 1.0,
+    drainRateMult: 1.0,
     weight: 490,
     pushingPower: 0.5,
     pushResistance: 0.5,

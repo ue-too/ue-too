@@ -2,17 +2,26 @@ import type { EffectiveAttributes } from './horse-attributes';
 import { TRAIT_RANGES } from './horse-attributes';
 
 // ---------------------------------------------------------------------------
-// Stamina constants
+// Stamina constants (no recovery — fixed pool, drain only)
 // ---------------------------------------------------------------------------
 
 /** Stamina drain per unit of extra tangential acceleration per tick. */
-export const STAMINA_DRAIN_RATE = 0.1;
+export const STAMINA_DRAIN_RATE = 0.01; // was 0.1
 
 /** Stamina drain per unit of speed above cruise speed per tick. */
-export const OVERDRIVE_DRAIN_RATE = 0.05;
+export const OVERDRIVE_DRAIN_RATE = 0.005; // was 0.05
 
 /** Stamina drain per unit of excess cornering force per tick. */
-export const CORNERING_DRAIN_RATE = 0.02;
+export const CORNERING_DRAIN_RATE = 0.002; // was 0.02
+
+/** Distance tax — drain per m/s of forward speed per tick. */
+export const SPEED_DRAIN_RATE = 0.0014; // was 0.014
+
+/** Stamina drain per unit of extra lateral steering per tick. */
+export const LATERAL_STEERING_DRAIN_RATE = 0.006;
+
+/** Stamina drain per m/s of sustained lateral velocity per tick. */
+export const LATERAL_VELOCITY_DRAIN_RATE = 0.0008;
 
 /**
  * Base cornering force tolerance, multiplied by `corneringGrip`.
@@ -27,22 +36,27 @@ export const GRIP_FORCE_BASELINE = 150.0;
 // Exhaustion thresholds (fraction of max stamina)
 const EXHAUSTION_FORWARD_ACCEL_THRESHOLD = 0.30;
 const EXHAUSTION_MAX_SPEED_THRESHOLD = 0.20;
-const EXHAUSTION_TURN_ACCEL_THRESHOLD = 0.15;
+const EXHAUSTION_TURN_ACCEL_THRESHOLD = 0.25; // was 0.15
 
 // ---------------------------------------------------------------------------
 // Stamina update
 // ---------------------------------------------------------------------------
 
 /**
- * Computes stamina drain/recovery for a single tick and returns the new
- * stamina value.
+ * Computes stamina drain for a single tick and returns the new stamina value.
+ *
+ * Fixed pool — no recovery. All drain is multiplied by the horse's
+ * drainRateMult attribute (lower = more efficient).
  *
  * @param currentStamina - Current stamina level
  * @param eff - Effective attributes (after modifiers, before exhaustion)
  * @param extraTangential - Actual tangential acceleration from jockey push
  *                          (raw input × forwardAccel, matching Python)
+ * @param extraNormal - Actual lateral acceleration from jockey steering
+ *                      (raw input × turnAccel, matching Python)
  * @param currentSpeed - Horse's velocity magnitude (for overdrive check)
  * @param tangentialVel - Horse's tangential velocity (for cornering force)
+ * @param normalVel - Horse's lateral velocity (for lateral drift drain)
  * @param turnRadius - Current turn radius (Infinity on straights)
  * @returns Updated stamina value
  *
@@ -52,8 +66,10 @@ export function updateStamina(
     currentStamina: number,
     eff: EffectiveAttributes,
     extraTangential: number,
+    extraNormal: number,
     currentSpeed: number,
     tangentialVel: number,
+    normalVel: number,
     turnRadius: number,
 ): number {
     let drain = 0;
@@ -61,6 +77,11 @@ export function updateStamina(
     // Drain from jockey pushing forward
     if (extraTangential > 0) {
         drain += extraTangential * STAMINA_DRAIN_RATE;
+    }
+
+    // Drain from jockey steering laterally
+    if (Math.abs(extraNormal) > 0) {
+        drain += Math.abs(extraNormal) * LATERAL_STEERING_DRAIN_RATE;
     }
 
     // Drain from exceeding cruise speed (uses velocity magnitude)
@@ -77,17 +98,16 @@ export function updateStamina(
         }
     }
 
-    // Recovery: always applies, but reduced when draining (prevents
-    // binary on/off exploit where agent alternates push/coast ticks).
-    if (drain > 0) {
-        const net = drain - eff.staminaRecovery * 0.25;
-        if (net > 0) {
-            return Math.max(0, currentStamina - net);
-        }
-        return Math.min(eff.stamina, currentStamina - net);
-    }
+    // Distance tax — every meter traveled costs stamina
+    drain += currentSpeed * SPEED_DRAIN_RATE;
 
-    return Math.min(eff.stamina, currentStamina + eff.staminaRecovery);
+    // Lateral velocity tax — sustained sideways movement costs stamina
+    drain += Math.abs(normalVel) * LATERAL_VELOCITY_DRAIN_RATE;
+
+    // Apply per-horse drain efficiency
+    drain *= eff.drainRateMult;
+
+    return Math.max(0, currentStamina - drain);
 }
 
 /**
@@ -96,10 +116,10 @@ export function updateStamina(
  *
  * @remarks
  * This produces the final effective attributes used by the engine.
- * Exhaustion causes gradual degradation, not a cliff:
+ * Exhaustion causes gradual degradation:
  * - Below 30% stamina: `forwardAccel` scales down proportionally
+ * - Below 25% stamina: `turnAccel` scales progressively (100% → 50%)
  * - Below 20% stamina: `maxSpeed` drops toward `cruiseSpeed`
- * - Below 15% stamina: `turnAccel` drops by 25%
  *
  * @param eff - Effective attributes (after modifier resolution)
  * @param currentStamina - Current stamina level
@@ -135,9 +155,11 @@ export function applyExhaustion(
     }
 
     if (ratio < EXHAUSTION_TURN_ACCEL_THRESHOLD) {
+        // Progressive: 100% at 25% stamina → 50% at 0% stamina
+        const scale = 0.5 + 0.5 * (ratio / EXHAUSTION_TURN_ACCEL_THRESHOLD);
         result.turnAccel = Math.max(
             TRAIT_RANGES.turnAccel.min,
-            result.turnAccel * 0.75,
+            result.turnAccel * scale,
         );
     }
 

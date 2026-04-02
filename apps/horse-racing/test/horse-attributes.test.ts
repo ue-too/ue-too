@@ -147,49 +147,52 @@ describe('resolveEffectiveAttributes', () => {
 describe('updateStamina', () => {
     const base = DEFAULT_CORE_ATTRIBUTES;
 
-    it('recovers when no drain sources active', () => {
-        const newStamina = updateStamina(50, base, 0, base.cruiseSpeed - 1, Infinity);
-        expect(newStamina).toBeGreaterThan(50);
+    it('never increases (no recovery)', () => {
+        // At cruise speed with no actions, stamina should only decrease
+        const newStamina = updateStamina(50, base, 0, 0, base.cruiseSpeed - 1, base.cruiseSpeed - 1, 0, Infinity);
+        expect(newStamina).toBeLessThanOrEqual(50);
+    });
+
+    it('no drain at zero speed and no actions', () => {
+        const newStamina = updateStamina(100, base, 0, 0, 0, 0, 0, Infinity);
+        expect(newStamina).toBe(100);
     });
 
     it('drains when jockey pushes forward', () => {
-        const newStamina = updateStamina(100, base, 5, 10, Infinity);
+        const newStamina = updateStamina(100, base, 5, 0, 10, 10, 0, Infinity);
         expect(newStamina).toBeLessThan(100);
     });
 
+    it('drains when jockey steers laterally', () => {
+        const noSteer = updateStamina(100, base, 0, 0, 14, 14, 0, Infinity);
+        const steer = updateStamina(100, base, 0, 3, 14, 14, 0, Infinity);
+        expect(steer).toBeLessThan(noSteer);
+    });
+
+    it('drains from sustained lateral velocity', () => {
+        const noDrift = updateStamina(100, base, 0, 0, 14, 14, 0, Infinity);
+        const drift = updateStamina(100, base, 0, 0, 14, 14, 2, Infinity);
+        expect(drift).toBeLessThan(noDrift);
+    });
+
     it('drains when speed exceeds cruise', () => {
-        // Need enough speed excess so overdrive drain exceeds partial recovery.
-        // drain = (speed - cruise) * 0.05; partial recovery = staminaRecovery * 0.25
-        // With staminaRecovery=1.0: need (excess * 0.05) > 0.25 → excess > 5
-        const newStamina = updateStamina(100, base, 0, base.cruiseSpeed + 6, Infinity);
+        const newStamina = updateStamina(100, base, 0, 0, base.cruiseSpeed + 6, base.cruiseSpeed + 6, 0, Infinity);
         expect(newStamina).toBeLessThan(100);
     });
 
     it('drains on cornering beyond grip threshold', () => {
-        // Need requiredForce = speed² / radius > grip * GRIP_FORCE_BASELINE
-        // With grip=1.0 and baseline=150, need speed²/radius > 150
-        // speed=40, radius=5 → 1600/5 = 320 > 150 ✓
         const tightTurnRadius = 5;
         const highSpeed = 40;
         const requiredForce = (highSpeed * highSpeed) / tightTurnRadius;
         const tolerated = base.corneringGrip * GRIP_FORCE_BASELINE;
         expect(requiredForce).toBeGreaterThan(tolerated);
 
-        const newStamina = updateStamina(100, base, 0, highSpeed, tightTurnRadius);
+        const newStamina = updateStamina(100, base, 0, 0, highSpeed, highSpeed, 0, tightTurnRadius);
         expect(newStamina).toBeLessThan(100);
     });
 
-    it('does not drain cornering within grip threshold', () => {
-        // Low speed, wide turn → within tolerance
-        const wideTurnRadius = 200;
-        const lowSpeed = 8;
-        const newStamina = updateStamina(50, base, 0, lowSpeed, wideTurnRadius);
-        // Should recover since no drain
-        expect(newStamina).toBeGreaterThanOrEqual(50);
-    });
-
     it('does not go below 0', () => {
-        const newStamina = updateStamina(0.01, base, 10, 20, 10);
+        const newStamina = updateStamina(0.01, base, 10, 5, 20, 20, 3, 10);
         expect(newStamina).toBeGreaterThanOrEqual(0);
     });
 });
@@ -215,9 +218,16 @@ describe('applyExhaustion', () => {
         expect(eff.maxSpeed).toBeGreaterThanOrEqual(base.cruiseSpeed);
     });
 
-    it('degrades turnAccel below 15%', () => {
-        const eff = applyExhaustion(base, 5, 100); // 5% stamina
-        expect(eff.turnAccel).toBeLessThan(base.turnAccel);
+    it('degrades turnAccel progressively below 25%', () => {
+        const at25 = applyExhaustion(base, 25, 100);
+        expect(at25.turnAccel).toBeCloseTo(base.turnAccel); // threshold boundary
+
+        const at12 = applyExhaustion(base, 12.5, 100); // ~75%
+        expect(at12.turnAccel).toBeLessThan(base.turnAccel);
+        expect(at12.turnAccel).toBeCloseTo(base.turnAccel * 0.75);
+
+        const at0 = applyExhaustion(base, 0, 100); // ~50%
+        expect(at0.turnAccel).toBeCloseTo(base.turnAccel * 0.5);
     });
 
     it('at 0 stamina, forwardAccel drops to minimum', () => {
@@ -304,12 +314,9 @@ describe('Engine with attributes', () => {
         expect(after[0].currentStamina).toBeLessThan(initialStamina);
     });
 
-    it('stamina recovers when coasting', () => {
+    it('stamina never recovers (fixed pool)', () => {
         const engine = new HorseRacingEngine(loadTrack());
-        // Push briefly to drain stamina but keep speed below cruise speed
-        // (avoiding overdrive drain that would block recovery during coast).
-        // With per-substep forces, 10 ticks of push drains ~10 stamina from
-        // the extraTangential cost while speed stays below cruiseSpeed (~6.5).
+        // Push briefly to drain stamina
         const pushActions: HorseAction[] = Array.from({ length: 4 }, () => ({
             extraTangential: 10,
             extraNormal: 0,
@@ -320,11 +327,11 @@ describe('Engine with attributes', () => {
         const drained = engine.step(pushActions);
         const drainedStamina = drained[0].currentStamina;
 
-        // Coast — speed is below cruise so drain = 0 and recovery kicks in
+        // Coast — stamina should not recover, only continue to drain (distance tax)
         for (let t = 0; t < 100; t++) {
             engine.step(zeroActions(4));
         }
-        const recovered = engine.step(zeroActions(4));
-        expect(recovered[0].currentStamina).toBeGreaterThan(drainedStamina);
+        const after = engine.step(zeroActions(4));
+        expect(after[0].currentStamina).toBeLessThanOrEqual(drainedStamina);
     });
 });

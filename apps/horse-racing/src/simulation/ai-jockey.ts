@@ -266,7 +266,7 @@ function observationToArray(
     arr[88] = obs.forwardAccel;
     arr[89] = obs.turnAccel;
     arr[90] = obs.corneringGrip;
-    arr[91] = obs.staminaRecovery;
+    arr[91] = obs.drainRateMult;
     arr[92] = obs.placementNorm;
     arr[93] = obs.numHorses / 20.0; // normalize to [0, 1]
     // Modifier flags [94-101]

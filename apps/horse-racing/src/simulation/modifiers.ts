@@ -179,7 +179,7 @@ const endurance: ModifierDefinition = {
     name: 'Endurance',
     condition: (ctx, i) =>
         ctx.maxStamina[i] > 0 && ctx.staminaLevels[i] / ctx.maxStamina[i] < 0.40,
-    effects: [{ target: 'staminaRecovery', pct: 0.30 }], // up to +30%
+    effects: [{ target: 'drainRateMult', pct: -0.20 }], // up to -20% drain
 };
 
 // ---------------------------------------------------------------------------

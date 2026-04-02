@@ -101,8 +101,8 @@ export type HorseObservation = {
     turnAccel: number;
     /** Effective cornering grip. */
     corneringGrip: number;
-    /** Effective stamina recovery rate per tick. */
-    staminaRecovery: number;
+    /** Drain rate multiplier (lower = more efficient). */
+    drainRateMult: number;
     /** Normalized placement: 0 = first, 1 = last. */
     placementNorm: number;
     /** Total number of horses in the race. */
@@ -300,24 +300,29 @@ export class HorseRacingEngine {
                 raceCtx,
                 i,
             );
-            eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
-            effectiveAttrs.push(eff);
+            // Compute stamina drain BEFORE applying exhaustion (matches Python)
             firedModifiers.push(evaluateModifierConditions(state.activeModifiers, raceCtx, i));
             resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
-            // Update stamina (once per tick)
-            // Python reference: extra_t = action.extra_tangential * eff.forward_accel
-            // Python reference: speed = np.linalg.norm(velocity) (magnitude)
+            // Update stamina (once per tick, using pre-exhaustion attrs)
             const speed = Math.sqrt(v.x * v.x + v.y * v.y);
+            const normalVel = PointCal.dotProduct(v, frame.normal);
             const extraT = resolvedActions[i].extraTangential * eff.forwardAccel;
+            const extraN = resolvedActions[i].extraNormal * eff.turnAccel;
             state.currentStamina = updateStamina(
                 state.currentStamina,
                 eff,
                 extraT,
+                extraN,
                 speed,
                 tangentialVel,
+                normalVel,
                 frame.turnRadius,
             );
+
+            // Apply exhaustion AFTER stamina update (matches Python)
+            eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
+            effectiveAttrs.push(eff);
         }
 
         // Precompute collision mass multipliers (push traits scale mass for collision only)
@@ -547,7 +552,7 @@ export class HorseRacingEngine {
                 forwardAccel: eff.forwardAccel,
                 turnAccel: eff.turnAccel,
                 corneringGrip: eff.corneringGrip,
-                staminaRecovery: eff.staminaRecovery,
+                drainRateMult: eff.drainRateMult,
                 placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
                 numHorses,
                 activeModifierIds: firedModifiers[i] ?? new Set(),
@@ -737,7 +742,7 @@ export class HorseRacingEngine {
             forwardAccel: state?.baseAttributes.forwardAccel ?? 1.0,
             turnAccel: state?.baseAttributes.turnAccel ?? 1.0,
             corneringGrip: state?.baseAttributes.corneringGrip ?? 1.0,
-            staminaRecovery: state?.baseAttributes.staminaRecovery ?? 1.0,
+            drainRateMult: state?.baseAttributes.drainRateMult ?? 1.0,
             placementNorm: 0,
             numHorses: this._horseStates.length,
             activeModifierIds: new Set(),

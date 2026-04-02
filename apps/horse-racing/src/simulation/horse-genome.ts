@@ -204,7 +204,7 @@ export function generateDefaultGenome(): HorseGenome {
     const core = {} as Record<CoreTraitName, Gene>;
     const traits: CoreTraitName[] = [
         'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
-        'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+        'corneringGrip', 'stamina', 'drainRateMult', 'weight',
         'pushingPower', 'pushResistance',
     ];
     for (const t of traits) {
@@ -236,7 +236,7 @@ export function generateRandomGenome(rng: () => number = Math.random): HorseGeno
     const core = {} as Record<CoreTraitName, Gene>;
     const traits: CoreTraitName[] = [
         'cruiseSpeed', 'maxSpeed', 'forwardAccel', 'turnAccel',
-        'corneringGrip', 'stamina', 'staminaRecovery', 'weight',
+        'corneringGrip', 'stamina', 'drainRateMult', 'weight',
         'pushingPower', 'pushResistance',
     ];
     for (const t of traits) {
