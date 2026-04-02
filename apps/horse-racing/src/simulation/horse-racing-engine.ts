@@ -360,10 +360,18 @@ export class HorseRacingEngine {
                         ? (tangentialVel * tangentialVel) / frame.turnRadius
                         : 0;
 
-                // Auto-cruise toward cruise speed
+                // Auto-cruise toward cruise speed, fading out when jockey opposes it
                 const speedChange = eff.cruiseSpeed - tangentialVel;
-                let tangentialAccel = speedChange + action.extraTangential * eff.forwardAccel;
+                const extraTangential = action.extraTangential * eff.forwardAccel;
+                const BLEND_THRESHOLD = 1.0;
+                const cruiseWeight = (speedChange * extraTangential < 0)
+                    ? Math.max(0.0, 1.0 - Math.abs(extraTangential) / BLEND_THRESHOLD)
+                    : 1.0;
+                let tangentialAccel = cruiseWeight * speedChange + extraTangential;
                 if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
+                    tangentialAccel = 0;
+                }
+                if (tangentialVel <= 0 && tangentialAccel < 0) {
                     tangentialAccel = 0;
                 }
 
@@ -384,6 +392,9 @@ export class HorseRacingEngine {
                     PointCal.multiplyVectorByScalar(frame.normal, normalAccel),
                 );
                 const totalForce = PointCal.multiplyVectorByScalar(totalAccel, eff.weight);
+                // Wake body if sleeping so forces take effect (a stopped horse
+                // can be put to sleep by the physics engine's sleeping system)
+                if (h.isSleeping) h.setSleeping(false);
                 h.applyForce(totalForce);
 
                 // Auto-orient to face tangential direction
@@ -474,6 +485,21 @@ export class HorseRacingEngine {
                     h.linearVelocity = {
                         x: v.x + wallNx * (-(1 + 0.4) * vn),
                         y: v.y + wallNy * (-(1 + 0.4) * vn),
+                    };
+                }
+            }
+
+            // Clamp: horses cannot reverse
+            for (let i = 0; i < ids.length; i++) {
+                const h = map.get(ids[i]);
+                if (!h || navs[i].completedLap) continue;
+                const frame = navs[i].getTrackFrame(h.center);
+                const v = h.linearVelocity;
+                const tangVel = PointCal.dotProduct(v, frame.tangential);
+                if (tangVel < 0) {
+                    h.linearVelocity = {
+                        x: v.x - tangVel * frame.tangential.x,
+                        y: v.y - tangVel * frame.tangential.y,
                     };
                 }
             }

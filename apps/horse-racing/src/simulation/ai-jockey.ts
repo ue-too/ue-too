@@ -280,7 +280,7 @@ function observationToArray(
     ];
     const skillIds = obs.activeSkillIds ?? new Set<string>();
     for (let k = 0; k < SKILL_IDS.length; k++) {
-        arr[102 + k] = skillIds.has(SKILL_IDS[k]) ? 1.0 : 0.0;
+        arr[102 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
     }
     return arr;
 }
