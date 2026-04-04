@@ -1,0 +1,34 @@
+[
+  {
+    "label": "Jockey Closer",
+    "url": "/models/jockey_closer.onnx"
+  },
+  {
+    "label": "Jockey Front Runner",
+    "url": "/models/jockey_front_runner.onnx"
+  },
+  {
+    "label": "Jockey Presser",
+    "url": "/models/jockey_presser.onnx"
+  },
+  {
+    "label": "Jockey Stalker",
+    "url": "/models/jockey_stalker.onnx"
+  },
+  {
+    "label": "V4 Baseline",
+    "url": "/models/v4_baseline.onnx"
+  },
+  {
+    "label": "V5 Baseline",
+    "url": "/models/v5_baseline.onnx"
+  },
+  {
+    "label": "V6 Baseline",
+    "url": "/models/v6_baseline.onnx"
+  },
+  {
+    "label": "V16 Baseline (Skill-Physics)",
+    "url": "/models/v16_baseline.onnx"
+  }
+]
