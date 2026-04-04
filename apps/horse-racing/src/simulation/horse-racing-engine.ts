@@ -24,6 +24,7 @@ import {
     DEFAULT_CORE_ATTRIBUTES,
 } from './horse-attributes';
 import type { RaceContext } from './modifiers';
+import { MODIFIER_REGISTRY, SKILL_MODIFIER_IDS } from './modifiers';
 import { updateStamina, applyExhaustion, corneringForceMargin } from './stamina';
 
 // ---------------------------------------------------------------------------
@@ -188,6 +189,8 @@ export class HorseRacingEngine {
     private readonly _halfTrackWidth: number;
     private readonly _genomes: HorseGenome[];
 
+    private _activeSkills: Set<string> = new Set();
+
     private _world!: World;
     private _horseIds!: string[];
     private _navigators!: TrackNavigator[];
@@ -220,6 +223,19 @@ export class HorseRacingEngine {
         }
 
         this._buildWorld();
+    }
+
+    /**
+     * Set active jockey skills (riding style modifiers) for horse 0.
+     * These apply physics effects each tick without changing the horse's base genetics.
+     */
+    setActiveSkills(skills: Set<string>): void {
+        this._activeSkills = skills;
+    }
+
+    /** Current active skills. */
+    get activeSkills(): ReadonlySet<string> {
+        return this._activeSkills;
     }
 
     // -- Public getters -----------------------------------------------------
@@ -296,14 +312,26 @@ export class HorseRacingEngine {
             const v = h.linearVelocity;
             const tangentialVel = PointCal.dotProduct(v, frame.tangential);
 
+            // Append skill modifiers for horse 0 (jockey riding style)
+            let modifiers = state.activeModifiers;
+            if (i === 0 && this._activeSkills.size > 0) {
+                modifiers = [...state.activeModifiers];
+                for (const skillModId of SKILL_MODIFIER_IDS) {
+                    const defn = MODIFIER_REGISTRY[skillModId];
+                    if (defn && defn.condition(raceCtx, i)) {
+                        modifiers.push({ id: skillModId, strength: 1.0 });
+                    }
+                }
+            }
+
             let eff = resolveEffectiveAttributes(
                 state.baseAttributes,
-                state.activeModifiers,
+                modifiers,
                 raceCtx,
                 i,
             );
             // Compute stamina drain BEFORE applying exhaustion (matches Python)
-            firedModifiers.push(evaluateModifierConditions(state.activeModifiers, raceCtx, i));
+            firedModifiers.push(evaluateModifierConditions(modifiers, raceCtx, i));
             resolvedActions.push(actions[i] ?? { extraTangential: 0, extraNormal: 0 });
 
             // Update stamina (once per tick, using pre-exhaustion attrs)
@@ -584,6 +612,7 @@ export class HorseRacingEngine {
                 placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
                 numHorses,
                 activeModifierIds: firedModifiers[i] ?? new Set(),
+                activeSkillIds: i === 0 ? new Set(this._activeSkills) : undefined,
             });
         }
 
@@ -741,6 +770,7 @@ export class HorseRacingEngine {
             rankings,
             totalHorses: ids.length,
             surface: this._config.surface,
+            activeSkills: this._activeSkills,
         };
     }
 
@@ -774,6 +804,7 @@ export class HorseRacingEngine {
             placementNorm: 0,
             numHorses: this._horseStates.length,
             activeModifierIds: new Set(),
+            activeSkillIds: index === 0 ? new Set(this._activeSkills) : undefined,
         };
     }
 }

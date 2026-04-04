@@ -32,6 +32,8 @@ export type RaceContext = {
     totalHorses: number;
     /** Track surface condition. */
     surface: 'dry' | 'wet' | 'heavy';
+    /** Active jockey skill IDs (riding style flags). */
+    activeSkills: Set<string>;
 };
 
 // ---------------------------------------------------------------------------
@@ -183,11 +185,77 @@ const endurance: ModifierDefinition = {
 };
 
 // ---------------------------------------------------------------------------
+// Skill-based riding style modifiers (active when jockey skill flag is set)
+// ---------------------------------------------------------------------------
+
+const skillPacePressure: ModifierDefinition = {
+    id: 'skillPacePressure',
+    name: 'Skill: Pace Pressure',
+    condition: (ctx) => ctx.activeSkills.has('pacePressure'),
+    effects: [
+        { target: 'maxSpeed', pct: 0.08 },
+        { target: 'forwardAccel', pct: 0.05 },
+        { target: 'drainRateMult', pct: 0.15 },
+    ],
+};
+
+const skillStaminaManagement: ModifierDefinition = {
+    id: 'skillStaminaManagement',
+    name: 'Skill: Stamina Management',
+    condition: (ctx) => ctx.activeSkills.has('staminaManagement'),
+    effects: [
+        { target: 'drainRateMult', pct: -0.25 },
+        { target: 'maxSpeed', pct: -0.05 },
+    ],
+};
+
+const skillSprintTiming: ModifierDefinition = {
+    id: 'skillSprintTiming',
+    name: 'Skill: Sprint Timing',
+    condition: (ctx, i) =>
+        ctx.activeSkills.has('sprintTiming') && ctx.trackProgress[i] > 0.75,
+    effects: [
+        { target: 'maxSpeed', pct: 0.10 },
+        { target: 'forwardAccel', pct: 0.10 },
+    ],
+};
+
+const skillDraftingExploit: ModifierDefinition = {
+    id: 'skillDraftingExploit',
+    name: 'Skill: Drafting Exploit',
+    condition: (ctx, i) =>
+        ctx.activeSkills.has('draftingExploit') &&
+        isWithinBehindAnother(ctx.positions, ctx.velocities, i, 15),
+    effects: [{ target: 'cruiseSpeed', pct: 0.08 }],
+};
+
+const skillCorneringLine: ModifierDefinition = {
+    id: 'skillCorneringLine',
+    name: 'Skill: Cornering Line',
+    condition: (ctx) => ctx.activeSkills.has('corneringLine'),
+    effects: [
+        { target: 'corneringGrip', pct: 0.15 },
+        { target: 'turnAccel', pct: 0.05 },
+    ],
+};
+
+const skillOvertake: ModifierDefinition = {
+    id: 'skillOvertake',
+    name: 'Skill: Overtake',
+    condition: (ctx) => ctx.activeSkills.has('overtake'),
+    effects: [
+        { target: 'forwardAccel', pct: 0.10 },
+        { target: 'turnAccel', pct: 0.08 },
+        { target: 'pushingPower', flat: 0.05 },
+    ],
+};
+
+// ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
 
 /**
- * All built-in modifier IDs.
+ * All built-in modifier IDs (used for observation vector flags).
  *
  * @group Modifiers
  */
@@ -197,7 +265,18 @@ export const MODIFIER_IDS: readonly string[] = [
 ] as const;
 
 /**
- * Registry of all built-in modifier definitions, keyed by id.
+ * Skill modifier IDs (not included in obs modifier flags — effects visible
+ * through attribute values and skill flags instead).
+ *
+ * @group Modifiers
+ */
+export const SKILL_MODIFIER_IDS: readonly string[] = [
+    'skillPacePressure', 'skillStaminaManagement', 'skillSprintTiming',
+    'skillDraftingExploit', 'skillCorneringLine', 'skillOvertake',
+] as const;
+
+/**
+ * Registry of all modifier definitions (built-in + skill), keyed by id.
  *
  * @group Modifiers
  */
@@ -210,4 +289,10 @@ export const MODIFIER_REGISTRY: Record<string, ModifierDefinition> = {
     mudder,
     gateSpeed,
     endurance,
+    skillPacePressure,
+    skillStaminaManagement,
+    skillSprintTiming,
+    skillDraftingExploit,
+    skillCorneringLine,
+    skillOvertake,
 };
