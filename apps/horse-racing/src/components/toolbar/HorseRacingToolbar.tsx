@@ -1,4 +1,4 @@
-import { BarChart3, Bot, BotOff, Download, Eye, EyeOff, Gamepad2, Home, Play, RotateCcw, Swords, Upload } from 'lucide-react';
+import { BarChart3, Bot, BotOff, Download, Eye, EyeOff, Gamepad2, Home, Play, RotateCcw, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -9,8 +9,6 @@ import { parseTrackJson } from '@/simulation/track-from-json';
 import type { HorseRacingAppComponents } from '@/utils/init-app';
 import type { HorseRacingSimHandle } from '@/simulation/horse-racing-sim';
 import type { HorseObservation } from '@/simulation/horse-racing-engine';
-import type { JockeyStyle } from '@/simulation/ai-jockey-v2';
-
 const TRACK_PRESETS = [
     { label: 'Tokyo', url: '/tracks/tokyo.json' },
     { label: 'Hanshin', url: '/tracks/hanshin.json' },
@@ -45,15 +43,6 @@ const HORSE_NAMES = [
     'Purple', 'Orange', 'Cyan', 'Pink', 'Lime', 'Teal',
     'Coral', 'Indigo', 'Salmon', 'Turquoise', 'Maroon', 'Olive',
     'Navy', 'Rose',
-];
-
-const JOCKEY_STYLE_PRESETS: { label: string; style: JockeyStyle }[] = [
-    { label: 'Default', style: { riskTolerance: 0.5, tacticalBias: 0, skillLevel: 0.5 } },
-    { label: 'Front Runner', style: { riskTolerance: 0.7, tacticalBias: -0.8, skillLevel: 0.5 } },
-    { label: 'Stalker', style: { riskTolerance: 0.4, tacticalBias: 0.2, skillLevel: 0.5 } },
-    { label: 'Closer', style: { riskTolerance: 0.6, tacticalBias: 0.8, skillLevel: 0.5 } },
-    { label: 'Conservative', style: { riskTolerance: 0.2, tacticalBias: 0, skillLevel: 0.5 } },
-    { label: 'Aggressive', style: { riskTolerance: 0.9, tacticalBias: -0.5, skillLevel: 0.5 } },
 ];
 
 type RaceState = 'idle' | 'racing' | 'finished';
@@ -230,12 +219,8 @@ export function HorseRacingToolbar() {
                 <ModelSelector handle={handle} horseCount={horseCount} availableModels={availableModels} />
             </div>
 
-            {/* Row 3: Jockey style + stats toggle */}
+            {/* Row 3: stats + export */}
             <div className="flex items-center gap-2 flex-wrap">
-                <JockeyStyleSelector handle={handle} horseCount={horseCount} />
-
-                <span className="bg-border mx-1 h-4 w-px" />
-
                 <button
                     type="button"
                     className={`inline-flex items-center gap-1 text-xs transition-colors ${
@@ -546,129 +531,13 @@ function ModelSelector({
 }
 
 // ---------------------------------------------------------------------------
-// JockeyStyleSelector
+// Helpers
 // ---------------------------------------------------------------------------
 
-function modelLabel(url: string | undefined, availableModels: { label: string; url: string }[]): string {
-    if (!url) return 'Default';
-    const found = availableModels.find(m => m.url === url);
-    return found?.label ?? url.split('/').pop()?.replace('.onnx', '') ?? 'Unknown';
-}
-
-function JockeyStyleSelector({
-    handle,
-    horseCount,
-}: {
-    handle: HorseRacingSimHandle | null;
-    horseCount: number;
-}) {
-    const [selectedHorse, setSelectedHorse] = useState(0);
-    const [styles, setStyles] = useState<JockeyStyle[]>(() =>
-        Array.from({ length: 20 }, () => ({ riskTolerance: 0.5, tacticalBias: 0, skillLevel: 0.5 })),
-    );
-
-    const updateStyle = useCallback((horseIdx: number, style: JockeyStyle) => {
-        setStyles(prev => {
-            const next = [...prev];
-            next[horseIdx] = style;
-            return next;
-        });
-        handle?.setJockeyStyle(horseIdx, style);
-    }, [handle]);
-
-    const applyPreset = (preset: JockeyStyle) => {
-        updateStyle(selectedHorse, preset);
-    };
-
-    const current = styles[selectedHorse];
-
-    const sliderChange = (field: keyof JockeyStyle, raw: number) => {
-        const next = { ...current, [field]: raw };
-        updateStyle(selectedHorse, next);
-    };
-
-    return (
-        <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
-                <Swords className="size-3.5" aria-hidden />
-                Jockey
-            </span>
-
-            {/* Horse selector tabs */}
-            {Array.from({ length: horseCount }, (_, i) => (
-                <button
-                    key={i}
-                    type="button"
-                    className={`rounded px-1 py-0.5 text-[10px] font-medium transition-colors ${
-                        selectedHorse === i
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
-                    onClick={() => setSelectedHorse(i)}
-                    title={`Edit jockey style for ${HORSE_NAMES[i] ?? `Horse ${i}`}`}
-                >
-                    {HORSE_NAMES[i] ?? `H${i}`}
-                </button>
-            ))}
-
-            <span className="bg-border mx-0.5 h-4 w-px" />
-
-            {/* Preset dropdown */}
-            <select
-                className="border-border bg-background text-foreground rounded border px-1.5 py-0.5 text-[10px]"
-                value=""
-                onChange={(e) => {
-                    const preset = JOCKEY_STYLE_PRESETS.find(p => p.label === e.target.value);
-                    if (preset) applyPreset(preset.style);
-                }}
-            >
-                <option value="" disabled>Presets...</option>
-                {JOCKEY_STYLE_PRESETS.map(p => (
-                    <option key={p.label} value={p.label}>{p.label}</option>
-                ))}
-            </select>
-
-            {/* Sliders */}
-            <div className="flex items-center gap-1">
-                <label className="text-muted-foreground text-[10px] w-8">Risk</label>
-                <input
-                    type="range"
-                    min={0} max={1} step={0.05}
-                    value={current.riskTolerance}
-                    onChange={(e) => sliderChange('riskTolerance', parseFloat(e.target.value))}
-                    className="h-1 w-14 accent-purple-500"
-                    title={`Risk tolerance: ${current.riskTolerance.toFixed(2)}`}
-                />
-                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.riskTolerance.toFixed(1)}</span>
-            </div>
-
-            <div className="flex items-center gap-1">
-                <label className="text-muted-foreground text-[10px] w-8">Tactic</label>
-                <input
-                    type="range"
-                    min={-1} max={1} step={0.05}
-                    value={current.tacticalBias}
-                    onChange={(e) => sliderChange('tacticalBias', parseFloat(e.target.value))}
-                    className="h-1 w-14 accent-purple-500"
-                    title={`Tactical bias: ${current.tacticalBias.toFixed(2)} (-1=front-runner, 1=closer)`}
-                />
-                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.tacticalBias.toFixed(1)}</span>
-            </div>
-
-            <div className="flex items-center gap-1">
-                <label className="text-muted-foreground text-[10px] w-8">Skill</label>
-                <input
-                    type="range"
-                    min={0} max={1} step={0.05}
-                    value={current.skillLevel}
-                    onChange={(e) => sliderChange('skillLevel', parseFloat(e.target.value))}
-                    className="h-1 w-14 accent-purple-500"
-                    title={`Skill level: ${current.skillLevel.toFixed(2)}`}
-                />
-                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.skillLevel.toFixed(1)}</span>
-            </div>
-        </div>
-    );
+function modelLabel(url: string | undefined, models: { label: string; url: string }[]): string {
+    if (!url) return 'default';
+    const m = models.find((m) => m.url === url);
+    return m ? m.label : url.split('/').pop() ?? url;
 }
 
 // ---------------------------------------------------------------------------
