@@ -593,7 +593,7 @@ export async function attachHorseRacingSim(
     const getObservations = (): HorseObservation[] | null => latestObservations;
 
     const getModelAssignment = (horseIndex: number): string | undefined =>
-        modelAssignments.get(horseIndex);
+        modelAssignments.get(horseIndex) ?? '/models/v5_baseline.onnx';
 
     const HORSE_NAMES = [
         'Gold', 'Brown', 'Blue', 'White', 'Red', 'Green',
@@ -605,7 +605,9 @@ export async function attachHorseRacingSim(
     const exportRaceData = (): RaceExport | null => {
         if (recordedTicks.length === 0) return null;
         const assignments: Record<number, string> = {};
-        for (const [k, v] of modelAssignments) assignments[k] = v;
+        for (let i = 0; i < currentHorseCount; i++) {
+            assignments[i] = modelAssignments.get(i) ?? '/models/v5_baseline.onnx';
+        }
         return {
             version: 1,
             exportedAt: new Date().toISOString(),
