@@ -4,9 +4,9 @@
  * Supports both a single shared model (all AI horses use the same policy)
  * and per-horse models (each horse has its own specialized policy).
  *
- * The model takes a 102-dimensional observation (94 continuous features +
- * 8 binary modifier flags) and outputs a 2D action
- * [extraTangential, extraNormal].
+ * Observations are always built at 108 dimensions (94 continuous + 8 modifier
+ * flags + 6 skill flags), then truncated to match each model's expected input
+ * size. This allows older models (94 or 102 dims) to coexist with v16+ models.
  */
 
 import * as ort from 'onnxruntime-web';
@@ -23,6 +23,8 @@ ort.env.wasm.numThreads = 1;
 export class AIJockey {
     private session: ort.InferenceSession | null = null;
     private ready = false;
+    /** The obs dimension this model expects (read from ONNX input metadata). */
+    private _modelObsSize: number = OBS_SIZE;
 
     /**
      * Load an ONNX model from a URL.
@@ -32,7 +34,20 @@ export class AIJockey {
         this.session = await ort.InferenceSession.create(modelUrl, {
             executionProviders: ['wasm'],
         });
+        // Detect model's expected obs size from input metadata
+        const meta = this.session.inputMetadata?.[0];
+        if (meta && 'shape' in meta && Array.isArray(meta.shape) && meta.shape.length === 2) {
+            const dim = meta.shape[1];
+            if (typeof dim === 'number' && dim > 0) {
+                this._modelObsSize = dim;
+            }
+        }
         this.ready = true;
+        console.log(`[AI] Model loaded: ${modelUrl} (obs_size=${this._modelObsSize})`);
+    }
+
+    get modelObsSize(): number {
+        return this._modelObsSize;
     }
 
     get isReady(): boolean {
@@ -47,8 +62,9 @@ export class AIJockey {
             return { extraTangential: 0, extraNormal: 0 };
         }
 
-        const obsArray = observationToArray(obs);
-        const tensor = new ort.Tensor('float32', obsArray, [1, OBS_SIZE]);
+        const fullArr = observationToArray(obs);
+        const obsArray = fitToModelSize(fullArr, this._modelObsSize);
+        const tensor = new ort.Tensor('float32', obsArray, [1, this._modelObsSize]);
         const results = await this.session.run({ obs: tensor });
         const actionData = results.action.data as Float32Array;
 
@@ -67,13 +83,14 @@ export class AIJockey {
         }
 
         const batchSize = observations.length;
-        const obsFlat = new Float32Array(batchSize * OBS_SIZE);
+        const obsFlat = new Float32Array(batchSize * this._modelObsSize);
         for (let i = 0; i < batchSize; i++) {
-            const arr = observationToArray(observations[i]);
-            obsFlat.set(arr, i * OBS_SIZE);
+            const fullArr = observationToArray(observations[i]);
+            const arr = fitToModelSize(fullArr, this._modelObsSize);
+            obsFlat.set(arr, i * this._modelObsSize);
         }
 
-        const tensor = new ort.Tensor('float32', obsFlat, [batchSize, OBS_SIZE]);
+        const tensor = new ort.Tensor('float32', obsFlat, [batchSize, this._modelObsSize]);
         const results = await this.session.run({ obs: tensor });
         const actionData = results.action.data as Float32Array;
 
@@ -150,8 +167,10 @@ export class AIJockeyManager {
             const perHorseJockey = this.perHorse.get(idx);
 
             if (perHorseJockey?.isReady) {
-                const obsArray = observationToArray(obs, idx, allObservations);
-                const tensor = new ort.Tensor('float32', obsArray, [1, OBS_SIZE]);
+                const fullArr = observationToArray(obs, idx, allObservations);
+                const obsSize = perHorseJockey.modelObsSize;
+                const obsArray = fitToModelSize(fullArr, obsSize);
+                const tensor = new ort.Tensor('float32', obsArray, [1, obsSize]);
                 const results = await perHorseJockey['session']!.run({ obs: tensor });
                 const actionData = results.action.data as Float32Array;
                 result.set(idx, {
@@ -167,12 +186,14 @@ export class AIJockeyManager {
         // Batch shared model inference
         if (sharedIndices.length > 0 && this.shared.isReady) {
             const batchSize = sharedIndices.length;
-            const obsFlat = new Float32Array(batchSize * OBS_SIZE);
+            const sharedObsSize = this.shared.modelObsSize;
+            const obsFlat = new Float32Array(batchSize * sharedObsSize);
             for (let j = 0; j < batchSize; j++) {
-                const arr = observationToArray(sharedObs[j], sharedIndices[j], allObservations);
-                obsFlat.set(arr, j * OBS_SIZE);
+                const fullArr = observationToArray(sharedObs[j], sharedIndices[j], allObservations);
+                const arr = fitToModelSize(fullArr, sharedObsSize);
+                obsFlat.set(arr, j * sharedObsSize);
             }
-            const tensor = new ort.Tensor('float32', obsFlat, [batchSize, OBS_SIZE]);
+            const tensor = new ort.Tensor('float32', obsFlat, [batchSize, sharedObsSize]);
             const results = await this.shared['session']!.run({ obs: tensor });
             const actionData = results.action.data as Float32Array;
             for (let j = 0; j < batchSize; j++) {
@@ -283,6 +304,19 @@ function observationToArray(
         arr[102 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
     }
     return arr;
+}
+
+/**
+ * Truncate or zero-pad the full 108-dim obs array to match a model's expected input size.
+ * Older models (e.g., 94 or 102 dims) get the first N features; newer models get all 108.
+ */
+function fitToModelSize(full: Float32Array, targetSize: number): Float32Array {
+    if (targetSize === full.length) return full;
+    if (targetSize < full.length) return full.slice(0, targetSize);
+    // Pad with zeros (shouldn't happen in practice)
+    const padded = new Float32Array(targetSize);
+    padded.set(full);
+    return padded;
 }
 
 function clamp(v: number, min: number, max: number): number {

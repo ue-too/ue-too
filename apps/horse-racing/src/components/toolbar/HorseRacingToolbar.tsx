@@ -1,4 +1,4 @@
-import { Bot, BotOff, Eye, EyeOff, Gamepad2, Home, Play, RotateCcw, Upload } from 'lucide-react';
+import { BarChart3, Bot, BotOff, Download, Eye, EyeOff, Gamepad2, Home, Play, RotateCcw, Swords, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -8,6 +8,7 @@ import { usePixiCanvas } from '@ue-too/board-pixi-react-integration';
 import { parseTrackJson } from '@/simulation/track-from-json';
 import type { HorseRacingAppComponents } from '@/utils/init-app';
 import type { HorseRacingSimHandle } from '@/simulation/horse-racing-sim';
+import type { HorseObservation } from '@/simulation/horse-racing-engine';
 
 const TRACK_PRESETS = [
     { label: 'Tokyo', url: '/tracks/tokyo.json' },
@@ -45,6 +46,23 @@ const HORSE_NAMES = [
     'Navy', 'Rose',
 ];
 
+const SKILL_DEFS = [
+    { id: 'pacePressure', label: 'Pace' },
+    { id: 'staminaManagement', label: 'Stamina' },
+    { id: 'sprintTiming', label: 'Sprint' },
+    { id: 'draftingExploit', label: 'Draft' },
+    { id: 'corneringLine', label: 'Corner' },
+    { id: 'overtake', label: 'Overtake' },
+] as const;
+
+const ARCHETYPE_PRESETS: { label: string; skills: string[] }[] = [
+    { label: 'None', skills: [] },
+    { label: 'Front Runner', skills: ['pacePressure', 'sprintTiming'] },
+    { label: 'Stalker', skills: ['draftingExploit', 'staminaManagement', 'sprintTiming'] },
+    { label: 'Closer', skills: ['staminaManagement', 'sprintTiming', 'overtake'] },
+    { label: 'Presser', skills: ['pacePressure', 'draftingExploit', 'overtake'] },
+];
+
 type RaceState = 'idle' | 'racing' | 'finished';
 
 export function HorseRacingToolbar() {
@@ -57,6 +75,7 @@ export function HorseRacingToolbar() {
     const [arcFanVisible, setArcFanVisible] = useState(() => handle?.arcFanVisible() ?? true);
     const [horseCount, setHorseCount] = useState(4);
     const [raceState, setRaceState] = useState<RaceState>('idle');
+    const [statsOpen, setStatsOpen] = useState(false);
 
     const toggleArcFan = useCallback(() => {
         if (!handle) return;
@@ -105,6 +124,20 @@ export function HorseRacingToolbar() {
     const handleReset = () => {
         handle?.resetRace();
         setRaceState('idle');
+    };
+
+    const handleExport = () => {
+        if (!handle) return;
+        const data = handle.exportRaceData();
+        if (!data) return;
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `race_export_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -203,6 +236,40 @@ export function HorseRacingToolbar() {
 
                 <ModelSelector handle={handle} horseCount={horseCount} availableModels={availableModels} />
             </div>
+
+            {/* Row 3: Jockey skill selector + stats toggle */}
+            <div className="flex items-center gap-2 flex-wrap">
+                <SkillSelector handle={handle} />
+
+                <span className="bg-border mx-1 h-4 w-px" />
+
+                <button
+                    type="button"
+                    className={`inline-flex items-center gap-1 text-xs transition-colors ${
+                        statsOpen ? 'text-cyan-500' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => setStatsOpen(v => !v)}
+                    title="Toggle debug stats panel"
+                >
+                    <BarChart3 className="size-3.5" aria-hidden />
+                    <span>Stats</span>
+                </button>
+
+                <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs transition-colors"
+                    onClick={handleExport}
+                    title="Export race data as JSON"
+                >
+                    <Download className="size-3.5" aria-hidden />
+                    <span>Export</span>
+                </button>
+            </div>
+
+            {/* Row 4: Debug stats panel (collapsible) */}
+            {statsOpen && (
+                <StatsPanel handle={handle} horseCount={horseCount} availableModels={availableModels} />
+            )}
         </div>
     );
 }
@@ -481,6 +548,196 @@ function ModelSelector({
                     </select>
                 </div>
             ))}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// SkillSelector
+// ---------------------------------------------------------------------------
+
+function modelLabel(url: string | undefined, availableModels: { label: string; url: string }[]): string {
+    if (!url) return 'Default';
+    const found = availableModels.find(m => m.url === url);
+    return found?.label ?? url.split('/').pop()?.replace('.onnx', '') ?? 'Unknown';
+}
+
+function SkillSelector({ handle }: { handle: HorseRacingSimHandle | null }) {
+    const [activeSkills, setActiveSkills] = useState<Set<string>>(new Set());
+
+    const applySkills = useCallback((skills: Set<string>) => {
+        setActiveSkills(skills);
+        handle?.setActiveSkills(skills);
+    }, [handle]);
+
+    const toggleSkill = (id: string) => {
+        const next = new Set(activeSkills);
+        if (next.has(id)) {
+            next.delete(id);
+        } else {
+            next.add(id);
+        }
+        applySkills(next);
+    };
+
+    const applyPreset = (skills: string[]) => {
+        applySkills(new Set(skills));
+    };
+
+    return (
+        <div className="flex items-center gap-1 flex-wrap">
+            <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+                <Swords className="size-3.5" aria-hidden />
+                Skills
+                <span className="text-purple-400 font-medium">({HORSE_NAMES[0]})</span>
+            </span>
+
+            <select
+                className="border-border bg-background text-foreground rounded border px-1.5 py-0.5 text-[10px]"
+                value=""
+                onChange={(e) => {
+                    const preset = ARCHETYPE_PRESETS.find(p => p.label === e.target.value);
+                    if (preset) applyPreset(preset.skills);
+                }}
+            >
+                <option value="" disabled>Presets...</option>
+                {ARCHETYPE_PRESETS.map(p => (
+                    <option key={p.label} value={p.label}>{p.label}</option>
+                ))}
+            </select>
+
+            {SKILL_DEFS.map(s => (
+                <button
+                    key={s.id}
+                    type="button"
+                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                        activeSkills.has(s.id)
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => toggleSkill(s.id)}
+                    title={s.id}
+                >
+                    {s.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// StatsPanel
+// ---------------------------------------------------------------------------
+
+function StatsPanel({
+    handle,
+    horseCount,
+    availableModels,
+}: {
+    handle: HorseRacingSimHandle | null;
+    horseCount: number;
+    availableModels: { label: string; url: string }[];
+}) {
+    const [observations, setObservations] = useState<HorseObservation[] | null>(null);
+
+    useEffect(() => {
+        if (!handle) return;
+        const interval = setInterval(() => {
+            setObservations(handle.getObservations());
+        }, 200);
+        return () => clearInterval(interval);
+    }, [handle]);
+
+    if (!observations || observations.length === 0) {
+        return (
+            <div className="text-muted-foreground text-[10px]">
+                No observations yet — start the race to see stats.
+            </div>
+        );
+    }
+
+    const fmt = (v: number, d = 1) => v.toFixed(d);
+    const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
+
+    return (
+        <div className="max-h-60 overflow-auto">
+            <table className="text-[10px] w-full border-collapse">
+                <thead>
+                    <tr className="text-muted-foreground text-left">
+                        <th className="px-1 py-0.5 font-medium">Horse</th>
+                        <th className="px-1 py-0.5 font-medium">Model</th>
+                        <th className="px-1 py-0.5 font-medium">Vel T/N</th>
+                        <th className="px-1 py-0.5 font-medium">Cruise</th>
+                        <th className="px-1 py-0.5 font-medium">Max Spd</th>
+                        <th className="px-1 py-0.5 font-medium">Fwd Acc</th>
+                        <th className="px-1 py-0.5 font-medium">Turn Acc</th>
+                        <th className="px-1 py-0.5 font-medium">Stamina</th>
+                        <th className="px-1 py-0.5 font-medium">Drain</th>
+                        <th className="px-1 py-0.5 font-medium">Grip</th>
+                        <th className="px-1 py-0.5 font-medium">Progress</th>
+                        <th className="px-1 py-0.5 font-medium">Place</th>
+                        <th className="px-1 py-0.5 font-medium">Modifiers</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {observations.slice(0, horseCount).map((obs, i) => {
+                        const staminaPct = obs.maxStamina > 0
+                            ? obs.currentStamina / obs.maxStamina
+                            : 0;
+                        const placement = Math.round(obs.placementNorm * (obs.numHorses - 1)) + 1;
+                        const modIds = obs.activeModifierIds
+                            ? [...obs.activeModifierIds].join(', ')
+                            : '';
+                        const skillIds = i === 0 && obs.activeSkillIds
+                            ? [...obs.activeSkillIds].join(', ')
+                            : '';
+                        const mUrl = handle?.getModelAssignment(i);
+
+                        return (
+                            <tr
+                                key={i}
+                                className={`border-border border-t ${i === 0 ? 'bg-purple-500/10' : ''}`}
+                            >
+                                <td className="px-1 py-0.5 font-medium">
+                                    {HORSE_NAMES[i] ?? `H${i}`}
+                                    {i === 0 && skillIds && (
+                                        <span className="text-purple-400 ml-1">[{skillIds}]</span>
+                                    )}
+                                </td>
+                                <td className="px-1 py-0.5 text-muted-foreground">
+                                    {modelLabel(mUrl, availableModels)}
+                                </td>
+                                <td className="px-1 py-0.5 font-mono">
+                                    {fmt(obs.tangentialVel)}/{fmt(obs.normalVel)}
+                                </td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.effectiveCruiseSpeed)}</td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.effectiveMaxSpeed)}</td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.forwardAccel, 2)}</td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.turnAccel, 2)}</td>
+                                <td className="px-1 py-0.5">
+                                    <div className="flex items-center gap-1">
+                                        <div className="bg-muted h-1.5 w-10 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full ${
+                                                    staminaPct > 0.4 ? 'bg-green-500' :
+                                                    staminaPct > 0.2 ? 'bg-yellow-500' : 'bg-red-500'
+                                                }`}
+                                                style={{ width: pct(staminaPct) }}
+                                            />
+                                        </div>
+                                        <span className="font-mono">{fmt(obs.currentStamina, 0)}</span>
+                                    </div>
+                                </td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.drainRateMult, 2)}</td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.corneringGrip, 2)}</td>
+                                <td className="px-1 py-0.5 font-mono">{pct(obs.trackProgress)}</td>
+                                <td className="px-1 py-0.5 font-mono font-medium">{placement}</td>
+                                <td className="px-1 py-0.5 text-muted-foreground">{modIds}</td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
         </div>
     );
 }

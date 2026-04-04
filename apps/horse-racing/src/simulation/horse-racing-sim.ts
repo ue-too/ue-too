@@ -104,6 +104,55 @@ export type HorseRacingSimHandle = {
     setPlayerHorse: (horseIndex: number) => void;
     /** Get the current player-controlled horse index (-1 = none). */
     getPlayerHorse: () => number;
+    /** Set active jockey skills for horse 0 (riding style modifiers + obs flags). */
+    setActiveSkills: (skills: Set<string>) => void;
+    /** Get currently active skills. */
+    getActiveSkills: () => ReadonlySet<string>;
+    /** Latest per-horse observations from the most recent sim tick (null before first step). */
+    getObservations: () => HorseObservation[] | null;
+    /** Get the model URL assigned to a horse (undefined = default). */
+    getModelAssignment: (horseIndex: number) => string | undefined;
+    /** Export recorded race data as a JSON object (returns null if no data). */
+    exportRaceData: () => RaceExport | null;
+};
+
+// ---------------------------------------------------------------------------
+// Race export types
+// ---------------------------------------------------------------------------
+
+export type RaceTickSnapshot = {
+    tick: number;
+    horses: {
+        tangentialVel: number;
+        normalVel: number;
+        displacement: number;
+        trackProgress: number;
+        currentStamina: number;
+        effectiveCruiseSpeed: number;
+        effectiveMaxSpeed: number;
+        forwardAccel: number;
+        turnAccel: number;
+        corneringGrip: number;
+        drainRateMult: number;
+        corneringMargin: number;
+        placementNorm: number;
+        position: { x: number; y: number };
+        activeModifierIds: string[];
+    }[];
+};
+
+export type RaceExport = {
+    version: 1;
+    exportedAt: string;
+    config: {
+        horseCount: number;
+        activeSkills: string[];
+        modelAssignments: Record<number, string>;
+        horseNames: string[];
+    };
+    finishOrder: number[];
+    /** Sampled at ~10 Hz (every 6 sim ticks). */
+    ticks: RaceTickSnapshot[];
 };
 
 // ---------------------------------------------------------------------------
@@ -135,6 +184,14 @@ export async function attachHorseRacingSim(
 
     // Track which model URL each horse should use
     const modelAssignments = new Map<number, string>();
+    // Persist active skills across resets
+    let currentSkills: Set<string> = new Set();
+    // Latest observations for debug stats panel
+    let latestObservations: HorseObservation[] | null = null;
+    // Race recording (sampled every RECORD_INTERVAL ticks)
+    const RECORD_INTERVAL = 6; // ~10 Hz at 60 Hz sim
+    let recordedTicks: RaceTickSnapshot[] = [];
+    let tickCounter = 0;
 
     const reloadModels = (): void => {
         aiManager.clearAll();
@@ -245,6 +302,32 @@ export async function attachHorseRacingSim(
 
             // Step simulation
             observations = engine.step(actions);
+            latestObservations = observations;
+
+            // Record snapshot at ~10 Hz
+            tickCounter++;
+            if (tickCounter % RECORD_INTERVAL === 0) {
+                recordedTicks.push({
+                    tick: tickCounter,
+                    horses: observations.map(obs => ({
+                        tangentialVel: obs.tangentialVel,
+                        normalVel: obs.normalVel,
+                        displacement: obs.displacement,
+                        trackProgress: obs.trackProgress,
+                        currentStamina: obs.currentStamina,
+                        effectiveCruiseSpeed: obs.effectiveCruiseSpeed,
+                        effectiveMaxSpeed: obs.effectiveMaxSpeed,
+                        forwardAccel: obs.forwardAccel,
+                        turnAccel: obs.turnAccel,
+                        corneringGrip: obs.corneringGrip,
+                        drainRateMult: obs.drainRateMult,
+                        corneringMargin: obs.corneringMargin === Infinity ? 1000 : obs.corneringMargin,
+                        placementNorm: obs.placementNorm,
+                        position: { x: obs.position.x, y: obs.position.y },
+                        activeModifierIds: obs.activeModifierIds ? [...obs.activeModifierIds] : [],
+                    })),
+                });
+            }
 
             // Detect newly finished horses via the navigator's completedLap flag,
             // which is set when a horse exits the last track segment.
@@ -407,7 +490,11 @@ export async function attachHorseRacingSim(
         segments = newSegments;
         raceStarted = false;
         pendingAIActions.clear();
+        recordedTicks = [];
+        tickCounter = 0;
+        latestObservations = null;
         sim = buildSim(stage, segments, currentHorseCount);
+        sim.engine.setActiveSkills(currentSkills);
         simAccumulatorMs = 0;
         reloadModels();
         aiControlled.clear();
@@ -454,7 +541,11 @@ export async function attachHorseRacingSim(
         teardownSim();
         raceStarted = false;
         pendingAIActions.clear();
+        recordedTicks = [];
+        tickCounter = 0;
+        latestObservations = null;
         sim = buildSim(stage, segments, currentHorseCount);
+        sim.engine.setActiveSkills(currentSkills);
         simAccumulatorMs = 0;
         reloadModels();
         aiControlled.clear();
@@ -492,12 +583,50 @@ export async function attachHorseRacingSim(
 
     const getPlayerHorse = (): number => playerIndex;
 
+    const setActiveSkills = (skills: Set<string>): void => {
+        currentSkills = new Set(skills);
+        sim.engine.setActiveSkills(currentSkills);
+    };
+
+    const getActiveSkills = (): ReadonlySet<string> => sim.engine.activeSkills;
+
+    const getObservations = (): HorseObservation[] | null => latestObservations;
+
+    const getModelAssignment = (horseIndex: number): string | undefined =>
+        modelAssignments.get(horseIndex);
+
+    const HORSE_NAMES = [
+        'Gold', 'Brown', 'Blue', 'White', 'Red', 'Green',
+        'Purple', 'Orange', 'Cyan', 'Pink', 'Lime', 'Teal',
+        'Coral', 'Indigo', 'Salmon', 'Turquoise', 'Maroon', 'Olive',
+        'Navy', 'Rose',
+    ];
+
+    const exportRaceData = (): RaceExport | null => {
+        if (recordedTicks.length === 0) return null;
+        const assignments: Record<number, string> = {};
+        for (const [k, v] of modelAssignments) assignments[k] = v;
+        return {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            config: {
+                horseCount: currentHorseCount,
+                activeSkills: [...currentSkills],
+                modelAssignments: assignments,
+                horseNames: HORSE_NAMES.slice(0, currentHorseCount),
+            },
+            finishOrder: [...sim.finishOrder],
+            ticks: recordedTicks,
+        };
+    };
+
     return {
         cleanup, reloadTrack, setArcFanVisible, arcFanVisible,
         enableAI, disableAI, isAIEnabled,
         startRace, isRaceStarted, isRaceFinished,
         resetRace, getHorseCount, setHorseCount, setModelForHorse,
-        setPlayerHorse, getPlayerHorse,
+        setPlayerHorse, getPlayerHorse, setActiveSkills, getActiveSkills,
+        getObservations, getModelAssignment, exportRaceData,
     };
 }
 
