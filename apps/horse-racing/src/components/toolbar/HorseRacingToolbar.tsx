@@ -9,6 +9,7 @@ import { parseTrackJson } from '@/simulation/track-from-json';
 import type { HorseRacingAppComponents } from '@/utils/init-app';
 import type { HorseRacingSimHandle } from '@/simulation/horse-racing-sim';
 import type { HorseObservation } from '@/simulation/horse-racing-engine';
+import type { JockeyStyle } from '@/simulation/ai-jockey-v2';
 
 const TRACK_PRESETS = [
     { label: 'Tokyo', url: '/tracks/tokyo.json' },
@@ -46,21 +47,13 @@ const HORSE_NAMES = [
     'Navy', 'Rose',
 ];
 
-const SKILL_DEFS = [
-    { id: 'pacePressure', label: 'Pace' },
-    { id: 'staminaManagement', label: 'Stamina' },
-    { id: 'sprintTiming', label: 'Sprint' },
-    { id: 'draftingExploit', label: 'Draft' },
-    { id: 'corneringLine', label: 'Corner' },
-    { id: 'overtake', label: 'Overtake' },
-] as const;
-
-const ARCHETYPE_PRESETS: { label: string; skills: string[] }[] = [
-    { label: 'None', skills: [] },
-    { label: 'Front Runner', skills: ['pacePressure', 'sprintTiming'] },
-    { label: 'Stalker', skills: ['draftingExploit', 'staminaManagement', 'sprintTiming'] },
-    { label: 'Closer', skills: ['staminaManagement', 'sprintTiming', 'overtake'] },
-    { label: 'Presser', skills: ['pacePressure', 'draftingExploit', 'overtake'] },
+const JOCKEY_STYLE_PRESETS: { label: string; style: JockeyStyle }[] = [
+    { label: 'Default', style: { riskTolerance: 0.5, tacticalBias: 0, skillLevel: 0.5 } },
+    { label: 'Front Runner', style: { riskTolerance: 0.7, tacticalBias: -0.8, skillLevel: 0.5 } },
+    { label: 'Stalker', style: { riskTolerance: 0.4, tacticalBias: 0.2, skillLevel: 0.5 } },
+    { label: 'Closer', style: { riskTolerance: 0.6, tacticalBias: 0.8, skillLevel: 0.5 } },
+    { label: 'Conservative', style: { riskTolerance: 0.2, tacticalBias: 0, skillLevel: 0.5 } },
+    { label: 'Aggressive', style: { riskTolerance: 0.9, tacticalBias: -0.5, skillLevel: 0.5 } },
 ];
 
 type RaceState = 'idle' | 'racing' | 'finished';
@@ -237,9 +230,9 @@ export function HorseRacingToolbar() {
                 <ModelSelector handle={handle} horseCount={horseCount} availableModels={availableModels} />
             </div>
 
-            {/* Row 3: Jockey skill selector + stats toggle */}
+            {/* Row 3: Jockey style + stats toggle */}
             <div className="flex items-center gap-2 flex-wrap">
-                <SkillSelector handle={handle} />
+                <JockeyStyleSelector handle={handle} horseCount={horseCount} />
 
                 <span className="bg-border mx-1 h-4 w-px" />
 
@@ -553,7 +546,7 @@ function ModelSelector({
 }
 
 // ---------------------------------------------------------------------------
-// SkillSelector
+// JockeyStyleSelector
 // ---------------------------------------------------------------------------
 
 function modelLabel(url: string | undefined, availableModels: { label: string; url: string }[]): string {
@@ -562,65 +555,118 @@ function modelLabel(url: string | undefined, availableModels: { label: string; u
     return found?.label ?? url.split('/').pop()?.replace('.onnx', '') ?? 'Unknown';
 }
 
-function SkillSelector({ handle }: { handle: HorseRacingSimHandle | null }) {
-    const [activeSkills, setActiveSkills] = useState<Set<string>>(new Set());
+function JockeyStyleSelector({
+    handle,
+    horseCount,
+}: {
+    handle: HorseRacingSimHandle | null;
+    horseCount: number;
+}) {
+    const [selectedHorse, setSelectedHorse] = useState(0);
+    const [styles, setStyles] = useState<JockeyStyle[]>(() =>
+        Array.from({ length: 20 }, () => ({ riskTolerance: 0.5, tacticalBias: 0, skillLevel: 0.5 })),
+    );
 
-    const applySkills = useCallback((skills: Set<string>) => {
-        setActiveSkills(skills);
-        handle?.setActiveSkills(skills);
+    const updateStyle = useCallback((horseIdx: number, style: JockeyStyle) => {
+        setStyles(prev => {
+            const next = [...prev];
+            next[horseIdx] = style;
+            return next;
+        });
+        handle?.setJockeyStyle(horseIdx, style);
     }, [handle]);
 
-    const toggleSkill = (id: string) => {
-        const next = new Set(activeSkills);
-        if (next.has(id)) {
-            next.delete(id);
-        } else {
-            next.add(id);
-        }
-        applySkills(next);
+    const applyPreset = (preset: JockeyStyle) => {
+        updateStyle(selectedHorse, preset);
     };
 
-    const applyPreset = (skills: string[]) => {
-        applySkills(new Set(skills));
+    const current = styles[selectedHorse];
+
+    const sliderChange = (field: keyof JockeyStyle, raw: number) => {
+        const next = { ...current, [field]: raw };
+        updateStyle(selectedHorse, next);
     };
 
     return (
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
             <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                 <Swords className="size-3.5" aria-hidden />
-                Skills
-                <span className="text-purple-400 font-medium">({HORSE_NAMES[0]})</span>
+                Jockey
             </span>
 
+            {/* Horse selector tabs */}
+            {Array.from({ length: horseCount }, (_, i) => (
+                <button
+                    key={i}
+                    type="button"
+                    className={`rounded px-1 py-0.5 text-[10px] font-medium transition-colors ${
+                        selectedHorse === i
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                    onClick={() => setSelectedHorse(i)}
+                    title={`Edit jockey style for ${HORSE_NAMES[i] ?? `Horse ${i}`}`}
+                >
+                    {HORSE_NAMES[i] ?? `H${i}`}
+                </button>
+            ))}
+
+            <span className="bg-border mx-0.5 h-4 w-px" />
+
+            {/* Preset dropdown */}
             <select
                 className="border-border bg-background text-foreground rounded border px-1.5 py-0.5 text-[10px]"
                 value=""
                 onChange={(e) => {
-                    const preset = ARCHETYPE_PRESETS.find(p => p.label === e.target.value);
-                    if (preset) applyPreset(preset.skills);
+                    const preset = JOCKEY_STYLE_PRESETS.find(p => p.label === e.target.value);
+                    if (preset) applyPreset(preset.style);
                 }}
             >
                 <option value="" disabled>Presets...</option>
-                {ARCHETYPE_PRESETS.map(p => (
+                {JOCKEY_STYLE_PRESETS.map(p => (
                     <option key={p.label} value={p.label}>{p.label}</option>
                 ))}
             </select>
 
-            {SKILL_DEFS.map(s => (
-                <button
-                    key={s.id}
-                    type="button"
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
-                        activeSkills.has(s.id)
-                            ? 'bg-purple-600 text-white'
-                            : 'bg-muted text-muted-foreground hover:text-foreground'
-                    }`}
-                    onClick={() => toggleSkill(s.id)}
-                    title={s.id}
-                >
-                    {s.label}
-                </button>
-            ))}
+            {/* Sliders */}
+            <div className="flex items-center gap-1">
+                <label className="text-muted-foreground text-[10px] w-8">Risk</label>
+                <input
+                    type="range"
+                    min={0} max={1} step={0.05}
+                    value={current.riskTolerance}
+                    onChange={(e) => sliderChange('riskTolerance', parseFloat(e.target.value))}
+                    className="h-1 w-14 accent-purple-500"
+                    title={`Risk tolerance: ${current.riskTolerance.toFixed(2)}`}
+                />
+                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.riskTolerance.toFixed(1)}</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+                <label className="text-muted-foreground text-[10px] w-8">Tactic</label>
+                <input
+                    type="range"
+                    min={-1} max={1} step={0.05}
+                    value={current.tacticalBias}
+                    onChange={(e) => sliderChange('tacticalBias', parseFloat(e.target.value))}
+                    className="h-1 w-14 accent-purple-500"
+                    title={`Tactical bias: ${current.tacticalBias.toFixed(2)} (-1=front-runner, 1=closer)`}
+                />
+                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.tacticalBias.toFixed(1)}</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+                <label className="text-muted-foreground text-[10px] w-8">Skill</label>
+                <input
+                    type="range"
+                    min={0} max={1} step={0.05}
+                    value={current.skillLevel}
+                    onChange={(e) => sliderChange('skillLevel', parseFloat(e.target.value))}
+                    className="h-1 w-14 accent-purple-500"
+                    title={`Skill level: ${current.skillLevel.toFixed(2)}`}
+                />
+                <span className="text-muted-foreground text-[10px] font-mono w-6">{current.skillLevel.toFixed(1)}</span>
+            </div>
         </div>
     );
 }
@@ -666,17 +712,15 @@ function StatsPanel({
                     <tr className="text-muted-foreground text-left">
                         <th className="px-1 py-0.5 font-medium">Horse</th>
                         <th className="px-1 py-0.5 font-medium">Model</th>
-                        <th className="px-1 py-0.5 font-medium">Vel T/N</th>
-                        <th className="px-1 py-0.5 font-medium">Cruise</th>
-                        <th className="px-1 py-0.5 font-medium">Max Spd</th>
-                        <th className="px-1 py-0.5 font-medium">Fwd Acc</th>
-                        <th className="px-1 py-0.5 font-medium">Turn Acc</th>
+                        <th className="px-1 py-0.5 font-medium">Speed</th>
+                        <th className="px-1 py-0.5 font-medium">Top Spd</th>
+                        <th className="px-1 py-0.5 font-medium">Accel</th>
                         <th className="px-1 py-0.5 font-medium">Stamina</th>
-                        <th className="px-1 py-0.5 font-medium">Drain</th>
-                        <th className="px-1 py-0.5 font-medium">Grip</th>
+                        <th className="px-1 py-0.5 font-medium">Grip L/R</th>
+                        <th className="px-1 py-0.5 font-medium">Climb</th>
+                        <th className="px-1 py-0.5 font-medium">Displ</th>
                         <th className="px-1 py-0.5 font-medium">Progress</th>
                         <th className="px-1 py-0.5 font-medium">Place</th>
-                        <th className="px-1 py-0.5 font-medium">Modifiers</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -685,24 +729,15 @@ function StatsPanel({
                             ? obs.currentStamina / obs.maxStamina
                             : 0;
                         const placement = Math.round(obs.placementNorm * (obs.numHorses - 1)) + 1;
-                        const modIds = obs.activeModifierIds
-                            ? [...obs.activeModifierIds].join(', ')
-                            : '';
-                        const skillIds = i === 0 && obs.activeSkillIds
-                            ? [...obs.activeSkillIds].join(', ')
-                            : '';
                         const mUrl = handle?.getModelAssignment(i);
 
                         return (
                             <tr
                                 key={i}
-                                className={`border-border border-t ${i === 0 ? 'bg-purple-500/10' : ''}`}
+                                className={`border-border border-t`}
                             >
                                 <td className="px-1 py-0.5 font-medium">
                                     {HORSE_NAMES[i] ?? `H${i}`}
-                                    {i === 0 && skillIds && (
-                                        <span className="text-purple-400 ml-1">[{skillIds}]</span>
-                                    )}
                                 </td>
                                 <td className="px-1 py-0.5 text-muted-foreground">
                                     {modelLabel(mUrl, availableModels)}
@@ -710,10 +745,8 @@ function StatsPanel({
                                 <td className="px-1 py-0.5 font-mono">
                                     {fmt(obs.tangentialVel)}/{fmt(obs.normalVel)}
                                 </td>
-                                <td className="px-1 py-0.5 font-mono">{fmt(obs.effectiveCruiseSpeed)}</td>
                                 <td className="px-1 py-0.5 font-mono">{fmt(obs.effectiveMaxSpeed)}</td>
                                 <td className="px-1 py-0.5 font-mono">{fmt(obs.forwardAccel, 2)}</td>
-                                <td className="px-1 py-0.5 font-mono">{fmt(obs.turnAccel, 2)}</td>
                                 <td className="px-1 py-0.5">
                                     <div className="flex items-center gap-1">
                                         <div className="bg-muted h-1.5 w-10 rounded-full overflow-hidden">
@@ -728,11 +761,13 @@ function StatsPanel({
                                         <span className="font-mono">{fmt(obs.currentStamina, 0)}</span>
                                     </div>
                                 </td>
-                                <td className="px-1 py-0.5 font-mono">{fmt(obs.drainRateMult, 2)}</td>
-                                <td className="px-1 py-0.5 font-mono">{fmt(obs.corneringGrip, 2)}</td>
+                                <td className="px-1 py-0.5 font-mono">
+                                    {fmt(obs.corneringGrip, 2)}/{fmt(obs.corneringGrip, 2)}
+                                </td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(1.0, 2)}</td>
+                                <td className="px-1 py-0.5 font-mono">{fmt(obs.displacement ?? 0, 1)}</td>
                                 <td className="px-1 py-0.5 font-mono">{pct(obs.trackProgress)}</td>
                                 <td className="px-1 py-0.5 font-mono font-medium">{placement}</td>
-                                <td className="px-1 py-0.5 text-muted-foreground">{modIds}</td>
                             </tr>
                         );
                     })}

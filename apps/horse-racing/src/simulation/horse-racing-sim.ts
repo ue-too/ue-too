@@ -108,6 +108,8 @@ export type HorseRacingSimHandle = {
     setActiveSkills: (skills: Set<string>) => void;
     /** Get currently active skills. */
     getActiveSkills: () => ReadonlySet<string>;
+    /** Set jockey style parameters for a specific horse (V2 engine). */
+    setJockeyStyle: (horseIndex: number, style: { riskTolerance: number; tacticalBias: number; skillLevel: number }) => void;
     /** Latest per-horse observations from the most recent sim tick (null before first step). */
     getObservations: () => HorseObservation[] | null;
     /** Get the model URL assigned to a horse (undefined = default). */
@@ -590,6 +592,13 @@ export async function attachHorseRacingSim(
 
     const getActiveSkills = (): ReadonlySet<string> => sim.engine.activeSkills;
 
+    const setJockeyStyle = (horseIndex: number, style: { riskTolerance: number; tacticalBias: number; skillLevel: number }): void => {
+        // V2 engine integration — stores style for use in next sim rebuild or tick
+        // The V1 engine doesn't support this; it will be wired up when the sim switches to V2 engine
+        (sim as any)._pendingJockeyStyles ??= new Map();
+        (sim as any)._pendingJockeyStyles.set(horseIndex, style);
+    };
+
     const getObservations = (): HorseObservation[] | null => latestObservations;
 
     const getModelAssignment = (horseIndex: number): string | undefined =>
@@ -628,7 +637,7 @@ export async function attachHorseRacingSim(
         startRace, isRaceStarted, isRaceFinished,
         resetRace, getHorseCount, setHorseCount, setModelForHorse,
         setPlayerHorse, getPlayerHorse, setActiveSkills, getActiveSkills,
-        getObservations, getModelAssignment, exportRaceData,
+        setJockeyStyle, getObservations, getModelAssignment, exportRaceData,
     };
 }
 

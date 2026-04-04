@@ -16,6 +16,10 @@
     "url": "/models/jockey_stalker.onnx"
   },
   {
+    "label": "V16 Baseline",
+    "url": "/models/v16_baseline.onnx"
+  },
+  {
     "label": "V4 Baseline",
     "url": "/models/v4_baseline.onnx"
   },
@@ -26,9 +30,5 @@
   {
     "label": "V6 Baseline",
     "url": "/models/v6_baseline.onnx"
-  },
-  {
-    "label": "V16 Baseline (Skill-Physics)",
-    "url": "/models/v16_baseline.onnx"
   }
 ]
