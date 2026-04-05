@@ -11,6 +11,7 @@ import { HorseRacingEngine } from './horse-racing-engine';
 import type { HorseAction, HorseObservation } from './horse-racing-engine';
 import { generateDefaultGenome } from './horse-genome';
 import { AIJockeyManager } from './ai-jockey';
+import { BTJockey, makeBTJockey, PERSONALITIES } from './bt-jockey';
 
 // ---------------------------------------------------------------------------
 // Constants (rendering only — simulation constants live in the engine)
@@ -182,6 +183,9 @@ export async function attachHorseRacingSim(
     let currentHorseCount = 4;
     let playerIndex = -1; // -1 = no player control (all AI)
 
+    // BT jockeys for horses without ONNX models
+    const btJockeys = new Map<number, BTJockey>();
+
     // Track which model URL each horse should use
     const modelAssignments = new Map<number, string>();
     // Persist active skills across resets
@@ -295,6 +299,15 @@ export async function attachHorseRacingSim(
                 } else if (aiControlled.has(i) && pendingAIActions.has(i) && aiManager.hasModel(i)) {
                     // Use AI-computed action from previous tick's observation
                     actions.push(pendingAIActions.get(i)!);
+                } else if (latestObservations && latestObservations[i]) {
+                    // No ONNX model — use behavior tree fallback
+                    if (!btJockeys.has(i)) {
+                        const archetypes = Object.keys(PERSONALITIES);
+                        btJockeys.set(i, makeBTJockey(archetypes[i % archetypes.length]));
+                    }
+                    actions.push(btJockeys.get(i)!.computeAction(
+                        latestObservations[i], i, latestObservations,
+                    ));
                 } else {
                     actions.push({ extraTangential: 0, extraNormal: 0 });
                 }
@@ -490,6 +503,7 @@ export async function attachHorseRacingSim(
         segments = newSegments;
         raceStarted = false;
         pendingAIActions.clear();
+        btJockeys.clear();
         recordedTicks = [];
         tickCounter = 0;
         latestObservations = null;
@@ -541,6 +555,7 @@ export async function attachHorseRacingSim(
         teardownSim();
         raceStarted = false;
         pendingAIActions.clear();
+        btJockeys.clear();
         recordedTicks = [];
         tickCounter = 0;
         latestObservations = null;
