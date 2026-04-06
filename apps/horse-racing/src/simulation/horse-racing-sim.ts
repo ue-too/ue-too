@@ -101,6 +101,8 @@ export type HorseRacingSimHandle = {
     setHorseCount: (count: number) => void;
     /** Assign a specific ONNX model to a horse. */
     setModelForHorse: (horseIndex: number, modelUrl: string) => Promise<void>;
+    /** Assign a BT archetype to a horse (clears any ONNX model). */
+    setBTForHorse: (horseIndex: number, archetype: string) => void;
     /** Set which horse the player controls (-1 = none, all AI). */
     setPlayerHorse: (horseIndex: number) => void;
     /** Get the current player-controlled horse index (-1 = none). */
@@ -579,7 +581,15 @@ export async function attachHorseRacingSim(
 
     const setModelForHorse = async (horseIndex: number, modelUrl: string): Promise<void> => {
         modelAssignments.set(horseIndex, modelUrl);
+        btJockeys.delete(horseIndex); // clear any BT assignment
         await aiManager.loadForHorse(horseIndex, modelUrl);
+    };
+
+    const setBTForHorse = (horseIndex: number, archetype: string): void => {
+        modelAssignments.set(horseIndex, `bt:${archetype}`);
+        // Clear ONNX model so the fallback BT path is used
+        aiManager.clearForHorse(horseIndex);
+        btJockeys.set(horseIndex, makeBTJockey(archetype));
     };
 
     const setPlayerHorse = (horseIndex: number): void => {
@@ -641,7 +651,7 @@ export async function attachHorseRacingSim(
         cleanup, reloadTrack, setArcFanVisible, arcFanVisible,
         enableAI, disableAI, isAIEnabled,
         startRace, isRaceStarted, isRaceFinished,
-        resetRace, getHorseCount, setHorseCount, setModelForHorse,
+        resetRace, getHorseCount, setHorseCount, setModelForHorse, setBTForHorse,
         setPlayerHorse, getPlayerHorse, setActiveSkills, getActiveSkills,
         getObservations, getModelAssignment, exportRaceData,
     };

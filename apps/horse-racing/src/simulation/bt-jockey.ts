@@ -65,6 +65,31 @@ export const PERSONALITIES: Record<string, JockeyPersonality> = {
         overtakeAggression: 0.8,
         draftSeeking: 0.3,
     },
+    // Degenerate personalities for testing
+    full_throttle: {
+        earlyEffort: 1.0,
+        kickProgress: 0.0,
+        staminaReserve: 0.0,
+        insideBias: 0.3,
+        overtakeAggression: 0.9,
+        draftSeeking: 0.0,
+    },
+    passive: {
+        earlyEffort: 0.0,
+        kickProgress: 1.0,
+        staminaReserve: 0.0,
+        insideBias: 0.3,
+        overtakeAggression: 0.0,
+        draftSeeking: 0.0,
+    },
+    blocker: {
+        earlyEffort: 0.4,
+        kickProgress: 0.80,
+        staminaReserve: 0.20,
+        insideBias: 0.9,
+        overtakeAggression: 0.2,
+        draftSeeking: 0.0,
+    },
 };
 
 // ---------------------------------------------------------------------------

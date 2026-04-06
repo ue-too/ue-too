@@ -24,6 +24,10 @@
     "url": "/models/v17_baseline.onnx"
   },
   {
+    "label": "V20 Single Agent",
+    "url": "/models/v20_single_agent.onnx"
+  },
+  {
     "label": "V4 Baseline",
     "url": "/models/v4_baseline.onnx"
   },

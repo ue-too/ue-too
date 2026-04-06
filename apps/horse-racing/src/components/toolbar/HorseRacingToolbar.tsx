@@ -23,6 +23,16 @@ const FALLBACK_MODELS = [
     { label: 'V5 Baseline', url: '/models/v5_baseline.onnx' },
 ];
 
+const BT_OPTIONS = [
+    { label: 'BT: Front Runner', url: 'bt:front_runner' },
+    { label: 'BT: Stalker', url: 'bt:stalker' },
+    { label: 'BT: Closer', url: 'bt:closer' },
+    { label: 'BT: Presser', url: 'bt:presser' },
+    { label: 'BT: Full Throttle', url: 'bt:full_throttle' },
+    { label: 'BT: Passive', url: 'bt:passive' },
+    { label: 'BT: Blocker', url: 'bt:blocker' },
+];
+
 const DEFAULT_MODEL_URL = '/models/v5_baseline.onnx';
 
 function useAvailableModels() {
@@ -501,11 +511,17 @@ function ModelSelector({
         Array.from({ length: 20 }, () => DEFAULT_MODEL_URL),
     );
 
-    const changeModel = (horseIndex: number, modelUrl: string) => {
+    const allOptions = [...availableModels, ...BT_OPTIONS];
+
+    const changeModel = (horseIndex: number, value: string) => {
         const next = [...models];
-        next[horseIndex] = modelUrl;
+        next[horseIndex] = value;
         setModels(next);
-        handle?.setModelForHorse(horseIndex, modelUrl);
+        if (value.startsWith('bt:')) {
+            handle?.setBTForHorse(horseIndex, value.slice(3));
+        } else {
+            handle?.setModelForHorse(horseIndex, value);
+        }
     };
 
     return (
@@ -520,9 +536,16 @@ function ModelSelector({
                         onChange={(e) => changeModel(i, e.target.value)}
                         title={`Model for ${HORSE_NAMES[i] ?? `Horse ${i}`}`}
                     >
-                        {availableModels.map(m => (
-                            <option key={m.url} value={m.url}>{m.label}</option>
-                        ))}
+                        <optgroup label="ONNX Models">
+                            {availableModels.map(m => (
+                                <option key={m.url} value={m.url}>{m.label}</option>
+                            ))}
+                        </optgroup>
+                        <optgroup label="BT Scripted">
+                            {BT_OPTIONS.map(m => (
+                                <option key={m.url} value={m.url}>{m.label}</option>
+                            ))}
+                        </optgroup>
                     </select>
                 </div>
             ))}

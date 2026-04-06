@@ -137,6 +137,10 @@ export class AIJockeyManager {
         this.perHorse.clear();
     }
 
+    clearForHorse(horseIndex: number): void {
+        this.perHorse.delete(horseIndex);
+    }
+
     hasModel(horseIndex: number): boolean {
         return this.perHorse.has(horseIndex) || this.shared.isReady;
     }
