@@ -112,6 +112,8 @@ export type HorseObservation = {
     nextCurvature: number;
     /** Distance in meters to the next curve segment (0 if already on a curve). */
     distanceToNextCurve: number;
+    /** Total track length in meters. */
+    trackLength: number;
     /** Set of modifier IDs whose conditions are met this tick. */
     activeModifierIds: Set<string>;
     /** Set of skill IDs active for this jockey (conditioning flags). */
@@ -616,6 +618,7 @@ export class HorseRacingEngine {
                 placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
                 numHorses,
                 ...this._computeNextCurvature(navs[i].segmentIndex),
+                trackLength: navs[i].totalLength,
                 activeModifierIds: firedModifiers[i] ?? new Set(),
                 activeSkillIds: i === 0 ? new Set(this._activeSkills) : undefined,
             });
@@ -810,6 +813,7 @@ export class HorseRacingEngine {
             numHorses: this._horseStates.length,
             nextCurvature: 0,
             distanceToNextCurve: 0,
+            trackLength: 900,
             activeModifierIds: new Set(),
             activeSkillIds: index === 0 ? new Set(this._activeSkills) : undefined,
         };

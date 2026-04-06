@@ -213,7 +213,7 @@ export class AIJockeyManager {
 // ---------------------------------------------------------------------------
 
 const MAX_REL_HORSES = 19;
-const OBS_SIZE = 110;
+const OBS_SIZE = 111;
 
 function observationToArray(
     obs: HorseObservation,
@@ -279,7 +279,7 @@ function observationToArray(
     arr[7] = obs.effectiveMaxSpeed;
     // Relative horses [8-83]
     arr.set(relFlat, 8);
-    // Track/attribute features [84-95]
+    // Track/attribute features [84-96]
     arr[84] = corneringMargin;
     arr[85] = obs.slope;
     arr[86] = obs.pushingPower;
@@ -292,18 +292,19 @@ function observationToArray(
     arr[93] = obs.numHorses / 20.0; // normalize to [0, 1]
     arr[94] = obs.nextCurvature ?? 0;
     arr[95] = (obs.distanceToNextCurve ?? 0) / 100.0; // normalize: 100m scale
-    // Modifier flags [96-103]
+    arr[96] = (obs.trackLength ?? 900) / 2000.0; // normalize: 2000m scale
+    // Modifier flags [97-104]
     for (let k = 0; k < MODIFIER_ID_MAP.length; k++) {
-        arr[96 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
+        arr[97 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
     }
-    // Skill flags [104-109]
+    // Skill flags [105-110]
     const SKILL_IDS = [
         'staminaManagement', 'sprintTiming', 'overtake',
         'draftingExploit', 'corneringLine', 'pacePressure',
     ];
     const skillIds = obs.activeSkillIds ?? new Set<string>();
     for (let k = 0; k < SKILL_IDS.length; k++) {
-        arr[104 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
+        arr[105 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
     }
     return arr;
 }
