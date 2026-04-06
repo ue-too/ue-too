@@ -20,6 +20,10 @@
     "url": "/models/v16_baseline.onnx"
   },
   {
+    "label": "V17 Baseline",
+    "url": "/models/v17_baseline.onnx"
+  },
+  {
     "label": "V4 Baseline",
     "url": "/models/v4_baseline.onnx"
   },

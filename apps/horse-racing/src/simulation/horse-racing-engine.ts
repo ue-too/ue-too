@@ -108,6 +108,10 @@ export type HorseObservation = {
     placementNorm: number;
     /** Total number of horses in the race. */
     numHorses: number;
+    /** Curvature of the next upcoming curve segment (0 if none ahead). */
+    nextCurvature: number;
+    /** Distance in meters to the next curve segment (0 if already on a curve). */
+    distanceToNextCurve: number;
     /** Set of modifier IDs whose conditions are met this tick. */
     activeModifierIds: Set<string>;
     /** Set of skill IDs active for this jockey (conditioning flags). */
@@ -611,6 +615,7 @@ export class HorseRacingEngine {
                 drainRateMult: eff.drainRateMult,
                 placementNorm: (placements[i] - 1) / Math.max(numHorses - 1, 1),
                 numHorses,
+                ...this._computeNextCurvature(navs[i].segmentIndex),
                 activeModifierIds: firedModifiers[i] ?? new Set(),
                 activeSkillIds: i === 0 ? new Set(this._activeSkills) : undefined,
             });
@@ -803,8 +808,27 @@ export class HorseRacingEngine {
             drainRateMult: state?.baseAttributes.drainRateMult ?? 1.0,
             placementNorm: 0,
             numHorses: this._horseStates.length,
+            nextCurvature: 0,
+            distanceToNextCurve: 0,
             activeModifierIds: new Set(),
             activeSkillIds: index === 0 ? new Set(this._activeSkills) : undefined,
         };
+    }
+
+    private _computeNextCurvature(segmentIndex: number): { nextCurvature: number; distanceToNextCurve: number } {
+        let accDist = 0;
+        for (let k = 1; k <= 5; k++) {
+            const idx = segmentIndex + k;
+            if (idx >= this._segments.length) break;
+            const seg = this._segments[idx];
+            if (seg.tracktype === 'CURVE') {
+                const sign = seg.angleSpan >= 0 ? 1.0 : -1.0;
+                return { nextCurvature: sign / seg.radius, distanceToNextCurve: accDist };
+            }
+            const dx = seg.endPoint.x - seg.startPoint.x;
+            const dy = seg.endPoint.y - seg.startPoint.y;
+            accDist += Math.hypot(dx, dy);
+        }
+        return { nextCurvature: 0, distanceToNextCurve: 0 };
     }
 }
