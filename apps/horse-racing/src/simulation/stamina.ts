@@ -37,6 +37,7 @@ export const GRIP_FORCE_BASELINE = 150.0;
 const EXHAUSTION_FORWARD_ACCEL_THRESHOLD = 0.30;
 const EXHAUSTION_MAX_SPEED_THRESHOLD = 0.20;
 const EXHAUSTION_TURN_ACCEL_THRESHOLD = 0.25; // was 0.15
+const EXHAUSTION_CRUISE_SPEED_THRESHOLD = 0.20;
 
 // ---------------------------------------------------------------------------
 // Stamina update
@@ -120,6 +121,7 @@ export function updateStamina(
  * - Below 30% stamina: `forwardAccel` scales down proportionally
  * - Below 25% stamina: `turnAccel` scales progressively (100% → 50%)
  * - Below 20% stamina: `maxSpeed` drops toward `cruiseSpeed`
+ * - Below 20% stamina: `cruiseSpeed` drops to 75% at 0%
  *
  * @param eff - Effective attributes (after modifier resolution)
  * @param currentStamina - Current stamina level
@@ -160,6 +162,17 @@ export function applyExhaustion(
         result.turnAccel = Math.max(
             TRAIT_RANGES.turnAccel.min,
             result.turnAccel * scale,
+        );
+    }
+
+    // Cruise speed degrades when nearly empty — depleted horses slow
+    // below cruise, making pacing a real advantage over full throttle.
+    // 20% → 100%, 0% → 75% of base cruise speed.
+    if (ratio < EXHAUSTION_CRUISE_SPEED_THRESHOLD) {
+        const cruiseMult = 0.75 + 0.25 * (ratio / EXHAUSTION_CRUISE_SPEED_THRESHOLD);
+        result.cruiseSpeed = Math.max(
+            TRAIT_RANGES.maxSpeed.min,
+            result.cruiseSpeed * cruiseMult,
         );
     }
 
