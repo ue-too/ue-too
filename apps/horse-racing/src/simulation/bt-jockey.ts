@@ -111,8 +111,9 @@ interface BTObs {
     displacement: number;
     trackProgress: number;
     curvature: number;
+    nextCurvature: number;
     staminaRatio: number;
-    relatives: { tangOff: number; normOff: number; relTangVel: number; relNormVel: number }[];
+    relatives: { tangOff: number; normOff: number; relTangVel: number; relNormVel: number; progressDiff?: number }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -144,6 +145,15 @@ function paceControl(obs: BTObs, p: JockeyPersonality): ActionOutput {
 
 function corneringLine(obs: BTObs, p: JockeyPersonality): ActionOutput | null {
     if (Math.abs(obs.curvature) < 1e-4) {
+        // On straights, pre-position for upcoming curve
+        if (Math.abs(obs.nextCurvature) > 1e-6) {
+            const insideSign = obs.nextCurvature > 0 ? -1 : 1;
+            const targetDisp = insideSign * 6 * p.insideBias;
+            const error = targetDisp - obs.displacement;
+            const steer = error * 0.3;
+            return { tangential: 0, normal: clamp(steer, -2, 2), weight: 0.3 };
+        }
+        // Otherwise gently drift toward center
         if (Math.abs(obs.displacement) > 2) {
             const correction = -obs.displacement * 0.3;
             return { tangential: 0, normal: clamp(correction, -2, 2), weight: 0.2 };
@@ -301,6 +311,7 @@ function extractBTObs(
         displacement: obs.displacement,
         trackProgress: obs.trackProgress,
         curvature,
+        nextCurvature: obs.nextCurvature ?? 0,
         staminaRatio,
         relatives,
     };
