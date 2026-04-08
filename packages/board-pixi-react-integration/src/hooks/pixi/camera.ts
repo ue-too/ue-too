@@ -1,4 +1,4 @@
-import { CameraState } from '@ue-too/board/camera';
+import type { CameraState } from '@ue-too/board';
 import { useRef, useSyncExternalStore } from 'react';
 
 import { usePixiCanvas } from '../../contexts';

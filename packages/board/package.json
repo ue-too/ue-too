@@ -8,6 +8,26 @@
             "import": "./src/index.ts",
             "default": "./src/index.ts"
         },
+        "./boardify": {
+            "types": "./src/boardify/index.ts",
+            "import": "./src/boardify/index.ts",
+            "default": "./src/boardify/index.ts"
+        },
+        "./camera": {
+            "types": "./src/camera/index.ts",
+            "import": "./src/camera/index.ts",
+            "default": "./src/camera/index.ts"
+        },
+        "./input-interpretation": {
+            "types": "./src/input-interpretation/index.ts",
+            "import": "./src/input-interpretation/index.ts",
+            "default": "./src/input-interpretation/index.ts"
+        },
+        "./utils": {
+            "types": "./src/utils/index.ts",
+            "import": "./src/utils/index.ts",
+            "default": "./src/utils/index.ts"
+        },
         "./*": {
             "types": "./src/*/index.ts",
             "import": "./src/*/index.ts",

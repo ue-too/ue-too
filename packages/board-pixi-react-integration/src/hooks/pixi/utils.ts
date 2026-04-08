@@ -1,9 +1,9 @@
 import {
+    convertFromCanvas2ViewPort,
     convertFromViewport2World,
     convertFromWindow2Canvas,
-} from '@ue-too/board/utils';
-import { convertFromCanvas2ViewPort } from '@ue-too/board/utils';
-import { getScrollBar } from '@ue-too/board/utils';
+    getScrollBar,
+} from '@ue-too/board';
 import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 
 import { usePixiCanvas } from '../../contexts';
