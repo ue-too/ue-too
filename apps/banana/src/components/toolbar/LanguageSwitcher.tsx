@@ -19,7 +19,7 @@ export function LanguageSwitcher() {
     return (
         <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-                <button className="border-border text-muted-foreground hover:text-foreground inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors">
+                <button className="border-border text-muted-foreground hover:text-foreground bg-background/80 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs shadow-lg backdrop-blur-sm transition-colors">
                     {LANGUAGES.find(l => l.code === i18n.language)?.label ??
                         'EN'}
                     <svg
@@ -39,7 +39,7 @@ export function LanguageSwitcher() {
                     </svg>
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-background/80 backdrop-blur-sm">
                 {LANGUAGES.map(({ code, label }) => (
                     <DropdownMenuItem
                         key={code}
