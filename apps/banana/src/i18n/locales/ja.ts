@@ -54,6 +54,20 @@ const ja = {
         invalidTerrainData: '無効な地形データ：{{error}}',
         importCarDefinitionFromEditor: '車両定義をインポート（列車エディターから）',
 
+        // Scene Management
+        scenePickerTitle: '保存済みシーン',
+        scenePickerDescription: 'シーンを選択して続行するか、新しいシーンを作成してください。',
+        newScene: '新しいシーン',
+        savedScenes: '保存済みシーン',
+        noSavedScenes: '保存済みのシーンはありません。',
+        lastActive: '最後に使用',
+        confirmDelete: '削除',
+        autoSaveInterval: '自動保存間隔',
+        autoSave1Min: '1分',
+        autoSave3Min: '3分',
+        autoSave5Min: '5分',
+        autoSave10Min: '10分',
+
         // Validation errors
         invalidTrackData: '無効な線路データ：{{error}}',
         invalidTrainData: '無効な列車データ：{{error}}',

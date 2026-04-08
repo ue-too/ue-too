@@ -7,6 +7,8 @@ import {
     Bug,
     Building2,
     Clock,
+    FilePlus,
+    FolderOpen,
     Landmark,
     Layers,
     List,
@@ -27,6 +29,7 @@ import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
+import { useSceneContext } from '@/contexts/scene-context';
 import { cn } from '@/lib/utils';
 import {
     type SerializedSceneData,
@@ -59,6 +62,7 @@ import {
 
 import { trackEvent } from '@/utils/analytics';
 
+import { AutoSaveIntervalSelector } from './AutoSaveIntervalSelector';
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
 import { DebugPanel } from './DebugPanel';
 import { DepotPanel } from './DepotPanel';
@@ -91,6 +95,7 @@ export function BananaToolbar({
     const app = useBananaApp();
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
+    const sceneContext = useSceneContext();
 
     const [mode, setMode] = useState<AppMode>('idle');
     const [elevation, setElevation] = useState<string>('N/A');
@@ -131,6 +136,7 @@ export function BananaToolbar({
     const [bed, setBed] = useState(false);
     const [bedWidth, setBedWidth] = useState(3);
     const [showExportSubmenu, setShowExportSubmenu] = useState(false);
+    const [showAutoSaveMenu, setShowAutoSaveMenu] = useState(false);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
 
     const selectedBuildingRef = useRef<number | null>(null);
@@ -788,7 +794,10 @@ export function BananaToolbar({
 
                     <ExportSubmenu
                         show={showExportSubmenu}
-                        onShowChange={setShowExportSubmenu}
+                        onShowChange={(open) => {
+                            setShowExportSubmenu(open);
+                            if (open) setShowAutoSaveMenu(false);
+                        }}
                         onExportTracks={handleExportTracks}
                         onImportTracks={handleImportTracks}
                         onExportTrains={handleExportTrains}
@@ -797,6 +806,20 @@ export function BananaToolbar({
                         onImportAll={handleImportAll}
                         onImportTerrain={handleImportTerrain}
                         onImportCarDefinition={handleImportCarDefinition}
+                    />
+
+                    <ToolbarButton tooltip={t('savedScenes')} onClick={() => sceneContext.showScenePicker()}>
+                        <FolderOpen />
+                    </ToolbarButton>
+                    <ToolbarButton tooltip={t('newScene')} onClick={() => sceneContext.createNewScene()}>
+                        <FilePlus />
+                    </ToolbarButton>
+                    <AutoSaveIntervalSelector
+                        show={showAutoSaveMenu}
+                        onShowChange={(open) => {
+                            setShowAutoSaveMenu(open);
+                            if (open) setShowExportSubmenu(false);
+                        }}
                     />
 
                     <Separator />

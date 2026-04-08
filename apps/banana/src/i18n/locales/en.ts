@@ -54,6 +54,20 @@ const en = {
         invalidTerrainData: 'Invalid terrain data: {{error}}',
         importCarDefinitionFromEditor: 'Import Car Definition (from Train Editor)',
 
+        // Scene Management
+        scenePickerTitle: 'Saved Scenes',
+        scenePickerDescription: 'Select a scene to continue, or create a new one.',
+        newScene: 'New Scene',
+        savedScenes: 'Saved Scenes',
+        noSavedScenes: 'No saved scenes yet.',
+        lastActive: 'last active',
+        confirmDelete: 'Delete',
+        autoSaveInterval: 'Auto-save interval',
+        autoSave1Min: '1 minute',
+        autoSave3Min: '3 minutes',
+        autoSave5Min: '5 minutes',
+        autoSave10Min: '10 minutes',
+
         // Validation errors
         invalidTrackData: 'Invalid track data: {{error}}',
         invalidTrainData: 'Invalid train data: {{error}}',
