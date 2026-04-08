@@ -6,16 +6,19 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { SceneMetadata } from '@/storage';
 
-function formatRelativeTime(timestamp: number): string {
+function formatRelativeTime(
+    timestamp: number,
+    t: (key: string, opts?: Record<string, unknown>) => string
+): string {
     const diff = Date.now() - timestamp;
     const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return 'just now';
+    if (seconds < 60) return t('justNow');
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
+    if (minutes < 60) return t('minutesAgo', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return t('hoursAgo', { count: hours });
     const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return t('daysAgo', { count: days });
 }
 
 type SceneCardProps = {
@@ -87,7 +90,7 @@ export function SceneCard({
                     </span>
                 )}
                 <span className="text-muted-foreground text-xs">
-                    {formatRelativeTime(scene.updatedAt)}
+                    {formatRelativeTime(scene.updatedAt, t)}
                     {isActive && (
                         <span className="text-primary ml-2 font-medium">
                             {t('lastActive')}
