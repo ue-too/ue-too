@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X } from '@/assets/icons';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ export function SceneCard({
     const [editName, setEditName] = useState(scene.name);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleDoubleClick = () => {
+    const startEditing = () => {
         setEditName(scene.name);
         setEditing(true);
         setTimeout(() => inputRef.current?.select(), 0);
@@ -66,11 +66,7 @@ export function SceneCard({
             <button
                 type="button"
                 className="flex min-w-0 flex-1 cursor-pointer flex-col items-start gap-0.5 text-left"
-                onClick={onSelect}
-                onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    handleDoubleClick();
-                }}
+                onClick={editing ? undefined : onSelect}
             >
                 {editing ? (
                     <input
@@ -125,17 +121,30 @@ export function SceneCard({
                     </Button>
                 </div>
             ) : (
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive size-7 shrink-0"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete();
-                    }}
-                >
-                    <Trash2 className="size-3.5" />
-                </Button>
+                <div className="flex items-center gap-0.5">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-foreground size-7 shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing();
+                        }}
+                    >
+                        <Pencil className="size-3.5" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive size-7 shrink-0"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                    >
+                        <Trash2 className="size-3.5" />
+                    </Button>
+                </div>
             )}
         </div>
     );

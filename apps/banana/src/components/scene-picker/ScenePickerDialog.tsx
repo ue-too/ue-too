@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FilePlus, Trash2 } from 'lucide-react';
+import { FilePlus, Trash2 } from '@/assets/icons';
 
 import { Button } from '@/components/ui/button';
 import {

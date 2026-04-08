@@ -25,6 +25,14 @@ Reference these for conventions and patterns:
 - **Image editing**: `src/train-editor/image-edit-state-machine.ts`
 - **KMT extension (board)**: `src/trains/input-state-machine/kmt-state-machine-extension.ts`
 
+## Icons
+
+All icons must be imported from `@/assets/icons` — never directly from `lucide-react` or other icon packages. The barrel file at `src/assets/icons/index.ts` re-exports Lucide icons via `src/assets/icons/lucide.ts` alongside custom SVG icons. To add a new Lucide icon, add it to the export list in `lucide.ts`.
+
+## Testing
+
+Tests use **Bun's built-in test runner** (`bun test`). Import test utilities from `bun:test`, not from `vitest` or `jest`. Module mocking uses `mock.module()` from `bun:test`.
+
 The `@ue-too/board` package also has reference implementations:
 - `packages/board/src/input-interpretation/input-state-machine/kmt-input-state-machine.ts`
 - `packages/board/src/input-interpretation/input-state-machine/touch-input-state-machine.ts`
