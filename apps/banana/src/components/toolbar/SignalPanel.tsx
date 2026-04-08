@@ -185,7 +185,7 @@ export function SignalPanel({
         <DraggablePanel
             title={t('signals', 'Signals')}
             onClose={onClose}
-            className="w-72"
+            className="w-72 overflow-hidden"
         >
             <Separator className="mb-2" />
 
@@ -232,11 +232,11 @@ export function SignalPanel({
                     <div className="text-xs font-semibold text-foreground mb-1">{t('signalsList', 'Signals')}</div>
                     <div className="flex flex-col gap-0.5 max-h-32 overflow-y-auto">
                         {signals.map(sig => (
-                            <div key={sig.id} className="flex items-center justify-between rounded bg-muted/50 px-1.5 py-0.5 text-xs">
-                                <span className="flex items-center gap-1.5">
+                            <div key={sig.id} className="flex items-center justify-between rounded bg-muted/50 px-1.5 py-0.5 text-xs min-w-0">
+                                <span className="flex items-center gap-1.5 min-w-0 truncate">
                                     <AspectDot aspect={signalStateEngine.getAspect(sig.id)} />
-                                    <span className="font-mono">#{sig.id}</span>
-                                    <span className="text-muted-foreground">seg {sig.segmentNumber} t={fmtT(sig.tValue)} {sig.direction === 'tangent' ? 'T' : 'R'}</span>
+                                    <span className="font-mono shrink-0">#{sig.id}</span>
+                                    <span className="text-muted-foreground truncate">seg {sig.segmentNumber} t={fmtT(sig.tValue)} {sig.direction === 'tangent' ? 'T' : 'R'}</span>
                                 </span>
                                 <button
                                     className="text-muted-foreground hover:text-destructive"
@@ -262,14 +262,14 @@ export function SignalPanel({
                             placeholder={t('entrySignal', 'Entry signal ID')}
                             value={blockEntry}
                             onChange={e => setBlockEntry(e.target.value)}
-                            className="flex-1 rounded border bg-background px-1.5 py-0.5 text-xs"
+                            className="min-w-0 flex-1 rounded border bg-background px-1.5 py-0.5 text-xs"
                         />
                         <input
                             type="number"
                             placeholder={t('exitSignal', 'Exit signal ID')}
                             value={blockExit}
                             onChange={e => setBlockExit(e.target.value)}
-                            className="flex-1 rounded border bg-background px-1.5 py-0.5 text-xs"
+                            className="min-w-0 flex-1 rounded border bg-background px-1.5 py-0.5 text-xs"
                         />
                     </div>
 

@@ -1,18 +1,35 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { X } from '@/assets/icons';
 import { Button } from './button';
 import { cn } from '@/lib/utils';
+
+const VIEWPORT_PADDING = 8;
 
 type DraggablePanelProps = {
     title: string;
     onClose: () => void;
     children: ReactNode;
-    /** Initial position. Defaults to right-center of viewport. */
+    /** Initial position. Defaults to near the left toolbar. */
     defaultPosition?: { x: number; y: number };
     className?: string;
     /** Extra content rendered in the header bar, after the title. */
     headerActions?: ReactNode;
 };
+
+/** Clamp position so the panel stays fully within the viewport. */
+function clampPosition(
+    x: number,
+    y: number,
+    panelW: number,
+    panelH: number
+): { x: number; y: number } {
+    const maxX = window.innerWidth - panelW - VIEWPORT_PADDING;
+    const maxY = window.innerHeight - panelH - VIEWPORT_PADDING;
+    return {
+        x: Math.max(VIEWPORT_PADDING, Math.min(x, maxX)),
+        y: Math.max(VIEWPORT_PADDING, Math.min(y, maxY)),
+    };
+}
 
 export function DraggablePanel({
     title,
@@ -24,13 +41,38 @@ export function DraggablePanel({
 }: DraggablePanelProps) {
     const panelRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = useState(
-        defaultPosition ?? { x: window.innerWidth - 240, y: window.innerHeight / 2 - 150 }
+        defaultPosition ?? { x: 80, y: window.innerHeight / 2 - 150 }
     );
-    const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null);
+    const dragState = useRef<{
+        startX: number;
+        startY: number;
+        originX: number;
+        originY: number;
+    } | null>(null);
+
+    // After first render, clamp position to ensure the panel is fully visible
+    useEffect(() => {
+        const el = panelRef.current;
+        if (!el) return;
+        // Wait one frame for layout to settle
+        requestAnimationFrame(() => {
+            const rect = el.getBoundingClientRect();
+            const clamped = clampPosition(
+                position.x,
+                position.y,
+                rect.width,
+                rect.height
+            );
+            if (clamped.x !== position.x || clamped.y !== position.y) {
+                setPosition(clamped);
+            }
+        });
+        // Only run on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const onPointerDown = useCallback(
         (e: React.PointerEvent) => {
-            // Only drag from the header area
             e.preventDefault();
             e.stopPropagation();
             dragState.current = {
@@ -48,23 +90,35 @@ export function DraggablePanel({
         if (!dragState.current) return;
         const dx = e.clientX - dragState.current.startX;
         const dy = e.clientY - dragState.current.startY;
-        setPosition({
-            x: dragState.current.originX + dx,
-            y: dragState.current.originY + dy,
-        });
+        const el = panelRef.current;
+        const w = el?.offsetWidth ?? 0;
+        const h = el?.offsetHeight ?? 0;
+        setPosition(
+            clampPosition(
+                dragState.current.originX + dx,
+                dragState.current.originY + dy,
+                w,
+                h
+            )
+        );
     }, []);
 
     const onPointerUp = useCallback(() => {
         dragState.current = null;
     }, []);
 
+    // Compute max-height for the content area so the panel doesn't overflow the viewport bottom
+    const maxContentHeight =
+        window.innerHeight -
+        position.y -
+        VIEWPORT_PADDING -
+        // Reserve space for the header (~40px) and content padding (12px)
+        52;
+
     return (
         <div
             ref={panelRef}
-            className={cn(
-                'pointer-events-auto fixed z-50',
-                className
-            )}
+            className={cn('pointer-events-auto fixed z-50', className)}
             style={{ left: position.x, top: position.y }}
         >
             <div className="bg-background/80 flex flex-col rounded-xl border shadow-lg backdrop-blur-sm">
@@ -90,7 +144,12 @@ export function DraggablePanel({
                     </div>
                 </div>
                 {/* Content */}
-                <div className="px-3 pb-3">
+                <div
+                    className="overflow-y-auto px-3 pb-3"
+                    style={{
+                        maxHeight: Math.max(maxContentHeight, 100),
+                    }}
+                >
                     {children}
                 </div>
             </div>

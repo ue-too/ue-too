@@ -6,6 +6,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 export function ToolbarButton({
     tooltip,
@@ -35,11 +36,11 @@ export function ToolbarButton({
                     size="icon-lg"
                     disabled={disabled}
                     onClick={onClick}
-                    className={
-                        destructiveMuted && !active
-                            ? 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
-                            : undefined
-                    }
+                    className={cn(
+                        "[&_svg:not([class*='size-'])]:size-5",
+                        destructiveMuted && !active &&
+                            'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                    )}
                 >
                     {children}
                 </Button>

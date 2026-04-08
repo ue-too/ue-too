@@ -611,7 +611,7 @@ export function BananaToolbar({
         <TooltipProvider delayDuration={200}>
             <div
                 className={cn(
-                    'pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col items-center gap-3',
+                    'pointer-events-auto absolute top-1/2 flex max-h-[calc(100dvh-2rem)] -translate-y-1/2 flex-col items-center gap-3 overflow-y-auto overflow-x-visible',
                     TOOLBAR_LEFT
                 )}
             >
