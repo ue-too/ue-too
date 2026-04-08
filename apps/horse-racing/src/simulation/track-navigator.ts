@@ -280,8 +280,13 @@ export class TrackNavigator {
         const start: Point = { x: seg.startPoint.x, y: seg.startPoint.y };
         const end: Point = { x: seg.endPoint.x, y: seg.endPoint.y };
         const tangential = PointCal.unitVector(PointCal.subVector(end, start));
+        // Normal points outward, matching the nearest curve's convention:
+        // CCW curve → outward = rotate tangential by -π/2
+        // CW curve  → outward = rotate tangential by +π/2
+        const curve = this.findNearestCurve(this.currentIndex);
+        const rotation = curve && curve.angleSpan < 0 ? Math.PI / 2 : -Math.PI / 2;
         const normal = PointCal.unitVector(
-            PointCal.rotatePoint(tangential, -Math.PI / 2),
+            PointCal.rotatePoint(tangential, rotation),
         );
         return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity, slope: seg.slope ?? 0 };
     }
@@ -322,7 +327,7 @@ export class TrackNavigator {
             normal,
             turnRadius,
             nominalRadius: seg.radius,
-            targetRadius: this.curveEntryRadius,
+            targetRadius: seg.radius,
             slope: seg.slope ?? 0,
         };
     }

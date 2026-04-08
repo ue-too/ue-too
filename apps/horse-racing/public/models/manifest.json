@@ -10,5 +10,9 @@
   {
     "label": "V42 Phase1 S1",
     "url": "/models/v42_phase1_s1.onnx"
+  },
+  {
+    "label": "V43 Phase1",
+    "url": "/models/v43_phase1.onnx"
   }
 ]

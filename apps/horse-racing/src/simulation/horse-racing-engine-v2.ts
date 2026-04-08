@@ -354,7 +354,10 @@ export class HorseRacingEngineV2 {
             if (frame.targetRadius < 1e6) {
                 displacement = frame.turnRadius - frame.targetRadius;
             } else {
-                displacement = 0;
+                const seg = this._segments[navs[i].segmentIndex];
+                const dx = body.center.x - seg.startPoint.x;
+                const dy = body.center.y - seg.startPoint.y;
+                displacement = dx * frame.normal.x + dy * frame.normal.y;
             }
 
             // Build lookahead (next 3 segments)

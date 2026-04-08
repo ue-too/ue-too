@@ -572,15 +572,10 @@ export class HorseRacingEngine {
             if (frame.targetRadius < 1e6) {
                 displacement = frame.turnRadius - frame.targetRadius;
             } else {
-                const outward = navs[i].getOutwardNormal(navs[i].segmentIndex);
-                if (outward) {
-                    const seg = this._segments[navs[i].segmentIndex];
-                    const dx = body.center.x - seg.startPoint.x;
-                    const dy = body.center.y - seg.startPoint.y;
-                    displacement = dx * outward.x + dy * outward.y;
-                } else {
-                    displacement = 0;
-                }
+                const seg = this._segments[navs[i].segmentIndex];
+                const dx = body.center.x - seg.startPoint.x;
+                const dy = body.center.y - seg.startPoint.y;
+                displacement = dx * frame.normal.x + dy * frame.normal.y;
             }
 
             const eff = effectiveAttrs[i];
