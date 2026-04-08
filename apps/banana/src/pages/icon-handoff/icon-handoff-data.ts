@@ -88,6 +88,7 @@ const LUCIDE_ROWS: IconHandoffComponentRow[] = [
     componentRow('Pencil', 'lucide'),
     componentRow('Play', 'lucide'),
     componentRow('Plus', 'lucide'),
+    componentRow('Save', 'lucide'),
     componentRow('Scissors', 'lucide'),
     componentRow('Settings2', 'lucide'),
     componentRow('Signal', 'lucide'),

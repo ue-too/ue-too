@@ -58,6 +58,7 @@ const ja = {
         scenePickerTitle: '保存済みシーン',
         scenePickerDescription: 'シーンを選択して続行するか、新しいシーンを作成してください。',
         newScene: '新しいシーン',
+        saveScene: 'シーンを保存',
         savedScenes: '保存済みシーン',
         noSavedScenes: '保存済みのシーンはありません。',
         lastActive: '最後に使用',

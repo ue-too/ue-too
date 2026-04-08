@@ -23,30 +23,40 @@ export function SceneRestorer(): null {
         if (!app || !pendingSceneId || loaded.current) return;
         loaded.current = true;
 
-        getSceneStorage()
-            .loadScene(pendingSceneId)
-            .then((stored) => {
-                if (!stored) {
-                    toast.error('Scene not found in storage');
-                    return;
-                }
+        const restore = async () => {
+            const stored = await getSceneStorage().loadScene(pendingSceneId);
+            if (!stored) {
+                toast.error('Scene not found in storage');
+                return;
+            }
 
-                const validation = validateSerializedSceneData(stored.data);
-                if (!validation.valid) {
-                    toast.error(
-                        `Scene data invalid: ${validation.error}`
-                    );
-                    return;
-                }
+            const validation = validateSerializedSceneData(stored.data);
+            if (!validation.valid) {
+                toast.error(`Scene data invalid: ${validation.error}`);
+                return;
+            }
 
-                deserializeSceneData(app, stored.data);
-                toast.success(`Loaded "${stored.metadata.name}"`, {
-                    duration: 2000,
-                });
-            })
+            useSceneStore.getState().setSceneLoading(true);
+            useSceneStore.getState().setSceneLoadProgress(0);
+
+            await deserializeSceneData(app, stored.data, {
+                onProgress: (loaded, total) =>
+                    useSceneStore.getState().setSceneLoadProgress(
+                        total > 0 ? loaded / total : 1
+                    ),
+            });
+
+            useSceneStore.getState().setSceneLoading(false);
+            toast.success(`Loaded "${stored.metadata.name}"`, {
+                duration: 2000,
+            });
+        };
+
+        restore()
             .catch((err) => {
                 console.error('Failed to restore scene:', err);
                 toast.error('Failed to restore scene');
+                useSceneStore.getState().setSceneLoading(false);
             })
             .finally(() => {
                 clearPendingScene();

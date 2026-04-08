@@ -58,6 +58,7 @@ const en = {
         scenePickerTitle: 'Saved Scenes',
         scenePickerDescription: 'Select a scene to continue, or create a new one.',
         newScene: 'New Scene',
+        saveScene: 'Save Scene',
         savedScenes: 'Saved Scenes',
         noSavedScenes: 'No saved scenes yet.',
         lastActive: 'last active',

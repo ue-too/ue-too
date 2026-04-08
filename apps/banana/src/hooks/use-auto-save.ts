@@ -14,8 +14,10 @@ const requestIdle =
 /**
  * Periodically auto-saves the current scene to IndexedDB.
  * Also saves on `beforeunload` for crash resilience.
+ *
+ * Returns `saveNow` for triggering a manual save from the UI.
  */
-export function useAutoSave(): void {
+export function useAutoSave(): { saveNow: () => void } {
     const app = useBananaApp();
     const activeSceneId = useSceneStore((s) => s.activeSceneId);
     const activeSceneName = useSceneStore((s) => s.activeSceneName);
@@ -37,7 +39,7 @@ export function useAutoSave(): void {
     }, [activeSceneId]);
 
     const doSave = useCallback(() => {
-        if (!app || !activeSceneId || savingRef.current) return;
+        if (!app || !activeSceneId || savingRef.current || useSceneStore.getState().sceneLoading) return;
         savingRef.current = true;
 
         try {
@@ -58,7 +60,7 @@ export function useAutoSave(): void {
                     })
                     .then(() => {
                         if (!hasShownToast.current) {
-                            toast.success('Scene auto-saved', {
+                            toast.success(`"${activeSceneName}" auto-saved`, {
                                 duration: 2000,
                             });
                             hasShownToast.current = true;
@@ -73,6 +75,41 @@ export function useAutoSave(): void {
             });
         } catch (err) {
             console.error('Auto-save serialization failed:', err);
+            savingRef.current = false;
+        }
+    }, [app, activeSceneId, activeSceneName]);
+
+    const saveNow = useCallback(() => {
+        if (!app || !activeSceneId || savingRef.current || useSceneStore.getState().sceneLoading) return;
+        savingRef.current = true;
+
+        try {
+            const data = serializeSceneData(app);
+            const storage = getSceneStorage();
+
+            storage
+                .saveScene({
+                    metadata: {
+                        id: activeSceneId,
+                        name: activeSceneName,
+                        createdAt: createdAtRef.current,
+                        updatedAt: Date.now(),
+                        version: SCENE_DATA_VERSION,
+                    },
+                    data,
+                })
+                .then(() => {
+                    toast.success(`"${activeSceneName}" saved`, { duration: 2000 });
+                })
+                .catch((err) => {
+                    console.error('Manual save failed:', err);
+                    toast.error('Save failed');
+                })
+                .finally(() => {
+                    savingRef.current = false;
+                });
+        } catch (err) {
+            console.error('Manual save serialization failed:', err);
             savingRef.current = false;
         }
     }, [app, activeSceneId, activeSceneName]);
@@ -93,4 +130,6 @@ export function useAutoSave(): void {
         window.addEventListener('beforeunload', handler);
         return () => window.removeEventListener('beforeunload', handler);
     }, [app, activeSceneId, doSave]);
+
+    return { saveNow };
 }

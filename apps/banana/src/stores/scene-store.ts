@@ -12,6 +12,8 @@ type SceneState = {
     initialized: boolean;
     pendingSceneId: string | null;
     autoSaveIntervalMs: number;
+    sceneLoading: boolean;
+    sceneLoadProgress: number;
 };
 
 type SceneActions = {
@@ -22,6 +24,8 @@ type SceneActions = {
     setPendingSceneId: (id: string | null) => void;
     clearPendingScene: () => void;
     setAutoSaveIntervalMs: (ms: number) => void;
+    setSceneLoading: (loading: boolean) => void;
+    setSceneLoadProgress: (progress: number) => void;
     initialize: () => Promise<void>;
 };
 
@@ -37,6 +41,8 @@ export const useSceneStore = create<SceneStore>()(
             initialized: false,
             pendingSceneId: null,
             autoSaveIntervalMs: DEFAULT_AUTO_SAVE_MS,
+            sceneLoading: false,
+            sceneLoadProgress: 0,
 
             // Actions
             setActiveScene: (id, name) => {
@@ -55,6 +61,9 @@ export const useSceneStore = create<SceneStore>()(
 
             setPendingSceneId: (id) => set({ pendingSceneId: id }),
             clearPendingScene: () => set({ pendingSceneId: null }),
+
+            setSceneLoading: (loading) => set({ sceneLoading: loading }),
+            setSceneLoadProgress: (progress) => set({ sceneLoadProgress: progress }),
 
             setAutoSaveIntervalMs: (ms) => {
                 set({ autoSaveIntervalMs: ms });

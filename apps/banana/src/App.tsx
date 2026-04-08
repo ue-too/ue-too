@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ScrollBarDisplay,
     Wrapper,
 } from '@ue-too/board-pixi-react-integration';
 import { toast } from 'sonner';
 
-import { AutoSaveProvider } from '@/components/AutoSaveProvider';
+import { SceneLoadingOverlay } from '@/components/SceneLoadingOverlay';
 import { SceneRestorer } from '@/components/SceneRestorer';
 import { ScenePickerDialog } from '@/components/scene-picker/ScenePickerDialog';
 import { BananaToolbar } from '@/components/toolbar';
@@ -71,6 +71,18 @@ function SceneGate() {
     const mountedRef = useRef(false);
     const [readyToMount, setReadyToMount] = useState(false);
 
+    // Stable reference so Wrapper's useEffect doesn't re-initialize PIXI on every render.
+    const wrapperOption = useMemo(
+        () => ({
+            fullScreen: true,
+            boundaries: {
+                min: { x: -5000, y: -5000 },
+                max: { x: 5000, y: 5000 },
+            },
+        }),
+        []
+    );
+
     // Initialize the scene store on mount (replaces SceneProvider's useEffect)
     useEffect(() => {
         initialize();
@@ -78,6 +90,11 @@ function SceneGate() {
 
     const handleInitialSceneSelected = useCallback(
         async (sceneId: string | null) => {
+            // Guard: if already mounting, ignore duplicate calls from the
+            // auto-create effect racing with the picker callback.
+            if (mountedRef.current) return;
+            mountedRef.current = true;
+
             if (sceneId) {
                 const stored = await getSceneStorage().loadScene(sceneId);
                 if (stored) {
@@ -119,7 +136,6 @@ function SceneGate() {
         const isNewScene =
             new URLSearchParams(window.location.search).get('new') === '1';
         if (isNewScene) {
-            mountedRef.current = true;
             const url = new URL(window.location.href);
             url.searchParams.delete('new');
             window.history.replaceState({}, '', url.toString());
@@ -131,7 +147,6 @@ function SceneGate() {
     useEffect(() => {
         if (!initialized || mountedRef.current || readyToMount) return;
         if (!scenePickerOpen) {
-            mountedRef.current = true;
             handleInitialSceneSelected(null);
         }
     }, [
@@ -160,17 +175,11 @@ function SceneGate() {
 
     return (
         <Wrapper
-            option={{
-                fullScreen: true,
-                boundaries: {
-                    min: { x: -5000, y: -5000 },
-                    max: { x: 5000, y: 5000 },
-                },
-            }}
+            option={wrapperOption}
             initFunction={initApp}
         >
             {pendingSceneId && <SceneRestorer />}
-            <AutoSaveProvider />
+            <SceneLoadingOverlay />
             <ScrollBarDisplay />
             <BananaToolbar />
             <TimeDisplay />

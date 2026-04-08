@@ -50,6 +50,7 @@ export {
     Pencil,
     Play,
     Plus,
+    Save,
     Scissors,
     Signal,
     Settings2,

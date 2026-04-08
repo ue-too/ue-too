@@ -1255,7 +1255,10 @@ export class TrackGraph {
      * notifications so the render system can clean up), then the new data
      * is loaded in, again with notifications so the render system rebuilds.
      */
-    loadFromSerializedData(data: { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] }): void {
+    async loadFromSerializedData(
+        data: { joints: SerializedTrackJoint[]; segments: SerializedTrackSegment[] },
+        options?: { batchSize?: number; onProgress?: (loaded: number, total: number) => void },
+    ): Promise<void> {
         const existingSegmentIds = [...this._trackCurveManager.livingEntities];
         for (const segId of existingSegmentIds) {
             this._trackCurveManager.destroyCurve(segId);
@@ -1279,19 +1282,35 @@ export class TrackGraph {
             });
         }
 
-        for (const segment of data.segments) {
-            const curve = new BCurve(segment.controlPoints);
-            this._trackCurveManager.loadSegmentWithId(
-                segment.segmentNumber,
-                curve,
-                segment.t0Joint,
-                segment.t1Joint,
-                segment.elevation.from,
-                segment.elevation.to,
-                segment.gauge,
-                segment.splits,
-                { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
-            );
+        const BATCH_SIZE = options?.batchSize ?? 50;
+        const segments = data.segments;
+
+        for (let i = 0; i < segments.length; i += BATCH_SIZE) {
+            const end = Math.min(i + BATCH_SIZE, segments.length);
+            for (let j = i; j < end; j++) {
+                const segment = segments[j];
+                const curve = new BCurve(segment.controlPoints);
+                this._trackCurveManager.loadSegmentWithId(
+                    segment.segmentNumber,
+                    curve,
+                    segment.t0Joint,
+                    segment.t1Joint,
+                    segment.elevation.from,
+                    segment.elevation.to,
+                    segment.gauge,
+                    segment.splits,
+                    { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
+                );
+            }
+            options?.onProgress?.(end, segments.length);
+
+            if (end < segments.length) {
+                // Use double-rAF to guarantee the browser paints the progress
+                // update before resuming the next batch of segment loading.
+                await new Promise<void>(resolve =>
+                    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+                );
+            }
         }
 
         this._drawDataDirty = true;

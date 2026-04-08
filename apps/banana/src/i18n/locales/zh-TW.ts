@@ -58,6 +58,7 @@ const zhTW = {
         scenePickerTitle: '已儲存的場景',
         scenePickerDescription: '選擇一個場景繼續，或建立新場景。',
         newScene: '新場景',
+        saveScene: '儲存場景',
         savedScenes: '已儲存的場景',
         noSavedScenes: '尚未儲存任何場景。',
         lastActive: '上次使用',

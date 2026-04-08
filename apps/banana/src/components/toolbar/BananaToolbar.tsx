@@ -10,6 +10,7 @@ import {
     FilePlus,
     FolderOpen,
     Landmark,
+    Save,
     Layers,
     List,
     ListOrdered,
@@ -30,6 +31,7 @@ import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
+import { useAutoSave } from '@/hooks/use-auto-save';
 import { useRenderSync } from '@/hooks/use-render-sync';
 import { cn } from '@/lib/utils';
 import { useRenderSettingsStore } from '@/stores/render-settings-store';
@@ -98,6 +100,7 @@ export function BananaToolbar({
     const app = useBananaApp();
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
+    const { saveNow } = useAutoSave();
     const showScenePickerAction = useSceneStore((s) => s.showScenePicker);
     const createNewScene = useSceneStore((s) => s.createNewScene);
 
@@ -377,15 +380,26 @@ export function BananaToolbar({
     const handleImportTracks = useCallback(() => {
         if (!app) return;
         trackEvent('import-tracks');
-        uploadJson(parsed => {
+        uploadJson(async (parsed) => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
                 alert(t('invalidTrackData', { error: result.error }));
                 return;
             }
-            app.curveEngine.trackGraph.loadFromSerializedData(
-                parsed as SerializedTrackData
+
+            useSceneStore.getState().setSceneLoading(true);
+            useSceneStore.getState().setSceneLoadProgress(0);
+
+            await app.curveEngine.trackGraph.loadFromSerializedData(
+                parsed as SerializedTrackData,
+                {
+                    onProgress: (loaded, total) =>
+                        useSceneStore.getState().setSceneLoadProgress(
+                            total > 0 ? loaded / total : 1
+                        ),
+                },
             );
+
             // Restore stations if present in the track data
             const obj = parsed as Record<string, unknown>;
             if (Array.isArray(obj.stations)) {
@@ -401,6 +415,8 @@ export function BananaToolbar({
                     app.stationRenderSystem.addStation(id);
                 }
             }
+
+            useSceneStore.getState().setSceneLoading(false);
         });
     }, [app]);
 
@@ -445,13 +461,24 @@ export function BananaToolbar({
     const handleImportAll = useCallback(() => {
         if (!app) return;
         trackEvent('import-scene');
-        uploadJson(parsed => {
+        uploadJson(async (parsed) => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
                 alert(t('invalidSceneData', { error: result.error }));
                 return;
             }
-            deserializeSceneData(app, parsed as SerializedSceneData);
+
+            useSceneStore.getState().setSceneLoading(true);
+            useSceneStore.getState().setSceneLoadProgress(0);
+
+            await deserializeSceneData(app, parsed as SerializedSceneData, {
+                onProgress: (loaded, total) =>
+                    useSceneStore.getState().setSceneLoadProgress(
+                        total > 0 ? loaded / total : 1
+                    ),
+            });
+
+            useSceneStore.getState().setSceneLoading(false);
         });
     }, [app]);
 
@@ -520,6 +547,20 @@ export function BananaToolbar({
             );
         },
         [app]
+    );
+
+    const handleGenerateTracks = useCallback(
+        (count: number) => {
+            if (!app) return;
+            const created = app.generateProceduralTracks({
+                segmentCount: count,
+                startX: stressStartX,
+                startY: stressStartY,
+                gentleCurve: true,
+            });
+            console.log(`Generated ${created} track segments`);
+        },
+        [app, stressStartX, stressStartY]
     );
 
     const handlePickStressStart = useCallback(() => {
@@ -763,6 +804,9 @@ export function BananaToolbar({
                     <ToolbarButton tooltip={t('savedScenes')} onClick={() => showScenePickerAction()}>
                         <FolderOpen />
                     </ToolbarButton>
+                    <ToolbarButton tooltip={t('saveScene')} onClick={saveNow}>
+                        <Save />
+                    </ToolbarButton>
                     <ToolbarButton tooltip={t('newScene')} onClick={() => createNewScene()}>
                         <FilePlus />
                     </ToolbarButton>
@@ -936,6 +980,7 @@ export function BananaToolbar({
                     onStressStartYChange={setStressStartY}
                     onPickStressStart={handlePickStressStart}
                     isPicking={mode === 'stress-pick'}
+                    onGenerateTracks={handleGenerateTracks}
                     onClose={() => setPanel('debugPanel', false)}
                 />
             )}
