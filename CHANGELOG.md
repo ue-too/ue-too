@@ -1,3 +1,14 @@
+## 0.17.2 (2026-04-08)
+
+### 🩹 Fixes
+
+- force production JSX transform in Bun.build output ([#381](https://github.com/ue-too/ue-too/pull/381), [#378](https://github.com/ue-too/ue-too/issues/378))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- vee @niuee
+
 ## 0.17.1 (2026-04-08)
 
 ### 🩹 Fixes
