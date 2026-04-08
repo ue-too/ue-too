@@ -1,11 +1,12 @@
 import {
     Board as Boardify,
+    CameraMux,
+    type CameraState,
     KMTEventParser,
     KmtInputStateMachine,
     OutputEvent,
     TouchEventParser,
 } from '@ue-too/board';
-import { CameraMux, CameraState } from '@ue-too/board/camera';
 import { Point } from '@ue-too/math';
 import {
     createContext,
