@@ -1,3 +1,14 @@
+## 0.17.0 (2026-04-08)
+
+### 🩹 Fixes
+
+- support nested subpath exports in package.json ([#377](https://github.com/ue-too/ue-too/pull/377))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- vee @niuee
+
 ## 0.16.0 (2026-03-25)
 
 This was a version bump only, there were no code changes.
