@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useBananaApp } from '@/contexts/pixi';
-import { useAutoSaveInterval, useSceneContext } from '@/contexts/scene-context';
+import { useSceneStore } from '@/stores/scene-store';
 import { serializeSceneData } from '@/scene-serialization';
 import { getSceneStorage, SCENE_DATA_VERSION } from '@/storage';
 
@@ -17,8 +17,9 @@ const requestIdle =
  */
 export function useAutoSave(): void {
     const app = useBananaApp();
-    const { activeSceneId, activeSceneName } = useSceneContext();
-    const { autoSaveIntervalMs } = useAutoSaveInterval();
+    const activeSceneId = useSceneStore((s) => s.activeSceneId);
+    const activeSceneName = useSceneStore((s) => s.activeSceneName);
+    const autoSaveIntervalMs = useSceneStore((s) => s.autoSaveIntervalMs);
     const hasShownToast = useRef(false);
     const savingRef = useRef(false);
     const createdAtRef = useRef<number>(Date.now());

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { useBananaApp } from '@/contexts/pixi';
-import { useSceneContext } from '@/contexts/scene-context';
+import { useSceneStore } from '@/stores/scene-store';
 import {
     deserializeSceneData,
     validateSerializedSceneData,
@@ -15,7 +15,8 @@ import { getSceneStorage } from '@/storage';
  */
 export function SceneRestorer(): null {
     const app = useBananaApp();
-    const { pendingSceneId, clearPendingScene } = useSceneContext();
+    const pendingSceneId = useSceneStore((s) => s.pendingSceneId);
+    const clearPendingScene = useSceneStore((s) => s.clearPendingScene);
     const loaded = useRef(false);
 
     useEffect(() => {

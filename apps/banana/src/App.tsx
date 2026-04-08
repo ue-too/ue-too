@@ -11,12 +11,12 @@ import { ScenePickerDialog } from '@/components/scene-picker/ScenePickerDialog';
 import { BananaToolbar } from '@/components/toolbar';
 import { TimeDisplay } from '@/components/toolbar/TimeDisplay';
 import { useBananaApp } from '@/contexts/pixi';
-import { SceneProvider, useSceneContext } from '@/contexts/scene-context';
 import {
     deserializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
 import { getSceneStorage, SCENE_DATA_VERSION } from '@/storage';
+import { useSceneStore } from '@/stores/scene-store';
 import { initApp } from '@/utils/init-app';
 
 import './App.css';
@@ -26,8 +26,9 @@ import './App.css';
  */
 function InAppScenePicker() {
     const app = useBananaApp();
-    const { setActiveScene, hideScenePicker, createNewScene } =
-        useSceneContext();
+    const setActiveScene = useSceneStore((s) => s.setActiveScene);
+    const hideScenePicker = useSceneStore((s) => s.hideScenePicker);
+    const createNewScene = useSceneStore((s) => s.createNewScene);
 
     const handleSceneSelected = useCallback(
         async (sceneId: string | null) => {
@@ -61,15 +62,19 @@ function InAppScenePicker() {
 }
 
 function SceneGate() {
-    const {
-        initialized,
-        scenePickerOpen,
-        setActiveScene,
-        setPendingSceneId,
-        pendingSceneId,
-    } = useSceneContext();
+    const initialized = useSceneStore((s) => s.initialized);
+    const scenePickerOpen = useSceneStore((s) => s.scenePickerOpen);
+    const setActiveScene = useSceneStore((s) => s.setActiveScene);
+    const setPendingSceneId = useSceneStore((s) => s.setPendingSceneId);
+    const pendingSceneId = useSceneStore((s) => s.pendingSceneId);
+    const initialize = useSceneStore((s) => s.initialize);
     const mountedRef = useRef(false);
     const [readyToMount, setReadyToMount] = useState(false);
+
+    // Initialize the scene store on mount (replaces SceneProvider's useEffect)
+    useEffect(() => {
+        initialize();
+    }, [initialize]);
 
     const handleInitialSceneSelected = useCallback(
         async (sceneId: string | null) => {
@@ -177,9 +182,7 @@ function SceneGate() {
 const App = (): React.ReactNode => {
     return (
         <div className="app">
-            <SceneProvider>
-                <SceneGate />
-            </SceneProvider>
+            <SceneGate />
         </div>
     );
 };

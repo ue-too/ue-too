@@ -8,7 +8,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAutoSaveInterval } from '@/contexts/scene-context';
+import { useSceneStore } from '@/stores/scene-store';
 import { cn } from '@/lib/utils';
 
 const INTERVAL_OPTIONS = [
@@ -28,7 +28,10 @@ export function AutoSaveIntervalSelector({
     onShowChange,
 }: AutoSaveIntervalSelectorProps) {
     const { t } = useTranslation();
-    const { autoSaveIntervalMs, setAutoSaveIntervalMs } = useAutoSaveInterval();
+    const autoSaveIntervalMs = useSceneStore((s) => s.autoSaveIntervalMs);
+    const setAutoSaveIntervalMs = useSceneStore(
+        (s) => s.setAutoSaveIntervalMs
+    );
 
     return (
         <DropdownMenu open={show} onOpenChange={onShowChange}>

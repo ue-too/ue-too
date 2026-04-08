@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useSceneContext } from '@/contexts/scene-context';
+import { useSceneStore } from '@/stores/scene-store';
 import { getSceneStorage, type SceneMetadata } from '@/storage';
 
 import { SceneCard } from './SceneCard';
@@ -22,12 +22,10 @@ type ScenePickerDialogProps = {
 
 export function ScenePickerDialog({ onSceneSelected }: ScenePickerDialogProps) {
     const { t } = useTranslation();
-    const {
-        scenePickerOpen,
-        hideScenePicker,
-        activeSceneId,
-        setActiveScene,
-    } = useSceneContext();
+    const scenePickerOpen = useSceneStore((s) => s.scenePickerOpen);
+    const hideScenePicker = useSceneStore((s) => s.hideScenePicker);
+    const activeSceneId = useSceneStore((s) => s.activeSceneId);
+    const setActiveScene = useSceneStore((s) => s.setActiveScene);
     const [scenes, setScenes] = useState<SceneMetadata[]>([]);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
