@@ -43,6 +43,8 @@ jobs:
                   bun ci
             - name: Build packages
               run: bun run build
+              env:
+                  NODE_ENV: production
 
             - name: Setup Node.js
               id: setup-node
