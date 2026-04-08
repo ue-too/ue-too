@@ -1,5 +1,5 @@
 import { translationHeightOf, translationWidthOf } from '@ue-too/board';
-import { convertFromWindow2Canvas } from '@ue-too/board/utils/coordinate-conversions/';
+import { convertFromWindow2Canvas } from '@ue-too/board/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { usePixiCanvas } from '../../contexts/pixi';
