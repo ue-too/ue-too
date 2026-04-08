@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'bun:test';
 
 import {
     useToolbarUIStore,
@@ -86,18 +86,20 @@ describe('toolbar-ui-store', () => {
     });
 
     describe('togglePanel', () => {
-        it.each(ALL_PANELS)('toggles %s from closed to open', (panel) => {
-            useToolbarUIStore.getState().togglePanel(panel);
-            const key = PANEL_STATE_KEYS[panel];
-            expect((useToolbarUIStore.getState() as any)[key]).toBe(true);
-        });
+        for (const panel of ALL_PANELS) {
+            it(`toggles ${panel} from closed to open`, () => {
+                useToolbarUIStore.getState().togglePanel(panel);
+                const key = PANEL_STATE_KEYS[panel];
+                expect((useToolbarUIStore.getState() as any)[key]).toBe(true);
+            });
 
-        it.each(ALL_PANELS)('toggles %s from open to closed', (panel) => {
-            const key = PANEL_STATE_KEYS[panel];
-            useToolbarUIStore.setState({ [key]: true });
-            useToolbarUIStore.getState().togglePanel(panel);
-            expect((useToolbarUIStore.getState() as any)[key]).toBe(false);
-        });
+            it(`toggles ${panel} from open to closed`, () => {
+                const key = PANEL_STATE_KEYS[panel];
+                useToolbarUIStore.setState({ [key]: true });
+                useToolbarUIStore.getState().togglePanel(panel);
+                expect((useToolbarUIStore.getState() as any)[key]).toBe(false);
+            });
+        }
 
         it('only affects the targeted panel', () => {
             useToolbarUIStore.getState().togglePanel('depot');
@@ -129,7 +131,6 @@ describe('toolbar-ui-store', () => {
 
     describe('closeAllPanels', () => {
         it('closes all open panels', () => {
-            // Open several panels
             useToolbarUIStore.setState({
                 showDepot: true,
                 showTrainPanel: true,

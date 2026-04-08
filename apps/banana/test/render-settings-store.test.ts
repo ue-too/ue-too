@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'bun:test';
 
 import { useRenderSettingsStore } from '../src/stores/render-settings-store';
 
@@ -81,7 +81,7 @@ describe('render-settings-store', () => {
     });
 
     describe('boolean setters', () => {
-        const booleanFields = [
+        const booleanFields: [string, string][] = [
             ['setShowElevationGradient', 'showElevationGradient'],
             ['setShowPreviewCurveArcs', 'showPreviewCurveArcs'],
             ['setElectrified', 'electrified'],
@@ -96,29 +96,24 @@ describe('render-settings-store', () => {
             ['setShowStationLocations', 'showStationLocations'],
             ['setShowProximityLines', 'showProximityLines'],
             ['setShowStats', 'showStats'],
-        ] as const;
+        ];
 
-        it.each(booleanFields)(
-            '%s toggles %s to true',
-            (setter, field) => {
-                const store = useRenderSettingsStore.getState();
-                (store as any)[setter](true);
-                expect((useRenderSettingsStore.getState() as any)[field]).toBe(
-                    true
-                );
-            }
-        );
+        for (const [setter, field] of booleanFields) {
+            it(`${setter} sets ${field} to true`, () => {
+                (useRenderSettingsStore.getState() as any)[setter](true);
+                expect(
+                    (useRenderSettingsStore.getState() as any)[field]
+                ).toBe(true);
+            });
 
-        it.each(booleanFields)(
-            '%s toggles %s back to false',
-            (setter, field) => {
+            it(`${setter} sets ${field} back to false`, () => {
                 useRenderSettingsStore.setState({ [field]: true } as any);
                 (useRenderSettingsStore.getState() as any)[setter](false);
-                expect((useRenderSettingsStore.getState() as any)[field]).toBe(
-                    false
-                );
-            }
-        );
+                expect(
+                    (useRenderSettingsStore.getState() as any)[field]
+                ).toBe(false);
+            });
+        }
     });
 
     describe('setTrackStyle', () => {
@@ -138,26 +133,29 @@ describe('render-settings-store', () => {
 
     describe('subscriptions', () => {
         it('fires subscriber with prev and next state on change', () => {
-            const listener = vi.fn();
-            const unsub = useRenderSettingsStore.subscribe(listener);
+            const calls: any[] = [];
+            const unsub = useRenderSettingsStore.subscribe((next, prev) => {
+                calls.push({ next, prev });
+            });
 
             useRenderSettingsStore.getState().setSunAngle(45);
 
-            expect(listener).toHaveBeenCalledTimes(1);
-            const [next, prev] = listener.mock.calls[0];
-            expect(prev.sunAngle).toBe(135);
-            expect(next.sunAngle).toBe(45);
+            expect(calls).toHaveLength(1);
+            expect(calls[0].prev.sunAngle).toBe(135);
+            expect(calls[0].next.sunAngle).toBe(45);
 
             unsub();
         });
 
         it('does not fire subscriber after unsubscribe', () => {
-            const listener = vi.fn();
-            const unsub = useRenderSettingsStore.subscribe(listener);
+            const calls: any[] = [];
+            const unsub = useRenderSettingsStore.subscribe((next, prev) => {
+                calls.push({ next, prev });
+            });
             unsub();
 
             useRenderSettingsStore.getState().setSunAngle(0);
-            expect(listener).not.toHaveBeenCalled();
+            expect(calls).toHaveLength(0);
         });
     });
 

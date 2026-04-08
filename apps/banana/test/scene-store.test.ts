@@ -1,25 +1,57 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 
-// Mock the storage module before importing the store
-const mockStorage = {
-    listScenes: vi.fn(),
-    loadScene: vi.fn(),
-    saveScene: vi.fn(),
-    deleteScene: vi.fn(),
-    getActiveSceneId: vi.fn(),
-    setActiveSceneId: vi.fn(),
-    getPreference: vi.fn(),
-    setPreference: vi.fn(),
-};
+import type { SceneStorage } from '../src/storage/scene-storage';
 
-vi.mock('@/storage', () => ({
-    getSceneStorage: () => mockStorage,
+// ---------------------------------------------------------------------------
+// In-memory storage used to verify the store's persistence side-effects
+// ---------------------------------------------------------------------------
+
+class InMemorySceneStorage implements SceneStorage {
+    scenes = new Map<string, any>();
+    meta = new Map<string, string>();
+
+    async listScenes() {
+        return [...this.scenes.values()]
+            .map((s: any) => s.metadata)
+            .sort((a: any, b: any) => b.updatedAt - a.updatedAt);
+    }
+    async loadScene(id: string) {
+        return this.scenes.get(id) ?? null;
+    }
+    async saveScene(scene: any) {
+        this.scenes.set(scene.metadata.id, structuredClone(scene));
+    }
+    async deleteScene(id: string) {
+        this.scenes.delete(id);
+    }
+    async getActiveSceneId() {
+        return this.meta.get('active-scene-id') ?? null;
+    }
+    async setActiveSceneId(id: string | null) {
+        if (id === null) this.meta.delete('active-scene-id');
+        else this.meta.set('active-scene-id', id);
+    }
+    async getPreference(key: string) {
+        return this.meta.get(`pref:${key}`) ?? null;
+    }
+    async setPreference(key: string, value: string) {
+        this.meta.set(`pref:${key}`, value);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mock the storage module so the store uses our in-memory implementation
+// ---------------------------------------------------------------------------
+
+const storage = new InMemorySceneStorage();
+
+mock.module('@/storage', () => ({
+    getSceneStorage: () => storage,
+    SCENE_DATA_VERSION: 1,
 }));
 
+// Import AFTER mocking
 const { useSceneStore } = await import('../src/stores/scene-store');
-
-// Helper to reset store to initial state between tests
-const initialState = useSceneStore.getState();
 
 function resetStore() {
     useSceneStore.setState({
@@ -32,10 +64,15 @@ function resetStore() {
     });
 }
 
+function resetStorage() {
+    storage.scenes.clear();
+    storage.meta.clear();
+}
+
 describe('scene-store', () => {
     beforeEach(() => {
         resetStore();
-        vi.clearAllMocks();
+        resetStorage();
     });
 
     describe('initial state', () => {
@@ -58,9 +95,11 @@ describe('scene-store', () => {
             expect(state.activeSceneName).toBe('My Scene');
         });
 
-        it('persists active scene id to storage', () => {
+        it('persists active scene id to storage', async () => {
             useSceneStore.getState().setActiveScene('xyz', 'Test');
-            expect(mockStorage.setActiveSceneId).toHaveBeenCalledWith('xyz');
+            // setActiveSceneId is fire-and-forget; await the promise
+            await new Promise((r) => setTimeout(r, 0));
+            expect(await storage.getActiveSceneId()).toBe('xyz');
         });
     });
 
@@ -102,10 +141,10 @@ describe('scene-store', () => {
             expect(useSceneStore.getState().autoSaveIntervalMs).toBe(60_000);
         });
 
-        it('persists to storage', () => {
+        it('persists to storage', async () => {
             useSceneStore.getState().setAutoSaveIntervalMs(300_000);
-            expect(mockStorage.setPreference).toHaveBeenCalledWith(
-                'autoSaveIntervalMs',
+            await new Promise((r) => setTimeout(r, 0));
+            expect(await storage.getPreference('autoSaveIntervalMs')).toBe(
                 '300000'
             );
         });
@@ -113,10 +152,6 @@ describe('scene-store', () => {
 
     describe('initialize', () => {
         it('sets initialized to true with no saved data', async () => {
-            mockStorage.getPreference.mockResolvedValue(null);
-            mockStorage.listScenes.mockResolvedValue([]);
-            mockStorage.getActiveSceneId.mockResolvedValue(null);
-
             await useSceneStore.getState().initialize();
 
             const state = useSceneStore.getState();
@@ -126,9 +161,7 @@ describe('scene-store', () => {
         });
 
         it('restores saved auto-save interval', async () => {
-            mockStorage.getPreference.mockResolvedValue('60000');
-            mockStorage.listScenes.mockResolvedValue([]);
-            mockStorage.getActiveSceneId.mockResolvedValue(null);
+            await storage.setPreference('autoSaveIntervalMs', '60000');
 
             await useSceneStore.getState().initialize();
 
@@ -136,9 +169,7 @@ describe('scene-store', () => {
         });
 
         it('ignores invalid saved interval', async () => {
-            mockStorage.getPreference.mockResolvedValue('not-a-number');
-            mockStorage.listScenes.mockResolvedValue([]);
-            mockStorage.getActiveSceneId.mockResolvedValue(null);
+            await storage.setPreference('autoSaveIntervalMs', 'not-a-number');
 
             await useSceneStore.getState().initialize();
 
@@ -146,11 +177,16 @@ describe('scene-store', () => {
         });
 
         it('opens scene picker when scenes exist', async () => {
-            mockStorage.getPreference.mockResolvedValue(null);
-            mockStorage.listScenes.mockResolvedValue([
-                { id: 's1', name: 'Scene 1' },
-            ]);
-            mockStorage.getActiveSceneId.mockResolvedValue(null);
+            await storage.saveScene({
+                metadata: {
+                    id: 's1',
+                    name: 'Scene 1',
+                    createdAt: 1000,
+                    updatedAt: 2000,
+                    version: 1,
+                },
+                data: { tracks: { joints: [], segments: [] }, trains: {} },
+            });
 
             await useSceneStore.getState().initialize();
 
@@ -158,12 +194,27 @@ describe('scene-store', () => {
         });
 
         it('restores last active scene if found', async () => {
-            mockStorage.getPreference.mockResolvedValue(null);
-            mockStorage.listScenes.mockResolvedValue([
-                { id: 's1', name: 'Scene 1' },
-                { id: 's2', name: 'Scene 2' },
-            ]);
-            mockStorage.getActiveSceneId.mockResolvedValue('s2');
+            await storage.saveScene({
+                metadata: {
+                    id: 's1',
+                    name: 'Scene 1',
+                    createdAt: 1000,
+                    updatedAt: 1000,
+                    version: 1,
+                },
+                data: { tracks: { joints: [], segments: [] }, trains: {} },
+            });
+            await storage.saveScene({
+                metadata: {
+                    id: 's2',
+                    name: 'Scene 2',
+                    createdAt: 2000,
+                    updatedAt: 2000,
+                    version: 1,
+                },
+                data: { tracks: { joints: [], segments: [] }, trains: {} },
+            });
+            await storage.setActiveSceneId('s2');
 
             await useSceneStore.getState().initialize();
 
@@ -173,12 +224,18 @@ describe('scene-store', () => {
             expect(state.scenePickerOpen).toBe(true);
         });
 
-        it('does not set active scene if last active id not found in list', async () => {
-            mockStorage.getPreference.mockResolvedValue(null);
-            mockStorage.listScenes.mockResolvedValue([
-                { id: 's1', name: 'Scene 1' },
-            ]);
-            mockStorage.getActiveSceneId.mockResolvedValue('deleted-id');
+        it('does not set active scene if last active id not in list', async () => {
+            await storage.saveScene({
+                metadata: {
+                    id: 's1',
+                    name: 'Scene 1',
+                    createdAt: 1000,
+                    updatedAt: 1000,
+                    version: 1,
+                },
+                data: { tracks: { joints: [], segments: [] }, trains: {} },
+            });
+            await storage.setActiveSceneId('deleted-id');
 
             await useSceneStore.getState().initialize();
 
@@ -190,21 +247,16 @@ describe('scene-store', () => {
 
     describe('subscriptions', () => {
         it('notifies subscribers on state change', () => {
-            const listener = vi.fn();
-            const unsub = useSceneStore.subscribe(listener);
+            const calls: any[] = [];
+            const unsub = useSceneStore.subscribe((next, prev) => {
+                calls.push({ next, prev });
+            });
 
             useSceneStore.getState().setActiveScene('id1', 'Name');
 
-            expect(listener).toHaveBeenCalledTimes(1);
-            expect(listener).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    activeSceneId: 'id1',
-                    activeSceneName: 'Name',
-                }),
-                expect.objectContaining({
-                    activeSceneId: null,
-                })
-            );
+            expect(calls).toHaveLength(1);
+            expect(calls[0].next.activeSceneId).toBe('id1');
+            expect(calls[0].prev.activeSceneId).toBeNull();
 
             unsub();
         });
