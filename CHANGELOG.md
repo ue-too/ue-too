@@ -1,3 +1,13 @@
+## 0.17.1 (2026-04-08)
+
+### 🩹 Fixes
+
+- **board:** explicit package exports and root imports for bundlers ([#379](https://github.com/ue-too/ue-too/pull/379))
+
+### ❤️ Thank You
+
+- vee @niuee
+
 ## 0.17.0 (2026-04-08)
 
 ### 🩹 Fixes
