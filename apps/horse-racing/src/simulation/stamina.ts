@@ -6,10 +6,10 @@ import { TRAIT_RANGES } from './horse-attributes';
 // ---------------------------------------------------------------------------
 
 /** Stamina drain per unit of extra tangential acceleration per tick. */
-export const STAMINA_DRAIN_RATE = 0.01; // was 0.1
+export const STAMINA_DRAIN_RATE = 0.03; // 3x from 0.01
 
 /** Stamina drain per unit of speed above cruise speed per tick. */
-export const OVERDRIVE_DRAIN_RATE = 0.005; // was 0.05
+export const OVERDRIVE_DRAIN_RATE = 0.015; // 3x from 0.005
 
 /** Stamina drain per unit of excess cornering force per tick. */
 export const CORNERING_DRAIN_RATE = 0.002; // was 0.02
