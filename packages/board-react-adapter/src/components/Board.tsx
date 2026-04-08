@@ -1,5 +1,4 @@
-import { OutputEvent } from '@ue-too/board';
-import type { CameraMux } from '@ue-too/board/camera';
+import { type CameraMux, OutputEvent } from '@ue-too/board';
 import { Point, PointCal } from '@ue-too/math';
 import {
     useCallback,

@@ -91,4 +91,5 @@
  */
 
 export * from './components/Board';
+export { default as Board } from './components/Board';
 export * from './hooks';

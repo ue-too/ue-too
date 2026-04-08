@@ -17,6 +17,16 @@
             "import": "./src/index.ts",
             "default": "./src/index.ts"
         },
+        "./components": {
+            "types": "./src/components/index.ts",
+            "import": "./src/components/index.ts",
+            "default": "./src/components/index.ts"
+        },
+        "./hooks": {
+            "types": "./src/hooks/index.ts",
+            "import": "./src/hooks/index.ts",
+            "default": "./src/hooks/index.ts"
+        },
         "./*": {
             "types": "./src/*/index.ts",
             "import": "./src/*/index.ts",

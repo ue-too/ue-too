@@ -1,6 +1,7 @@
 // Uncomment this line to use CSS modules
 // import styles from './app.module.css';
 import {
+    Board,
     BoardProvider,
     useAnimationFrameWithBoard,
     useBoard,
@@ -9,7 +10,6 @@ import {
     useCanvasDimension,
     useCanvasProxyWithRef,
 } from '@ue-too/board-react-adapter';
-import { Board } from '@ue-too/board-react-adapter/components';
 import { useEffect } from 'react';
 import { Link, Route, Routes } from 'react-router-dom';
 
