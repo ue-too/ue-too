@@ -1,4 +1,4 @@
-import { Observable, SynchronousObservable } from '@ue-too/board/utils/';
+import { Observable, SynchronousObservable } from '@ue-too/board/utils';
 import { Point, PointCal } from '@ue-too/math';
 
 export type Cell = {
