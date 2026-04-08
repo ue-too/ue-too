@@ -54,6 +54,21 @@ const zhTW = {
         invalidTerrainData: '無效的地形資料：{{error}}',
         importCarDefinitionFromEditor: '匯入車輛定義（從列車編輯器）',
 
+        // Scene Management
+        scenePickerTitle: '已儲存的場景',
+        scenePickerDescription: '選擇一個場景繼續，或建立新場景。',
+        newScene: '新場景',
+        saveScene: '儲存場景',
+        savedScenes: '已儲存的場景',
+        noSavedScenes: '尚未儲存任何場景。',
+        lastActive: '上次使用',
+        confirmDelete: '刪除',
+        autoSaveInterval: '自動儲存間隔',
+        autoSave1Min: '1 分鐘',
+        autoSave3Min: '3 分鐘',
+        autoSave5Min: '5 分鐘',
+        autoSave10Min: '10 分鐘',
+
         // Validation errors
         invalidTrackData: '無效的軌道資料：{{error}}',
         invalidTrainData: '無效的列車資料：{{error}}',

@@ -7,7 +7,10 @@ import {
     Bug,
     Building2,
     Clock,
+    FilePlus,
+    FolderOpen,
     Landmark,
+    Save,
     Layers,
     List,
     ListOrdered,
@@ -21,13 +24,19 @@ import {
 } from '@/assets/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 
 import type { BuildingPreset } from '@/buildings/types';
 import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
+import { useAutoSave } from '@/hooks/use-auto-save';
+import { useRenderSync } from '@/hooks/use-render-sync';
 import { cn } from '@/lib/utils';
+import { useRenderSettingsStore } from '@/stores/render-settings-store';
+import { useSceneStore } from '@/stores/scene-store';
+import { useToolbarUIStore } from '@/stores/toolbar-ui-store';
 import {
     type SerializedSceneData,
     deserializeSceneData,
@@ -48,7 +57,7 @@ import {
 } from '@/trains/car-template';
 import type { ThrottleSteps } from '@/trains/formation';
 import { ELEVATION } from '@/trains/tracks/types';
-import type { SerializedTrackData, TrackStyle } from '@/trains/tracks/types';
+import type { SerializedTrackData } from '@/trains/tracks/types';
 import { validateSerializedTrackData } from '@/trains/tracks/types';
 import {
     type SerializedTrainData,
@@ -59,6 +68,7 @@ import {
 
 import { trackEvent } from '@/utils/analytics';
 
+import { AutoSaveIntervalSelector } from './AutoSaveIntervalSelector';
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
 import { DebugPanel } from './DebugPanel';
 import { DepotPanel } from './DepotPanel';
@@ -76,7 +86,6 @@ import { TrackStyleSelector } from './TrackStyleSelector';
 import { SignalPanel } from './SignalPanel';
 import { TimetablePanel } from './TimetablePanel';
 import { TrainPanel } from './TrainPanel';
-import type { AppMode } from './types';
 import { TOOLBAR_LEFT } from './types';
 import { downloadJson, uploadJson } from './utils';
 
@@ -91,51 +100,100 @@ export function BananaToolbar({
     const app = useBananaApp();
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
+    const { saveNow } = useAutoSave();
+    const showScenePickerAction = useSceneStore((s) => s.showScenePicker);
+    const createNewScene = useSceneStore((s) => s.createNewScene);
 
-    const [mode, setMode] = useState<AppMode>('idle');
+    // Toolbar UI store — mode and panel visibility
+    const mode = useToolbarUIStore((s) => s.mode);
+    const setMode = useToolbarUIStore((s) => s.setMode);
+    const {
+        showDepot,
+        showTrainPanel,
+        showFormationEditor,
+        showDebugPanel,
+        showStationList,
+        showTimetable,
+        showSignalPanel,
+        showExportSubmenu,
+        showAutoSaveMenu,
+    } = useToolbarUIStore(
+        useShallow((s) => ({
+            showDepot: s.showDepot,
+            showTrainPanel: s.showTrainPanel,
+            showFormationEditor: s.showFormationEditor,
+            showDebugPanel: s.showDebugPanel,
+            showStationList: s.showStationList,
+            showTimetable: s.showTimetable,
+            showSignalPanel: s.showSignalPanel,
+            showExportSubmenu: s.showExportSubmenu,
+            showAutoSaveMenu: s.showAutoSaveMenu,
+        }))
+    );
+    const setPanel = useToolbarUIStore((s) => s.setPanel);
+    const togglePanel = useToolbarUIStore((s) => s.togglePanel);
+
+    // Render settings store
+    const {
+        sunAngle,
+        showElevationGradient,
+        showPreviewCurveArcs,
+        trackStyle,
+        electrified,
+        projectionBuffer,
+        bed,
+        bedWidth,
+        terrainFillVisible,
+        terrainOpacity,
+        whiteOcclusion,
+        showJointNumbers,
+        showSegmentIds,
+        showFormationIds,
+        showStationStops,
+        showStationLocations,
+        showProximityLines,
+        showStats,
+        terrainXray,
+    } = useRenderSettingsStore(
+        useShallow((s) => ({
+            sunAngle: s.sunAngle,
+            showElevationGradient: s.showElevationGradient,
+            showPreviewCurveArcs: s.showPreviewCurveArcs,
+            trackStyle: s.trackStyle,
+            electrified: s.electrified,
+            projectionBuffer: s.projectionBuffer,
+            bed: s.bed,
+            bedWidth: s.bedWidth,
+            terrainFillVisible: s.terrainFillVisible,
+            terrainOpacity: s.terrainOpacity,
+            whiteOcclusion: s.whiteOcclusion,
+            showJointNumbers: s.showJointNumbers,
+            showSegmentIds: s.showSegmentIds,
+            showFormationIds: s.showFormationIds,
+            showStationStops: s.showStationStops,
+            showStationLocations: s.showStationLocations,
+            showProximityLines: s.showProximityLines,
+            showStats: s.showStats,
+            terrainXray: s.terrainXray,
+        }))
+    );
+    const rs = useRenderSettingsStore;
+
+    // Local state that stays in the component
     const [elevation, setElevation] = useState<string>('N/A');
     const [tension, setTension] = useState<string>('1.0');
-    const [sunAngle, setSunAngle] = useState(135);
     const [buildingPreset, setBuildingPreset] =
         useState<BuildingPreset>('medium');
     const [buildingElevation, setBuildingElevation] = useState<ELEVATION>(
         ELEVATION.ABOVE_1
     );
     const [buildingHeight, setBuildingHeight] = useState(1);
-    const [showElevationGradient, setShowElevationGradient] = useState(false);
-    const [showPreviewCurveArcs, setShowPreviewCurveArcs] = useState(false);
-    const [showJointNumbers, setShowJointNumbers] = useState(false);
-    const [showSegmentIds, setShowSegmentIds] = useState(false);
-    const [showFormationIds, setShowFormationIds] = useState(false);
-    const [showStationStops, setShowStationStops] = useState(false);
-    const [showStationLocations, setShowStationLocations] = useState(false);
-    const [showProximityLines, setShowProximityLines] = useState(false);
     const [, setTrainListVersion] = useState(0);
-    const [showDepot, setShowDepot] = useState(false);
-    const [showTrainPanel, setShowTrainPanel] = useState(false);
-    const [showFormationEditor, setShowFormationEditor] = useState(false);
-    const [showDebugPanel, setShowDebugPanel] = useState(false);
     const [stressStartX, setStressStartX] = useState(0);
     const [stressStartY, setStressStartY] = useState(0);
-    const [showStationList, setShowStationList] = useState(false);
-    const [showTimetable, setShowTimetable] = useState(false);
-    const [showSignalPanel, setShowSignalPanel] = useState(false);
-    const [showStats, setShowStats] = useState(true);
-    const [terrainXray, setTerrainXray] = useState(false);
-    const [terrainFillVisible, setTerrainFillVisible] = useState(true);
-    const [terrainOpacity, setTerrainOpacity] = useState(1);
-    const [whiteOcclusion, setWhiteOcclusion] = useState(false);
-    const [trackStyle, setTrackStyle] = useState<TrackStyle>('ballasted');
-    const [electrified, setElectrified] = useState(false);
-    const [projectionBuffer, setProjectionBuffer] = useState(0.5);
-    const [bed, setBed] = useState(false);
-    const [bedWidth, setBedWidth] = useState(3);
-    const [showExportSubmenu, setShowExportSubmenu] = useState(false);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
 
     const selectedBuildingRef = useRef<number | null>(null);
-    const modeRef = useRef(mode);
-    modeRef.current = mode;
 
     const buildingPresetRef = useRef(buildingPreset);
     buildingPresetRef.current = buildingPreset;
@@ -143,6 +201,9 @@ export function BananaToolbar({
     buildingElevationRef.current = buildingElevation;
     const buildingHeightRef = useRef(buildingHeight);
     buildingHeightRef.current = buildingHeight;
+
+    // Sync render settings to PIXI systems
+    useRenderSync(app);
 
     useEffect(() => {
         if (!app) return;
@@ -154,106 +215,6 @@ export function BananaToolbar({
             setTension(t.toFixed(1));
         });
     }, [app]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.sunAngle = sunAngle;
-        app.buildingRenderSystem.sunAngle = sunAngle;
-    }, [app, sunAngle]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.showElevationGradient = showElevationGradient;
-    }, [app, showElevationGradient]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.showPreviewCurveArcs = showPreviewCurveArcs;
-    }, [app, showPreviewCurveArcs]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.trackStyle = trackStyle;
-    }, [app, trackStyle]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.electrified = electrified;
-    }, [app, electrified]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.curveEngine.trackGraph.projectionBuffer = projectionBuffer;
-    }, [app, projectionBuffer]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.bed = bed;
-        app.curveEngine.trackGraph.bedEnabled = bed;
-    }, [app, bed]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.trackRenderSystem.bedWidth = bedWidth;
-        app.curveEngine.trackGraph.bedWidth = bedWidth;
-    }, [app, bedWidth]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.terrainRenderSystem.xray = terrainXray;
-    }, [app, terrainXray]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.terrainRenderSystem.fillVisible = terrainFillVisible;
-    }, [app, terrainFillVisible]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.terrainRenderSystem.fillOpacity = terrainOpacity;
-    }, [app, terrainOpacity]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.terrainRenderSystem.whiteOcclusion = whiteOcclusion;
-    }, [app, whiteOcclusion]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowJointDebug(showJointNumbers);
-    }, [app, showJointNumbers]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowSegmentDebug(showSegmentIds);
-    }, [app, showSegmentIds]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowFormationDebug(showFormationIds);
-    }, [app, showFormationIds]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowStationStopDebug(showStationStops);
-    }, [app, showStationStops]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowStationLocationDebug(
-            showStationLocations
-        );
-    }, [app, showStationLocations]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.debugOverlayRenderSystem.setShowProximityDebug(showProximityLines);
-    }, [app, showProximityLines]);
-
-    useEffect(() => {
-        if (!app) return;
-        app.statsDom.style.display = showStats ? 'block' : 'none';
-    }, [app, showStats]);
 
     useEffect(() => {
         if (!app) return;
@@ -366,7 +327,7 @@ export function BananaToolbar({
             if (event.button !== 0 || !app) return;
 
             const worldPosition = convertCoords(event);
-            const currentMode = modeRef.current;
+            const currentMode = useToolbarUIStore.getState().mode;
 
             if (currentMode === 'building-placement') {
                 const existingHit =
@@ -419,15 +380,26 @@ export function BananaToolbar({
     const handleImportTracks = useCallback(() => {
         if (!app) return;
         trackEvent('import-tracks');
-        uploadJson(parsed => {
+        uploadJson(async (parsed) => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
                 alert(t('invalidTrackData', { error: result.error }));
                 return;
             }
-            app.curveEngine.trackGraph.loadFromSerializedData(
-                parsed as SerializedTrackData
+
+            useSceneStore.getState().setSceneLoading(true);
+            useSceneStore.getState().setSceneLoadProgress(0);
+
+            await app.curveEngine.trackGraph.loadFromSerializedData(
+                parsed as SerializedTrackData,
+                {
+                    onProgress: (loaded, total) =>
+                        useSceneStore.getState().setSceneLoadProgress(
+                            total > 0 ? loaded / total : 1
+                        ),
+                },
             );
+
             // Restore stations if present in the track data
             const obj = parsed as Record<string, unknown>;
             if (Array.isArray(obj.stations)) {
@@ -443,6 +415,8 @@ export function BananaToolbar({
                     app.stationRenderSystem.addStation(id);
                 }
             }
+
+            useSceneStore.getState().setSceneLoading(false);
         });
     }, [app]);
 
@@ -487,13 +461,24 @@ export function BananaToolbar({
     const handleImportAll = useCallback(() => {
         if (!app) return;
         trackEvent('import-scene');
-        uploadJson(parsed => {
+        uploadJson(async (parsed) => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
                 alert(t('invalidSceneData', { error: result.error }));
                 return;
             }
-            deserializeSceneData(app, parsed as SerializedSceneData);
+
+            useSceneStore.getState().setSceneLoading(true);
+            useSceneStore.getState().setSceneLoadProgress(0);
+
+            await deserializeSceneData(app, parsed as SerializedSceneData, {
+                onProgress: (loaded, total) =>
+                    useSceneStore.getState().setSceneLoadProgress(
+                        total > 0 ? loaded / total : 1
+                    ),
+            });
+
+            useSceneStore.getState().setSceneLoading(false);
         });
     }, [app]);
 
@@ -562,6 +547,20 @@ export function BananaToolbar({
             );
         },
         [app]
+    );
+
+    const handleGenerateTracks = useCallback(
+        (count: number) => {
+            if (!app) return;
+            const created = app.generateProceduralTracks({
+                segmentCount: count,
+                startX: stressStartX,
+                startY: stressStartY,
+                gentleCurve: true,
+            });
+            console.log(`Generated ${created} track segments`);
+        },
+        [app, stressStartX, stressStartY]
     );
 
     const handlePickStressStart = useCallback(() => {
@@ -654,7 +653,7 @@ export function BananaToolbar({
                             placedTrains.length === 0 &&
                             mode !== 'train-placement'
                         }
-                        onClick={() => { if (!showTrainPanel) trackEvent('open-train-panel'); setShowTrainPanel(v => !v); }}
+                        onClick={() => { if (!showTrainPanel) trackEvent('open-train-panel'); togglePanel('trainPanel'); }}
                     >
                         <List />
                     </ToolbarButton>
@@ -662,7 +661,7 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={showDepot ? t('closeDepot') : t('openDepot')}
                         active={showDepot}
-                        onClick={() => { if (!showDepot) trackEvent('open-depot'); setShowDepot(v => !v); }}
+                        onClick={() => { if (!showDepot) trackEvent('open-depot'); togglePanel('depot'); }}
                     >
                         <Warehouse />
                     </ToolbarButton>
@@ -674,7 +673,7 @@ export function BananaToolbar({
                                 : t('editFormations')
                         }
                         active={showFormationEditor}
-                        onClick={() => { if (!showFormationEditor) trackEvent('open-formation-editor'); setShowFormationEditor(v => !v); }}
+                        onClick={() => { if (!showFormationEditor) trackEvent('open-formation-editor'); togglePanel('formationEditor'); }}
                     >
                         <ListOrdered />
                     </ToolbarButton>
@@ -729,7 +728,7 @@ export function BananaToolbar({
                                 : t('openStationList')
                         }
                         active={showStationList}
-                        onClick={() => { if (!showStationList) trackEvent('open-station-list'); setShowStationList(v => !v); }}
+                        onClick={() => { if (!showStationList) trackEvent('open-station-list'); togglePanel('stationList'); }}
                     >
                         <Landmark />
                     </ToolbarButton>
@@ -741,7 +740,7 @@ export function BananaToolbar({
                                 : t('openTimetable')
                         }
                         active={showTimetable}
-                        onClick={() => setShowTimetable(v => !v)}
+                        onClick={() => togglePanel('timetable')}
                     >
                         <Clock />
                     </ToolbarButton>
@@ -753,7 +752,7 @@ export function BananaToolbar({
                                 : t('openSignals', 'Signals')
                         }
                         active={showSignalPanel}
-                        onClick={() => setShowSignalPanel(v => !v)}
+                        onClick={() => togglePanel('signalPanel')}
                     >
                         <Signal />
                     </ToolbarButton>
@@ -767,7 +766,7 @@ export function BananaToolbar({
                                 : t('showElevationGradient')
                         }
                         active={showElevationGradient}
-                        onClick={() => setShowElevationGradient(v => !v)}
+                        onClick={() => rs.getState().setShowElevationGradient(!showElevationGradient)}
                     >
                         <Layers />
                     </ToolbarButton>
@@ -779,7 +778,7 @@ export function BananaToolbar({
                                 : t('showPreviewCurveArcs')
                         }
                         active={showPreviewCurveArcs}
-                        onClick={() => setShowPreviewCurveArcs(v => !v)}
+                        onClick={() => rs.getState().setShowPreviewCurveArcs(!showPreviewCurveArcs)}
                     >
                         <Spline />
                     </ToolbarButton>
@@ -788,7 +787,10 @@ export function BananaToolbar({
 
                     <ExportSubmenu
                         show={showExportSubmenu}
-                        onShowChange={setShowExportSubmenu}
+                        onShowChange={(open) => {
+                            setPanel('exportSubmenu', open);
+                            if (open) setPanel('autoSaveMenu', false);
+                        }}
                         onExportTracks={handleExportTracks}
                         onImportTracks={handleImportTracks}
                         onExportTrains={handleExportTrains}
@@ -797,6 +799,23 @@ export function BananaToolbar({
                         onImportAll={handleImportAll}
                         onImportTerrain={handleImportTerrain}
                         onImportCarDefinition={handleImportCarDefinition}
+                    />
+
+                    <ToolbarButton tooltip={t('savedScenes')} onClick={() => showScenePickerAction()}>
+                        <FolderOpen />
+                    </ToolbarButton>
+                    <ToolbarButton tooltip={t('saveScene')} onClick={saveNow}>
+                        <Save />
+                    </ToolbarButton>
+                    <ToolbarButton tooltip={t('newScene')} onClick={() => createNewScene()}>
+                        <FilePlus />
+                    </ToolbarButton>
+                    <AutoSaveIntervalSelector
+                        show={showAutoSaveMenu}
+                        onShowChange={(open) => {
+                            setPanel('autoSaveMenu', open);
+                            if (open) setPanel('exportSubmenu', false);
+                        }}
                     />
 
                     <Separator />
@@ -816,20 +835,20 @@ export function BananaToolbar({
                             showDebugPanel ? t('closeDebug') : t('openDebug')
                         }
                         active={showDebugPanel}
-                        onClick={() => { if (!showDebugPanel) trackEvent('open-debug-panel'); setShowDebugPanel(v => !v); }}
+                        onClick={() => { if (!showDebugPanel) trackEvent('open-debug-panel'); togglePanel('debugPanel'); }}
                     >
                         <Bug />
                     </ToolbarButton>
                 </div>
 
-                <SunAngleControl value={sunAngle} onChange={setSunAngle} />
+                <SunAngleControl value={sunAngle} onChange={rs.getState().setSunAngle} />
                 <TerrainControl
                     visible={terrainFillVisible}
-                    onVisibleChange={setTerrainFillVisible}
+                    onVisibleChange={rs.getState().setTerrainFillVisible}
                     opacity={terrainOpacity}
-                    onOpacityChange={setTerrainOpacity}
+                    onOpacityChange={rs.getState().setTerrainOpacity}
                     whiteOcclusion={whiteOcclusion}
-                    onWhiteOcclusionChange={setWhiteOcclusion}
+                    onWhiteOcclusionChange={rs.getState().setWhiteOcclusion}
                 />
             </div>
 
@@ -848,15 +867,15 @@ export function BananaToolbar({
                     />
                     <TrackStyleSelector
                         value={trackStyle}
-                        onChange={setTrackStyle}
+                        onChange={rs.getState().setTrackStyle}
                         electrified={electrified}
-                        onElectrifiedChange={setElectrified}
+                        onElectrifiedChange={rs.getState().setElectrified}
                         projectionBuffer={projectionBuffer}
-                        onProjectionBufferChange={setProjectionBuffer}
+                        onProjectionBufferChange={rs.getState().setProjectionBuffer}
                         bed={bed}
-                        onBedChange={setBed}
+                        onBedChange={rs.getState().setBed}
                         bedWidth={bedWidth}
-                        onBedWidthChange={setBedWidth}
+                        onBedWidthChange={rs.getState().setBedWidth}
                     />
                 </>
             )}
@@ -870,7 +889,7 @@ export function BananaToolbar({
                         stopFollowing={app.stopFollowing}
                         isFollowing={app.isFollowing}
                         camera={app.camera}
-                        onClose={() => setShowTrainPanel(false)}
+                        onClose={() => setPanel('trainPanel', false)}
                     />
                 )}
 
@@ -891,7 +910,7 @@ export function BananaToolbar({
                     carImageRegistry={app.carImageRegistry}
                     carTemplates={carTemplates}
                     onCarTemplatesChange={setCarTemplates}
-                    onClose={() => setShowDepot(false)}
+                    onClose={() => setPanel('depot', false)}
                 />
             )}
 
@@ -900,7 +919,7 @@ export function BananaToolbar({
                     formationManager={app.formationManager}
                     carStockManager={app.carStockManager}
                     trainManager={app.trainManager}
-                    onClose={() => setShowFormationEditor(false)}
+                    onClose={() => setPanel('formationEditor', false)}
                 />
             )}
 
@@ -910,7 +929,7 @@ export function BananaToolbar({
                     stationRenderSystem={app.stationRenderSystem}
                     trackGraph={app.curveEngine.trackGraph}
                     cameraRig={app.cameraRig}
-                    onClose={() => setShowStationList(false)}
+                    onClose={() => setPanel('stationList', false)}
                     onStationChange={() =>
                         app.debugOverlayRenderSystem.refresh()
                     }
@@ -919,7 +938,7 @@ export function BananaToolbar({
 
             {showTimetable && (
                 <TimetablePanel
-                    onClose={() => setShowTimetable(false)}
+                    onClose={() => setPanel('timetable', false)}
                 />
             )}
 
@@ -929,28 +948,28 @@ export function BananaToolbar({
                     signalStateEngine={app.signalStateEngine}
                     signalRenderSystem={app.signalRenderSystem}
                     trackGraph={app.curveEngine.trackGraph}
-                    onClose={() => setShowSignalPanel(false)}
+                    onClose={() => setPanel('signalPanel', false)}
                 />
             )}
 
             {showDebugPanel && (
                 <DebugPanel
                     showJointNumbers={showJointNumbers}
-                    onShowJointNumbersChange={setShowJointNumbers}
+                    onShowJointNumbersChange={rs.getState().setShowJointNumbers}
                     showSegmentIds={showSegmentIds}
-                    onShowSegmentIdsChange={setShowSegmentIds}
+                    onShowSegmentIdsChange={rs.getState().setShowSegmentIds}
                     showFormationIds={showFormationIds}
-                    onShowFormationIdsChange={setShowFormationIds}
+                    onShowFormationIdsChange={rs.getState().setShowFormationIds}
                     showStationStops={showStationStops}
-                    onShowStationStopsChange={setShowStationStops}
+                    onShowStationStopsChange={rs.getState().setShowStationStops}
                     showStationLocations={showStationLocations}
-                    onShowStationLocationsChange={setShowStationLocations}
+                    onShowStationLocationsChange={rs.getState().setShowStationLocations}
                     showProximityLines={showProximityLines}
-                    onShowProximityLinesChange={setShowProximityLines}
+                    onShowProximityLinesChange={rs.getState().setShowProximityLines}
                     showStats={showStats}
-                    onShowStatsChange={setShowStats}
+                    onShowStatsChange={rs.getState().setShowStats}
                     terrainXray={terrainXray}
-                    onTerrainXrayChange={setTerrainXray}
+                    onTerrainXrayChange={rs.getState().setTerrainXray}
                     onSpawnStressTest={handleSpawnStressTest}
                     onThrottleAll={handleThrottleAll}
                     onSwitchDirectionAll={handleSwitchDirectionAll}
@@ -961,7 +980,8 @@ export function BananaToolbar({
                     onStressStartYChange={setStressStartY}
                     onPickStressStart={handlePickStressStart}
                     isPicking={mode === 'stress-pick'}
-                    onClose={() => setShowDebugPanel(false)}
+                    onGenerateTracks={handleGenerateTracks}
+                    onClose={() => setPanel('debugPanel', false)}
                 />
             )}
 

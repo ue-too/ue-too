@@ -36,12 +36,18 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
   };
 }
 
-export function deserializeSceneData(app: BananaAppComponents, data: SerializedSceneData): void {
+export async function deserializeSceneData(
+  app: BananaAppComponents,
+  data: SerializedSceneData,
+  options?: { onProgress?: (loaded: number, total: number) => void },
+): Promise<void> {
   // Clear caches that reference old track geometry before replacing tracks.
   clearShadowCache();
 
-  // Load tracks first so train positions can resolve to points
-  app.curveEngine.trackGraph.loadFromSerializedData(data.tracks);
+  // Load tracks first so train positions can resolve to points (batched)
+  await app.curveEngine.trackGraph.loadFromSerializedData(data.tracks, {
+    onProgress: options?.onProgress,
+  });
   deserializeTrainData(
     data.trains,
     app.curveEngine.trackGraph,

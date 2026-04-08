@@ -33,6 +33,7 @@ type DebugPanelProps = {
     onStressStartYChange?: (value: number) => void;
     onPickStressStart?: () => void;
     isPicking?: boolean;
+    onGenerateTracks?: (count: number) => void;
     onClose: () => void;
 };
 
@@ -63,6 +64,7 @@ export function DebugPanel({
     onStressStartYChange,
     onPickStressStart,
     isPicking = false,
+    onGenerateTracks,
     onClose,
 }: DebugPanelProps) {
     const { t } = useTranslation();
@@ -294,6 +296,26 @@ export function DebugPanel({
                                     </Button>
                                 </>
                             )}
+                        </div>
+                    </>
+                )}
+                {onGenerateTracks && (
+                    <>
+                        <Separator />
+                        <span className="text-muted-foreground text-[10px]">
+                            Generate Tracks
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                            {[50, 200, 500, 1000].map(n => (
+                                <Button
+                                    key={n}
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() => onGenerateTracks(n)}
+                                >
+                                    {n} segs
+                                </Button>
+                            ))}
                         </div>
                     </>
                 )}
