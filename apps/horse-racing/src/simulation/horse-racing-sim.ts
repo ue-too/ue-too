@@ -202,7 +202,7 @@ export async function attachHorseRacingSim(
     const reloadModels = (): void => {
         aiManager.clearAll();
         for (let i = 0; i < currentHorseCount; i++) {
-            const url = modelAssignments.get(i) ?? '/models/v35_phase2.onnx';
+            const url = modelAssignments.get(i) ?? '/models/v38_phase1_s2.onnx';
             aiManager.loadForHorse(i, url).catch(() => {
                 console.warn(`[AI] Failed to load model for horse ${i}`);
             });
@@ -618,7 +618,7 @@ export async function attachHorseRacingSim(
     const getObservations = (): HorseObservation[] | null => latestObservations;
 
     const getModelAssignment = (horseIndex: number): string | undefined =>
-        modelAssignments.get(horseIndex) ?? '/models/v35_phase2.onnx';
+        modelAssignments.get(horseIndex) ?? '/models/v38_phase1_s2.onnx';
 
     const HORSE_NAMES = [
         'Gold', 'Brown', 'Blue', 'White', 'Red', 'Green',
@@ -631,7 +631,7 @@ export async function attachHorseRacingSim(
         if (recordedTicks.length === 0) return null;
         const assignments: Record<number, string> = {};
         for (let i = 0; i < currentHorseCount; i++) {
-            assignments[i] = modelAssignments.get(i) ?? '/models/v35_phase2.onnx';
+            assignments[i] = modelAssignments.get(i) ?? '/models/v38_phase1_s2.onnx';
         }
         return {
             version: 1,

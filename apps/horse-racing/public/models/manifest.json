@@ -1,6 +1,14 @@
 [
   {
-    "label": "V35 Phase 2",
+    "label": "V35 Phase2",
     "url": "/models/v35_phase2.onnx"
+  },
+  {
+    "label": "V38 Phase1 S2",
+    "url": "/models/v38_phase1_s2.onnx"
+  },
+  {
+    "label": "V42 Phase1 S1",
+    "url": "/models/v42_phase1_s1.onnx"
   }
 ]

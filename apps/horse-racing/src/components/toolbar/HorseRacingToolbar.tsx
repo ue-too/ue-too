@@ -21,6 +21,8 @@ const TRACK_PRESETS = [
 
 const FALLBACK_MODELS = [
     { label: 'V35 Phase 2', url: '/models/v35_phase2.onnx' },
+    { label: 'V38 Phase1 S2', url: '/models/v38_phase1_s2.onnx' },
+    { label: 'V42 Phase1 S1', url: '/models/v42_phase1_s1.onnx' },
 ];
 
 const BT_OPTIONS = [
@@ -33,7 +35,7 @@ const BT_OPTIONS = [
     { label: 'BT: Blocker', url: 'bt:blocker' },
 ];
 
-const DEFAULT_MODEL_URL = '/models/v35_phase2.onnx';
+const DEFAULT_MODEL_URL = '/models/v38_phase1_s2.onnx';
 
 function useAvailableModels() {
     const [models, setModels] = useState<{ label: string; url: string }[]>(FALLBACK_MODELS);
