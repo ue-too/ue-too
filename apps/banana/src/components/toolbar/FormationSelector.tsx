@@ -2,7 +2,10 @@ import { TrainFront } from '@/assets/icons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FormationManager } from '@/trains/formation-manager';
+
+const NONE = '__none__';
 import type { TrainPlacementEngine } from '@/trains/input-state-machine/train-kmt-state-machine';
 
 type FormationSelectorProps = {
@@ -32,26 +35,29 @@ export function FormationSelector({
                 <span className="text-muted-foreground whitespace-nowrap text-xs font-medium">
                     {t('formation')}
                 </span>
-                <select
-                    className="bg-background h-7 min-w-[160px] rounded-md border px-2 text-xs"
-                    value={selectedId}
-                    onChange={e => {
-                        const val = e.target.value || null;
-                        const formation = val
-                            ? formationManager.getFormation(val)
-                            : null;
+                <Select
+                    value={selectedId || NONE}
+                    onValueChange={(val) => {
+                        const formation = val === NONE
+                            ? null
+                            : formationManager.getFormation(val);
                         trainPlacementEngine.setFormation(formation);
                     }}
                 >
-                    <option value="">{t('defaultFormation')}</option>
-                    {formations.map(entry => (
-                        <option key={entry.id} value={entry.id}>
-                            {entry.formation.name} (
-                            {t('car', { count: entry.formation.flatCars().length })}
-                            )
-                        </option>
-                    ))}
-                </select>
+                    <SelectTrigger className="min-w-[160px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NONE}>{t('defaultFormation')}</SelectItem>
+                        {formations.map(entry => (
+                            <SelectItem key={entry.id} value={entry.id}>
+                                {entry.formation.name} (
+                                {t('car', { count: entry.formation.flatCars().length })}
+                                )
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );

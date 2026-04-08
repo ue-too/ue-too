@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+
+const NONE = '__none__';
 import { useBananaApp } from '@/contexts/pixi';
 import { TimetableManager } from '@/timetable/timetable-manager';
 import { downloadJson, uploadJson } from './utils';
@@ -352,24 +355,28 @@ function ShiftSection({
                         onChange={(e) => setShiftName(e.target.value)}
                     />
 
-                    <span className="text-muted-foreground text-[10px]">Stops:</span>
+                    <span className="text-muted-foreground text-[10px]">{t('stops')}:</span>
                     {stopsInput.map((stop, i) => (
                         <div key={i} className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-1">
-                                <select
-                                    className="bg-background text-foreground flex-1 rounded border px-1 py-0.5 text-xs"
-                                    value={stop.stationId}
-                                    onChange={(e) =>
-                                        updateStop(i, 'stationId', e.target.value)
+                                <Select
+                                    value={stop.stationId || NONE}
+                                    onValueChange={(val) =>
+                                        updateStop(i, 'stationId', val === NONE ? '' : val)
                                     }
                                 >
-                                    <option value="">Station...</option>
-                                    {stations.map(({ id, station }) => (
-                                        <option key={id} value={String(id)}>
-                                            {station.name || `Station ${id}`}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger size="sm" className="flex-1">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={NONE}>{t('stationPlaceholder')}</SelectItem>
+                                        {stations.map(({ id, station }) => (
+                                            <SelectItem key={id} value={String(id)}>
+                                                {station.name || `Station ${id}`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                                 {stopsInput.length > 2 && (
                                     <Button
                                         variant="ghost"
@@ -384,7 +391,7 @@ function ShiftSection({
                                 {i > 0 && (
                                     <input
                                         className="bg-background text-foreground w-16 rounded border px-1 py-0.5 text-[10px] outline-none"
-                                        placeholder="Arr HH:MM"
+                                        placeholder={t('arrivalTime')}
                                         value={stop.arrive}
                                         onChange={(e) =>
                                             updateStop(i, 'arrive', e.target.value)
@@ -394,7 +401,7 @@ function ShiftSection({
                                 {i < stopsInput.length - 1 && (
                                     <input
                                         className="bg-background text-foreground w-16 rounded border px-1 py-0.5 text-[10px] outline-none"
-                                        placeholder="Dep HH:MM"
+                                        placeholder={t('departureTime')}
                                         value={stop.depart}
                                         onChange={(e) =>
                                             updateStop(i, 'depart', e.target.value)
@@ -403,24 +410,28 @@ function ShiftSection({
                                 )}
                             </div>
                             {i < stopsInput.length - 1 && (
-                                <select
-                                    className="bg-background text-foreground rounded border px-1 py-0.5 text-[10px]"
-                                    value={routeIds[i] ?? ''}
-                                    onChange={(e) =>
+                                <Select
+                                    value={routeIds[i] || NONE}
+                                    onValueChange={(val) =>
                                         setRouteIds((prev) =>
                                             prev.map((r, j) =>
-                                                j === i ? e.target.value : r,
+                                                j === i ? (val === NONE ? '' : val) : r,
                                             ),
                                         )
                                     }
                                 >
-                                    <option value="">Route...</option>
-                                    {routes.map((r) => (
-                                        <option key={r.id} value={r.id}>
-                                            {r.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    <SelectTrigger size="sm" className="text-[10px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={NONE}>{t('routePlaceholder')}</SelectItem>
+                                        {routes.map((r) => (
+                                            <SelectItem key={r.id} value={r.id}>
+                                                {r.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             )}
                             {i < stopsInput.length - 1 && (
                                 <Separator className="my-0.5" />
@@ -428,7 +439,7 @@ function ShiftSection({
                         </div>
                     ))}
                     <Button variant="ghost" size="xs" onClick={addStop}>
-                        + Stop
+                        {t('addStop')}
                     </Button>
                     <Button
                         variant="default"
@@ -527,30 +538,38 @@ function AssignSection({
             <span className="text-xs font-medium">{t('assignments')}</span>
 
             <div className="flex flex-col gap-1">
-                <select
-                    className="bg-background text-foreground rounded border px-1 py-0.5 text-xs"
-                    value={selectedFormationId}
-                    onChange={(e) => setSelectedFormationId(e.target.value)}
+                <Select
+                    value={selectedFormationId || NONE}
+                    onValueChange={(val) => setSelectedFormationId(val === NONE ? '' : val)}
                 >
-                    <option value="">{t('selectFormation')}</option>
-                    {formations.map((f) => (
-                        <option key={f.id} value={f.id}>
-                            {f.formation.name ?? f.id}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    className="bg-background text-foreground rounded border px-1 py-0.5 text-xs"
-                    value={selectedShiftId}
-                    onChange={(e) => setSelectedShiftId(e.target.value)}
+                    <SelectTrigger size="sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NONE}>{t('selectFormation')}</SelectItem>
+                        {formations.map((f) => (
+                            <SelectItem key={f.id} value={f.id}>
+                                {f.formation.name ?? f.id}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <Select
+                    value={selectedShiftId || NONE}
+                    onValueChange={(val) => setSelectedShiftId(val === NONE ? '' : val)}
                 >
-                    <option value="">{t('selectShift')}</option>
-                    {shifts.map((s) => (
-                        <option key={s.id} value={s.id}>
-                            {s.name}
-                        </option>
-                    ))}
-                </select>
+                    <SelectTrigger size="sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NONE}>{t('selectShift')}</SelectItem>
+                        {shifts.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 <Button
                     variant="default"
                     size="xs"
@@ -583,7 +602,7 @@ function AssignSection({
                                 </span>
                                 <span className="text-muted-foreground text-[10px]">
                                     {a.formationId.slice(0, 8)}…
-                                    {a.suspended ? ' (suspended)' : ''}
+                                    {a.suspended ? ` (${t('suspended')})` : ''}
                                 </span>
                             </div>
                             <Button

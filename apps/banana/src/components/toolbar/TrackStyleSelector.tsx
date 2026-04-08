@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TrackStyle } from '@/trains/tracks/types';
 
 type TrackStyleSelectorProps = {
@@ -35,17 +36,15 @@ export function TrackStyleSelector({
                     <span className="text-muted-foreground text-xs font-medium">
                         {t('trackStyle')}
                     </span>
-                    <select
-                        className="bg-background h-7 rounded-md border px-2 text-xs"
-                        value={value}
-                        onChange={e => {
-                            onChange(e.target.value as TrackStyle);
-                            e.target.blur();
-                        }}
-                    >
-                        <option value="ballasted">{t('ballasted')}</option>
-                        <option value="slab">{t('slabElevated')}</option>
-                    </select>
+                    <Select value={value} onValueChange={(val) => onChange(val as TrackStyle)}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ballasted">{t('ballasted')}</SelectItem>
+                            <SelectItem value="slab">{t('slabElevated')}</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                         <input
                             type="checkbox"

@@ -748,8 +748,8 @@ export function BananaToolbar({
                     <ToolbarButton
                         tooltip={
                             showSignalPanel
-                                ? t('closeSignals', 'Close Signals')
-                                : t('openSignals', 'Signals')
+                                ? t('closeSignals')
+                                : t('openSignals')
                         }
                         active={showSignalPanel}
                         onClick={() => togglePanel('signalPanel')}

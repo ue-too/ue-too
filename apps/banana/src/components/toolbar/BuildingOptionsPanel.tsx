@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { BuildingPreset } from '@/buildings/types';
 import { ELEVATION } from '@/trains/tracks/types';
 
@@ -27,30 +28,28 @@ export function BuildingOptionsPanel({
                 <span className="text-muted-foreground text-xs font-medium">
                     {t('building')}
                 </span>
-                <select
-                    className="bg-background h-7 rounded-md border px-2 text-xs"
-                    value={preset}
-                    onChange={e =>
-                        onPresetChange(e.target.value as BuildingPreset)
-                    }
-                >
-                    <option value="small">{t('small')}</option>
-                    <option value="medium">{t('medium')}</option>
-                    <option value="large">{t('large')}</option>
-                    <option value="l-shape">{t('lShape')}</option>
-                </select>
-                <select
-                    className="bg-background h-7 rounded-md border px-2 text-xs"
-                    value={elevation}
-                    onChange={e =>
-                        onElevationChange(Number(e.target.value) as ELEVATION)
-                    }
-                >
-                    <option value={ELEVATION.GROUND}>{t('ground')}</option>
-                    <option value={ELEVATION.ABOVE_1}>{t('above1')}</option>
-                    <option value={ELEVATION.ABOVE_2}>{t('above2')}</option>
-                    <option value={ELEVATION.ABOVE_3}>{t('above3')}</option>
-                </select>
+                <Select value={preset} onValueChange={(val) => onPresetChange(val as BuildingPreset)}>
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="small">{t('small')}</SelectItem>
+                        <SelectItem value="medium">{t('medium')}</SelectItem>
+                        <SelectItem value="large">{t('large')}</SelectItem>
+                        <SelectItem value="l-shape">{t('lShape')}</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={String(elevation)} onValueChange={(val) => onElevationChange(Number(val) as ELEVATION)}>
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={String(ELEVATION.GROUND)}>{t('ground')}</SelectItem>
+                        <SelectItem value={String(ELEVATION.ABOVE_1)}>{t('above1')}</SelectItem>
+                        <SelectItem value={String(ELEVATION.ABOVE_2)}>{t('above2')}</SelectItem>
+                        <SelectItem value={String(ELEVATION.ABOVE_3)}>{t('above3')}</SelectItem>
+                    </SelectContent>
+                </Select>
                 <label className="flex flex-col gap-1 text-xs">
                     {t('height')}: {height} {t('level')}
                     <input
