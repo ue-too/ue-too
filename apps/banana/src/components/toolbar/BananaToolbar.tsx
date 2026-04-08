@@ -6,6 +6,8 @@ import {
 import {
     Bug,
     Building2,
+    ChevronDown,
+    ChevronUp,
     Clock,
     FilePlus,
     FolderOpen,
@@ -201,6 +203,50 @@ export function BananaToolbar({
     buildingElevationRef.current = buildingElevation;
     const buildingHeightRef = useRef(buildingHeight);
     buildingHeightRef.current = buildingHeight;
+
+    // Scroll overflow indicators
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
+
+    const updateScrollIndicators = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const threshold = 2;
+        setCanScrollUp(el.scrollTop > threshold);
+        setCanScrollDown(
+            el.scrollTop + el.clientHeight < el.scrollHeight - threshold
+        );
+    }, []);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        updateScrollIndicators();
+        el.addEventListener('scroll', updateScrollIndicators, {
+            passive: true,
+        });
+        const ro = new ResizeObserver(updateScrollIndicators);
+        ro.observe(el);
+
+        // Watch for children being added/removed so we re-check overflow
+        const mo = new MutationObserver(() => {
+            // Re-observe new children and recheck
+            ro.disconnect();
+            ro.observe(el);
+            for (const child of el.children) {
+                ro.observe(child);
+            }
+            updateScrollIndicators();
+        });
+        mo.observe(el, { childList: true, subtree: true });
+
+        return () => {
+            el.removeEventListener('scroll', updateScrollIndicators);
+            ro.disconnect();
+            mo.disconnect();
+        };
+    }, [updateScrollIndicators]);
 
     // Sync render settings to PIXI systems
     useRenderSync(app);
@@ -610,10 +656,23 @@ export function BananaToolbar({
         <TooltipProvider delayDuration={200}>
             <div
                 className={cn(
-                    'scrollbar-hide pointer-events-auto absolute top-1/2 flex max-h-[calc(100dvh-2rem)] -translate-y-1/2 flex-col items-center gap-3 overflow-y-auto overflow-x-visible',
+                    'pointer-events-auto absolute top-1/2 -translate-y-1/2 flex-col items-center gap-2',
                     TOOLBAR_LEFT
                 )}
             >
+                {/* Top scroll arrow – always takes space, invisible when not needed */}
+                <div
+                    className={cn(
+                        'bg-background/80 mb-2 flex justify-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
+                        canScrollUp ? 'text-foreground' : 'invisible'
+                    )}
+                >
+                    <ChevronUp className="h-4 w-4" />
+                </div>
+                <div
+                    ref={scrollRef}
+                    className="scrollbar-hide flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-3 overflow-y-auto overflow-x-clip rounded-xl"
+                >
                 {/* Main icon toolbar */}
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     <ToolbarButton
@@ -850,6 +909,16 @@ export function BananaToolbar({
                     whiteOcclusion={whiteOcclusion}
                     onWhiteOcclusionChange={rs.getState().setWhiteOcclusion}
                 />
+                </div>
+                {/* Bottom scroll arrow – always takes space, invisible when not needed */}
+                <div
+                    className={cn(
+                        'bg-background/80 mt-2 flex justify-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
+                        canScrollDown ? 'text-foreground' : 'invisible'
+                    )}
+                >
+                    <ChevronDown className="h-4 w-4" />
+                </div>
             </div>
 
             {mode === 'train-placement' && (
