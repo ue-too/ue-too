@@ -35,6 +35,12 @@ const result = await Bun.build({
     sourcemap: 'external',
     // minify: true,
     external: external,
+    // Force production JSX transform (react/jsx-runtime with jsx/jsxs) regardless
+    // of NODE_ENV. Without this, Bun.build() defaults to dev JSX
+    // (react/jsx-dev-runtime with jsxDEV) when NODE_ENV is unset.
+    define: {
+        'process.env.NODE_ENV': '"production"',
+    },
 });
 
 if (!result.success) {
