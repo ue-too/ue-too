@@ -1,9 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
 import { BulldozerIcon } from '@/assets/icons';
-import { TOOLBAR_LEFT } from '@/components/toolbar/types';
-import { cn } from '@/lib/utils';
-
 import { ToolbarButton } from './ToolbarButton';
 
 type LayoutDeletionToolbarProps = {
@@ -17,12 +14,8 @@ export function LayoutDeletionToolbar({
 }: LayoutDeletionToolbarProps) {
     const { t } = useTranslation();
     return (
-        <div
-            className={cn(
-                'pointer-events-auto absolute bottom-3',
-                TOOLBAR_LEFT
-            )}
-        >
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 -translate-x-1/2">
+
             <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                 <ToolbarButton
                     tooltip={
