@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, Layers, Link2, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from '@/assets/icons';
+import { ArrowDown, ArrowUp, ArrowLeftRight, ChevronDown, ChevronUp, FlipVertical2, Layers, Link2, Merge, Pencil, Plus, Scissors, Trash2, TrainFront } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -163,6 +163,20 @@ export function FormationEditor({
         [formationManager]
     );
 
+    const handleReverseNestedChildren = useCallback(
+        (formationId: string, childIndex: number) => {
+            formationManager.reverseNestedChildren(formationId, childIndex);
+        },
+        [formationManager]
+    );
+
+    const handleFlipChildDirection = useCallback(
+        (formationId: string, childIndex: number) => {
+            formationManager.flipChildDirection(formationId, childIndex);
+        },
+        [formationManager]
+    );
+
     const handleRenameFormation = useCallback(
         (formationId: string, name: string) => {
             formationManager.renameFormation(formationId, name);
@@ -304,6 +318,12 @@ export function FormationEditor({
                                 onSwapChildren={index =>
                                     handleSwapChildren(id, index)
                                 }
+                                onReverseNestedChildren={childIndex =>
+                                    handleReverseNestedChildren(id, childIndex)
+                                }
+                                onFlipChildDirection={childIndex =>
+                                    handleFlipChildDirection(id, childIndex)
+                                }
                                 otherFormations={unplacedFormations
                                     .filter(f => f.id !== id)
                                     .map(f => ({ id: f.id, formation: f.formation }))}
@@ -350,6 +370,10 @@ type FormationCardProps = {
     onReverseChildren?: () => void;
     /** Swap child at index with child at index+1. */
     onSwapChildren?: (index: number) => void;
+    /** Reverse the children order of a nested formation at the given child index. */
+    onReverseNestedChildren?: (childIndex: number) => void;
+    /** Flip the direction of any child (car or nested formation) at the given index. */
+    onFlipChildDirection?: (childIndex: number) => void;
     /** Other depot formations available to nest into this one. */
     otherFormations?: readonly { id: string; formation: Formation }[];
     /** Append another formation as a nested child. */
@@ -378,6 +402,8 @@ function FormationCard({
     onConsolidate,
     onReverseChildren,
     onSwapChildren,
+    onReverseNestedChildren,
+    onFlipChildDirection,
     otherFormations,
     onAppendFormation,
     onPrependFormation,
@@ -580,6 +606,30 @@ function FormationCard({
                                         </div>
                                         {!readOnly && (
                                             <div className="flex items-center gap-0.5">
+                                                {isNested && onReverseNestedChildren && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        onClick={() =>
+                                                            onReverseNestedChildren(index)
+                                                        }
+                                                        title={t('reverseNestedTooltip')}
+                                                    >
+                                                        <ArrowLeftRight className="size-2.5" />
+                                                    </Button>
+                                                )}
+                                                {onFlipChildDirection && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-xs"
+                                                        onClick={() =>
+                                                            onFlipChildDirection(index)
+                                                        }
+                                                        title={t('flipChildDirectionTooltip')}
+                                                    >
+                                                        <FlipVertical2 className="size-2.5" />
+                                                    </Button>
+                                                )}
                                                 {onSwapChildren && (
                                                     <>
                                                         <Button

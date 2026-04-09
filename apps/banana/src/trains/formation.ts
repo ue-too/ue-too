@@ -188,6 +188,14 @@ export class Formation implements TrainUnit {
         this._invalidateCache();
     }
 
+    /** Flip the direction of each direct child without changing their order. */
+    flipChildrenDirection(): void {
+        for (const child of this._children) {
+            child.switchDirection();
+        }
+        this._invalidateCache();
+    }
+
     /** Reverse the order of direct children in both operational and original lists. */
     reverseChildren(): void {
         this._children.reverse();
@@ -430,6 +438,11 @@ export class Formation implements TrainUnit {
             new Car(generateCarId(), [20], 2.5, 2.5),
             new Car(generateCarId(), [20], 2.5, 2.5),
         ]);
+    }
+
+    /** Invalidate cached values. Called when a child is mutated externally. */
+    invalidateCache(): void {
+        this._invalidateCache();
     }
 
     private _invalidateCache(): void {
