@@ -22,7 +22,7 @@ import { BuildingManager, BuildingRenderSystem } from '@/buildings';
 import { createKmtInputStateMachineExpansion, KmtExpandedStateMachine } from '@/trains/input-state-machine/kmt-state-machine-extension';
 import { CarImageRegistry } from '@/trains/car-image-registry';
 import { TimeManager } from '@/time';
-import { ScheduleClock, DayOfWeek, TimetableManager } from '@/timetable';
+import { ScheduleClock, TimetableManager } from '@/timetable';
 import { BlockSignalManager, SignalStateEngine, SignalRenderSystem } from '@/signals';
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
@@ -520,8 +520,7 @@ export const initApp = async (
   // Share the proximity detector with the train manager for coupling queries
   trainManager.setProximityDetector(trainRenderSystem.proximityDetector);
 
-  // Timetable: schedule clock starts at Monday 06:00
-  const scheduleClock = new ScheduleClock(DayOfWeek.Monday, { hours: 6, minutes: 0, seconds: 0 });
+  const scheduleClock = new ScheduleClock();
   // Mutable ref so that the TimeManager callback always uses the current
   // timetable manager, even after deserialization replaces it.
   const timetableRef: { current: TimetableManager } = { current: null! };

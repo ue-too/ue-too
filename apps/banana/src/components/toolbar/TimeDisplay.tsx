@@ -6,9 +6,6 @@ import { DayOfWeek } from '@/timetable/types';
 
 const SPEED_STEPS = [1, 2, 5, 10, 50, 100];
 
-/** Base Monday date for the virtual calendar. */
-const BASE_MONDAY = Date.UTC(2026, 2, 16); // 2026-03-16 is a Monday
-
 const DAY_NAMES: Record<DayOfWeek, string> = {
     [DayOfWeek.Monday]: 'Mon',
     [DayOfWeek.Tuesday]: 'Tue',
@@ -19,18 +16,15 @@ const DAY_NAMES: Record<DayOfWeek, string> = {
     [DayOfWeek.Sunday]: 'Sun',
 };
 
-/** Format elapsed ms into the virtual schedule clock time with date. */
+/** Format epoch ms into the virtual schedule clock time with date. */
 function formatScheduleTime(
-    elapsedMs: number,
+    epochMs: number,
     toVirtualDateTime: (ms: number) => { day: DayOfWeek; time: { hours: number; minutes: number; seconds: number } },
-    epochOffsetMs: number,
 ): string {
-    const vdt = toVirtualDateTime(elapsedMs);
+    const vdt = toVirtualDateTime(epochMs);
     const day = DAY_NAMES[vdt.day] ?? '???';
 
-    // Compute a calendar date by adding elapsed + epoch offset to the base Monday
-    const totalMs = epochOffsetMs + elapsedMs;
-    const date = new Date(BASE_MONDAY + totalMs);
+    const date = new Date(epochMs);
     const y = date.getUTCFullYear();
     const mo = String(date.getUTCMonth() + 1).padStart(2, '0');
     const d = String(date.getUTCDate()).padStart(2, '0');
@@ -100,7 +94,7 @@ export function TimeDisplay() {
                 <ChevronLeft size={14} />
             </button>
             <span className="text-muted-foreground bg-background/60 rounded px-2 py-1 text-xs font-mono backdrop-blur-sm">
-                {app ? formatScheduleTime(time, (ms) => app.scheduleClock.toVirtualDateTime(ms), app.scheduleClock.epochOffsetMs) : '--'} <span className="text-[10px]">x{speed}</span>
+                {app ? formatScheduleTime(time, (ms) => app.scheduleClock.toVirtualDateTime(ms)) : '--'} <span className="text-[10px]">x{speed}</span>
             </span>
             <button
                 onClick={faster}

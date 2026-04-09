@@ -3,7 +3,7 @@ import { Application } from "pixi.js";
 
 class TimeManager {
 
-    private _currentTime: number = 0; // the current time in milliseconds
+    private _currentTime: number = Date.now(); // the current time in epoch milliseconds
     private _syncTimeObservable: Observable<[number, number]> = new SynchronousObservable<[number, number]>();
     private _pauseObservable: Observable<[boolean]> = new SynchronousObservable<[boolean]>();
     private _speedObservable: Observable<[number]> = new SynchronousObservable<[number]>();
@@ -43,6 +43,14 @@ class TimeManager {
             this.update(time.deltaMS);
         };
         pixixApp.ticker.add(this._tickerCallback);
+    }
+
+    get currentTime(): number {
+        return this._currentTime;
+    }
+
+    setCurrentTime(ms: number): void {
+        this._currentTime = ms;
     }
 
     get paused(): boolean {

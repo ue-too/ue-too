@@ -23,6 +23,7 @@ export type SerializedSceneData = {
   terrain?: SerializedTerrainData;
   timetable?: SerializedTimetableData;
   signals?: SerializedSignalData;
+  time?: number;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
@@ -33,6 +34,7 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
     terrain: app.terrainData.serialize(),
     timetable: app.timetableManager.serialize(),
     signals: app.blockSignalManager.serialize(),
+    time: app.timeManager.currentTime,
   };
 }
 
@@ -78,6 +80,11 @@ export async function deserializeSceneData(
     // so the TimeManager callback uses the new instance.
     (app as { timetableManager: TimetableManager }).timetableManager = restored;
     app.timetableRef.current = restored;
+  }
+
+  // Restore simulation time if present
+  if (data.time !== undefined) {
+    app.timeManager.setCurrentTime(data.time);
   }
 
   // Load signal data if present

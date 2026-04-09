@@ -98,13 +98,21 @@ describe('TimeManager', () => {
     });
 
     it('accumulates current time across multiple ticks', () => {
+      let firstTime = 0;
       let lastTime = 0;
-      tm.subscribe((currentTime) => { lastTime = currentTime; });
+      let callCount = 0;
+      tm.subscribe((currentTime) => {
+        if (callCount === 0) firstTime = currentTime;
+        lastTime = currentTime;
+        callCount++;
+      });
 
       mock.tick(10);
+      const afterFirst = lastTime;
       mock.tick(20);
 
-      expect(lastTime).toBeCloseTo(30, 5);
+      // The delta between first tick end and final should be ~20
+      expect(lastTime - afterFirst).toBeCloseTo(20, 5);
     });
 
     it('does not notify when paused', () => {
@@ -118,16 +126,18 @@ describe('TimeManager', () => {
     });
 
     it('resumes correctly after pause', () => {
-      let lastTime = 0;
-      tm.subscribe((t) => { lastTime = t; });
+      const deltas: number[] = [];
+      tm.subscribe((_, d) => deltas.push(d));
 
       mock.tick(10);
       tm.pause();
-      mock.tick(100);
+      mock.tick(100); // should be ignored
       tm.resume();
       mock.tick(5);
 
-      expect(lastTime).toBeCloseTo(15, 5);
+      // Total accumulated delta should be 15 (10 + 5, skipping 100 while paused)
+      const total = deltas.reduce((s, d) => s + d, 0);
+      expect(total).toBeCloseTo(15, 5);
     });
   });
 
@@ -201,24 +211,26 @@ describe('TimeManager', () => {
       expect(total).toBeCloseTo(200, 5);
     });
 
-    it('produces consistent accumulated time regardless of step size', () => {
+    it('produces consistent accumulated delta regardless of step size', () => {
       // Run 1: one large 100ms tick
       const mock1 = makeMockApp();
       const tm1 = new TimeManager(mock1.app);
-      let time1 = 0;
-      tm1.subscribe((t) => { time1 = t; });
+      const deltas1: number[] = [];
+      tm1.subscribe((_, d) => deltas1.push(d));
       mock1.tick(100);
 
       // Run 2: many small 1ms ticks totalling 100ms
       const mock2 = makeMockApp();
       const tm2 = new TimeManager(mock2.app);
-      let time2 = 0;
-      tm2.subscribe((t) => { time2 = t; });
+      const deltas2: number[] = [];
+      tm2.subscribe((_, d) => deltas2.push(d));
       for (let i = 0; i < 100; i++) {
         mock2.tick(1);
       }
 
-      expect(time1).toBeCloseTo(time2, 3);
+      const total1 = deltas1.reduce((s, d) => s + d, 0);
+      const total2 = deltas2.reduce((s, d) => s + d, 0);
+      expect(total1).toBeCloseTo(total2, 3);
 
       tm1.dispose();
       tm2.dispose();
@@ -242,6 +254,112 @@ describe('TimeManager', () => {
       // ticker.lastTime should have been reset to approximately now
       expect(mock.ticker.lastTime).toBeGreaterThanOrEqual(before);
       expect(mock.ticker.lastTime).toBeLessThanOrEqual(after);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // setCurrentTime
+  // -----------------------------------------------------------------------
+
+  describe('setCurrentTime', () => {
+    it('overrides the current time', () => {
+      const target = Date.UTC(2026, 3, 9, 12, 0, 0);
+      tm.setCurrentTime(target);
+
+      let reported = 0;
+      tm.subscribe((t) => { reported = t; });
+      mock.tick(10);
+
+      expect(reported).toBeCloseTo(target + 10, 5);
+    });
+
+    it('is readable via currentTime getter', () => {
+      const target = 123456789;
+      tm.setCurrentTime(target);
+      expect(tm.currentTime).toBe(target);
+    });
+
+    it('subsequent ticks accumulate from the restored time', () => {
+      const saved = Date.UTC(2025, 0, 6, 8, 0, 0); // Monday 08:00 UTC
+      tm.setCurrentTime(saved);
+
+      const times: number[] = [];
+      tm.subscribe((t) => { times.push(t); });
+
+      mock.tick(100);
+      mock.tick(200);
+
+      const totalDelta = times[times.length - 1] - saved;
+      expect(totalDelta).toBeCloseTo(300, 5);
+    });
+
+    it('respects speed after time restoration', () => {
+      const saved = Date.UTC(2025, 5, 1, 12, 0, 0);
+      tm.setCurrentTime(saved);
+      tm.setSpeed(5);
+
+      const deltas: number[] = [];
+      tm.subscribe((_, d) => deltas.push(d));
+      mock.tick(20);
+
+      const total = deltas.reduce((s, d) => s + d, 0);
+      expect(total).toBeCloseTo(100, 5); // 20 * 5
+    });
+
+    it('respects pause after time restoration', () => {
+      const saved = Date.UTC(2025, 5, 1, 12, 0, 0);
+      tm.setCurrentTime(saved);
+      tm.pause();
+
+      const deltas: number[] = [];
+      tm.subscribe((_, d) => deltas.push(d));
+      mock.tick(100);
+
+      expect(deltas).toHaveLength(0);
+      expect(tm.currentTime).toBe(saved);
+    });
+
+    it('schedule clock produces correct day/time from restored time', () => {
+      // Import ScheduleClock here to test integration
+      const { ScheduleClock } = require('../src/timetable/schedule-clock');
+      const clock = new ScheduleClock();
+
+      // Monday 08:30:00 UTC — 2025-01-06 is a Monday
+      const saved = Date.UTC(2025, 0, 6, 8, 30, 0);
+      tm.setCurrentTime(saved);
+
+      const vdt = clock.toVirtualDateTime(tm.currentTime);
+      expect(vdt.day).toBe(0); // DayOfWeek.Monday
+      expect(vdt.time.hours).toBe(8);
+      expect(vdt.time.minutes).toBe(30);
+      expect(vdt.time.seconds).toBe(0);
+    });
+
+    it('schedule clock advances correctly after restoration and ticks', () => {
+      const { ScheduleClock } = require('../src/timetable/schedule-clock');
+      const clock = new ScheduleClock();
+
+      // Wednesday 14:00:00 UTC — 2025-01-08 is a Wednesday
+      const saved = Date.UTC(2025, 0, 8, 14, 0, 0);
+      tm.setCurrentTime(saved);
+
+      // Tick forward 2 hours worth of deltas
+      let lastTime = 0;
+      tm.subscribe((t) => { lastTime = t; });
+      const twoHoursMs = 2 * 3_600_000;
+      const steps = 100;
+      for (let i = 0; i < steps; i++) {
+        mock.tick(twoHoursMs / steps);
+      }
+
+      // Verify the total accumulated time is ~2 hours past saved
+      expect(lastTime - saved).toBeCloseTo(twoHoursMs, -2); // within 100ms
+
+      const vdt = clock.toVirtualDateTime(lastTime);
+      expect(vdt.day).toBe(2); // DayOfWeek.Wednesday
+      // Hours should be 16 (14 + 2), allow for minor sub-step rounding
+      expect(vdt.time.hours).toBeGreaterThanOrEqual(15);
+      expect(vdt.time.hours).toBeLessThanOrEqual(16);
     });
   });
 
