@@ -3,6 +3,10 @@ import { TrainUnit, generateFormationId } from './cars';
 import { Formation } from './formation';
 import { CarStockManager } from './car-stock-manager';
 
+function isFormation(unit: TrainUnit): unit is Formation {
+    return unit.depth > 0;
+}
+
 export type FormationEntry = { id: string; formation: Formation };
 
 type FormationChangeType = 'add' | 'remove' | 'update';
@@ -212,6 +216,57 @@ export class FormationManager {
             throw new Error(`Formation ${formationId} not found`);
         }
         formation.reverseChildren();
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Reverse the children order of a nested formation at the given child index.
+     */
+    reverseNestedChildren(formationId: string, childIndex: number): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        const child = formation.originalChildren[childIndex];
+        if (child === undefined) {
+            throw new Error(
+                `Child index ${childIndex} out of bounds for formation ${formationId}`
+            );
+        }
+        if (!isFormation(child)) {
+            throw new Error(
+                `Child at index ${childIndex} is not a nested formation`
+            );
+        }
+        child.reverseChildren();
+        formation.invalidateCache();
+        this._observable.notify(formationId, { type: 'update' });
+        this._notify();
+    }
+
+    /**
+     * Flip the direction of a child at the given index.
+     * For a Car: flips its head/tail orientation.
+     * For a nested Formation: flips each of its children's direction without reordering.
+     */
+    flipChildDirection(formationId: string, childIndex: number): void {
+        const formation = this._formations.get(formationId);
+        if (formation === undefined) {
+            throw new Error(`Formation ${formationId} not found`);
+        }
+        const child = formation.originalChildren[childIndex];
+        if (child === undefined) {
+            throw new Error(
+                `Child index ${childIndex} out of bounds for formation ${formationId}`
+            );
+        }
+        if (isFormation(child)) {
+            child.flipChildrenDirection();
+        } else {
+            child.switchDirection();
+        }
+        formation.invalidateCache();
         this._observable.notify(formationId, { type: 'update' });
         this._notify();
     }

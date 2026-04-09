@@ -236,6 +236,8 @@ const en = {
         consolidate: 'Consolidate',
         consolidateTooltip: 'Flatten nested formations into individual cars',
         reverseTooltip: 'Reverse the order of children',
+        reverseNestedTooltip: 'Reverse the order of this formation\'s children',
+        flipChildDirectionTooltip: 'Flip the direction of this child',
         couplable: 'couplable',
         couple: 'Couple',
         coupleWith: 'Couple with Train {{number}}',

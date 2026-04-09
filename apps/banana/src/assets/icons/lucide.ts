@@ -24,6 +24,7 @@ export {
     Eraser,
     Eye,
     FilePlus,
+    FlipVertical2,
     Focus,
     FolderOpen,
     Gauge,
