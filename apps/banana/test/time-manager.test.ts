@@ -278,6 +278,89 @@ describe('TimeManager', () => {
       tm.setCurrentTime(target);
       expect(tm.currentTime).toBe(target);
     });
+
+    it('subsequent ticks accumulate from the restored time', () => {
+      const saved = Date.UTC(2025, 0, 6, 8, 0, 0); // Monday 08:00 UTC
+      tm.setCurrentTime(saved);
+
+      const times: number[] = [];
+      tm.subscribe((t) => { times.push(t); });
+
+      mock.tick(100);
+      mock.tick(200);
+
+      const totalDelta = times[times.length - 1] - saved;
+      expect(totalDelta).toBeCloseTo(300, 5);
+    });
+
+    it('respects speed after time restoration', () => {
+      const saved = Date.UTC(2025, 5, 1, 12, 0, 0);
+      tm.setCurrentTime(saved);
+      tm.setSpeed(5);
+
+      const deltas: number[] = [];
+      tm.subscribe((_, d) => deltas.push(d));
+      mock.tick(20);
+
+      const total = deltas.reduce((s, d) => s + d, 0);
+      expect(total).toBeCloseTo(100, 5); // 20 * 5
+    });
+
+    it('respects pause after time restoration', () => {
+      const saved = Date.UTC(2025, 5, 1, 12, 0, 0);
+      tm.setCurrentTime(saved);
+      tm.pause();
+
+      const deltas: number[] = [];
+      tm.subscribe((_, d) => deltas.push(d));
+      mock.tick(100);
+
+      expect(deltas).toHaveLength(0);
+      expect(tm.currentTime).toBe(saved);
+    });
+
+    it('schedule clock produces correct day/time from restored time', () => {
+      // Import ScheduleClock here to test integration
+      const { ScheduleClock } = require('../src/timetable/schedule-clock');
+      const clock = new ScheduleClock();
+
+      // Monday 08:30:00 UTC — 2025-01-06 is a Monday
+      const saved = Date.UTC(2025, 0, 6, 8, 30, 0);
+      tm.setCurrentTime(saved);
+
+      const vdt = clock.toVirtualDateTime(tm.currentTime);
+      expect(vdt.day).toBe(0); // DayOfWeek.Monday
+      expect(vdt.time.hours).toBe(8);
+      expect(vdt.time.minutes).toBe(30);
+      expect(vdt.time.seconds).toBe(0);
+    });
+
+    it('schedule clock advances correctly after restoration and ticks', () => {
+      const { ScheduleClock } = require('../src/timetable/schedule-clock');
+      const clock = new ScheduleClock();
+
+      // Wednesday 14:00:00 UTC — 2025-01-08 is a Wednesday
+      const saved = Date.UTC(2025, 0, 8, 14, 0, 0);
+      tm.setCurrentTime(saved);
+
+      // Tick forward 2 hours worth of deltas
+      let lastTime = 0;
+      tm.subscribe((t) => { lastTime = t; });
+      const twoHoursMs = 2 * 3_600_000;
+      const steps = 100;
+      for (let i = 0; i < steps; i++) {
+        mock.tick(twoHoursMs / steps);
+      }
+
+      // Verify the total accumulated time is ~2 hours past saved
+      expect(lastTime - saved).toBeCloseTo(twoHoursMs, -2); // within 100ms
+
+      const vdt = clock.toVirtualDateTime(lastTime);
+      expect(vdt.day).toBe(2); // DayOfWeek.Wednesday
+      // Hours should be 16 (14 + 2), allow for minor sub-step rounding
+      expect(vdt.time.hours).toBeGreaterThanOrEqual(15);
+      expect(vdt.time.hours).toBeLessThanOrEqual(16);
+    });
   });
 
   // -----------------------------------------------------------------------

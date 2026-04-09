@@ -53,6 +53,18 @@ describe('validateSerializedSceneData', () => {
             const result = validateSerializedSceneData(data);
             expect(result.valid).toBe(true);
         });
+
+        it('accepts scene with optional time field', () => {
+            const result = validateSerializedSceneData(
+                makeValid({ time: Date.UTC(2026, 3, 9, 12, 0, 0) })
+            );
+            expect(result.valid).toBe(true);
+        });
+
+        it('accepts scene with time field set to 0', () => {
+            const result = validateSerializedSceneData(makeValid({ time: 0 }));
+            expect(result.valid).toBe(true);
+        });
     });
 
     describe('invalid top-level', () => {
