@@ -400,7 +400,10 @@ export class HorseRacingEngine {
                 const speedChange = eff.cruiseSpeed - tangentialVel;
                 const extraTangential = action.extraTangential * eff.forwardAccel;
                 let tangentialAccel = speedChange + extraTangential;
-                if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
+                if (tangentialVel > eff.maxSpeed) {
+                    // Active brake: clamp accel so speed converges to maxSpeed
+                    tangentialAccel = Math.min(tangentialAccel, eff.maxSpeed - tangentialVel);
+                } else if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
                     tangentialAccel = 0;
                 }
                 if (tangentialVel <= 0 && tangentialAccel < 0) {
