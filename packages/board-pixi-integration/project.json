@@ -15,7 +15,7 @@
             ],
             "executor": "nx:run-commands",
             "options": {
-                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external pixi.js --external @ue-too/board --external @ue-too/being --external @ue-too/math",
                 "cwd": "packages/board-pixi-integration"
             }
         },
@@ -28,7 +28,7 @@
             ],
             "executor": "nx:run-commands",
             "options": {
-                "command": "rm -rf dist && bun run ../../scripts/build.ts",
+                "command": "rm -rf dist && bun run ../../scripts/build.ts --external pixi.js --external @ue-too/board --external @ue-too/being --external @ue-too/math",
                 "cwd": "packages/board-pixi-integration"
             }
         },
