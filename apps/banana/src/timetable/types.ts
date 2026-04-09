@@ -222,12 +222,11 @@ export type SerializedShiftAssignment = {
   suspendedAtStopIndex: number | null;
 };
 
-export type SerializedScheduleClock = {
-  startDay: number;
-  startHours: number;
-  startMinutes: number;
-  startSeconds: number;
-};
+/**
+ * Legacy type kept for backward compatibility with saved scenes.
+ * The clock is now stateless — this data is ignored on deserialization.
+ */
+export type SerializedScheduleClock = Record<string, unknown>;
 
 export type SerializedTimetableData = {
   clock: SerializedScheduleClock;

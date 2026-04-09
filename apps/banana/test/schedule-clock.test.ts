@@ -1,41 +1,54 @@
 import { ScheduleClock, MS_PER_SECOND, MS_PER_MINUTE, MS_PER_HOUR, MS_PER_DAY, MS_PER_WEEK } from '../src/timetable/schedule-clock';
 import { DayOfWeek } from '../src/timetable/types';
 
+/**
+ * Helper: build an epoch-ms value for a known UTC day-of-week and time.
+ *
+ * 1970-01-05 is the first Monday after the epoch (epoch 0 = Thursday).
+ */
+function mondayEpoch(dayOffset: DayOfWeek, hours: number, minutes: number, seconds: number): number {
+  // 1970-01-05 00:00:00 UTC is Monday
+  const FIRST_MONDAY = 4 * MS_PER_DAY; // 4 days after epoch 0 (Thu)
+  return FIRST_MONDAY + dayOffset * MS_PER_DAY + hours * MS_PER_HOUR + minutes * MS_PER_MINUTE + seconds * MS_PER_SECOND;
+}
+
 describe('ScheduleClock', () => {
   // -----------------------------------------------------------------------
   // toWeekMs
   // -----------------------------------------------------------------------
 
   describe('toWeekMs', () => {
-    it('returns the epoch offset when elapsed is 0', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 6, minutes: 0, seconds: 0 });
-      expect(clock.toWeekMs(0)).toBe(6 * MS_PER_HOUR);
+    it('returns Monday 06:00 for an epoch timestamp at Monday 06:00 UTC', () => {
+      const clock = new ScheduleClock();
+      const epoch = mondayEpoch(DayOfWeek.Monday, 6, 0, 0);
+      expect(clock.toWeekMs(epoch)).toBe(6 * MS_PER_HOUR);
     });
 
-    it('adds elapsed time to the epoch offset', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 0, minutes: 0, seconds: 0 });
-      expect(clock.toWeekMs(5000)).toBe(5000);
+    it('returns correct weekMs for a Monday 00:00 epoch', () => {
+      const clock = new ScheduleClock();
+      const epoch = mondayEpoch(DayOfWeek.Monday, 0, 0, 0);
+      expect(clock.toWeekMs(epoch)).toBe(0);
     });
 
     it('wraps around at the end of the week', () => {
-      // Start at Sunday 23:59:59
-      const clock = new ScheduleClock(DayOfWeek.Sunday, { hours: 23, minutes: 59, seconds: 59 });
-      // After 2 seconds, should wrap to Monday 00:00:01
-      expect(clock.toWeekMs(2 * MS_PER_SECOND)).toBe(1 * MS_PER_SECOND);
+      const clock = new ScheduleClock();
+      // Sunday 23:59:59 + 2 seconds → Monday 00:00:01
+      const epoch = mondayEpoch(DayOfWeek.Sunday, 23, 59, 59) + 2 * MS_PER_SECOND;
+      expect(clock.toWeekMs(epoch)).toBe(1 * MS_PER_SECOND);
     });
 
     it('handles multiple week wraps', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 0, minutes: 0, seconds: 0 });
-      // 2 full weeks + 1 hour
-      const elapsed = 2 * MS_PER_WEEK + MS_PER_HOUR;
-      expect(clock.toWeekMs(elapsed)).toBe(MS_PER_HOUR);
+      const clock = new ScheduleClock();
+      const epoch = mondayEpoch(DayOfWeek.Monday, 0, 0, 0) + 2 * MS_PER_WEEK + MS_PER_HOUR;
+      expect(clock.toWeekMs(epoch)).toBe(MS_PER_HOUR);
     });
 
-    it('combines day and time correctly for mid-week start', () => {
+    it('computes correctly for mid-week timestamp', () => {
+      const clock = new ScheduleClock();
       // Wednesday 14:30:00
-      const clock = new ScheduleClock(DayOfWeek.Wednesday, { hours: 14, minutes: 30, seconds: 0 });
+      const epoch = mondayEpoch(DayOfWeek.Wednesday, 14, 30, 0);
       const expected = DayOfWeek.Wednesday * MS_PER_DAY + 14 * MS_PER_HOUR + 30 * MS_PER_MINUTE;
-      expect(clock.toWeekMs(0)).toBe(expected);
+      expect(clock.toWeekMs(epoch)).toBe(expected);
     });
   });
 
@@ -44,33 +57,36 @@ describe('ScheduleClock', () => {
   // -----------------------------------------------------------------------
 
   describe('toVirtualDateTime', () => {
-    it('returns the start day/time when elapsed is 0', () => {
-      const clock = new ScheduleClock(DayOfWeek.Tuesday, { hours: 8, minutes: 15, seconds: 30 });
-      const vdt = clock.toVirtualDateTime(0);
+    it('returns the correct day/time for a Tuesday 08:15:30 epoch', () => {
+      const clock = new ScheduleClock();
+      const epoch = mondayEpoch(DayOfWeek.Tuesday, 8, 15, 30);
+      const vdt = clock.toVirtualDateTime(epoch);
       expect(vdt.day).toBe(DayOfWeek.Tuesday);
       expect(vdt.time).toEqual({ hours: 8, minutes: 15, seconds: 30 });
     });
 
     it('advances correctly within the same day', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 10, minutes: 0, seconds: 0 });
-      // 2 hours later
-      const vdt = clock.toVirtualDateTime(2 * MS_PER_HOUR);
+      const clock = new ScheduleClock();
+      const epoch = mondayEpoch(DayOfWeek.Monday, 12, 0, 0);
+      const vdt = clock.toVirtualDateTime(epoch);
       expect(vdt.day).toBe(DayOfWeek.Monday);
       expect(vdt.time.hours).toBe(12);
     });
 
     it('crosses day boundary correctly', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 23, minutes: 0, seconds: 0 });
-      // 2 hours later → Tuesday 01:00
-      const vdt = clock.toVirtualDateTime(2 * MS_PER_HOUR);
+      const clock = new ScheduleClock();
+      // Tuesday 01:00
+      const epoch = mondayEpoch(DayOfWeek.Tuesday, 1, 0, 0);
+      const vdt = clock.toVirtualDateTime(epoch);
       expect(vdt.day).toBe(DayOfWeek.Tuesday);
       expect(vdt.time.hours).toBe(1);
     });
 
     it('wraps from Sunday to Monday', () => {
-      const clock = new ScheduleClock(DayOfWeek.Sunday, { hours: 23, minutes: 0, seconds: 0 });
-      // 2 hours later → Monday 01:00
-      const vdt = clock.toVirtualDateTime(2 * MS_PER_HOUR);
+      const clock = new ScheduleClock();
+      // Monday 01:00 (next week)
+      const epoch = mondayEpoch(DayOfWeek.Monday, 1, 0, 0) + MS_PER_WEEK;
+      const vdt = clock.toVirtualDateTime(epoch);
       expect(vdt.day).toBe(DayOfWeek.Monday);
       expect(vdt.time.hours).toBe(1);
     });
@@ -119,44 +135,20 @@ describe('ScheduleClock', () => {
   });
 
   // -----------------------------------------------------------------------
-  // epochOffsetMs
-  // -----------------------------------------------------------------------
-
-  describe('epochOffsetMs', () => {
-    it('is 0 for Monday 00:00:00', () => {
-      const clock = new ScheduleClock(DayOfWeek.Monday, { hours: 0, minutes: 0, seconds: 0 });
-      expect(clock.epochOffsetMs).toBe(0);
-    });
-
-    it('includes full day+time calculation', () => {
-      const clock = new ScheduleClock(DayOfWeek.Friday, { hours: 18, minutes: 30, seconds: 0 });
-      const expected = DayOfWeek.Friday * MS_PER_DAY + 18 * MS_PER_HOUR + 30 * MS_PER_MINUTE;
-      expect(clock.epochOffsetMs).toBe(expected);
-    });
-  });
-
-  // -----------------------------------------------------------------------
   // Serialization
   // -----------------------------------------------------------------------
 
   describe('serialize / deserialize', () => {
-    it('round-trips correctly', () => {
-      const original = new ScheduleClock(DayOfWeek.Thursday, { hours: 9, minutes: 45, seconds: 10 });
-      const serialized = original.serialize();
-      const restored = ScheduleClock.deserialize(serialized);
-
-      expect(restored.epochOffsetMs).toBe(original.epochOffsetMs);
-      expect(restored.toWeekMs(0)).toBe(original.toWeekMs(0));
-      expect(restored.toWeekMs(123456)).toBe(original.toWeekMs(123456));
+    it('deserialize returns a functional clock regardless of input', () => {
+      const restored = ScheduleClock.deserialize({ startDay: 3, startHours: 9 });
+      const epoch = mondayEpoch(DayOfWeek.Monday, 0, 0, 0);
+      expect(restored.toWeekMs(epoch)).toBe(0);
     });
 
-    it('serialized format has the expected fields', () => {
-      const clock = new ScheduleClock(DayOfWeek.Wednesday, { hours: 14, minutes: 30, seconds: 0 });
+    it('serialize returns an empty object', () => {
+      const clock = new ScheduleClock();
       const s = clock.serialize();
-      expect(s.startDay).toBe(DayOfWeek.Wednesday);
-      expect(s.startHours).toBe(14);
-      expect(s.startMinutes).toBe(30);
-      expect(s.startSeconds).toBe(0);
+      expect(Object.keys(s).length).toBe(0);
     });
   });
 });
