@@ -1,7 +1,7 @@
 {
     "name": "@ue-too/dynamics",
     "type": "module",
-    "version": "0.17.2",
+    "version": "0.17.3",
     "license": "MIT",
     "repository": {
         "type": "git",

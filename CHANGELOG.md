@@ -1,3 +1,14 @@
+## 0.17.3 (2026-04-09)
+
+### 🩹 Fixes
+
+- **board-pixi-integration:** mark pixi.js and workspace deps as external in build ([#383](https://github.com/ue-too/ue-too/pull/383))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- vee @niuee
+
 ## 0.17.2 (2026-04-08)
 
 ### 🩹 Fixes
