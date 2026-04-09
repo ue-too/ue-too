@@ -76,7 +76,11 @@ type GangwayGeometry = {
  * next car and the front edge faces the previous car — opposite of the
  * non-flipped case. We pick the gap-side edge accordingly.
  */
-function getGangwayGeometries(carGeoms: CarGeometry[], cars: readonly Car[]): GangwayGeometry[] {
+function getGangwayGeometries(
+  carGeoms: CarGeometry[],
+  cars: readonly Car[],
+  positions: TrainPosition[],
+): GangwayGeometry[] {
   const out: GangwayGeometry[] = [];
   for (let k = 0; k + 1 < cars.length; k++) {
     // switchDirection already swaps the flags, so no flip conditional needed
@@ -109,17 +113,31 @@ function getGangwayGeometries(carGeoms: CarGeometry[], cars: readonly Car[]): Ga
       gapBy = gB.y;
     }
 
-    const dx = gapBx - gapAx;
-    const dy = gapBy - gapAy;
-    const gangwayLength = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx);
+    const edgeDx = gapBx - gapAx;
+    const edgeDy = gapBy - gapAy;
+    const gangwayLength = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
+
+    // Derive the gangway angle from the two bogies closest to the coupling
+    // gap (bogie 2k+1 of car A and bogie 2k+2 of car B). On curves, the
+    // car-edge endpoints can overshoot each other (each is extended along
+    // its own car's angle), which flips the atan2 result ~180°. The bogie
+    // positions always maintain proper spacing along the track, giving a
+    // stable direction.
+    const tailBogie = positions[2 * k + 1].point;
+    const headBogie = positions[2 * (k + 1)].point;
+    const angle = Math.atan2(
+      headBogie.y - tailBogie.y,
+      headBogie.x - tailBogie.x,
+    );
 
     // Use the bogie closest to the gap for z-order band resolution
     const gapBogieIdx = 2 * k + 1;
 
+    // Centre the gangway in the coupling gap so it stays visually balanced
+    // even when the car-edge endpoints are slightly asymmetric on curves.
     out.push({
-      x: gapAx,
-      y: gapAy,
+      x: (gapAx + gapBx) / 2,
+      y: (gapAy + gapBy) / 2,
       angle,
       length: Math.max(gangwayLength, 0),
       bogiePositionIndex: gapBogieIdx,
@@ -527,7 +545,7 @@ export class TrainRenderSystem {
       }
       const cars = train.cars;
       const carGeoms = getCarGeometries(positions, cars);
-      const geoms = getGangwayGeometries(carGeoms, cars);
+      const geoms = getGangwayGeometries(carGeoms, cars, positions);
       this._syncGangwayPoolForTrain(id, geoms.length, texture);
       const pool = this._gangwayPools.get(id)!;
 
@@ -575,7 +593,7 @@ export class TrainRenderSystem {
     }
     while (pool.length < count) {
       const sprite = new Sprite({ texture });
-      sprite.anchor.set(0, 0.5);
+      sprite.anchor.set(0.5, 0.5);
       pool.push(sprite);
     }
   }
