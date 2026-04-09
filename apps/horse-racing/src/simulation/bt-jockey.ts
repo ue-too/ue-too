@@ -196,27 +196,51 @@ function kick(obs: BTObs, p: JockeyPersonality): ActionOutput {
     return { tangential: 3 + intensity * 4, normal: 0, weight: 0.6 };
 }
 
-function overtakeLine(obs: BTObs, p: JockeyPersonality): ActionOutput | null {
+/**
+ * Full overtake: detect blockage, pull out, pass, cut back.
+ *
+ * Phase 1 — Blocked: slower horse ahead in same lane → steer to side with more room
+ * Phase 2 — Alongside: side-by-side → accelerate past while holding lane offset
+ * Phase 3 — Clear: no blockage → return null (let other behaviors take over)
+ */
+function overtake(obs: BTObs, p: JockeyPersonality): ActionOutput | null {
+    if (p.overtakeAggression < 0.05) return null;
+
+    const trackHalfW = 10.0; // approximate TRACK_HALF_WIDTH
+
+    // Phase 1: detect horse blocking ahead (in front, same lane, slower)
     for (const rel of obs.relatives) {
-        if (Math.abs(rel.tangOff) < 5 && Math.abs(rel.normOff) < 8) {
-            let steer: number;
-            if (obs.displacement > 0) {
-                steer = rel.normOff > 0
-                    ? -3 * p.overtakeAggression
-                    : 2 * p.overtakeAggression;
-            } else {
-                steer = rel.normOff < 0
-                    ? 2 * p.overtakeAggression
-                    : -2 * p.overtakeAggression;
+        if (rel.tangOff > 2 && rel.tangOff < 15 && Math.abs(rel.normOff) < 3 && rel.relTangVel < -0.5) {
+            const roomInside = obs.displacement + trackHalfW;
+            const roomOutside = trackHalfW - obs.displacement;
+            const steer = roomOutside > roomInside
+                ? 2.0 * p.overtakeAggression   // go outside
+                : -2.0 * p.overtakeAggression;  // go inside
+            return {
+                tangential: 2.5 * p.overtakeAggression,
+                normal: clamp(steer, -4, 4),
+                weight: 0.5 * p.overtakeAggression,
+            };
+        }
+    }
+
+    // Phase 2: alongside — accelerate past while holding offset
+    for (const rel of obs.relatives) {
+        if (Math.abs(rel.tangOff) < 5 && Math.abs(rel.normOff) < 6) {
+            let holdSteer = 0;
+            if (Math.abs(rel.normOff) < 2.5) {
+                // Too close laterally — nudge away
+                holdSteer = 1.5 * p.overtakeAggression * (rel.normOff < 0 ? 1 : -1);
             }
             return {
-                tangential: 2 * p.overtakeAggression,
-                normal: clamp(steer, -4, 4),
+                tangential: 3.0 * p.overtakeAggression,
+                normal: clamp(holdSteer, -3, 3),
                 weight: 0.4 * p.overtakeAggression,
             };
         }
     }
-    return null;
+
+    return null; // clear — no overtake needed
 }
 
 // ---------------------------------------------------------------------------
@@ -266,9 +290,9 @@ function buildDefaultTree(): BTNode {
     return selector([
         condition((obs) => obs.staminaRatio < 0.15, emergencyBrake),
         condition((obs) => obs.trackProgress < 0.08, gateBreak),
-        condition((obs) => obs.trackProgress < 0.40, blend([paceControl, corneringLine])),
-        condition((obs) => obs.trackProgress < 0.75, blend([paceControl, drafting, corneringLine])),
-        condition((obs) => obs.trackProgress >= 0.75, blend([kick, overtakeLine, corneringLine])),
+        condition((obs) => obs.trackProgress < 0.40, blend([paceControl, overtake, corneringLine])),
+        condition((obs) => obs.trackProgress < 0.75, blend([paceControl, overtake, drafting, corneringLine])),
+        condition((obs) => obs.trackProgress >= 0.75, blend([kick, overtake, corneringLine])),
         (_obs, _p) => ({ tangential: 0, normal: 0, weight: 1 }),
     ]);
 }
