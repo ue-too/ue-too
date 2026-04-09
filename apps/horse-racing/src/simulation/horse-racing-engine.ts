@@ -394,14 +394,12 @@ export class HorseRacingEngine {
                         ? (tangentialVel * tangentialVel) / frame.turnRadius
                         : 0;
 
-                // Auto-cruise toward cruise speed, fading out when jockey opposes it
+                // Auto-cruise spring: always active, pulls toward cruise speed.
+                // Jockey input stacks on top — at steady state the spring balances
+                // the push, giving vel = cruise + action * fwd_accel.
                 const speedChange = eff.cruiseSpeed - tangentialVel;
                 const extraTangential = action.extraTangential * eff.forwardAccel;
-                const BLEND_THRESHOLD = 1.0;
-                const cruiseWeight = (speedChange * extraTangential < 0)
-                    ? Math.max(0.0, 1.0 - Math.abs(extraTangential) / BLEND_THRESHOLD)
-                    : 1.0;
-                let tangentialAccel = cruiseWeight * speedChange + extraTangential;
+                let tangentialAccel = speedChange + extraTangential;
                 if (tangentialVel >= eff.maxSpeed && tangentialAccel > 0) {
                     tangentialAccel = 0;
                 }

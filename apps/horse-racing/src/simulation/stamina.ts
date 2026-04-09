@@ -8,8 +8,8 @@ import { TRAIT_RANGES } from './horse-attributes';
 /** Stamina drain per unit of extra tangential acceleration per tick. */
 export const STAMINA_DRAIN_RATE = 0.01; // reverted from 0.03
 
-/** Stamina drain per unit of speed above cruise speed per tick. */
-export const OVERDRIVE_DRAIN_RATE = 0.005; // reverted from 0.015
+/** Stamina drain per (speed - cruise)² per tick (quadratic). */
+export const OVERDRIVE_DRAIN_RATE = 0.002;
 
 /** Stamina drain per unit of excess cornering force per tick. */
 export const CORNERING_DRAIN_RATE = 0.002; // was 0.02
@@ -85,9 +85,10 @@ export function updateStamina(
         drain += Math.abs(extraNormal) * LATERAL_STEERING_DRAIN_RATE;
     }
 
-    // Drain from exceeding cruise speed (uses velocity magnitude)
+    // Drain from exceeding cruise speed (quadratic — small pushes cheap, big pushes expensive)
     if (currentSpeed > eff.cruiseSpeed) {
-        drain += (currentSpeed - eff.cruiseSpeed) * OVERDRIVE_DRAIN_RATE;
+        const overdrive = currentSpeed - eff.cruiseSpeed;
+        drain += overdrive * overdrive * OVERDRIVE_DRAIN_RATE;
     }
 
     // Drain from cornering beyond grip threshold (uses tangential velocity)
