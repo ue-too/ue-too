@@ -25,6 +25,16 @@ type PreviewDrawData = {
     };
 }[];
 
+/**
+ * Highlight payload for the duplicate-to-side tool.
+ * `hover` = candidate under the cursor while no source is selected.
+ * `selected` = the currently locked-in source while a preview is shown.
+ */
+export type DuplicateHighlightState = {
+    segmentNumber: number;
+    kind: 'hover' | 'selected';
+} | null;
+
 export class DuplicateToSideEngine implements DuplicateToSideContext {
     private _trackGraph: TrackGraph;
     private _convert2WorldPosition: (position: Point) => Point;
@@ -32,6 +42,7 @@ export class DuplicateToSideEngine implements DuplicateToSideContext {
     private _sourceSegmentNumber: number | null = null;
     private _side: 1 | -1 = 1;
     private _cursorWorldPosition: Point = { x: 0, y: 0 };
+    private _lastHoverSegmentNumber: number | null = null;
 
     private _newPreviewGauge: number = 1.067;
     private _newPreviewBedWidth: number | undefined = undefined;
@@ -39,6 +50,9 @@ export class DuplicateToSideEngine implements DuplicateToSideContext {
     private _previewDrawDataObservable: Observable<
         [PreviewDrawData | undefined]
     > = new SynchronousObservable<[PreviewDrawData | undefined]>();
+
+    private _highlightObservable: Observable<[DuplicateHighlightState]> =
+        new SynchronousObservable<[DuplicateHighlightState]>();
 
     constructor(
         trackGraph: TrackGraph,
@@ -67,8 +81,44 @@ export class DuplicateToSideEngine implements DuplicateToSideContext {
         this._previewDrawDataObservable.subscribe(observer, options);
     }
 
+    onHighlightChange(
+        observer: Observer<[DuplicateHighlightState]>,
+        options?: SubscriptionOptions
+    ) {
+        this._highlightObservable.subscribe(observer, options);
+    }
+
     updateCursor(position: Point): void {
         this._cursorWorldPosition = position;
+        // While a source is locked in, the 'selected' highlight stays put —
+        // don't overwrite it with hover updates.
+        if (this._sourceSegmentNumber !== null) {
+            return;
+        }
+
+        const res = this._trackGraph.project(position);
+        let hoverSegment: number | null = null;
+        if (res.hit) {
+            if (res.hitType === 'curve' || res.hitType === 'edge') {
+                hoverSegment = res.curve;
+            } else if (res.hitType === 'joint') {
+                const joint = this._trackGraph.getJoint(res.jointNumber);
+                const first = joint?.connections.values().next().value;
+                if (first !== undefined) {
+                    hoverSegment = first;
+                }
+            }
+        }
+
+        if (hoverSegment === this._lastHoverSegmentNumber) {
+            return;
+        }
+        this._lastHoverSegmentNumber = hoverSegment;
+        this._highlightObservable.notify(
+            hoverSegment === null
+                ? null
+                : { segmentNumber: hoverSegment, kind: 'hover' }
+        );
     }
 
     selectSource(position: Point): boolean {
@@ -111,6 +161,11 @@ export class DuplicateToSideEngine implements DuplicateToSideContext {
             projectionPoint,
             tangentAtProjection
         );
+        this._lastHoverSegmentNumber = null;
+        this._highlightObservable.notify({
+            segmentNumber,
+            kind: 'selected',
+        });
         this._refreshPreview();
         return true;
     }
@@ -180,7 +235,9 @@ export class DuplicateToSideEngine implements DuplicateToSideContext {
 
     cancelPreview(): void {
         this._sourceSegmentNumber = null;
+        this._lastHoverSegmentNumber = null;
         this._previewDrawDataObservable.notify(undefined);
+        this._highlightObservable.notify(null);
     }
 
     private _refreshPreview(): void {
