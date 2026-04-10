@@ -38,7 +38,11 @@ export function ToolbarButton({
                     onClick={onClick}
                     className={cn(
                         "[&_svg:not([class*='size-'])]:size-5",
-                        destructiveMuted && !active &&
+                        !active &&
+                            !destructive &&
+                            'hover:bg-foreground/15 hover:text-foreground dark:hover:bg-foreground/20',
+                        destructiveMuted &&
+                            !active &&
                             'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
                     )}
                 >

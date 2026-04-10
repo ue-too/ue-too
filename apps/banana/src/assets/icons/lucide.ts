@@ -44,6 +44,7 @@ export {
     Map,
     MapPin,
     Merge,
+    Moon,
     Mountain,
     MousePointer2,
     OctagonXIcon,

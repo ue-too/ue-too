@@ -14,6 +14,13 @@ export type PanelName =
     | 'exportSubmenu'
     | 'autoSaveMenu';
 
+export type ToolbarCategory =
+    | 'drawing'
+    | 'trains'
+    | 'infra'
+    | 'scene'
+    | 'debug';
+
 type PanelState = {
     showDepot: boolean;
     showTrainPanel: boolean;
@@ -40,6 +47,7 @@ const PANEL_KEY_MAP: Record<PanelName, keyof PanelState> = {
 
 type ToolbarUIState = PanelState & {
     mode: AppMode;
+    activeCategory: ToolbarCategory | null;
 };
 
 type ToolbarUIActions = {
@@ -47,6 +55,8 @@ type ToolbarUIActions = {
     togglePanel: (panel: PanelName) => void;
     setPanel: (panel: PanelName, open: boolean) => void;
     closeAllPanels: () => void;
+    setActiveCategory: (category: ToolbarCategory | null) => void;
+    toggleCategory: (category: ToolbarCategory) => void;
 };
 
 export type ToolbarUIStore = ToolbarUIState & ToolbarUIActions;
@@ -65,22 +75,32 @@ const INITIAL_PANEL_STATE: PanelState = {
 
 export const useToolbarUIStore = create<ToolbarUIStore>()(
     devtools(
-        (set) => ({
+        set => ({
             mode: 'idle',
+            activeCategory: null,
             ...INITIAL_PANEL_STATE,
 
-            setMode: (mode) => set({ mode }),
+            setMode: mode => set({ mode }),
 
-            togglePanel: (panel) =>
-                set((state) => {
+            togglePanel: panel =>
+                set(state => {
                     const key = PANEL_KEY_MAP[panel];
                     return { [key]: !state[key] };
                 }),
 
-            setPanel: (panel, open) =>
-                set({ [PANEL_KEY_MAP[panel]]: open }),
+            setPanel: (panel, open) => set({ [PANEL_KEY_MAP[panel]]: open }),
 
             closeAllPanels: () => set(INITIAL_PANEL_STATE),
+
+            setActiveCategory: category => set({ activeCategory: category }),
+
+            toggleCategory: category =>
+                set(state => ({
+                    activeCategory:
+                        state.activeCategory === category ? null : category,
+                    showExportSubmenu: false,
+                    showAutoSaveMenu: false,
+                })),
         }),
         { name: 'banana-toolbar-ui' }
     )

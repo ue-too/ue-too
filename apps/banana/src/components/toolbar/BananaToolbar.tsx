@@ -9,11 +9,11 @@ import { useShallow } from 'zustand/react/shallow';
 
 import {
     Bug,
-    Building2,
     ChevronDown,
     ChevronUp,
     Clock,
     Copy,
+    Download,
     FilePlus,
     FolderOpen,
     Landmark,
@@ -24,15 +24,17 @@ import {
     Save,
     Signal,
     Spline,
+    Timer,
     TrainFront,
     TrainTrack,
-    Trash2,
     Warehouse,
+    X,
 } from '@/assets/icons';
 import type { BuildingPreset } from '@/buildings/types';
 import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
 import { FormationEditor } from '@/components/formation-editor';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useBananaApp } from '@/contexts/pixi';
 import { useAutoSave } from '@/hooks/use-auto-save';
@@ -49,7 +51,10 @@ import type { SerializedStationData } from '@/stations/types';
 import type { StoredCarDefinition } from '@/storage';
 import { useRenderSettingsStore } from '@/stores/render-settings-store';
 import { useSceneStore } from '@/stores/scene-store';
-import { useToolbarUIStore } from '@/stores/toolbar-ui-store';
+import {
+    type ToolbarCategory,
+    useToolbarUIStore,
+} from '@/stores/toolbar-ui-store';
 import {
     TerrainData,
     validateSerializedTerrainData,
@@ -74,6 +79,8 @@ import { trackEvent } from '@/utils/analytics';
 
 import { AutoSaveIntervalSelector } from './AutoSaveIntervalSelector';
 import { BuildingOptionsPanel } from './BuildingOptionsPanel';
+import { CategoryFlyout, type FlyoutCategory } from './CategoryFlyout';
+import { CategoryRail } from './CategoryRail';
 import { DebugPanel } from './DebugPanel';
 import { DepotPanel } from './DepotPanel';
 import { ExportSubmenu } from './ExportSubmenu';
@@ -87,7 +94,6 @@ import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { TimetablePanel } from './TimetablePanel';
-import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TrainPanel } from './TrainPanel';
 import { TOOLBAR_LEFT } from './types';
@@ -136,6 +142,9 @@ export function BananaToolbar({
     );
     const setPanel = useToolbarUIStore(s => s.setPanel);
     const togglePanel = useToolbarUIStore(s => s.togglePanel);
+    const activeCategory = useToolbarUIStore(s => s.activeCategory);
+    const toggleCategory = useToolbarUIStore(s => s.toggleCategory);
+    const setActiveCategory = useToolbarUIStore(s => s.setActiveCategory);
 
     // Render settings store
     const {
@@ -208,6 +217,9 @@ export function BananaToolbar({
     buildingElevationRef.current = buildingElevation;
     const buildingHeightRef = useRef(buildingHeight);
     buildingHeightRef.current = buildingHeight;
+
+    // Shell ref used by CategoryFlyout to detect outside clicks
+    const shellRef = useRef<HTMLDivElement>(null);
 
     // Scroll overflow indicators
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -700,245 +712,198 @@ export function BananaToolbar({
     const placedTrains = trainManager.getPlacedTrains();
     const isLayoutActive = mode === 'layout' || mode === 'layout-deletion';
 
-    return (
-        <TooltipProvider delayDuration={200}>
-            <div
-                className={cn(
-                    'pointer-events-auto absolute top-1/2 -translate-y-1/2 flex-col items-center gap-2',
-                    TOOLBAR_LEFT
-                )}
-            >
-                {/* Top scroll arrow – always takes space, invisible when not needed */}
-                <div
-                    className={cn(
-                        'bg-background/80 mb-2 flex justify-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
-                        canScrollUp ? 'text-foreground' : 'invisible'
-                    )}
-                >
-                    <ChevronUp className="h-4 w-4" />
-                </div>
-                <div
-                    ref={scrollRef}
-                    className="scrollbar-hide flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-3 overflow-x-clip overflow-y-auto rounded-xl"
-                >
-                    {/* Main icon toolbar */}
-                    <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
-                        <ToolbarButton
-                            tooltip={
-                                isLayoutActive
-                                    ? t('endLayout')
-                                    : t('startLayout')
-                            }
-                            active={isLayoutActive}
-                            disabled={mode !== 'idle' && !isLayoutActive}
-                            onClick={handleLayoutToggle}
-                        >
-                            <TrainTrack />
-                        </ToolbarButton>
+    const modeHolderCategory: ToolbarCategory | null =
+        mode === 'layout' ||
+        mode === 'layout-deletion' ||
+        mode === 'station-placement' ||
+        mode === 'duplicate-to-side'
+            ? 'drawing'
+            : mode === 'train-placement'
+              ? 'trains'
+              : null;
 
-                        <Separator />
+    const modeLabelKey: string | null =
+        mode === 'layout'
+            ? 'modeDrawingLayout'
+            : mode === 'layout-deletion'
+              ? 'modeDeletingTrack'
+              : mode === 'train-placement'
+                ? 'modePlacingTrain'
+                : mode === 'station-placement'
+                  ? 'modePlacingStation'
+                  : mode === 'duplicate-to-side'
+                    ? 'modeDuplicatingTrack'
+                    : mode === 'building-placement'
+                      ? 'modePlacingBuilding'
+                      : mode === 'building-deletion'
+                        ? 'modeDeletingBuilding'
+                        : null;
 
-                        <ToolbarButton
-                            tooltip={
-                                mode === 'train-placement'
-                                    ? t('endPlacement')
-                                    : t('placeTrain')
-                            }
-                            active={mode === 'train-placement'}
-                            disabled={
-                                mode !== 'idle' && mode !== 'train-placement'
-                            }
-                            onClick={handleTrainPlacementToggle}
-                        >
-                            <TrainFront />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showTrainPanel
-                                    ? t('closeTrainList')
-                                    : t('trainList')
-                            }
-                            active={showTrainPanel}
-                            disabled={
-                                placedTrains.length === 0 &&
-                                mode !== 'train-placement'
-                            }
-                            onClick={() => {
-                                if (!showTrainPanel)
-                                    trackEvent('open-train-panel');
-                                togglePanel('trainPanel');
-                            }}
-                        >
-                            <List />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showDepot ? t('closeDepot') : t('openDepot')
-                            }
-                            active={showDepot}
-                            onClick={() => {
-                                if (!showDepot) trackEvent('open-depot');
-                                togglePanel('depot');
-                            }}
-                        >
-                            <Warehouse />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showFormationEditor
-                                    ? t('closeFormations')
-                                    : t('editFormations')
-                            }
-                            active={showFormationEditor}
-                            onClick={() => {
-                                if (!showFormationEditor)
-                                    trackEvent('open-formation-editor');
-                                togglePanel('formationEditor');
-                            }}
-                        >
-                            <ListOrdered />
-                        </ToolbarButton>
-
-                        {/* <ToolbarButton
-                        tooltip={
-                            mode === 'building-placement'
-                                ? t('endPlacement')
-                                : t('placeBuilding')
-                        }
-                        active={mode === 'building-placement'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'building-placement'
-                        }
-                        onClick={handleBuildingPlacementToggle}
-                    >
-                        <Building2 />
-                    </ToolbarButton> */}
-                        {/* <ToolbarButton
-                        tooltip={
-                            mode === 'building-deletion'
-                                ? t('endDeletion')
-                                : t('deleteBuilding')
-                        }
-                        active={mode === 'building-deletion'}
-                        destructive={mode === 'building-deletion'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'building-deletion'
-                        }
-                        onClick={handleBuildingDeletionToggle}
-                    >
-                        <Trash2 />
-                    </ToolbarButton> */}
-                        <ToolbarButton
-                            tooltip={
-                                mode === 'station-placement'
-                                    ? t('endStationPlacement')
-                                    : t('placeStation')
-                            }
-                            active={mode === 'station-placement'}
-                            disabled={
-                                mode !== 'idle' && mode !== 'station-placement'
-                            }
-                            onClick={handleStationPlacementToggle}
-                        >
-                            <Warehouse />
-                        </ToolbarButton>
-                        <ToolbarButton
-                            tooltip={
-                                mode === 'duplicate-to-side'
-                                    ? 'Exit duplicate to side'
-                                    : 'Duplicate track to side'
-                            }
-                            active={mode === 'duplicate-to-side'}
-                            disabled={
-                                mode !== 'idle' && mode !== 'duplicate-to-side'
-                            }
-                            onClick={handleDuplicateToSideToggle}
-                        >
-                            <Copy />
-                        </ToolbarButton>
-                        <ToolbarButton
-                            tooltip={
-                                showStationList
-                                    ? t('closeStationList')
-                                    : t('openStationList')
-                            }
-                            active={showStationList}
-                            onClick={() => {
-                                if (!showStationList)
-                                    trackEvent('open-station-list');
-                                togglePanel('stationList');
-                            }}
-                        >
-                            <Landmark />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showTimetable
-                                    ? t('closeTimetable')
-                                    : t('openTimetable')
-                            }
-                            active={showTimetable}
-                            onClick={() => togglePanel('timetable')}
-                        >
-                            <Clock />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showSignalPanel
-                                    ? t('closeSignals')
-                                    : t('openSignals')
-                            }
-                            active={showSignalPanel}
-                            onClick={() => togglePanel('signalPanel')}
-                        >
-                            <Signal />
-                        </ToolbarButton>
-
-                        <Separator />
-
-                        <ToolbarButton
-                            tooltip={
-                                showElevationGradient
-                                    ? t('hideElevationGradient')
-                                    : t('showElevationGradient')
-                            }
-                            active={showElevationGradient}
-                            onClick={() =>
-                                rs
-                                    .getState()
-                                    .setShowElevationGradient(
-                                        !showElevationGradient
-                                    )
-                            }
-                        >
-                            <Layers />
-                        </ToolbarButton>
-
-                        <ToolbarButton
-                            tooltip={
-                                showPreviewCurveArcs
-                                    ? t('hidePreviewCurveArcs')
-                                    : t('showPreviewCurveArcs')
-                            }
-                            active={showPreviewCurveArcs}
-                            onClick={() =>
-                                rs
-                                    .getState()
-                                    .setShowPreviewCurveArcs(
-                                        !showPreviewCurveArcs
-                                    )
-                            }
-                        >
-                            <Spline />
-                        </ToolbarButton>
-
-                        <Separator />
-
+    const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
+        drawing: {
+            title: t('toolbarCategoryDrawing'),
+            rows: [
+                {
+                    kind: 'button',
+                    id: 'draw-layout',
+                    icon: <TrainTrack />,
+                    label: isLayoutActive ? t('endLayout') : t('startLayout'),
+                    active: isLayoutActive,
+                    disabled: mode !== 'idle' && !isLayoutActive,
+                    onClick: handleLayoutToggle,
+                },
+                {
+                    kind: 'button',
+                    id: 'place-station',
+                    icon: <Warehouse />,
+                    label: t('placeStation'),
+                    active: mode === 'station-placement',
+                    disabled: mode !== 'idle' && mode !== 'station-placement',
+                    onClick: handleStationPlacementToggle,
+                },
+                {
+                    kind: 'button',
+                    id: 'duplicate-track',
+                    icon: <Copy />,
+                    label: t('duplicateTrackToSide'),
+                    active: mode === 'duplicate-to-side',
+                    disabled: mode !== 'idle' && mode !== 'duplicate-to-side',
+                    onClick: handleDuplicateToSideToggle,
+                },
+            ],
+        },
+        trains: {
+            title: t('toolbarCategoryTrains'),
+            rows: [
+                {
+                    kind: 'button',
+                    id: 'place-train',
+                    icon: <TrainFront />,
+                    label: t('placeTrain'),
+                    active: mode === 'train-placement',
+                    disabled: mode !== 'idle' && mode !== 'train-placement',
+                    onClick: handleTrainPlacementToggle,
+                },
+                {
+                    kind: 'button',
+                    id: 'train-list',
+                    icon: <List />,
+                    label: t('trainList'),
+                    active: showTrainPanel,
+                    disabled:
+                        placedTrains.length === 0 && mode !== 'train-placement',
+                    onClick: () => {
+                        if (!showTrainPanel) trackEvent('open-train-panel');
+                        togglePanel('trainPanel');
+                    },
+                },
+                {
+                    kind: 'button',
+                    id: 'depot',
+                    icon: <Warehouse />,
+                    label: t('depot'),
+                    active: showDepot,
+                    onClick: () => {
+                        if (!showDepot) trackEvent('open-depot');
+                        togglePanel('depot');
+                    },
+                },
+                {
+                    kind: 'button',
+                    id: 'formations',
+                    icon: <ListOrdered />,
+                    label: t('formations'),
+                    active: showFormationEditor,
+                    onClick: () => {
+                        if (!showFormationEditor)
+                            trackEvent('open-formation-editor');
+                        togglePanel('formationEditor');
+                    },
+                },
+                {
+                    kind: 'button',
+                    id: 'timetable',
+                    icon: <Clock />,
+                    label: t('timetable'),
+                    active: showTimetable,
+                    onClick: () => togglePanel('timetable'),
+                },
+            ],
+        },
+        infra: {
+            title: t('toolbarCategoryInfra'),
+            rows: [
+                {
+                    kind: 'button',
+                    id: 'station-list',
+                    icon: <Landmark />,
+                    label: t('stations'),
+                    active: showStationList,
+                    onClick: () => {
+                        if (!showStationList) trackEvent('open-station-list');
+                        togglePanel('stationList');
+                    },
+                },
+                {
+                    kind: 'button',
+                    id: 'signals',
+                    icon: <Signal />,
+                    label: t('signals'),
+                    active: showSignalPanel,
+                    onClick: () => togglePanel('signalPanel'),
+                },
+                {
+                    kind: 'button',
+                    id: 'elevation-gradient',
+                    icon: <Layers />,
+                    label: t('elevationGradientLabel'),
+                    active: showElevationGradient,
+                    onClick: () =>
+                        rs
+                            .getState()
+                            .setShowElevationGradient(!showElevationGradient),
+                },
+                {
+                    kind: 'button',
+                    id: 'curve-arcs',
+                    icon: <Spline />,
+                    label: t('curveArcsLabel'),
+                    active: showPreviewCurveArcs,
+                    onClick: () =>
+                        rs
+                            .getState()
+                            .setShowPreviewCurveArcs(!showPreviewCurveArcs),
+                },
+            ],
+        },
+        scene: {
+            title: t('toolbarCategoryScene'),
+            rows: [
+                {
+                    kind: 'button',
+                    id: 'saved-scenes',
+                    icon: <FolderOpen />,
+                    label: t('savedScenes'),
+                    onClick: () => showScenePickerAction(),
+                },
+                {
+                    kind: 'button',
+                    id: 'save-scene',
+                    icon: <Save />,
+                    label: t('saveScene'),
+                    onClick: saveNow,
+                },
+                {
+                    kind: 'button',
+                    id: 'new-scene',
+                    icon: <FilePlus />,
+                    label: t('newScene'),
+                    onClick: () => createNewScene(),
+                },
+                {
+                    kind: 'custom',
+                    id: 'export-submenu',
+                    node: (
                         <ExportSubmenu
                             show={showExportSubmenu}
                             onShowChange={open => {
@@ -956,80 +921,164 @@ export function BananaToolbar({
                             onImportCarDefinitionFromLibrary={
                                 handleImportCarDefinitionFromLibrary
                             }
+                            trigger={
+                                <Button
+                                    variant={
+                                        showExportSubmenu ? 'default' : 'ghost'
+                                    }
+                                    size="sm"
+                                    className={cn(
+                                        "h-9 w-full justify-start gap-2.5 px-2.5 text-sm [&_svg:not([class*='size-'])]:size-4",
+                                        !showExportSubmenu &&
+                                            'hover:bg-foreground/15 hover:text-foreground dark:hover:bg-foreground/20'
+                                    )}
+                                >
+                                    <Download />
+                                    <span className="truncate">
+                                        {t('importExport')}
+                                    </span>
+                                </Button>
+                            }
                         />
-
-                        <ToolbarButton
-                            tooltip={t('savedScenes')}
-                            onClick={() => showScenePickerAction()}
-                        >
-                            <FolderOpen />
-                        </ToolbarButton>
-                        <ToolbarButton
-                            tooltip={t('saveScene')}
-                            onClick={saveNow}
-                        >
-                            <Save />
-                        </ToolbarButton>
-                        <ToolbarButton
-                            tooltip={t('newScene')}
-                            onClick={() => createNewScene()}
-                        >
-                            <FilePlus />
-                        </ToolbarButton>
+                    ),
+                },
+                {
+                    kind: 'custom',
+                    id: 'auto-save-menu',
+                    node: (
                         <AutoSaveIntervalSelector
                             show={showAutoSaveMenu}
                             onShowChange={open => {
                                 setPanel('autoSaveMenu', open);
                                 if (open) setPanel('exportSubmenu', false);
                             }}
+                            trigger={
+                                <Button
+                                    variant={
+                                        showAutoSaveMenu ? 'default' : 'ghost'
+                                    }
+                                    size="sm"
+                                    className={cn(
+                                        "h-9 w-full justify-start gap-2.5 px-2.5 text-sm [&_svg:not([class*='size-'])]:size-4",
+                                        !showAutoSaveMenu &&
+                                            'hover:bg-foreground/15 hover:text-foreground dark:hover:bg-foreground/20'
+                                    )}
+                                >
+                                    <Timer />
+                                    <span className="truncate">
+                                        {t('autoSaveInterval')}
+                                    </span>
+                                </Button>
+                            }
+                        />
+                    ),
+                },
+            ],
+        },
+        debug: {
+            title: t('toolbarCategoryDebug'),
+            rows: [
+                ...(onToggleMap
+                    ? [
+                          {
+                              kind: 'button' as const,
+                              id: 'map-toggle',
+                              icon: <Map />,
+                              label: t('mapLabel'),
+                              active: showMap,
+                              onClick: onToggleMap,
+                          },
+                      ]
+                    : []),
+                {
+                    kind: 'button',
+                    id: 'debug-panel',
+                    icon: <Bug />,
+                    label: t('debug'),
+                    active: showDebugPanel,
+                    onClick: () => {
+                        if (!showDebugPanel) trackEvent('open-debug-panel');
+                        togglePanel('debugPanel');
+                    },
+                },
+            ],
+        },
+    };
+
+    return (
+        <TooltipProvider delayDuration={200}>
+            <div
+                ref={shellRef}
+                className={cn(
+                    'pointer-events-auto absolute top-1/2 flex -translate-y-1/2 flex-col items-start gap-2',
+                    TOOLBAR_LEFT
+                )}
+            >
+                {modeLabelKey && (
+                    <button
+                        type="button"
+                        onClick={exitAllModes}
+                        className="bg-background/80 text-destructive hover:bg-destructive hover:border-destructive absolute bottom-full left-1/2 mb-2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap shadow-sm backdrop-blur-sm transition-colors hover:text-white"
+                        title={t('exitMode')}
+                    >
+                        <X className="size-3.5" />
+                        <span>{t(modeLabelKey)}</span>
+                    </button>
+                )}
+                {/* Top scroll arrow – always takes space, invisible when not needed */}
+                <div
+                    className={cn(
+                        'bg-background/80 flex justify-center self-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
+                        canScrollUp ? 'text-foreground' : 'invisible'
+                    )}
+                >
+                    <ChevronUp className="h-4 w-4" />
+                </div>
+                <div className="relative flex items-start">
+                    <div
+                        ref={scrollRef}
+                        className={cn(
+                            'scrollbar-hide flex flex-col items-center gap-3 overflow-x-clip overflow-y-auto rounded-xl',
+                            modeLabelKey
+                                ? 'max-h-[calc(100dvh-9rem)]'
+                                : 'max-h-[calc(100dvh-6rem)]'
+                        )}
+                    >
+                        <CategoryRail
+                            activeCategory={activeCategory}
+                            modeHolderCategory={modeHolderCategory}
+                            onToggleCategory={toggleCategory}
                         />
 
-                        <Separator />
-
-                        {onToggleMap && (
-                            <ToolbarButton
-                                tooltip={showMap ? t('hideMap') : t('showMap')}
-                                active={showMap}
-                                onClick={onToggleMap}
-                            >
-                                <Map />
-                            </ToolbarButton>
-                        )}
-
-                        <ToolbarButton
-                            tooltip={
-                                showDebugPanel
-                                    ? t('closeDebug')
-                                    : t('openDebug')
+                        <SunAngleControl
+                            value={sunAngle}
+                            onChange={rs.getState().setSunAngle}
+                        />
+                        <TerrainControl
+                            visible={terrainFillVisible}
+                            onVisibleChange={
+                                rs.getState().setTerrainFillVisible
                             }
-                            active={showDebugPanel}
-                            onClick={() => {
-                                if (!showDebugPanel)
-                                    trackEvent('open-debug-panel');
-                                togglePanel('debugPanel');
-                            }}
-                        >
-                            <Bug />
-                        </ToolbarButton>
+                            opacity={terrainOpacity}
+                            onOpacityChange={rs.getState().setTerrainOpacity}
+                            whiteOcclusion={whiteOcclusion}
+                            onWhiteOcclusionChange={
+                                rs.getState().setWhiteOcclusion
+                            }
+                        />
                     </div>
 
-                    <SunAngleControl
-                        value={sunAngle}
-                        onChange={rs.getState().setSunAngle}
-                    />
-                    <TerrainControl
-                        visible={terrainFillVisible}
-                        onVisibleChange={rs.getState().setTerrainFillVisible}
-                        opacity={terrainOpacity}
-                        onOpacityChange={rs.getState().setTerrainOpacity}
-                        whiteOcclusion={whiteOcclusion}
-                        onWhiteOcclusionChange={rs.getState().setWhiteOcclusion}
+                    <CategoryFlyout
+                        category={activeCategory}
+                        categories={flyoutCategories}
+                        onClose={() => setActiveCategory(null)}
+                        shellRef={shellRef}
                     />
                 </div>
                 {/* Bottom scroll arrow – always takes space, invisible when not needed */}
                 <div
                     className={cn(
-                        'bg-background/80 mt-2 flex justify-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
+                        'bg-background/80 flex justify-center self-center rounded-full border px-2 py-0.5 shadow-sm backdrop-blur-sm',
                         canScrollDown ? 'text-foreground' : 'invisible'
                     )}
                 >
@@ -1176,7 +1225,8 @@ export function BananaToolbar({
                 />
             )}
 
-            <div className="pointer-events-auto absolute top-3 right-3">
+            <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2">
+                <ThemeToggle />
                 <LanguageSwitcher />
             </div>
 

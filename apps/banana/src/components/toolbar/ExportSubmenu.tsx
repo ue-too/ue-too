@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -33,6 +34,8 @@ type ExportSubmenuProps = {
     onImportTerrain: () => void;
     onImportCarDefinition: () => void;
     onImportCarDefinitionFromLibrary: () => void;
+    /** Custom trigger element — overrides the default icon button. */
+    trigger?: ReactElement;
 };
 
 export function ExportSubmenu({
@@ -47,22 +50,25 @@ export function ExportSubmenu({
     onImportTerrain,
     onImportCarDefinition,
     onImportCarDefinitionFromLibrary,
+    trigger,
 }: ExportSubmenuProps) {
     const { t } = useTranslation();
 
     return (
         <DropdownMenu open={show} onOpenChange={onShowChange}>
             <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon-lg"
-                    className={cn(
-                        "[&_svg:not([class*='size-'])]:size-5",
-                        show && 'bg-accent'
-                    )}
-                >
-                    <Download />
-                </Button>
+                {trigger ?? (
+                    <Button
+                        variant="ghost"
+                        size="icon-lg"
+                        className={cn(
+                            "[&_svg:not([class*='size-'])]:size-5",
+                            show && 'bg-accent'
+                        )}
+                    >
+                        <Download />
+                    </Button>
+                )}
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 side="right"

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ScrollBarDisplay,
     Wrapper,
 } from '@ue-too/board-pixi-react-integration';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { SceneLoadingOverlay } from '@/components/SceneLoadingOverlay';
@@ -15,7 +15,7 @@ import {
     deserializeSceneData,
     validateSerializedSceneData,
 } from '@/scene-serialization';
-import { getSceneStorage, SCENE_DATA_VERSION } from '@/storage';
+import { SCENE_DATA_VERSION, getSceneStorage } from '@/storage';
 import { useSceneStore } from '@/stores/scene-store';
 import { initApp } from '@/utils/init-app';
 
@@ -26,9 +26,9 @@ import './App.css';
  */
 function InAppScenePicker() {
     const app = useBananaApp();
-    const setActiveScene = useSceneStore((s) => s.setActiveScene);
-    const hideScenePicker = useSceneStore((s) => s.hideScenePicker);
-    const createNewScene = useSceneStore((s) => s.createNewScene);
+    const setActiveScene = useSceneStore(s => s.setActiveScene);
+    const hideScenePicker = useSceneStore(s => s.hideScenePicker);
+    const createNewScene = useSceneStore(s => s.createNewScene);
 
     const handleSceneSelected = useCallback(
         async (sceneId: string | null) => {
@@ -62,12 +62,12 @@ function InAppScenePicker() {
 }
 
 function SceneGate() {
-    const initialized = useSceneStore((s) => s.initialized);
-    const scenePickerOpen = useSceneStore((s) => s.scenePickerOpen);
-    const setActiveScene = useSceneStore((s) => s.setActiveScene);
-    const setPendingSceneId = useSceneStore((s) => s.setPendingSceneId);
-    const pendingSceneId = useSceneStore((s) => s.pendingSceneId);
-    const initialize = useSceneStore((s) => s.initialize);
+    const initialized = useSceneStore(s => s.initialized);
+    const scenePickerOpen = useSceneStore(s => s.scenePickerOpen);
+    const setActiveScene = useSceneStore(s => s.setActiveScene);
+    const setPendingSceneId = useSceneStore(s => s.setPendingSceneId);
+    const pendingSceneId = useSceneStore(s => s.pendingSceneId);
+    const initialize = useSceneStore(s => s.initialize);
     const mountedRef = useRef(false);
     const [readyToMount, setReadyToMount] = useState(false);
 
@@ -163,9 +163,7 @@ function SceneGate() {
     // Show picker before PIXI mount
     if (scenePickerOpen && !readyToMount) {
         return (
-            <ScenePickerDialog
-                onSceneSelected={handleInitialSceneSelected}
-            />
+            <ScenePickerDialog onSceneSelected={handleInitialSceneSelected} />
         );
     }
 
@@ -174,10 +172,7 @@ function SceneGate() {
     }
 
     return (
-        <Wrapper
-            option={wrapperOption}
-            initFunction={initApp}
-        >
+        <Wrapper option={wrapperOption} initFunction={initApp}>
             {pendingSceneId && <SceneRestorer />}
             <SceneLoadingOverlay />
             <ScrollBarDisplay />

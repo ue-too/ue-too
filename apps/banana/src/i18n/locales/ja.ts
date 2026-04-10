@@ -2,11 +2,29 @@ import { iconHandoff as iconHandoffStringsEn } from './icon-handoff-en';
 
 const ja = {
     translation: {
+        // Toolbar - Category Rail
+        toolbarCategoryDrawing: '作図ツール',
+        toolbarCategoryTrains: '列車管理',
+        toolbarCategoryInfra: 'インフラ & 表示',
+        toolbarCategoryScene: 'シーン & ファイル',
+        toolbarCategoryDebug: 'デバッグ & 表示',
+
         // Toolbar - Layout
         startLayout: 'レイアウト開始',
         endLayout: 'レイアウト終了',
         deleteTrack: '線路を削除',
         endDeletion: '削除終了',
+        duplicateTrackToSide: '線路を側方に複製',
+
+        // Toolbar - Mode Exit Chip
+        exitMode: '終了',
+        modeDrawingLayout: '線路を敷設中',
+        modeDeletingTrack: '線路を削除中',
+        modePlacingTrain: '列車を配置中',
+        modePlacingStation: '駅を配置中',
+        modeDuplicatingTrack: '線路を複製中',
+        modePlacingBuilding: '建物を配置中',
+        modeDeletingBuilding: '建物を削除中',
 
         // Toolbar - Train
         placeTrain: '列車を配置',
@@ -33,6 +51,10 @@ const ja = {
         hideElevationGradient: '標高グラデーションを非表示',
         showPreviewCurveArcs: 'プレビュー曲線弧を表示',
         hidePreviewCurveArcs: 'プレビュー曲線弧を非表示',
+        elevationGradientLabel: '標高グラデーション',
+        curveArcsLabel: '曲線弧',
+        mapLabel: '地図',
+        importExport: 'インポート / エクスポート',
         showMap: '地図を表示',
         hideMap: '地図を非表示',
         openDebug: 'デバッグを開く',

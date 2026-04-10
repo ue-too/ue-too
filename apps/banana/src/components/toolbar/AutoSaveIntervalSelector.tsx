@@ -1,6 +1,7 @@
+import type { ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Timer } from '@/assets/icons';
 
+import { Check, Timer } from '@/assets/icons';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -8,8 +9,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useSceneStore } from '@/stores/scene-store';
 import { cn } from '@/lib/utils';
+import { useSceneStore } from '@/stores/scene-store';
 
 const INTERVAL_OPTIONS = [
     { labelKey: 'autoSave1Min', value: 60_000 },
@@ -21,31 +22,34 @@ const INTERVAL_OPTIONS = [
 type AutoSaveIntervalSelectorProps = {
     show: boolean;
     onShowChange: (show: boolean) => void;
+    /** Custom trigger element — overrides the default icon button. */
+    trigger?: ReactElement;
 };
 
 export function AutoSaveIntervalSelector({
     show,
     onShowChange,
+    trigger,
 }: AutoSaveIntervalSelectorProps) {
     const { t } = useTranslation();
-    const autoSaveIntervalMs = useSceneStore((s) => s.autoSaveIntervalMs);
-    const setAutoSaveIntervalMs = useSceneStore(
-        (s) => s.setAutoSaveIntervalMs
-    );
+    const autoSaveIntervalMs = useSceneStore(s => s.autoSaveIntervalMs);
+    const setAutoSaveIntervalMs = useSceneStore(s => s.setAutoSaveIntervalMs);
 
     return (
         <DropdownMenu open={show} onOpenChange={onShowChange}>
             <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon-lg"
-                    className={cn(
-                        "[&_svg:not([class*='size-'])]:size-5",
-                        show && 'bg-accent'
-                    )}
-                >
-                    <Timer />
-                </Button>
+                {trigger ?? (
+                    <Button
+                        variant="ghost"
+                        size="icon-lg"
+                        className={cn(
+                            "[&_svg:not([class*='size-'])]:size-5",
+                            show && 'bg-accent'
+                        )}
+                    >
+                        <Timer />
+                    </Button>
+                )}
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 side="right"
@@ -53,7 +57,7 @@ export function AutoSaveIntervalSelector({
                 sideOffset={12}
                 className="bg-background/80 backdrop-blur-sm"
             >
-                {INTERVAL_OPTIONS.map((opt) => (
+                {INTERVAL_OPTIONS.map(opt => (
                     <DropdownMenuItem
                         key={opt.value}
                         onClick={() => setAutoSaveIntervalMs(opt.value)}
@@ -61,8 +65,7 @@ export function AutoSaveIntervalSelector({
                         <Check
                             className={cn(
                                 'size-4',
-                                autoSaveIntervalMs !== opt.value &&
-                                    'invisible'
+                                autoSaveIntervalMs !== opt.value && 'invisible'
                             )}
                         />
                         {t(opt.labelKey)}
