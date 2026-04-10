@@ -107,7 +107,9 @@ function SplitFlapText({ text, animate }: { text: string; animate: boolean }) {
 export function LandingPage(): React.ReactNode {
     const { t, i18n } = useTranslation();
     const [reduceMotion, setReduceMotion] = useReduceMotion();
-    const [ctaHover, setCtaHover] = useState(false);
+    const [hoveredCta, setHoveredCta] = useState<
+        'sim' | 'tutorial' | 'editor' | null
+    >(null);
     const [fitScale, setFitScale] = useState(1);
     const measureRef = useRef<HTMLDivElement>(null);
     const isCJK =
@@ -248,8 +250,8 @@ export function LandingPage(): React.ReactNode {
                             <Link
                                 to="/app"
                                 className="mt-7 transition-opacity hover:opacity-75"
-                                onMouseEnter={() => setCtaHover(true)}
-                                onMouseLeave={() => setCtaHover(false)}
+                                onMouseEnter={() => setHoveredCta('sim')}
+                                onMouseLeave={() => setHoveredCta(null)}
                                 onClick={() =>
                                     trackEvent('landing-open-simulator')
                                 }
@@ -259,15 +261,17 @@ export function LandingPage(): React.ReactNode {
                                     height={isCJK ? 36 : 24}
                                     dotSize={isCJK ? 3 : undefined}
                                     scroll={false}
-                                    pulse={!reduceMotion && !ctaHover}
+                                    pulse={
+                                        !reduceMotion && hoveredCta !== 'sim'
+                                    }
                                     usePixelFont
                                 />
                             </Link>
                             <Link
                                 to="/app"
                                 className="mt-7 transition-opacity hover:opacity-75"
-                                onMouseEnter={() => setCtaHover(true)}
-                                onMouseLeave={() => setCtaHover(false)}
+                                onMouseEnter={() => setHoveredCta('tutorial')}
+                                onMouseLeave={() => setHoveredCta(null)}
                                 onClick={() =>
                                     trackEvent('landing-open-tutorial')
                                 }
@@ -277,15 +281,18 @@ export function LandingPage(): React.ReactNode {
                                     height={isCJK ? 36 : 24}
                                     dotSize={isCJK ? 3 : undefined}
                                     scroll={false}
-                                    pulse={!reduceMotion && !ctaHover}
+                                    pulse={
+                                        !reduceMotion &&
+                                        hoveredCta !== 'tutorial'
+                                    }
                                     usePixelFont
                                 />
                             </Link>
                             <Link
                                 to="/train-editor"
                                 className="mt-7 transition-opacity hover:opacity-75"
-                                onMouseEnter={() => setCtaHover(true)}
-                                onMouseLeave={() => setCtaHover(false)}
+                                onMouseEnter={() => setHoveredCta('editor')}
+                                onMouseLeave={() => setHoveredCta(null)}
                                 onClick={() =>
                                     trackEvent('landing-open-car-editor')
                                 }
@@ -295,7 +302,10 @@ export function LandingPage(): React.ReactNode {
                                     height={isCJK ? 36 : 24}
                                     dotSize={isCJK ? 3 : undefined}
                                     scroll={false}
-                                    pulse={!reduceMotion && !ctaHover}
+                                    pulse={
+                                        !reduceMotion &&
+                                        hoveredCta !== 'editor'
+                                    }
                                     usePixelFont
                                 />
                             </Link>
