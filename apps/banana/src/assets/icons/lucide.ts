@@ -19,6 +19,7 @@ export {
     ChevronUp,
     CircleCheckIcon,
     CircleIcon,
+    Copy,
     Crosshair,
     Download,
     Eraser,
