@@ -3,6 +3,7 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
+import { DeletionHighlightState } from '../input-state-machine/curve-engine';
 import { DuplicateHighlightState, DuplicateToSideEngine } from '../input-state-machine/duplicate-to-side-engine';
 import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
 import { LEVEL_HEIGHT } from './constants';
@@ -93,6 +94,9 @@ export class TrackRenderSystem {
 
     /** World-space overlay stroke drawn on the track under the cursor / selected source in duplicate mode. */
     private _duplicateHighlightGraphics: Graphics = new Graphics();
+
+    /** World-space overlay stroke drawn on the track under the cursor in delete mode. */
+    private _deletionHighlightGraphics: Graphics = new Graphics();
 
     private _showPreviewCurveArcs: boolean = false;
     private _latestPreviewDrawDataList:
@@ -211,12 +215,14 @@ export class TrackRenderSystem {
         this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
         curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+        curveCreationEngine.onDeletionHighlightChange(this._onDeletionHighlightChange.bind(this), { signal: this._abortController.signal });
         if (duplicateToSideEngine) {
             duplicateToSideEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
             duplicateToSideEngine.onHighlightChange(this._onDuplicateHighlightChange.bind(this), { signal: this._abortController.signal });
         }
 
         this._topLevelContainer.addChild(this._duplicateHighlightGraphics);
+        this._topLevelContainer.addChild(this._deletionHighlightGraphics);
 
         this._previewStartProjection.visible = false;
         this._previewEndProjection.visible = false;
@@ -1847,6 +1853,27 @@ export class TrackRenderSystem {
         } else {
             g.stroke({ color: 0xffc107, width: 1.0, alpha: 0.95 });
         }
+    }
+
+    private _onDeletionHighlightChange(state: DeletionHighlightState) {
+        const g = this._deletionHighlightGraphics;
+        g.clear();
+        if (state === null) {
+            return;
+        }
+        const curve = this._trackCurveManager.getTrackSegment(state.segmentNumber);
+        if (curve === null) {
+            return;
+        }
+
+        const SAMPLE_COUNT = 32;
+        const first = curve.get(0);
+        g.moveTo(first.x, first.y);
+        for (let i = 1; i <= SAMPLE_COUNT; i++) {
+            const pt = curve.get(i / SAMPLE_COUNT);
+            g.lineTo(pt.x, pt.y);
+        }
+        g.stroke({ color: 0xff3b30, width: 0.9, alpha: 0.85 });
     }
 
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {

@@ -1,4 +1,12 @@
 import { Canvas, convertFromCanvas2ViewPort, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWindow2Canvas, convertFromWorld2Viewport, Observable, ObservableBoardCamera, ObservableInputTracker, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
+
+/**
+ * Highlight payload for the curve deletion tool.
+ * Non-null while the cursor is over a deletable segment.
+ */
+export type DeletionHighlightState = {
+    segmentNumber: number;
+} | null;
 import { BCurve } from '@ue-too/curve';
 import { type Point, directionAlignedToTangent } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
@@ -40,6 +48,8 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     private _lastCurveSuccess: boolean = false;
 
     private _previewCurveForDeletion: number | null = null;
+    private _deletionHighlightObservable: Observable<[DeletionHighlightState]> =
+        new SynchronousObservable<[DeletionHighlightState]>();
 
     public _currentJointElevation: ELEVATION | null = null;
     private _elevationObservable: Observable<[ELEVATION | null]> =
@@ -274,11 +284,21 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
 
     hoverForCurveDeletion(position: Point) {
         const res = this._trackGraph.project(position);
-        if (res.hit && res.hitType === 'curve') {
-            this._previewCurveForDeletion = res.curve;
-        } else {
-            this._previewCurveForDeletion = null;
+        const next = res.hit && res.hitType === 'curve' ? res.curve : null;
+        if (next === this._previewCurveForDeletion) {
+            return;
         }
+        this._previewCurveForDeletion = next;
+        this._deletionHighlightObservable.notify(
+            next === null ? null : { segmentNumber: next }
+        );
+    }
+
+    onDeletionHighlightChange(
+        observer: Observer<[DeletionHighlightState]>,
+        options?: SubscriptionOptions
+    ) {
+        this._deletionHighlightObservable.subscribe(observer, options);
     }
 
     hoverForStartingPoint(position: Point, gauge: number = 1.067) {
@@ -496,6 +516,7 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         console.log('deleteCurrentCurve', this._previewCurveForDeletion);
         this._trackGraph.removeTrackSegment(this._previewCurveForDeletion);
         this._previewCurveForDeletion = null;
+        this._deletionHighlightObservable.notify(null);
     }
 
     private endCurveInternal(): Point | null {
@@ -728,7 +749,11 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     }
 
     cancelCurrentDeletion() {
+        if (this._previewCurveForDeletion === null) {
+            return;
+        }
         this._previewCurveForDeletion = null;
+        this._deletionHighlightObservable.notify(null);
     }
 
     setup() { }
