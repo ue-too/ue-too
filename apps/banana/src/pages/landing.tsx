@@ -281,6 +281,24 @@ export function LandingPage(): React.ReactNode {
                                     usePixelFont
                                 />
                             </Link>
+                            <Link
+                                to="/train-editor"
+                                className="mt-7 transition-opacity hover:opacity-75"
+                                onMouseEnter={() => setCtaHover(true)}
+                                onMouseLeave={() => setCtaHover(false)}
+                                onClick={() =>
+                                    trackEvent('landing-open-car-editor')
+                                }
+                            >
+                                <LedMarquee
+                                    text={t('openCarEditor') + ' →'}
+                                    height={isCJK ? 36 : 24}
+                                    dotSize={isCJK ? 3 : undefined}
+                                    scroll={false}
+                                    pulse={!reduceMotion && !ctaHover}
+                                    usePixelFont
+                                />
+                            </Link>
                         </section>
 
                         <section className="flex flex-col items-center gap-8 px-4 py-6 sm:gap-10 sm:px-6">

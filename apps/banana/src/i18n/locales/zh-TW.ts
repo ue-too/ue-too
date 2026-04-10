@@ -252,6 +252,7 @@ const zhTW = {
         landingTagline2: '軌道、車站、列車、自由組合',
         openSimulator: '開啟模擬器',
         openTutorial: '教學（製作中）',
+        openCarEditor: '開啟車輛編輯器',
         build: '建造',
         simulate: '模擬',
         featureTrackDrawing: '高度自由的佈軌系統',
