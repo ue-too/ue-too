@@ -246,7 +246,7 @@ export function BananaToolbar({
             ro.disconnect();
             mo.disconnect();
         };
-    }, [updateScrollIndicators]);
+    }, [updateScrollIndicators, app]);
 
     // Sync render settings to PIXI systems
     useRenderSync(app);
