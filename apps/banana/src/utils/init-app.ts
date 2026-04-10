@@ -456,6 +456,12 @@ export const initApp = async (
     { renderer: baseComponents.app.renderer },
   );
 
+  const duplicateToSideEngine = new DuplicateToSideEngine(
+    curveEngine.trackGraph,
+    (position) => curveEngine.convert2WorldPosition(position),
+  );
+  const duplicateSubStateMachine = createDuplicateToSideStateMachine(duplicateToSideEngine);
+
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,
     curveEngine.trackGraph.trackCurveManager,
@@ -463,6 +469,7 @@ export const initApp = async (
     baseComponents.camera,
     { renderer: baseComponents.app.renderer },
     terrainData,
+    duplicateToSideEngine,
   );
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);
@@ -511,11 +518,6 @@ export const initApp = async (
     stationRenderSystem,
   );
   const stationStateMachine = new StationPlacementStateMachine(stationPlacementEngine);
-  const duplicateToSideEngine = new DuplicateToSideEngine(
-    curveEngine.trackGraph,
-    (position) => curveEngine.convert2WorldPosition(position),
-  );
-  const duplicateSubStateMachine = createDuplicateToSideStateMachine(duplicateToSideEngine);
   const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
     worldRenderSystem,
     trackGraph,

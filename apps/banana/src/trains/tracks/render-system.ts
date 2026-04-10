@@ -3,6 +3,7 @@ import { TrackCurveManager } from './trackcurve-manager';
 import { BCurve } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
+import { DuplicateToSideEngine } from '../input-state-machine/duplicate-to-side-engine';
 import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
 import { LEVEL_HEIGHT } from './constants';
 import type { TerrainData } from '@/terrain/terrain-data';
@@ -192,6 +193,7 @@ export class TrackRenderSystem {
         camera: ObservableBoardCamera,
         textureRenderer?: TrackTextureRenderer | null,
         terrainData?: TerrainData | null,
+        duplicateToSideEngine?: DuplicateToSideEngine,
     ) {
         this._worldRenderSystem = worldRenderSystem;
         this._terrainData = terrainData ?? null;
@@ -206,6 +208,9 @@ export class TrackRenderSystem {
         this._trackCurveManager.onDelete(this._onDelete.bind(this), { signal: this._abortController.signal });
         this._trackCurveManager.onAdd(this._onNewTrackData.bind(this), { signal: this._abortController.signal });
         curveCreationEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+        if (duplicateToSideEngine) {
+            duplicateToSideEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
+        }
 
         this._previewStartProjection.visible = false;
         this._previewEndProjection.visible = false;
