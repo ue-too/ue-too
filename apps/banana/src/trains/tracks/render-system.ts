@@ -9,6 +9,8 @@ import type { TerrainData } from '@/terrain/terrain-data';
 import { clearShadowCache } from '@/utils';
 import { WorldRenderSystem, findElevationInterval } from '@/world-render-system';
 import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
+import { ballastHalfWidth } from './geometry-utils';
+import { computeTunnelEntranceGeometry } from './tunnel-geometry';
 
 /** Zoom level above which detailed track draw data is shown; below this only the bezier curve is drawn. */
 const ZOOM_THRESHOLD_DETAILED_TRACK = 5;
@@ -39,13 +41,6 @@ const SHADOW_TEX_SIZE = 4;
 
 /** Size of the tiny solid-color textures used for tunnel meshes. */
 const TUNNEL_TEX_SIZE = 4;
-
-/** Compute the ballast/slab half-width for a draw data entry. Always derived from gauge. */
-const ballastHalfWidth = (drawData: TrackSegmentDrawData): number => {
-    const tieOverhang = 4;
-    const tieHw = (drawData.gauge / 2) * ((TRACK_TEX_SIZE + tieOverhang * 2) / TRACK_TEX_SIZE);
-    return tieHw + 0.15;
-};
 
 /** Compute the rail mesh half-width (always derived from gauge — not affected by ballast width). */
 const railHalfWidth = (drawData: TrackSegmentDrawData): number => {
@@ -654,104 +649,14 @@ export class TrackRenderSystem {
 
     /**
      * Shared geometry computation for tunnel entrance walls and cover.
-     *
-     * Only applies to sloped segments (elevation.from !== elevation.to) where
-     * at least one end is below terrain.
-     *
-     * @returns Edge point arrays and metadata, or null when not applicable.
+     * Delegates to the pure helper in `tunnel-geometry.ts`.
      */
-    private _computeTunnelEntranceGeometry(drawData: TrackSegmentDrawData): {
-        leftInner: { x: number; y: number }[];
-        leftOuter: { x: number; y: number }[];
-        rightInner: { x: number; y: number }[];
-        rightOuter: { x: number; y: number }[];
-        coverEnd: 'start' | 'end' | 'both';
-        coverSteps: number;
-        surfaceBandIndex: number;
-    } | null {
-        const { curve, elevation } = drawData;
-        // Only draw on ramped tracks (not flat underground tracks).
-        if (elevation.from === elevation.to) return null;
-
-        // Sample terrain height at both ends of the track segment.
-        const startPoint = curve.getPointbyPercentage(0);
-        const endPoint = curve.getPointbyPercentage(1);
-        const startTerrainH = this._terrainData?.getHeight(startPoint.x, startPoint.y) ?? 0;
-        const endTerrainH = this._terrainData?.getHeight(endPoint.x, endPoint.y) ?? 0;
-
-        // Compute relative elevation (track elevation minus terrain height).
-        const relFrom = elevation.from - startTerrainH;
-        const relTo = elevation.to - endTerrainH;
-
-        // At least one end must be below terrain.
-        if (relFrom >= 0 && relTo >= 0) return null;
-
-        const ballastHw = ballastHalfWidth(drawData);
-        const hw = drawData.bed ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2) : ballastHw;
-        /** Width of each retaining wall strip in world units (meters). */
-        const wallThickness = 0.4;
-        /** How far the walls extend beyond the terrain crossing (meters). */
-        const overshootDistance = 5;
-        const overshootT = curve.fullLength > 0
-            ? Math.min(0.15, overshootDistance / curve.fullLength)
-            : 0;
-
-        let tStart = 0;
-        let tEnd = 1;
-        let coverEnd: 'start' | 'end' | 'both';
-
-        if (relFrom >= 0 && relTo < 0) {
-            // Track goes from above terrain into underground.
-            const crossingT = relFrom / (relFrom - relTo);
-            tStart = Math.max(0, crossingT - overshootT);
-            tEnd = 1;
-            coverEnd = 'end';
-        } else if (relFrom < 0 && relTo >= 0) {
-            // Track goes from underground up to above terrain.
-            const crossingT = relFrom / (relFrom - relTo);
-            tStart = 0;
-            tEnd = Math.min(1, crossingT + overshootT);
-            coverEnd = 'start';
-        } else {
-            // Both ends below terrain (still a ramp).
-            tStart = 0;
-            tEnd = 1;
-            coverEnd = 'both';
-        }
-
-        // Place at the terrain surface elevation band.
-        const surfaceElev = Math.max(startTerrainH, endTerrainH);
-        const surfaceBandIndex = this._worldRenderSystem.getElevationBandIndex(surfaceElev);
-
-        const steps = Math.max(4, Math.ceil(curve.fullLength / 2));
-        const innerOffset = hw + 0.1;
-        const outerOffset = innerOffset + wallThickness;
-
-        const leftInner: { x: number; y: number }[] = [];
-        const leftOuter: { x: number; y: number }[] = [];
-        const rightInner: { x: number; y: number }[] = [];
-        const rightOuter: { x: number; y: number }[] = [];
-
-        for (let i = 0; i <= steps; i++) {
-            const t = tStart + (tEnd - tStart) * (i / steps);
-            const point = curve.getPointbyPercentage(t);
-            const tangent = PointCal.unitVector(curve.derivativeByPercentage(t));
-            const nx = -tangent.y;
-            const ny = tangent.x;
-
-            leftInner.push({ x: point.x - nx * innerOffset, y: point.y - ny * innerOffset });
-            leftOuter.push({ x: point.x - nx * outerOffset, y: point.y - ny * outerOffset });
-            rightInner.push({ x: point.x + nx * innerOffset, y: point.y + ny * innerOffset });
-            rightOuter.push({ x: point.x + nx * outerOffset, y: point.y + ny * outerOffset });
-        }
-
-        /** How far the cover extends along the ramp from the underground end (meters). */
-        const coverLength = 10;
-        const coverSteps = Math.max(1, Math.round(
-            (coverLength / curve.fullLength) * steps / (tEnd - tStart)
-        ));
-
-        return { leftInner, leftOuter, rightInner, rightOuter, coverEnd, coverSteps, surfaceBandIndex };
+    private _computeTunnelEntranceGeometry(drawData: TrackSegmentDrawData) {
+        return computeTunnelEntranceGeometry(
+            drawData,
+            this._terrainData ?? null,
+            (rawElevation) => this._worldRenderSystem.getElevationBandIndex(rawElevation),
+        );
     }
 
     /**
@@ -803,10 +708,9 @@ export class TrackRenderSystem {
             if (mesh) container.addChild(mesh);
         };
 
-        if (coverEnd === 'start' || coverEnd === 'both') {
+        if (coverEnd === 'start') {
             buildCover(0, Math.min(coverSteps, lastIdx));
-        }
-        if (coverEnd === 'end' || coverEnd === 'both') {
+        } else {
             buildCover(Math.max(0, lastIdx - coverSteps), lastIdx);
         }
 
