@@ -9,6 +9,7 @@ import {
     ChevronDown,
     ChevronUp,
     Clock,
+    Copy,
     FilePlus,
     FolderOpen,
     Landmark,
@@ -365,6 +366,17 @@ export function BananaToolbar({
             app.kmtStateMachineExpansion.happens('switchToStation');
             setMode('station-placement');
             trackEvent('start-station-placement');
+        }
+    }, [app, mode, exitAllModes]);
+
+    const handleDuplicateToSideToggle = useCallback(() => {
+        if (!app) return;
+        if (mode === 'duplicate-to-side') {
+            exitAllModes();
+        } else {
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToDuplicate');
+            setMode('duplicate-to-side');
         }
     }, [app, mode, exitAllModes]);
 
@@ -779,6 +791,20 @@ export function BananaToolbar({
                         onClick={handleStationPlacementToggle}
                     >
                         <Warehouse />
+                    </ToolbarButton>
+                    <ToolbarButton
+                        tooltip={
+                            mode === 'duplicate-to-side'
+                                ? 'Exit duplicate to side'
+                                : 'Duplicate track to side'
+                        }
+                        active={mode === 'duplicate-to-side'}
+                        disabled={
+                            mode !== 'idle' && mode !== 'duplicate-to-side'
+                        }
+                        onClick={handleDuplicateToSideToggle}
+                    >
+                        <Copy />
                     </ToolbarButton>
                     <ToolbarButton
                         tooltip={
