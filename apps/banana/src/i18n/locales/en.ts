@@ -255,6 +255,7 @@ const en = {
         landingTagline2: 'tracks, stations, trains, and more.',
         openSimulator: 'Open Simulator',
         openTutorial: 'tutorial (WIP)',
+        openCarEditor: 'Open Car Editor',
         build: 'Build',
         simulate: 'Simulate',
         featureTrackDrawing: 'Bézier Track Drawing provides high flexibility',

@@ -190,6 +190,7 @@ const ja = {
         landingTagline2: '線路、駅、列車、そしてもっと。',
         openSimulator: 'シミュレーターを開く',
         openTutorial: 'チュートリアル（作成中）',
+        openCarEditor: '車両エディターを開く',
         build: '建設',
         simulate: 'シミュレート',
         featureTrackDrawing: 'ベジエ曲線による線路敷設',
