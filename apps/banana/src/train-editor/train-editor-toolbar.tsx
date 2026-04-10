@@ -1,16 +1,19 @@
+import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import {
     Download,
+    FolderOpen,
     GripHorizontal,
     Image,
     MousePointer2,
     Plus,
+    Save,
     Upload,
 } from '@/assets/icons';
-import type { ReactNode } from 'react';
-import { useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { Point } from '@ue-too/math';
-
+import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
+import { SaveCarDefinitionDialog } from '@/components/car-definition-library/SaveCarDefinitionDialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -20,6 +23,14 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import {
+    CAR_DEFINITION_DATA_VERSION,
+    type CarDefinitionData,
+    type StoredCarDefinition,
+    generateCarDefinitionId,
+    getCarDefinitionStorage,
+} from '@/storage';
+
 import { useTrainEditorApp } from './use-train-editor-app';
 
 type TrainEditorMode = 'idle' | 'edit-bogie' | 'add-bogie' | 'edit-image';
@@ -56,23 +67,10 @@ function ToolbarButton({
     );
 }
 
-/**
- * Exported train editor state: car bogie definition + optional reference image.
- */
-type TrainEditorExport = {
-    bogieOffsets: number[];
-    edgeToBogie: number;
-    bogieToEdge: number;
-    bogies: Point[];
-    image?: {
-        src: string;
-        position: Point;
-        width: number;
-        height: number;
-    };
-};
-
-function uploadJson(onJson: (parsed: unknown) => void, onError?: (error: string) => void): void {
+function uploadJson(
+    onJson: (parsed: unknown) => void,
+    onError?: (error: string) => void
+): void {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';
@@ -95,7 +93,9 @@ function uploadJson(onJson: (parsed: unknown) => void, onError?: (error: string)
     input.click();
 }
 
-function uploadImage(onLoad: (src: string, width: number, height: number) => void): void {
+function uploadImage(
+    onLoad: (src: string, width: number, height: number) => void
+): void {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -123,6 +123,13 @@ export function TrainEditorToolbar() {
     const { t } = useTranslation();
     const app = useTrainEditorApp();
     const [mode, setMode] = useState<TrainEditorMode>('idle');
+    const [loadedLibraryEntry, setLoadedLibraryEntry] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
+    const [pendingInitialName, setPendingInitialName] = useState('');
 
     const exitAllModes = useCallback(() => {
         if (!app) return;
@@ -180,19 +187,59 @@ export function TrainEditorToolbar() {
         });
     }, [app, exitAllModes]);
 
-    const handleExport = useCallback(() => {
-        if (!app) return;
+    const buildCarDefinitionData = useCallback((): CarDefinitionData | null => {
+        if (!app) return null;
         const def = app.bogieEditorEngine.exportCarDefinition();
-        if (!def) {
-            alert(t('needAtLeast2Bogies'));
-            return;
-        }
+        if (!def) return null;
         const image = app.imageEditorEngine.getImage();
-        const exportData: TrainEditorExport = {
+        return {
             ...def,
             bogies: [...app.bogieEditorEngine.getBogies()],
             image: image ? { ...image } : undefined,
         };
+    }, [app]);
+
+    const hydrateFromCarDefinition = useCallback(
+        (data: Partial<CarDefinitionData>): boolean => {
+            if (!app) return false;
+            if (!data.bogieOffsets || !Array.isArray(data.bogieOffsets)) {
+                alert(t('invalidFileMissingBogieOffsets'));
+                return false;
+            }
+            const currentBogies = app.bogieEditorEngine.getBogies();
+            for (let i = currentBogies.length - 1; i >= 0; i--) {
+                app.bogieEditorEngine.removeBogie(i);
+            }
+            if (data.bogies && Array.isArray(data.bogies)) {
+                for (const bogie of data.bogies) {
+                    app.bogieEditorEngine.addBogie(bogie);
+                }
+            }
+            if (data.image) {
+                app.imageEditorEngine.setImage(
+                    data.image.src,
+                    data.image.width,
+                    data.image.height
+                );
+                const img = app.imageEditorEngine.getImage();
+                if (img) {
+                    img.position = { ...data.image.position };
+                    img.width = data.image.width;
+                    img.height = data.image.height;
+                }
+                app.imageEditorEngine.notifyChange();
+            }
+            return true;
+        },
+        [app, t]
+    );
+
+    const handleExport = useCallback(() => {
+        const exportData = buildCarDefinitionData();
+        if (!exportData) {
+            alert(t('needAtLeast2Bogies'));
+            return;
+        }
         const json = JSON.stringify(exportData, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -203,42 +250,83 @@ export function TrainEditorToolbar() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-    }, [app]);
+    }, [buildCarDefinitionData, t]);
 
     const handleImport = useCallback(() => {
         if (!app) return;
-        uploadJson(parsed => {
-            const data = parsed as Partial<TrainEditorExport>;
-            if (!data.bogieOffsets || !Array.isArray(data.bogieOffsets)) {
-                alert(t('invalidFileMissingBogieOffsets'));
+        uploadJson(
+            parsed => {
+                const data = parsed as Partial<CarDefinitionData>;
+                if (hydrateFromCarDefinition(data)) {
+                    // File-imported entries are not tracked as a library slot.
+                    setLoadedLibraryEntry(null);
+                }
+            },
+            error => alert(t('failedToParseJson', { error }))
+        );
+    }, [app, hydrateFromCarDefinition, t]);
+
+    const handleOpenSaveDialog = useCallback(async () => {
+        if (!app) return;
+        const def = app.bogieEditorEngine.exportCarDefinition();
+        if (!def) {
+            alert(t('needAtLeast2Bogies'));
+            return;
+        }
+        if (loadedLibraryEntry) {
+            setPendingInitialName(loadedLibraryEntry.name);
+        } else {
+            const existing =
+                await getCarDefinitionStorage().listCarDefinitions();
+            setPendingInitialName(
+                t('untitledCar', { count: existing.length + 1 })
+            );
+        }
+        setSaveDialogOpen(true);
+    }, [app, loadedLibraryEntry, t]);
+
+    const handleConfirmSave = useCallback(
+        async (name: string) => {
+            const data = buildCarDefinitionData();
+            if (!data) {
+                alert(t('needAtLeast2Bogies'));
                 return;
             }
-            // Clear existing bogies
-            const currentBogies = app.bogieEditorEngine.getBogies();
-            for (let i = currentBogies.length - 1; i >= 0; i--) {
-                app.bogieEditorEngine.removeBogie(i);
+            const now = Date.now();
+            const id = loadedLibraryEntry?.id ?? generateCarDefinitionId();
+            const existing = loadedLibraryEntry
+                ? await getCarDefinitionStorage().loadCarDefinition(
+                      loadedLibraryEntry.id
+                  )
+                : null;
+            const createdAt = existing?.metadata.createdAt ?? now;
+            const stored: StoredCarDefinition = {
+                metadata: {
+                    id,
+                    name,
+                    createdAt,
+                    updatedAt: now,
+                    version: CAR_DEFINITION_DATA_VERSION,
+                },
+                data,
+            };
+            await getCarDefinitionStorage().saveCarDefinition(stored);
+            setLoadedLibraryEntry({ id, name });
+        },
+        [buildCarDefinitionData, loadedLibraryEntry, t]
+    );
+
+    const handleLoadFromLibrary = useCallback(
+        (stored: StoredCarDefinition) => {
+            if (hydrateFromCarDefinition(stored.data)) {
+                setLoadedLibraryEntry({
+                    id: stored.metadata.id,
+                    name: stored.metadata.name,
+                });
             }
-            // Restore bogies from saved positions
-            if (data.bogies && Array.isArray(data.bogies)) {
-                for (const bogie of data.bogies) {
-                    app.bogieEditorEngine.addBogie(bogie);
-                }
-            }
-            // Restore image
-            if (data.image) {
-                app.imageEditorEngine.setImage(data.image.src, data.image.width, data.image.height);
-                // Restore position (setImage resets to origin)
-                const img = app.imageEditorEngine.getImage();
-                if (img) {
-                    img.position = { ...data.image.position };
-                    img.width = data.image.width;
-                    img.height = data.image.height;
-                }
-                // Notify render system of the restored position
-                app.imageEditorEngine.notifyChange();
-            }
-        }, (error) => alert(t('failedToParseJson', { error })));
-    }, [app, t]);
+        },
+        [hydrateFromCarDefinition]
+    );
 
     if (!app) return null;
 
@@ -255,7 +343,11 @@ export function TrainEditorToolbar() {
                 <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
                     {/* Edit bogies */}
                     <ToolbarButton
-                        tooltip={mode === 'edit-bogie' ? t('endEdit') : t('editBogies')}
+                        tooltip={
+                            mode === 'edit-bogie'
+                                ? t('endEdit')
+                                : t('editBogies')
+                        }
                         active={mode === 'edit-bogie'}
                         onClick={handleEditBogieToggle}
                     >
@@ -264,7 +356,9 @@ export function TrainEditorToolbar() {
 
                     {/* Add bogie */}
                     <ToolbarButton
-                        tooltip={mode === 'add-bogie' ? t('endAdd') : t('addBogie')}
+                        tooltip={
+                            mode === 'add-bogie' ? t('endAdd') : t('addBogie')
+                        }
                         active={mode === 'add-bogie'}
                         onClick={handleAddBogieToggle}
                     >
@@ -283,7 +377,11 @@ export function TrainEditorToolbar() {
 
                     {/* Edit image */}
                     <ToolbarButton
-                        tooltip={mode === 'edit-image' ? t('endImageEdit') : t('editImage')}
+                        tooltip={
+                            mode === 'edit-image'
+                                ? t('endImageEdit')
+                                : t('editImage')
+                        }
                         active={mode === 'edit-image'}
                         disabled={!hasImage && mode !== 'edit-image'}
                         onClick={handleEditImageToggle}
@@ -309,8 +407,41 @@ export function TrainEditorToolbar() {
                     >
                         <Upload />
                     </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Save to library */}
+                    <ToolbarButton
+                        tooltip={t('saveToLibrary')}
+                        disabled={!hasBogies}
+                        onClick={handleOpenSaveDialog}
+                    >
+                        <Save />
+                    </ToolbarButton>
+
+                    {/* Load from library */}
+                    <ToolbarButton
+                        tooltip={t('loadFromLibrary')}
+                        onClick={() => setLibraryDialogOpen(true)}
+                    >
+                        <FolderOpen />
+                    </ToolbarButton>
                 </div>
             </div>
+
+            <SaveCarDefinitionDialog
+                open={saveDialogOpen}
+                onOpenChange={setSaveDialogOpen}
+                initialName={pendingInitialName}
+                updatingExisting={loadedLibraryEntry !== null}
+                onConfirm={handleConfirmSave}
+            />
+            <CarDefinitionLibraryDialog
+                open={libraryDialogOpen}
+                onOpenChange={setLibraryDialogOpen}
+                onPick={handleLoadFromLibrary}
+                highlightedId={loadedLibraryEntry?.id ?? null}
+            />
         </TooltipProvider>
     );
 }

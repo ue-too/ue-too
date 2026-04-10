@@ -52,11 +52,15 @@ const ja = {
         importAll: 'すべてインポート（線路 + 列車 + 駅）',
         importTerrain: '地形をインポート',
         invalidTerrainData: '無効な地形データ：{{error}}',
-        importCarDefinitionFromEditor: '車両定義をインポート（列車エディターから）',
+        importCarDefinitionFromEditor:
+            '車両定義をインポート（列車エディターから）',
+        importCarDefinitionFromLibrary:
+            '車両定義をインポート（ライブラリから）',
 
         // Scene Management
         scenePickerTitle: '保存済みシーン',
-        scenePickerDescription: 'シーンを選択して続行するか、新しいシーンを作成してください。',
+        scenePickerDescription:
+            'シーンを選択して続行するか、新しいシーンを作成してください。',
         newScene: '新しいシーン',
         saveScene: 'シーンを保存',
         savedScenes: '保存済みシーン',
@@ -162,9 +166,24 @@ const ja = {
         endImageEdit: '画像編集を終了',
         exportCarDefinition: '車両定義をエクスポート',
         importCarDefinition: '車両定義をインポート',
+        saveToLibrary: 'ライブラリに保存',
+        loadFromLibrary: 'ライブラリから読み込み',
+        save: '保存',
+        carDefinitionLibraryTitle: '車両定義ライブラリ',
+        carDefinitionLibraryDescription: '読み込む車両定義を選択してください。',
+        noSavedCarDefinitions: '保存済みの車両定義はありません。',
+        carDefinitionNamePlaceholder: '車両名',
+        saveCarDefinitionTitle: '車両定義を保存',
+        saveCarDefinitionDescription:
+            'ライブラリに保存するための名前を入力してください。',
+        saveCarDefinitionUpdateTitle: '車両定義を更新',
+        saveCarDefinitionUpdateDescription:
+            '既存のエントリを更新するか、名前を変更します。',
+        untitledCar: '名称未設定の車両 {{count}}',
         needAtLeast2Bogies: 'エクスポートには台車が2つ以上必要です。',
         failedToParseJson: 'JSON の解析に失敗：{{error}}',
-        invalidFileMissingBogieOffsets: '無効なファイル：bogieOffsets がありません。',
+        invalidFileMissingBogieOffsets:
+            '無効なファイル：bogieOffsets がありません。',
 
         // Formation Editor
         formations: '編成',
@@ -177,7 +196,8 @@ const ja = {
         couplable: '連結可能',
         couple: '連結',
         coupleWith: '列車{{number}}と連結',
-        couplingDepthExceeded: '連結不可：編成の入れ子が深すぎます。先にどちらかの編成を整理してください。',
+        couplingDepthExceeded:
+            '連結不可：編成の入れ子が深すぎます。先にどちらかの編成を整理してください。',
         proximityLines: '連結近接表示',
         nested: 'ネスト',
         containsNestedFormations: 'ネストされた編成を含む',

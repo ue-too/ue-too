@@ -32,6 +32,7 @@ type ExportSubmenuProps = {
     onImportAll: () => void;
     onImportTerrain: () => void;
     onImportCarDefinition: () => void;
+    onImportCarDefinitionFromLibrary: () => void;
 };
 
 export function ExportSubmenu({
@@ -45,6 +46,7 @@ export function ExportSubmenu({
     onImportAll,
     onImportTerrain,
     onImportCarDefinition,
+    onImportCarDefinitionFromLibrary,
 }: ExportSubmenuProps) {
     const { t } = useTranslation();
 
@@ -102,6 +104,10 @@ export function ExportSubmenu({
                 <DropdownMenuItem onClick={onImportCarDefinition}>
                     <Gauge />
                     {t('importCarDefinitionFromEditor')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onImportCarDefinitionFromLibrary}>
+                    <Gauge />
+                    {t('importCarDefinitionFromLibrary')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
