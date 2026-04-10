@@ -44,17 +44,22 @@ export const findElevationInterval = (elevation: number): { interval: [ELEVATION
 /**
  * Sublayer types within each elevation band.
  *
- * Draw order (bottom to top): shadow → bed → drawable → rail → onTrack → catenary.
+ * Draw order (bottom to top): bed → drawable → rail → onTrack → catenary → shadow.
+ *
+ * Shadow is drawn last within its band so a higher track's shadow (placed in
+ * the band one level below the track) paints over tracks/rails at that lower
+ * level. Terrain occlusion for the next band still hides it because occlusion
+ * containers sit between bands in the parent z-order.
  */
 export type BandSublayer = 'drawable' | 'rail' | 'onTrack' | 'catenary';
 
 /** Z-index constants for band sublayers. Shadow and bed are shared containers; the rest are sortable. */
-const SUBLAYER_SHADOW = 0;
-const SUBLAYER_BED = 1;
-const SUBLAYER_DRAWABLE = 2;
-const SUBLAYER_RAIL = 3;
-const SUBLAYER_ON_TRACK = 4;
-const SUBLAYER_CATENARY = 5;
+const SUBLAYER_BED = 0;
+const SUBLAYER_DRAWABLE = 1;
+const SUBLAYER_RAIL = 2;
+const SUBLAYER_ON_TRACK = 3;
+const SUBLAYER_CATENARY = 4;
+const SUBLAYER_SHADOW = 5;
 
 const SUBLAYER_MAP: Record<BandSublayer, number> = {
     drawable: SUBLAYER_DRAWABLE,
