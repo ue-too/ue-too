@@ -22,6 +22,7 @@ type RenderSettingsState = {
     showStationStops: boolean;
     showStationLocations: boolean;
     showProximityLines: boolean;
+    showBogies: boolean;
     showStats: boolean;
 };
 
@@ -44,6 +45,7 @@ type RenderSettingsActions = {
     setShowStationStops: (v: boolean) => void;
     setShowStationLocations: (v: boolean) => void;
     setShowProximityLines: (v: boolean) => void;
+    setShowBogies: (v: boolean) => void;
     setShowStats: (v: boolean) => void;
 };
 
@@ -71,6 +73,7 @@ export const useRenderSettingsStore = create<RenderSettingsStore>()(
             showStationStops: false,
             showStationLocations: false,
             showProximityLines: false,
+            showBogies: true,
             showStats: true,
 
             // Actions
@@ -92,6 +95,7 @@ export const useRenderSettingsStore = create<RenderSettingsStore>()(
             setShowStationStops: (v) => set({ showStationStops: v }),
             setShowStationLocations: (v) => set({ showStationLocations: v }),
             setShowProximityLines: (v) => set({ showProximityLines: v }),
+            setShowBogies: (v) => set({ showBogies: v }),
             setShowStats: (v) => set({ showStats: v }),
         }),
         { name: 'banana-render-settings' }

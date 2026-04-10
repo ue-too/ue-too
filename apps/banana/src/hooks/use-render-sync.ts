@@ -93,6 +93,9 @@ export function useRenderSync(app: BananaAppComponents | null): void {
                     state.showProximityLines
                 );
             }
+            if (state.showBogies !== prev.showBogies) {
+                app.trainRenderSystem.showBogies = state.showBogies;
+            }
             if (state.showStats !== prev.showStats) {
                 app.statsDom.style.display = state.showStats
                     ? 'block'
@@ -137,5 +140,6 @@ function applyAll(
     app.debugOverlayRenderSystem.setShowProximityDebug(
         state.showProximityLines
     );
+    app.trainRenderSystem.showBogies = state.showBogies;
     app.statsDom.style.display = state.showStats ? 'block' : 'none';
 }

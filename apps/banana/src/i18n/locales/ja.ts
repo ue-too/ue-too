@@ -148,6 +148,7 @@ const ja = {
         formationIds: '編成 ID',
         stationStops: '停車駅',
         stationLocations: '駅の位置',
+        showBogies: '台車',
         terrainXray: '地形透視',
         fpsStats: 'FPS 統計',
 

@@ -148,6 +148,7 @@ const en = {
         formationIds: 'Formation IDs',
         stationStops: 'Station stops',
         stationLocations: 'Station locations',
+        showBogies: 'Bogies',
         terrainXray: 'Terrain X-ray',
         fpsStats: 'FPS stats',
 
