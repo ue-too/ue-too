@@ -52,11 +52,14 @@ const en = {
         importAll: 'Import All (tracks + trains + stations + timetable)',
         importTerrain: 'Import Terrain',
         invalidTerrainData: 'Invalid terrain data: {{error}}',
-        importCarDefinitionFromEditor: 'Import Car Definition (from Train Editor)',
+        importCarDefinitionFromEditor:
+            'Import Car Definition (from Train Editor)',
+        importCarDefinitionFromLibrary: 'Import Car Definition (from Library)',
 
         // Scene Management
         scenePickerTitle: 'Saved Scenes',
-        scenePickerDescription: 'Select a scene to continue, or create a new one.',
+        scenePickerDescription:
+            'Select a scene to continue, or create a new one.',
         newScene: 'New Scene',
         saveScene: 'Save Scene',
         savedScenes: 'Saved Scenes',
@@ -164,6 +167,20 @@ const en = {
         endImageEdit: 'End Image Edit',
         exportCarDefinition: 'Export Car Definition',
         importCarDefinition: 'Import Car Definition',
+        saveToLibrary: 'Save to Library',
+        loadFromLibrary: 'Load from Library',
+        save: 'Save',
+        carDefinitionLibraryTitle: 'Car Definition Library',
+        carDefinitionLibraryDescription: 'Pick a saved car definition to load.',
+        noSavedCarDefinitions: 'No saved car definitions yet.',
+        carDefinitionNamePlaceholder: 'Car name',
+        saveCarDefinitionTitle: 'Save car definition',
+        saveCarDefinitionDescription:
+            'Name this car to save it to the library.',
+        saveCarDefinitionUpdateTitle: 'Update car definition',
+        saveCarDefinitionUpdateDescription:
+            'Update the existing entry or rename it.',
+        untitledCar: 'Untitled car {{count}}',
         needAtLeast2Bogies: 'Need at least 2 bogies to export.',
         failedToParseJson: 'Failed to parse JSON: {{error}}',
         invalidFileMissingBogieOffsets: 'Invalid file: missing bogieOffsets.',
@@ -237,12 +254,13 @@ const en = {
         consolidate: 'Consolidate',
         consolidateTooltip: 'Flatten nested formations into individual cars',
         reverseTooltip: 'Reverse the order of children',
-        reverseNestedTooltip: 'Reverse the order of this formation\'s children',
+        reverseNestedTooltip: "Reverse the order of this formation's children",
         flipChildDirectionTooltip: 'Flip the direction of this child',
         couplable: 'couplable',
         couple: 'Couple',
         coupleWith: 'Couple with Train {{number}}',
-        couplingDepthExceeded: 'Cannot couple: formation nesting too deep. Consolidate one of the formations first.',
+        couplingDepthExceeded:
+            'Cannot couple: formation nesting too deep. Consolidate one of the formations first.',
         proximityLines: 'Coupling proximity',
         renameFormation: 'Click to rename',
         renameCar: 'Click to rename',
@@ -262,10 +280,12 @@ const en = {
         featureTrackDrawing: 'Bézier Track Drawing provides high flexibility',
         featureTerrain: '2D but not flat, subway? checked!',
         featureStations: 'Stations & Buildings (WIP)',
-        featureTrainSim: 'Train Simulation, want to drive the train yourself? Not a problem!',
+        featureTrainSim:
+            'Train Simulation, want to drive the train yourself? Not a problem!',
         featureFormations: 'Flexible Train Formations',
         featureNavigation: 'Smooth Navigation',
-        featureImportExport: 'Import & Export, cloud and browser-side auto-save in development',
+        featureImportExport:
+            'Import & Export, cloud and browser-side auto-save in development',
         featureDynamicFormations: 'Couple and decouple trains dynamically',
         featureGranularity: 'Granular timetable editing (WIP)',
         builtWithFooter:

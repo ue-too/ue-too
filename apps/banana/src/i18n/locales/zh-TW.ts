@@ -53,6 +53,7 @@ const zhTW = {
         importTerrain: '匯入地形',
         invalidTerrainData: '無效的地形資料：{{error}}',
         importCarDefinitionFromEditor: '匯入車輛定義（從列車編輯器）',
+        importCarDefinitionFromLibrary: '匯入車輛定義（從程式庫）',
 
         // Scene Management
         scenePickerTitle: '已儲存的場景',
@@ -162,6 +163,18 @@ const zhTW = {
         endImageEdit: '結束圖片編輯',
         exportCarDefinition: '匯出車輛定義',
         importCarDefinition: '匯入車輛定義',
+        saveToLibrary: '儲存到程式庫',
+        loadFromLibrary: '從程式庫載入',
+        save: '儲存',
+        carDefinitionLibraryTitle: '車輛定義程式庫',
+        carDefinitionLibraryDescription: '選擇要載入的已儲存車輛定義。',
+        noSavedCarDefinitions: '尚未儲存任何車輛定義。',
+        carDefinitionNamePlaceholder: '車輛名稱',
+        saveCarDefinitionTitle: '儲存車輛定義',
+        saveCarDefinitionDescription: '為此車輛命名以儲存到程式庫。',
+        saveCarDefinitionUpdateTitle: '更新車輛定義',
+        saveCarDefinitionUpdateDescription: '更新現有項目或重新命名。',
+        untitledCar: '未命名車輛 {{count}}',
         needAtLeast2Bogies: '需要至少 2 個轉向架才能匯出。',
         failedToParseJson: '解析 JSON 失敗：{{error}}',
         invalidFileMissingBogieOffsets: '無效的檔案：缺少 bogieOffsets。',
@@ -263,7 +276,8 @@ const zhTW = {
         featureFormations: '靈活的列車編組',
         featureNavigation: '平滑導覽',
         featureImportExport: '匯入與匯出，雲端與瀏覽器端自動儲存開發中',
-        featureDynamicFormations: '直接模擬聯掛與解聯，PP 在苗栗臨時要掛補機？沒問題，不過你確定要嗎？（施工中）',
+        featureDynamicFormations:
+            '直接模擬聯掛與解聯，PP 在苗栗臨時要掛補機？沒問題，不過你確定要嗎？（施工中）',
         featureGranularity: '細粒度的時刻表編排（施工中）',
         builtWithFooter:
             '基於 <ueToo>ue-too</ueToo> 打造 · <issues>回饋</issues>',

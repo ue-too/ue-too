@@ -3,6 +3,10 @@ import {
     useCoordinateConversion,
     useToggleKmtInput,
 } from '@ue-too/board-pixi-react-integration';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
+
 import {
     Bug,
     Building2,
@@ -13,11 +17,11 @@ import {
     FilePlus,
     FolderOpen,
     Landmark,
-    Save,
     Layers,
     List,
     ListOrdered,
     Map,
+    Save,
     Signal,
     Spline,
     TrainFront,
@@ -25,11 +29,8 @@ import {
     Trash2,
     Warehouse,
 } from '@/assets/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useShallow } from 'zustand/react/shallow';
-
 import type { BuildingPreset } from '@/buildings/types';
+import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
 import { FormationEditor } from '@/components/formation-editor';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -37,9 +38,6 @@ import { useBananaApp } from '@/contexts/pixi';
 import { useAutoSave } from '@/hooks/use-auto-save';
 import { useRenderSync } from '@/hooks/use-render-sync';
 import { cn } from '@/lib/utils';
-import { useRenderSettingsStore } from '@/stores/render-settings-store';
-import { useSceneStore } from '@/stores/scene-store';
-import { useToolbarUIStore } from '@/stores/toolbar-ui-store';
 import {
     type SerializedSceneData,
     deserializeSceneData,
@@ -48,6 +46,10 @@ import {
 } from '@/scene-serialization';
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
+import type { StoredCarDefinition } from '@/storage';
+import { useRenderSettingsStore } from '@/stores/render-settings-store';
+import { useSceneStore } from '@/stores/scene-store';
+import { useToolbarUIStore } from '@/stores/toolbar-ui-store';
 import {
     TerrainData,
     validateSerializedTerrainData,
@@ -68,7 +70,6 @@ import {
     serializeTrainData,
     validateSerializedTrainData,
 } from '@/trains/train-serialization';
-
 import { trackEvent } from '@/utils/analytics';
 
 import { AutoSaveIntervalSelector } from './AutoSaveIntervalSelector';
@@ -80,14 +81,14 @@ import { FormationSelector } from './FormationSelector';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
 import { ScaleRuler } from './ScaleRuler';
+import { SignalPanel } from './SignalPanel';
 import { StationListPanel } from './StationListPanel';
 import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
+import { TimetablePanel } from './TimetablePanel';
 import { ToolbarButton } from './ToolbarButton';
 import { TrackStyleSelector } from './TrackStyleSelector';
-import { SignalPanel } from './SignalPanel';
-import { TimetablePanel } from './TimetablePanel';
 import { TrainPanel } from './TrainPanel';
 import { TOOLBAR_LEFT } from './types';
 import { downloadJson, uploadJson } from './utils';
@@ -104,12 +105,12 @@ export function BananaToolbar({
     const convertCoords = useCoordinateConversion();
     const toggleKmtInput = useToggleKmtInput();
     const { saveNow } = useAutoSave();
-    const showScenePickerAction = useSceneStore((s) => s.showScenePicker);
-    const createNewScene = useSceneStore((s) => s.createNewScene);
+    const showScenePickerAction = useSceneStore(s => s.showScenePicker);
+    const createNewScene = useSceneStore(s => s.createNewScene);
 
     // Toolbar UI store — mode and panel visibility
-    const mode = useToolbarUIStore((s) => s.mode);
-    const setMode = useToolbarUIStore((s) => s.setMode);
+    const mode = useToolbarUIStore(s => s.mode);
+    const setMode = useToolbarUIStore(s => s.setMode);
     const {
         showDepot,
         showTrainPanel,
@@ -121,7 +122,7 @@ export function BananaToolbar({
         showExportSubmenu,
         showAutoSaveMenu,
     } = useToolbarUIStore(
-        useShallow((s) => ({
+        useShallow(s => ({
             showDepot: s.showDepot,
             showTrainPanel: s.showTrainPanel,
             showFormationEditor: s.showFormationEditor,
@@ -133,8 +134,8 @@ export function BananaToolbar({
             showAutoSaveMenu: s.showAutoSaveMenu,
         }))
     );
-    const setPanel = useToolbarUIStore((s) => s.setPanel);
-    const togglePanel = useToolbarUIStore((s) => s.togglePanel);
+    const setPanel = useToolbarUIStore(s => s.setPanel);
+    const togglePanel = useToolbarUIStore(s => s.togglePanel);
 
     // Render settings store
     const {
@@ -159,7 +160,7 @@ export function BananaToolbar({
         showStats,
         terrainXray,
     } = useRenderSettingsStore(
-        useShallow((s) => ({
+        useShallow(s => ({
             sunAngle: s.sunAngle,
             showElevationGradient: s.showElevationGradient,
             showPreviewCurveArcs: s.showPreviewCurveArcs,
@@ -197,6 +198,7 @@ export function BananaToolbar({
     const [stressStartX, setStressStartX] = useState(0);
     const [stressStartY, setStressStartY] = useState(0);
     const [carTemplates, setCarTemplates] = useState<CarTemplate[]>([]);
+    const [libraryDialogOpen, setLibraryDialogOpen] = useState(false);
 
     const selectedBuildingRef = useRef<number | null>(null);
 
@@ -440,7 +442,7 @@ export function BananaToolbar({
     const handleImportTracks = useCallback(() => {
         if (!app) return;
         trackEvent('import-tracks');
-        uploadJson(async (parsed) => {
+        uploadJson(async parsed => {
             const result = validateSerializedTrackData(parsed);
             if (!result.valid) {
                 alert(t('invalidTrackData', { error: result.error }));
@@ -454,10 +456,12 @@ export function BananaToolbar({
                 parsed as SerializedTrackData,
                 {
                     onProgress: (loaded, total) =>
-                        useSceneStore.getState().setSceneLoadProgress(
-                            total > 0 ? loaded / total : 1
-                        ),
-                },
+                        useSceneStore
+                            .getState()
+                            .setSceneLoadProgress(
+                                total > 0 ? loaded / total : 1
+                            ),
+                }
             );
 
             // Restore stations if present in the track data
@@ -521,7 +525,7 @@ export function BananaToolbar({
     const handleImportAll = useCallback(() => {
         if (!app) return;
         trackEvent('import-scene');
-        uploadJson(async (parsed) => {
+        uploadJson(async parsed => {
             const result = validateSerializedSceneData(parsed);
             if (!result.valid) {
                 alert(t('invalidSceneData', { error: result.error }));
@@ -533,9 +537,9 @@ export function BananaToolbar({
 
             await deserializeSceneData(app, parsed as SerializedSceneData, {
                 onProgress: (loaded, total) =>
-                    useSceneStore.getState().setSceneLoadProgress(
-                        total > 0 ? loaded / total : 1
-                    ),
+                    useSceneStore
+                        .getState()
+                        .setSceneLoadProgress(total > 0 ? loaded / total : 1),
             });
 
             useSceneStore.getState().setSceneLoading(false);
@@ -567,6 +571,30 @@ export function BananaToolbar({
         });
     }, [app, t]);
 
+    const addCarTemplateFromDefinition = useCallback(
+        (def: {
+            bogieOffsets: number[];
+            edgeToBogie?: number;
+            bogieToEdge?: number;
+            image?: {
+                src: string;
+                position: { x: number; y: number };
+                width: number;
+                height: number;
+            };
+        }) => {
+            const template: CarTemplate = {
+                id: generateTemplateId(),
+                bogieOffsets: def.bogieOffsets,
+                edgeToBogie: def.edgeToBogie ?? 2.5,
+                bogieToEdge: def.bogieToEdge ?? 2.5,
+                image: def.image,
+            };
+            setCarTemplates(prev => [...prev, template]);
+        },
+        []
+    );
+
     const handleImportCarDefinition = useCallback(() => {
         if (!app) return;
         trackEvent('import-car-definition');
@@ -576,32 +604,38 @@ export function BananaToolbar({
                 alert(t('invalidCarDefinition', { error: result.error }));
                 return;
             }
-            const def = parsed as {
-                bogieOffsets: number[];
-                edgeToBogie?: number;
-                bogieToEdge?: number;
-                image?: {
-                    src: string;
-                    position: { x: number; y: number };
-                    width: number;
-                    height: number;
-                };
-            };
-            const template: CarTemplate = {
-                id: generateTemplateId(),
-                bogieOffsets: def.bogieOffsets,
-                edgeToBogie: def.edgeToBogie ?? 2.5,
-                bogieToEdge: def.bogieToEdge ?? 2.5,
-                image: def.image,
-            };
-            setCarTemplates(prev => [...prev, template]);
+            addCarTemplateFromDefinition(
+                parsed as Parameters<typeof addCarTemplateFromDefinition>[0]
+            );
         });
+    }, [app, addCarTemplateFromDefinition, t]);
+
+    const handleImportCarDefinitionFromLibrary = useCallback(() => {
+        if (!app) return;
+        trackEvent('import-car-definition');
+        setLibraryDialogOpen(true);
     }, [app]);
+
+    const handleLibraryPick = useCallback(
+        (stored: StoredCarDefinition) => {
+            const result = validateCarDefinition(stored.data);
+            if (!result.valid) {
+                alert(t('invalidCarDefinition', { error: result.error }));
+                return;
+            }
+            addCarTemplateFromDefinition(stored.data);
+        },
+        [addCarTemplateFromDefinition, t]
+    );
 
     const handleSpawnStressTest = useCallback(
         (count: number, startX?: number, startY?: number) => {
             if (!app) return;
-            const placed = app.spawnParallelTracksWithTrains(count, startX, startY);
+            const placed = app.spawnParallelTracksWithTrains(
+                count,
+                startX,
+                startY
+            );
             console.log(
                 `Stress test: spawned ${placed} trains at (${startX ?? 0}, ${startY ?? 0})`
             );
@@ -685,73 +719,90 @@ export function BananaToolbar({
                 </div>
                 <div
                     ref={scrollRef}
-                    className="scrollbar-hide flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-3 overflow-y-auto overflow-x-clip rounded-xl"
+                    className="scrollbar-hide flex max-h-[calc(100dvh-6rem)] flex-col items-center gap-3 overflow-x-clip overflow-y-auto rounded-xl"
                 >
-                {/* Main icon toolbar */}
-                <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
-                    <ToolbarButton
-                        tooltip={
-                            isLayoutActive ? t('endLayout') : t('startLayout')
-                        }
-                        active={isLayoutActive}
-                        disabled={mode !== 'idle' && !isLayoutActive}
-                        onClick={handleLayoutToggle}
-                    >
-                        <TrainTrack />
-                    </ToolbarButton>
+                    {/* Main icon toolbar */}
+                    <div className="bg-background/80 flex flex-col items-center gap-1 rounded-xl border p-1.5 shadow-lg backdrop-blur-sm">
+                        <ToolbarButton
+                            tooltip={
+                                isLayoutActive
+                                    ? t('endLayout')
+                                    : t('startLayout')
+                            }
+                            active={isLayoutActive}
+                            disabled={mode !== 'idle' && !isLayoutActive}
+                            onClick={handleLayoutToggle}
+                        >
+                            <TrainTrack />
+                        </ToolbarButton>
 
-                    <Separator />
+                        <Separator />
 
-                    <ToolbarButton
-                        tooltip={
-                            mode === 'train-placement'
-                                ? t('endPlacement')
-                                : t('placeTrain')
-                        }
-                        active={mode === 'train-placement'}
-                        disabled={mode !== 'idle' && mode !== 'train-placement'}
-                        onClick={handleTrainPlacementToggle}
-                    >
-                        <TrainFront />
-                    </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={
+                                mode === 'train-placement'
+                                    ? t('endPlacement')
+                                    : t('placeTrain')
+                            }
+                            active={mode === 'train-placement'}
+                            disabled={
+                                mode !== 'idle' && mode !== 'train-placement'
+                            }
+                            onClick={handleTrainPlacementToggle}
+                        >
+                            <TrainFront />
+                        </ToolbarButton>
 
-                    <ToolbarButton
-                        tooltip={
-                            showTrainPanel
-                                ? t('closeTrainList')
-                                : t('trainList')
-                        }
-                        active={showTrainPanel}
-                        disabled={
-                            placedTrains.length === 0 &&
-                            mode !== 'train-placement'
-                        }
-                        onClick={() => { if (!showTrainPanel) trackEvent('open-train-panel'); togglePanel('trainPanel'); }}
-                    >
-                        <List />
-                    </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={
+                                showTrainPanel
+                                    ? t('closeTrainList')
+                                    : t('trainList')
+                            }
+                            active={showTrainPanel}
+                            disabled={
+                                placedTrains.length === 0 &&
+                                mode !== 'train-placement'
+                            }
+                            onClick={() => {
+                                if (!showTrainPanel)
+                                    trackEvent('open-train-panel');
+                                togglePanel('trainPanel');
+                            }}
+                        >
+                            <List />
+                        </ToolbarButton>
 
-                    <ToolbarButton
-                        tooltip={showDepot ? t('closeDepot') : t('openDepot')}
-                        active={showDepot}
-                        onClick={() => { if (!showDepot) trackEvent('open-depot'); togglePanel('depot'); }}
-                    >
-                        <Warehouse />
-                    </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={
+                                showDepot ? t('closeDepot') : t('openDepot')
+                            }
+                            active={showDepot}
+                            onClick={() => {
+                                if (!showDepot) trackEvent('open-depot');
+                                togglePanel('depot');
+                            }}
+                        >
+                            <Warehouse />
+                        </ToolbarButton>
 
-                    <ToolbarButton
-                        tooltip={
-                            showFormationEditor
-                                ? t('closeFormations')
-                                : t('editFormations')
-                        }
-                        active={showFormationEditor}
-                        onClick={() => { if (!showFormationEditor) trackEvent('open-formation-editor'); togglePanel('formationEditor'); }}
-                    >
-                        <ListOrdered />
-                    </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={
+                                showFormationEditor
+                                    ? t('closeFormations')
+                                    : t('editFormations')
+                            }
+                            active={showFormationEditor}
+                            onClick={() => {
+                                if (!showFormationEditor)
+                                    trackEvent('open-formation-editor');
+                                togglePanel('formationEditor');
+                            }}
+                        >
+                            <ListOrdered />
+                        </ToolbarButton>
 
-                    {/* <ToolbarButton
+                        {/* <ToolbarButton
                         tooltip={
                             mode === 'building-placement'
                                 ? t('endPlacement')
@@ -765,7 +816,7 @@ export function BananaToolbar({
                     >
                         <Building2 />
                     </ToolbarButton> */}
-                    {/* <ToolbarButton
+                        {/* <ToolbarButton
                         tooltip={
                             mode === 'building-deletion'
                                 ? t('endDeletion')
@@ -780,163 +831,200 @@ export function BananaToolbar({
                     >
                         <Trash2 />
                     </ToolbarButton> */}
-                    <ToolbarButton
-                        tooltip={
-                            mode === 'station-placement'
-                                ? t('endStationPlacement')
-                                : t('placeStation')
-                        }
-                        active={mode === 'station-placement'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'station-placement'
-                        }
-                        onClick={handleStationPlacementToggle}
-                    >
-                        <Warehouse />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip={
-                            mode === 'duplicate-to-side'
-                                ? 'Exit duplicate to side'
-                                : 'Duplicate track to side'
-                        }
-                        active={mode === 'duplicate-to-side'}
-                        disabled={
-                            mode !== 'idle' && mode !== 'duplicate-to-side'
-                        }
-                        onClick={handleDuplicateToSideToggle}
-                    >
-                        <Copy />
-                    </ToolbarButton>
-                    <ToolbarButton
-                        tooltip={
-                            showStationList
-                                ? t('closeStationList')
-                                : t('openStationList')
-                        }
-                        active={showStationList}
-                        onClick={() => { if (!showStationList) trackEvent('open-station-list'); togglePanel('stationList'); }}
-                    >
-                        <Landmark />
-                    </ToolbarButton>
-
-                    <ToolbarButton
-                        tooltip={
-                            showTimetable
-                                ? t('closeTimetable')
-                                : t('openTimetable')
-                        }
-                        active={showTimetable}
-                        onClick={() => togglePanel('timetable')}
-                    >
-                        <Clock />
-                    </ToolbarButton>
-
-                    <ToolbarButton
-                        tooltip={
-                            showSignalPanel
-                                ? t('closeSignals')
-                                : t('openSignals')
-                        }
-                        active={showSignalPanel}
-                        onClick={() => togglePanel('signalPanel')}
-                    >
-                        <Signal />
-                    </ToolbarButton>
-
-                    <Separator />
-
-                    <ToolbarButton
-                        tooltip={
-                            showElevationGradient
-                                ? t('hideElevationGradient')
-                                : t('showElevationGradient')
-                        }
-                        active={showElevationGradient}
-                        onClick={() => rs.getState().setShowElevationGradient(!showElevationGradient)}
-                    >
-                        <Layers />
-                    </ToolbarButton>
-
-                    <ToolbarButton
-                        tooltip={
-                            showPreviewCurveArcs
-                                ? t('hidePreviewCurveArcs')
-                                : t('showPreviewCurveArcs')
-                        }
-                        active={showPreviewCurveArcs}
-                        onClick={() => rs.getState().setShowPreviewCurveArcs(!showPreviewCurveArcs)}
-                    >
-                        <Spline />
-                    </ToolbarButton>
-
-                    <Separator />
-
-                    <ExportSubmenu
-                        show={showExportSubmenu}
-                        onShowChange={(open) => {
-                            setPanel('exportSubmenu', open);
-                            if (open) setPanel('autoSaveMenu', false);
-                        }}
-                        onExportTracks={handleExportTracks}
-                        onImportTracks={handleImportTracks}
-                        onExportTrains={handleExportTrains}
-                        onImportTrains={handleImportTrains}
-                        onExportAll={handleExportAll}
-                        onImportAll={handleImportAll}
-                        onImportTerrain={handleImportTerrain}
-                        onImportCarDefinition={handleImportCarDefinition}
-                    />
-
-                    <ToolbarButton tooltip={t('savedScenes')} onClick={() => showScenePickerAction()}>
-                        <FolderOpen />
-                    </ToolbarButton>
-                    <ToolbarButton tooltip={t('saveScene')} onClick={saveNow}>
-                        <Save />
-                    </ToolbarButton>
-                    <ToolbarButton tooltip={t('newScene')} onClick={() => createNewScene()}>
-                        <FilePlus />
-                    </ToolbarButton>
-                    <AutoSaveIntervalSelector
-                        show={showAutoSaveMenu}
-                        onShowChange={(open) => {
-                            setPanel('autoSaveMenu', open);
-                            if (open) setPanel('exportSubmenu', false);
-                        }}
-                    />
-
-                    <Separator />
-
-                    {onToggleMap && (
                         <ToolbarButton
-                            tooltip={showMap ? t('hideMap') : t('showMap')}
-                            active={showMap}
-                            onClick={onToggleMap}
+                            tooltip={
+                                mode === 'station-placement'
+                                    ? t('endStationPlacement')
+                                    : t('placeStation')
+                            }
+                            active={mode === 'station-placement'}
+                            disabled={
+                                mode !== 'idle' && mode !== 'station-placement'
+                            }
+                            onClick={handleStationPlacementToggle}
                         >
-                            <Map />
+                            <Warehouse />
                         </ToolbarButton>
-                    )}
+                        <ToolbarButton
+                            tooltip={
+                                mode === 'duplicate-to-side'
+                                    ? 'Exit duplicate to side'
+                                    : 'Duplicate track to side'
+                            }
+                            active={mode === 'duplicate-to-side'}
+                            disabled={
+                                mode !== 'idle' && mode !== 'duplicate-to-side'
+                            }
+                            onClick={handleDuplicateToSideToggle}
+                        >
+                            <Copy />
+                        </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={
+                                showStationList
+                                    ? t('closeStationList')
+                                    : t('openStationList')
+                            }
+                            active={showStationList}
+                            onClick={() => {
+                                if (!showStationList)
+                                    trackEvent('open-station-list');
+                                togglePanel('stationList');
+                            }}
+                        >
+                            <Landmark />
+                        </ToolbarButton>
 
-                    <ToolbarButton
-                        tooltip={
-                            showDebugPanel ? t('closeDebug') : t('openDebug')
-                        }
-                        active={showDebugPanel}
-                        onClick={() => { if (!showDebugPanel) trackEvent('open-debug-panel'); togglePanel('debugPanel'); }}
-                    >
-                        <Bug />
-                    </ToolbarButton>
-                </div>
+                        <ToolbarButton
+                            tooltip={
+                                showTimetable
+                                    ? t('closeTimetable')
+                                    : t('openTimetable')
+                            }
+                            active={showTimetable}
+                            onClick={() => togglePanel('timetable')}
+                        >
+                            <Clock />
+                        </ToolbarButton>
 
-                <SunAngleControl value={sunAngle} onChange={rs.getState().setSunAngle} />
-                <TerrainControl
-                    visible={terrainFillVisible}
-                    onVisibleChange={rs.getState().setTerrainFillVisible}
-                    opacity={terrainOpacity}
-                    onOpacityChange={rs.getState().setTerrainOpacity}
-                    whiteOcclusion={whiteOcclusion}
-                    onWhiteOcclusionChange={rs.getState().setWhiteOcclusion}
-                />
+                        <ToolbarButton
+                            tooltip={
+                                showSignalPanel
+                                    ? t('closeSignals')
+                                    : t('openSignals')
+                            }
+                            active={showSignalPanel}
+                            onClick={() => togglePanel('signalPanel')}
+                        >
+                            <Signal />
+                        </ToolbarButton>
+
+                        <Separator />
+
+                        <ToolbarButton
+                            tooltip={
+                                showElevationGradient
+                                    ? t('hideElevationGradient')
+                                    : t('showElevationGradient')
+                            }
+                            active={showElevationGradient}
+                            onClick={() =>
+                                rs
+                                    .getState()
+                                    .setShowElevationGradient(
+                                        !showElevationGradient
+                                    )
+                            }
+                        >
+                            <Layers />
+                        </ToolbarButton>
+
+                        <ToolbarButton
+                            tooltip={
+                                showPreviewCurveArcs
+                                    ? t('hidePreviewCurveArcs')
+                                    : t('showPreviewCurveArcs')
+                            }
+                            active={showPreviewCurveArcs}
+                            onClick={() =>
+                                rs
+                                    .getState()
+                                    .setShowPreviewCurveArcs(
+                                        !showPreviewCurveArcs
+                                    )
+                            }
+                        >
+                            <Spline />
+                        </ToolbarButton>
+
+                        <Separator />
+
+                        <ExportSubmenu
+                            show={showExportSubmenu}
+                            onShowChange={open => {
+                                setPanel('exportSubmenu', open);
+                                if (open) setPanel('autoSaveMenu', false);
+                            }}
+                            onExportTracks={handleExportTracks}
+                            onImportTracks={handleImportTracks}
+                            onExportTrains={handleExportTrains}
+                            onImportTrains={handleImportTrains}
+                            onExportAll={handleExportAll}
+                            onImportAll={handleImportAll}
+                            onImportTerrain={handleImportTerrain}
+                            onImportCarDefinition={handleImportCarDefinition}
+                            onImportCarDefinitionFromLibrary={
+                                handleImportCarDefinitionFromLibrary
+                            }
+                        />
+
+                        <ToolbarButton
+                            tooltip={t('savedScenes')}
+                            onClick={() => showScenePickerAction()}
+                        >
+                            <FolderOpen />
+                        </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={t('saveScene')}
+                            onClick={saveNow}
+                        >
+                            <Save />
+                        </ToolbarButton>
+                        <ToolbarButton
+                            tooltip={t('newScene')}
+                            onClick={() => createNewScene()}
+                        >
+                            <FilePlus />
+                        </ToolbarButton>
+                        <AutoSaveIntervalSelector
+                            show={showAutoSaveMenu}
+                            onShowChange={open => {
+                                setPanel('autoSaveMenu', open);
+                                if (open) setPanel('exportSubmenu', false);
+                            }}
+                        />
+
+                        <Separator />
+
+                        {onToggleMap && (
+                            <ToolbarButton
+                                tooltip={showMap ? t('hideMap') : t('showMap')}
+                                active={showMap}
+                                onClick={onToggleMap}
+                            >
+                                <Map />
+                            </ToolbarButton>
+                        )}
+
+                        <ToolbarButton
+                            tooltip={
+                                showDebugPanel
+                                    ? t('closeDebug')
+                                    : t('openDebug')
+                            }
+                            active={showDebugPanel}
+                            onClick={() => {
+                                if (!showDebugPanel)
+                                    trackEvent('open-debug-panel');
+                                togglePanel('debugPanel');
+                            }}
+                        >
+                            <Bug />
+                        </ToolbarButton>
+                    </div>
+
+                    <SunAngleControl
+                        value={sunAngle}
+                        onChange={rs.getState().setSunAngle}
+                    />
+                    <TerrainControl
+                        visible={terrainFillVisible}
+                        onVisibleChange={rs.getState().setTerrainFillVisible}
+                        opacity={terrainOpacity}
+                        onOpacityChange={rs.getState().setTerrainOpacity}
+                        whiteOcclusion={whiteOcclusion}
+                        onWhiteOcclusionChange={rs.getState().setWhiteOcclusion}
+                    />
                 </div>
                 {/* Bottom scroll arrow – always takes space, invisible when not needed */}
                 <div
@@ -968,7 +1056,9 @@ export function BananaToolbar({
                         electrified={electrified}
                         onElectrifiedChange={rs.getState().setElectrified}
                         projectionBuffer={projectionBuffer}
-                        onProjectionBufferChange={rs.getState().setProjectionBuffer}
+                        onProjectionBufferChange={
+                            rs.getState().setProjectionBuffer
+                        }
                         bed={bed}
                         onBedChange={rs.getState().setBed}
                         bedWidth={bedWidth}
@@ -1034,9 +1124,7 @@ export function BananaToolbar({
             )}
 
             {showTimetable && (
-                <TimetablePanel
-                    onClose={() => setPanel('timetable', false)}
-                />
+                <TimetablePanel onClose={() => setPanel('timetable', false)} />
             )}
 
             {showSignalPanel && (
@@ -1060,9 +1148,13 @@ export function BananaToolbar({
                     showStationStops={showStationStops}
                     onShowStationStopsChange={rs.getState().setShowStationStops}
                     showStationLocations={showStationLocations}
-                    onShowStationLocationsChange={rs.getState().setShowStationLocations}
+                    onShowStationLocationsChange={
+                        rs.getState().setShowStationLocations
+                    }
                     showProximityLines={showProximityLines}
-                    onShowProximityLinesChange={rs.getState().setShowProximityLines}
+                    onShowProximityLinesChange={
+                        rs.getState().setShowProximityLines
+                    }
                     showBogies={showBogies}
                     onShowBogiesChange={rs.getState().setShowBogies}
                     showStats={showStats}
@@ -1095,6 +1187,12 @@ export function BananaToolbar({
                 </span>
                 <ScaleRuler />
             </div>
+
+            <CarDefinitionLibraryDialog
+                open={libraryDialogOpen}
+                onOpenChange={setLibraryDialogOpen}
+                onPick={handleLibraryPick}
+            />
         </TooltipProvider>
     );
 }
