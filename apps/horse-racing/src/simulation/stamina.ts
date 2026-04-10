@@ -75,9 +75,15 @@ export function updateStamina(
 ): number {
     let drain = 0;
 
-    // Drain from jockey pushing forward
+    // Drain from jockey pushing forward — capped at the force needed to
+    // sustain max speed. Excess action beyond what produces useful
+    // acceleration doesn't cost extra stamina.
+    // extraTangential is already action × forwardAccel, so the useful
+    // cap is (maxSpeed - cruiseSpeed) which is the spring deficit at max.
     if (extraTangential > 0) {
-        drain += extraTangential * STAMINA_DRAIN_RATE;
+        const maxUseful = Math.max(eff.maxSpeed - eff.cruiseSpeed, 0);
+        const cappedTangential = Math.min(extraTangential, maxUseful);
+        drain += cappedTangential * STAMINA_DRAIN_RATE;
     }
 
     // Drain from jockey steering laterally
