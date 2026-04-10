@@ -155,6 +155,7 @@ export function BananaToolbar({
         showStationStops,
         showStationLocations,
         showProximityLines,
+        showBogies,
         showStats,
         terrainXray,
     } = useRenderSettingsStore(
@@ -176,6 +177,7 @@ export function BananaToolbar({
             showStationStops: s.showStationStops,
             showStationLocations: s.showStationLocations,
             showProximityLines: s.showProximityLines,
+            showBogies: s.showBogies,
             showStats: s.showStats,
             terrainXray: s.terrainXray,
         }))
@@ -1061,6 +1063,8 @@ export function BananaToolbar({
                     onShowStationLocationsChange={rs.getState().setShowStationLocations}
                     showProximityLines={showProximityLines}
                     onShowProximityLinesChange={rs.getState().setShowProximityLines}
+                    showBogies={showBogies}
+                    onShowBogiesChange={rs.getState().setShowBogies}
                     showStats={showStats}
                     onShowStatsChange={rs.getState().setShowStats}
                     terrainXray={terrainXray}

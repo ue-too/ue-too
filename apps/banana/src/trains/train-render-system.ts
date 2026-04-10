@@ -290,6 +290,8 @@ export class TrainRenderSystem {
   /** Cache of loaded custom car textures by car ID. */
   private _customCarTextures: Map<string, { full: Texture; rear: Texture; front: Texture }> = new Map();
 
+  private _showBogies: boolean = true;
+
   constructor(
     worldRenderSystem: WorldRenderSystem,
     getPlacedTrains: () => readonly PlacedTrainEntry[],
@@ -342,6 +344,23 @@ export class TrainRenderSystem {
   /** The centralized occupancy registry, updated each frame. */
   get occupancyRegistry(): OccupancyRegistry {
     return this._occupancyRegistry;
+  }
+
+  get showBogies(): boolean {
+    return this._showBogies;
+  }
+
+  set showBogies(value: boolean) {
+    if (this._showBogies === value) return;
+    this._showBogies = value;
+    if (!value) {
+      for (const [trainId] of this._actualPools) {
+        this._hideActualBogiesForTrain(trainId);
+      }
+      for (const g of this._previewGraphicsPool) {
+        g.visible = false;
+      }
+    }
   }
 
   /** The proximity detector, updated each frame. */
@@ -427,6 +446,7 @@ export class TrainRenderSystem {
     for (let i = 0; i < positions.length; i++) {
       const g = this._previewGraphicsPool[i];
       g.position.set(positions[i].point.x, positions[i].point.y);
+      g.visible = this._showBogies;
     }
   }
 
@@ -457,7 +477,7 @@ export class TrainRenderSystem {
         const g = pool[i];
         const key = bogieKey(id, i);
         g.position.set(positions[i].point.x, positions[i].point.y);
-        g.visible = true;
+        g.visible = this._showBogies;
 
         const bandIndex = i === 0 ? headBand : (this._resolveBandIndex(positions[i]) ?? headBand);
         if (bandIndex !== null) {
@@ -823,7 +843,7 @@ export class TrainRenderSystem {
       this._previewContainer.addChild(g);
     }
     for (let i = 0; i < this._previewGraphicsPool.length; i++) {
-      this._previewGraphicsPool[i].visible = i < count;
+      this._previewGraphicsPool[i].visible = this._showBogies && i < count;
     }
   }
 }

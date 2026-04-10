@@ -1,4 +1,4 @@
-import { Activity, ArrowLeftRight, Crosshair, Eye, Hash, Landmark, Link2, ListOrdered, OctagonXIcon, TrainFront, MapPin } from '@/assets/icons';
+import { Activity, ArrowLeftRight, CircleIcon, Crosshair, Eye, Hash, Landmark, Link2, ListOrdered, OctagonXIcon, TrainFront, MapPin } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ type DebugPanelProps = {
     onShowStationLocationsChange: (value: boolean) => void;
     showProximityLines: boolean;
     onShowProximityLinesChange: (value: boolean) => void;
+    showBogies: boolean;
+    onShowBogiesChange: (value: boolean) => void;
     showStats: boolean;
     onShowStatsChange: (value: boolean) => void;
     terrainXray: boolean;
@@ -50,6 +52,8 @@ export function DebugPanel({
     onShowStationLocationsChange,
     showProximityLines,
     onShowProximityLinesChange,
+    showBogies,
+    onShowBogiesChange,
     showStats,
     onShowStatsChange,
     terrainXray,
@@ -140,6 +144,17 @@ export function DebugPanel({
                         aria-label="Toggle coupling proximity lines"
                     >
                         <Link2 className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">{t('showBogies')}</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showBogies}
+                        onPressedChange={onShowBogiesChange}
+                        aria-label="Toggle bogies rendering"
+                    >
+                        <CircleIcon className="size-3.5" />
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">
