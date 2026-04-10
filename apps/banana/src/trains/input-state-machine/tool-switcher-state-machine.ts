@@ -1,9 +1,10 @@
 import { BaseContext, CreateStateType, DefaultOutputMapping, Defer, EventReactions, NO_OP, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { LayoutStateMachine } from "./layout-kmt-state-machine";
 import { createLayoutStateMachine, CurveCreationEngine, TrainPlacementStateMachine } from ".";
+import { DuplicateToSideStateMachine } from "./duplicate-to-side-state-machine";
 import { StationPlacementStateMachine } from "@/stations/station-placement-state-machine";
 
-export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'IDLE'] as const;
+export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'DUPLICATE', 'IDLE'] as const;
 
 export type ToolSwitcherStates = CreateStateType<typeof TOOL_SWITCHER_STATES>;
 
@@ -11,6 +12,7 @@ export type ToolSwitcherEvents = {
     "switchToLayout": {};
     "switchToTrain": {};
     "switchToStation": {};
+    "switchToDuplicate": {};
     "switchToIdle": {};
 }
 
@@ -24,6 +26,7 @@ export type ToolSwitcherEventOutputMapping = {
     switchToLayout: void;
     switchToTrain: void;
     switchToStation: void;
+    switchToDuplicate: void;
     switchToIdle: void;
 }
 
@@ -44,6 +47,10 @@ class ToolSwitcherIdleState extends TemplateState<ToolSwitcherEvents, ToolSwitch
         switchToStation: {
             action: NO_OP,
             defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
         },
         switchToIdle: {
             action: NO_OP,
@@ -98,6 +105,10 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
             action: NO_OP,
             defaultTargetState: 'STATION',
         },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -125,6 +136,10 @@ class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitc
         switchToStation: {
             action: NO_OP,
             defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
         },
         switchToIdle: {
             action: NO_OP,
@@ -176,6 +191,10 @@ class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwi
             action: NO_OP,
             defaultTargetState: 'STATION',
         },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -201,16 +220,68 @@ class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwi
     };
 };
 
+class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
+    private _duplicateSubStateMachine: DuplicateToSideStateMachine;
+
+    constructor(duplicateSubStateMachine: DuplicateToSideStateMachine) {
+        super();
+        this._duplicateSubStateMachine = duplicateSubStateMachine;
+    }
+
+    protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
+        switchToLayout: {
+            action: NO_OP,
+            defaultTargetState: 'LAYOUT',
+        },
+        switchToTrain: {
+            action: NO_OP,
+            defaultTargetState: 'TRAIN',
+        },
+        switchToStation: {
+            action: NO_OP,
+            defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
+        switchToIdle: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE',
+        }
+    }
+
+    uponEnter(context: BaseContext, stateMachine: StateMachine<ToolSwitcherEvents, BaseContext, ToolSwitcherStates, DefaultOutputMapping<ToolSwitcherEvents>>, from: ToolSwitcherStates | "INITIAL"): void {
+        this._duplicateSubStateMachine.happens('startDuplicate');
+    }
+
+    beforeExit(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, toState: ToolSwitcherStates) {
+        this._duplicateSubStateMachine.happens('endDuplicate');
+    }
+
+    protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
+        action: (context, event, eventKey, stateMachine) => {
+            const result = this._duplicateSubStateMachine.happens(eventKey, event);
+            if (result.handled) {
+                return { handled: true, output: result.output };
+            }
+            return { handled: false };
+        },
+    };
+};
+
 export const createToolSwitcherStateMachine = (
     layoutSubStateMachine: LayoutStateMachine,
     trainSubStateMachine: TrainPlacementStateMachine,
     stationSubStateMachine: StationPlacementStateMachine,
+    duplicateSubStateMachine: DuplicateToSideStateMachine,
 ): ToolSwitcherStateMachine => {
     return new TemplateStateMachine<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates>({
         IDLE: new ToolSwitcherIdleState(),
         LAYOUT: new ToolSwitcherLayoutState(layoutSubStateMachine),
         TRAIN: new ToolSwitcherTrainState(trainSubStateMachine),
         STATION: new ToolSwitcherStationState(stationSubStateMachine),
+        DUPLICATE: new ToolSwitcherDuplicateState(duplicateSubStateMachine),
     }, 'IDLE', {
         setup: () => { },
         cleanup: () => { },
