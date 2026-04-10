@@ -2,11 +2,29 @@ import { iconHandoff as iconHandoffStringsZhTW } from './icon-handoff-zh-TW';
 
 const zhTW = {
     translation: {
+        // Toolbar - Category Rail
+        toolbarCategoryDrawing: '繪製工具',
+        toolbarCategoryTrains: '列車管理',
+        toolbarCategoryInfra: '基礎設施 & 顯示',
+        toolbarCategoryScene: '場景 & 檔案',
+        toolbarCategoryDebug: '除錯 & 檢視',
+
         // Toolbar - Layout
         startLayout: '開始佈軌',
         endLayout: '結束佈軌',
         deleteTrack: '刪除軌道',
         endDeletion: '結束刪除',
+        duplicateTrackToSide: '複製軌道到側邊',
+
+        // Toolbar - Mode Exit Chip
+        exitMode: '結束',
+        modeDrawingLayout: '佈軌中',
+        modeDeletingTrack: '刪除軌道中',
+        modePlacingTrain: '放置列車中',
+        modePlacingStation: '放置車站中',
+        modeDuplicatingTrack: '複製軌道中',
+        modePlacingBuilding: '放置建築中',
+        modeDeletingBuilding: '刪除建築中',
 
         // Toolbar - Train
         placeTrain: '放置列車',
@@ -33,6 +51,10 @@ const zhTW = {
         hideElevationGradient: '隱藏高度漸層',
         showPreviewCurveArcs: '顯示預覽曲線弧',
         hidePreviewCurveArcs: '隱藏預覽曲線弧',
+        elevationGradientLabel: '高度漸層',
+        curveArcsLabel: '曲線弧',
+        mapLabel: '地圖',
+        importExport: '匯入 / 匯出',
         showMap: '顯示地圖',
         hideMap: '隱藏地圖',
         openDebug: '開啟除錯選項',

@@ -2,11 +2,29 @@ import { iconHandoff as iconHandoffStringsEn } from './icon-handoff-en';
 
 const en = {
     translation: {
+        // Toolbar - Category Rail
+        toolbarCategoryDrawing: 'Drawing Tools',
+        toolbarCategoryTrains: 'Train Management',
+        toolbarCategoryInfra: 'Infrastructure & Visualization',
+        toolbarCategoryScene: 'Scene & Files',
+        toolbarCategoryDebug: 'Debug & View',
+
         // Toolbar - Layout
         startLayout: 'Start Layout',
         endLayout: 'End Layout',
         deleteTrack: 'Delete Track',
         endDeletion: 'End Deletion',
+        duplicateTrackToSide: 'Duplicate Track to Side',
+
+        // Toolbar - Mode Exit Chip
+        exitMode: 'Exit',
+        modeDrawingLayout: 'Drawing Tracks',
+        modeDeletingTrack: 'Deleting Tracks',
+        modePlacingTrain: 'Placing Train',
+        modePlacingStation: 'Placing Station',
+        modeDuplicatingTrack: 'Duplicating Track',
+        modePlacingBuilding: 'Placing Building',
+        modeDeletingBuilding: 'Deleting Building',
 
         // Toolbar - Train
         placeTrain: 'Place Train',
@@ -33,6 +51,10 @@ const en = {
         hideElevationGradient: 'Hide Elevation Gradient',
         showPreviewCurveArcs: 'Show Preview Curve Arcs',
         hidePreviewCurveArcs: 'Hide Preview Curve Arcs',
+        elevationGradientLabel: 'Elevation Gradient',
+        curveArcsLabel: 'Curve Arcs',
+        mapLabel: 'Map',
+        importExport: 'Import / Export',
         showMap: 'Show Map',
         hideMap: 'Hide Map',
         openDebug: 'Open Debug',
