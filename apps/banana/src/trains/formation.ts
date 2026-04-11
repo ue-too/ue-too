@@ -3,6 +3,7 @@ import { Point, approximately } from '@ue-too/curve';
 import { SegmentSplitInfo, TrackGraph } from './tracks/track';
 import {
     JointDirectionManager,
+    WalkBackJointDirectionManager,
     flipDirection,
 } from './input-state-machine/train-kmt-state-machine';
 import { Car, TrainUnit, generateCarId, generateFormationId } from './cars';
@@ -594,6 +595,7 @@ export class Train {
     private _position: TrainPosition | null;
     private _trackGraph: TrackGraph;
     private _jointDirectionManager: JointDirectionManager;
+    private _walkBackResolver: WalkBackJointDirectionManager;
     private _speed: number = 0;
     private _acceleration: number = 0;
     private _throttle: ThrottleSteps = 'N';
@@ -644,6 +646,7 @@ export class Train {
         this._position = position;
         this._trackGraph = trackGraph;
         this._jointDirectionManager = jointDirectionManager;
+        this._walkBackResolver = new WalkBackJointDirectionManager(trackGraph);
         this._formation = formation ?? Formation.createDefault();
         this._maxSpeed = normalizeTrainMaxSpeed(maxSpeed);
     }
@@ -710,7 +713,7 @@ export class Train {
                     accuOffset,
                     { ...position, direction: expandDirection },
                     this._trackGraph,
-                    this._jointDirectionManager,
+                    this._walkBackResolver,
                     this._occupiedJointNumbers,
                     this._occupiedTrackSegments
                 )
@@ -718,7 +721,7 @@ export class Train {
                     accuOffset,
                     { ...position, direction: expandDirection },
                     this._trackGraph,
-                    this._jointDirectionManager
+                    this._walkBackResolver
                 );
             if (bogiePosition === null || bogiePosition.stop) {
                 // console.warn('cannot put the whole train at the current position');
