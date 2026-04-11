@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
+import { APP_DISPLAY_NAME } from '@/branding';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
 import { cn } from '@/lib/utils';
 
@@ -125,7 +126,9 @@ function HandoffTable({
                                             />
                                         </td>
                                         <td className="text-muted-foreground align-top px-3 py-3 leading-relaxed">
-                                            {t(`desc.${row.descKey}`)}
+                                            {t(`desc.${row.descKey}`, {
+                                                appName: APP_DISPLAY_NAME,
+                                            })}
                                         </td>
                                     </tr>
                                 );
@@ -155,7 +158,9 @@ function HandoffTable({
                                         />
                                     </td>
                                     <td className="text-muted-foreground align-top px-3 py-3 leading-relaxed">
-                                        {t(`desc.${row.exportName}`)}
+                                        {t(`desc.${row.exportName}`, {
+                                            appName: APP_DISPLAY_NAME,
+                                        })}
                                     </td>
                                 </tr>
                             );
@@ -195,7 +200,7 @@ export function IconHandoffPage(): ReactNode {
                             {t('title')}
                         </h1>
                         <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
-                            {t('intro')}{' '}
+                            {t('intro', { appName: APP_DISPLAY_NAME })}{' '}
                             <a
                                 href="https://lucide.dev/icons/"
                                 className="text-primary underline-offset-2 hover:underline"

@@ -4,7 +4,7 @@
 export const iconHandoff = {
     title: 'Icon handoff',
     intro:
-        'Visual inventory for the Banana app: each row shows the icon as implemented today, a slot for the designer-delivered SVG, and what it is used for. Lucide reference:',
+        'Visual inventory for the {{appName}} app: each row shows the icon as implemented today, a slot for the designer-delivered SVG, and what it is used for. Lucide reference:',
     lucideLinkLabel: 'lucide.dev',
     introClosing: '.',
     backToLanding: '← Back to landing',
@@ -82,7 +82,7 @@ export const iconHandoff = {
             'Train panel: focus camera on the selected train (animated zoom/pan to train).',
         Gauge:
             'Export submenu: import car definition from train editor (speedometer metaphor for vehicle spec).',
-        Github: 'Landing page footer: link to Banana app source on GitHub.',
+        Github: 'Landing page footer: link to {{appName}} app source on GitHub.',
         GripHorizontal:
             'Train editor: toggle edit train car image mode (resize/move sprite).',
         Hash: 'Debug panel: toggle track joint numbers overlay.',
@@ -109,7 +109,7 @@ export const iconHandoff = {
             'Train editor: edit bogies mode (place/adjust wheel positions).',
         OctagonXIcon: 'Toast: error notification icon.',
         Package:
-            'Terrain editor: export terrain as scene bundle for use in the main Banana app.',
+            'Terrain editor: export terrain as scene bundle for use in the main {{appName}} app.',
         Pause:
             'Simulation time control: pause the world clock (shown while running).',
         Pencil:
@@ -140,7 +140,7 @@ export const iconHandoff = {
             'Main toolbar: depot panel (car stock). Also used for station placement mode (warehouse / yard metaphor).',
         X: 'Close draggable panels. Station list: cancel platform-picking mode.',
         favicon:
-            'Browser tab favicon for Banana (public/favicon.svg). Replace the shipped favicon when branding updates.',
+            'Browser tab favicon for {{appName}} (public/favicon.svg). Replace the shipped favicon when branding updates.',
         languageChevron:
             'Tiny inline SVG beside the locale label in LanguageSwitcher.tsx (opens language menu). Not part of the Lucide barrel.',
     },

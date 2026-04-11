@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Github } from '@/assets/icons';
+import { APP_DISPLAY_NAME } from '@/branding';
 
 import { LedMarquee } from '@/components/led-marquee';
 import { LanguageSwitcher } from '@/components/toolbar/LanguageSwitcher';
@@ -233,7 +234,7 @@ export function LandingPage(): React.ReactNode {
                                     {t('nextStop')}
                                 </span>
                                 <LedMarquee
-                                    text="Banana"
+                                    text={APP_DISPLAY_NAME}
                                     rows={24}
                                     visibleCols={80}
                                     height={120}
@@ -377,7 +378,7 @@ export function LandingPage(): React.ReactNode {
                                     href="https://github.com/ue-too/ue-too/tree/main/apps/banana"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    aria-label="Banana source on GitHub"
+                                    aria-label={`${APP_DISPLAY_NAME} source on GitHub`}
                                     className="hover:text-foreground ml-1 inline-flex items-center align-middle transition-colors whitespace-nowrap"
                                 >
                                     <Github className="h-3.5 w-3.5" />
