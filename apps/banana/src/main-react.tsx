@@ -3,6 +3,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 
+import { APP_DISPLAY_NAME } from '@/branding';
 import { AnalyticsNotice } from '@/components/analytics-notice';
 import { Toaster } from '@/components/ui/sonner';
 import '@/i18n';
@@ -22,6 +23,8 @@ declare module '@ue-too/board-pixi-react-integration' {
         components: BananaAppComponents;
     }
 }
+
+document.title = APP_DISPLAY_NAME;
 
 const rootElement = document.getElementById('root');
 

@@ -4,7 +4,7 @@
 export const iconHandoff = {
     title: '圖示交付（設計用）',
     intro:
-        'Banana 應用程式的視覺化圖示清單：每一列顯示目前實作的圖示、設計師交付用 SVG 的預留位置，以及用途說明。Lucide 參考：',
+        '{{appName}} 應用程式的視覺化圖示清單：每一列顯示目前實作的圖示、設計師交付用 SVG 的預留位置，以及用途說明。Lucide 參考：',
     lucideLinkLabel: 'lucide.dev',
     introClosing: '。',
     backToLanding: '← 返回首頁',
@@ -75,7 +75,7 @@ export const iconHandoff = {
         Focus: '列車面板：將攝影機聚焦所選列車（縮放／平移動畫）。',
         Gauge:
             '匯出子選單：從列車編輯器匯入車輛定義（儀表隱喻）。',
-        Github: '首頁頁尾：連結至 GitHub 上的 Banana 原始碼。',
+        Github: '首頁頁尾：連結至 GitHub 上的 {{appName}} 原始碼。',
         GripHorizontal: '列車編輯器：切換編輯車體圖片模式（縮放／移動精靈圖）。',
         Hash: '除錯面板：切換軌道接點編號疊加層。',
         Image: '列車編輯器：匯入點陣圖至車體。',
@@ -99,7 +99,7 @@ export const iconHandoff = {
             '地形控制：地形填色顯示開關。匯出子選單：匯入地形資料。',
         MousePointer2: '列車編輯器：編輯轉向架模式（放置／調整輪位）。',
         OctagonXIcon: 'Toast：錯誤通知圖示。',
-        Package: '地形編輯器：將地形匯出為場景包，供主程式 Banana 使用。',
+        Package: '地形編輯器：將地形匯出為場景包，供主程式 {{appName}} 使用。',
         Pause: '模擬時間控制：暫停世界時鐘（執行中時顯示）。',
         Pencil:
             '車庫：重新命名庫存車輛。編組編輯器：重新命名編組（觸發行內編輯）。',
