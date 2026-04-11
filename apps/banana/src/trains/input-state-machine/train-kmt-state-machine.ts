@@ -76,15 +76,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
 
     getNextJoint(
         jointNumber: number,
-        direction: 'tangent' | 'reverseTangent',
-        occupiedJoints?: {
-            jointNumber: number;
-            direction: 'tangent' | 'reverseTangent';
-        }[],
-        occupiedTrackSegments?: {
-            trackNumber: number;
-            inTrackDirection: 'tangent' | 'reverseTangent';
-        }[]
+        direction: 'tangent' | 'reverseTangent'
     ): {
         jointNumber: number;
         direction: 'tangent' | 'reverseTangent';
@@ -101,25 +93,7 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             return null;
         }
 
-        // When there are multiple branches and we know which segments the
-        // train occupies, prefer the branch whose segment is already occupied.
-        let selectedNextJointNumber: number | undefined;
-        if (possibleNextJoints.size > 1 && occupiedTrackSegments && occupiedTrackSegments.length > 0) {
-            const occupiedSet = new Set(occupiedTrackSegments.map(s => s.trackNumber));
-            for (const nextJoint of possibleNextJoints) {
-                const segNumber = joint.connections.get(nextJoint);
-                if (segNumber === undefined) continue;
-                if (occupiedSet.has(segNumber)) {
-                    selectedNextJointNumber = nextJoint;
-                    break;
-                }
-            }
-        }
-
-        // Fall back to the first available joint if no occupied match was found.
-        if (selectedNextJointNumber === undefined) {
-            selectedNextJointNumber = possibleNextJoints.values().next().value;
-        }
+        const selectedNextJointNumber = possibleNextJoints.values().next().value;
         if (selectedNextJointNumber === undefined) {
             return null;
         }
@@ -145,6 +119,113 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             nextTrackSegment.t0Joint === jointNumber
                 ? 'tangent'
                 : 'reverseTangent';
+        return {
+            jointNumber: selectedNextJointNumber,
+            direction: nextDirection,
+            curveNumber: nextTrackSegmentNumber,
+        };
+    }
+}
+
+/**
+ * Joint resolver for bogie walk-back.
+ *
+ * Walk-back is a fundamentally different question from forward advancement:
+ * forward asks "where should the train go next?" (a policy question answered
+ * by the train's configured {@link JointDirectionManager} — default heuristic,
+ * route-aware, etc.), while walk-back asks "which segments is the body
+ * already on?" (a geometric question answered by the occupied track segments
+ * that previous forward steps have recorded).
+ *
+ * This resolver is used by {@link Train._getBogiePositions} instead of the
+ * train's forward-policy JDM, so walk-back is unaffected by quirks in the
+ * forward policy — specifically the revisited-joint and `currentIndex` lag
+ * edge cases that used to bite {@link TimetableJointDirectionManager}.
+ *
+ * Strategy:
+ *   - Unambiguous joint (one reachable branch) → pick it.
+ *   - Ambiguous joint with a populated occupied list → strictly pick the
+ *     branch whose segment is in the list.  If no branch matches, return
+ *     null — the train body is in an inconsistent state and walk-back
+ *     should fail loudly rather than silently shifting the rear.
+ *   - Ambiguous joint with an empty occupied list → bootstrap by picking
+ *     the first-available branch.  This only fires on the very first
+ *     walk-back pass after placement, before the seeding path at
+ *     {@link Train._getBogiePositions} has populated the occupied list.
+ */
+export class WalkBackJointDirectionManager implements JointDirectionManager {
+    private _trackGraph: TrackGraph;
+
+    constructor(trackGraph: TrackGraph) {
+        this._trackGraph = trackGraph;
+    }
+
+    getNextJoint(
+        jointNumber: number,
+        direction: 'tangent' | 'reverseTangent',
+        _occupiedJoints?: {
+            jointNumber: number;
+            direction: 'tangent' | 'reverseTangent';
+        }[],
+        occupiedTrackSegments?: {
+            trackNumber: number;
+            inTrackDirection: 'tangent' | 'reverseTangent';
+        }[]
+    ): {
+        jointNumber: number;
+        direction: 'tangent' | 'reverseTangent';
+        curveNumber: number;
+    } | null {
+        const joint = this._trackGraph.getJoint(jointNumber);
+        if (joint === null) return null;
+
+        const possibleNextJoints = joint.direction[direction];
+        if (possibleNextJoints.size === 0) return null;
+
+        let selectedNextJointNumber: number | undefined;
+
+        const hasOccupied =
+            occupiedTrackSegments !== undefined &&
+            occupiedTrackSegments.length > 0;
+
+        if (possibleNextJoints.size > 1 && hasOccupied) {
+            const occupiedSet = new Set(
+                occupiedTrackSegments!.map(s => s.trackNumber)
+            );
+            for (const nextJoint of possibleNextJoints) {
+                const segNumber = joint.connections.get(nextJoint);
+                if (segNumber === undefined) continue;
+                if (occupiedSet.has(segNumber)) {
+                    selectedNextJointNumber = nextJoint;
+                    break;
+                }
+            }
+            // Ambiguous junction, occupied list populated, but no branch
+            // matched — the train body is inconsistent with the graph.
+            // Fail instead of silently picking the wrong branch.
+            if (selectedNextJointNumber === undefined) return null;
+        }
+
+        // Unambiguous joint OR bootstrap (empty occupied) — pick the first
+        // available branch.
+        if (selectedNextJointNumber === undefined) {
+            selectedNextJointNumber = possibleNextJoints.values().next().value;
+        }
+        if (selectedNextJointNumber === undefined) return null;
+
+        const nextTrackSegmentNumber =
+            joint.connections.get(selectedNextJointNumber);
+        if (nextTrackSegmentNumber === undefined) return null;
+
+        const nextTrackSegment =
+            this._trackGraph.getTrackSegmentWithJoints(nextTrackSegmentNumber);
+        if (nextTrackSegment === null) return null;
+
+        const nextDirection: 'tangent' | 'reverseTangent' =
+            nextTrackSegment.t0Joint === jointNumber
+                ? 'tangent'
+                : 'reverseTangent';
+
         return {
             jointNumber: selectedNextJointNumber,
             direction: nextDirection,

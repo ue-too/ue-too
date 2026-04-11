@@ -129,11 +129,6 @@ export class TimetableJointDirectionManager implements JointDirectionManager {
     }
 
     // Route doesn't cover this junction — fall back to default behaviour.
-    return this._fallback.getNextJoint(
-      jointNumber,
-      direction,
-      occupiedJoints,
-      occupiedTrackSegments,
-    );
+    return this._fallback.getNextJoint(jointNumber, direction);
   }
 }
