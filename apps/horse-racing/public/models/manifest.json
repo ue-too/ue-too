@@ -18,5 +18,9 @@
   {
     "label": "V45 P2s1",
     "url": "/models/v45_p2s1.onnx"
+  },
+  {
+    "label": "V46 P2s3",
+    "url": "/models/v46_p2s3.onnx"
   }
 ]
