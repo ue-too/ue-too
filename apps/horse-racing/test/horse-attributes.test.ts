@@ -22,8 +22,14 @@ import {
     updateStamina,
     applyExhaustion,
     corneringForceMargin,
+    computeBurstMax,
     GRIP_FORCE_BASELINE,
+    BURST_EMPTY_CLAMP,
+    CLIFF_THRESHOLD,
+    CLIFF_CRUISE_MULT,
+    CLIFF_ACCEL_MULT,
 } from '../src/simulation/stamina';
+import type { HorseStaminaState } from '../src/simulation/stamina';
 import { HorseRacingEngine } from '../src/simulation/horse-racing-engine';
 import type { HorseAction } from '../src/simulation/horse-racing-engine';
 
@@ -48,6 +54,7 @@ function makeRaceContext(overrides?: Partial<RaceContext>): RaceContext {
         rankings: [1, 2, 3, 4],
         totalHorses: 4,
         surface: 'dry',
+        activeSkills: new Set<string>(),
         ...overrides,
     };
 }
@@ -144,95 +151,155 @@ describe('resolveEffectiveAttributes', () => {
 
 // ---- Stamina tests ----
 
+function makeState(
+    stamina: number = 100,
+    attrs: CoreAttributes = DEFAULT_CORE_ATTRIBUTES,
+): HorseStaminaState {
+    const burstMax = computeBurstMax(attrs);
+    return {
+        currentStamina: stamina,
+        baseAttributes: attrs,
+        burstPool: burstMax,
+        burstMax,
+        isFrontmost: false,
+        isDrafting: false,
+    };
+}
+
 describe('updateStamina', () => {
     const base = DEFAULT_CORE_ATTRIBUTES;
 
-    it('never increases (no recovery)', () => {
-        // At cruise speed with no actions, stamina should only decrease
-        const newStamina = updateStamina(50, base, 0, 0, base.cruiseSpeed - 1, base.cruiseSpeed - 1, 0, Infinity);
-        expect(newStamina).toBeLessThanOrEqual(50);
-    });
-
     it('no drain at zero speed and no actions', () => {
-        const newStamina = updateStamina(100, base, 0, 0, 0, 0, 0, Infinity);
-        expect(newStamina).toBe(100);
+        const state = makeState(100);
+        updateStamina(state, base, 0, 0, 0, 0, 0, Infinity);
+        expect(state.currentStamina).toBe(100);
     });
 
     it('drains when jockey pushes forward', () => {
-        const newStamina = updateStamina(100, base, 5, 0, 10, 10, 0, Infinity);
-        expect(newStamina).toBeLessThan(100);
+        const state = makeState(100);
+        updateStamina(state, base, 5, 0, 10, 10, 0, Infinity);
+        expect(state.currentStamina).toBeLessThan(100);
     });
 
     it('drains when jockey steers laterally', () => {
-        const noSteer = updateStamina(100, base, 0, 0, 14, 14, 0, Infinity);
-        const steer = updateStamina(100, base, 0, 3, 14, 14, 0, Infinity);
-        expect(steer).toBeLessThan(noSteer);
+        const noSteer = makeState(100);
+        const steer = makeState(100);
+        updateStamina(noSteer, base, 0, 0, 14, 14, 0, Infinity);
+        updateStamina(steer, base, 0, 3, 14, 14, 0, Infinity);
+        expect(steer.currentStamina).toBeLessThan(noSteer.currentStamina);
     });
 
     it('drains from sustained lateral velocity', () => {
-        const noDrift = updateStamina(100, base, 0, 0, 14, 14, 0, Infinity);
-        const drift = updateStamina(100, base, 0, 0, 14, 14, 2, Infinity);
-        expect(drift).toBeLessThan(noDrift);
+        const noDrift = makeState(100);
+        const drift = makeState(100);
+        updateStamina(noDrift, base, 0, 0, 14, 14, 0, Infinity);
+        updateStamina(drift, base, 0, 0, 14, 14, 2, Infinity);
+        expect(drift.currentStamina).toBeLessThan(noDrift.currentStamina);
     });
 
-    it('drains when speed exceeds cruise', () => {
-        const newStamina = updateStamina(100, base, 0, 0, base.cruiseSpeed + 6, base.cruiseSpeed + 6, 0, Infinity);
-        expect(newStamina).toBeLessThan(100);
+    it('drains the burst pool when speed exceeds cruise', () => {
+        const state = makeState(100);
+        const startBurst = state.burstPool;
+        for (let i = 0; i < 20; i++) {
+            updateStamina(state, base, 0, 0, base.cruiseSpeed + 3, base.cruiseSpeed + 3, 0, Infinity);
+        }
+        expect(state.burstPool).toBeLessThan(startBurst);
+    });
+
+    it('recovers the burst pool below cruise buffer', () => {
+        const state = makeState(100);
+        state.burstPool = state.burstMax * 0.5;
+        const before = state.burstPool;
+        for (let i = 0; i < 50; i++) {
+            updateStamina(state, base, 0, 0, base.cruiseSpeed - 2, base.cruiseSpeed - 2, 0, Infinity);
+        }
+        expect(state.burstPool).toBeGreaterThan(before);
     });
 
     it('drains on cornering beyond grip threshold', () => {
+        const state = makeState(100);
         const tightTurnRadius = 5;
         const highSpeed = 40;
         const requiredForce = (highSpeed * highSpeed) / tightTurnRadius;
         const tolerated = base.corneringGrip * GRIP_FORCE_BASELINE;
         expect(requiredForce).toBeGreaterThan(tolerated);
 
-        const newStamina = updateStamina(100, base, 0, 0, highSpeed, highSpeed, 0, tightTurnRadius);
-        expect(newStamina).toBeLessThan(100);
+        updateStamina(state, base, 0, 0, highSpeed, highSpeed, 0, tightTurnRadius);
+        expect(state.currentStamina).toBeLessThan(100);
     });
 
     it('does not go below 0', () => {
-        const newStamina = updateStamina(0.01, base, 10, 5, 20, 20, 3, 10);
-        expect(newStamina).toBeGreaterThanOrEqual(0);
+        const state = makeState(0.01);
+        updateStamina(state, base, 10, 5, 20, 20, 3, 10);
+        expect(state.currentStamina).toBeGreaterThanOrEqual(0);
+    });
+
+    it('frontmost horse pays a lead penalty above cruise', () => {
+        const front = makeState(100);
+        front.isFrontmost = true;
+        const mid = makeState(100);
+        mid.isFrontmost = false;
+        const speed = base.cruiseSpeed + 2;
+        updateStamina(front, base, 0, 0, speed, speed, 0, Infinity);
+        updateStamina(mid, base, 0, 0, speed, speed, 0, Infinity);
+        expect(front.currentStamina).toBeLessThan(mid.currentStamina);
+    });
+
+    it('drafting at cruise drains less than no drafting', () => {
+        const drafter = makeState(50);
+        drafter.isDrafting = true;
+        const solo = makeState(50);
+        updateStamina(drafter, base, 0, 0, base.cruiseSpeed, base.cruiseSpeed, 0, Infinity);
+        updateStamina(solo, base, 0, 0, base.cruiseSpeed, base.cruiseSpeed, 0, Infinity);
+        expect(drafter.currentStamina).toBeGreaterThan(solo.currentStamina);
     });
 });
 
 describe('applyExhaustion', () => {
     const base = DEFAULT_CORE_ATTRIBUTES;
 
-    it('no effect when stamina is above 30%', () => {
-        const eff = applyExhaustion(base, 50, 100);
-        expect(eff.forwardAccel).toBeCloseTo(base.forwardAccel);
+    it('no effect well above the cliff threshold', () => {
+        const state = makeState(50, base);
+        const eff = applyExhaustion(base, state, 100);
+        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed);
         expect(eff.maxSpeed).toBeCloseTo(base.maxSpeed);
-        expect(eff.turnAccel).toBeCloseTo(base.turnAccel);
+        expect(eff.forwardAccel).toBeCloseTo(base.forwardAccel);
     });
 
-    it('degrades forwardAccel below 30%', () => {
-        const eff = applyExhaustion(base, 15, 100); // 15% stamina
-        expect(eff.forwardAccel).toBeLessThan(base.forwardAccel);
+    it('cliff collapse at the threshold', () => {
+        const state = makeState(CLIFF_THRESHOLD * 100, base);
+        const eff = applyExhaustion(base, state, 100);
+        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed * CLIFF_CRUISE_MULT);
+        expect(eff.maxSpeed).toBeCloseTo(eff.cruiseSpeed + BURST_EMPTY_CLAMP);
+        expect(eff.forwardAccel).toBeCloseTo(base.forwardAccel * CLIFF_ACCEL_MULT);
     });
 
-    it('degrades maxSpeed toward cruiseSpeed below 20%', () => {
-        const eff = applyExhaustion(base, 10, 100); // 10% stamina
-        expect(eff.maxSpeed).toBeLessThan(base.maxSpeed);
-        expect(eff.maxSpeed).toBeGreaterThanOrEqual(base.cruiseSpeed);
+    it('cliff collapse below the threshold', () => {
+        const state = makeState(0, base);
+        const eff = applyExhaustion(base, state, 100);
+        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed * CLIFF_CRUISE_MULT);
     });
 
-    it('degrades turnAccel progressively below 25%', () => {
-        const at25 = applyExhaustion(base, 25, 100);
-        expect(at25.turnAccel).toBeCloseTo(base.turnAccel); // threshold boundary
-
-        const at12 = applyExhaustion(base, 12.5, 100); // ~75%
-        expect(at12.turnAccel).toBeLessThan(base.turnAccel);
-        expect(at12.turnAccel).toBeCloseTo(base.turnAccel * 0.75);
-
-        const at0 = applyExhaustion(base, 0, 100); // ~50%
-        expect(at0.turnAccel).toBeCloseTo(base.turnAccel * 0.5);
+    it('empty burst pool clamps max speed', () => {
+        const state = makeState(50, base);
+        state.burstPool = 0;
+        const eff = applyExhaustion(base, state, 100);
+        expect(eff.maxSpeed).toBeCloseTo(base.cruiseSpeed + BURST_EMPTY_CLAMP);
+        expect(eff.cruiseSpeed).toBeCloseTo(base.cruiseSpeed);
     });
 
-    it('at 0 stamina, forwardAccel drops to minimum', () => {
-        const eff = applyExhaustion(base, 0, 100);
-        expect(eff.forwardAccel).toBeCloseTo(TRAIT_RANGES.forwardAccel.min);
+    it('burst clamp only ratchets max speed downward', () => {
+        const narrow: CoreAttributes = { ...base, cruiseSpeed: 15.0, maxSpeed: 15.2 };
+        const state = makeState(50, narrow);
+        state.burstPool = 0;
+        const eff = applyExhaustion(narrow, state, 100);
+        expect(eff.maxSpeed).toBeLessThanOrEqual(narrow.maxSpeed);
+    });
+
+    it('burst with pool: no clamp', () => {
+        const state = makeState(50, base);
+        const eff = applyExhaustion(base, state, 100);
+        expect(eff.maxSpeed).toBeCloseTo(base.maxSpeed);
     });
 });
 
@@ -314,9 +381,12 @@ describe('Engine with attributes', () => {
         expect(after[0].currentStamina).toBeLessThan(initialStamina);
     });
 
-    it('stamina never recovers (fixed pool)', () => {
+    it('frontmost horse without drafting cannot recover', () => {
+        // Front-runner pays the lead penalty (no drafting available), so under
+        // the redesigned stamina its aerobic should only ever drop while it
+        // keeps moving. The trailing horses CAN recover via drafting, which
+        // is exactly the point of the redesign.
         const engine = new HorseRacingEngine(loadTrack());
-        // Push briefly to drain stamina
         const pushActions: HorseAction[] = Array.from({ length: 4 }, () => ({
             extraTangential: 10,
             extraNormal: 0,
@@ -325,13 +395,21 @@ describe('Engine with attributes', () => {
             engine.step(pushActions);
         }
         const drained = engine.step(pushActions);
-        const drainedStamina = drained[0].currentStamina;
+        // Pick whichever horse is currently leading the field.
+        let frontIdx = 0;
+        for (let i = 1; i < drained.length; i++) {
+            if (drained[i].trackProgress > drained[frontIdx].trackProgress) {
+                frontIdx = i;
+            }
+        }
+        const frontDrained = drained[frontIdx].currentStamina;
 
-        // Coast — stamina should not recover, only continue to drain (distance tax)
         for (let t = 0; t < 100; t++) {
             engine.step(zeroActions(4));
         }
         const after = engine.step(zeroActions(4));
-        expect(after[0].currentStamina).toBeLessThanOrEqual(drainedStamina);
+        // The horse that was leading should still be at or below its drained
+        // value: lead penalty + distance tax, no recovery.
+        expect(after[frontIdx].currentStamina).toBeLessThanOrEqual(frontDrained);
     });
 });

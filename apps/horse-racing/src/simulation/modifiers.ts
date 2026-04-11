@@ -131,7 +131,9 @@ const drafting: ModifierDefinition = {
     id: 'drafting',
     name: 'Drafting',
     condition: (ctx, i) => isWithinBehindAnother(ctx.positions, ctx.velocities, i, 15),
-    effects: [{ target: 'cruiseSpeed', pct: 0.08 }], // up to +8% at full strength
+    // Drafting now drives aerobic recovery in stamina.ts (gated by isDrafting),
+    // not a raw cruiseSpeed boost. Effects are intentionally empty.
+    effects: [],
 };
 
 const packPressure: ModifierDefinition = {

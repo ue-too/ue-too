@@ -25,7 +25,13 @@ import {
 } from './horse-attributes';
 import type { RaceContext } from './modifiers';
 import { MODIFIER_REGISTRY, SKILL_MODIFIER_IDS } from './modifiers';
-import { updateStamina, applyExhaustion, corneringForceMargin } from './stamina';
+import {
+    updateStamina,
+    applyExhaustion,
+    corneringForceMargin,
+    computeBurstMax,
+    DRAFT_DISTANCE,
+} from './stamina';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -163,6 +169,14 @@ type HorseState = {
     baseAttributes: CoreAttributes;
     activeModifiers: ActiveModifier[];
     currentStamina: number;
+    /** Burst pool — kick reserve, separate from aerobic stamina. */
+    burstPool: number;
+    /** Burst pool size for this horse. */
+    burstMax: number;
+    /** Race-context flag, written each tick before stamina update. */
+    isFrontmost: boolean;
+    /** Race-context flag, written each tick before stamina update. */
+    isDrafting: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -298,6 +312,11 @@ export class HorseRacingEngine {
         // Build race context for modifier evaluation
         const raceCtx = this._buildRaceContext();
 
+        // Update isFrontmost / isDrafting on each horse's runtime state. The
+        // stamina update reads these flags to apply lead penalty and draft
+        // recovery, so they must be set before updateStamina runs.
+        this._updateRaceContextFlags(raceCtx);
+
         // Resolve effective attributes and apply forces per horse
         const effectiveAttrs: EffectiveAttributes[] = [];
         const firedModifiers: Set<string>[] = [];
@@ -345,8 +364,8 @@ export class HorseRacingEngine {
             const normalVel = PointCal.dotProduct(v, frame.normal);
             const extraT = resolvedActions[i].extraTangential * eff.forwardAccel;
             const extraN = resolvedActions[i].extraNormal * eff.turnAccel;
-            state.currentStamina = updateStamina(
-                state.currentStamina,
+            updateStamina(
+                state,
                 eff,
                 extraT,
                 extraN,
@@ -357,7 +376,7 @@ export class HorseRacingEngine {
             );
 
             // Apply exhaustion AFTER stamina update (matches Python)
-            eff = applyExhaustion(eff, state.currentStamina, state.baseAttributes.stamina);
+            eff = applyExhaustion(eff, state, state.baseAttributes.stamina);
             effectiveAttrs.push(eff);
         }
 
@@ -447,7 +466,8 @@ export class HorseRacingEngine {
                 const mult = collisionMassMultipliers[i];
                 (h as unknown as { _mass: number })._mass = effectiveAttrs[i].weight * mult;
                 // Scale force by same multiplier so accel = force/(weight*mult) = originalForce/weight
-                h.force = PointCal.multiplyVectorByScalar(h.force, mult);
+                const hf = h as unknown as { force: { x: number; y: number } };
+                hf.force = PointCal.multiplyVectorByScalar(hf.force, mult);
             }
 
             world.step(fixedDt);
@@ -717,11 +737,16 @@ export class HorseRacingEngine {
             startPositions.push({ x: pos.x, y: pos.y });
             navigators.push(nav);
 
+            const burstMax = computeBurstMax(baseAttributes);
             horseStates.push({
                 genome,
                 baseAttributes,
                 activeModifiers,
                 currentStamina: baseAttributes.stamina, // start fully rested
+                burstPool: burstMax,
+                burstMax,
+                isFrontmost: false,
+                isDrafting: false,
             });
         }
 
@@ -730,6 +755,49 @@ export class HorseRacingEngine {
         this._navigators = navigators;
         this._startPositions = startPositions;
         this._horseStates = horseStates;
+    }
+
+    /**
+     * Sets `isFrontmost` and `isDrafting` on each horse's runtime state.
+     *
+     * Frontmost = highest track progress (ties broken by lower index).
+     * Drafting  = at least one horse with greater track progress is within
+     *             {@link DRAFT_DISTANCE} meters.
+     */
+    private _updateRaceContextFlags(ctx: RaceContext): void {
+        const states = this._horseStates;
+        const n = states.length;
+        if (n === 0) return;
+
+        // Frontmost
+        let frontIdx = 0;
+        let frontProg = ctx.trackProgress[0];
+        for (let i = 1; i < n; i++) {
+            if (ctx.trackProgress[i] > frontProg) {
+                frontProg = ctx.trackProgress[i];
+                frontIdx = i;
+            }
+        }
+
+        // Drafting — quadratic but n is small (≤ 20)
+        const d2 = DRAFT_DISTANCE * DRAFT_DISTANCE;
+        for (let i = 0; i < n; i++) {
+            states[i].isFrontmost = i === frontIdx;
+            const myPos = ctx.positions[i];
+            const myProg = ctx.trackProgress[i];
+            let drafting = false;
+            for (let j = 0; j < n; j++) {
+                if (j === i) continue;
+                if (ctx.trackProgress[j] <= myProg) continue;
+                const dx = ctx.positions[j].x - myPos.x;
+                const dy = ctx.positions[j].y - myPos.y;
+                if (dx * dx + dy * dy < d2) {
+                    drafting = true;
+                    break;
+                }
+            }
+            states[i].isDrafting = drafting;
+        }
     }
 
     private _buildRaceContext(): RaceContext {

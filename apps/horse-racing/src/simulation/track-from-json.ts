@@ -40,16 +40,20 @@ function asPoint(v: unknown): Point {
  */
 export function parseTrackJson(raw: unknown): TrackSegment[] {
     // Support both bare array and {segments: [...]} object format
-    if (!Array.isArray(raw)) {
-        if (raw && typeof raw === 'object' && 'segments' in raw && Array.isArray((raw as Record<string, unknown>).segments)) {
-            raw = (raw as Record<string, unknown>).segments;
-        } else {
-            throw new Error('Track JSON must be an array or an object with a "segments" key');
-        }
+    let items: unknown[];
+    if (Array.isArray(raw)) {
+        items = raw;
+    } else if (
+        raw && typeof raw === 'object' && 'segments' in raw &&
+        Array.isArray((raw as Record<string, unknown>).segments)
+    ) {
+        items = (raw as Record<string, unknown>).segments as unknown[];
+    } else {
+        throw new Error('Track JSON must be an array or an object with a "segments" key');
     }
     const out: TrackSegment[] = [];
-    for (let i = 0; i < raw.length; i++) {
-        const item = raw[i];
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
         if (!isRecord(item)) throw new Error(`Segment ${i} invalid`);
         const tt = item.tracktype;
         if (tt !== 'STRAIGHT' && tt !== 'CURVE') {
