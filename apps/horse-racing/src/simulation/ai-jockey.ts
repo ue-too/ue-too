@@ -4,9 +4,9 @@
  * Supports both a single shared model (all AI horses use the same policy)
  * and per-horse models (each horse has its own specialized policy).
  *
- * Observations are always built at 108 dimensions (94 continuous + 8 modifier
+ * Observations are always built at 112 dimensions (98 continuous + 8 modifier
  * flags + 6 skill flags), then truncated to match each model's expected input
- * size. This allows older models (94 or 102 dims) to coexist with v16+ models.
+ * size. This allows older models (94, 102, 111 dims) to coexist with v53+ models.
  */
 
 import * as ort from 'onnxruntime-web';
@@ -217,7 +217,7 @@ export class AIJockeyManager {
 // ---------------------------------------------------------------------------
 
 const MAX_REL_HORSES = 19;
-const OBS_SIZE = 111;
+const OBS_SIZE = 112;
 
 function observationToArray(
     obs: HorseObservation,
@@ -272,50 +272,51 @@ function observationToArray(
     const activeIds = obs.activeModifierIds ?? new Set<string>();
 
     const arr = new Float32Array(OBS_SIZE);
-    // Ego features [0-7]
+    // Ego features [0-8]
     arr[0] = obs.tangentialVel;
     arr[1] = obs.normalVel;
     arr[2] = obs.displacement;
     arr[3] = obs.trackProgress;
     arr[4] = obs.turnRadius < 1e6 ? 1 / obs.turnRadius : 0;
     arr[5] = obs.currentStamina / obs.maxStamina;
-    arr[6] = obs.effectiveCruiseSpeed;
-    arr[7] = obs.effectiveMaxSpeed;
-    // Relative horses [8-83]
-    arr.set(relFlat, 8);
-    // Track/attribute features [84-96]
-    arr[84] = corneringMargin;
-    arr[85] = obs.slope;
-    arr[86] = obs.pushingPower;
-    arr[87] = obs.pushResistance;
-    arr[88] = obs.forwardAccel;
-    arr[89] = obs.turnAccel;
-    arr[90] = obs.corneringGrip;
-    arr[91] = obs.drainRateMult;
-    arr[92] = obs.placementNorm;
-    arr[93] = obs.numHorses / 20.0; // normalize to [0, 1]
-    arr[94] = obs.nextCurvature ?? 0;
-    arr[95] = (obs.distanceToNextCurve ?? 0) / 100.0; // normalize: 100m scale
-    arr[96] = (obs.trackLength ?? 900) / 2000.0; // normalize: 2000m scale
-    // Modifier flags [97-104]
+    arr[6] = obs.burstMax > 1e-6 ? obs.burstPool / obs.burstMax : 0;
+    arr[7] = obs.effectiveCruiseSpeed;
+    arr[8] = obs.effectiveMaxSpeed;
+    // Relative horses [9-84]
+    arr.set(relFlat, 9);
+    // Track/attribute features [85-97]
+    arr[85] = corneringMargin;
+    arr[86] = obs.slope;
+    arr[87] = obs.pushingPower;
+    arr[88] = obs.pushResistance;
+    arr[89] = obs.forwardAccel;
+    arr[90] = obs.turnAccel;
+    arr[91] = obs.corneringGrip;
+    arr[92] = obs.drainRateMult;
+    arr[93] = obs.placementNorm;
+    arr[94] = obs.numHorses / 20.0; // normalize to [0, 1]
+    arr[95] = obs.nextCurvature ?? 0;
+    arr[96] = (obs.distanceToNextCurve ?? 0) / 100.0; // normalize: 100m scale
+    arr[97] = (obs.trackLength ?? 900) / 2000.0; // normalize: 2000m scale
+    // Modifier flags [98-105]
     for (let k = 0; k < MODIFIER_ID_MAP.length; k++) {
-        arr[97 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
+        arr[98 + k] = activeIds.has(MODIFIER_ID_MAP[k][1]) ? 1.0 : 0.0;
     }
-    // Skill flags [105-110]
+    // Skill flags [106-111]
     const SKILL_IDS = [
         'staminaManagement', 'sprintTiming', 'overtake',
         'draftingExploit', 'corneringLine', 'pacePressure',
     ];
     const skillIds = obs.activeSkillIds ?? new Set<string>();
     for (let k = 0; k < SKILL_IDS.length; k++) {
-        arr[105 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
+        arr[106 + k] = skillIds.has(SKILL_IDS[k]) ? 5.0 : 0.0;
     }
     return arr;
 }
 
 /**
- * Truncate or zero-pad the full 108-dim obs array to match a model's expected input size.
- * Older models (e.g., 94 or 102 dims) get the first N features; newer models get all 108.
+ * Truncate or zero-pad the full 112-dim obs array to match a model's expected input size.
+ * Older models (e.g., 94, 102, 111 dims) get the first N features; newer models get all 112.
  */
 function fitToModelSize(full: Float32Array, targetSize: number): Float32Array {
     if (targetSize === full.length) return full;

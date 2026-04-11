@@ -84,10 +84,14 @@ export type HorseObservation = {
     normal: Point;
 
     // Attribute state
-    /** Current stamina level. */
+    /** Current aerobic stamina level. */
     currentStamina: number;
-    /** Maximum stamina (from base attributes). */
+    /** Maximum aerobic stamina (from base attributes). */
     maxStamina: number;
+    /** Current burst pool (kick reserve). */
+    burstPool: number;
+    /** Burst pool max for this horse. */
+    burstMax: number;
     /** Post-modifier cruise speed (useful for RL agent). */
     effectiveCruiseSpeed: number;
     /** Post-modifier max speed (useful for RL agent). */
@@ -616,6 +620,8 @@ export class HorseRacingEngine {
                 normal: { x: frame.normal.x, y: frame.normal.y },
                 currentStamina: state.currentStamina,
                 maxStamina: state.baseAttributes.stamina,
+                burstPool: state.burstPool,
+                burstMax: state.burstMax,
                 effectiveCruiseSpeed: eff.cruiseSpeed,
                 effectiveMaxSpeed: eff.maxSpeed,
                 corneringMargin: corneringForceMargin(
@@ -862,6 +868,8 @@ export class HorseRacingEngine {
             normal: { x: 0, y: -1 },
             currentStamina: state?.currentStamina ?? 100,
             maxStamina: state?.baseAttributes.stamina ?? 100,
+            burstPool: state?.burstPool ?? 0,
+            burstMax: state?.burstMax ?? 1,
             effectiveCruiseSpeed: state?.baseAttributes.cruiseSpeed ?? 14.25,
             effectiveMaxSpeed: state?.baseAttributes.maxSpeed ?? 18,
             corneringMargin: Infinity,
