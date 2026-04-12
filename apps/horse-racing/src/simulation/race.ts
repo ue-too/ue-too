@@ -11,38 +11,54 @@ import {
     FIXED_DT,
     type Horse,
     type InputState,
+    MAX_HORSES,
     PHYS_SUBSTEPS,
     type RaceState,
     TRACK_HALF_WIDTH,
 } from './types';
 
-const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
+const BASE_COLORS = [
+    0xc9a227, 0x4169e1, 0xe53935, 0x43a047, 0x8e24aa, 0xf57c00, 0x00897b,
+    0xc62828, 0x1565c0, 0x6a1b9a, 0xef6c00, 0x2e7d32, 0xad1457, 0x00838f,
+    0x4e342e, 0x37474f, 0xfdd835, 0x7cb342, 0x039be5, 0xd81b60, 0x00acc1,
+    0x5d4037, 0x546e7a, 0xff8f00,
+];
+
+function horseColor(index: number): number {
+    return BASE_COLORS[index % BASE_COLORS.length];
+}
 
 /**
- * Build four identical horses lined up at the start of the track.
+ * Build horses lined up at the start of the track.
  * Each horse gets its own `TrackNavigator` instance and default attributes.
+ *
+ * @param segments - Track segments defining the course.
+ * @param horseCount - Number of horses to spawn (default 4, clamped to [1, MAX_HORSES]).
  */
-export function spawnHorses(segments: TrackSegment[]): Horse[] {
+export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
     if (segments.length === 0) {
         throw new Error('spawnHorses: track has no segments');
     }
+    const count = Math.max(1, Math.min(MAX_HORSES, horseCount));
     const first = segments[0];
     const probe = new TrackNavigator(segments, 0, TRACK_HALF_WIDTH);
     const startPoint: Point = { x: first.startPoint.x, y: first.startPoint.y };
     const frame = probe.getTrackFrame(startPoint);
 
-    const laneSpacing = (TRACK_HALF_WIDTH * 1.2) / 3;
-    const laneOffsets = [-1.5, -0.5, 0.5, 1.5].map(i => i * laneSpacing);
+    const laneSpacing =
+        count > 1 ? (TRACK_HALF_WIDTH * 2 * 0.8) / (count - 1) : 0;
 
-    return HORSE_COLORS.map((color, id) => {
+    return Array.from({ length: count }, (_, id) => {
+        const laneOffset =
+            count > 1 ? -TRACK_HALF_WIDTH * 0.8 + id * laneSpacing : 0;
         const pos: Point = {
-            x: startPoint.x + frame.normal.x * laneOffsets[id],
-            y: startPoint.y + frame.normal.y * laneOffsets[id],
+            x: startPoint.x + frame.normal.x * laneOffset,
+            y: startPoint.y + frame.normal.y * laneOffset,
         };
         const attrs = createDefaultAttributes();
         return {
             id,
-            color,
+            color: horseColor(id),
             pos,
             tangentialVel: 0,
             normalVel: 0,
@@ -68,13 +84,15 @@ export function spawnHorses(segments: TrackSegment[]): Horse[] {
 export class Race {
     state: RaceState;
     private segments: TrackSegment[];
+    private horseCount: number;
     private raceWorld: RaceWorld;
 
-    constructor(segments: TrackSegment[]) {
+    constructor(segments: TrackSegment[], horseCount = 4) {
         this.segments = segments;
+        this.horseCount = horseCount;
         this.state = {
             phase: 'gate',
-            horses: spawnHorses(segments),
+            horses: spawnHorses(segments, horseCount),
             playerHorseId: null,
             tick: 0,
             finishOrder: [],
@@ -161,7 +179,7 @@ export class Race {
         this.raceWorld.dispose();
         this.state = {
             phase: 'gate',
-            horses: spawnHorses(this.segments),
+            horses: spawnHorses(this.segments, this.horseCount),
             playerHorseId: null,
             tick: 0,
             finishOrder: [],
