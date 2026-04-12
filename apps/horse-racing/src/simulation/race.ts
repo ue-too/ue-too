@@ -2,9 +2,13 @@ import type { Point } from '@ue-too/math';
 import { TrackNavigator } from './track-navigator';
 import type { TrackSegment } from './track-types';
 
+import { createDefaultAttributes } from './attributes';
+import { applyExhaustion } from './exhaustion';
 import { stepPhysics } from './physics';
+import { drainStamina } from './stamina';
 import {
     FIXED_DT,
+    PHYS_SUBSTEPS,
     TRACK_HALF_WIDTH,
     type Horse,
     type InputState,
@@ -15,26 +19,18 @@ const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
 
 /**
  * Build four identical horses lined up at the start of the track.
- * Each horse gets its own `TrackNavigator` instance — sharing one navigator
- * across horses corrupts its per-horse `currentIndex` / `curveEntryRadius`.
- *
- * Horses are spread across the track width by setting their initial position
- * to `segment.startPoint + laneOffset * outwardNormal`. Four lanes fit in
- * `[-TRACK_HALF_WIDTH * 0.6, +TRACK_HALF_WIDTH * 0.6]` so no horse starts
- * clipped into a rail.
+ * Each horse gets its own `TrackNavigator` instance and default attributes.
  */
 export function spawnHorses(segments: TrackSegment[]): Horse[] {
     if (segments.length === 0) {
         throw new Error('spawnHorses: track has no segments');
     }
     const first = segments[0];
-    // Use one temporary navigator to pull the start-frame outward normal.
-    // Horses receive their own instances below.
     const probe = new TrackNavigator(segments, 0, TRACK_HALF_WIDTH);
     const startPoint: Point = { x: first.startPoint.x, y: first.startPoint.y };
     const frame = probe.getTrackFrame(startPoint);
 
-    const laneSpacing = (TRACK_HALF_WIDTH * 1.2) / 3; // 4 horses, 3 gaps
+    const laneSpacing = (TRACK_HALF_WIDTH * 1.2) / 3;
     const laneOffsets = [-1.5, -0.5, 0.5, 1.5].map((i) => i * laneSpacing);
 
     return HORSE_COLORS.map((color, id) => {
@@ -42,6 +38,7 @@ export function spawnHorses(segments: TrackSegment[]): Horse[] {
             x: startPoint.x + frame.normal.x * laneOffsets[id],
             y: startPoint.y + frame.normal.y * laneOffsets[id],
         };
+        const attrs = createDefaultAttributes();
         return {
             id,
             color,
@@ -52,14 +49,20 @@ export function spawnHorses(segments: TrackSegment[]): Horse[] {
             navigator: new TrackNavigator(segments, 0, TRACK_HALF_WIDTH),
             finished: false,
             finishOrder: null,
+            baseAttributes: attrs,
+            currentStamina: attrs.maxStamina,
+            effectiveAttributes: { ...attrs },
         };
     });
 }
 
 /**
- * Race state machine: gate → running → finished. The sim loop calls
- * `tick(input)` at fixed timestep; React calls `start(playerHorseId)` and
- * `reset()` imperatively.
+ * Race state machine: gate → running → finished.
+ *
+ * Tick pipeline per frame:
+ *   1. applyExhaustion per horse → effective attrs
+ *   2. stepPhysics (8 substeps at 240Hz) using effective attrs
+ *   3. drainStamina per horse (once per tick, after physics)
  */
 export class Race {
     state: RaceState;
@@ -86,8 +89,31 @@ export class Race {
     tick(input: InputState): void {
         if (this.state.phase !== 'running') return;
 
-        stepPhysics(this.state.horses, input, this.state.playerHorseId, FIXED_DT);
+        // 1. Resolve effective attributes (exhaustion decay if stamina = 0)
+        for (const h of this.state.horses) {
+            if (!h.finished) {
+                h.effectiveAttributes = applyExhaustion(h);
+            }
+        }
 
+        // 2. Physics substeps
+        stepPhysics(
+            this.state.horses,
+            input,
+            this.state.playerHorseId,
+            PHYS_SUBSTEPS,
+            FIXED_DT,
+        );
+
+        // 3. Stamina drain (once per tick, after physics)
+        for (const h of this.state.horses) {
+            if (!h.finished) {
+                const frame = h.navigator.getTrackFrame(h.pos);
+                drainStamina(h, h.effectiveAttributes, input, frame);
+            }
+        }
+
+        // 4. Finish detection
         for (const h of this.state.horses) {
             if (!h.finished && h.trackProgress >= 1.0) {
                 h.finished = true;
