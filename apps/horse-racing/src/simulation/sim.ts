@@ -43,8 +43,6 @@ export class V2Sim {
         this.input = createInputHandler();
         this.renderer.syncHorses(this.race.state.horses, null);
 
-        components.camera.setMaxZoomLevel(30);
-
         this.tickerCb = () => this.tick();
         components.app.ticker.add(this.tickerCb);
     }
