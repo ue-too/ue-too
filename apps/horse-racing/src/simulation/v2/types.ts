@@ -14,7 +14,7 @@ export const K_CRUISE = 0.5;
 /** Linear drag coefficient, 1/s. */
 export const C_DRAG = 0.1;
 /** Half-width of the track in meters. Rails are at +/- this distance. */
-export const TRACK_HALF_WIDTH = 10;
+export const TRACK_HALF_WIDTH = 10.325;
 /** Fixed physics timestep in seconds. */
 export const FIXED_DT = 1 / 60;
 

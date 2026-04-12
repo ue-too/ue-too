@@ -33,6 +33,7 @@ export function HorsePicker({ sim }: Props): ReactNode {
                 background: 'rgba(20,20,20,0.85)',
                 borderRadius: 12,
                 zIndex: 10,
+                pointerEvents: 'auto',
             }}
         >
             {HORSE_COLORS.map((color, id) => (

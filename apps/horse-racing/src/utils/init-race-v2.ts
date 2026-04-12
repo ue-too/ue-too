@@ -54,6 +54,11 @@ export function makeInitRaceV2(
             cleanup: () => sim.cleanup(),
         };
 
+        // Let the Wrapper's own teardown handle sim cleanup — pushing onto
+        // components.cleanups ensures it fires at the right time in the Pixi
+        // lifecycle, avoiding the React Strict Mode double-mount race.
+        components.cleanups.push(() => sim.cleanup());
+
         onReady(handle);
         return { ...components, simHandle: handle, sim };
     };

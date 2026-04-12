@@ -33,6 +33,7 @@ export function RaceToolbar({ sim, phase }: Props): ReactNode {
                 background: 'rgba(20,20,20,0.85)',
                 borderRadius: 10,
                 zIndex: 10,
+                pointerEvents: 'auto',
                 alignItems: 'center',
             }}
         >

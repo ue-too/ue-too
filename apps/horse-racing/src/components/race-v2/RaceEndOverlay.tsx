@@ -41,6 +41,7 @@ export function RaceEndOverlay({ order, sim }: Props): ReactNode {
                 background: 'rgba(15,15,15,0.95)',
                 borderRadius: 16,
                 zIndex: 20,
+                pointerEvents: 'auto',
                 color: 'white',
                 minWidth: 260,
             }}

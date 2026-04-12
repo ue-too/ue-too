@@ -4,106 +4,196 @@ import type { CurveSegment, StraightSegment, TrackSegment } from '../track-types
 import { TRACK_HALF_WIDTH, type Horse } from './types';
 
 const RAIL_COLOR = 0xcccccc;
-const RAIL_WIDTH = 0.8;
+const RAIL_WIDTH = 2;
 const TRACK_SURFACE_COLOR = 0x8b7355;
 const CENTERLINE_COLOR = 0xffffff;
-const CENTERLINE_WIDTH = 0.3;
+const CENTERLINE_WIDTH = 1;
+const CENTERLINE_DASH = 6;
+const CENTERLINE_GAP = 8;
+const ARC_STEPS_PER_DEG = 1;
 const HORSE_LENGTH = 2.0;
 const HORSE_WIDTH = 0.65;
 const PLAYER_OUTLINE_COLOR = 0xffff00;
 const PLAYER_OUTLINE_WIDTH = 0.25;
-const ARC_STEP_RAD = Math.PI / 90; // 2-degree resolution
 
-/** Draw the full track (surface fill + inner/outer rails + centerline) into a Graphics. */
+// ---- Geometry helpers ----
+
+function straightOffsetLine(
+    seg: StraightSegment,
+    offset: number,
+): { sx: number; sy: number; ex: number; ey: number } {
+    const dx = seg.endPoint.x - seg.startPoint.x;
+    const dy = seg.endPoint.y - seg.startPoint.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return { sx: seg.startPoint.x, sy: seg.startPoint.y, ex: seg.endPoint.x, ey: seg.endPoint.y };
+    // outward = rotate forward by -90° → (dy/len, -dx/len)
+    const nx = (dy / len) * offset;
+    const ny = (-dx / len) * offset;
+    return {
+        sx: seg.startPoint.x + nx,
+        sy: seg.startPoint.y + ny,
+        ex: seg.endPoint.x + nx,
+        ey: seg.endPoint.y + ny,
+    };
+}
+
+function arcPoints(
+    cx: number,
+    cy: number,
+    radius: number,
+    startAngle: number,
+    span: number,
+    steps: number,
+): { x: number; y: number }[] {
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i <= steps; i++) {
+        const a = startAngle + (span * i) / steps;
+        pts.push({ x: cx + radius * Math.cos(a), y: cy + radius * Math.sin(a) });
+    }
+    return pts;
+}
+
+function curveStartAngle(seg: CurveSegment): number {
+    return Math.atan2(
+        seg.startPoint.y - seg.center.y,
+        seg.startPoint.x - seg.center.x,
+    );
+}
+
+function curveSteps(span: number): number {
+    return Math.max(Math.ceil(Math.abs(span) * (180 / Math.PI) * ARC_STEPS_PER_DEG), 4);
+}
+
+// ---- Straight drawing ----
+
+function drawStraightSurface(g: Graphics, seg: StraightSegment, hw: number): void {
+    const outer = straightOffsetLine(seg, hw);
+    const inner = straightOffsetLine(seg, -hw);
+    g.moveTo(outer.sx, outer.sy);
+    g.lineTo(outer.ex, outer.ey);
+    g.lineTo(inner.ex, inner.ey);
+    g.lineTo(inner.sx, inner.sy);
+    g.closePath();
+}
+
+function drawStraightRails(g: Graphics, seg: StraightSegment, hw: number): void {
+    const outer = straightOffsetLine(seg, hw);
+    const inner = straightOffsetLine(seg, -hw);
+    g.moveTo(outer.sx, outer.sy);
+    g.lineTo(outer.ex, outer.ey);
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
+    g.moveTo(inner.sx, inner.sy);
+    g.lineTo(inner.ex, inner.ey);
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
+}
+
+function drawStraightCenterline(g: Graphics, seg: StraightSegment): void {
+    const dx = seg.endPoint.x - seg.startPoint.x;
+    const dy = seg.endPoint.y - seg.startPoint.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-6) return;
+    const fx = dx / len;
+    const fy = dy / len;
+    let d = 0;
+    let drawing = true;
+    while (d < len) {
+        const segLen = Math.min(drawing ? CENTERLINE_DASH : CENTERLINE_GAP, len - d);
+        if (drawing) {
+            g.moveTo(seg.startPoint.x + fx * d, seg.startPoint.y + fy * d);
+            g.lineTo(seg.startPoint.x + fx * (d + segLen), seg.startPoint.y + fy * (d + segLen));
+            g.stroke({ width: CENTERLINE_WIDTH, color: CENTERLINE_COLOR, alpha: 0.5 });
+        }
+        d += segLen;
+        drawing = !drawing;
+    }
+}
+
+// ---- Curve drawing ----
+
+function drawCurveSurface(g: Graphics, seg: CurveSegment, hw: number): void {
+    const startA = curveStartAngle(seg);
+    const steps = curveSteps(seg.angleSpan);
+    const outerPts = arcPoints(seg.center.x, seg.center.y, seg.radius + hw, startA, seg.angleSpan, steps);
+    const innerPts = arcPoints(seg.center.x, seg.center.y, seg.radius - hw, startA, seg.angleSpan, steps);
+
+    g.moveTo(outerPts[0].x, outerPts[0].y);
+    for (let i = 1; i < outerPts.length; i++) g.lineTo(outerPts[i].x, outerPts[i].y);
+    for (let i = innerPts.length - 1; i >= 0; i--) g.lineTo(innerPts[i].x, innerPts[i].y);
+    g.closePath();
+}
+
+function drawCurveRails(g: Graphics, seg: CurveSegment, hw: number): void {
+    const startA = curveStartAngle(seg);
+    const steps = curveSteps(seg.angleSpan);
+    const outerPts = arcPoints(seg.center.x, seg.center.y, seg.radius + hw, startA, seg.angleSpan, steps);
+    const innerPts = arcPoints(seg.center.x, seg.center.y, seg.radius - hw, startA, seg.angleSpan, steps);
+
+    g.moveTo(outerPts[0].x, outerPts[0].y);
+    for (let i = 1; i < outerPts.length; i++) g.lineTo(outerPts[i].x, outerPts[i].y);
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
+
+    g.moveTo(innerPts[0].x, innerPts[0].y);
+    for (let i = 1; i < innerPts.length; i++) g.lineTo(innerPts[i].x, innerPts[i].y);
+    g.stroke({ width: RAIL_WIDTH, color: RAIL_COLOR, pixelLine: true });
+}
+
+function drawCurveCenterline(g: Graphics, seg: CurveSegment): void {
+    const startA = curveStartAngle(seg);
+    const arcLen = Math.abs(seg.angleSpan) * seg.radius;
+
+    let d = 0;
+    let drawing = true;
+    while (d < arcLen) {
+        const segLen = Math.min(drawing ? CENTERLINE_DASH : CENTERLINE_GAP, arcLen - d);
+        if (drawing) {
+            const a0 = startA + (seg.angleSpan * d) / arcLen;
+            const a1 = startA + (seg.angleSpan * (d + segLen)) / arcLen;
+            const dashSpan = a1 - a0;
+            const dashSteps = Math.max(Math.ceil(Math.abs(dashSpan) * (180 / Math.PI)), 2);
+            const pts = arcPoints(seg.center.x, seg.center.y, seg.radius, a0, dashSpan, dashSteps);
+            g.moveTo(pts[0].x, pts[0].y);
+            for (let i = 1; i < pts.length; i++) g.lineTo(pts[i].x, pts[i].y);
+            g.stroke({ width: CENTERLINE_WIDTH, color: CENTERLINE_COLOR, alpha: 0.5 });
+        }
+        d += segLen;
+        drawing = !drawing;
+    }
+}
+
+// ---- Main drawTrack ----
+
 function drawTrack(segments: TrackSegment[]): Graphics {
     const g = new Graphics();
+    const hw = TRACK_HALF_WIDTH;
 
-    // --- Surface fill (outer rail polygon minus inner rail polygon) ---
-    const outer: { x: number; y: number }[] = [];
-    const inner: { x: number; y: number }[] = [];
-
+    // Pass 1: track surface (brown fill)
+    g.beginPath();
     for (const seg of segments) {
         if (seg.tracktype === 'STRAIGHT') {
-            const ss = seg as StraightSegment;
-            const dx = ss.endPoint.x - ss.startPoint.x;
-            const dy = ss.endPoint.y - ss.startPoint.y;
-            const len = Math.hypot(dx, dy);
-            if (len < 1e-6) continue;
-            const nx = dy / len; // left-hand normal
-            const ny = -dx / len;
-            outer.push({ x: ss.startPoint.x + nx * TRACK_HALF_WIDTH, y: ss.startPoint.y + ny * TRACK_HALF_WIDTH });
-            outer.push({ x: ss.endPoint.x + nx * TRACK_HALF_WIDTH, y: ss.endPoint.y + ny * TRACK_HALF_WIDTH });
-            inner.push({ x: ss.startPoint.x - nx * TRACK_HALF_WIDTH, y: ss.startPoint.y - ny * TRACK_HALF_WIDTH });
-            inner.push({ x: ss.endPoint.x - nx * TRACK_HALF_WIDTH, y: ss.endPoint.y - ny * TRACK_HALF_WIDTH });
+            drawStraightSurface(g, seg as StraightSegment, hw);
         } else {
-            const cs = seg as CurveSegment;
-            const startAng = Math.atan2(
-                cs.startPoint.y - cs.center.y,
-                cs.startPoint.x - cs.center.x,
-            );
-            const steps = Math.max(2, Math.ceil(Math.abs(cs.angleSpan) / ARC_STEP_RAD));
-            for (let i = 0; i <= steps; i++) {
-                const t = i / steps;
-                const a = startAng + cs.angleSpan * t;
-                outer.push({
-                    x: cs.center.x + (cs.radius + TRACK_HALF_WIDTH) * Math.cos(a),
-                    y: cs.center.y + (cs.radius + TRACK_HALF_WIDTH) * Math.sin(a),
-                });
-                inner.push({
-                    x: cs.center.x + (cs.radius - TRACK_HALF_WIDTH) * Math.cos(a),
-                    y: cs.center.y + (cs.radius - TRACK_HALF_WIDTH) * Math.sin(a),
-                });
-            }
+            drawCurveSurface(g, seg as CurveSegment, hw);
+        }
+    }
+    g.fill({ color: TRACK_SURFACE_COLOR });
+
+    // Pass 2: inner + outer rail lines
+    for (const seg of segments) {
+        if (seg.tracktype === 'STRAIGHT') {
+            drawStraightRails(g, seg as StraightSegment, hw);
+        } else {
+            drawCurveRails(g, seg as CurveSegment, hw);
         }
     }
 
-    // Surface: outer polygon filled, then erase-fill the inner polygon by
-    // stroking it (simpler than geometry boolean ops and good enough visually).
-    if (outer.length > 0) {
-        g.moveTo(outer[0].x, outer[0].y);
-        for (let i = 1; i < outer.length; i++) g.lineTo(outer[i].x, outer[i].y);
-        g.closePath();
-        g.fill({ color: TRACK_SURFACE_COLOR });
-    }
-
-    // --- Rails ---
-    const stroke = { color: RAIL_COLOR, width: RAIL_WIDTH };
-    if (outer.length > 0) {
-        g.moveTo(outer[0].x, outer[0].y);
-        for (let i = 1; i < outer.length; i++) g.lineTo(outer[i].x, outer[i].y);
-        g.closePath();
-        g.stroke(stroke);
-    }
-    if (inner.length > 0) {
-        g.moveTo(inner[0].x, inner[0].y);
-        for (let i = 1; i < inner.length; i++) g.lineTo(inner[i].x, inner[i].y);
-        g.closePath();
-        g.stroke(stroke);
-    }
-
-    // --- Centerline ---
-    const centerStroke = { color: CENTERLINE_COLOR, width: CENTERLINE_WIDTH };
+    // Pass 3: dashed centerline
     for (const seg of segments) {
         if (seg.tracktype === 'STRAIGHT') {
-            const ss = seg as StraightSegment;
-            g.moveTo(ss.startPoint.x, ss.startPoint.y);
-            g.lineTo(ss.endPoint.x, ss.endPoint.y);
+            drawStraightCenterline(g, seg as StraightSegment);
         } else {
-            const cs = seg as CurveSegment;
-            const startAng = Math.atan2(
-                cs.startPoint.y - cs.center.y,
-                cs.startPoint.x - cs.center.x,
-            );
-            const steps = Math.max(2, Math.ceil(Math.abs(cs.angleSpan) / ARC_STEP_RAD));
-            g.moveTo(cs.startPoint.x, cs.startPoint.y);
-            for (let i = 1; i <= steps; i++) {
-                const t = i / steps;
-                const a = startAng + cs.angleSpan * t;
-                g.lineTo(cs.center.x + cs.radius * Math.cos(a), cs.center.y + cs.radius * Math.sin(a));
-            }
+            drawCurveCenterline(g, seg as CurveSegment);
         }
     }
-    g.stroke(centerStroke);
 
     return g;
 }

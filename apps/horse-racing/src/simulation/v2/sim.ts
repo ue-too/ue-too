@@ -112,8 +112,12 @@ export class V2Sim {
     }
 
     cleanup(): void {
+        if (this.disposed) return;
         this.disposed = true;
-        this.components.app.ticker.remove(this.tickerCb);
+        // Wrapper may destroy the Pixi Application before React's cleanup
+        // effect fires (unmount ordering is not guaranteed), so guard the
+        // ticker access with optional chaining.
+        this.components.app.ticker?.remove(this.tickerCb);
         this.input.dispose();
         this.renderer.dispose();
         this.listeners.clear();
