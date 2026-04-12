@@ -49,7 +49,15 @@ const App = (): ReactNode => {
             <Wrapper option={WRAPPER_OPTION} initFunction={initFunction}>
                 <ScrollBarDisplay />
                 <RaceToolbar sim={simHandle} phase={phase} />
-                {phase === 'gate' && simHandle && <HorsePicker sim={simHandle} />}
+                {phase === 'gate' && simHandle && (
+                    <HorsePicker
+                        sim={simHandle}
+                        horses={simHandle.getHorses().map((h) => ({
+                            id: h.id,
+                            color: h.color,
+                        }))}
+                    />
+                )}
                 {phase === 'finished' && simHandle && (
                     <RaceEndOverlay order={finishOrder} sim={simHandle} />
                 )}
