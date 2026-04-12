@@ -85,11 +85,14 @@ NORMAL_DAMP = 0.5       # radial velocity damping coefficient
 
 TRACK_HALF_WIDTH = HORSE_SPACING * HORSE_COUNT + HORSE_RADIUS  # = 65
 
-# Stamina constants
-STAMINA_DRAIN_RATE = 0.1       # drain per unit of extra tangential accel per tick
-OVERDRIVE_DRAIN_RATE = 0.05    # drain per unit of speed above cruise per tick
-CORNERING_DRAIN_RATE = 0.02    # drain per unit of excess cornering force per tick
-GRIP_FORCE_BASELINE = 150.0    # base force tolerance, scaled by corneringGrip
+# Stamina constants (no recovery — fixed pool, drain only)
+STAMINA_DRAIN_RATE = 0.01          # drain per unit of extra tangential accel per tick
+OVERDRIVE_DRAIN_RATE = 0.005       # drain per unit of speed above cruise per tick
+CORNERING_DRAIN_RATE = 0.002       # drain per unit of excess cornering force per tick
+SPEED_DRAIN_RATE = 0.0014          # distance tax per m/s of speed per tick
+LATERAL_STEERING_DRAIN_RATE = 0.006  # drain per unit of lateral steering per tick
+LATERAL_VELOCITY_DRAIN_RATE = 0.0008 # drain per m/s of lateral velocity per tick
+GRIP_FORCE_BASELINE = 150.0        # base force tolerance, scaled by corneringGrip
 ```
 
 ### Per-Horse Attributes System
@@ -106,7 +109,7 @@ Instead of global constants like `HORSE_MASS` or `TANGENTIAL_TARGET_SPEED`, each
 | `turn_accel` | 1.0 | 0.5–1.5 | Multiplier on jockey's normal (steering) input |
 | `cornering_grip` | 1.0 | 0.5–1.5 | Defines stamina drain threshold for cornering (does NOT affect centripetal physics force) |
 | `stamina` | 100.0 | 50–150 | Max energy pool |
-| `stamina_recovery` | 1.0 | 0.5–2.0 | Energy recovery per tick when not pushing |
+| `drain_rate_mult` | 1.0 | 0.7–1.3 | Multiplier on all stamina drain (lower = more efficient) |
 | `weight` | 500.0 | 400–600 | Mass in kg (affects F=ma and collision impulse) |
 
 ```python
@@ -118,7 +121,7 @@ class CoreAttributes:
     turn_accel: float = 1.0
     cornering_grip: float = 1.0
     stamina: float = 100.0
-    stamina_recovery: float = 1.0
+    drain_rate_mult: float = 1.0
     weight: float = 500.0
 
 TRAIT_RANGES: dict[str, tuple[float, float]] = {
@@ -128,7 +131,7 @@ TRAIT_RANGES: dict[str, tuple[float, float]] = {
     "turn_accel": (0.5, 1.5),
     "cornering_grip": (0.5, 1.5),
     "stamina": (50.0, 150.0),
-    "stamina_recovery": (0.5, 2.0),
+    "drain_rate_mult": (0.7, 1.3),
     "weight": (400.0, 600.0),
 }
 ```
@@ -188,7 +191,7 @@ Each horse has a subset of modifiers (determined by genome). Each modifier has a
 | `closer` | In last 25% of track AND not 1st | `max_speed` | +pct 3–8% | Closing kick |
 | `mudder` | Track surface = wet/heavy | `cornering_grip` | +pct 5–15% | Handles wet conditions |
 | `gate_speed` | First 10% of track | `forward_accel` | +pct 10–25% | Explosive starts |
-| `endurance` | `current_stamina` < 40% | `stamina_recovery` | +pct 10–30% | Recovers better when tired |
+| `endurance` | `current_stamina` < 40% | `drain_rate_mult` | -pct 10–20% | Burns less stamina when tired |
 
 A modifier is present if `max(presence_gene.sire, presence_gene.dam) >= 0.4`. Its strength (0–1) is the blended average of the strength gene's alleles, which scales the effect within the listed range.
 
@@ -227,13 +230,19 @@ class HorseRuntimeState:
     active_modifiers: list[ActiveModifier]
 
 def update_stamina(state: HorseRuntimeState, eff: CoreAttributes,
-                   extra_tangential: float, current_speed: float,
-                   tangential_vel: float, turn_radius: float) -> float:
+                   extra_tangential: float, extra_normal: float,
+                   current_speed: float, tangential_vel: float,
+                   normal_vel: float, turn_radius: float) -> float:
+    """Fixed pool — no recovery. All drain multiplied by drain_rate_mult."""
     drain = 0.0
 
     # Drain from jockey pushing forward
     if extra_tangential > 0:
         drain += abs(extra_tangential) * STAMINA_DRAIN_RATE
+
+    # Drain from jockey steering laterally
+    if abs(extra_normal) > 0:
+        drain += abs(extra_normal) * LATERAL_STEERING_DRAIN_RATE
 
     # Drain from exceeding cruise speed
     if current_speed > eff.cruise_speed:
@@ -246,13 +255,16 @@ def update_stamina(state: HorseRuntimeState, eff: CoreAttributes,
         if required_force > tolerated_force:
             drain += (required_force - tolerated_force) * CORNERING_DRAIN_RATE
 
-    # Recovery (only when not draining)
-    if drain == 0:
-        recovery = eff.stamina_recovery
-        state.current_stamina = min(eff.stamina, state.current_stamina + recovery)
-    else:
-        state.current_stamina = max(0, state.current_stamina - drain)
+    # Distance tax
+    drain += current_speed * SPEED_DRAIN_RATE
 
+    # Lateral velocity tax
+    drain += abs(normal_vel) * LATERAL_VELOCITY_DRAIN_RATE
+
+    # Apply per-horse drain efficiency
+    drain *= eff.drain_rate_mult
+
+    state.current_stamina = max(0, state.current_stamina - drain)
     return state.current_stamina
 
 def apply_exhaustion(eff: CoreAttributes, current_stamina: float, max_stamina: float) -> CoreAttributes:
@@ -263,8 +275,8 @@ def apply_exhaustion(eff: CoreAttributes, current_stamina: float, max_stamina: f
     if ratio < 0.20:
         lerp = ratio / 0.20
         result.max_speed = result.cruise_speed + (result.max_speed - result.cruise_speed) * lerp
-    if ratio < 0.15:
-        result.turn_accel *= 0.75
+    if ratio < 0.25:
+        result.turn_accel *= 0.5 + 0.5 * (ratio / 0.25)  # progressive from 25%
     return result
 ```
 
