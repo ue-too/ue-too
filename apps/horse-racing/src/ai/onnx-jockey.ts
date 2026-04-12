@@ -17,6 +17,7 @@ export class OnnxJockey implements Jockey {
     private session: InferenceSession;
     private pendingResult: Map<number, InputState> = new Map();
     private inferring = false;
+    private disposed = false;
 
     private constructor(session: InferenceSession) {
         this.session = session;
@@ -39,6 +40,10 @@ export class OnnxJockey implements Jockey {
     }
 
     infer(race: Race): Map<number, InputState> {
+        if (this.disposed) {
+            return new Map();
+        }
+
         const horses = race.state.horses;
         const playerId = race.state.playerHorseId;
 
@@ -64,6 +69,8 @@ export class OnnxJockey implements Jockey {
         const batchSize = aiIndices.length;
         const inputData = new Float32Array(batchSize * OBS_SIZE);
 
+        // buildObservations returns Float64Array but ONNX requires float32;
+        // copying element-by-element truncates each value to 32-bit precision.
         for (let b = 0; b < batchSize; b++) {
             const obs = allObs[aiIndices[b]];
             for (let j = 0; j < OBS_SIZE; j++) {
@@ -81,13 +88,13 @@ export class OnnxJockey implements Jockey {
                 dims: [batchSize, OBS_SIZE],
                 type: 'float32',
                 data: inputData,
-                size: inputData.length,
             } as unknown as Tensor,
         };
 
         this.session
             .run(feeds)
             .then((results) => {
+                if (this.disposed) return;
                 const output = results[outputName];
                 const outData = output.data as Float32Array;
                 const actions = new Map<number, InputState>();
@@ -102,6 +109,7 @@ export class OnnxJockey implements Jockey {
                 this.pendingResult = actions;
             })
             .catch((err) => {
+                if (this.disposed) return;
                 console.error('OnnxJockey inference failed:', err);
                 this.pendingResult = new Map();
             })
@@ -114,6 +122,7 @@ export class OnnxJockey implements Jockey {
     }
 
     dispose(): void {
+        this.disposed = true;
         this.session.release();
     }
 }

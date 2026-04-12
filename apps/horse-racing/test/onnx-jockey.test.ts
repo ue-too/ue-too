@@ -120,4 +120,40 @@ describe('OnnxJockey', () => {
 
         expect(session.release).toHaveBeenCalled();
     });
+
+    it('re-entry guard: second infer() while first is pending returns previous result and does not call session.run again', async () => {
+        const segments = loadOvalTrack();
+        const race = new Race(segments, 4);
+        race.start(null); // all horses are AI
+
+        // Create a session whose run() never resolves during this test
+        let resolveRun!: (value: unknown) => void;
+        const session = {
+            inputNames: ['obs'],
+            outputNames: ['actions'],
+            run: jest.fn(
+                () =>
+                    new Promise((resolve) => {
+                        resolveRun = resolve;
+                    })
+            ),
+            release: jest.fn(),
+        };
+        const jockey = OnnxJockey.fromSession(session as any);
+
+        // First call — fires async run, returns empty pending result
+        const firstResult = jockey.infer(race);
+        expect(session.run).toHaveBeenCalledTimes(1);
+        expect(firstResult.size).toBe(0);
+
+        // Second call before run resolves — must NOT call run again
+        const secondResult = jockey.infer(race);
+        expect(session.run).toHaveBeenCalledTimes(1);
+        // secondResult should equal the pendingResult (still empty at this point)
+        expect(secondResult.size).toBe(0);
+
+        // Clean up: let the promise resolve so no leaks
+        resolveRun({ actions: { dims: [4, 2], data: new Float32Array(8) } });
+        await Promise.resolve();
+    });
 });
