@@ -57,6 +57,9 @@ export class RaceWorld {
     }
 
     dispose(): void {
+        for (const id of this.horseBodies.keys()) {
+            this.world.removeRigidBody(`horse-${id}`);
+        }
         this.horseBodies.clear();
     }
 }

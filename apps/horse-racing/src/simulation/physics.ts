@@ -143,6 +143,9 @@ export function stepPhysics(
     substeps: number,
     dt: number,
 ): void {
+    // Invariant: horse.pos mirrors body.center at the start of each apply pass.
+    // spawnHorses sets the initial pos, addHorse copies it to the body.
+    // syncFromBody writes body.center back to horse.pos at the end of each substep.
     for (let s = 0; s < substeps; s++) {
         for (const h of horses) {
             const body = raceWorld.getHorseBody(h.id);
