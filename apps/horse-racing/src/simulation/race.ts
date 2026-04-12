@@ -1,19 +1,19 @@
 import type { Point } from '@ue-too/math';
-import { TrackNavigator } from './track-navigator';
-import type { TrackSegment } from './track-types';
 
 import { createDefaultAttributes } from './attributes';
 import { applyExhaustion } from './exhaustion';
 import { stepPhysics } from './physics';
 import { RaceWorld } from './race-world';
 import { drainStamina } from './stamina';
+import { TrackNavigator } from './track-navigator';
+import type { TrackSegment } from './track-types';
 import {
     FIXED_DT,
-    PHYS_SUBSTEPS,
-    TRACK_HALF_WIDTH,
     type Horse,
     type InputState,
+    PHYS_SUBSTEPS,
     type RaceState,
+    TRACK_HALF_WIDTH,
 } from './types';
 
 const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
@@ -32,7 +32,7 @@ export function spawnHorses(segments: TrackSegment[]): Horse[] {
     const frame = probe.getTrackFrame(startPoint);
 
     const laneSpacing = (TRACK_HALF_WIDTH * 1.2) / 3;
-    const laneOffsets = [-1.5, -0.5, 0.5, 1.5].map((i) => i * laneSpacing);
+    const laneOffsets = [-1.5, -0.5, 0.5, 1.5].map(i => i * laneSpacing);
 
     return HORSE_COLORS.map((color, id) => {
         const pos: Point = {
@@ -91,7 +91,7 @@ export class Race {
                 h.id,
                 h.pos,
                 angle,
-                h.baseAttributes.weight,
+                h.baseAttributes.weight
             );
         }
     }
@@ -103,8 +103,10 @@ export class Race {
         this.state.tick = 0;
     }
 
-    tick(input: InputState): void {
+    tick(inputs: Map<number, InputState>): void {
         if (this.state.phase !== 'running') return;
+
+        const zeroInput: InputState = { tangential: 0, normal: 0 };
 
         // 1. Resolve effective attributes (exhaustion decay if stamina = 0)
         for (const h of this.state.horses) {
@@ -116,20 +118,17 @@ export class Race {
         // 2. Physics substeps
         stepPhysics(
             this.state.horses,
-            input,
-            this.state.playerHorseId,
+            inputs,
             this.raceWorld,
             PHYS_SUBSTEPS,
-            FIXED_DT,
+            FIXED_DT
         );
 
         // 3. Stamina drain (once per tick, after physics)
-        const zeroInput: InputState = { tangential: 0, normal: 0 };
         for (const h of this.state.horses) {
             if (!h.finished) {
                 const frame = h.navigator.getTrackFrame(h.pos);
-                const horseInput =
-                    h.id === this.state.playerHorseId ? input : zeroInput;
+                const horseInput = inputs.get(h.id) ?? zeroInput;
                 drainStamina(h, h.effectiveAttributes, horseInput, frame);
             }
         }
@@ -146,9 +145,12 @@ export class Race {
         const playerId = this.state.playerHorseId;
         const isPlayerMode = playerId !== null;
         const player = isPlayerMode ? this.state.horses[playerId] : null;
-        const allFinished = this.state.horses.every((h) => h.finished);
+        const allFinished = this.state.horses.every(h => h.finished);
 
-        if ((isPlayerMode && player!.finished) || (!isPlayerMode && allFinished)) {
+        if (
+            (isPlayerMode && player!.finished) ||
+            (!isPlayerMode && allFinished)
+        ) {
             this.state.phase = 'finished';
         }
 

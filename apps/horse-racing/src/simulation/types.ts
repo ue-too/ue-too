@@ -1,6 +1,7 @@
 import type { Point } from '@ue-too/math';
-import type { TrackNavigator } from './track-navigator';
+
 import type { CoreAttributes } from './attributes';
+import type { TrackNavigator } from './track-navigator';
 
 // --- Physics constants ---
 
@@ -41,9 +42,12 @@ export interface Horse {
 }
 
 export interface InputState {
-    tangential: -1 | 0 | 1;
-    normal: -1 | 0 | 1;
+    tangential: number;
+    normal: number;
 }
+
+/** Maximum number of horses supported per race. */
+export const MAX_HORSES = 24;
 
 export type RacePhase = 'gate' | 'running' | 'finished';
 

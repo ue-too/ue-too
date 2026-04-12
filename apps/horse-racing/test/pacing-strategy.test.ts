@@ -1,10 +1,10 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { parseTrackJson } from '../src/simulation/track-from-json';
 import { Race } from '../src/simulation/race';
-import type { InputState } from '../src/simulation/types';
+import { parseTrackJson } from '../src/simulation/track-from-json';
 import type { TrackSegment } from '../src/simulation/track-types';
+import type { InputState } from '../src/simulation/types';
 
 function loadTrack(name: string) {
     const path = join(__dirname, '../public/tracks', name);
@@ -21,14 +21,15 @@ const MAX_TICKS = 20_000;
  */
 function runPlayerRace(
     segments: TrackSegment[],
-    input: InputState,
+    input: InputState
 ): { finishTick: number | null; depletionTick: number | null } {
     const race = new Race(segments);
     race.start(0);
+    const inputs = new Map<number, InputState>([[0, input]]);
     let depletionTick: number | null = null;
 
     for (let tick = 0; tick < MAX_TICKS; tick++) {
-        race.tick(input);
+        race.tick(inputs);
         const h = race.state.horses[0];
 
         if (h.currentStamina <= 0 && depletionTick === null) {

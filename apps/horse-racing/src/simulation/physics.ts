@@ -1,30 +1,26 @@
-import type { Point } from '@ue-too/math';
 import type { Polygon } from '@ue-too/dynamics';
+import type { Point } from '@ue-too/math';
 
-import type { TrackFrame } from './track-navigator';
 import type { CoreAttributes } from './attributes';
-import { F_T_MAX, F_N_MAX } from './attributes';
+import { F_N_MAX, F_T_MAX } from './attributes';
 import { computeCruiseForce } from './cruise';
 import type { RaceWorld } from './race-world';
-import {
-    C_DRAG,
-    NORMAL_DAMP,
-    type Horse,
-    type InputState,
-} from './types';
+import type { TrackFrame } from './track-navigator';
+import { C_DRAG, type Horse, type InputState, NORMAL_DAMP } from './types';
+
+const ZERO_INPUT: InputState = { tangential: 0, normal: 0 };
 
 /**
  * Project world-space velocity onto track-relative components.
  */
 export function projectVelocity(
     worldVel: Point,
-    frame: TrackFrame,
+    frame: TrackFrame
 ): { tangentialVel: number; normalVel: number } {
     return {
         tangentialVel:
             worldVel.x * frame.tangential.x + worldVel.y * frame.tangential.y,
-        normalVel:
-            worldVel.x * frame.normal.x + worldVel.y * frame.normal.y,
+        normalVel: worldVel.x * frame.normal.x + worldVel.y * frame.normal.y,
     };
 }
 
@@ -41,15 +37,14 @@ export function computeAccelerations(
     normalVel: number,
     attrs: CoreAttributes,
     input: InputState,
-    playerHorseId: number | null,
-    horseId: number,
-    frame: TrackFrame,
+    frame: TrackFrame
 ): [number, number] {
+    const clampedTan = Math.max(-1, Math.min(1, input.tangential));
+    const clampedNor = Math.max(-1, Math.min(1, input.normal));
+
     // --- Tangential ---
     let a_t = computeCruiseForce(tangentialVel, attrs.cruiseSpeed);
-    if (horseId === playerHorseId) {
-        a_t += input.tangential * F_T_MAX * attrs.forwardAccel;
-    }
+    a_t += clampedTan * F_T_MAX * attrs.forwardAccel;
     a_t -= C_DRAG * tangentialVel;
     if (tangentialVel >= attrs.maxSpeed && a_t > 0) {
         a_t = 0;
@@ -63,10 +58,8 @@ export function computeAccelerations(
     }
     // Lateral damping
     a_n -= NORMAL_DAMP * normalVel;
-    // Player steering
-    if (horseId === playerHorseId) {
-        a_n += input.normal * F_N_MAX * attrs.turnAccel;
-    }
+    // Steering
+    a_n += clampedNor * F_N_MAX * attrs.turnAccel;
     // Drag on normal component
     a_n -= C_DRAG * normalVel;
 
@@ -81,22 +74,19 @@ function applyForcesToBody(
     horse: Horse,
     body: Polygon,
     attrs: CoreAttributes,
-    input: InputState,
-    playerHorseId: number | null,
+    input: InputState
 ): void {
     const frame = horse.navigator.getTrackFrame(horse.pos);
     const { tangentialVel, normalVel } = projectVelocity(
         body.linearVelocity,
-        frame,
+        frame
     );
     const [a_t, a_n] = computeAccelerations(
         tangentialVel,
         normalVel,
         attrs,
         input,
-        playerHorseId,
-        horse.id,
-        frame,
+        frame
     );
 
     const mass = attrs.weight;
@@ -106,7 +96,9 @@ function applyForcesToBody(
     });
 
     // Lock orientation to track tangent — no angular dynamics
-    body.setOrientationAngle(Math.atan2(frame.tangential.y, frame.tangential.x));
+    body.setOrientationAngle(
+        Math.atan2(frame.tangential.y, frame.tangential.x)
+    );
     body.angularVelocity = 0;
 }
 
@@ -137,11 +129,10 @@ function syncFromBody(horse: Horse, body: Polygon): void {
  */
 export function stepPhysics(
     horses: Horse[],
-    input: InputState,
-    playerHorseId: number | null,
+    inputs: Map<number, InputState>,
     raceWorld: RaceWorld,
     substeps: number,
-    dt: number,
+    dt: number
 ): void {
     // Invariant: horse.pos mirrors body.center at the start of each apply pass.
     // spawnHorses sets the initial pos, addHorse copies it to the body.
@@ -157,8 +148,7 @@ export function stepPhysics(
                 h,
                 body,
                 h.effectiveAttributes,
-                input,
-                playerHorseId,
+                inputs.get(h.id) ?? ZERO_INPUT
             );
         }
 

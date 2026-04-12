@@ -1,14 +1,14 @@
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
-import type { TrackSegment } from './track-types';
 
 import { createInputHandler } from './input';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';
-import type { Horse, RacePhase } from './types';
+import type { TrackSegment } from './track-types';
+import type { Horse, InputState, RacePhase } from './types';
 
 export type PhaseChangeCallback = (
     phase: RacePhase,
-    finishOrder: number[],
+    finishOrder: number[]
 ) => void;
 
 export interface V2SimHandle {
@@ -37,7 +37,7 @@ export class V2Sim {
 
     constructor(
         private components: BaseAppComponents,
-        private segments: TrackSegment[],
+        private segments: TrackSegment[]
     ) {
         this.race = new Race(segments);
         this.renderer = new RaceRenderer(components.app.stage, segments);
@@ -51,10 +51,15 @@ export class V2Sim {
     private tick(): void {
         if (this.disposed) return;
         const prevPhase = this.race.state.phase;
-        this.race.tick(this.input.state);
+        const inputs = new Map<number, InputState>();
+        const pid = this.race.state.playerHorseId;
+        if (pid !== null) {
+            inputs.set(pid, this.input.state);
+        }
+        this.race.tick(inputs);
         this.renderer.syncHorses(
             this.race.state.horses,
-            this.race.state.playerHorseId,
+            this.race.state.playerHorseId
         );
 
         if (this.race.state.phase !== prevPhase) {
@@ -62,7 +67,6 @@ export class V2Sim {
         }
 
         // Camera follow in player mode
-        const pid = this.race.state.playerHorseId;
         if (pid !== null && this.race.state.phase === 'running') {
             const h = this.race.state.horses[pid];
             this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
@@ -92,7 +96,10 @@ export class V2Sim {
         this.race.reset();
         this.pendingPlayerId = null;
         this.renderer.dispose();
-        this.renderer = new RaceRenderer(this.components.app.stage, this.segments);
+        this.renderer = new RaceRenderer(
+            this.components.app.stage,
+            this.segments
+        );
         this.renderer.syncHorses(this.race.state.horses, null);
         this.emitPhase();
     }
@@ -129,7 +136,7 @@ export class V2Sim {
 
 export function attachV2Sim(
     components: BaseAppComponents,
-    segments: TrackSegment[],
+    segments: TrackSegment[]
 ): V2Sim {
     return new V2Sim(components, segments);
 }
