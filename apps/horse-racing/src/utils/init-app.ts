@@ -4,6 +4,7 @@ import {
     type InitAppOptions,
 } from '@ue-too/board-pixi-integration';
 
+import type { Jockey } from '@/ai';
 import { parseTrackJson } from '@/simulation/track-from-json';
 import type { TrackSegment } from '@/simulation/track-types';
 import {
@@ -52,6 +53,7 @@ export function makeInitApp(
             getPhase: () => sim.getPhase(),
             getHorses: () => sim.getHorses(),
             onPhaseChange: (cb) => sim.onPhaseChange(cb),
+            setJockey: (jockey: Jockey) => sim.setJockey(jockey),
             cleanup: () => sim.cleanup(),
         };
 

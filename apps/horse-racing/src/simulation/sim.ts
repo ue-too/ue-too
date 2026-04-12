@@ -1,5 +1,6 @@
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
 
+import { NullJockey, type Jockey } from '../ai';
 import { createInputHandler } from './input';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';
@@ -18,6 +19,7 @@ export interface V2SimHandle {
     getPhase(): RacePhase;
     getHorses(): Horse[];
     onPhaseChange(cb: PhaseChangeCallback): () => void;
+    setJockey(jockey: Jockey): void;
     cleanup(): void;
 }
 
@@ -34,6 +36,7 @@ export class V2Sim {
     private listeners = new Set<PhaseChangeCallback>();
     private tickerCb: () => void;
     private disposed = false;
+    private jockey: Jockey = new NullJockey();
 
     constructor(
         private components: BaseAppComponents,
@@ -51,12 +54,14 @@ export class V2Sim {
     private tick(): void {
         if (this.disposed) return;
         const prevPhase = this.race.state.phase;
-        const inputs = new Map<number, InputState>();
+
+        const inputs = this.jockey.infer(this.race);
         const pid = this.race.state.playerHorseId;
         if (pid !== null) {
             inputs.set(pid, this.input.state);
         }
         this.race.tick(inputs);
+
         this.renderer.syncHorses(
             this.race.state.horses,
             this.race.state.playerHorseId
@@ -71,6 +76,11 @@ export class V2Sim {
             const h = this.race.state.horses[pid];
             this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
         }
+    }
+
+    setJockey(jockey: Jockey): void {
+        this.jockey.dispose();
+        this.jockey = jockey;
     }
 
     private emitPhase(): void {
