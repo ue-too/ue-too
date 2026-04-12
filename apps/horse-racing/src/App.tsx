@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { HorsePicker } from '@/components/race/HorsePicker';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
 import { RaceToolbar } from '@/components/race/RaceToolbar';
+import { StaminaOverlay } from '@/components/race/StaminaOverlay';
 import type { RacePhase, V2SimHandle } from '@/simulation';
 import { makeInitApp } from '@/utils/init-app';
 
@@ -51,6 +52,9 @@ const App = (): ReactNode => {
                 {phase === 'gate' && simHandle && <HorsePicker sim={simHandle} />}
                 {phase === 'finished' && simHandle && (
                     <RaceEndOverlay order={finishOrder} sim={simHandle} />
+                )}
+                {simHandle && phase === 'running' && (
+                    <StaminaOverlay sim={simHandle} />
                 )}
             </Wrapper>
         </div>

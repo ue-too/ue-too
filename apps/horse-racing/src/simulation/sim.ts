@@ -4,7 +4,7 @@ import type { TrackSegment } from './track-types';
 import { createInputHandler } from './input';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';
-import type { RacePhase } from './types';
+import type { Horse, RacePhase } from './types';
 
 export type PhaseChangeCallback = (
     phase: RacePhase,
@@ -16,6 +16,7 @@ export interface V2SimHandle {
     start(): void;
     reset(): void;
     getPhase(): RacePhase;
+    getHorses(): Horse[];
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     cleanup(): void;
 }
@@ -98,6 +99,10 @@ export class V2Sim {
 
     getPhase(): RacePhase {
         return this.race.state.phase;
+    }
+
+    getHorses(): Horse[] {
+        return this.race.state.horses;
     }
 
     onPhaseChange(cb: PhaseChangeCallback): () => void {

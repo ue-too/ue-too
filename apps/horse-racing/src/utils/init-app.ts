@@ -50,6 +50,7 @@ export function makeInitApp(
             start: () => sim.start(),
             reset: () => sim.reset(),
             getPhase: () => sim.getPhase(),
+            getHorses: () => sim.getHorses(),
             onPhaseChange: (cb) => sim.onPhaseChange(cb),
             cleanup: () => sim.cleanup(),
         };
