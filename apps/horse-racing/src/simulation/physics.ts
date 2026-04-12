@@ -6,10 +6,67 @@ import { F_T_MAX, F_N_MAX } from './attributes';
 import { computeCruiseForce } from './cruise';
 import {
     C_DRAG,
+    NORMAL_DAMP,
     TRACK_HALF_WIDTH,
     type Horse,
     type InputState,
 } from './types';
+
+/**
+ * Project world-space velocity onto track-relative components.
+ */
+export function projectVelocity(
+    worldVel: Point,
+    frame: TrackFrame,
+): { tangentialVel: number; normalVel: number } {
+    return {
+        tangentialVel:
+            worldVel.x * frame.tangential.x + worldVel.y * frame.tangential.y,
+        normalVel:
+            worldVel.x * frame.normal.x + worldVel.y * frame.normal.y,
+    };
+}
+
+/**
+ * Compute track-relative accelerations for a single horse.
+ *
+ * Tangential: cruise + player input − drag, capped at maxSpeed.
+ * Normal: centripetal (−v²/r) + NORMAL_DAMP + player steering − drag.
+ *
+ * @returns Tuple `[tangentialAccel, normalAccel]` in m/s².
+ */
+export function computeAccelerations(
+    tangentialVel: number,
+    normalVel: number,
+    attrs: CoreAttributes,
+    input: InputState,
+    playerHorseId: number | null,
+    horseId: number,
+    frame: TrackFrame,
+): [number, number] {
+    // --- Tangential ---
+    let a_t = computeCruiseForce(tangentialVel, attrs.cruiseSpeed);
+    if (horseId === playerHorseId) {
+        a_t += input.tangential * F_T_MAX * attrs.forwardAccel;
+    }
+    a_t -= C_DRAG * tangentialVel;
+    if (tangentialVel >= attrs.maxSpeed && a_t > 0) {
+        a_t = 0;
+    }
+
+    // --- Normal ---
+    let a_n = 0;
+    if (frame.turnRadius < 1e6 && frame.turnRadius > 1e-3) {
+        a_n -= (tangentialVel * tangentialVel) / frame.turnRadius;
+    }
+    a_n -= NORMAL_DAMP * normalVel;
+    if (horseId === playerHorseId) {
+        a_n += input.normal * F_N_MAX * attrs.turnAccel;
+    }
+    a_n -= C_DRAG * normalVel;
+
+    return [a_t, a_n];
+}
 
 /**
  * Signed lateral displacement from the centerline, in meters.
