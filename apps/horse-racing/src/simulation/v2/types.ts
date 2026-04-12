@@ -10,7 +10,7 @@ export const F_T_MAX = 5;
 /** Player normal force cap in m/s^2. */
 export const F_N_MAX = 3;
 /** Cruise controller proportional gain, 1/s. */
-export const K_CRUISE = 0.5;
+export const K_CRUISE = 2.0;
 /** Linear drag coefficient, 1/s. */
 export const C_DRAG = 0.1;
 /** Half-width of the track in meters. Rails are at +/- this distance. */
