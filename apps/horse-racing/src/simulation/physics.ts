@@ -27,8 +27,8 @@ export function projectVelocity(
 /**
  * Compute track-relative accelerations for a single horse.
  *
- * Tangential: cruise + player input − drag, capped at maxSpeed.
- * Normal: centripetal (−v²/r) + NORMAL_DAMP + player steering − drag.
+ * Tangential: cruise + agent input − drag, capped at maxSpeed.
+ * Normal: centripetal (−v²/r) + NORMAL_DAMP + agent steering − drag.
  *
  * @returns Tuple `[tangentialAccel, normalAccel]` in m/s².
  */
