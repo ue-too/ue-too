@@ -58,7 +58,7 @@ export class TrackNavigator {
         this.outwardNormals = this.computeOutwardNormals();
 
         // Precompute segment lengths and cumulative distances
-        this._segmentLengths = segments.map((seg) => {
+        this._segmentLengths = segments.map(seg => {
             if (seg.tracktype === 'STRAIGHT') {
                 const dx = seg.endPoint.x - seg.startPoint.x;
                 const dy = seg.endPoint.y - seg.startPoint.y;
@@ -141,7 +141,10 @@ export class TrackNavigator {
 
     /** The radius the horse should hold on the current curve, or `Infinity` on straights. */
     get targetRadius(): number {
-        if (this.segment.tracktype === 'CURVE' && !isNaN(this.curveEntryRadius)) {
+        if (
+            this.segment.tracktype === 'CURVE' &&
+            !isNaN(this.curveEntryRadius)
+        ) {
             return this.curveEntryRadius;
         }
         return Infinity;
@@ -195,11 +198,10 @@ export class TrackNavigator {
                 ) {
                     // Curve → curve: carry the lane offset forward so
                     // accumulated drift doesn't get locked in.
-                    const laneOffset =
-                        this.curveEntryRadius - prevSeg.radius;
+                    const laneOffset = this.curveEntryRadius - prevSeg.radius;
                     this.curveEntryRadius = Math.max(
                         newSeg.radius + laneOffset,
-                        innerRail,
+                        innerRail
                     );
                 } else {
                     // Straight → curve: capture from actual position.
@@ -209,12 +211,9 @@ export class TrackNavigator {
                         y: newSeg.center.y,
                     };
                     const rawRadius = PointCal.magnitude(
-                        PointCal.subVector(position, center),
+                        PointCal.subVector(position, center)
                     );
-                    this.curveEntryRadius = Math.max(
-                        rawRadius,
-                        innerRail,
-                    );
+                    this.curveEntryRadius = Math.max(rawRadius, innerRail);
                 }
             } else {
                 this.curveEntryRadius = NaN;
@@ -249,8 +248,7 @@ export class TrackNavigator {
                 const mx = (start.x + end.x) / 2;
                 const my = (start.y + end.y) / 2;
                 const toCenterDot =
-                    (curve.center.x - mx) * nx +
-                    (curve.center.y - my) * ny;
+                    (curve.center.x - mx) * nx + (curve.center.y - my) * ny;
                 if (toCenterDot > 0) {
                     nx = -nx;
                     ny = -ny;
@@ -284,11 +282,19 @@ export class TrackNavigator {
         // CCW curve → outward = rotate tangential by -π/2
         // CW curve  → outward = rotate tangential by +π/2
         const curve = this.findNearestCurve(this.currentIndex);
-        const rotation = curve && curve.angleSpan < 0 ? Math.PI / 2 : -Math.PI / 2;
+        const rotation =
+            curve && curve.angleSpan < 0 ? Math.PI / 2 : -Math.PI / 2;
         const normal = PointCal.unitVector(
-            PointCal.rotatePoint(tangential, rotation),
+            PointCal.rotatePoint(tangential, rotation)
         );
-        return { tangential, normal, turnRadius: Infinity, nominalRadius: Infinity, targetRadius: Infinity, slope: seg.slope ?? 0 };
+        return {
+            tangential,
+            normal,
+            turnRadius: Infinity,
+            nominalRadius: Infinity,
+            targetRadius: Infinity,
+            slope: seg.slope ?? 0,
+        };
     }
 
     private curveFrame(seg: CurveSegment, position: Point): TrackFrame {
@@ -298,9 +304,7 @@ export class TrackNavigator {
 
         // normal points outward (away from center)
         const normal =
-            turnRadius > 1e-6
-                ? PointCal.unitVector(radial)
-                : { x: 1, y: 0 };
+            turnRadius > 1e-6 ? PointCal.unitVector(radial) : { x: 1, y: 0 };
 
         // tangential is perpendicular to normal, direction depends on sweep
         // positive angleSpan → CCW → tangential = rotate normal by +π/2
@@ -308,8 +312,8 @@ export class TrackNavigator {
         const tangential = PointCal.unitVector(
             PointCal.rotatePoint(
                 normal,
-                seg.angleSpan >= 0 ? Math.PI / 2 : -Math.PI / 2,
-            ),
+                seg.angleSpan >= 0 ? Math.PI / 2 : -Math.PI / 2
+            )
         );
 
         // Lazily capture entry radius on first frame of this curve
@@ -318,7 +322,7 @@ export class TrackNavigator {
         if (isNaN(this.curveEntryRadius)) {
             this.curveEntryRadius = Math.max(
                 turnRadius,
-                seg.radius - this.halfTrackWidth,
+                seg.radius - this.halfTrackWidth
             );
         }
 
@@ -330,6 +334,154 @@ export class TrackNavigator {
             targetRadius: seg.radius,
             slope: seg.slope ?? 0,
         };
+    }
+
+    // ------------------------------------------------------------------
+    // Lookahead sampling
+    // ------------------------------------------------------------------
+
+    /**
+     * Sample the track frame at a point `distance` meters ahead of `position`
+     * along the centerline. Walks forward through segments from currentIndex.
+     * Does not mutate the navigator's state.
+     */
+    sampleTrackAhead(position: Point, distance: number): TrackFrame {
+        if (distance <= 0) {
+            return this.getTrackFrame(position);
+        }
+
+        const seg = this.segments[this.currentIndex];
+        const segLen = this._segmentLengths[this.currentIndex];
+        const along = this.distanceAlongSegment(seg, position);
+
+        let remaining = distance + along;
+        let idx = this.currentIndex;
+
+        while (idx < this.segments.length) {
+            const len = this._segmentLengths[idx];
+            if (remaining <= len) {
+                return this.frameAtSegmentOffset(idx, remaining);
+            }
+            remaining -= len;
+            idx++;
+        }
+
+        // Past end of track: return frame at end of last segment
+        const lastIdx = this.segments.length - 1;
+        return this.frameAtSegmentOffset(
+            lastIdx,
+            this._segmentLengths[lastIdx]
+        );
+    }
+
+    /**
+     * Project position onto the given segment and return raw meters from
+     * the segment start along the centerline.
+     */
+    private distanceAlongSegment(seg: TrackSegment, position: Point): number {
+        if (seg.tracktype === 'STRAIGHT') {
+            const dx = seg.endPoint.x - seg.startPoint.x;
+            const dy = seg.endPoint.y - seg.startPoint.y;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) return 0;
+            const fwdX = dx / len;
+            const fwdY = dy / len;
+            const offX = position.x - seg.startPoint.x;
+            const offY = position.y - seg.startPoint.y;
+            const along = offX * fwdX + offY * fwdY;
+            return Math.max(0, Math.min(len, along));
+        }
+
+        // Curve: arc length from startAngle to position angle
+        const toPosX = position.x - seg.center.x;
+        const toPosY = position.y - seg.center.y;
+        const anglePos = Math.atan2(toPosY, toPosX);
+        const toStartX = seg.startPoint.x - seg.center.x;
+        const toStartY = seg.startPoint.y - seg.center.y;
+        const angleStart = Math.atan2(toStartY, toStartX);
+
+        let delta = anglePos - angleStart;
+        if (seg.angleSpan >= 0) {
+            while (delta < 0) delta += 2 * Math.PI;
+            while (delta > 2 * Math.PI) delta -= 2 * Math.PI;
+        } else {
+            while (delta > 0) delta -= 2 * Math.PI;
+            while (delta < -2 * Math.PI) delta += 2 * Math.PI;
+        }
+        const segLen = Math.abs(seg.angleSpan) * seg.radius;
+        return Math.max(0, Math.min(segLen, Math.abs(delta) * seg.radius));
+    }
+
+    /**
+     * Compute a TrackFrame at `offset` meters into segment `segIdx` along the
+     * centerline. Uses nominalRadius for curves (geometry only, no horse
+     * lateral position).
+     */
+    private frameAtSegmentOffset(segIdx: number, offset: number): TrackFrame {
+        const seg = this.segments[segIdx];
+
+        if (seg.tracktype === 'STRAIGHT') {
+            // Frame is constant along a straight; reuse straightFrame logic
+            // but we need to use this segment's index for findNearestCurve
+            const start: Point = {
+                x: seg.startPoint.x,
+                y: seg.startPoint.y,
+            };
+            const end: Point = { x: seg.endPoint.x, y: seg.endPoint.y };
+            const tangential = PointCal.unitVector(
+                PointCal.subVector(end, start)
+            );
+            const curve = this.findNearestCurve(segIdx);
+            const rotation =
+                curve && curve.angleSpan < 0 ? Math.PI / 2 : -Math.PI / 2;
+            const normal = PointCal.unitVector(
+                PointCal.rotatePoint(tangential, rotation)
+            );
+            return {
+                tangential,
+                normal,
+                turnRadius: Infinity,
+                nominalRadius: Infinity,
+                targetRadius: Infinity,
+                slope: seg.slope ?? 0,
+            };
+        }
+
+        // Curve: compute angle at offset
+        const angleAtOffset =
+            this.curveStartAngle(seg) +
+            (offset / seg.radius) * Math.sign(seg.angleSpan);
+
+        // Normal points outward (away from center)
+        const normal: Point = {
+            x: Math.cos(angleAtOffset),
+            y: Math.sin(angleAtOffset),
+        };
+
+        // tangential perpendicular to normal
+        const tangential = PointCal.unitVector(
+            PointCal.rotatePoint(
+                normal,
+                seg.angleSpan >= 0 ? Math.PI / 2 : -Math.PI / 2
+            )
+        );
+
+        return {
+            tangential,
+            normal,
+            turnRadius: seg.radius,
+            nominalRadius: seg.radius,
+            targetRadius: seg.radius,
+            slope: seg.slope ?? 0,
+        };
+    }
+
+    /** Return the start angle (radians) of a curve segment's arc. */
+    private curveStartAngle(seg: CurveSegment): number {
+        return Math.atan2(
+            seg.startPoint.y - seg.center.y,
+            seg.startPoint.x - seg.center.x
+        );
     }
 
     // ------------------------------------------------------------------
@@ -358,13 +510,10 @@ export class TrackNavigator {
     private exitedCurve(seg: CurveSegment, position: Point): boolean {
         const center: Point = { x: seg.center.x, y: seg.center.y };
         const endDir = PointCal.unitVector(
-            PointCal.subVector(
-                { x: seg.endPoint.x, y: seg.endPoint.y },
-                center,
-            ),
+            PointCal.subVector({ x: seg.endPoint.x, y: seg.endPoint.y }, center)
         );
         const horseDir = PointCal.unitVector(
-            PointCal.subVector(position, center),
+            PointCal.subVector(position, center)
         );
         const angle = PointCal.angleFromA2B(endDir, horseDir);
 
