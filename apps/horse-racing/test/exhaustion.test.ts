@@ -61,14 +61,16 @@ describe('applyExhaustion', () => {
         expect(horse.effectiveAttributes.turnAccel).toBeCloseTo(floorTurnAccel, 1);
     });
 
-    it('does not decay cruiseSpeed or other non-degraded traits', () => {
+    it('decays cruiseSpeed to 40% floor and does not decay non-degraded traits', () => {
         const horse = makeHorse({ currentStamina: 0 });
+        const base = horse.baseAttributes;
+        const floorCruiseSpeed = base.cruiseSpeed * 0.4;
         for (let i = 0; i < 120; i++) {
             horse.effectiveAttributes = applyExhaustion(horse);
         }
-        expect(horse.effectiveAttributes.cruiseSpeed).toBe(horse.baseAttributes.cruiseSpeed);
-        expect(horse.effectiveAttributes.maxStamina).toBe(horse.baseAttributes.maxStamina);
-        expect(horse.effectiveAttributes.weight).toBe(horse.baseAttributes.weight);
+        expect(horse.effectiveAttributes.cruiseSpeed).toBeCloseTo(floorCruiseSpeed, 1);
+        expect(horse.effectiveAttributes.maxStamina).toBe(base.maxStamina);
+        expect(horse.effectiveAttributes.weight).toBe(base.weight);
     });
 
     it('resets to base if stamina goes back above 0 (edge case)', () => {
