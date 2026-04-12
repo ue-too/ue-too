@@ -15,6 +15,7 @@ const zhTW = {
         deleteTrack: '刪除軌道',
         endDeletion: '結束刪除',
         duplicateTrackToSide: '複製軌道到側邊',
+        catenaryLayout: '架線佈置',
 
         // Toolbar - Mode Exit Chip
         exitMode: '結束',
@@ -23,6 +24,7 @@ const zhTW = {
         modePlacingTrain: '放置列車中',
         modePlacingStation: '放置車站中',
         modeDuplicatingTrack: '複製軌道中',
+        modeCatenaryLayout: '架線佈置中',
         modePlacingBuilding: '放置建築中',
         modeDeletingBuilding: '刪除建築中',
 

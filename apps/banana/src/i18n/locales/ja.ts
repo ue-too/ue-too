@@ -15,6 +15,7 @@ const ja = {
         deleteTrack: '線路を削除',
         endDeletion: '削除終了',
         duplicateTrackToSide: '線路を側方に複製',
+        catenaryLayout: '架線配置',
 
         // Toolbar - Mode Exit Chip
         exitMode: '終了',
@@ -23,6 +24,7 @@ const ja = {
         modePlacingTrain: '列車を配置中',
         modePlacingStation: '駅を配置中',
         modeDuplicatingTrack: '線路を複製中',
+        modeCatenaryLayout: '架線を配置中',
         modePlacingBuilding: '建物を配置中',
         modeDeletingBuilding: '建物を削除中',
 

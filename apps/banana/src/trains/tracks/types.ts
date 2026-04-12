@@ -34,6 +34,8 @@ export type TrackSegment = {
     trackStyle?: TrackStyle;
     /** Whether this track segment has overhead catenary electrification. */
     electrified?: boolean;
+    /** Which side of the track the catenary poles are placed on (1 = left, -1 = right relative to curve direction). */
+    catenarySide?: 1 | -1;
     /** Whether this track segment should render a bed (gravel foundation below the ballast). */
     bed?: boolean;
     splits: number[];
@@ -100,6 +102,8 @@ export type TrackSegmentDrawData = {
     trackStyle?: TrackStyle;
     /** Whether this track segment has overhead catenary electrification. */
     electrified?: boolean;
+    /** Which side of the track the catenary poles are placed on (1 = left, -1 = right relative to curve direction). */
+    catenarySide?: 1 | -1;
     /** Total width of the gravel bed foundation in world units (meters). Used for snapping. */
     bedWidth?: number;
     /** Whether this track segment should render a bed (gravel foundation below the ballast). */
@@ -212,6 +216,7 @@ export type SerializedTrackSegment = {
     splits: number[];
     trackStyle?: TrackStyle;
     electrified?: boolean;
+    catenarySide?: 1 | -1;
     bed?: boolean;
 };
 

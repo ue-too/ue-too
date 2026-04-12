@@ -68,4 +68,5 @@ export {
     Upload,
     Warehouse,
     X,
+    Zap,
 } from 'lucide-react';
