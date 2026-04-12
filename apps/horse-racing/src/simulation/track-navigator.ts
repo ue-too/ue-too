@@ -351,7 +351,6 @@ export class TrackNavigator {
         }
 
         const seg = this.segments[this.currentIndex];
-        const segLen = this._segmentLengths[this.currentIndex];
         const along = this.distanceAlongSegment(seg, position);
 
         let remaining = distance + along;
