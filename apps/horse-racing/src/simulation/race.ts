@@ -124,10 +124,13 @@ export class Race {
         );
 
         // 3. Stamina drain (once per tick, after physics)
+        const zeroInput: InputState = { tangential: 0, normal: 0 };
         for (const h of this.state.horses) {
             if (!h.finished) {
                 const frame = h.navigator.getTrackFrame(h.pos);
-                drainStamina(h, h.effectiveAttributes, input, frame);
+                const horseInput =
+                    h.id === this.state.playerHorseId ? input : zeroInput;
+                drainStamina(h, h.effectiveAttributes, horseInput, frame);
             }
         }
 
