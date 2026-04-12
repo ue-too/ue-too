@@ -140,6 +140,7 @@ export class V2Sim {
         this.components.app.ticker?.remove(this.tickerCb);
         this.input.dispose();
         this.renderer.dispose();
+        this.jockey.dispose();
         this.listeners.clear();
     }
 }
