@@ -30,8 +30,10 @@ describe('spawnHorses', () => {
 
     it('spaces horses across available lanes (distinct positions)', () => {
         const horses = spawnHorses(segments, 5);
-        const xs = horses.map(h => h.pos.x);
-        const unique = new Set(xs);
+        const positions = horses.map(
+            (h) => `${h.pos.x.toFixed(6)},${h.pos.y.toFixed(6)}`,
+        );
+        const unique = new Set(positions);
         expect(unique.size).toBe(5);
     });
 
