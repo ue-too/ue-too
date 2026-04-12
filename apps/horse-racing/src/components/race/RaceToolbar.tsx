@@ -1,7 +1,7 @@
 // apps/horse-racing/src/components/race-v2/RaceToolbar.tsx
 import type { ReactNode } from 'react';
 
-import type { RacePhase, V2SimHandle } from '@/simulation/v2';
+import type { RacePhase, V2SimHandle } from '@/simulation';
 
 interface Props {
     sim: V2SimHandle | null;

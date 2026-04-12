@@ -1,5 +1,5 @@
 import type { Point } from '@ue-too/math';
-import type { TrackFrame, TrackNavigator } from '../track-navigator';
+import type { TrackFrame, TrackNavigator } from './track-navigator';
 
 import { computeCruiseForce } from './cruise';
 import {

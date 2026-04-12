@@ -1,7 +1,7 @@
 // apps/horse-racing/src/components/race-v2/RaceEndOverlay.tsx
 import type { ReactNode } from 'react';
 
-import type { V2SimHandle } from '@/simulation/v2';
+import type { V2SimHandle } from '@/simulation';
 
 const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
 const ORDINALS = ['1st', '2nd', '3rd', '4th'];

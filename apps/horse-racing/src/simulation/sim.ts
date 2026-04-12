@@ -1,5 +1,5 @@
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
-import type { TrackSegment } from '../track-types';
+import type { TrackSegment } from './track-types';
 
 import { createInputHandler } from './input';
 import { Race } from './race';

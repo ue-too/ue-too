@@ -8,7 +8,6 @@ import '@/i18n';
 import App from './App';
 import { LandingPage } from './pages/landing';
 import { NotFoundPage } from './pages/not-found';
-import { RaceV2Page } from './pages/race-v2';
 import { TrackMakerPage } from './pages/track-maker';
 
 import './App.css';
@@ -31,7 +30,6 @@ root.render(
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/app" element={<App />} />
-                    <Route path="/app/v2" element={<RaceV2Page />} />
                     <Route path="/track-maker" element={<TrackMakerPage />} />
                     <Route path="/404" element={<NotFoundPage />} />
                     <Route path="*" element={<Navigate to="/404" replace />} />

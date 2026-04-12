@@ -1,6 +1,6 @@
 import type { Point } from '@ue-too/math';
-import { TrackNavigator } from '../track-navigator';
-import type { TrackSegment } from '../track-types';
+import { TrackNavigator } from './track-navigator';
+import type { TrackSegment } from './track-types';
 
 import { stepPhysics } from './physics';
 import {

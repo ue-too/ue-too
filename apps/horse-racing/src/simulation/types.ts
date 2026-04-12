@@ -1,5 +1,5 @@
 import type { Point } from '@ue-too/math';
-import type { TrackNavigator } from '../track-navigator';
+import type { TrackNavigator } from './track-navigator';
 
 // --- Physics constants ---
 

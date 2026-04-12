@@ -1,4 +1,4 @@
-import { createInputHandler } from '../../src/simulation/v2/input';
+import { createInputHandler } from '../src/simulation/input';
 
 function press(key: string) {
     window.dispatchEvent(new KeyboardEvent('keydown', { key }));

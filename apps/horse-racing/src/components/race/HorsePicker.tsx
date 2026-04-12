@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 
-import type { V2SimHandle } from '@/simulation/v2';
+import type { V2SimHandle } from '@/simulation';
 
 const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
 

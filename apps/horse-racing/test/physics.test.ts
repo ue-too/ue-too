@@ -2,12 +2,12 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { parseTrackJson } from '../../src/simulation/track-from-json';
-import { Race } from '../../src/simulation/v2/race';
-import type { InputState } from '../../src/simulation/v2/types';
+import { parseTrackJson } from '../src/simulation/track-from-json';
+import { Race } from '../src/simulation/race';
+import type { InputState } from '../src/simulation/types';
 
 function loadTrack(name: string) {
-    const path = join(__dirname, '../../public/tracks', name);
+    const path = join(__dirname, '../public/tracks', name);
     return parseTrackJson(JSON.parse(readFileSync(path, 'utf-8')) as unknown);
 }
 

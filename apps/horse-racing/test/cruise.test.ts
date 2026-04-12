@@ -1,5 +1,5 @@
-import { computeCruiseForce } from '../../src/simulation/v2/cruise';
-import { K_CRUISE, TARGET_CRUISE } from '../../src/simulation/v2/types';
+import { computeCruiseForce } from '../src/simulation/cruise';
+import { K_CRUISE, TARGET_CRUISE } from '../src/simulation/types';
 
 describe('computeCruiseForce', () => {
     it('returns zero at the target velocity', () => {

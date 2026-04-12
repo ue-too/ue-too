@@ -1,5 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
-import type { CurveSegment, StraightSegment, TrackSegment } from '../track-types';
+import type { CurveSegment, StraightSegment, TrackSegment } from './track-types';
 
 import { TRACK_HALF_WIDTH, type Horse } from './types';
 
