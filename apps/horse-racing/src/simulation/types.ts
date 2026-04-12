@@ -16,6 +16,12 @@ export const PHYS_HZ = 240;
 export const PHYS_SUBSTEPS = 8;
 /** Fixed physics timestep in seconds (one substep). */
 export const FIXED_DT = 1 / PHYS_HZ;
+/** Lateral velocity damping coefficient (m/s² per m/s of normal velocity). */
+export const NORMAL_DAMP = 0.5;
+/** Half-length of horse collision body in meters. */
+export const HORSE_HALF_LENGTH = 1.0;
+/** Half-width of horse collision body in meters. */
+export const HORSE_HALF_WIDTH = 0.325;
 
 // --- State shapes ---
 
