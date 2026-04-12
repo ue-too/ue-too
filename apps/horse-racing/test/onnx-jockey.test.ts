@@ -133,7 +133,7 @@ describe('OnnxJockey', () => {
             outputNames: ['actions'],
             run: jest.fn(
                 () =>
-                    new Promise((resolve) => {
+                    new Promise(resolve => {
                         resolveRun = resolve;
                     })
             ),

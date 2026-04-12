@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
-import { OnnxJockey, NullJockey } from '@/ai';
+import { NullJockey, OnnxJockey } from '@/ai';
 import type { V2SimHandle } from '@/simulation';
 
 interface ModelEntry {
@@ -25,7 +25,7 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
 
     useEffect(() => {
         fetch('/models/manifest.json')
-            .then((res) => res.json())
+            .then(res => res.json())
             .then((data: ModelEntry[]) => setModels(data))
             .catch(() => setModels([]));
     }, []);
@@ -76,7 +76,7 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
             {models.length > 0 && (
                 <select
                     value={selectedModel}
-                    onChange={(e) => onModelChange(e.target.value)}
+                    onChange={e => onModelChange(e.target.value)}
                     disabled={loading}
                     style={{
                         padding: '6px 10px',
@@ -89,7 +89,7 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                     }}
                 >
                     <option value="">No AI Model</option>
-                    {models.map((m) => (
+                    {models.map(m => (
                         <option key={m.url} value={m.url}>
                             {m.label}
                         </option>
@@ -99,7 +99,7 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
 
             {/* Horse picker */}
             <div style={{ display: 'flex', gap: 12 }}>
-                {horses.map((h) => (
+                {horses.map(h => (
                     <button
                         key={h.id}
                         onClick={() => pick(h.id)}

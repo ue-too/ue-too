@@ -1,6 +1,6 @@
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
 
-import { NullJockey, type Jockey } from '../ai';
+import { type Jockey, NullJockey } from '../ai';
 import { createInputHandler } from './input';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';

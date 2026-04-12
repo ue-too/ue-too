@@ -1,6 +1,9 @@
 // apps/horse-racing/src/App.tsx
-import { ScrollBarDisplay, Wrapper } from '@ue-too/board-pixi-react-integration';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+    ScrollBarDisplay,
+    Wrapper,
+} from '@ue-too/board-pixi-react-integration';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { HorsePicker } from '@/components/race/HorsePicker';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
@@ -26,8 +29,8 @@ const App = (): ReactNode => {
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
 
     const initFunction = useMemo(
-        () => makeInitApp((handle) => setSimHandle(handle)),
-        [],
+        () => makeInitApp(handle => setSimHandle(handle)),
+        []
     );
 
     useEffect(() => {
@@ -52,7 +55,7 @@ const App = (): ReactNode => {
                 {phase === 'gate' && simHandle && (
                     <HorsePicker
                         sim={simHandle}
-                        horses={simHandle.getHorses().map((h) => ({
+                        horses={simHandle.getHorses().map(h => ({
                             id: h.id,
                             color: h.color,
                         }))}

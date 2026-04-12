@@ -1,6 +1,6 @@
 import type { InferenceSession, Tensor } from 'onnxruntime-web';
 
-import { buildObservations, OBS_SIZE } from '../simulation/observation';
+import { OBS_SIZE, buildObservations } from '../simulation/observation';
 import type { Race } from '../simulation/race';
 import type { InputState } from '../simulation/types';
 import type { Jockey } from './types';
@@ -93,7 +93,7 @@ export class OnnxJockey implements Jockey {
 
         this.session
             .run(feeds)
-            .then((results) => {
+            .then(results => {
                 if (this.disposed) return;
                 const output = results[outputName];
                 const outData = output.data as Float32Array;
@@ -108,7 +108,7 @@ export class OnnxJockey implements Jockey {
 
                 this.pendingResult = actions;
             })
-            .catch((err) => {
+            .catch(err => {
                 if (this.disposed) return;
                 console.error('OnnxJockey inference failed:', err);
                 this.pendingResult = new Map();
