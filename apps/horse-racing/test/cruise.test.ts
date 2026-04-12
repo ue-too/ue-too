@@ -1,17 +1,19 @@
 import { computeCruiseForce } from '../src/simulation/cruise';
-import { K_CRUISE, TARGET_CRUISE } from '../src/simulation/types';
+import { K_CRUISE } from '../src/simulation/types';
+
+const CRUISE_SPEED = 13;
 
 describe('computeCruiseForce', () => {
-    it('returns zero at the target velocity', () => {
-        expect(computeCruiseForce(TARGET_CRUISE, TARGET_CRUISE)).toBeCloseTo(0);
+    it('returns zero at the cruise velocity', () => {
+        expect(computeCruiseForce(CRUISE_SPEED, CRUISE_SPEED)).toBeCloseTo(0);
     });
 
-    it('returns positive force when below target', () => {
-        expect(computeCruiseForce(0, TARGET_CRUISE)).toBeCloseTo(K_CRUISE * TARGET_CRUISE);
+    it('returns positive force when below cruise', () => {
+        expect(computeCruiseForce(0, CRUISE_SPEED)).toBeCloseTo(K_CRUISE * CRUISE_SPEED);
     });
 
-    it('returns negative force when above target', () => {
-        expect(computeCruiseForce(2 * TARGET_CRUISE, TARGET_CRUISE))
-            .toBeCloseTo(-K_CRUISE * TARGET_CRUISE);
+    it('returns negative force when above cruise', () => {
+        expect(computeCruiseForce(2 * CRUISE_SPEED, CRUISE_SPEED))
+            .toBeCloseTo(-K_CRUISE * CRUISE_SPEED);
     });
 });
