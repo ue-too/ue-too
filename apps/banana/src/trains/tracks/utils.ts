@@ -226,6 +226,7 @@ export const makeTrackSegmentDrawDataFromSplit = (split: TrackSegmentSplit, orig
         bedWidth: originalTrackSegment.bedWidth,
         trackStyle: originalTrackSegment.trackStyle,
         electrified: originalTrackSegment.electrified,
+        catenarySide: originalTrackSegment.catenarySide,
         bed: originalTrackSegment.bed,
     }
 };

@@ -1,10 +1,11 @@
 import { BaseContext, CreateStateType, DefaultOutputMapping, Defer, EventReactions, NO_OP, StateMachine, TemplateState, TemplateStateMachine } from "@ue-too/being";
 import { LayoutStateMachine } from "./layout-kmt-state-machine";
 import { createLayoutStateMachine, CurveCreationEngine, TrainPlacementStateMachine } from ".";
+import { CatenaryLayoutStateMachine } from "./catenary-layout-state-machine";
 import { DuplicateToSideStateMachine } from "./duplicate-to-side-state-machine";
 import { StationPlacementStateMachine } from "@/stations/station-placement-state-machine";
 
-export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'DUPLICATE', 'IDLE'] as const;
+export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'DUPLICATE', 'CATENARY', 'IDLE'] as const;
 
 export type ToolSwitcherStates = CreateStateType<typeof TOOL_SWITCHER_STATES>;
 
@@ -13,6 +14,7 @@ export type ToolSwitcherEvents = {
     "switchToTrain": {};
     "switchToStation": {};
     "switchToDuplicate": {};
+    "switchToCatenary": {};
     "switchToIdle": {};
 }
 
@@ -27,6 +29,7 @@ export type ToolSwitcherEventOutputMapping = {
     switchToTrain: void;
     switchToStation: void;
     switchToDuplicate: void;
+    switchToCatenary: void;
     switchToIdle: void;
 }
 
@@ -51,6 +54,10 @@ class ToolSwitcherIdleState extends TemplateState<ToolSwitcherEvents, ToolSwitch
         switchToDuplicate: {
             action: NO_OP,
             defaultTargetState: 'DUPLICATE',
+        },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
         },
         switchToIdle: {
             action: NO_OP,
@@ -109,6 +116,10 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
             action: NO_OP,
             defaultTargetState: 'DUPLICATE',
         },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -140,6 +151,10 @@ class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitc
         switchToDuplicate: {
             action: NO_OP,
             defaultTargetState: 'DUPLICATE',
+        },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
         },
         switchToIdle: {
             action: NO_OP,
@@ -195,6 +210,10 @@ class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwi
             action: NO_OP,
             defaultTargetState: 'DUPLICATE',
         },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -245,6 +264,10 @@ class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolS
             action: NO_OP,
             defaultTargetState: 'DUPLICATE',
         },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -270,11 +293,66 @@ class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolS
     };
 };
 
+class ToolSwitcherCatenaryState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
+    private _catenarySubStateMachine: CatenaryLayoutStateMachine;
+
+    constructor(catenarySubStateMachine: CatenaryLayoutStateMachine) {
+        super();
+        this._catenarySubStateMachine = catenarySubStateMachine;
+    }
+
+    protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
+        switchToLayout: {
+            action: NO_OP,
+            defaultTargetState: 'LAYOUT',
+        },
+        switchToTrain: {
+            action: NO_OP,
+            defaultTargetState: 'TRAIN',
+        },
+        switchToStation: {
+            action: NO_OP,
+            defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
+        switchToIdle: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE',
+        }
+    }
+
+    uponEnter(context: BaseContext, stateMachine: StateMachine<ToolSwitcherEvents, BaseContext, ToolSwitcherStates, DefaultOutputMapping<ToolSwitcherEvents>>, from: ToolSwitcherStates | "INITIAL"): void {
+        this._catenarySubStateMachine.happens('startCatenary');
+    }
+
+    beforeExit(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, toState: ToolSwitcherStates) {
+        this._catenarySubStateMachine.happens('endCatenary');
+    }
+
+    protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
+        action: (context, event, eventKey, stateMachine) => {
+            const result = this._catenarySubStateMachine.happens(eventKey, event);
+            if (result.handled) {
+                return { handled: true, output: result.output };
+            }
+            return { handled: false };
+        },
+    };
+};
+
 export const createToolSwitcherStateMachine = (
     layoutSubStateMachine: LayoutStateMachine,
     trainSubStateMachine: TrainPlacementStateMachine,
     stationSubStateMachine: StationPlacementStateMachine,
     duplicateSubStateMachine: DuplicateToSideStateMachine,
+    catenarySubStateMachine: CatenaryLayoutStateMachine,
 ): ToolSwitcherStateMachine => {
     return new TemplateStateMachine<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates>({
         IDLE: new ToolSwitcherIdleState(),
@@ -282,6 +360,7 @@ export const createToolSwitcherStateMachine = (
         TRAIN: new ToolSwitcherTrainState(trainSubStateMachine),
         STATION: new ToolSwitcherStationState(stationSubStateMachine),
         DUPLICATE: new ToolSwitcherDuplicateState(duplicateSubStateMachine),
+        CATENARY: new ToolSwitcherCatenaryState(catenarySubStateMachine),
     }, 'IDLE', {
         setup: () => { },
         cleanup: () => { },

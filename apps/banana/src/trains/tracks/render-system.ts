@@ -4,6 +4,7 @@ import { BCurve } from '@ue-too/curve';
 import { Point, PointCal } from '@ue-too/math';
 import { CurveCreationEngine } from '../input-state-machine';
 import { DeletionHighlightState } from '../input-state-machine/curve-engine';
+import { CatenaryHighlightState, CatenaryLayoutEngine, CatenaryPreviewState } from '../input-state-machine/catenary-layout-engine';
 import { DuplicateHighlightState, DuplicateToSideEngine } from '../input-state-machine/duplicate-to-side-engine';
 import { ELEVATION, ELEVATION_MAX, ELEVATION_MIN, ELEVATION_VALUES, ProjectionPositiveResult, TrackSegmentDrawData, TrackSegmentWithCollision, TrackStyle } from './types';
 import { LEVEL_HEIGHT } from './constants';
@@ -97,6 +98,12 @@ export class TrackRenderSystem {
 
     /** World-space overlay stroke drawn on the track under the cursor in delete mode. */
     private _deletionHighlightGraphics: Graphics = new Graphics();
+
+    /** World-space overlay stroke drawn on the track under the cursor / selected source in catenary mode. */
+    private _catenaryHighlightGraphics: Graphics = new Graphics();
+
+    /** World-space preview graphics for catenary poles while the user is choosing a side. */
+    private _catenaryPreviewGraphics: Graphics = new Graphics();
 
     private _showPreviewCurveArcs: boolean = false;
     private _latestPreviewDrawDataList:
@@ -201,6 +208,7 @@ export class TrackRenderSystem {
         textureRenderer?: TrackTextureRenderer | null,
         terrainData?: TerrainData | null,
         duplicateToSideEngine?: DuplicateToSideEngine,
+        catenaryLayoutEngine?: CatenaryLayoutEngine,
     ) {
         this._worldRenderSystem = worldRenderSystem;
         this._terrainData = terrainData ?? null;
@@ -220,9 +228,18 @@ export class TrackRenderSystem {
             duplicateToSideEngine.onPreviewDrawDataChange(this._onPreviewDrawDataChange.bind(this), { signal: this._abortController.signal });
             duplicateToSideEngine.onHighlightChange(this._onDuplicateHighlightChange.bind(this), { signal: this._abortController.signal });
         }
+        if (catenaryLayoutEngine) {
+            catenaryLayoutEngine.onHighlightChange(this._onCatenaryHighlightChange.bind(this), { signal: this._abortController.signal });
+            catenaryLayoutEngine.onPreviewChange(this._onCatenaryPreviewChange.bind(this), { signal: this._abortController.signal });
+            catenaryLayoutEngine.onCommit((payload) => {
+                this.applyCatenary(payload.segmentNumber, payload.side);
+            }, { signal: this._abortController.signal });
+        }
 
         this._topLevelContainer.addChild(this._duplicateHighlightGraphics);
         this._topLevelContainer.addChild(this._deletionHighlightGraphics);
+        this._topLevelContainer.addChild(this._catenaryHighlightGraphics);
+        this._topLevelContainer.addChild(this._catenaryPreviewGraphics);
 
         this._previewStartProjection.visible = false;
         this._previewEndProjection.visible = false;
@@ -287,6 +304,80 @@ export class TrackRenderSystem {
 
     set electrified(value: boolean) {
         this._electrified = value;
+    }
+
+    /**
+     * Apply catenary electrification to an existing track segment on a given side.
+     * Updates all draw data entries belonging to that segment, then rebuilds catenary graphics.
+     */
+    applyCatenary(segmentNumber: number, side: 1 | -1): void {
+        // Stamp the canonical segment so serialization picks it up.
+        const segment = this._trackCurveManager.getTrackSegmentWithJoints(segmentNumber);
+        if (segment) {
+            segment.electrified = true;
+            segment.catenarySide = side;
+        }
+
+        const drawDataList = this._trackCurveManager.persistedDrawData;
+        for (const drawData of drawDataList) {
+            if (drawData.originalTrackSegment.trackSegmentNumber === segmentNumber) {
+                drawData.electrified = true;
+                drawData.catenarySide = side;
+
+                const key = JSON.stringify({
+                    trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber,
+                    tValInterval: drawData.originalTrackSegment.tValInterval,
+                });
+
+                // Remove existing catenary graphics if present.
+                const existing = this._catenaryMap.get(key);
+                if (existing !== undefined) {
+                    const removed = this._worldRenderSystem.removeFromBand(`__catenary__${key}`);
+                    removed?.destroy({ children: true });
+                    this._catenaryMap.delete(key);
+                }
+
+                // Rebuild catenary graphics on the new side.
+                const catenaryContainer = this._buildCatenaryForDrawData(drawData);
+                const bandIndex = this._drawDataBandMap.get(key);
+                if (bandIndex !== undefined) {
+                    this._worldRenderSystem.addToBand(`__catenary__${key}`, catenaryContainer, bandIndex, 'catenary');
+                    this._catenaryMap.set(key, catenaryContainer);
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove catenary electrification from an existing track segment.
+     * Clears electrified/catenarySide from all draw data entries belonging to that segment.
+     */
+    removeCatenary(segmentNumber: number): void {
+        const segment = this._trackCurveManager.getTrackSegmentWithJoints(segmentNumber);
+        if (segment) {
+            segment.electrified = false;
+            segment.catenarySide = undefined;
+        }
+
+        const drawDataList = this._trackCurveManager.persistedDrawData;
+        for (const drawData of drawDataList) {
+            if (drawData.originalTrackSegment.trackSegmentNumber === segmentNumber) {
+                drawData.electrified = false;
+                drawData.catenarySide = undefined;
+
+                const key = JSON.stringify({
+                    trackSegmentNumber: drawData.originalTrackSegment.trackSegmentNumber,
+                    tValInterval: drawData.originalTrackSegment.tValInterval,
+                });
+
+                const existing = this._catenaryMap.get(key);
+                if (existing !== undefined) {
+                    const removed = this._worldRenderSystem.removeFromBand(`__catenary__${key}`);
+                    removed?.destroy({ children: true });
+                    this._catenaryMap.delete(key);
+                }
+            }
+        }
     }
 
     /** Total width of the gravel bed foundation for newly laid tracks (meters). */
@@ -619,8 +710,8 @@ export class TrackRenderSystem {
         // Mast offset from track center (outside the track).
         const mastOffset = gauge / 2 + 2;
 
-        // Alternate which side the pole appears on.
-        let side = 1;
+        // Use stored side (all poles on one side) or default to +1.
+        const side = drawData.catenarySide ?? 1;
 
         for (let i = 0; i <= poleCount; i++) {
             const t = poleCount === 0 ? 0.5 : i / poleCount;
@@ -646,8 +737,6 @@ export class TrackRenderSystem {
             // Contact wire dot at track center.
             g.circle(point.x, point.y, 0.04);
             g.fill(0x404040);
-
-            side *= -1;
         }
 
         // Draw the catenary wire along the full curve.
@@ -1874,6 +1963,84 @@ export class TrackRenderSystem {
             g.lineTo(pt.x, pt.y);
         }
         g.stroke({ color: 0xff3b30, width: 0.9, alpha: 0.85 });
+    }
+
+    private _onCatenaryHighlightChange(state: CatenaryHighlightState) {
+        const g = this._catenaryHighlightGraphics;
+        g.clear();
+        if (state === null) {
+            return;
+        }
+        const curve = this._trackCurveManager.getTrackSegment(state.segmentNumber);
+        if (curve === null) {
+            return;
+        }
+
+        const SAMPLE_COUNT = 32;
+        const first = curve.get(0);
+        g.moveTo(first.x, first.y);
+        for (let i = 1; i <= SAMPLE_COUNT; i++) {
+            const pt = curve.get(i / SAMPLE_COUNT);
+            g.lineTo(pt.x, pt.y);
+        }
+
+        if (state.kind === 'hover') {
+            g.stroke({ color: 0x66bb6a, width: 0.6, alpha: 0.75 });
+        } else {
+            g.stroke({ color: 0x43a047, width: 1.0, alpha: 0.95 });
+        }
+    }
+
+    private _onCatenaryPreviewChange(state: CatenaryPreviewState) {
+        const g = this._catenaryPreviewGraphics;
+        g.clear();
+        if (state === null) {
+            return;
+        }
+
+        const curve = this._trackCurveManager.getTrackSegment(state.segmentNumber);
+        if (curve === null) {
+            return;
+        }
+
+        // Draw a preview of poles on the chosen side.
+        const curveLength = curve.fullLength;
+        const poleSpacing = 25;
+        const poleCount = Math.max(1, Math.floor(curveLength / poleSpacing));
+        // Use the default gauge (approximation for preview).
+        const gauge = 1.067;
+        const mastOffset = gauge / 2 + 2;
+        const side = state.side;
+
+        for (let i = 0; i <= poleCount; i++) {
+            const t = poleCount === 0 ? 0.5 : i / poleCount;
+            const point = curve.getPointbyPercentage(t);
+            const derivative = curve.derivativeByPercentage(t);
+            const tangent = PointCal.unitVector(derivative);
+            const nx = -tangent.y;
+            const ny = tangent.x;
+
+            const mastX = point.x + nx * mastOffset * side;
+            const mastY = point.y + ny * mastOffset * side;
+
+            g.circle(mastX, mastY, 0.15);
+            g.fill({ color: 0x43a047, alpha: 0.7 });
+
+            g.moveTo(mastX, mastY);
+            g.lineTo(point.x, point.y);
+            g.stroke({ color: 0x66bb6a, width: 0.08, alpha: 0.6 });
+        }
+
+        // Draw wire preview.
+        const wireSteps = Math.max(10, Math.ceil(curveLength / 1));
+        const first = curve.get(0);
+        g.moveTo(first.x, first.y);
+        for (let i = 1; i <= wireSteps; i++) {
+            const t = i / wireSteps;
+            const p = curve.getPointbyPercentage(t);
+            g.lineTo(p.x, p.y);
+        }
+        g.stroke({ color: 0x43a047, width: 0.05, alpha: 0.5 });
     }
 
     private _onPreviewDrawDataChange(drawDataList: { index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined) {

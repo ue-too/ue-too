@@ -14,6 +14,7 @@ import {
     Clock,
     Copy,
     Download,
+    Zap,
     FilePlus,
     FolderOpen,
     Landmark,
@@ -396,6 +397,17 @@ export function BananaToolbar({
         }
     }, [app, mode, exitAllModes]);
 
+    const handleCatenaryLayoutToggle = useCallback(() => {
+        if (!app) return;
+        if (mode === 'catenary-layout') {
+            exitAllModes();
+        } else {
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToCatenary');
+            setMode('catenary-layout');
+        }
+    }, [app, mode, exitAllModes]);
+
     const handlePointerDown = useCallback(
         (event: PointerEvent) => {
             if (event.button !== 0 || !app) return;
@@ -716,7 +728,8 @@ export function BananaToolbar({
         mode === 'layout' ||
         mode === 'layout-deletion' ||
         mode === 'station-placement' ||
-        mode === 'duplicate-to-side'
+        mode === 'duplicate-to-side' ||
+        mode === 'catenary-layout'
             ? 'drawing'
             : mode === 'train-placement'
               ? 'trains'
@@ -733,7 +746,9 @@ export function BananaToolbar({
                   ? 'modePlacingStation'
                   : mode === 'duplicate-to-side'
                     ? 'modeDuplicatingTrack'
-                    : mode === 'building-placement'
+                    : mode === 'catenary-layout'
+                      ? 'modeCatenaryLayout'
+                      : mode === 'building-placement'
                       ? 'modePlacingBuilding'
                       : mode === 'building-deletion'
                         ? 'modeDeletingBuilding'
@@ -769,6 +784,15 @@ export function BananaToolbar({
                     active: mode === 'duplicate-to-side',
                     disabled: mode !== 'idle' && mode !== 'duplicate-to-side',
                     onClick: handleDuplicateToSideToggle,
+                },
+                {
+                    kind: 'button',
+                    id: 'catenary-layout',
+                    icon: <Zap />,
+                    label: t('catenaryLayout'),
+                    active: mode === 'catenary-layout',
+                    disabled: mode !== 'idle' && mode !== 'catenary-layout',
+                    onClick: handleCatenaryLayoutToggle,
                 },
             ],
         },

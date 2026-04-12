@@ -99,12 +99,12 @@ export class TrackCurveManager {
         return this._persistedDrawData;
     }
 
-    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean } | undefined {
+    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; catenarySide?: 1 | -1; bed?: boolean } | undefined {
         const drawData = this._persistedDrawData.find(
             entry => entry.originalTrackSegment.trackSegmentNumber === segmentNumber
         );
         if (drawData === undefined) return undefined;
-        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, bed: drawData.bed };
+        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, catenarySide: drawData.catenarySide, bed: drawData.bed };
     }
 
     getTrackSegment(segmentNumber: number): BCurve | null {
@@ -406,7 +406,7 @@ export class TrackCurveManager {
         gauge: number = 1.067,
         excludeSegmentsForCollisionCheck: Set<number> = new Set(),
         bedWidth?: number,
-        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean }
+        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; catenarySide?: 1 | -1; bed?: boolean }
     ): number {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -590,6 +590,7 @@ export class TrackCurveManager {
             bedWidth: bedWidth ?? (this._bedEnabled ? this._bedWidth : undefined),
             trackStyle: visualProps?.trackStyle,
             electrified: visualProps?.electrified,
+            catenarySide: visualProps?.catenarySide,
             bed: visualProps?.bed,
             splits: insertionT,
             splitCurves: splits,
@@ -953,6 +954,7 @@ export class TrackCurveManager {
                     splits: [...entity.segment.splits],
                     trackStyle: entity.segment.trackStyle ?? visualProps?.trackStyle,
                     electrified: entity.segment.electrified ?? visualProps?.electrified,
+                    catenarySide: entity.segment.catenarySide ?? visualProps?.catenarySide,
                     bed: entity.segment.bed ?? visualProps?.bed,
                 };
             });
@@ -972,7 +974,7 @@ export class TrackCurveManager {
         t1Elevation: ELEVATION,
         gauge: number,
         splitTValues: number[],
-        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; bed?: boolean }
+        visualProps?: { trackStyle?: TrackStyle; electrified?: boolean; catenarySide?: 1 | -1; bed?: boolean }
     ): void {
         const experimentPositiveOffsets = offset2(curve, gauge / 2);
         const experimentNegativeOffsets = offset2(curve, -gauge / 2);
@@ -1082,6 +1084,7 @@ export class TrackCurveManager {
             gauge,
             trackStyle: visualProps?.trackStyle,
             electrified: visualProps?.electrified,
+            catenarySide: visualProps?.catenarySide,
             bed: visualProps?.bed,
             splits: splitTValues,
             splitCurves: splits,
@@ -1142,7 +1145,7 @@ export class TrackCurveManager {
                 segment.elevation.to,
                 segment.gauge,
                 segment.splits,
-                { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
+                { trackStyle: segment.trackStyle, electrified: segment.electrified, catenarySide: segment.catenarySide, bed: segment.bed }
             );
         }
         return manager;

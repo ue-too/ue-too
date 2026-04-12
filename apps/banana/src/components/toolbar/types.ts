@@ -8,6 +8,7 @@ export type AppMode =
     | 'building-deletion'
     | 'station-placement'
     | 'duplicate-to-side'
+    | 'catenary-layout'
     | 'stress-pick';
 
 /** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar). */

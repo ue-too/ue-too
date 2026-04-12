@@ -1299,7 +1299,7 @@ export class TrackGraph {
                     segment.elevation.to,
                     segment.gauge,
                     segment.splits,
-                    { trackStyle: segment.trackStyle, electrified: segment.electrified, bed: segment.bed }
+                    { trackStyle: segment.trackStyle, electrified: segment.electrified, catenarySide: segment.catenarySide, bed: segment.bed }
                 );
             }
             options?.onProgress?.(end, segments.length);

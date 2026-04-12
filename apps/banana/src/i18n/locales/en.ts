@@ -15,6 +15,7 @@ const en = {
         deleteTrack: 'Delete Track',
         endDeletion: 'End Deletion',
         duplicateTrackToSide: 'Duplicate Track to Side',
+        catenaryLayout: 'Catenary Layout',
 
         // Toolbar - Mode Exit Chip
         exitMode: 'Exit',
@@ -23,6 +24,7 @@ const en = {
         modePlacingTrain: 'Placing Train',
         modePlacingStation: 'Placing Station',
         modeDuplicatingTrack: 'Duplicating Track',
+        modeCatenaryLayout: 'Placing Catenary',
         modePlacingBuilding: 'Placing Building',
         modeDeletingBuilding: 'Deleting Building',
 

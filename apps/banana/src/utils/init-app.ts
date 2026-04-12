@@ -7,6 +7,8 @@ import type { JointDirectionManager } from '@/trains/input-state-machine/train-k
 import { DefaultJointDirectionManager, TrainPlacementEngine, TrainPlacementStateMachine } from '@/trains/input-state-machine/train-kmt-state-machine';
 import { LayoutStateMachine } from '@/trains/input-state-machine/layout-kmt-state-machine';
 import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
+import { CatenaryLayoutEngine } from '@/trains/input-state-machine/catenary-layout-engine';
+import { createCatenaryLayoutStateMachine } from '@/trains/input-state-machine/catenary-layout-state-machine';
 import { DuplicateToSideEngine } from '@/trains/input-state-machine/duplicate-to-side-engine';
 import { createDuplicateToSideStateMachine } from '@/trains/input-state-machine/duplicate-to-side-state-machine';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
@@ -227,6 +229,7 @@ export type BananaAppComponents = BaseAppComponents & {
   timetableRef: { current: TimetableManager };
   curveEngine: CurveCreationEngine;
   duplicateToSideEngine: DuplicateToSideEngine;
+  catenaryLayoutEngine: CatenaryLayoutEngine;
   worldRenderSystem: WorldRenderSystem;
   terrainData: TerrainData;
   terrainRenderSystem: TerrainRenderSystem;
@@ -462,6 +465,12 @@ export const initApp = async (
   );
   const duplicateSubStateMachine = createDuplicateToSideStateMachine(duplicateToSideEngine);
 
+  const catenaryLayoutEngine = new CatenaryLayoutEngine(
+    curveEngine.trackGraph,
+    (position) => curveEngine.convert2WorldPosition(position),
+  );
+  const catenarySubStateMachine = createCatenaryLayoutStateMachine(catenaryLayoutEngine);
+
   const trackRenderSystem = new TrackRenderSystem(
     worldRenderSystem,
     curveEngine.trackGraph.trackCurveManager,
@@ -470,6 +479,7 @@ export const initApp = async (
     { renderer: baseComponents.app.renderer },
     terrainData,
     duplicateToSideEngine,
+    catenaryLayoutEngine,
   );
   const buildingManager = new BuildingManager();
   const buildingRenderSystem = new BuildingRenderSystem(worldRenderSystem, buildingManager);
@@ -559,7 +569,7 @@ export const initApp = async (
     formationManager.addFormation(train.formation);
   });
 
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, duplicateSubStateMachine, baseComponents.observableInputTracker);
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, duplicateSubStateMachine, catenarySubStateMachine, baseComponents.observableInputTracker);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
@@ -666,6 +676,7 @@ export const initApp = async (
     ...baseComponents,
     curveEngine,
     duplicateToSideEngine,
+    catenaryLayoutEngine,
     worldRenderSystem,
     terrainData,
     terrainRenderSystem,
