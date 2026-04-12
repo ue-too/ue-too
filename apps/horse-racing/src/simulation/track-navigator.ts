@@ -346,12 +346,13 @@ export class TrackNavigator {
      * Does not mutate the navigator's state.
      */
     sampleTrackAhead(position: Point, distance: number): TrackFrame {
-        if (distance <= 0) {
-            return this.getTrackFrame(position);
-        }
-
         const seg = this.segments[this.currentIndex];
         const along = this.distanceAlongSegment(seg, position);
+
+        if (distance <= 0) {
+            const clamped = Math.max(0, Math.min(this._segmentLengths[this.currentIndex], along));
+            return this.frameAtSegmentOffset(this.currentIndex, clamped);
+        }
 
         let remaining = distance + along;
         let idx = this.currentIndex;
