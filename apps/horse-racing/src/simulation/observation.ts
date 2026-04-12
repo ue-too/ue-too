@@ -3,17 +3,17 @@ import type { Race } from './race';
 import type { TrackFrame } from './track-navigator';
 import { type Horse, MAX_HORSES, TRACK_HALF_WIDTH } from './types';
 
+// Lookahead distances in meters
+const LOOKAHEAD_DISTANCES = [25, 50, 100, 200];
+
 // --- Constants ---
 
 export const SELF_STATE_SIZE = 14;
-export const TRACK_CONTEXT_SIZE = 10;
+export const TRACK_CONTEXT_SIZE = 2 + LOOKAHEAD_DISTANCES.length * 2; // 10
 export const OPPONENT_SLOT_SIZE = 5;
 export const OPPONENT_SLOTS = MAX_HORSES - 1; // 23
 export const OBS_SIZE =
     SELF_STATE_SIZE + TRACK_CONTEXT_SIZE + OPPONENT_SLOTS * OPPONENT_SLOT_SIZE; // 139
-
-// Lookahead distances in meters
-const LOOKAHEAD_DISTANCES = [25, 50, 100, 200];
 
 // --- Helpers ---
 
