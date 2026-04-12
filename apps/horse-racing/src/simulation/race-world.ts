@@ -38,7 +38,7 @@ export class RaceWorld {
             orientationAngle,
             mass,
             false, // not static
-            true, // friction enabled
+            false, // friction disabled — our force model handles drag
         );
         body.angularVelocity = 0;
         this.world.addRigidBody(`horse-${id}`, body);

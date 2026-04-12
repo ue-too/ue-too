@@ -5,6 +5,7 @@ import type { TrackSegment } from './track-types';
 import { createDefaultAttributes } from './attributes';
 import { applyExhaustion } from './exhaustion';
 import { stepPhysics } from './physics';
+import { RaceWorld } from './race-world';
 import { drainStamina } from './stamina';
 import {
     FIXED_DT,
@@ -67,6 +68,7 @@ export function spawnHorses(segments: TrackSegment[]): Horse[] {
 export class Race {
     state: RaceState;
     private segments: TrackSegment[];
+    private raceWorld: RaceWorld;
 
     constructor(segments: TrackSegment[]) {
         this.segments = segments;
@@ -77,6 +79,21 @@ export class Race {
             tick: 0,
             finishOrder: [],
         };
+        this.raceWorld = new RaceWorld(segments);
+        this.addHorseBodies();
+    }
+
+    private addHorseBodies(): void {
+        for (const h of this.state.horses) {
+            const frame = h.navigator.getTrackFrame(h.pos);
+            const angle = Math.atan2(frame.tangential.y, frame.tangential.x);
+            this.raceWorld.addHorse(
+                h.id,
+                h.pos,
+                angle,
+                h.baseAttributes.weight,
+            );
+        }
     }
 
     start(playerHorseId: number | null): void {
@@ -101,6 +118,7 @@ export class Race {
             this.state.horses,
             input,
             this.state.playerHorseId,
+            this.raceWorld,
             PHYS_SUBSTEPS,
             FIXED_DT,
         );
@@ -135,6 +153,7 @@ export class Race {
     }
 
     reset(): void {
+        this.raceWorld.dispose();
         this.state = {
             phase: 'gate',
             horses: spawnHorses(this.segments),
@@ -142,5 +161,7 @@ export class Race {
             tick: 0,
             finishOrder: [],
         };
+        this.raceWorld = new RaceWorld(this.segments);
+        this.addHorseBodies();
     }
 }

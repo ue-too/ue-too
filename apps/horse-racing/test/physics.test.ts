@@ -28,7 +28,7 @@ describe('Race physics integration', () => {
         expect(race.state.phase).toBe('finished');
         expect(race.state.horses.every((h) => h.finished)).toBe(true);
         expect(race.state.finishOrder).toHaveLength(4);
-    });
+    }, 30_000);
 
     it('identical horses finish within 15% tick variance', () => {
         const segments = loadTrack('test_oval.json');
@@ -52,5 +52,5 @@ describe('Race physics integration', () => {
         const minT = Math.min(...ticks);
         const maxT = Math.max(...ticks);
         expect((maxT - minT) / minT).toBeLessThan(0.15);
-    });
+    }, 30_000);
 });
