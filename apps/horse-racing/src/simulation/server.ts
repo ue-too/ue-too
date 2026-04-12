@@ -1,14 +1,19 @@
+/**
+ * Headless validation server for the horse-racing simulation.
+ *
+ * Exposes the v2 Race over HTTP so a Python RL environment can validate
+ * its reimplemented physics against the TypeScript ground truth.
+ *
+ * Start with: `bun run apps/horse-racing/src/simulation/server.ts`
+ */
 import { join } from 'path';
 
 import { buildObservations } from './observation';
 import { Race } from './race';
 import { parseTrackJson } from './track-from-json';
-import type { InputState } from './types';
+import { MAX_HORSES, type InputState } from './types';
 
 const TRACKS_DIR = join(import.meta.dir, '../../public/tracks');
-
-let race: Race | null = null;
-let prevProgress: number[] = [];
 
 function jsonResponse(body: unknown, status = 200): Response {
     return new Response(JSON.stringify(body), {
@@ -17,47 +22,66 @@ function jsonResponse(body: unknown, status = 200): Response {
     });
 }
 
-async function handleReset(req: Request): Promise<Response> {
-    const body = (await req.json()) as {
-        track?: string;
-        horseCount?: number;
-    };
-    const trackName = body.track ?? 'tokyo';
-    const horseCount = Math.max(1, Math.min(24, body.horseCount ?? 8));
+export function startServer(port: number) {
+    let race: Race | null = null;
+    let prevProgress: number[] = [];
 
-    const trackPath = join(TRACKS_DIR, `${trackName}.json`);
-    const trackFile = Bun.file(trackPath);
-    if (!(await trackFile.exists())) {
-        return jsonResponse({ error: `Track "${trackName}" not found` }, 404);
+    async function handleReset(req: Request): Promise<Response> {
+        const body = (await req.json()) as {
+            track?: string;
+            horseCount?: number;
+        };
+        const trackName = body.track ?? 'tokyo';
+        const horseCount = Math.max(
+            1,
+            Math.min(MAX_HORSES, body.horseCount ?? 8),
+        );
+
+        const trackPath = join(TRACKS_DIR, `${trackName}.json`);
+        const trackFile = Bun.file(trackPath);
+        if (!(await trackFile.exists())) {
+            return jsonResponse(
+                { error: `Track "${trackName}" not found` },
+                404,
+            );
+        }
+
+        let segments;
+        try {
+            const raw = await trackFile.json();
+            segments = parseTrackJson(raw);
+        } catch {
+            return jsonResponse(
+                { error: `Track "${trackName}" is malformed` },
+                400,
+            );
+        }
+
+        race = new Race(segments, horseCount);
+        race.start(null);
+
+        const observations = buildObservations(race);
+        prevProgress = race.state.horses.map((h) => h.trackProgress);
+
+        return jsonResponse({
+            observations: observations.map((o) => Array.from(o)),
+            horseCount,
+        });
     }
 
-    const raw = await trackFile.json();
-    const segments = parseTrackJson(raw);
+    async function handleStep(req: Request): Promise<Response> {
+        const body = (await req.json()) as { actions?: number[][] };
 
-    race = new Race(segments, horseCount);
-    race.start(null);
-
-    const observations = buildObservations(race);
-    prevProgress = race.state.horses.map(h => h.trackProgress);
-
-    return jsonResponse({
-        observations: observations.map(o => Array.from(o)),
-        horseCount,
-    });
-}
-
-function handleStep(req: Request): Promise<Response> {
-    return req.json().then((body: { actions?: number[][] }) => {
         if (!race) {
             return jsonResponse(
                 { error: 'No active race. Call /reset first.' },
-                400
+                400,
             );
         }
         if (race.state.phase === 'finished') {
             return jsonResponse(
                 { error: 'Race is finished. Call /reset.' },
-                400
+                400,
             );
         }
 
@@ -68,7 +92,7 @@ function handleStep(req: Request): Promise<Response> {
                 {
                     error: `Expected ${expected} actions, got ${actions.length}`,
                 },
-                400
+                400,
             );
         }
 
@@ -83,22 +107,24 @@ function handleStep(req: Request): Promise<Response> {
         race.tick(inputs);
 
         const observations = buildObservations(race);
-        const currentProgress = race.state.horses.map(h => h.trackProgress);
-        const rewards = currentProgress.map((p, i) => p - prevProgress[i]);
+        const currentProgress = race.state.horses.map(
+            (h) => h.trackProgress,
+        );
+        const rewards = currentProgress.map(
+            (p, i) => p - prevProgress[i],
+        );
         prevProgress = currentProgress;
 
-        const dones = race.state.horses.map(h => h.finished);
+        const dones = race.state.horses.map((h) => h.finished);
 
         return jsonResponse({
-            observations: observations.map(o => Array.from(o)),
+            observations: observations.map((o) => Array.from(o)),
             rewards,
             dones,
             tick: race.state.tick,
         });
-    });
-}
+    }
 
-export function startServer(port: number) {
     return Bun.serve({
         port,
         fetch(req) {
