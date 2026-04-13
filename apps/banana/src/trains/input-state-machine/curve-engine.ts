@@ -1,4 +1,32 @@
-import { Canvas, convertFromCanvas2ViewPort, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWindow2Canvas, convertFromWorld2Viewport, Observable, ObservableBoardCamera, ObservableInputTracker, Observer, SubscriptionOptions, SynchronousObservable } from '@ue-too/board';
+import {
+    Canvas,
+    Observable,
+    ObservableBoardCamera,
+    ObservableInputTracker,
+    Observer,
+    SubscriptionOptions,
+    SynchronousObservable,
+    convertFromCanvas2ViewPort,
+    convertFromCanvas2Window,
+    convertFromViewPort2Canvas,
+    convertFromViewport2World,
+    convertFromWindow2Canvas,
+    convertFromWorld2Viewport,
+} from '@ue-too/board';
+import { BCurve } from '@ue-too/curve';
+import { type Point, directionAlignedToTangent } from '@ue-too/math';
+import { PointCal } from '@ue-too/math';
+
+import { PreviewCurveCalculator, TENSION_STEP } from '../tracks/new-joint';
+import { TrackGraph } from '../tracks/track';
+import {
+    ELEVATION,
+    ProjectionPositiveResult,
+    ProjectionResult,
+    TrackSegmentDrawData,
+} from '../tracks/types';
+import { LayoutContext } from './layout-kmt-state-machine';
+import { NewJointType } from './types';
 
 /**
  * Highlight payload for the curve deletion tool.
@@ -7,31 +35,24 @@ import { Canvas, convertFromCanvas2ViewPort, convertFromCanvas2Window, convertFr
 export type DeletionHighlightState = {
     segmentNumber: number;
 } | null;
-import { BCurve } from '@ue-too/curve';
-import { type Point, directionAlignedToTangent } from '@ue-too/math';
-import { PointCal } from '@ue-too/math';
 
-import { PreviewCurveCalculator, TENSION_STEP } from '../tracks/new-joint';
-import {
-    ELEVATION,
-    ProjectionPositiveResult,
-    ProjectionResult,
-    TrackSegmentDrawData,
-} from '../tracks/types';
-import { TrackGraph } from '../tracks/track';
-import { LayoutContext } from './layout-kmt-state-machine';
-import { NewJointType } from './types';
-
-export class CurveCreationEngine extends ObservableInputTracker implements LayoutContext {
+export class CurveCreationEngine
+    extends ObservableInputTracker
+    implements LayoutContext
+{
     private _trackGraph: TrackGraph;
 
     private _newStartJoint: NewJointType | null = null;
     private _newEndJoint: NewJointType | null = null;
 
     private _previewStartProjection: ProjectionPositiveResult | null = null;
-    private _previewStartProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
+    private _previewStartProjectionObservable: Observable<
+        [ProjectionPositiveResult | null]
+    > = new SynchronousObservable<[ProjectionPositiveResult | null]>();
     private _previewEndProjection: ProjectionPositiveResult | null = null;
-    private _previewEndProjectionObservable: Observable<[ProjectionPositiveResult | null]> = new SynchronousObservable<[ProjectionPositiveResult | null]>();
+    private _previewEndProjectionObservable: Observable<
+        [ProjectionPositiveResult | null]
+    > = new SynchronousObservable<[ProjectionPositiveResult | null]>();
 
     private _previewCurve: {
         curve: BCurve;
@@ -61,8 +82,29 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     private _tensionObservable: Observable<[number]> =
         new SynchronousObservable<[number]>();
 
-    private _previewDrawDataObservable: Observable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]> =
-        new SynchronousObservable<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>();
+    private _previewDrawDataObservable: Observable<
+        [
+            | {
+                  index: number;
+                  drawData: TrackSegmentDrawData & {
+                      positiveOffsets: Point[];
+                      negativeOffsets: Point[];
+                  };
+              }[]
+            | undefined,
+        ]
+    > = new SynchronousObservable<
+        [
+            | {
+                  index: number;
+                  drawData: TrackSegmentDrawData & {
+                      positiveOffsets: Point[];
+                      negativeOffsets: Point[];
+                  };
+              }[]
+            | undefined,
+        ]
+    >();
 
     private _camera: ObservableBoardCamera;
 
@@ -88,8 +130,8 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         const res =
             this._previewCurveForDeletion !== null
                 ? this._trackGraph.getTrackSegmentCurve(
-                    this._previewCurveForDeletion
-                )
+                      this._previewCurveForDeletion
+                  )
                 : null;
         return res;
     }
@@ -108,7 +150,6 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     setCurrentGauge(gauge: number) {
         this._previewCurveGauge = gauge;
     }
-
 
     bumpStartJointElevation() {
         if (
@@ -347,13 +388,13 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 previewStartAndEndSwitched: newPreviewCurve.startAndEndSwitched,
                 elevation: newPreviewCurve.startAndEndSwitched
                     ? {
-                        from: endJoint.elevation,
-                        to: startJoint.elevation,
-                    }
+                          from: endJoint.elevation,
+                          to: startJoint.elevation,
+                      }
                     : {
-                        from: startJoint.elevation,
-                        to: endJoint.elevation,
-                    },
+                          from: startJoint.elevation,
+                          to: endJoint.elevation,
+                      },
                 gauge: this._previewCurveGauge,
             };
         } else {
@@ -362,13 +403,13 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 newPreviewCurve.startAndEndSwitched;
             this._previewCurve.elevation = newPreviewCurve.startAndEndSwitched
                 ? {
-                    from: endJoint.elevation,
-                    to: startJoint.elevation,
-                }
+                      from: endJoint.elevation,
+                      to: startJoint.elevation,
+                  }
                 : {
-                    from: startJoint.elevation,
-                    to: endJoint.elevation,
-                };
+                      from: startJoint.elevation,
+                      to: endJoint.elevation,
+                  };
         }
 
         const previewCurve = this._previewCurve.curve;
@@ -381,7 +422,10 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
             excludeSegmentsForCollisionCheck.add(startJoint.constraint.curve);
         }
 
-        if (startJoint.type === 'branchJoint' || startJoint.type === 'extendingTrack') {
+        if (
+            startJoint.type === 'branchJoint' ||
+            startJoint.type === 'extendingTrack'
+        ) {
             const startJointNumber = startJoint.constraint.jointNumber;
             const startTrackJoint = this._trackGraph.getJoint(startJointNumber);
             if (startTrackJoint !== null) {
@@ -396,7 +440,10 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
             excludeSegmentsForCollisionCheck.add(endJoint.constraint.curve);
         }
 
-        if (endJoint.type === 'branchJoint' || endJoint.type === 'extendingTrack') {
+        if (
+            endJoint.type === 'branchJoint' ||
+            endJoint.type === 'extendingTrack'
+        ) {
             const endJointNumber = endJoint.constraint.jointNumber;
             const endTrackJoint = this._trackGraph.getJoint(endJointNumber);
             if (endTrackJoint !== null) {
@@ -407,12 +454,32 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
             }
         }
 
-        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(previewCurve, startElevation, endElevation, this._previewCurve.gauge, excludeSegmentsForCollisionCheck);
+        const drawData = this._trackGraph.trackCurveManager.getPreviewDrawData(
+            previewCurve,
+            startElevation,
+            endElevation,
+            this._previewCurve.gauge,
+            excludeSegmentsForCollisionCheck
+        );
 
         this._previewDrawDataObservable.notify(drawData);
     }
 
-    onPreviewDrawDataChange(observer: Observer<[{ index: number, drawData: TrackSegmentDrawData & { positiveOffsets: Point[]; negativeOffsets: Point[] } }[] | undefined]>, options?: SubscriptionOptions) {
+    onPreviewDrawDataChange(
+        observer: Observer<
+            [
+                | {
+                      index: number;
+                      drawData: TrackSegmentDrawData & {
+                          positiveOffsets: Point[];
+                          negativeOffsets: Point[];
+                      };
+                  }[]
+                | undefined,
+            ]
+        >,
+        options?: SubscriptionOptions
+    ) {
         this._previewDrawDataObservable.subscribe(observer, options);
     }
 
@@ -465,11 +532,17 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         this._updatePreviewCurve(this._newStartJoint, this._newEndJoint);
     }
 
-    onPreviewStartProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+    onPreviewStartProjectionChange(
+        observer: Observer<[ProjectionPositiveResult | null]>,
+        options?: SubscriptionOptions
+    ) {
         this._previewStartProjectionObservable.subscribe(observer, options);
     }
 
-    onPreviewEndProjectionChange(observer: Observer<[ProjectionPositiveResult | null]>, options?: SubscriptionOptions) {
+    onPreviewEndProjectionChange(
+        observer: Observer<[ProjectionPositiveResult | null]>,
+        options?: SubscriptionOptions
+    ) {
         this._previewEndProjectionObservable.subscribe(observer, options);
     }
 
@@ -590,9 +663,9 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 ._previewCurve.previewStartAndEndSwitched
                 ? this._previewCurve.curve.derivative(0)
                 : PointCal.multiplyVectorByScalar(
-                    this._previewCurve.curve.derivative(1),
-                    -1
-                );
+                      this._previewCurve.curve.derivative(1),
+                      -1
+                  );
             if (
                 !extendTrackIsPossible(
                     startJointNumber,
@@ -686,7 +759,9 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 branchedSegment !== null &&
                 Math.abs(branchedSegment.gauge - this._previewCurveGauge) > 1e-6
             ) {
-                console.warn('gauge mismatch: cannot branch from segment with different gauge');
+                console.warn(
+                    'gauge mismatch: cannot branch from segment with different gauge'
+                );
                 this.cancelCurrentCurve();
                 return null;
             }
@@ -700,7 +775,9 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 branchedSegment !== null &&
                 Math.abs(branchedSegment.gauge - this._previewCurveGauge) > 1e-6
             ) {
-                console.warn('gauge mismatch: cannot branch from segment with different gauge');
+                console.warn(
+                    'gauge mismatch: cannot branch from segment with different gauge'
+                );
                 this.cancelCurrentCurve();
                 return null;
             }
@@ -741,11 +818,11 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                     this._previewCurve.previewStartAndEndSwitched;
                 const endTangent = previewCurveStartAndEndSwitched
                     ? PointCal.unitVector(
-                        this._previewCurve.curve.derivative(0)
-                    )
+                          this._previewCurve.curve.derivative(0)
+                      )
                     : PointCal.unitVector(
-                        this._previewCurve.curve.derivative(1)
-                    );
+                          this._previewCurve.curve.derivative(1)
+                      );
                 const previewCurveCPs =
                     this._previewCurve.curve.getControlPoints();
                 const endPosition = previewCurveStartAndEndSwitched
@@ -839,9 +916,9 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
         this._deletionHighlightObservable.notify(null);
     }
 
-    setup() { }
+    setup() {}
 
-    cleanup() { }
+    cleanup() {}
 
     get trackGraph(): TrackGraph {
         return this._trackGraph;
@@ -902,20 +979,37 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
     clearEndPoint() {
         this._newEndJoint = null;
         this._previewCurve = null;
-        this._previewDrawDataObservable.notify(undefined)
+        this._previewDrawDataObservable.notify(undefined);
     }
 
     // position is in raw window coordinates space
     convert2WorldPosition(position: Point): Point {
         const pointInCanvas = convertFromWindow2Canvas(position, this.canvas);
-        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
-        return convertFromViewport2World(pointInViewPort, this._camera.position, this._camera.zoomLevel, this._camera.rotation, false);
+        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+        });
+        return convertFromViewport2World(
+            pointInViewPort,
+            this._camera.position,
+            this._camera.zoomLevel,
+            this._camera.rotation,
+            false
+        );
     }
 
     // position is in the world space
     convert2WindowPosition(position: Point): Point {
-        const pointInViewPort = convertFromWorld2Viewport(position, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
-        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        const pointInViewPort = convertFromWorld2Viewport(
+            position,
+            this._camera.position,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+        });
         return convertFromCanvas2Window(pointInCanvas, this.canvas);
     }
 }
@@ -944,6 +1038,10 @@ function extendTrackIsPossible(
     return false;
 }
 
+// TODO: When train-gauge compatibility is implemented, trains should carry a
+// `gauge` property and the routing/pathfinding system should filter segments
+// by gauge match to prevent narrow-gauge rolling stock from running on
+// standard-gauge track.
 function gaugesAreCompatible(
     jointNumber: number,
     incomingGauge: number,
