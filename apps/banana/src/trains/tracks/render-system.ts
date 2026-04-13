@@ -706,9 +706,11 @@ export class TrackRenderSystem {
         const poleSpacing = 25;
         const poleCount = Math.max(1, Math.floor(curveLength / poleSpacing));
 
-        const gauge = drawData.gauge;
-        // Mast offset from track center (outside the track).
-        const mastOffset = gauge / 2 + 2;
+        // Mast offset from track center — place at the edge of the bed (or ballast when no bed).
+        const ballastHw = ballastHalfWidth(drawData);
+        const mastOffset = drawData.bed
+            ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2)
+            : ballastHw;
 
         // Use stored side (all poles on one side) or default to +1.
         const side = drawData.catenarySide ?? 1;
@@ -2010,9 +2012,14 @@ export class TrackRenderSystem {
         const curveLength = curve.fullLength;
         const poleSpacing = 25;
         const poleCount = Math.max(1, Math.floor(curveLength / poleSpacing));
-        // Use the default gauge (approximation for preview).
-        const gauge = 1.067;
-        const mastOffset = gauge / 2 + 2;
+        const visualProps = this._trackCurveManager.getVisualPropsForSegment(state.segmentNumber);
+        const gauge = visualProps?.gauge ?? 1.067;
+        const tieOverhang = 4;
+        const tieHw = (gauge / 2) * ((TRACK_TEX_SIZE + tieOverhang * 2) / TRACK_TEX_SIZE);
+        const bHw = tieHw + 0.15;
+        const mastOffset = visualProps?.bed
+            ? Math.max(bHw, (visualProps.bedWidth ?? 3) / 2)
+            : bHw;
         const side = state.side;
 
         for (let i = 0; i <= poleCount; i++) {
