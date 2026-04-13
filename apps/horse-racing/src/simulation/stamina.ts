@@ -4,8 +4,8 @@ import type { TrackFrame } from './track-navigator';
 
 // --- Drain rate constants (initial values, to be tuned via integration tests) ---
 
-export const OVERDRIVE_DRAIN_RATE = 0.08;
-export const STAMINA_DRAIN_RATE = 0.065;
+export const OVERDRIVE_DRAIN_RATE = 0.01;
+export const STAMINA_DRAIN_RATE = 0.015;
 export const LATERAL_STEERING_DRAIN_RATE = 0.006;
 export const CORNERING_DRAIN_RATE = 0.002;
 export const SPEED_DRAIN_RATE = 0.002;
