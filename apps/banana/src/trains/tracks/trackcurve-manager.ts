@@ -397,6 +397,61 @@ export class TrackCurveManager {
         return projectionInfo;
     }
 
+    /**
+     * Like projectOnCurve but uses a wider acceptance radius instead of gauge/2.
+     * Used by platform placement tools that need a more forgiving hit area.
+     */
+    projectOnCurveWide(
+        position: Point,
+        maxDistance: number = 5,
+    ): ProjectionInfo | null {
+        let minDistance = Infinity;
+        let projectionInfo: ProjectionInfo | null = null;
+        const searchRadius = Math.max(10, maxDistance);
+        const bbox = new Rectangle(
+            position.x - searchRadius,
+            position.y - searchRadius,
+            position.x + searchRadius,
+            position.y + searchRadius
+        );
+        const possibleTrackSegments = this._internalRTree.search(bbox);
+        possibleTrackSegments.forEach(trackSegment => {
+            const res = trackSegment.curve.getProjection(position);
+            if (res != null) {
+                const distance = PointCal.distanceBetweenPoints(
+                    position,
+                    res.projection
+                );
+                if (distance < minDistance && distance < maxDistance) {
+                    minDistance = distance;
+                    const tangent = trackSegment.curve.derivative(res.tVal);
+                    const curvature = trackSegment.curve.curvature(res.tVal);
+                    const curveIsSloped = trackSegment.elevation.from !== trackSegment.elevation.to;
+                    const elevation = curveIsSloped ? getElevationAtT(res.tVal, {
+                        elevation: {
+                            from: trackSegment.elevation.from * LEVEL_HEIGHT,
+                            to: trackSegment.elevation.to * LEVEL_HEIGHT,
+                        },
+                    }) : trackSegment.elevation.from;
+                    projectionInfo = {
+                        curve: trackSegment.trackSegmentNumber,
+                        atT: res.tVal,
+                        projectionPoint: res.projection,
+                        t0Joint: trackSegment.t0Joint,
+                        t1Joint: trackSegment.t1Joint,
+                        tangent,
+                        curvature,
+                        elevation: {
+                            curveIsSloped,
+                            elevation,
+                        },
+                    };
+                }
+            }
+        });
+        return projectionInfo;
+    }
+
     createCurveWithJoints(
         curve: BCurve,
         t0Joint: number,

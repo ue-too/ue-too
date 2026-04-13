@@ -888,6 +888,14 @@ export class TrackGraph {
         return this._trackCurveManager.onTrackSegmentEdge(position);
     }
 
+    /**
+     * Project a point onto the nearest track with a wider acceptance radius.
+     * Used by platform placement tools where gauge/2 is too restrictive.
+     */
+    projectPointNearTrack(position: Point, maxDistance: number = 5): ProjectionInfo | null {
+        return this._trackCurveManager.projectOnCurveWide(position, maxDistance);
+    }
+
     pointOnJoint(position: Point): ProjectionJointResult | null {
         let closestJoint: {
             jointNumber: number;

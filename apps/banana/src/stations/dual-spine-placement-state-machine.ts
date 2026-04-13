@@ -192,7 +192,7 @@ export class DualSpinePlacementEngine
     }
 
     pickSpineAStart(position: Point): boolean {
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const segment = this._trackGraph.getTrackSegmentWithJoints(projection.curve);
@@ -240,7 +240,7 @@ export class DualSpinePlacementEngine
     updateSpineAEnd(position: Point): boolean {
         if (!this._hasSpineAStart || this._spineA.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         return true;
@@ -249,7 +249,7 @@ export class DualSpinePlacementEngine
     confirmSpineAEnd(position: Point): boolean {
         if (!this._hasSpineAStart || this._spineA.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const startEntry = this._spineA[0];
@@ -306,7 +306,7 @@ export class DualSpinePlacementEngine
     }
 
     pickSpineBStart(position: Point): boolean {
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const segment = this._trackGraph.getTrackSegmentWithJoints(projection.curve);
@@ -354,7 +354,7 @@ export class DualSpinePlacementEngine
     updateSpineBEnd(position: Point): boolean {
         if (!this._hasSpineBStart || this._spineB.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         return true;
@@ -363,7 +363,7 @@ export class DualSpinePlacementEngine
     confirmSpineBEnd(position: Point): boolean {
         if (!this._hasSpineBStart || this._spineB.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const startEntry = this._spineB[0];

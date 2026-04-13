@@ -146,7 +146,7 @@ export class SingleSpinePlacementEngine
     }
 
     pickStart(position: Point): boolean {
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const segment = this._trackGraph.getTrackSegmentWithJoints(projection.curve);
@@ -197,7 +197,7 @@ export class SingleSpinePlacementEngine
     updateEnd(position: Point): boolean {
         if (!this._hasStart || this._spine.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         // Minimal preview update — just track the projected point for now.
@@ -207,7 +207,7 @@ export class SingleSpinePlacementEngine
     confirmEnd(position: Point): boolean {
         if (!this._hasStart || this._spine.length === 0) return false;
 
-        const projection = this._trackGraph.projectPointOnTrack(position);
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
 
         const startEntry = this._spine[0];
