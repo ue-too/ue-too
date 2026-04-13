@@ -569,6 +569,17 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 this.cancelCurrentCurve();
                 return null;
             }
+            if (
+                !gaugesAreCompatible(
+                    this._newStartJoint.constraint.jointNumber,
+                    this._previewCurveGauge,
+                    this._trackGraph
+                )
+            ) {
+                console.warn('gauge mismatch at start joint');
+                this.cancelCurrentCurve();
+                return null;
+            }
         }
 
         if (this._newEndJoint.type === 'extendingTrack') {
@@ -591,6 +602,17 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                 )
             ) {
                 console.warn('extend track not possible for end joint');
+                this.cancelCurrentCurve();
+                return null;
+            }
+            if (
+                !gaugesAreCompatible(
+                    this._newEndJoint.constraint.jointNumber,
+                    this._previewCurveGauge,
+                    this._trackGraph
+                )
+            ) {
+                console.warn('gauge mismatch at end joint');
                 this.cancelCurrentCurve();
                 return null;
             }
@@ -625,6 +647,62 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
                     this.cancelCurrentCurve();
                     return null;
                 }
+            }
+        }
+
+        if (this._newStartJoint.type === 'branchJoint') {
+            if (
+                !gaugesAreCompatible(
+                    this._newStartJoint.constraint.jointNumber,
+                    this._previewCurveGauge,
+                    this._trackGraph
+                )
+            ) {
+                console.warn('gauge mismatch at start branch joint');
+                this.cancelCurrentCurve();
+                return null;
+            }
+        }
+
+        if (this._newEndJoint.type === 'branchJoint') {
+            if (
+                !gaugesAreCompatible(
+                    this._newEndJoint.constraint.jointNumber,
+                    this._previewCurveGauge,
+                    this._trackGraph
+                )
+            ) {
+                console.warn('gauge mismatch at end branch joint');
+                this.cancelCurrentCurve();
+                return null;
+            }
+        }
+
+        if (this._newStartJoint.type === 'branchCurve') {
+            const branchedSegment = this._trackGraph.getTrackSegmentWithJoints(
+                this._newStartJoint.constraint.curve
+            );
+            if (
+                branchedSegment !== null &&
+                Math.abs(branchedSegment.gauge - this._previewCurveGauge) > 1e-6
+            ) {
+                console.warn('gauge mismatch: cannot branch from segment with different gauge');
+                this.cancelCurrentCurve();
+                return null;
+            }
+        }
+
+        if (this._newEndJoint.type === 'branchCurve') {
+            const branchedSegment = this._trackGraph.getTrackSegmentWithJoints(
+                this._newEndJoint.constraint.curve
+            );
+            if (
+                branchedSegment !== null &&
+                Math.abs(branchedSegment.gauge - this._previewCurveGauge) > 1e-6
+            ) {
+                console.warn('gauge mismatch: cannot branch from segment with different gauge');
+                this.cancelCurrentCurve();
+                return null;
             }
         }
 
@@ -714,7 +792,12 @@ export class CurveCreationEngine extends ObservableInputTracker implements Layou
             return null;
         }
 
-        this._trackGraph.connectJoints(startJointNumber, endJointNumber, cps);
+        this._trackGraph.connectJoints(
+            startJointNumber,
+            endJointNumber,
+            cps,
+            this._previewCurveGauge
+        );
         // this._trackGraph.logJoints();
         console.log('---track segments---');
         this._trackGraph.logTrackSegments();
@@ -859,4 +942,22 @@ function extendTrackIsPossible(
     }
 
     return false;
+}
+
+function gaugesAreCompatible(
+    jointNumber: number,
+    incomingGauge: number,
+    trackGraph: TrackGraph
+): boolean {
+    const joint = trackGraph.getJoint(jointNumber);
+    if (joint === null) return true;
+    const epsilon = 1e-6;
+    for (const [, segmentNumber] of joint.connections) {
+        const segment = trackGraph.getTrackSegmentWithJoints(segmentNumber);
+        if (segment === null) continue;
+        if (Math.abs(segment.gauge - incomingGauge) > epsilon) {
+            return false;
+        }
+    }
+    return true;
 }
