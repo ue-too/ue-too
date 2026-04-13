@@ -342,7 +342,7 @@ export class CurveCreationEngine
         this._deletionHighlightObservable.subscribe(observer, options);
     }
 
-    hoverForStartingPoint(position: Point, gauge: number = 1.067) {
+    hoverForStartingPoint(position: Point) {
         const res = this._trackGraph.project(position);
         const elevation =
             this._currentJointElevation != null
@@ -359,7 +359,6 @@ export class CurveCreationEngine
             this._previewStartProjection = null;
         }
 
-        this._previewCurveGauge = gauge;
         this._previewStartProjectionObservable.notify(res.hit ? res : null);
     }
 
