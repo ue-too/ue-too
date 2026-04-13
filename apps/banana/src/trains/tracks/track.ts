@@ -37,6 +37,16 @@ export class TrackGraph {
     private _segmentRemovedObservable: Observable<[number]> =
         new SynchronousObservable<[number]>();
 
+    private _segmentProtectionCheck: ((segmentNumber: number) => boolean) | null = null;
+
+    /**
+     * Register a callback that returns true if a segment is protected
+     * (e.g., has a platform attached) and should not be deleted.
+     */
+    setSegmentProtectionCheck(check: (segmentNumber: number) => boolean): void {
+        this._segmentProtectionCheck = check;
+    }
+
     getJoints(): { jointNumber: number; joint: TrackJoint }[] {
         return this._jointManager.getJoints();
     }
@@ -379,6 +389,11 @@ export class TrackGraph {
         console.log('segment', segment);
         if (segment === null) {
             console.warn('segment not found');
+            return;
+        }
+
+        if (this._segmentProtectionCheck !== null && this._segmentProtectionCheck(trackSegmentNumber)) {
+            console.warn(`Cannot delete segment ${trackSegmentNumber}: protected by a track-aligned platform`);
             return;
         }
 
