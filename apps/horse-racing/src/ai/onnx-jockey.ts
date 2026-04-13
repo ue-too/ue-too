@@ -5,11 +5,48 @@ import type { Race } from '../simulation/race';
 import type { InputState } from '../simulation/types';
 import type { Jockey } from './types';
 
+/** Discrete levels for each axis: hard-neg, soft-neg, neutral, soft-pos, hard-pos */
+export const ACTION_LEVELS = [-1, -0.5, 0, 0.5, 1] as const;
+export const LEVELS_PER_AXIS = ACTION_LEVELS.length; // 5
+export const NUM_ACTIONS = LEVELS_PER_AXIS * LEVELS_PER_AXIS; // 25
+
+/**
+ * Decode a flat action index (0-24) into a (tangential, normal) pair.
+ * Layout: index = tangentialLevel * LEVELS_PER_AXIS + normalLevel
+ */
+export function decodeAction(index: number): InputState {
+    const ti = Math.floor(index / LEVELS_PER_AXIS);
+    const ni = index % LEVELS_PER_AXIS;
+    return {
+        tangential: ACTION_LEVELS[ti],
+        normal: ACTION_LEVELS[ni],
+    };
+}
+
+/**
+ * Find the index of the maximum value in a Float32Array slice.
+ */
+function argmax(data: Float32Array, offset: number, length: number): number {
+    let best = 0;
+    let bestVal = data[offset];
+    for (let i = 1; i < length; i++) {
+        if (data[offset + i] > bestVal) {
+            bestVal = data[offset + i];
+            best = i;
+        }
+    }
+    return best;
+}
+
 /**
  * AI jockey that runs a trained ONNX model to produce actions.
  *
- * Input tensor:  [batchSize, OBS_SIZE]  (Float32)
- * Output tensor: [batchSize, 2]         (tangential, normal per horse)
+ * Input tensor:  [batchSize, OBS_SIZE]    (Float32)
+ * Output tensor: [batchSize, NUM_ACTIONS] (logits over 25 discrete actions)
+ *
+ * The model outputs logits for each of the 25 discrete action combinations
+ * (5 tangential levels × 5 normal levels). The jockey takes the argmax
+ * per horse and decodes it into an InputState.
  *
  * The player horse (if any) is excluded from the batch.
  */
@@ -100,10 +137,12 @@ export class OnnxJockey implements Jockey {
                 const actions = new Map<number, InputState>();
 
                 for (let b = 0; b < batchSize; b++) {
-                    actions.set(aiIndices[b], {
-                        tangential: outData[b * 2],
-                        normal: outData[b * 2 + 1],
-                    });
+                    const actionIdx = argmax(
+                        outData,
+                        b * NUM_ACTIONS,
+                        NUM_ACTIONS
+                    );
+                    actions.set(aiIndices[b], decodeAction(actionIdx));
                 }
 
                 this.pendingResult = actions;
