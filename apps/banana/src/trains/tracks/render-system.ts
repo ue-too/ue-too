@@ -1482,7 +1482,7 @@ export class TrackRenderSystem {
      * Build a shadow mesh strip along a curve.
      *
      * @param curve - The bezier curve to trace
-     * @param gauge - Track gauge in meters (used for shadow width)
+     * @param halfWidth - Half-width of the shadow in world units (should cover ballast + bed)
      * @param elevation - Elevation range for shadow offset calculation
      * @param sunAngle - Sun angle in degrees
      * @param baseShadowLength - Base shadow length multiplier
@@ -1491,7 +1491,7 @@ export class TrackRenderSystem {
      */
     private _buildShadowMesh(
         curve: BCurve,
-        gauge: number,
+        halfWidth: number,
         elevation: { from: number; to: number },
         sunAngle: number,
         baseShadowLength: number,
@@ -1526,14 +1526,13 @@ export class TrackRenderSystem {
             const offsetX = cosA * shadowLen;
             const offsetY = sinA * shadowLen;
 
-            const shadowHalfWidth = gauge / 2;
             const bi = i * 4;
             // Left edge base (no sun offset)
-            baseVerts[bi] = point.x + nx * shadowHalfWidth;
-            baseVerts[bi + 1] = point.y + ny * shadowHalfWidth;
+            baseVerts[bi] = point.x + nx * halfWidth;
+            baseVerts[bi + 1] = point.y + ny * halfWidth;
             // Right edge base
-            baseVerts[bi + 2] = point.x - nx * shadowHalfWidth;
-            baseVerts[bi + 3] = point.y - ny * shadowHalfWidth;
+            baseVerts[bi + 2] = point.x - nx * halfWidth;
+            baseVerts[bi + 3] = point.y - ny * halfWidth;
 
             elevationFactors[i] = shadowLen;
 
@@ -1759,9 +1758,13 @@ export class TrackRenderSystem {
             const hasPositiveElevation =
                 drawData.elevation.from > 0 || drawData.elevation.to > 0;
 
+            const ballastHw = ballastHalfWidth(drawData);
+            const shadowHw = drawData.bed
+                ? Math.max(ballastHw, (drawData.bedWidth ?? 3) / 2)
+                : ballastHw;
             const shadowResult = hasPositiveElevation
                 ? this._buildShadowMesh(
-                    drawData.curve, drawData.gauge, drawData.elevation, this._sunAngle, this._baseShadowLength,
+                    drawData.curve, shadowHw, drawData.elevation, this._sunAngle, this._baseShadowLength,
                 )
                 : null;
 
