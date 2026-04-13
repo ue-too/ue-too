@@ -6,7 +6,7 @@ import type {
     Guard,
     StateMachine,
 } from '@ue-too/being';
-import { NO_OP, TemplateState, TemplateStateMachine } from '@ue-too/being';
+import { TemplateState, TemplateStateMachine } from '@ue-too/being';
 import {
     Canvas,
     ObservableBoardCamera,

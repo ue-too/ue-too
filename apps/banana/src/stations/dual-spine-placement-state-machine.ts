@@ -6,7 +6,7 @@ import type {
     Guard,
     StateMachine,
 } from '@ue-too/being';
-import { NO_OP, TemplateState, TemplateStateMachine } from '@ue-too/being';
+import { TemplateState, TemplateStateMachine } from '@ue-too/being';
 import {
     Canvas,
     ObservableBoardCamera,
@@ -22,7 +22,7 @@ import type { Point } from '@ue-too/math';
 import { PointCal } from '@ue-too/math';
 
 import type { TrackGraph } from '@/trains/tracks/track';
-import { ELEVATION } from '@/trains/tracks/types';
+import type { TrackJointWithElevation } from '@/trains/tracks/types';
 
 import type { StationManager } from './station-manager';
 import type { TrackAlignedPlatformManager } from './track-aligned-platform-manager';
@@ -320,7 +320,7 @@ export class DualSpinePlacementEngine
                 const jointA = this._trackGraph.getJoint(segAFull.t0Joint);
                 const jointB = this._trackGraph.getJoint(segment.t0Joint);
                 if (jointA !== null && jointB !== null) {
-                    if ((jointA as any).elevation !== (jointB as any).elevation) return false;
+                    if ((jointA as TrackJointWithElevation).elevation !== (jointB as TrackJointWithElevation).elevation) return false;
                 }
             }
         }

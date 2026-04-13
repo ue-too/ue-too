@@ -96,7 +96,22 @@ export async function deserializeSceneData(
     app.blockSignalManager.deserialize(data.signals);
   }
 
-  // Load track-aligned platforms if present
+  // Load stations and rebuild their render visuals (must come before
+  // track-aligned platforms so that station elevation lookups succeed).
+  if (data.stations) {
+    const restored = StationManager.deserialize(data.stations);
+    // Replace the current station manager's state
+    for (const { id } of app.stationManager.getStations()) {
+      app.stationRenderSystem.removeStation(id);
+      app.stationManager.destroyStation(id);
+    }
+    for (const { id, station } of restored.getStations()) {
+      app.stationManager.createStationWithId(id, station);
+      app.stationRenderSystem.addStation(id);
+    }
+  }
+
+  // Load track-aligned platforms if present (after stations are restored)
   if (data.trackAlignedPlatforms) {
     const restored = TrackAlignedPlatformManager.deserialize(data.trackAlignedPlatforms);
     // Remove existing platforms
@@ -109,20 +124,6 @@ export async function deserializeSceneData(
       app.trackAlignedPlatformManager.createPlatformWithId(id, platform);
       const elevation = app.stationManager.getStation(platform.stationId)?.elevation ?? 0;
       app.trackAlignedPlatformRenderSystem.addPlatform(id, elevation);
-    }
-  }
-
-  // Load stations and rebuild their render visuals
-  if (data.stations) {
-    const restored = StationManager.deserialize(data.stations);
-    // Replace the current station manager's state
-    for (const { id } of app.stationManager.getStations()) {
-      app.stationRenderSystem.removeStation(id);
-      app.stationManager.destroyStation(id);
-    }
-    for (const { id, station } of restored.getStations()) {
-      app.stationManager.createStationWithId(id, station);
-      app.stationRenderSystem.addStation(id);
     }
   }
 }

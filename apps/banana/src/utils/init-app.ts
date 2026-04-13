@@ -510,6 +510,14 @@ export const initApp = async (
       return trackAlignedPlatformManager.getPlatformsBySegment(segNum).length > 0;
   });
 
+  stationManager.setOnDestroyStation((stationId) => {
+      const platforms = trackAlignedPlatformManager.getPlatformsByStation(stationId);
+      for (const { id } of platforms) {
+          trackAlignedPlatformRenderSystem.removePlatform(id);
+          trackAlignedPlatformManager.destroyPlatform(id);
+      }
+  });
+
   const trainManager = new TrainManager();
   const carStockManager = new CarStockManager();
   const formationManager = new FormationManager(carStockManager);
