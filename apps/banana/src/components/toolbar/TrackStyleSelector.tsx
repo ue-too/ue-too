@@ -7,8 +7,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { GAUGE_PRESETS } from '@/trains/tracks/gauge-presets';
 import type { TrackStyle } from '@/trains/tracks/types';
+
+import { GaugeSelector } from './GaugeSelector';
 
 type TrackStyleSelectorProps = {
     value: TrackStyle;
@@ -47,50 +48,12 @@ export function TrackStyleSelector({
     return (
         <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
             <div className="bg-background/80 flex flex-col gap-3 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
-                <div className="flex flex-col gap-2">
-                    <span className="text-muted-foreground text-xs font-medium">
-                        {t('trackGauge')}
-                    </span>
-                    <Select
-                        value={gaugePresetId}
-                        onValueChange={val => onGaugePresetChange(val)}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {GAUGE_PRESETS.map(preset => (
-                                <SelectItem key={preset.id} value={preset.id}>
-                                    {preset.name} ({preset.width}m)
-                                </SelectItem>
-                            ))}
-                            <SelectItem value="custom">
-                                {t('customGauge')}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    {gaugePresetId === 'custom' && (
-                        <div className="flex flex-col gap-1">
-                            <input
-                                type="range"
-                                min="0.5"
-                                max="3.0"
-                                step="0.01"
-                                value={customGaugeWidth ?? 1.0}
-                                onChange={e =>
-                                    onCustomGaugeChange(Number(e.target.value))
-                                }
-                                onPointerUp={e =>
-                                    (e.target as HTMLInputElement).blur()
-                                }
-                                className="h-1.5 w-24 cursor-pointer"
-                            />
-                            <span className="text-muted-foreground text-center text-[10px]">
-                                {(customGaugeWidth ?? 1.0).toFixed(3)}m
-                            </span>
-                        </div>
-                    )}
-                </div>
+                <GaugeSelector
+                    gaugePresetId={gaugePresetId}
+                    onGaugePresetChange={onGaugePresetChange}
+                    customGaugeWidth={customGaugeWidth}
+                    onCustomGaugeChange={onCustomGaugeChange}
+                />
                 <div className="flex flex-col gap-2">
                     <span className="text-muted-foreground text-xs font-medium">
                         {t('trackStyle')}

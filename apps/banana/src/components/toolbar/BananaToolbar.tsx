@@ -96,6 +96,7 @@ import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { TimetablePanel } from './TimetablePanel';
+import { GaugeSelector } from './GaugeSelector';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TrainPanel } from './TrainPanel';
 import { TOOLBAR_LEFT } from './types';
@@ -1163,6 +1164,29 @@ export function BananaToolbar({
                         }
                     />
                 </>
+            )}
+
+            {mode === 'station-placement' && (
+                <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
+                    <div className="bg-background/80 flex flex-col gap-3 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
+                        <GaugeSelector
+                            gaugePresetId={selectedPresetId}
+                            onGaugePresetChange={id => {
+                                if (id === 'custom') {
+                                    useGaugeStore
+                                        .getState()
+                                        .setCustomGauge(customWidth ?? 1.0);
+                                } else {
+                                    useGaugeStore.getState().selectPreset(id);
+                                }
+                            }}
+                            customGaugeWidth={customWidth}
+                            onCustomGaugeChange={w =>
+                                useGaugeStore.getState().setCustomGauge(w)
+                            }
+                        />
+                    </div>
+                </div>
             )}
 
             {showTrainPanel &&
