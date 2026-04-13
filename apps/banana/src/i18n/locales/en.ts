@@ -154,6 +154,9 @@ const en = {
         bed: 'Bed',
         bedWidth: 'Bed Width',
         snapBuffer: 'Snap Buffer',
+        trackGauge: 'Track Gauge',
+        customGauge: 'Custom',
+        gaugeLabels: 'Gauge Labels',
 
         // Building Options Panel
         building: 'Building',

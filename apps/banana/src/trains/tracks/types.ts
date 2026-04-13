@@ -27,7 +27,6 @@ export type TrackSegment = {
     t1Joint: number;
     curve: BCurve;
     gauge: number;
-    gauges?: number[];
     /** Total width of the gravel bed foundation (meters). Used for snapping when bed is enabled. */
     bedWidth?: number;
     /** Visual style for this track segment. Preserved through splits so branching doesn't alter appearance. */

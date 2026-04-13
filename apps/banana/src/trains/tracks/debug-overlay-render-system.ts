@@ -1,11 +1,18 @@
-import { Container, Graphics, Text } from 'pixi.js';
-import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-too/board';
+import {
+    CameraState,
+    CameraZoomEventPayload,
+    ObservableBoardCamera,
+} from '@ue-too/board';
 import { PointCal } from '@ue-too/math';
-import { WorldRenderSystem } from '@/world-render-system';
-import type { TrackGraph } from './track';
-import type { PlacedTrainEntry } from '@/trains/train-manager';
-import type { ProximityDetector } from '@/trains/proximity-detector';
+import { Container, Graphics, Text } from 'pixi.js';
+
 import type { StationManager } from '@/stations/station-manager';
+import type { ProximityDetector } from '@/trains/proximity-detector';
+import type { PlacedTrainEntry } from '@/trains/train-manager';
+import { WorldRenderSystem } from '@/world-render-system';
+
+import { findPresetByWidth } from './gauge-presets';
+import type { TrackGraph } from './track';
 
 /** Base radius of the circle (world units); effective size = this / zoomLevel for constant screen size. */
 const LABEL_CIRCLE_RADIUS = 8;
@@ -27,6 +34,18 @@ const JOINT_CIRCLE_FILL = 0x2563eb;
 
 /** Fill color for segment label circles (debug). */
 const SEGMENT_CIRCLE_FILL = 0x16a34a;
+
+/** Per-gauge label colors so different gauges are visually distinct in the debug overlay. */
+const GAUGE_COLOR_MAP: Record<string, number> = {
+    'narrow-cape': 0x0891b2, // cyan
+    meter: 0x8b5cf6, // purple
+    standard: 0x2563eb, // blue
+    russian: 0xd97706, // amber
+    'broad-indian': 0xdc2626, // red
+};
+
+/** Fallback color for custom (non-preset) gauges. */
+const GAUGE_LABEL_FILL_CUSTOM = 0x71717a; // gray
 
 /** Fill color for formation ID label circles (debug). */
 const FORMATION_CIRCLE_FILL = 0xd97706;
@@ -61,6 +80,8 @@ export class DebugOverlayRenderSystem {
     private _proximityContainer: Container;
     private _showJointNumbers = false;
     private _showSegmentIds = false;
+    private _gaugeContainer: Container;
+    private _showGaugeLabels = false;
     private _showFormationIds = false;
     private _showStationStops = false;
     private _showStationLocations = false;
@@ -74,7 +95,7 @@ export class DebugOverlayRenderSystem {
     constructor(
         worldRenderSystem: WorldRenderSystem,
         trackGraph: TrackGraph,
-        camera: ObservableBoardCamera,
+        camera: ObservableBoardCamera
     ) {
         this._worldRenderSystem = worldRenderSystem;
         this._trackGraph = trackGraph;
@@ -82,6 +103,8 @@ export class DebugOverlayRenderSystem {
         this._overlayContainer = new Container();
         this._jointContainer = new Container();
         this._segmentContainer = new Container();
+        this._gaugeContainer = new Container();
+        this._gaugeContainer.visible = false;
         this._formationContainer = new Container();
         this._stationStopContainer = new Container();
         this._stationLocationContainer = new Container();
@@ -92,6 +115,7 @@ export class DebugOverlayRenderSystem {
         this._proximityContainer.visible = false;
         this._overlayContainer.addChild(this._jointContainer);
         this._overlayContainer.addChild(this._segmentContainer);
+        this._overlayContainer.addChild(this._gaugeContainer);
         this._overlayContainer.addChild(this._formationContainer);
         this._overlayContainer.addChild(this._stationStopContainer);
         this._overlayContainer.addChild(this._stationLocationContainer);
@@ -99,12 +123,20 @@ export class DebugOverlayRenderSystem {
         this._worldRenderSystem.addOverlayContainer(this._overlayContainer);
 
         this._zoomLevel = this._camera.zoomLevel;
-        this._camera.on('zoom', this._onZoom.bind(this), { signal: this._abortController.signal });
+        this._camera.on('zoom', this._onZoom.bind(this), {
+            signal: this._abortController.signal,
+        });
 
         const tcm = trackGraph.trackCurveManager;
-        tcm.onAdd(() => this.refresh(), { signal: this._abortController.signal });
-        trackGraph.onSegmentRemoved(() => this.refresh(), { signal: this._abortController.signal });
-        trackGraph.onSegmentSplit(() => this.refresh(), { signal: this._abortController.signal });
+        tcm.onAdd(() => this.refresh(), {
+            signal: this._abortController.signal,
+        });
+        trackGraph.onSegmentRemoved(() => this.refresh(), {
+            signal: this._abortController.signal,
+        });
+        trackGraph.onSegmentSplit(() => this.refresh(), {
+            signal: this._abortController.signal,
+        });
     }
 
     private _onZoom(_event: CameraZoomEventPayload, state: CameraState): void {
@@ -119,6 +151,9 @@ export class DebugOverlayRenderSystem {
             child.scale.set(scale);
         }
         for (const child of this._segmentContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._gaugeContainer.children) {
             child.scale.set(scale);
         }
         for (const child of this._formationContainer.children) {
@@ -159,6 +194,19 @@ export class DebugOverlayRenderSystem {
         this._showSegmentIds = show;
         this._segmentContainer.visible = show;
         if (show) this._rebuildSegmentLabels();
+    }
+
+    /** Whether gauge labels are visible. */
+    get showGaugeLabels(): boolean {
+        return this._showGaugeLabels;
+    }
+
+    /** Show or hide gauge label overlays on track segments. */
+    setShowGaugeDebug(show: boolean): void {
+        if (this._showGaugeLabels === show) return;
+        this._showGaugeLabels = show;
+        this._gaugeContainer.visible = show;
+        if (show) this._rebuildGaugeLabels();
     }
 
     /** Show or hide formation ID labels above each car. */
@@ -236,6 +284,7 @@ export class DebugOverlayRenderSystem {
     refresh(): void {
         if (this._showJointNumbers) this._rebuildJointLabels();
         if (this._showSegmentIds) this._rebuildSegmentLabels();
+        if (this._showGaugeLabels) this._rebuildGaugeLabels();
         if (this._showStationStops) this._rebuildStationStopLabels();
         if (this._showStationLocations) this._rebuildStationLocationLabels();
     }
@@ -247,13 +296,15 @@ export class DebugOverlayRenderSystem {
         for (const { jointNumber, joint } of joints) {
             const { position, tangent } = joint;
             const arrowDir =
-                PointCal.magnitude(tangent) > 1e-6 ? PointCal.unitVector(tangent) : null;
+                PointCal.magnitude(tangent) > 1e-6
+                    ? PointCal.unitVector(tangent)
+                    : null;
             const node = this._makeLabelNode(
                 String(jointNumber),
                 position.x,
                 position.y,
                 JOINT_CIRCLE_FILL,
-                arrowDir,
+                arrowDir
             );
             this._jointContainer.addChild(node);
         }
@@ -264,20 +315,52 @@ export class DebugOverlayRenderSystem {
         removed.forEach(c => c.destroy({ children: true }));
         const segmentIds = this._trackGraph.trackCurveManager.livingEntities;
         for (const segmentNumber of segmentIds) {
-            const segment = this._trackGraph.getTrackSegmentWithJoints(segmentNumber);
+            const segment =
+                this._trackGraph.getTrackSegmentWithJoints(segmentNumber);
             if (segment === null) continue;
             const mid = segment.curve.get(0.5);
             const derivative = segment.curve.derivative(0.5);
             const positiveDir =
-                PointCal.magnitude(derivative) > 1e-6 ? PointCal.unitVector(derivative) : null;
+                PointCal.magnitude(derivative) > 1e-6
+                    ? PointCal.unitVector(derivative)
+                    : null;
             const node = this._makeLabelNode(
                 String(segmentNumber),
                 mid.x,
                 mid.y,
                 SEGMENT_CIRCLE_FILL,
-                positiveDir,
+                positiveDir
             );
             this._segmentContainer.addChild(node);
+        }
+    }
+
+    private _rebuildGaugeLabels(): void {
+        const removed = this._gaugeContainer.removeChildren();
+        removed.forEach(c => c.destroy({ children: true }));
+        const segmentIds = this._trackGraph.trackCurveManager.livingEntities;
+        for (const segmentNumber of segmentIds) {
+            const segment =
+                this._trackGraph.getTrackSegmentWithJoints(segmentNumber);
+            if (segment === null) continue;
+            const mid = segment.curve.get(0.5);
+            const gauge = segment.gauge;
+            const preset = findPresetByWidth(gauge);
+            const label = preset
+                ? `${preset.name} ${gauge}m`
+                : `Custom ${gauge}m`;
+            const color = preset
+                ? (GAUGE_COLOR_MAP[preset.id] ?? GAUGE_LABEL_FILL_CUSTOM)
+                : GAUGE_LABEL_FILL_CUSTOM;
+            const node = this._makeLabelNode(
+                label,
+                mid.x,
+                mid.y,
+                color,
+                null,
+                true
+            );
+            this._gaugeContainer.addChild(node);
         }
     }
 
@@ -304,7 +387,7 @@ export class DebugOverlayRenderSystem {
                     cy,
                     FORMATION_CIRCLE_FILL,
                     null,
-                    true,
+                    true
                 );
                 this._formationContainer.addChild(node);
             }
@@ -314,7 +397,8 @@ export class DebugOverlayRenderSystem {
     private _rebuildProximityLines(): void {
         const removed = this._proximityContainer.removeChildren();
         removed.forEach(c => c.destroy({ children: true }));
-        if (this._proximityDetector === null || this._getPlacedTrains === null) return;
+        if (this._proximityDetector === null || this._getPlacedTrains === null)
+            return;
 
         const placed = this._getPlacedTrains();
         const trainMap = new Map<number, PlacedTrainEntry>();
@@ -330,14 +414,22 @@ export class DebugOverlayRenderSystem {
 
             const bogiesA = entryA.train.getBogiePositions();
             const bogiesB = entryB.train.getBogiePositions();
-            if (!bogiesA || bogiesA.length === 0 || !bogiesB || bogiesB.length === 0) continue;
+            if (
+                !bogiesA ||
+                bogiesA.length === 0 ||
+                !bogiesB ||
+                bogiesB.length === 0
+            )
+                continue;
 
-            const ptA = match.trainA.end === 'head'
-                ? bogiesA[0].point
-                : bogiesA[bogiesA.length - 1].point;
-            const ptB = match.trainB.end === 'head'
-                ? bogiesB[0].point
-                : bogiesB[bogiesB.length - 1].point;
+            const ptA =
+                match.trainA.end === 'head'
+                    ? bogiesA[0].point
+                    : bogiesA[bogiesA.length - 1].point;
+            const ptB =
+                match.trainB.end === 'head'
+                    ? bogiesB[0].point
+                    : bogiesB[bogiesB.length - 1].point;
 
             // Draw a dashed-style line between endpoints with dots at each end
             const midX = (ptA.x + ptB.x) / 2;
@@ -378,7 +470,7 @@ export class DebugOverlayRenderSystem {
                 station.position.y,
                 STATION_LOCATION_CIRCLE_FILL,
                 null,
-                true,
+                true
             );
             this._stationLocationContainer.addChild(node);
         }
@@ -392,7 +484,9 @@ export class DebugOverlayRenderSystem {
         for (const { station } of stations) {
             for (const platform of station.platforms) {
                 for (const stop of platform.stopPositions) {
-                    const curve = this._trackGraph.getTrackSegmentCurve(stop.trackSegmentId);
+                    const curve = this._trackGraph.getTrackSegmentCurve(
+                        stop.trackSegmentId
+                    );
                     if (curve === null) continue;
                     const pos = curve.get(stop.tValue);
                     const derivative = curve.derivative(stop.tValue);
@@ -401,9 +495,10 @@ export class DebugOverlayRenderSystem {
                     if (mag > 1e-6) {
                         const unit = PointCal.unitVector(derivative);
                         // 'tangent' points in derivative direction; 'reverseTangent' points opposite
-                        arrowDir = stop.direction === 'tangent'
-                            ? unit
-                            : { x: -unit.x, y: -unit.y };
+                        arrowDir =
+                            stop.direction === 'tangent'
+                                ? unit
+                                : { x: -unit.x, y: -unit.y };
                     }
                     const label = `S${stop.trackSegmentId}`;
                     const node = this._makeLabelNode(
@@ -411,7 +506,7 @@ export class DebugOverlayRenderSystem {
                         pos.x,
                         pos.y,
                         STATION_STOP_CIRCLE_FILL,
-                        arrowDir,
+                        arrowDir
                     );
                     this._stationStopContainer.addChild(node);
                 }
@@ -425,21 +520,34 @@ export class DebugOverlayRenderSystem {
         y: number,
         circleFill: number,
         arrowDirection: { x: number; y: number } | null = null,
-        pill: boolean = false,
+        pill: boolean = false
     ): Container {
         const container = new Container();
         container.position.set(x, y);
         container.scale.set(1 / this._zoomLevel);
 
         if (arrowDirection !== null) {
-            const arrow = this._makeArrowGraphic(arrowDirection.x, arrowDirection.y, circleFill);
+            const arrow = this._makeArrowGraphic(
+                arrowDirection.x,
+                arrowDirection.y,
+                circleFill
+            );
             container.addChild(arrow);
         }
 
         const bg = new Graphics();
         if (pill) {
-            const pillHalfWidth = Math.max(LABEL_CIRCLE_RADIUS, textStr.length * 4 + 6);
-            bg.roundRect(-pillHalfWidth, -LABEL_CIRCLE_RADIUS, pillHalfWidth * 2, LABEL_CIRCLE_RADIUS * 2, LABEL_CIRCLE_RADIUS);
+            const pillHalfWidth = Math.max(
+                LABEL_CIRCLE_RADIUS,
+                textStr.length * 4 + 6
+            );
+            bg.roundRect(
+                -pillHalfWidth,
+                -LABEL_CIRCLE_RADIUS,
+                pillHalfWidth * 2,
+                LABEL_CIRCLE_RADIUS * 2,
+                LABEL_CIRCLE_RADIUS
+            );
         } else {
             bg.circle(0, 0, LABEL_CIRCLE_RADIUS);
         }

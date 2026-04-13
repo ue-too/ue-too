@@ -14,7 +14,6 @@ import {
     Clock,
     Copy,
     Download,
-    Zap,
     FilePlus,
     FolderOpen,
     Landmark,
@@ -30,6 +29,7 @@ import {
     TrainTrack,
     Warehouse,
     X,
+    Zap,
 } from '@/assets/icons';
 import type { BuildingPreset } from '@/buildings/types';
 import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
@@ -50,6 +50,7 @@ import {
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
 import type { StoredCarDefinition } from '@/storage';
+import { useGaugeStore } from '@/stores/gauge-store';
 import { useRenderSettingsStore } from '@/stores/render-settings-store';
 import { useSceneStore } from '@/stores/scene-store';
 import {
@@ -95,6 +96,7 @@ import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { TimetablePanel } from './TimetablePanel';
+import { GaugeSelector } from './GaugeSelector';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TrainPanel } from './TrainPanel';
 import { TOOLBAR_LEFT } from './types';
@@ -162,6 +164,7 @@ export function BananaToolbar({
         whiteOcclusion,
         showJointNumbers,
         showSegmentIds,
+        showGaugeLabels,
         showFormationIds,
         showStationStops,
         showStationLocations,
@@ -184,6 +187,7 @@ export function BananaToolbar({
             whiteOcclusion: s.whiteOcclusion,
             showJointNumbers: s.showJointNumbers,
             showSegmentIds: s.showSegmentIds,
+            showGaugeLabels: s.showGaugeLabels,
             showFormationIds: s.showFormationIds,
             showStationStops: s.showStationStops,
             showStationLocations: s.showStationLocations,
@@ -194,6 +198,9 @@ export function BananaToolbar({
         }))
     );
     const rs = useRenderSettingsStore;
+
+    // Gauge store
+    const { selectedPresetId, customWidth, currentGauge } = useGaugeStore();
 
     // Local state that stays in the component
     const [elevation, setElevation] = useState<string>('N/A');
@@ -236,6 +243,11 @@ export function BananaToolbar({
             el.scrollTop + el.clientHeight < el.scrollHeight - threshold
         );
     }, []);
+
+    useEffect(() => {
+        if (!app) return;
+        app.curveEngine.setCurrentGauge(currentGauge);
+    }, [app, currentGauge]);
 
     useEffect(() => {
         const el = scrollRef.current;
@@ -749,10 +761,10 @@ export function BananaToolbar({
                     : mode === 'catenary-layout'
                       ? 'modeCatenaryLayout'
                       : mode === 'building-placement'
-                      ? 'modePlacingBuilding'
-                      : mode === 'building-deletion'
-                        ? 'modeDeletingBuilding'
-                        : null;
+                        ? 'modePlacingBuilding'
+                        : mode === 'building-deletion'
+                          ? 'modeDeletingBuilding'
+                          : null;
 
     const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
         drawing: {
@@ -1136,8 +1148,45 @@ export function BananaToolbar({
                         onBedChange={rs.getState().setBed}
                         bedWidth={bedWidth}
                         onBedWidthChange={rs.getState().setBedWidth}
+                        gaugePresetId={selectedPresetId}
+                        onGaugePresetChange={id => {
+                            if (id === 'custom') {
+                                useGaugeStore
+                                    .getState()
+                                    .setCustomGauge(customWidth ?? 1.0);
+                            } else {
+                                useGaugeStore.getState().selectPreset(id);
+                            }
+                        }}
+                        customGaugeWidth={customWidth}
+                        onCustomGaugeChange={w =>
+                            useGaugeStore.getState().setCustomGauge(w)
+                        }
                     />
                 </>
+            )}
+
+            {mode === 'station-placement' && (
+                <div className="pointer-events-auto absolute top-1/2 right-3 -translate-y-1/2">
+                    <div className="bg-background/80 flex flex-col gap-3 rounded-xl border p-3 shadow-lg backdrop-blur-sm">
+                        <GaugeSelector
+                            gaugePresetId={selectedPresetId}
+                            onGaugePresetChange={id => {
+                                if (id === 'custom') {
+                                    useGaugeStore
+                                        .getState()
+                                        .setCustomGauge(customWidth ?? 1.0);
+                                } else {
+                                    useGaugeStore.getState().selectPreset(id);
+                                }
+                            }}
+                            customGaugeWidth={customWidth}
+                            onCustomGaugeChange={w =>
+                                useGaugeStore.getState().setCustomGauge(w)
+                            }
+                        />
+                    </div>
+                </div>
             )}
 
             {showTrainPanel &&
@@ -1216,6 +1265,8 @@ export function BananaToolbar({
                     onShowJointNumbersChange={rs.getState().setShowJointNumbers}
                     showSegmentIds={showSegmentIds}
                     onShowSegmentIdsChange={rs.getState().setShowSegmentIds}
+                    showGaugeLabels={showGaugeLabels}
+                    onShowGaugeLabelsChange={rs.getState().setShowGaugeLabels}
                     showFormationIds={showFormationIds}
                     onShowFormationIdsChange={rs.getState().setShowFormationIds}
                     showStationStops={showStationStops}

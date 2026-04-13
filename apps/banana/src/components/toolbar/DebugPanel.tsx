@@ -1,4 +1,4 @@
-import { Activity, ArrowLeftRight, CircleIcon, Crosshair, Eye, Hash, Landmark, Link2, ListOrdered, OctagonXIcon, TrainFront, MapPin } from '@/assets/icons';
+import { Activity, ArrowLeftRight, CircleIcon, Crosshair, Eye, Gauge, Hash, Landmark, Link2, ListOrdered, OctagonXIcon, TrainFront, MapPin } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ type DebugPanelProps = {
     onShowJointNumbersChange: (value: boolean) => void;
     showSegmentIds: boolean;
     onShowSegmentIdsChange: (value: boolean) => void;
+    showGaugeLabels: boolean;
+    onShowGaugeLabelsChange: (value: boolean) => void;
     showFormationIds: boolean;
     onShowFormationIdsChange: (value: boolean) => void;
     showStationStops: boolean;
@@ -44,6 +46,8 @@ export function DebugPanel({
     onShowJointNumbersChange,
     showSegmentIds,
     onShowSegmentIdsChange,
+    showGaugeLabels,
+    onShowGaugeLabelsChange,
     showFormationIds,
     onShowFormationIdsChange,
     showStationStops,
@@ -100,6 +104,17 @@ export function DebugPanel({
                         aria-label="Toggle segment IDs"
                     >
                         <ListOrdered className="size-3.5" />
+                    </Toggle>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-foreground">{t('gaugeLabels')}</span>
+                    <Toggle
+                        size="sm"
+                        pressed={showGaugeLabels}
+                        onPressedChange={onShowGaugeLabelsChange}
+                        aria-label="Toggle gauge labels"
+                    >
+                        <Gauge className="size-3.5" />
                     </Toggle>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-xs">

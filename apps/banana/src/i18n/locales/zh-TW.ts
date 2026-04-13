@@ -152,6 +152,9 @@ const zhTW = {
         bed: '路基',
         bedWidth: '路基寬度',
         snapBuffer: '吸附距離',
+        trackGauge: '軌距',
+        customGauge: '自訂',
+        gaugeLabels: '軌距標籤',
 
         // Building Options Panel
         building: '建築',

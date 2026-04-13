@@ -18,6 +18,7 @@ type RenderSettingsState = {
     whiteOcclusion: boolean;
     showJointNumbers: boolean;
     showSegmentIds: boolean;
+    showGaugeLabels: boolean;
     showFormationIds: boolean;
     showStationStops: boolean;
     showStationLocations: boolean;
@@ -41,6 +42,7 @@ type RenderSettingsActions = {
     setWhiteOcclusion: (v: boolean) => void;
     setShowJointNumbers: (v: boolean) => void;
     setShowSegmentIds: (v: boolean) => void;
+    setShowGaugeLabels: (v: boolean) => void;
     setShowFormationIds: (v: boolean) => void;
     setShowStationStops: (v: boolean) => void;
     setShowStationLocations: (v: boolean) => void;
@@ -69,6 +71,7 @@ export const useRenderSettingsStore = create<RenderSettingsStore>()(
             whiteOcclusion: false,
             showJointNumbers: false,
             showSegmentIds: false,
+            showGaugeLabels: false,
             showFormationIds: false,
             showStationStops: false,
             showStationLocations: false,
@@ -91,6 +94,7 @@ export const useRenderSettingsStore = create<RenderSettingsStore>()(
             setWhiteOcclusion: (v) => set({ whiteOcclusion: v }),
             setShowJointNumbers: (v) => set({ showJointNumbers: v }),
             setShowSegmentIds: (v) => set({ showSegmentIds: v }),
+            setShowGaugeLabels: (v) => set({ showGaugeLabels: v }),
             setShowFormationIds: (v) => set({ showFormationIds: v }),
             setShowStationStops: (v) => set({ showStationStops: v }),
             setShowStationLocations: (v) => set({ showStationLocations: v }),
