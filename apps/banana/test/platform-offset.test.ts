@@ -23,4 +23,22 @@ describe('computePlatformOffset', () => {
         // ballastHw (~0.75) + 0.2 + 2.0 = ~2.95
         expect(offset).toBeCloseTo(2.95, 0);
     });
+
+    it('should produce larger offset for wider gauge', () => {
+        const narrowGauge = computePlatformOffset(1.067, undefined);
+        const standardGauge = computePlatformOffset(1.435, undefined);
+        expect(standardGauge).toBeGreaterThan(narrowGauge);
+    });
+
+    it('should increase offset proportionally with car half width', () => {
+        const small = computePlatformOffset(1.435, undefined, 1.0);
+        const large = computePlatformOffset(1.435, undefined, 2.0);
+        expect(large - small).toBeCloseTo(1.0, 5);
+    });
+
+    it('should handle zero bed width', () => {
+        const offset = computePlatformOffset(1.435, 0);
+        // ballastHw > 0 since gauge > 0, so offset should be ballastHw + clearance + carHalfWidth
+        expect(offset).toBeGreaterThan(0);
+    });
 });

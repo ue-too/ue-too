@@ -286,4 +286,107 @@ describe('TrackAlignedPlatformManager', () => {
             expect(mgr.getPlatformsBySegment(99)).toHaveLength(0);
         });
     });
+
+    // -----------------------------------------------------------------------
+    // 8. createPlatformWithId / getAllPlatforms
+    // -----------------------------------------------------------------------
+
+    describe('createPlatformWithId', () => {
+        it('should create a platform at a specific ID', () => {
+            mgr.createPlatformWithId(3, makePlatform(1, [10]));
+            const platform = mgr.getPlatform(3);
+            expect(platform).not.toBeNull();
+            expect(platform!.id).toBe(3);
+            expect(platform!.stationId).toBe(1);
+        });
+
+        it('should be retrievable via station and segment lookups', () => {
+            mgr.createPlatformWithId(3, makePlatform(1, [10]));
+            expect(mgr.getPlatformsByStation(1)).toHaveLength(1);
+            expect(mgr.getPlatformsBySegment(10)).toHaveLength(1);
+        });
+    });
+
+    describe('getAllPlatforms', () => {
+        it('should return empty array when no platforms exist', () => {
+            expect(mgr.getAllPlatforms()).toHaveLength(0);
+        });
+
+        it('should return all living platforms', () => {
+            mgr.createPlatform(makePlatform(1, [10]));
+            mgr.createPlatform(makePlatform(2, [11]));
+            mgr.createPlatform(makeDualSpinePlatform(3, [12], [13]));
+            expect(mgr.getAllPlatforms()).toHaveLength(3);
+        });
+
+        it('should not include destroyed platforms', () => {
+            const id1 = mgr.createPlatform(makePlatform(1, [10]));
+            mgr.createPlatform(makePlatform(2, [11]));
+            mgr.destroyPlatform(id1);
+            expect(mgr.getAllPlatforms()).toHaveLength(1);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 9. Serialization edge cases
+    // -----------------------------------------------------------------------
+
+    describe('serialization edge cases', () => {
+        it('should round-trip platforms created with specific IDs', () => {
+            mgr.createPlatformWithId(2, makePlatform(1, [10]));
+            mgr.createPlatformWithId(5, makePlatform(2, [11]));
+            const data = mgr.serialize();
+            const restored = TrackAlignedPlatformManager.deserialize(data);
+
+            expect(restored.getPlatform(2)).not.toBeNull();
+            expect(restored.getPlatform(5)).not.toBeNull();
+            expect(restored.getPlatform(2)!.stationId).toBe(1);
+            expect(restored.getPlatform(5)!.stationId).toBe(2);
+        });
+
+        it('should preserve outerVertices kind=dual through round-trip', () => {
+            const id = mgr.createPlatform(makeDualSpinePlatform(1, [10], [20]));
+            const data = mgr.serialize();
+            const restored = TrackAlignedPlatformManager.deserialize(data);
+            const platform = restored.getPlatform(id)!;
+
+            expect(platform.outerVertices.kind).toBe('dual');
+            if (platform.outerVertices.kind === 'dual') {
+                expect(platform.outerVertices.capA).toHaveLength(1);
+                expect(platform.outerVertices.capB).toHaveLength(1);
+            }
+        });
+
+        it('should preserve multi-segment spines through round-trip', () => {
+            const id = mgr.createPlatform(makePlatform(1, [10, 11, 12]));
+            const data = mgr.serialize();
+            const restored = TrackAlignedPlatformManager.deserialize(data);
+            const platform = restored.getPlatform(id)!;
+
+            expect(platform.spineA).toHaveLength(3);
+            expect(platform.spineA[0].trackSegment).toBe(10);
+            expect(platform.spineA[1].trackSegment).toBe(11);
+            expect(platform.spineA[2].trackSegment).toBe(12);
+        });
+
+        it('should preserve t-values and side through round-trip', () => {
+            const platform: Omit<TrackAlignedPlatform, 'id'> = {
+                stationId: 1,
+                spineA: [{ trackSegment: 10, tStart: 0.25, tEnd: 0.75, side: -1 }],
+                spineB: null,
+                offset: 3.5,
+                outerVertices: { kind: 'single', vertices: [{ x: 1, y: 2 }] },
+                stopPositions: [],
+            };
+            const id = mgr.createPlatform(platform);
+            const data = mgr.serialize();
+            const restored = TrackAlignedPlatformManager.deserialize(data);
+            const p = restored.getPlatform(id)!;
+
+            expect(p.spineA[0].tStart).toBe(0.25);
+            expect(p.spineA[0].tEnd).toBe(0.75);
+            expect(p.spineA[0].side).toBe(-1);
+            expect(p.offset).toBe(3.5);
+        });
+    });
 });

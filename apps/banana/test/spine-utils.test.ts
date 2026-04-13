@@ -270,4 +270,146 @@ describe('computeAnchorPoint', () => {
         expect(pt.x).toBeCloseTo(0, 5);
         expect(pt.y).toBeCloseTo(-3, 5);
     });
+
+    it('computes anchor at a mid-segment t-value', () => {
+        // At t=0.5 on segment 0, x should be ~5 (midpoint of 0..10)
+        const entry: SpineEntry = { trackSegment: 0, tStart: 0.5, tEnd: 1, side: 1 };
+        const pt = computeAnchorPoint(entry, 'start', 2, getCurve);
+        expect(pt.x).toBeCloseTo(5, 0);
+        expect(pt.y).toBeCloseTo(2, 5);
+    });
+
+    it('computes anchor at segment boundary (t=1)', () => {
+        const entry: SpineEntry = { trackSegment: 0, tStart: 0, tEnd: 1, side: 1 };
+        const pt = computeAnchorPoint(entry, 'end', 2, getCurve);
+        expect(pt.x).toBeCloseTo(10, 5);
+        expect(pt.y).toBeCloseTo(2, 5);
+    });
+
+    it('returns raw curve point when offset is zero', () => {
+        const entry: SpineEntry = { trackSegment: 0, tStart: 0, tEnd: 1, side: 1 };
+        const pt = computeAnchorPoint(entry, 'start', 0, getCurve);
+        expect(pt.x).toBeCloseTo(0, 5);
+        expect(pt.y).toBeCloseTo(0, 5);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// sampleSpineEdge — partial t-ranges
+// ---------------------------------------------------------------------------
+
+describe('sampleSpineEdge — partial t-ranges', () => {
+    const curves = makeStraightCurves();
+    const getCurve = (id: number) => curves.get(id)!;
+
+    it('samples a partial segment (tStart=0.2, tEnd=0.8)', () => {
+        const spine: SpineEntry[] = [{ trackSegment: 0, tStart: 0.2, tEnd: 0.8, side: 1 }];
+        const points = sampleSpineEdge(spine, 0, getCurve, 3);
+        // 3 steps + 1 = 4 points
+        expect(points).toHaveLength(4);
+        // x should range from ~2 to ~8 (20% to 80% of 0..10)
+        expect(points[0].x).toBeCloseTo(2, 0);
+        expect(points[points.length - 1].x).toBeCloseTo(8, 0);
+    });
+
+    it('handles a reversed t-range (tStart > tEnd)', () => {
+        // Walking the segment in reverse
+        const spine: SpineEntry[] = [{ trackSegment: 0, tStart: 1, tEnd: 0, side: 1 }];
+        const points = sampleSpineEdge(spine, 0, getCurve, 3);
+        // x should go from 10 down to 0
+        expect(points[0].x).toBeCloseTo(10, 0);
+        expect(points[points.length - 1].x).toBeCloseTo(0, 0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// sampleSpineEdge — curved track
+// ---------------------------------------------------------------------------
+
+describe('sampleSpineEdge — curved track', () => {
+    it('offsets perpendicular to a quarter-circle arc', () => {
+        // Quarter circle from (10,0) through (10,10) to (0,10) — 3-point quadratic Bézier
+        const curve = new BCurve([
+            { x: 10, y: 0 },
+            { x: 10, y: 10 },
+            { x: 0, y: 10 },
+        ]);
+        const getCurve = () => curve;
+
+        const spine: SpineEntry[] = [{ trackSegment: 0, tStart: 0, tEnd: 1, side: 1 }];
+        const offset = 2;
+        const points = sampleSpineEdge(spine, offset, getCurve, 10);
+
+        // Each point should be approximately `offset` distance from its corresponding
+        // on-curve point. Verify at endpoints where we know the normal direction.
+        // At t=0, tangent ≈ (0,1), normal (side=1) ≈ (-1,0), so offset point ≈ (8,0)
+        expect(points[0].x).toBeCloseTo(8, 0);
+        expect(points[0].y).toBeCloseTo(0, 0);
+
+        // At t=1, tangent ≈ (-1,0), normal (side=1) ≈ (0,-1), so offset point ≈ (0,8)
+        const last = points[points.length - 1];
+        expect(last.x).toBeCloseTo(0, 0);
+        expect(last.y).toBeCloseTo(8, 0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// validateSpine — additional edge cases
+// ---------------------------------------------------------------------------
+
+describe('validateSpine — edge cases', () => {
+    it('accepts a spine with three consecutive segments', () => {
+        const segments = new Map([
+            [0, { t0Joint: 0, t1Joint: 1 }],
+            [1, { t0Joint: 1, t1Joint: 2 }],
+            [2, { t0Joint: 2, t1Joint: 3 }],
+        ]);
+        const joints = new Map([
+            [0, { connections: new Map([[1, 0]]) }],
+            [1, { connections: new Map([[0, 0], [2, 1]]) }],
+            [2, { connections: new Map([[1, 1], [3, 2]]) }],
+            [3, { connections: new Map([[2, 2]]) }],
+        ]);
+
+        const spine: SpineEntry[] = [
+            { trackSegment: 0, tStart: 0, tEnd: 1, side: 1 },
+            { trackSegment: 1, tStart: 0, tEnd: 1, side: 1 },
+            { trackSegment: 2, tStart: 0, tEnd: 1, side: 1 },
+        ];
+        const result = validateSpine(
+            spine,
+            (id) => segments.get(id)!,
+            (id) => joints.get(id)!,
+        );
+        expect(result.valid).toBe(true);
+    });
+
+    it('rejects when branching occurs at the second joint in a three-segment spine', () => {
+        const segments = new Map([
+            [0, { t0Joint: 0, t1Joint: 1 }],
+            [1, { t0Joint: 1, t1Joint: 2 }],
+            [2, { t0Joint: 2, t1Joint: 3 }],
+        ]);
+        // Joint 2 branches — has 3 connections
+        const joints = new Map([
+            [0, { connections: new Map([[1, 0]]) }],
+            [1, { connections: new Map([[0, 0], [2, 1]]) }],
+            [2, { connections: new Map([[1, 1], [3, 2], [4, 3]]) }],
+            [3, { connections: new Map([[2, 2]]) }],
+        ]);
+
+        const spine: SpineEntry[] = [
+            { trackSegment: 1, tStart: 0, tEnd: 1, side: 1 },
+            { trackSegment: 2, tStart: 0, tEnd: 1, side: 1 },
+        ];
+        const result = validateSpine(
+            spine,
+            (id) => segments.get(id)!,
+            (id) => joints.get(id)!,
+        );
+        expect(result.valid).toBe(false);
+        if (!result.valid) {
+            expect(result.error).toContain('branching');
+        }
+    });
 });
