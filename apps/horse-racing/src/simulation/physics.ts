@@ -27,7 +27,7 @@ export function projectVelocity(
 /**
  * Compute track-relative accelerations for a single horse.
  *
- * Tangential: cruise + agent input − drag, capped at maxSpeed.
+ * Tangential: cruise + agent input − drag − slope gravity, capped at maxSpeed.
  * Normal: centripetal (−v²/r) + NORMAL_DAMP + agent steering − drag.
  *
  * @returns Tuple `[tangentialAccel, normalAccel]` in m/s².
@@ -46,6 +46,8 @@ export function computeAccelerations(
     let a_t = computeCruiseForce(tangentialVel, attrs.cruiseSpeed);
     a_t += clampedTan * F_T_MAX * attrs.forwardAccel;
     a_t -= C_DRAG * tangentialVel;
+    // Slope gravity: uphill (slope > 0) decelerates, downhill accelerates
+    a_t -= 9.81 * frame.slope;
     if (tangentialVel >= attrs.maxSpeed && a_t > 0) {
         a_t = 0;
     }

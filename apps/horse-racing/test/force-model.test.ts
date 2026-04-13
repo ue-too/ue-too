@@ -129,6 +129,54 @@ describe('computeAccelerations', () => {
         expect(a_n).toBeCloseTo(3, 0);
     });
 
+    it('uphill slope reduces tangential acceleration', () => {
+        const uphillFrame: TrackFrame = {
+            ...straightFrame(),
+            slope: 0.05, // 5% grade
+        };
+        const [a_t_flat] = computeAccelerations(
+            10,
+            0,
+            attrs,
+            ZERO_INPUT,
+            straightFrame()
+        );
+        const [a_t_uphill] = computeAccelerations(
+            10,
+            0,
+            attrs,
+            ZERO_INPUT,
+            uphillFrame
+        );
+        // Uphill should produce less acceleration than flat
+        expect(a_t_uphill).toBeLessThan(a_t_flat);
+        // Difference should be g * slope = 9.81 * 0.05 ≈ 0.49
+        expect(a_t_flat - a_t_uphill).toBeCloseTo(9.81 * 0.05, 2);
+    });
+
+    it('downhill slope increases tangential acceleration', () => {
+        const downhillFrame: TrackFrame = {
+            ...straightFrame(),
+            slope: -0.05,
+        };
+        const [a_t_flat] = computeAccelerations(
+            10,
+            0,
+            attrs,
+            ZERO_INPUT,
+            straightFrame()
+        );
+        const [a_t_downhill] = computeAccelerations(
+            10,
+            0,
+            attrs,
+            ZERO_INPUT,
+            downhillFrame
+        );
+        expect(a_t_downhill).toBeGreaterThan(a_t_flat);
+        expect(a_t_downhill - a_t_flat).toBeCloseTo(9.81 * 0.05, 2);
+    });
+
     it('clamps input values to [-1, 1]', () => {
         const input: InputState = { tangential: 5, normal: -3 };
         const clamped: InputState = { tangential: 1, normal: -1 };
