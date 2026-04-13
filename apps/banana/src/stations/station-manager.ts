@@ -60,6 +60,7 @@ export class StationManager {
         })),
         trackSegments: [...entity.trackSegments],
         joints: [...entity.joints],
+        trackAlignedPlatforms: [...entity.trackAlignedPlatforms],
       }));
 
     return { stations };
@@ -84,6 +85,7 @@ export class StationManager {
         })),
         trackSegments: [...s.trackSegments],
         joints: [...s.joints],
+        trackAlignedPlatforms: [...(s.trackAlignedPlatforms ?? [])],
       });
     }
     return manager;

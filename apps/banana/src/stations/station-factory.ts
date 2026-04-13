@@ -149,6 +149,7 @@ export function createIslandStation(
         platforms: [platform1, platform2],
         trackSegments,
         joints,
+        trackAlignedPlatforms: [],
     });
 
     return stationId;
