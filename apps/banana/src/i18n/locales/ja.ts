@@ -155,6 +155,9 @@ const ja = {
         bed: '路盤',
         bedWidth: '路盤幅',
         snapBuffer: 'スナップ距離',
+        trackGauge: '軌間',
+        customGauge: 'カスタム',
+        gaugeLabels: '軌間ラベル',
 
         // Building Options Panel
         building: '建物',
