@@ -10,7 +10,7 @@ export const LATERAL_STEERING_DRAIN_RATE = 0.006;
 export const CORNERING_DRAIN_RATE = 0.002;
 export const SPEED_DRAIN_RATE = 0.002;
 export const LATERAL_VELOCITY_DRAIN_RATE = 0.0008;
-export const GRIP_FORCE_BASELINE = 150.0;
+export const GRIP_FORCE_BASELINE = 2.0;
 
 /**
  * Drain stamina based on the horse's current effort. Mutates `horse.currentStamina`.
