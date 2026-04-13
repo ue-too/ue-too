@@ -27,7 +27,7 @@ import type { StationManager } from './station-manager';
 import type { TrackAlignedPlatformManager } from './track-aligned-platform-manager';
 import type { TrackAlignedPlatformRenderSystem } from './track-aligned-platform-render-system';
 import { computePlatformOffset } from './platform-offset';
-import { validateSpine, computeAnchorPoint } from './spine-utils';
+import { validateSpine, computeAnchorPoint, sampleSpineEdge } from './spine-utils';
 import type { SpineEntry } from './track-aligned-platform-types';
 
 // ---------------------------------------------------------------------------
@@ -61,6 +61,7 @@ export interface SingleSpineContext extends BaseContext {
     readonly hasEnd: boolean;
     readonly isFinalized: boolean;
     setStation: (stationId: number) => void;
+    hoverUpdate: (position: Point) => void;
     pickStart: (position: Point) => boolean;
     updateEnd: (position: Point) => boolean;
     confirmEnd: (position: Point) => boolean;
@@ -145,6 +146,30 @@ export class SingleSpinePlacementEngine
         this._activeStationId = stationId;
     }
 
+    hoverUpdate(position: Point): void {
+        const projection = this._trackGraph.projectPointNearTrack(position, 5);
+        if (projection === null) {
+            this._platformRenderSystem.hidePreview();
+            return;
+        }
+
+        const segment = this._trackGraph.getTrackSegmentWithJoints(projection.curve);
+        if (segment === null) {
+            this._platformRenderSystem.hidePreview();
+            return;
+        }
+
+        // Determine which side the cursor is on.
+        const { tangent, projectionPoint } = projection;
+        const dx = position.x - projectionPoint.x;
+        const dy = position.y - projectionPoint.y;
+        const cross = tangent.x * dy - tangent.y * dx;
+        const side: 1 | -1 = cross >= 0 ? 1 : -1;
+
+        const offset = computePlatformOffset(segment.gauge, segment.bedWidth);
+        this._platformRenderSystem.showTrackHighlight(projection.curve, projection.atT, side, offset);
+    }
+
     pickStart(position: Point): boolean {
         const projection = this._trackGraph.projectPointNearTrack(position, 5);
         if (projection === null) return false;
@@ -190,6 +215,9 @@ export class SingleSpinePlacementEngine
         if (curve !== null) {
             this._startAnchor = computeAnchorPoint(startEntry, 'start', offset, () => curve);
         }
+
+        // Show preview with just the start anchor.
+        this._updatePlacementPreview();
 
         return true;
     }
@@ -264,11 +292,13 @@ export class SingleSpinePlacementEngine
         }
 
         this._hasEnd = true;
+        this._updatePlacementPreview();
         return true;
     }
 
     addOuterVertex(position: Point): boolean {
         this._outerVertices.push(position);
+        this._updatePlacementPreview();
         return true;
     }
 
@@ -312,10 +342,12 @@ export class SingleSpinePlacementEngine
         this._platformRenderSystem.addPlatform(platformId, elevation);
 
         this._isFinalized = true;
+        this._platformRenderSystem.hidePreview();
         this._resetState();
     }
 
     cancel(): void {
+        this._platformRenderSystem.hidePreview();
         this._resetState();
     }
 
@@ -364,6 +396,31 @@ export class SingleSpinePlacementEngine
         this._startAnchor = null;
         this._endAnchor = null;
         this._offset = 0;
+    }
+
+    private _updatePlacementPreview(): void {
+        if (this._spine.length === 0) return;
+
+        // Sample spine edge points.
+        const getCurve = (segmentId: number) => {
+            const curve = this._trackGraph.getTrackSegmentCurve(segmentId);
+            if (curve === null) throw new Error(`Missing curve for segment ${segmentId}`);
+            return curve;
+        };
+
+        let spinePoints: Point[];
+        try {
+            spinePoints = sampleSpineEdge(this._spine, this._offset, getCurve);
+        } catch {
+            spinePoints = [];
+        }
+
+        this._platformRenderSystem.showPlacementPreview(
+            spinePoints,
+            this._outerVertices,
+            this._startAnchor,
+            this._endAnchor,
+        );
     }
 
     /**
@@ -544,6 +601,13 @@ class SingleSpinePickStartState extends TemplateState<
         SingleSpineContext,
         SingleSpineStates
     > = {
+        pointerMove: {
+            action: (context, event) => {
+                const worldPos = context.convert2WorldPosition({ x: event.x, y: event.y });
+                context.hoverUpdate(worldPos);
+            },
+            defaultTargetState: 'PICK_START',
+        },
         leftPointerUp: {
             action: (context, event) => {
                 const worldPos = context.convert2WorldPosition({ x: event.x, y: event.y });

@@ -48,6 +48,10 @@ export class TrackAlignedPlatformRenderSystem {
     private _records: Map<number, TrackAlignedPlatformRenderRecord> = new Map();
     private _platformTexture: Texture | null = null;
 
+    // Preview graphics for placement tools
+    private _previewGraphics: Graphics | null = null;
+    private _previewKey = 'track-aligned-platform-preview';
+
     constructor(
         worldRenderSystem: WorldRenderSystem,
         platformManager: TrackAlignedPlatformManager,
@@ -96,7 +100,129 @@ export class TrackAlignedPlatformRenderSystem {
         this._records.delete(id);
     }
 
+    // ---------------------------------------------------------------------------
+    // Preview (placement tool feedback)
+    // ---------------------------------------------------------------------------
+
+    private _ensurePreviewGraphics(): Graphics {
+        if (this._previewGraphics === null) {
+            this._previewGraphics = new Graphics();
+            this._previewGraphics.zIndex = 9999;
+            this._worldRenderSystem.addDrawable(this._previewKey, this._previewGraphics);
+        }
+        return this._previewGraphics;
+    }
+
+    /**
+     * Show a highlight along a track segment to indicate it can be clicked.
+     * Used in PICK_START state when the cursor is near a track.
+     */
+    showTrackHighlight(segmentId: number, projectionT: number, side: 1 | -1, offset: number): void {
+        const curve = this._trackGraph.getTrackSegmentCurve(segmentId);
+        if (curve === null) return;
+
+        const g = this._ensurePreviewGraphics();
+        g.clear();
+
+        // Draw the full track edge on the chosen side.
+        const steps = Math.max(8, Math.ceil(curve.fullLength / 2));
+        let started = false;
+        for (let s = 0; s <= steps; s++) {
+            const t = s / steps;
+            const pos = curve.get(t);
+            const d = curve.derivative(t);
+            const mag = Math.sqrt(d.x * d.x + d.y * d.y);
+            if (mag < 1e-12) continue;
+            const nx = (-d.y / mag) * side;
+            const ny = (d.x / mag) * side;
+            const px = pos.x + nx * offset;
+            const py = pos.y + ny * offset;
+            if (!started) {
+                g.moveTo(px, py);
+                started = true;
+            } else {
+                g.lineTo(px, py);
+            }
+        }
+        g.stroke({ color: 0x44cc88, alpha: 0.9, width: 0.3 });
+
+        // Draw a dot at the projected point.
+        const projPos = curve.get(projectionT);
+        g.circle(projPos.x, projPos.y, 0.5);
+        g.fill({ color: 0x44cc88, alpha: 0.8 });
+
+        this._worldRenderSystem.sortChildren();
+    }
+
+    /**
+     * Show the spine edge preview and optional outer polygon during placement.
+     * @param spinePoints - sampled spine edge points
+     * @param outerVertices - outer polygon vertices drawn so far (can be empty)
+     * @param startAnchor - start anchor point (for closing indicator)
+     * @param endAnchor - end anchor point (if spine confirmed)
+     */
+    showPlacementPreview(
+        spinePoints: Point[],
+        outerVertices: Point[],
+        startAnchor: Point | null,
+        endAnchor: Point | null,
+    ): void {
+        const g = this._ensurePreviewGraphics();
+        g.clear();
+
+        // Draw the spine edge.
+        if (spinePoints.length >= 2) {
+            g.moveTo(spinePoints[0].x, spinePoints[0].y);
+            for (let i = 1; i < spinePoints.length; i++) {
+                g.lineTo(spinePoints[i].x, spinePoints[i].y);
+            }
+            g.stroke({ color: 0x44cc88, alpha: 0.9, width: 0.25 });
+        }
+
+        // Draw outer polygon vertices.
+        if (outerVertices.length > 0) {
+            // Line from end anchor to first outer vertex.
+            if (endAnchor !== null) {
+                g.moveTo(endAnchor.x, endAnchor.y);
+                g.lineTo(outerVertices[0].x, outerVertices[0].y);
+            }
+            // Connect outer vertices.
+            g.moveTo(outerVertices[0].x, outerVertices[0].y);
+            for (let i = 1; i < outerVertices.length; i++) {
+                g.lineTo(outerVertices[i].x, outerVertices[i].y);
+            }
+            g.stroke({ color: 0xf0cc00, alpha: 0.8, width: 0.2 });
+
+            // Dots at each vertex.
+            for (const v of outerVertices) {
+                g.circle(v.x, v.y, 0.3);
+                g.fill({ color: 0xf0cc00, alpha: 0.8 });
+            }
+        }
+
+        // Anchor points.
+        if (startAnchor !== null) {
+            g.circle(startAnchor.x, startAnchor.y, 0.5);
+            g.fill({ color: 0x44cc88, alpha: 0.9 });
+        }
+        if (endAnchor !== null) {
+            g.circle(endAnchor.x, endAnchor.y, 0.5);
+            g.fill({ color: 0xcc4444, alpha: 0.9 });
+        }
+
+        this._worldRenderSystem.sortChildren();
+    }
+
+    hidePreview(): void {
+        if (this._previewGraphics !== null) {
+            this._worldRenderSystem.removeDrawable(this._previewKey);
+            this._previewGraphics.destroy();
+            this._previewGraphics = null;
+        }
+    }
+
     cleanup(): void {
+        this.hidePreview();
         for (const [id] of this._records) {
             this.removePlatform(id);
         }
