@@ -162,6 +162,7 @@ export function BananaToolbar({
         whiteOcclusion,
         showJointNumbers,
         showSegmentIds,
+        showGaugeLabels,
         showFormationIds,
         showStationStops,
         showStationLocations,
@@ -184,6 +185,7 @@ export function BananaToolbar({
             whiteOcclusion: s.whiteOcclusion,
             showJointNumbers: s.showJointNumbers,
             showSegmentIds: s.showSegmentIds,
+            showGaugeLabels: s.showGaugeLabels,
             showFormationIds: s.showFormationIds,
             showStationStops: s.showStationStops,
             showStationLocations: s.showStationLocations,
@@ -1216,6 +1218,8 @@ export function BananaToolbar({
                     onShowJointNumbersChange={rs.getState().setShowJointNumbers}
                     showSegmentIds={showSegmentIds}
                     onShowSegmentIdsChange={rs.getState().setShowSegmentIds}
+                    showGaugeLabels={showGaugeLabels}
+                    onShowGaugeLabelsChange={rs.getState().setShowGaugeLabels}
                     showFormationIds={showFormationIds}
                     onShowFormationIdsChange={rs.getState().setShowFormationIds}
                     showStationStops={showStationStops}

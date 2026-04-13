@@ -3,6 +3,7 @@ import { CameraState, CameraZoomEventPayload, ObservableBoardCamera } from '@ue-
 import { PointCal } from '@ue-too/math';
 import { WorldRenderSystem } from '@/world-render-system';
 import type { TrackGraph } from './track';
+import { findPresetByWidth } from './gauge-presets';
 import type { PlacedTrainEntry } from '@/trains/train-manager';
 import type { ProximityDetector } from '@/trains/proximity-detector';
 import type { StationManager } from '@/stations/station-manager';
@@ -27,6 +28,9 @@ const JOINT_CIRCLE_FILL = 0x2563eb;
 
 /** Fill color for segment label circles (debug). */
 const SEGMENT_CIRCLE_FILL = 0x16a34a;
+
+/** Fill color for gauge label pills (debug). */
+const GAUGE_LABEL_FILL = 0x0891b2;
 
 /** Fill color for formation ID label circles (debug). */
 const FORMATION_CIRCLE_FILL = 0xd97706;
@@ -61,6 +65,8 @@ export class DebugOverlayRenderSystem {
     private _proximityContainer: Container;
     private _showJointNumbers = false;
     private _showSegmentIds = false;
+    private _gaugeContainer: Container;
+    private _showGaugeLabels = false;
     private _showFormationIds = false;
     private _showStationStops = false;
     private _showStationLocations = false;
@@ -82,6 +88,8 @@ export class DebugOverlayRenderSystem {
         this._overlayContainer = new Container();
         this._jointContainer = new Container();
         this._segmentContainer = new Container();
+        this._gaugeContainer = new Container();
+        this._gaugeContainer.visible = false;
         this._formationContainer = new Container();
         this._stationStopContainer = new Container();
         this._stationLocationContainer = new Container();
@@ -92,6 +100,7 @@ export class DebugOverlayRenderSystem {
         this._proximityContainer.visible = false;
         this._overlayContainer.addChild(this._jointContainer);
         this._overlayContainer.addChild(this._segmentContainer);
+        this._overlayContainer.addChild(this._gaugeContainer);
         this._overlayContainer.addChild(this._formationContainer);
         this._overlayContainer.addChild(this._stationStopContainer);
         this._overlayContainer.addChild(this._stationLocationContainer);
@@ -119,6 +128,9 @@ export class DebugOverlayRenderSystem {
             child.scale.set(scale);
         }
         for (const child of this._segmentContainer.children) {
+            child.scale.set(scale);
+        }
+        for (const child of this._gaugeContainer.children) {
             child.scale.set(scale);
         }
         for (const child of this._formationContainer.children) {
@@ -159,6 +171,19 @@ export class DebugOverlayRenderSystem {
         this._showSegmentIds = show;
         this._segmentContainer.visible = show;
         if (show) this._rebuildSegmentLabels();
+    }
+
+    /** Whether gauge labels are visible. */
+    get showGaugeLabels(): boolean {
+        return this._showGaugeLabels;
+    }
+
+    /** Show or hide gauge label overlays on track segments. */
+    setShowGaugeDebug(show: boolean): void {
+        if (this._showGaugeLabels === show) return;
+        this._showGaugeLabels = show;
+        this._gaugeContainer.visible = show;
+        if (show) this._rebuildGaugeLabels();
     }
 
     /** Show or hide formation ID labels above each car. */
@@ -236,6 +261,7 @@ export class DebugOverlayRenderSystem {
     refresh(): void {
         if (this._showJointNumbers) this._rebuildJointLabels();
         if (this._showSegmentIds) this._rebuildSegmentLabels();
+        if (this._showGaugeLabels) this._rebuildGaugeLabels();
         if (this._showStationStops) this._rebuildStationStopLabels();
         if (this._showStationLocations) this._rebuildStationLocationLabels();
     }
@@ -278,6 +304,32 @@ export class DebugOverlayRenderSystem {
                 positiveDir,
             );
             this._segmentContainer.addChild(node);
+        }
+    }
+
+    private _rebuildGaugeLabels(): void {
+        const removed = this._gaugeContainer.removeChildren();
+        removed.forEach((c) => c.destroy({ children: true }));
+        const segmentIds = this._trackGraph.trackCurveManager.livingEntities;
+        for (const segmentNumber of segmentIds) {
+            const segment =
+                this._trackGraph.getTrackSegmentWithJoints(segmentNumber);
+            if (segment === null) continue;
+            const mid = segment.curve.get(0.5);
+            const gauge = segment.gauge;
+            const preset = findPresetByWidth(gauge);
+            const label = preset
+                ? `${preset.name} ${gauge}m`
+                : `Custom ${gauge}m`;
+            const node = this._makeLabelNode(
+                label,
+                mid.x,
+                mid.y,
+                GAUGE_LABEL_FILL,
+                null,
+                true,
+            );
+            this._gaugeContainer.addChild(node);
         }
     }
 

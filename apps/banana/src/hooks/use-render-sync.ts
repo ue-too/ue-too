@@ -73,6 +73,11 @@ export function useRenderSync(app: BananaAppComponents | null): void {
                     state.showSegmentIds
                 );
             }
+            if (state.showGaugeLabels !== prev.showGaugeLabels) {
+                app.debugOverlayRenderSystem.setShowGaugeDebug(
+                    state.showGaugeLabels
+                );
+            }
             if (state.showFormationIds !== prev.showFormationIds) {
                 app.debugOverlayRenderSystem.setShowFormationDebug(
                     state.showFormationIds
@@ -128,6 +133,7 @@ function applyAll(
     app.terrainRenderSystem.whiteOcclusion = state.whiteOcclusion;
     app.debugOverlayRenderSystem.setShowJointDebug(state.showJointNumbers);
     app.debugOverlayRenderSystem.setShowSegmentDebug(state.showSegmentIds);
+    app.debugOverlayRenderSystem.setShowGaugeDebug(state.showGaugeLabels);
     app.debugOverlayRenderSystem.setShowFormationDebug(
         state.showFormationIds
     );
