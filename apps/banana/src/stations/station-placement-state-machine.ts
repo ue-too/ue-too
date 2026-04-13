@@ -162,6 +162,24 @@ export class StationPlacementEngine
         this._dragStart = null;
     }
 
+    /**
+     * Creates a station with no platforms, no tracks, and no joints.
+     * Used as a prerequisite for adding track-aligned platforms.
+     */
+    createBareStation(position: Point): number {
+        const stationId = this._stationManager.createStation({
+            name: 'Station',
+            position,
+            elevation: ELEVATION.GROUND,
+            platforms: [],
+            trackSegments: [],
+            joints: [],
+            trackAlignedPlatforms: [],
+        });
+        this._stationRenderSystem.addStation(stationId);
+        return stationId;
+    }
+
     setup(): void {}
     cleanup(): void {}
 
