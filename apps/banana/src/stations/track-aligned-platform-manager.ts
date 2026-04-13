@@ -16,6 +16,16 @@ export class TrackAlignedPlatformManager {
     // CRUD
     // -----------------------------------------------------------------------
 
+    createPlatformWithId(id: number, platform: Omit<TrackAlignedPlatform, 'id'>): void {
+        this._manager.createEntityWithId(id, { ...platform, id } as TrackAlignedPlatform);
+    }
+
+    getAllPlatforms(): { id: number; platform: TrackAlignedPlatform }[] {
+        return this._manager
+            .getLivingEntitiesWithIndex()
+            .map(({ index, entity }) => ({ id: index, platform: entity }));
+    }
+
     createPlatform(platform: Omit<TrackAlignedPlatform, 'id'>): number {
         const id = this._manager.createEntity({ ...platform, id: -1 } as TrackAlignedPlatform);
         const entity = this._manager.getEntity(id);

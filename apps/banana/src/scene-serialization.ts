@@ -8,6 +8,8 @@ import {
 } from '@/trains/train-serialization';
 import type { SerializedStationData } from '@/stations/types';
 import { StationManager } from '@/stations/station-manager';
+import { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
+import type { SerializedTrackAlignedPlatformData } from '@/stations/track-aligned-platform-types';
 import type { BananaAppComponents } from '@/utils/init-app';
 import { TerrainData, validateSerializedTerrainData } from '@/terrain/terrain-data';
 import type { SerializedTerrainData } from '@/terrain/terrain-data';
@@ -24,6 +26,7 @@ export type SerializedSceneData = {
   timetable?: SerializedTimetableData;
   signals?: SerializedSignalData;
   time?: number;
+  trackAlignedPlatforms?: SerializedTrackAlignedPlatformData;
 };
 
 export function serializeSceneData(app: BananaAppComponents): SerializedSceneData {
@@ -35,6 +38,7 @@ export function serializeSceneData(app: BananaAppComponents): SerializedSceneDat
     timetable: app.timetableManager.serialize(),
     signals: app.blockSignalManager.serialize(),
     time: app.timeManager.currentTime,
+    trackAlignedPlatforms: app.trackAlignedPlatformManager.serialize(),
   };
 }
 
@@ -90,6 +94,22 @@ export async function deserializeSceneData(
   // Load signal data if present
   if (data.signals) {
     app.blockSignalManager.deserialize(data.signals);
+  }
+
+  // Load track-aligned platforms if present
+  if (data.trackAlignedPlatforms) {
+    const restored = TrackAlignedPlatformManager.deserialize(data.trackAlignedPlatforms);
+    // Remove existing platforms
+    for (const { id } of app.trackAlignedPlatformManager.getAllPlatforms()) {
+      app.trackAlignedPlatformRenderSystem.removePlatform(id);
+      app.trackAlignedPlatformManager.destroyPlatform(id);
+    }
+    // Add restored platforms
+    for (const { id, platform } of restored.getAllPlatforms()) {
+      app.trackAlignedPlatformManager.createPlatformWithId(id, platform);
+      const elevation = app.stationManager.getStation(platform.stationId)?.elevation ?? 0;
+      app.trackAlignedPlatformRenderSystem.addPlatform(id, elevation);
+    }
   }
 
   // Load stations and rebuild their render visuals
