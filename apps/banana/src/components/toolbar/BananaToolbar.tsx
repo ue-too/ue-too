@@ -420,6 +420,26 @@ export function BananaToolbar({
         }
     }, [app, mode, exitAllModes]);
 
+    const handleStartSingleSpinePlatform = useCallback(
+        (stationId: number) => {
+            if (!app) return;
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToSingleSpinePlatform', { stationId });
+            setMode('single-spine-platform');
+        },
+        [app, exitAllModes],
+    );
+
+    const handleStartDualSpinePlatform = useCallback(
+        (stationId: number) => {
+            if (!app) return;
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToDualSpinePlatform', { stationId });
+            setMode('dual-spine-platform');
+        },
+        [app, exitAllModes],
+    );
+
     const handlePointerDown = useCallback(
         (event: PointerEvent) => {
             if (event.button !== 0 || !app) return;
@@ -741,7 +761,9 @@ export function BananaToolbar({
         mode === 'layout-deletion' ||
         mode === 'station-placement' ||
         mode === 'duplicate-to-side' ||
-        mode === 'catenary-layout'
+        mode === 'catenary-layout' ||
+        mode === 'single-spine-platform' ||
+        mode === 'dual-spine-platform'
             ? 'drawing'
             : mode === 'train-placement'
               ? 'trains'
@@ -764,7 +786,11 @@ export function BananaToolbar({
                         ? 'modePlacingBuilding'
                         : mode === 'building-deletion'
                           ? 'modeDeletingBuilding'
-                          : null;
+                          : mode === 'single-spine-platform'
+                            ? 'modeSingleSpinePlatform'
+                            : mode === 'dual-spine-platform'
+                              ? 'modeDualSpinePlatform'
+                              : null;
 
     const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
         drawing: {
@@ -1237,11 +1263,14 @@ export function BananaToolbar({
                     stationManager={app.stationManager}
                     stationRenderSystem={app.stationRenderSystem}
                     trackGraph={app.curveEngine.trackGraph}
+                    trackAlignedPlatformManager={app.trackAlignedPlatformManager}
                     cameraRig={app.cameraRig}
                     onClose={() => setPanel('stationList', false)}
                     onStationChange={() =>
                         app.debugOverlayRenderSystem.refresh()
                     }
+                    onAddSingleSpinePlatform={handleStartSingleSpinePlatform}
+                    onAddDualSpinePlatform={handleStartDualSpinePlatform}
                 />
             )}
 

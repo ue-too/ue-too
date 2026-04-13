@@ -48,6 +48,8 @@ export {
     Mountain,
     MousePointer2,
     OctagonXIcon,
+    Columns2,
+    PanelLeft,
     Package,
     Pause,
     Pencil,

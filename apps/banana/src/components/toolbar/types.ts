@@ -9,6 +9,8 @@ export type AppMode =
     | 'station-placement'
     | 'duplicate-to-side'
     | 'catenary-layout'
+    | 'single-spine-platform'
+    | 'dual-spine-platform'
     | 'stress-pick';
 
 /** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar). */

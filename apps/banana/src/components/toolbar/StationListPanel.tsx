@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Crosshair, Settings2, Trash2, X } from '@/assets/icons';
+import { Check, Columns2, Crosshair, PanelLeft, Settings2, Trash2, X } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { DraggablePanel } from '@/components/ui/draggable-panel';
 import { Separator } from '@/components/ui/separator';
 import type { StationManager } from '@/stations/station-manager';
 import type { StationRenderSystem } from '@/stations/station-render-system';
+import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import type { TrackGraph } from '@/trains/tracks/track';
 import type { Platform, Station } from '@/stations/types';
 import type { CameraRig } from '@ue-too/board';
@@ -18,10 +19,15 @@ type StationListPanelProps = {
     stationManager: StationManager;
     stationRenderSystem: StationRenderSystem;
     trackGraph: TrackGraph;
+    trackAlignedPlatformManager: TrackAlignedPlatformManager;
     cameraRig: CameraRig;
     onClose: () => void;
     /** Called after any station mutation (rename, delete, reassign) so callers can refresh debug overlays etc. */
     onStationChange?: () => void;
+    /** Activate single-spine platform tool for the given station. */
+    onAddSingleSpinePlatform?: (stationId: number) => void;
+    /** Activate dual-spine platform tool for the given station. */
+    onAddDualSpinePlatform?: (stationId: number) => void;
 };
 
 /**
@@ -152,9 +158,12 @@ export function StationListPanel({
     stationManager,
     stationRenderSystem,
     trackGraph,
+    trackAlignedPlatformManager,
     cameraRig,
     onClose,
     onStationChange,
+    onAddSingleSpinePlatform,
+    onAddDualSpinePlatform,
 }: StationListPanelProps) {
     const { t } = useTranslation();
     const stations = stationManager.getStations();
@@ -230,11 +239,14 @@ export function StationListPanel({
                         {t('noStations')}
                     </span>
                 ) : (
-                    stations.map(({ id, station }) => (
+                    stations.map(({ id, station }) => {
+                        const trackAlignedCount = trackAlignedPlatformManager.getPlatformsByStation(id).length;
+                        return (
                         <div
                             key={id}
-                            className="bg-muted/50 flex items-center justify-between rounded-lg px-2.5 py-1.5"
+                            className="bg-muted/50 flex flex-col rounded-lg px-2.5 py-1.5"
                         >
+                            <div className="flex items-center justify-between">
                             <div className="flex min-w-0 flex-col">
                                 {editingId === id ? (
                                     <input
@@ -261,6 +273,12 @@ export function StationListPanel({
                                     ({station.position.x.toFixed(1)}, {station.position.y.toFixed(1)})
                                     {' · '}
                                     {t('platform', { count: station.platforms.length })}
+                                    {trackAlignedCount > 0 && (
+                                        <>
+                                            {' · '}
+                                            {t('trackAlignedPlatform', { count: trackAlignedCount })}
+                                        </>
+                                    )}
                                 </span>
                             </div>
                             <div className="flex shrink-0 gap-0.5">
@@ -301,8 +319,33 @@ export function StationListPanel({
                                     <Trash2 className="size-3" />
                                 </Button>
                             </div>
+                            </div>
+                            {/* Track-aligned platform actions */}
+                            <div className="mt-1 flex gap-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 flex-1 gap-1 px-1.5 text-[10px]"
+                                    onClick={() => onAddSingleSpinePlatform?.(id)}
+                                    title={t('addSingleSpinePlatform')}
+                                >
+                                    <PanelLeft className="size-3" />
+                                    {t('addSingleSpinePlatform')}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 flex-1 gap-1 px-1.5 text-[10px]"
+                                    onClick={() => onAddDualSpinePlatform?.(id)}
+                                    title={t('addDualSpinePlatform')}
+                                >
+                                    <Columns2 className="size-3" />
+                                    {t('addDualSpinePlatform')}
+                                </Button>
+                            </div>
                         </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 

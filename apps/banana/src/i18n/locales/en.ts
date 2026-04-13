@@ -27,6 +27,8 @@ const en = {
         modeCatenaryLayout: 'Placing Catenary',
         modePlacingBuilding: 'Placing Building',
         modeDeletingBuilding: 'Deleting Building',
+        modeSingleSpinePlatform: 'Placing Single-Side Platform',
+        modeDualSpinePlatform: 'Placing Dual-Side Platform',
 
         // Toolbar - Train
         placeTrain: 'Place Train',
@@ -131,10 +133,14 @@ const en = {
         noStations: 'No stations',
         platform_one: '{{count}} platform',
         platform_other: '{{count}} platforms',
+        trackAlignedPlatform_one: '{{count}} track platform',
+        trackAlignedPlatform_other: '{{count}} track platforms',
         donePickingPlatforms: 'Done picking platforms',
         pickPlatformsToAdd: 'Pick platforms to add',
         panToStation: 'Pan to station',
         deleteStation: 'Delete station',
+        addSingleSpinePlatform: 'Add single-side platform',
+        addDualSpinePlatform: 'Add dual-side platform',
         nearbyPlatforms: 'Nearby platforms',
         cancel: 'Cancel',
         noNearbyPlatforms: 'No nearby platforms from other stations',
