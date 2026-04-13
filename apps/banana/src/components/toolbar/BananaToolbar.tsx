@@ -14,7 +14,6 @@ import {
     Clock,
     Copy,
     Download,
-    Zap,
     FilePlus,
     FolderOpen,
     Landmark,
@@ -30,6 +29,7 @@ import {
     TrainTrack,
     Warehouse,
     X,
+    Zap,
 } from '@/assets/icons';
 import type { BuildingPreset } from '@/buildings/types';
 import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
@@ -50,6 +50,7 @@ import {
 import { StationManager } from '@/stations/station-manager';
 import type { SerializedStationData } from '@/stations/types';
 import type { StoredCarDefinition } from '@/storage';
+import { useGaugeStore } from '@/stores/gauge-store';
 import { useRenderSettingsStore } from '@/stores/render-settings-store';
 import { useSceneStore } from '@/stores/scene-store';
 import {
@@ -197,6 +198,9 @@ export function BananaToolbar({
     );
     const rs = useRenderSettingsStore;
 
+    // Gauge store
+    const { selectedPresetId, customWidth, currentGauge } = useGaugeStore();
+
     // Local state that stays in the component
     const [elevation, setElevation] = useState<string>('N/A');
     const [tension, setTension] = useState<string>('1.0');
@@ -238,6 +242,11 @@ export function BananaToolbar({
             el.scrollTop + el.clientHeight < el.scrollHeight - threshold
         );
     }, []);
+
+    useEffect(() => {
+        if (!app) return;
+        app.curveEngine.setCurrentGauge(currentGauge);
+    }, [app, currentGauge]);
 
     useEffect(() => {
         const el = scrollRef.current;
@@ -751,10 +760,10 @@ export function BananaToolbar({
                     : mode === 'catenary-layout'
                       ? 'modeCatenaryLayout'
                       : mode === 'building-placement'
-                      ? 'modePlacingBuilding'
-                      : mode === 'building-deletion'
-                        ? 'modeDeletingBuilding'
-                        : null;
+                        ? 'modePlacingBuilding'
+                        : mode === 'building-deletion'
+                          ? 'modeDeletingBuilding'
+                          : null;
 
     const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
         drawing: {
@@ -1138,6 +1147,20 @@ export function BananaToolbar({
                         onBedChange={rs.getState().setBed}
                         bedWidth={bedWidth}
                         onBedWidthChange={rs.getState().setBedWidth}
+                        gaugePresetId={selectedPresetId}
+                        onGaugePresetChange={id => {
+                            if (id === 'custom') {
+                                useGaugeStore
+                                    .getState()
+                                    .setCustomGauge(customWidth ?? 1.0);
+                            } else {
+                                useGaugeStore.getState().selectPreset(id);
+                            }
+                        }}
+                        customGaugeWidth={customWidth}
+                        onCustomGaugeChange={w =>
+                            useGaugeStore.getState().setCustomGauge(w)
+                        }
                     />
                 </>
             )}
