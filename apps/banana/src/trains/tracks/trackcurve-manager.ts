@@ -99,12 +99,12 @@ export class TrackCurveManager {
         return this._persistedDrawData;
     }
 
-    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; catenarySide?: 1 | -1; bed?: boolean } | undefined {
+    getVisualPropsForSegment(segmentNumber: number): { trackStyle?: TrackStyle; electrified?: boolean; catenarySide?: 1 | -1; bed?: boolean; gauge?: number; bedWidth?: number } | undefined {
         const drawData = this._persistedDrawData.find(
             entry => entry.originalTrackSegment.trackSegmentNumber === segmentNumber
         );
         if (drawData === undefined) return undefined;
-        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, catenarySide: drawData.catenarySide, bed: drawData.bed };
+        return { trackStyle: drawData.trackStyle, electrified: drawData.electrified, catenarySide: drawData.catenarySide, bed: drawData.bed, gauge: drawData.gauge, bedWidth: drawData.bedWidth };
     }
 
     getTrackSegment(segmentNumber: number): BCurve | null {
