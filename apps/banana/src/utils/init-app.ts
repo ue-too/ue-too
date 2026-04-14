@@ -48,6 +48,7 @@ import { createCatenaryLayoutStateMachine } from '@/trains/input-state-machine/c
 import { CurveCreationEngine } from '@/trains/input-state-machine/curve-engine';
 import { DuplicateToSideEngine } from '@/trains/input-state-machine/duplicate-to-side-engine';
 import { createDuplicateToSideStateMachine } from '@/trains/input-state-machine/duplicate-to-side-state-machine';
+import { createJointDirectionStateMachine } from '@/trains/input-state-machine/joint-direction-state-machine';
 import {
     KmtExpandedStateMachine,
     createKmtInputStateMachineExpansion,
@@ -59,9 +60,9 @@ import {
     TrainPlacementEngine,
     TrainPlacementStateMachine,
 } from '@/trains/input-state-machine/train-kmt-state-machine';
-import { JointDirectionPreferenceMap } from '@/trains/tracks/joint-direction-preference-map';
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
+import { JointDirectionPreferenceMap } from '@/trains/tracks/joint-direction-preference-map';
 import {
     type ParallelTrackOptions,
     type ProceduralTrackOptions,
@@ -538,6 +539,8 @@ export const initApp = async (
     const catenarySubStateMachine =
         createCatenaryLayoutStateMachine(catenaryLayoutEngine);
 
+    const jointDirectionSubStateMachine = createJointDirectionStateMachine();
+
     const trackRenderSystem = new TrackRenderSystem(
         worldRenderSystem,
         curveEngine.trackGraph.trackCurveManager,
@@ -591,7 +594,10 @@ export const initApp = async (
     const formationManager = new FormationManager(carStockManager);
     const trackGraph = curveEngine.trackGraph;
     const jointDirectionPreferenceMap = new JointDirectionPreferenceMap();
-    const jointDirectionManager = new DefaultJointDirectionManager(trackGraph, jointDirectionPreferenceMap);
+    const jointDirectionManager = new DefaultJointDirectionManager(
+        trackGraph,
+        jointDirectionPreferenceMap
+    );
     const trainPlacementEngine = new TrainPlacementEngine(
         baseComponents.canvasProxy,
         trackGraph,
@@ -729,6 +735,7 @@ export const initApp = async (
         catenarySubStateMachine,
         singleSpineStateMachine,
         dualSpineStateMachine,
+        jointDirectionSubStateMachine,
         baseComponents.observableInputTracker
     );
     baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
