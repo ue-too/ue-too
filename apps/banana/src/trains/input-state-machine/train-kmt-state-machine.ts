@@ -5,11 +5,22 @@ import {
     TemplateState,
     TemplateStateMachine,
 } from '@ue-too/being';
+import {
+    Canvas,
+    ObservableBoardCamera,
+    ObservableInputTracker,
+    convertFromCanvas2ViewPort,
+    convertFromCanvas2Window,
+    convertFromViewPort2Canvas,
+    convertFromViewport2World,
+    convertFromWindow2Canvas,
+    convertFromWorld2Viewport,
+} from '@ue-too/board';
 import { Point, PointCal } from '@ue-too/math';
 
-import { TrackGraph } from '../tracks/track';
 import { Formation, Train, TrainPosition } from '../formation';
-import { convertFromCanvas2ViewPort, convertFromWindow2Canvas, convertFromCanvas2Window, convertFromViewPort2Canvas, convertFromViewport2World, convertFromWorld2Viewport, ObservableBoardCamera, Canvas, ObservableInputTracker } from '@ue-too/board';
+import { JointDirectionPreferenceMap } from '../tracks/joint-direction-preference-map';
+import { TrackGraph } from '../tracks/track';
 
 export type TrainPlacementStates = 'IDLE' | 'HOVER_FOR_PLACEMENT';
 
@@ -69,9 +80,15 @@ export interface JointDirectionManager {
 
 export class DefaultJointDirectionManager implements JointDirectionManager {
     private _trackGraph: TrackGraph;
+    private _preferenceMap: JointDirectionPreferenceMap | null;
 
-    constructor(trackGraph: TrackGraph) {
+    constructor(trackGraph: TrackGraph, preferenceMap?: JointDirectionPreferenceMap) {
         this._trackGraph = trackGraph;
+        this._preferenceMap = preferenceMap ?? null;
+    }
+
+    get preferenceMap(): JointDirectionPreferenceMap | null {
+        return this._preferenceMap;
     }
 
     getNextJoint(
@@ -93,20 +110,29 @@ export class DefaultJointDirectionManager implements JointDirectionManager {
             return null;
         }
 
-        const selectedNextJointNumber = possibleNextJoints.values().next().value;
+        let selectedNextJointNumber: number | undefined;
+        if (this._preferenceMap) {
+            const preferred = this._preferenceMap.get(jointNumber, direction);
+            if (preferred !== undefined && possibleNextJoints.has(preferred)) {
+                selectedNextJointNumber = preferred;
+            }
+        }
+        if (selectedNextJointNumber === undefined) {
+            selectedNextJointNumber = possibleNextJoints.values().next().value;
+        }
         if (selectedNextJointNumber === undefined) {
             return null;
         }
-        const nextTrackSegmentNumber =
-            joint.connections.get(selectedNextJointNumber);
+        const nextTrackSegmentNumber = joint.connections.get(
+            selectedNextJointNumber
+        );
         const nextJoint = this._trackGraph.getJoint(selectedNextJointNumber);
         if (nextTrackSegmentNumber === undefined) {
             return null;
         }
-        const nextTrackSegment =
-            this._trackGraph.getTrackSegmentWithJoints(
-                nextTrackSegmentNumber
-            );
+        const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(
+            nextTrackSegmentNumber
+        );
         if (nextJoint === null) {
             console.warn('next joint not found');
             return null;
@@ -213,12 +239,14 @@ export class WalkBackJointDirectionManager implements JointDirectionManager {
         }
         if (selectedNextJointNumber === undefined) return null;
 
-        const nextTrackSegmentNumber =
-            joint.connections.get(selectedNextJointNumber);
+        const nextTrackSegmentNumber = joint.connections.get(
+            selectedNextJointNumber
+        );
         if (nextTrackSegmentNumber === undefined) return null;
 
-        const nextTrackSegment =
-            this._trackGraph.getTrackSegmentWithJoints(nextTrackSegmentNumber);
+        const nextTrackSegment = this._trackGraph.getTrackSegmentWithJoints(
+            nextTrackSegmentNumber
+        );
         if (nextTrackSegment === null) return null;
 
         const nextDirection: 'tangent' | 'reverseTangent' =
@@ -240,7 +268,10 @@ export type TrainPlacementEngineOptions = {
     onPlaced?: (placed: Train) => Train | void;
 };
 
-export class TrainPlacementEngine extends ObservableInputTracker implements TrainPlacementContext {
+export class TrainPlacementEngine
+    extends ObservableInputTracker
+    implements TrainPlacementContext
+{
     private _trackGraph: TrackGraph;
     private _trainTangent: Point | null = null;
 
@@ -251,18 +282,19 @@ export class TrainPlacementEngine extends ObservableInputTracker implements Trai
     private _camera: ObservableBoardCamera;
     private _pendingFormation: Formation | null = null;
 
-    constructor(canvas: Canvas, trackGraph: TrackGraph, camera: ObservableBoardCamera, options?: TrainPlacementEngineOptions) {
+    constructor(
+        canvas: Canvas,
+        trackGraph: TrackGraph,
+        camera: ObservableBoardCamera,
+        options?: TrainPlacementEngineOptions
+    ) {
         super(canvas);
         this._trackGraph = trackGraph;
         this._jointDirectionManager = new DefaultJointDirectionManager(
             trackGraph
         );
         this._onPlaced = options?.onPlaced;
-        this._train = new Train(
-            null,
-            trackGraph,
-            this._jointDirectionManager
-        );
+        this._train = new Train(null, trackGraph, this._jointDirectionManager);
         this._camera = camera;
     }
 
@@ -274,7 +306,7 @@ export class TrainPlacementEngine extends ObservableInputTracker implements Trai
             null,
             this._trackGraph,
             this._jointDirectionManager,
-            formation ?? undefined,
+            formation ?? undefined
         );
     }
 
@@ -359,17 +391,33 @@ export class TrainPlacementEngine extends ObservableInputTracker implements Trai
     // position is in raw window coordinates space
     convert2WorldPosition(position: Point): Point {
         const pointInCanvas = convertFromWindow2Canvas(position, this.canvas);
-        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
-        return convertFromViewport2World(pointInViewPort, this._camera.position, this._camera.zoomLevel, this._camera.rotation, false);
+        const pointInViewPort = convertFromCanvas2ViewPort(pointInCanvas, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+        });
+        return convertFromViewport2World(
+            pointInViewPort,
+            this._camera.position,
+            this._camera.zoomLevel,
+            this._camera.rotation,
+            false
+        );
     }
 
     // position is in the world space
     convert2WindowPosition(position: Point): Point {
-        const pointInViewPort = convertFromWorld2Viewport(position, this._camera.position, this._camera.zoomLevel, this._camera.rotation);
-        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, { x: this.canvas.width / 2, y: this.canvas.height / 2 });
+        const pointInViewPort = convertFromWorld2Viewport(
+            position,
+            this._camera.position,
+            this._camera.zoomLevel,
+            this._camera.rotation
+        );
+        const pointInCanvas = convertFromViewPort2Canvas(pointInViewPort, {
+            x: this.canvas.width / 2,
+            y: this.canvas.height / 2,
+        });
         return convertFromCanvas2Window(pointInCanvas, this.canvas);
     }
-
 }
 
 export class TrainPlacementStateMachine extends TemplateStateMachine<
@@ -399,11 +447,11 @@ export class TrainPlacementIDLEState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-            startPlacement: {
-                action: NO_OP,
-                defaultTargetState: 'HOVER_FOR_PLACEMENT',
-            },
-        };
+        startPlacement: {
+            action: NO_OP,
+            defaultTargetState: 'HOVER_FOR_PLACEMENT',
+        },
+    };
 }
 
 export class TrainPlacementHoverForPlacementState extends TemplateState<
@@ -416,37 +464,43 @@ export class TrainPlacementHoverForPlacementState extends TemplateState<
         TrainPlacementContext,
         TrainPlacementStates
     > = {
-            endPlacement: {
-                action: context => {
-                    context.cancelCurrentTrainPlacement();
-                },
-                defaultTargetState: 'IDLE',
+        endPlacement: {
+            action: context => {
+                context.cancelCurrentTrainPlacement();
             },
-            leftPointerUp: {
-                action: (context, event) => {
-                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
-                    context.placeTrain(worldPosition);
-                },
-                defaultTargetState: 'HOVER_FOR_PLACEMENT',
+            defaultTargetState: 'IDLE',
+        },
+        leftPointerUp: {
+            action: (context, event) => {
+                const worldPosition = context.convert2WorldPosition({
+                    x: event.x,
+                    y: event.y,
+                });
+                context.placeTrain(worldPosition);
             },
-            pointerMove: {
-                action: (context, event) => {
-                    const worldPosition = context.convert2WorldPosition({ x: event.x, y: event.y });
-                    context.hoverForPlacement(worldPosition);
-                },
-                defaultTargetState: 'HOVER_FOR_PLACEMENT',
+            defaultTargetState: 'HOVER_FOR_PLACEMENT',
+        },
+        pointerMove: {
+            action: (context, event) => {
+                const worldPosition = context.convert2WorldPosition({
+                    x: event.x,
+                    y: event.y,
+                });
+                context.hoverForPlacement(worldPosition);
             },
-            escapeKey: {
-                action: context => {
-                    context.cancelCurrentTrainPlacement();
-                },
-                defaultTargetState: 'IDLE',
+            defaultTargetState: 'HOVER_FOR_PLACEMENT',
+        },
+        escapeKey: {
+            action: context => {
+                context.cancelCurrentTrainPlacement();
             },
-            F: {
-                action: context => {
-                    context.flipTrainDirection();
-                },
-                defaultTargetState: 'HOVER_FOR_PLACEMENT',
-            }
-        };
+            defaultTargetState: 'IDLE',
+        },
+        F: {
+            action: context => {
+                context.flipTrainDirection();
+            },
+            defaultTargetState: 'HOVER_FOR_PLACEMENT',
+        },
+    };
 }
