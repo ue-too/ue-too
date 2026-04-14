@@ -1,0 +1,175 @@
+import type { InferenceSession } from 'onnxruntime-web';
+
+import { OBS_SIZE, buildObservations } from '../simulation/observation';
+import type { Race } from '../simulation/race';
+import type { InputState } from '../simulation/types';
+import type { Jockey } from './types';
+
+type OrtModule = typeof import('onnxruntime-web');
+
+/** Discrete 9×9 action space — quarter-step resolution on both axes. */
+export const TANGENTIAL_LEVELS = [
+    -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,
+] as const;
+export const NORMAL_LEVELS = [
+    -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,
+] as const;
+export const NUM_TANGENTIAL = TANGENTIAL_LEVELS.length; // 9
+export const NUM_NORMAL = NORMAL_LEVELS.length; // 9
+export const NUM_ACTIONS = NUM_TANGENTIAL * NUM_NORMAL; // 81
+
+/**
+ * Decode a flat action index (0-34) into a (tangential, normal) pair.
+ * Layout: index = tangentialLevel * NUM_NORMAL + normalLevel
+ */
+export function decodeAction(index: number): InputState {
+    const ti = Math.floor(index / NUM_NORMAL);
+    const ni = index % NUM_NORMAL;
+    return {
+        tangential: TANGENTIAL_LEVELS[ti],
+        normal: NORMAL_LEVELS[ni],
+    };
+}
+
+/**
+ * Find the index of the maximum value in a Float32Array slice.
+ */
+function argmax(data: Float32Array, offset: number, length: number): number {
+    let best = 0;
+    let bestVal = data[offset];
+    for (let i = 1; i < length; i++) {
+        if (data[offset + i] > bestVal) {
+            bestVal = data[offset + i];
+            best = i;
+        }
+    }
+    return best;
+}
+
+/**
+ * AI jockey that runs a trained ONNX model to produce actions.
+ *
+ * Input tensor:  [batchSize, OBS_SIZE]    (Float32)
+ * Output tensor: [batchSize, NUM_ACTIONS] (logits over 35 discrete actions)
+ *
+ * The model outputs logits for each of the 35 discrete action combinations
+ * (7 tangential levels × 5 normal levels). The jockey takes the argmax
+ * per horse and decodes it into an InputState.
+ *
+ * The player horse (if any) is excluded from the batch.
+ */
+export class OnnxJockey implements Jockey {
+    private ort: OrtModule;
+    private session: InferenceSession;
+    private pendingResult: Map<number, InputState> = new Map();
+    private inferring = false;
+    private disposed = false;
+
+    private constructor(ort: OrtModule, session: InferenceSession) {
+        this.ort = ort;
+        this.session = session;
+    }
+
+    /**
+     * Load an ONNX model from a URL and create an OnnxJockey.
+     */
+    static async create(modelUrl: string): Promise<OnnxJockey> {
+        const ort = await import('onnxruntime-web');
+        const session = await ort.InferenceSession.create(modelUrl);
+        return new OnnxJockey(ort, session);
+    }
+
+    /**
+     * Create from a pre-existing session (useful for testing with mocks).
+     */
+    static fromSession(session: InferenceSession): OnnxJockey {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new OnnxJockey(null as any, session);
+    }
+
+    infer(race: Race): Map<number, InputState> {
+        if (this.disposed) {
+            return new Map();
+        }
+
+        const horses = race.state.horses;
+        const playerId = race.state.playerHorseId;
+
+        // Collect AI horse indices (exclude player)
+        const aiIndices: number[] = [];
+        for (const h of horses) {
+            if (h.id !== playerId && !h.finished) {
+                aiIndices.push(h.id);
+            }
+        }
+
+        if (aiIndices.length === 0) {
+            return new Map();
+        }
+
+        // If a previous async inference is still running, return last result
+        if (this.inferring) {
+            return new Map(this.pendingResult);
+        }
+
+        // Build observations for all horses, then pick AI ones
+        const allObs = buildObservations(race);
+        const batchSize = aiIndices.length;
+        const inputData = new Float32Array(batchSize * OBS_SIZE);
+
+        // buildObservations returns Float64Array but ONNX requires float32;
+        // copying element-by-element truncates each value to 32-bit precision.
+        for (let b = 0; b < batchSize; b++) {
+            const obs = allObs[aiIndices[b]];
+            for (let j = 0; j < OBS_SIZE; j++) {
+                inputData[b * OBS_SIZE + j] = obs[j];
+            }
+        }
+
+        const inputName = this.session.inputNames[0];
+        const outputName = this.session.outputNames[0];
+
+        // Fire async inference — use last result until it completes
+        this.inferring = true;
+        const tensor = this.ort
+            ? new this.ort.Tensor('float32', inputData, [batchSize, OBS_SIZE])
+            : ({ dims: [batchSize, OBS_SIZE], type: 'float32', data: inputData } as any);
+        const feeds = { [inputName]: tensor };
+
+        this.session
+            .run(feeds)
+            .then(results => {
+                if (this.disposed) return;
+                const output = results[outputName];
+                const outData = output.data as Float32Array;
+                const actions = new Map<number, InputState>();
+
+                for (let b = 0; b < batchSize; b++) {
+                    const actionIdx = argmax(
+                        outData,
+                        b * NUM_ACTIONS,
+                        NUM_ACTIONS
+                    );
+                    actions.set(aiIndices[b], decodeAction(actionIdx));
+                }
+
+                this.pendingResult = actions;
+            })
+            .catch(err => {
+                if (this.disposed) return;
+                console.error('OnnxJockey inference failed:', err);
+                this.pendingResult = new Map();
+            })
+            .finally(() => {
+                this.inferring = false;
+            });
+
+        // Return previous result while async inference runs
+        return new Map(this.pendingResult);
+    }
+
+    dispose(): void {
+        this.disposed = true;
+        this.session.release();
+    }
+}

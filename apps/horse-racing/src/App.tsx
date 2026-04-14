@@ -1,10 +1,14 @@
 // apps/horse-racing/src/App.tsx
-import { ScrollBarDisplay, Wrapper } from '@ue-too/board-pixi-react-integration';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+    ScrollBarDisplay,
+    Wrapper,
+} from '@ue-too/board-pixi-react-integration';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { HorsePicker } from '@/components/race/HorsePicker';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
 import { RaceToolbar } from '@/components/race/RaceToolbar';
+import { StaminaOverlay } from '@/components/race/StaminaOverlay';
 import type { RacePhase, V2SimHandle } from '@/simulation';
 import { makeInitApp } from '@/utils/init-app';
 
@@ -25,8 +29,8 @@ const App = (): ReactNode => {
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
 
     const initFunction = useMemo(
-        () => makeInitApp((handle) => setSimHandle(handle)),
-        [],
+        () => makeInitApp(handle => setSimHandle(handle)),
+        []
     );
 
     useEffect(() => {
@@ -48,9 +52,20 @@ const App = (): ReactNode => {
             <Wrapper option={WRAPPER_OPTION} initFunction={initFunction}>
                 <ScrollBarDisplay />
                 <RaceToolbar sim={simHandle} phase={phase} />
-                {phase === 'gate' && simHandle && <HorsePicker sim={simHandle} />}
+                {phase === 'gate' && simHandle && (
+                    <HorsePicker
+                        sim={simHandle}
+                        horses={simHandle.getHorses().map(h => ({
+                            id: h.id,
+                            color: h.color,
+                        }))}
+                    />
+                )}
                 {phase === 'finished' && simHandle && (
                     <RaceEndOverlay order={finishOrder} sim={simHandle} />
+                )}
+                {simHandle && phase === 'running' && (
+                    <StaminaOverlay sim={simHandle} />
                 )}
             </Wrapper>
         </div>

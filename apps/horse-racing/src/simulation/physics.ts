@@ -1,97 +1,164 @@
+import type { Polygon } from '@ue-too/dynamics';
 import type { Point } from '@ue-too/math';
-import type { TrackFrame, TrackNavigator } from './track-navigator';
 
+import type { CoreAttributes } from './attributes';
+import { F_N_MAX, F_T_MAX } from './attributes';
 import { computeCruiseForce } from './cruise';
-import {
-    C_DRAG,
-    F_N_MAX,
-    F_T_MAX,
-    TARGET_CRUISE,
-    TRACK_HALF_WIDTH,
-    type Horse,
-    type InputState,
-} from './types';
+import type { RaceWorld } from './race-world';
+import type { TrackFrame } from './track-navigator';
+import { C_DRAG, type Horse, type InputState, NORMAL_DAMP } from './types';
+
+const ZERO_INPUT: InputState = { tangential: 0, normal: 0 };
 
 /**
- * Signed lateral displacement from the centerline, in meters.
- * Positive = outside (toward outer rail); negative = inside (toward inner rail).
- *
- * On curves this is `turnRadius - targetRadius` (how far from the horse's
- * entry radius it has drifted). On straights this is the projection of
- * `(pos - segment.startPoint)` onto the segment's outward normal.
+ * Project world-space velocity onto track-relative components.
  */
-function lateralDisplacement(
-    frame: TrackFrame,
-    pos: Point,
-    navigator: TrackNavigator,
-): number {
-    const seg = navigator.segment;
-    if (seg.tracktype === 'CURVE') {
-        // TS narrows seg to CurveSegment via the tracktype discriminator.
-        const toHorseX = pos.x - seg.center.x;
-        const toHorseY = pos.y - seg.center.y;
-        const currentRadius = Math.sqrt(toHorseX * toHorseX + toHorseY * toHorseY);
-        const target = Number.isFinite(frame.targetRadius)
-            ? frame.targetRadius
-            : seg.radius;
-        return currentRadius - target;
-    }
-    // Straight segment.
-    const offX = pos.x - seg.startPoint.x;
-    const offY = pos.y - seg.startPoint.y;
-    return offX * frame.normal.x + offY * frame.normal.y;
+export function projectVelocity(
+    worldVel: Point,
+    frame: TrackFrame
+): { tangentialVel: number; normalVel: number } {
+    return {
+        tangentialVel:
+            worldVel.x * frame.tangential.x + worldVel.y * frame.tangential.y,
+        normalVel: worldVel.x * frame.normal.x + worldVel.y * frame.normal.y,
+    };
 }
 
 /**
- * Advance every horse by one physics step. Mutates `horses` in place.
+ * Compute track-relative accelerations for a single horse.
  *
- * Force model: F_total = F_cruise + F_player - F_drag, decomposed into
- * tangential + normal components in the horse's current track frame.
- * Forward Euler integration for velocity and position.
+ * Tangential: cruise + agent input − drag − slope gravity, capped at maxSpeed.
+ * Normal: centripetal (−v²/r) + NORMAL_DAMP + agent steering − drag.
+ *
+ * @returns Tuple `[tangentialAccel, normalAccel]` in m/s².
+ */
+export function computeAccelerations(
+    tangentialVel: number,
+    normalVel: number,
+    attrs: CoreAttributes,
+    input: InputState,
+    frame: TrackFrame
+): [number, number] {
+    const clampedTan = Math.max(-1, Math.min(1, input.tangential));
+    const clampedNor = Math.max(-1, Math.min(1, input.normal));
+
+    // --- Tangential ---
+    let a_t = computeCruiseForce(tangentialVel, attrs.cruiseSpeed);
+    a_t += clampedTan * F_T_MAX * attrs.forwardAccel;
+    a_t -= C_DRAG * tangentialVel;
+    // Slope gravity: uphill (slope > 0) decelerates, downhill accelerates
+    a_t -= 9.81 * frame.slope;
+    if (tangentialVel >= attrs.maxSpeed && a_t > 0) {
+        a_t = 0;
+    }
+
+    // --- Normal ---
+    let a_n = 0;
+    // Centripetal: -v²/r toward curve center (negative normal direction)
+    if (frame.turnRadius < 1e6 && frame.turnRadius > 1e-3) {
+        a_n -= (tangentialVel * tangentialVel) / frame.turnRadius;
+    }
+    // Lateral damping
+    a_n -= NORMAL_DAMP * normalVel;
+    // Steering
+    a_n += clampedNor * F_N_MAX * attrs.turnAccel;
+    // Drag on normal component
+    a_n -= C_DRAG * normalVel;
+
+    return [a_t, a_n];
+}
+
+/**
+ * Compute track-relative forces and apply to the horse's dynamics body.
+ * Sets body orientation to track tangent and zeroes angular velocity.
+ */
+function applyForcesToBody(
+    horse: Horse,
+    body: Polygon,
+    attrs: CoreAttributes,
+    input: InputState
+): void {
+    const frame = horse.navigator.getTrackFrame(horse.pos);
+    const { tangentialVel, normalVel } = projectVelocity(
+        body.linearVelocity,
+        frame
+    );
+    const [a_t, a_n] = computeAccelerations(
+        tangentialVel,
+        normalVel,
+        attrs,
+        input,
+        frame
+    );
+
+    const mass = attrs.weight;
+    body.applyForce({
+        x: (a_t * frame.tangential.x + a_n * frame.normal.x) * mass,
+        y: (a_t * frame.tangential.y + a_n * frame.normal.y) * mass,
+    });
+
+    // Lock orientation to track tangent — no angular dynamics
+    body.setOrientationAngle(
+        Math.atan2(frame.tangential.y, frame.tangential.x)
+    );
+    body.angularVelocity = 0;
+}
+
+/**
+ * Read back position/velocity from the dynamics body into horse state.
+ * Updates navigator segment tracking, progress, and track-relative velocities.
+ */
+function syncFromBody(horse: Horse, body: Polygon): void {
+    horse.pos.x = body.center.x;
+    horse.pos.y = body.center.y;
+
+    horse.navigator.updateSegment(horse.pos);
+    horse.trackProgress = horse.navigator.computeProgress(horse.pos);
+
+    const frame = horse.navigator.getTrackFrame(horse.pos);
+    const projected = projectVelocity(body.linearVelocity, frame);
+    horse.tangentialVel = projected.tangentialVel;
+    horse.normalVel = projected.normalVel;
+}
+
+/**
+ * Run physics substeps for all horses using the dynamics world.
+ *
+ * Per substep:
+ * 1. Compute + apply forces for each horse (finished horses get velocity zeroed)
+ * 2. `world.step(dt)` — dynamics engine integrates + resolves collisions
+ * 3. Sync position/velocity from bodies back to horse state
  */
 export function stepPhysics(
     horses: Horse[],
-    input: InputState,
-    playerHorseId: number | null,
-    dt: number,
+    inputs: Map<number, InputState>,
+    raceWorld: RaceWorld,
+    substeps: number,
+    dt: number
 ): void {
-    for (const h of horses) {
-        if (h.finished) continue;
-
-        // 1. Forces
-        let F_t = computeCruiseForce(h.tangentialVel, TARGET_CRUISE);
-        let F_n = 0;
-        if (h.id === playerHorseId) {
-            F_t += input.tangential * F_T_MAX;
-            F_n += input.normal * F_N_MAX;
+    // Invariant: horse.pos mirrors body.center at the start of each apply pass.
+    // spawnHorses sets the initial pos, addHorse copies it to the body.
+    // syncFromBody writes body.center back to horse.pos at the end of each substep.
+    for (let s = 0; s < substeps; s++) {
+        for (const h of horses) {
+            if (h.finished) continue;
+            const body = raceWorld.getHorseBody(h.id);
+            if (!body) continue;
+            applyForcesToBody(
+                h,
+                body,
+                h.effectiveAttributes,
+                inputs.get(h.id) ?? ZERO_INPUT
+            );
         }
 
-        // 2. Drag
-        F_t -= C_DRAG * h.tangentialVel;
-        F_n -= C_DRAG * h.normalVel;
+        raceWorld.step(dt);
 
-        // 3. Integrate velocity
-        h.tangentialVel += F_t * dt;
-        h.normalVel += F_n * dt;
-
-        // 4. Integrate position using the horse's current track frame
-        const frame = h.navigator.getTrackFrame(h.pos);
-        h.pos.x += (frame.tangential.x * h.tangentialVel + frame.normal.x * h.normalVel) * dt;
-        h.pos.y += (frame.tangential.y * h.tangentialVel + frame.normal.y * h.normalVel) * dt;
-
-        // 5. Segment advance + progress refresh
-        h.navigator.updateSegment(h.pos);
-        h.trackProgress = h.navigator.computeProgress(h.pos);
-
-        // 6. Rail clamp (soft wall). Re-fetch the frame after updateSegment in
-        // case the horse crossed a segment boundary this tick.
-        const postFrame = h.navigator.getTrackFrame(h.pos);
-        const disp = lateralDisplacement(postFrame, h.pos, h.navigator);
-        if (Math.abs(disp) > TRACK_HALF_WIDTH) {
-            h.normalVel = 0;
-            const excess = disp - Math.sign(disp) * TRACK_HALF_WIDTH;
-            h.pos.x -= postFrame.normal.x * excess;
-            h.pos.y -= postFrame.normal.y * excess;
+        for (const h of horses) {
+            if (h.finished) continue;
+            const body = raceWorld.getHorseBody(h.id);
+            if (!body) continue;
+            syncFromBody(h, body);
         }
     }
 }

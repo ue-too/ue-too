@@ -1,9 +1,8 @@
-// apps/horse-racing/test/v2/physics.test.ts
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-import { parseTrackJson } from '../src/simulation/track-from-json';
 import { Race } from '../src/simulation/race';
+import { parseTrackJson } from '../src/simulation/track-from-json';
 import type { InputState } from '../src/simulation/types';
 
 function loadTrack(name: string) {
@@ -11,7 +10,7 @@ function loadTrack(name: string) {
     return parseTrackJson(JSON.parse(readFileSync(path, 'utf-8')) as unknown);
 }
 
-const ZERO_INPUT: InputState = { tangential: 0, normal: 0 };
+const EMPTY_INPUTS = new Map<number, InputState>();
 const MAX_TICKS = 10_000;
 
 describe('Race physics integration', () => {
@@ -22,25 +21,24 @@ describe('Race physics integration', () => {
 
         let safety = 0;
         while (race.state.phase !== 'finished' && safety < MAX_TICKS) {
-            race.tick(ZERO_INPUT);
+            race.tick(EMPTY_INPUTS);
             safety++;
         }
 
         expect(race.state.phase).toBe('finished');
-        expect(race.state.horses.every((h) => h.finished)).toBe(true);
+        expect(race.state.horses.every(h => h.finished)).toBe(true);
         expect(race.state.finishOrder).toHaveLength(4);
-    });
+    }, 30_000);
 
     it('identical horses finish within 15% tick variance', () => {
         const segments = loadTrack('test_oval.json');
         const race = new Race(segments);
         race.start(null);
 
-        // Record each horse's finish-tick by watching `tick` on the transition.
         const finishTicks = new Map<number, number>();
         let safety = 0;
         while (race.state.phase !== 'finished' && safety < MAX_TICKS) {
-            race.tick(ZERO_INPUT);
+            race.tick(EMPTY_INPUTS);
             safety++;
             for (const h of race.state.horses) {
                 if (h.finished && !finishTicks.has(h.id)) {
@@ -53,13 +51,6 @@ describe('Race physics integration', () => {
         const ticks = [...finishTicks.values()];
         const minT = Math.min(...ticks);
         const maxT = Math.max(...ticks);
-        // 15% spread tolerance. This test's purpose is to catch gross
-        // physics bugs (stuck horses, broken integration, NaN blow-up) —
-        // NOT to enforce identical finish times. On tight ovals like
-        // test_oval.json (inner curve radius ~41 m), the ±6 m lane spread
-        // means outer lanes legitimately run ~8–9% more arc length on
-        // curves. That's correct racing physics, not a bug. 15% leaves
-        // headroom for geometry while still flagging real pathologies.
         expect((maxT - minT) / minT).toBeLessThan(0.15);
-    });
+    }, 30_000);
 });

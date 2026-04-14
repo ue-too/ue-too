@@ -1,23 +1,57 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
+import { NullJockey, OnnxJockey } from '@/ai';
 import type { V2SimHandle } from '@/simulation';
 
-const HORSE_COLORS = [0xc9a227, 0x4169e1, 0xe53935, 0x43a047];
+interface ModelEntry {
+    label: string;
+    url: string;
+}
 
 interface Props {
     sim: V2SimHandle;
+    horses: { id: number; color: number }[];
 }
 
 function hex(n: number): string {
     return `#${n.toString(16).padStart(6, '0')}`;
 }
 
-export function HorsePicker({ sim }: Props): ReactNode {
+export function HorsePicker({ sim, horses }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
+    const [models, setModels] = useState<ModelEntry[]>([]);
+    const [selectedModel, setSelectedModel] = useState<string>('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        fetch('/models/manifest.json')
+            .then(res => res.json())
+            .then((data: ModelEntry[]) => setModels(data))
+            .catch(() => setModels([]));
+    }, []);
 
     const pick = (id: number | null) => {
         setSelected(id);
         sim.pickHorse(id);
+    };
+
+    const onModelChange = async (url: string) => {
+        setSelectedModel(url);
+        if (!url) {
+            sim.setJockey(new NullJockey());
+            return;
+        }
+        setLoading(true);
+        try {
+            const jockey = await OnnxJockey.create(url);
+            sim.setJockey(jockey);
+        } catch (err) {
+            console.error('Failed to load model:', err);
+            sim.setJockey(new NullJockey());
+            setSelectedModel('');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -28,6 +62,8 @@ export function HorsePicker({ sim }: Props): ReactNode {
                 left: '50%',
                 transform: 'translateX(-50%)',
                 display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
                 gap: 12,
                 padding: '12px 16px',
                 background: 'rgba(20,20,20,0.85)',
@@ -36,35 +72,69 @@ export function HorsePicker({ sim }: Props): ReactNode {
                 pointerEvents: 'auto',
             }}
         >
-            {HORSE_COLORS.map((color, id) => (
-                <button
-                    key={id}
-                    onClick={() => pick(id)}
-                    aria-label={`Pick horse ${id + 1}`}
+            {/* Model picker */}
+            {models.length > 0 && (
+                <select
+                    value={selectedModel}
+                    onChange={e => onModelChange(e.target.value)}
+                    disabled={loading}
                     style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 22,
-                        border: selected === id ? '3px solid white' : '2px solid #555',
-                        background: hex(color),
+                        padding: '6px 10px',
+                        borderRadius: 8,
+                        border: '1px solid #555',
+                        background: '#222',
+                        color: 'white',
+                        fontSize: 13,
                         cursor: 'pointer',
                     }}
-                />
-            ))}
-            <button
-                onClick={() => pick(null)}
-                style={{
-                    padding: '0 14px',
-                    borderRadius: 22,
-                    border: selected === null ? '3px solid white' : '2px solid #555',
-                    background: '#333',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: 14,
-                }}
-            >
-                Watch
-            </button>
+                >
+                    <option value="">No AI Model</option>
+                    {models.map(m => (
+                        <option key={m.url} value={m.url}>
+                            {m.label}
+                        </option>
+                    ))}
+                </select>
+            )}
+
+            {/* Horse picker */}
+            <div style={{ display: 'flex', gap: 12 }}>
+                {horses.map(h => (
+                    <button
+                        key={h.id}
+                        onClick={() => pick(h.id)}
+                        aria-label={`Pick horse ${h.id + 1}`}
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            border:
+                                selected === h.id
+                                    ? '3px solid white'
+                                    : '2px solid #555',
+                            background: hex(h.color),
+                            cursor: 'pointer',
+                        }}
+                    />
+                ))}
+                <button
+                    onClick={() => pick(null)}
+                    style={{
+                        padding: '0 14px',
+                        borderRadius: 22,
+                        border:
+                            selected === null
+                                ? '3px solid white'
+                                : '2px solid #555',
+                        background: '#333',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: 14,
+                    }}
+                >
+                    Watch
+                </button>
+            </div>
         </div>
     );
 }

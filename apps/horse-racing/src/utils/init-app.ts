@@ -1,16 +1,13 @@
 import {
-    baseInitApp,
     type BaseAppComponents,
     type InitAppOptions,
+    baseInitApp,
 } from '@ue-too/board-pixi-integration';
 
+import type { Jockey } from '@/ai';
+import { type V2Sim, type V2SimHandle, attachV2Sim } from '@/simulation';
 import { parseTrackJson } from '@/simulation/track-from-json';
 import type { TrackSegment } from '@/simulation/track-types';
-import {
-    attachV2Sim,
-    type V2Sim,
-    type V2SimHandle,
-} from '@/simulation';
 
 const DEFAULT_TRACK_URL = '/tracks/test_oval.json';
 
@@ -36,8 +33,11 @@ async function loadTrack(url: string): Promise<TrackSegment[]> {
  * closure-captured callback instead.
  */
 export function makeInitApp(
-    onReady: (handle: V2SimHandle) => void,
-): (canvas: HTMLCanvasElement, opt: Partial<InitAppOptions>) => Promise<V2AppComponents> {
+    onReady: (handle: V2SimHandle) => void
+): (
+    canvas: HTMLCanvasElement,
+    opt: Partial<InitAppOptions>
+) => Promise<V2AppComponents> {
     return async (canvas, opt) => {
         const components = await baseInitApp(canvas, opt);
         components.camera.setMaxZoomLevel?.(30);
@@ -46,11 +46,14 @@ export function makeInitApp(
         const sim = attachV2Sim(components, segments);
 
         const handle: V2SimHandle = {
-            pickHorse: (id) => sim.pickHorse(id),
+            pickHorse: id => sim.pickHorse(id),
             start: () => sim.start(),
             reset: () => sim.reset(),
             getPhase: () => sim.getPhase(),
-            onPhaseChange: (cb) => sim.onPhaseChange(cb),
+            getHorses: () => sim.getHorses(),
+            onPhaseChange: cb => sim.onPhaseChange(cb),
+            setJockey: (jockey: Jockey) => sim.setJockey(jockey),
+            exportRace: () => sim.exportRace(),
             cleanup: () => sim.cleanup(),
         };
 
