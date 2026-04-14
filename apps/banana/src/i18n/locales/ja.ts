@@ -150,6 +150,13 @@ const ja = {
         noCarsInStock: '車庫に車両がありません',
         bogieCount: '{{count}} 台車',
         templates: 'テンプレート',
+        carType: 'タイプ',
+        carType_locomotive: '機関車',
+        carType_coach: '客車',
+        carType_motor: '電動車',
+        carType_trailer: '付随車',
+        carType_freight: '貨車',
+        carType_cab_car: '制御車',
 
         // Station List Panel
         stations: '駅',

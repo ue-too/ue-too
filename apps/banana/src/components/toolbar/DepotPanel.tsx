@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { DraggablePanel } from '@/components/ui/draggable-panel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import type { CarStockManager } from '@/trains/car-stock-manager';
 import type { CarStockEntry } from '@/trains/car-stock-manager';
 import type { CarImageRegistry } from '@/trains/car-image-registry';
 import type { CarTemplate } from '@/trains/car-template';
+import { CarType } from '@/trains/cars';
+
+const CAR_TYPES = Object.values(CarType);
 
 type DepotPanelProps = {
     carStockManager: CarStockManager;
@@ -35,23 +39,39 @@ export function DepotPanel({
     );
     const availableCars = useSyncExternalStore(subscribe, getSnapshot);
     const { t } = useTranslation();
+    const [newCarType, setNewCarType] = useState<CarType>(CarType.COACH);
 
     return (
         <DraggablePanel
             title={t('depot')}
             onClose={onClose}
             className="w-56"
-            headerActions={
+        >
+            <Separator className="mb-2" />
+            <div className="flex items-center gap-1 mb-2">
+                <Select
+                    value={newCarType}
+                    onValueChange={(value: string) => setNewCarType(value as CarType)}
+                >
+                    <SelectTrigger size="sm" className="h-6 flex-1 text-[10px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {CAR_TYPES.map(ct => (
+                            <SelectItem key={ct} value={ct}>
+                                {t(`carType_${ct}`)}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
                 <Button
                     variant="ghost"
                     size="icon-xs"
-                    onClick={() => carStockManager.createCar()}
+                    onClick={() => carStockManager.createCar(undefined, undefined, undefined, newCarType)}
                 >
                     <Plus className="size-3.5" />
                 </Button>
-            }
-        >
-            <Separator className="mb-2" />
+            </div>
             <div className="flex max-h-64 flex-col gap-1 overflow-y-auto">
                 {availableCars.length === 0 ? (
                     <span className="text-muted-foreground py-4 text-center text-xs">
@@ -109,7 +129,8 @@ export function DepotPanel({
                                                 carStockManager.createCar(
                                                     [...tpl.bogieOffsets],
                                                     tpl.edgeToBogie,
-                                                    tpl.bogieToEdge
+                                                    tpl.bogieToEdge,
+                                                    tpl.type
                                                 );
                                             if (tpl.image) {
                                                 carImageRegistry.set(
@@ -204,6 +225,8 @@ function DepotCarRow({
                     )}
                 </div>
                 <span className="text-muted-foreground text-[10px]">
+                    {t(`carType_${entry.car.type}`)}
+                    {' · '}
                     {t('bogieCount', { count: entry.car.bogieOffsets().length + 1 })}
                     {' · '}
                     {entry.car.edgeToBogie +

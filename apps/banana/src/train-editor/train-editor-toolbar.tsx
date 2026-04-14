@@ -15,6 +15,7 @@ import {
 import { CarDefinitionLibraryDialog } from '@/components/car-definition-library/CarDefinitionLibraryDialog';
 import { SaveCarDefinitionDialog } from '@/components/car-definition-library/SaveCarDefinitionDialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import {
     Tooltip,
@@ -30,8 +31,11 @@ import {
     generateCarDefinitionId,
     getCarDefinitionStorage,
 } from '@/storage';
+import { CarType } from '@/trains/cars';
 
 import { useTrainEditorApp } from './use-train-editor-app';
+
+const CAR_TYPES = Object.values(CarType);
 
 type TrainEditorMode = 'idle' | 'edit-bogie' | 'add-bogie' | 'edit-image';
 
@@ -123,6 +127,7 @@ export function TrainEditorToolbar() {
     const { t } = useTranslation();
     const app = useTrainEditorApp();
     const [mode, setMode] = useState<TrainEditorMode>('idle');
+    const [carType, setCarType] = useState<CarType>(CarType.COACH);
     const [loadedLibraryEntry, setLoadedLibraryEntry] = useState<{
         id: string;
         name: string;
@@ -195,9 +200,10 @@ export function TrainEditorToolbar() {
         return {
             ...def,
             bogies: [...app.bogieEditorEngine.getBogies()],
+            carType,
             image: image ? { ...image } : undefined,
         };
-    }, [app]);
+    }, [app, carType]);
 
     const hydrateFromCarDefinition = useCallback(
         (data: Partial<CarDefinitionData>): boolean => {
@@ -229,6 +235,7 @@ export function TrainEditorToolbar() {
                 }
                 app.imageEditorEngine.notifyChange();
             }
+            setCarType(data.carType ?? CarType.COACH);
             return true;
         },
         [app, t]
@@ -364,6 +371,30 @@ export function TrainEditorToolbar() {
                     >
                         <Plus />
                     </ToolbarButton>
+
+                    <Separator />
+
+                    {/* Car type */}
+                    <div className="w-full px-1">
+                        <span className="text-muted-foreground text-[9px] font-medium uppercase tracking-wider">
+                            {t('carType')}
+                        </span>
+                        <Select
+                            value={carType}
+                            onValueChange={(value: string) => setCarType(value as CarType)}
+                        >
+                            <SelectTrigger size="sm" className="h-6 w-full text-[10px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {CAR_TYPES.map(ct => (
+                                    <SelectItem key={ct} value={ct}>
+                                        {t(`carType_${ct}`)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     <Separator />
 
