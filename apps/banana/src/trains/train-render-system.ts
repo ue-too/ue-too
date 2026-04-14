@@ -51,8 +51,15 @@ function gangwayKey(trainId: number, index: number): string {
   return `__train_${trainId}_gangway_${index}`;
 }
 
+function couplerKey(trainId: number, index: number): string {
+  return `__train_${trainId}_coupler_${index}`;
+}
+
 /** World-space width of the gangway rectangle (meters). */
 const GANGWAY_WIDTH = 1.2;
+
+/** World-space width of the coupler bar (meters). */
+const COUPLER_WIDTH = 0.25;
 
 type GangwayGeometry = {
   x: number;
@@ -113,10 +120,6 @@ function getGangwayGeometries(
       gapBy = gB.y;
     }
 
-    const edgeDx = gapBx - gapAx;
-    const edgeDy = gapBy - gapAy;
-    const gangwayLength = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
-
     // Derive the gangway angle from the two bogies closest to the coupling
     // gap (bogie 2k+1 of car A and bogie 2k+2 of car B). On curves, the
     // car-edge endpoints can overshoot each other (each is extended along
@@ -130,6 +133,24 @@ function getGangwayGeometries(
       headBogie.x - tailBogie.x,
     );
 
+    // Compute gangway length from both the car-edge distance and the
+    // bogie-to-bogie distance to handle curves correctly. On curves the
+    // car edges splay apart (each extends along its own car's angle), so
+    // the edge-to-edge distance can grow beyond the nominal gap. At the
+    // same time on tight curves the edges can converge and shrink the gap.
+    // We take the max of both measurements plus CAR_GAP padding so the
+    // gangway always tucks under both car bodies with no visible seams.
+    const edgeDx = gapBx - gapAx;
+    const edgeDy = gapBy - gapAy;
+    const edgeDist = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
+    const bogieDx = headBogie.x - tailBogie.x;
+    const bogieDy = headBogie.y - tailBogie.y;
+    const bogieDist = Math.sqrt(bogieDx * bogieDx + bogieDy * bogieDy);
+    const overhangA = (cars[k].flipped ? cars[k].edgeToBogie : cars[k].bogieToEdge) - CAR_GAP;
+    const overhangB = (cars[k + 1].flipped ? cars[k + 1].bogieToEdge : cars[k + 1].edgeToBogie) - CAR_GAP;
+    const nominalLength = bogieDist - overhangA - overhangB;
+    const gangwayLength = Math.max(edgeDist, nominalLength) + CAR_GAP;
+
     // Use the bogie closest to the gap for z-order band resolution
     const gapBogieIdx = 2 * k + 1;
 
@@ -140,6 +161,69 @@ function getGangwayGeometries(
       y: (gapAy + gapBy) / 2,
       angle,
       length: Math.max(gangwayLength, 0),
+      bogiePositionIndex: gapBogieIdx,
+    });
+  }
+  return out;
+}
+
+/**
+ * Compute coupler geometries between adjacent cars that do NOT both have
+ * gangway enabled on the touching sides. A coupler is a thin bar connecting
+ * the two car edges in the coupling gap.
+ */
+function getCouplerGeometries(
+  carGeoms: CarGeometry[],
+  cars: readonly Car[],
+  positions: TrainPosition[],
+): GangwayGeometry[] {
+  const out: GangwayGeometry[] = [];
+  for (let k = 0; k + 1 < cars.length; k++) {
+    // Only render couplers where gangway is NOT rendered
+    if (cars[k].tailHasGangway && cars[k + 1].headHasGangway) continue;
+
+    const gA = carGeoms[k];
+    const gB = carGeoms[k + 1];
+
+    let gapAx: number, gapAy: number;
+    if (cars[k].flipped) {
+      gapAx = gA.x;
+      gapAy = gA.y;
+    } else {
+      gapAx = gA.x + Math.cos(gA.angle) * gA.length;
+      gapAy = gA.y + Math.sin(gA.angle) * gA.length;
+    }
+
+    let gapBx: number, gapBy: number;
+    if (cars[k + 1].flipped) {
+      gapBx = gB.x + Math.cos(gB.angle) * gB.length;
+      gapBy = gB.y + Math.sin(gB.angle) * gB.length;
+    } else {
+      gapBx = gB.x;
+      gapBy = gB.y;
+    }
+
+    const tailBogie = positions[2 * k + 1].point;
+    const headBogie = positions[2 * (k + 1)].point;
+    const angle = Math.atan2(
+      headBogie.y - tailBogie.y,
+      headBogie.x - tailBogie.x,
+    );
+
+    const bogieDx = headBogie.x - tailBogie.x;
+    const bogieDy = headBogie.y - tailBogie.y;
+    const bogieDist = Math.sqrt(bogieDx * bogieDx + bogieDy * bogieDy);
+    const overhangA = (cars[k].flipped ? cars[k].edgeToBogie : cars[k].bogieToEdge) - CAR_GAP;
+    const overhangB = (cars[k + 1].flipped ? cars[k + 1].bogieToEdge : cars[k + 1].edgeToBogie) - CAR_GAP;
+    const couplerLength = bogieDist - overhangA - overhangB;
+
+    const gapBogieIdx = 2 * k + 1;
+
+    out.push({
+      x: (gapAx + gapBx) / 2,
+      y: (gapAy + gapBy) / 2,
+      angle,
+      length: Math.max(couplerLength, 0),
       bogiePositionIndex: gapBogieIdx,
     });
   }
@@ -272,6 +356,12 @@ export class TrainRenderSystem {
   private _activeGangwayCounts: Map<number, number> = new Map();
   /** Cached procedural gangway texture. */
   private _gangwayTexture: Texture | null = null;
+  /** Per-train-id: pool of Sprites for coupler connectors. */
+  private _couplerPools: Map<number, Sprite[]> = new Map();
+  /** Per-train-id: number of active coupler drawables. */
+  private _activeCouplerCounts: Map<number, number> = new Map();
+  /** Cached procedural coupler texture. */
+  private _couplerTexture: Texture | null = null;
   /** Train ids we had last frame (to remove drawables when a train is removed). */
   private _lastTrainIds: Set<number> = new Set();
 
@@ -335,6 +425,7 @@ export class TrainRenderSystem {
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
     this._updateGangways(placed);
+    this._updateCouplers(placed);
     this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
@@ -380,6 +471,7 @@ export class TrainRenderSystem {
     this._updateActualBogies(placed);
     this._updateActualCars(placed);
     this._updateGangways(placed);
+    this._updateCouplers(placed);
     this._worldRenderSystem.sortChildren();
 
     this._lastTrainIds.clear();
@@ -419,6 +511,17 @@ export class TrainRenderSystem {
     }
     this._gangwayPools.clear();
     this._activeGangwayCounts.clear();
+
+    for (const [trainId] of this._couplerPools) {
+      const count = this._activeCouplerCounts.get(trainId) ?? 0;
+      for (let i = 0; i < count; i++) {
+        const key = couplerKey(trainId, i);
+        const removed = this._worldRenderSystem.removeFromBand(key);
+        removed?.destroy({ children: true });
+      }
+    }
+    this._couplerPools.clear();
+    this._activeCouplerCounts.clear();
     this._lastTrainIds.clear();
 
     for (const cached of this._customCarTextures.values()) {
@@ -618,6 +721,85 @@ export class TrainRenderSystem {
     }
   }
 
+  private _getOrCreateCouplerTexture(): Texture | null {
+    if (this._couplerTexture) return this._couplerTexture;
+    const renderer = this._textureRenderer?.renderer?.textureGenerator;
+    if (renderer === undefined) return null;
+    const w = 16;
+    const h = 16;
+    const g = new Graphics();
+    g.rect(0, 0, w, h);
+    g.fill({ color: 0x555555 });
+    this._couplerTexture = renderer.generateTexture({ target: g });
+    g.destroy();
+    return this._couplerTexture;
+  }
+
+  private _updateCouplers(placed: readonly PlacedTrainEntry[]): void {
+    const texture = this._getOrCreateCouplerTexture();
+    if (texture === null) return;
+
+    for (const { id, train } of placed) {
+      const positions = train.getBogiePositions();
+      if (positions === null || positions.length < 2) {
+        this._hideCouplerForTrain(id);
+        continue;
+      }
+      const cars = train.cars;
+      const carGeoms = getCarGeometries(positions, cars);
+      const geoms = getCouplerGeometries(carGeoms, cars, positions);
+      this._syncCouplerPoolForTrain(id, geoms.length, texture);
+      const pool = this._couplerPools.get(id)!;
+
+      for (let i = 0; i < geoms.length; i++) {
+        const sprite = pool[i];
+        const g = geoms[i];
+
+        sprite.position.set(g.x, g.y);
+        sprite.rotation = g.angle;
+        sprite.scale.set(g.length / texture.width, COUPLER_WIDTH / texture.height);
+        sprite.visible = true;
+
+        const bandIndex = this._resolveBandIndex(positions[g.bogiePositionIndex]);
+        if (bandIndex !== null) {
+          this._worldRenderSystem.addToBand(couplerKey(id, i), sprite, bandIndex, 'onTrack');
+          this._worldRenderSystem.setOrderInBand(couplerKey(id, i), 0);
+        }
+      }
+
+      // Hide excess sprites from previous frame and remove from band
+      const prevCount = this._activeCouplerCounts.get(id) ?? 0;
+      for (let i = geoms.length; i < prevCount; i++) {
+        pool[i].visible = false;
+        this._worldRenderSystem.removeFromBand(couplerKey(id, i));
+      }
+      this._activeCouplerCounts.set(id, geoms.length);
+    }
+  }
+
+  private _hideCouplerForTrain(trainId: number): void {
+    const pool = this._couplerPools.get(trainId);
+    const count = this._activeCouplerCounts.get(trainId) ?? 0;
+    if (pool) {
+      for (let i = 0; i < count; i++) {
+        pool[i].visible = false;
+      }
+    }
+  }
+
+  private _syncCouplerPoolForTrain(trainId: number, count: number, texture: Texture): void {
+    let pool = this._couplerPools.get(trainId);
+    if (!pool) {
+      pool = [];
+      this._couplerPools.set(trainId, pool);
+    }
+    while (pool.length < count) {
+      const sprite = new Sprite({ texture });
+      sprite.anchor.set(0.5, 0.5);
+      pool.push(sprite);
+    }
+  }
+
   private _updatePreviewCars(): void {
     const texture = this._getOrCreateCarTexture();
     const positions = this._getPreviewTrain().previewBogiePositions;
@@ -789,6 +971,18 @@ export class TrainRenderSystem {
       this._gangwayPools.delete(trainId);
     }
     this._activeGangwayCounts.delete(trainId);
+
+    const couplerPool = this._couplerPools.get(trainId);
+    const couplerCount = this._activeCouplerCounts.get(trainId) ?? 0;
+    if (couplerPool) {
+      for (let i = 0; i < couplerCount; i++) {
+        const key = couplerKey(trainId, i);
+        const removed = this._worldRenderSystem.removeFromBand(key);
+        removed?.destroy({ children: true });
+      }
+      this._couplerPools.delete(trainId);
+    }
+    this._activeCouplerCounts.delete(trainId);
   }
 
   private _resolveBandIndex(position: TrainPosition): number | null {

@@ -150,6 +150,13 @@ const en = {
         noCarsInStock: 'No cars in stock',
         bogieCount: '{{count}} bogies',
         templates: 'Templates',
+        carType: 'Type',
+        carType_locomotive: 'Locomotive',
+        carType_coach: 'Coach',
+        carType_motor: 'Motor',
+        carType_trailer: 'Trailer',
+        carType_freight: 'Freight',
+        carType_cab_car: 'Cab Car',
 
         // Station List Panel
         stations: 'Stations',

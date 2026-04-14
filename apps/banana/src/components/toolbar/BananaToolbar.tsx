@@ -68,6 +68,7 @@ import {
     generateTemplateId,
     validateCarDefinition,
 } from '@/trains/car-template';
+import type { CarType } from '@/trains/cars';
 import type { ThrottleSteps } from '@/trains/formation';
 import { ELEVATION } from '@/trains/tracks/types';
 import type { SerializedTrackData } from '@/trains/tracks/types';
@@ -659,6 +660,7 @@ export function BananaToolbar({
             bogieOffsets: number[];
             edgeToBogie?: number;
             bogieToEdge?: number;
+            carType?: CarType;
             image?: {
                 src: string;
                 position: { x: number; y: number };
@@ -671,6 +673,7 @@ export function BananaToolbar({
                 bogieOffsets: def.bogieOffsets,
                 edgeToBogie: def.edgeToBogie ?? 2.5,
                 bogieToEdge: def.bogieToEdge ?? 2.5,
+                type: def.carType,
                 image: def.image,
             };
             setCarTemplates(prev => [...prev, template]);

@@ -1,4 +1,5 @@
 import type { Point } from '@ue-too/math';
+import type { CarType } from '@/trains/cars';
 
 /**
  * Raw car-definition payload — the shape the train editor produces and consumes.
@@ -10,6 +11,8 @@ export type CarDefinitionData = {
     edgeToBogie: number;
     bogieToEdge: number;
     bogies: Point[];
+    /** Car category — determines default gangway/coupler flags. */
+    carType?: CarType;
     image?: {
         src: string;
         position: Point;

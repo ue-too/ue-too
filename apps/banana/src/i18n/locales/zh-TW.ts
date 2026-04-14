@@ -144,6 +144,13 @@ const zhTW = {
         noCarsInStock: '車庫中沒有車輛',
         bogieCount: '{{count}} 個轉向架',
         templates: '範本',
+        carType: '類型',
+        carType_locomotive: '機車',
+        carType_coach: '客車',
+        carType_motor: '動力車',
+        carType_trailer: '拖車',
+        carType_freight: '貨車',
+        carType_cab_car: '駕駛車',
 
         // Station List Panel
         stations: '車站',

@@ -1,5 +1,5 @@
 import { Observable, SynchronousObservable } from '@ue-too/board';
-import { Car, generateCarId } from './cars';
+import { Car, type CarType, generateCarId } from './cars';
 
 export type CarStockEntry = { id: string; car: Car };
 
@@ -39,10 +39,21 @@ export class CarStockManager {
     }
 
     /** Create a new car with default parameters and add it to stock. */
-    createCar(bogieOffsets: number[] = [20], edgeToBogie: number = 2.5, bogieToEdge: number = 2.5): Car {
-        const car = new Car(generateCarId(), bogieOffsets, edgeToBogie, bogieToEdge);
+    createCar(bogieOffsets: number[] = [20], edgeToBogie: number = 2.5, bogieToEdge: number = 2.5, type?: CarType): Car {
+        const car = new Car(generateCarId(), bogieOffsets, edgeToBogie, bogieToEdge, undefined, type);
         this.addCar(car);
         return car;
+    }
+
+    /** Change a car's type and notify subscribers. */
+    setCarType(carId: string, type: CarType): void {
+        const car = this._cars.get(carId);
+        if (car === undefined) {
+            throw new Error(`Car ${carId} is not in stock`);
+        }
+        car.type = type;
+        this._observable.notify(carId, { type: 'update' });
+        this._notify();
     }
 
     /**
