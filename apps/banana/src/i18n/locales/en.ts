@@ -27,6 +27,8 @@ const en = {
         modeCatenaryLayout: 'Placing Catenary',
         modePlacingBuilding: 'Placing Building',
         modeDeletingBuilding: 'Deleting Building',
+        modeSingleSpinePlatform: 'Placing Single-Side Platform',
+        modeDualSpinePlatform: 'Placing Dual-Side Platform',
 
         // Toolbar - Train
         placeTrain: 'Place Train',
@@ -99,6 +101,19 @@ const en = {
         autoSave3Min: '3 minutes',
         autoSave5Min: '5 minutes',
         autoSave10Min: '10 minutes',
+        autoSaveToast: '"{{name}}" auto-saved',
+
+        // Track-aligned platform hints
+        hintPickStart: 'Click on a track to set the start point',
+        hintPickEnd: 'Click along the track to set the end point',
+        hintDrawOuter: 'Click to draw the platform edge — close near the start anchor to finish',
+        hintDualPickSpineAStart: 'Click on a track to set spine A start',
+        hintDualPickSpineAEnd: 'Click along the track to set spine A end',
+        hintDualPickSpineBStart: 'Click the opposite track to set spine B start',
+        hintDualPickSpineBEnd: 'Click along the track to set spine B end',
+        hintDualDrawCap1: 'Click to draw the first end cap — close near the snap ring to finish',
+        hintDualDrawCap2: 'Click to draw the second end cap — close near the snap ring to finish',
+        hintPlatformCreated: 'Platform created',
 
         // Validation errors
         invalidTrackData: 'Invalid track data: {{error}}',
@@ -128,13 +143,18 @@ const en = {
 
         // Station List Panel
         stations: 'Stations',
+        createEmptyStation: 'Create empty station',
         noStations: 'No stations',
         platform_one: '{{count}} platform',
         platform_other: '{{count}} platforms',
+        trackAlignedPlatform_one: '{{count}} track platform',
+        trackAlignedPlatform_other: '{{count}} track platforms',
         donePickingPlatforms: 'Done picking platforms',
         pickPlatformsToAdd: 'Pick platforms to add',
         panToStation: 'Pan to station',
         deleteStation: 'Delete station',
+        addSingleSpinePlatform: 'Add single-side platform',
+        addDualSpinePlatform: 'Add dual-side platform',
         nearbyPlatforms: 'Nearby platforms',
         cancel: 'Cancel',
         noNearbyPlatforms: 'No nearby platforms from other stations',

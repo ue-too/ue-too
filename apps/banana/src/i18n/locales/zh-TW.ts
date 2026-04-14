@@ -25,6 +25,8 @@ const zhTW = {
         modePlacingStation: '放置車站中',
         modeDuplicatingTrack: '複製軌道中',
         modeCatenaryLayout: '架線佈置中',
+        modeSingleSpinePlatform: '單側月台佈置中',
+        modeDualSpinePlatform: '雙側月台佈置中',
         modePlacingBuilding: '放置建築中',
         modeDeletingBuilding: '刪除建築中',
 
@@ -97,6 +99,19 @@ const zhTW = {
         autoSave3Min: '3 分鐘',
         autoSave5Min: '5 分鐘',
         autoSave10Min: '10 分鐘',
+        autoSaveToast: '「{{name}}」已自動儲存',
+
+        // Track-aligned platform hints
+        hintPickStart: '點擊軌道設定起點',
+        hintPickEnd: '沿軌道點擊設定終點',
+        hintDrawOuter: '點擊繪製月台邊緣 — 靠近起點錨點以完成',
+        hintDualPickSpineAStart: '點擊軌道設定脊線 A 起點',
+        hintDualPickSpineAEnd: '沿軌道點擊設定脊線 A 終點',
+        hintDualPickSpineBStart: '點擊對面軌道設定脊線 B 起點',
+        hintDualPickSpineBEnd: '沿軌道點擊設定脊線 B 終點',
+        hintDualDrawCap1: '點擊繪製第一個端蓋 — 靠近吸附環以完成',
+        hintDualDrawCap2: '點擊繪製第二個端蓋 — 靠近吸附環以完成',
+        hintPlatformCreated: '月台已建立',
 
         // Validation errors
         invalidTrackData: '無效的軌道資料：{{error}}',
@@ -126,6 +141,7 @@ const zhTW = {
 
         // Station List Panel
         stations: '車站',
+        createEmptyStation: '建立空車站',
         noStations: '沒有車站',
         platform_one: '{{count}} 個月台',
         platform_other: '{{count}} 個月台',
@@ -133,6 +149,10 @@ const zhTW = {
         pickPlatformsToAdd: '選取要加入的月台',
         panToStation: '移至車站',
         deleteStation: '刪除車站',
+        addSingleSpinePlatform: '新增單側月台',
+        addDualSpinePlatform: '新增雙側月台',
+        trackAlignedPlatform_one: '{{count}}個軌道月台',
+        trackAlignedPlatform_other: '{{count}}個軌道月台',
         nearbyPlatforms: '附近月台',
         cancel: '取消',
         noNearbyPlatforms: '附近沒有其他車站的月台',

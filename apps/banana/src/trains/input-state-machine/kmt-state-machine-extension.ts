@@ -9,6 +9,8 @@ import { TrainPlacementStateMachine } from "./train-kmt-state-machine";
 import { CatenaryLayoutStateMachine } from "./catenary-layout-state-machine";
 import { DuplicateToSideStateMachine } from "./duplicate-to-side-state-machine";
 import { StationPlacementStateMachine } from "@/stations/station-placement-state-machine";
+import type { SingleSpinePlacementStateMachine } from '@/stations/single-spine-placement-state-machine';
+import type { DualSpinePlacementStateMachine } from '@/stations/dual-spine-placement-state-machine';
 
 type KmtStateMachineEventWithToolSwitcher = KmtInputEventMapping & ToolSwitcherEvents & {
     startDeletion: {};
@@ -22,7 +24,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
     private _originalEventReactions: EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
     private _toolSwitcherSubStateMachine: ToolSwitcherStateMachine;
 
-    constructor(layoutSubStateMachine: LayoutStateMachine, trainSubStateMachine: TrainPlacementStateMachine, stationSubStateMachine: StationPlacementStateMachine, duplicateSubStateMachine: DuplicateToSideStateMachine, catenarySubStateMachine: CatenaryLayoutStateMachine) {
+    constructor(layoutSubStateMachine: LayoutStateMachine, trainSubStateMachine: TrainPlacementStateMachine, stationSubStateMachine: StationPlacementStateMachine, duplicateSubStateMachine: DuplicateToSideStateMachine, catenarySubStateMachine: CatenaryLayoutStateMachine, singleSpineSubStateMachine: SingleSpinePlacementStateMachine, dualSpineSubStateMachine: DualSpinePlacementStateMachine) {
         super();
         const originalIdleState = new KmtIdleState();
         this._originalEventReactions = originalIdleState.eventReactions as unknown as EventReactions<KmtStateMachineEventWithToolSwitcher, KmtStateMachineExtensionContext, KmtInputStates, KmtInputEventOutputMapping>;
@@ -46,7 +48,7 @@ class KmtStateMachineExtensionIdleState extends TemplateState<KmtStateMachineEve
 
         this._guards = originalIdleState.guards as unknown as Guard<KmtStateMachineExtensionContext>;
 
-        this._toolSwitcherSubStateMachine = createToolSwitcherStateMachine(layoutSubStateMachine, trainSubStateMachine, stationSubStateMachine, duplicateSubStateMachine, catenarySubStateMachine);
+        this._toolSwitcherSubStateMachine = createToolSwitcherStateMachine(layoutSubStateMachine, trainSubStateMachine, stationSubStateMachine, duplicateSubStateMachine, catenarySubStateMachine, singleSpineSubStateMachine, dualSpineSubStateMachine);
     }
 
     protected _defer: Defer<KmtStateMachineExtensionContext, KmtStateMachineEventWithToolSwitcher, KmtInputStates, KmtInputEventOutputMapping> = {
@@ -111,10 +113,12 @@ export function createKmtInputStateMachineExpansion(
     stationSubStateMachine: StationPlacementStateMachine,
     duplicateSubStateMachine: DuplicateToSideStateMachine,
     catenarySubStateMachine: CatenaryLayoutStateMachine,
+    singleSpineSubStateMachine: SingleSpinePlacementStateMachine,
+    dualSpineSubStateMachine: DualSpinePlacementStateMachine,
     context: KmtStateMachineExtensionContext
 ): KmtExpandedStateMachine {
     const states = {
-        IDLE: new KmtStateMachineExtensionIdleState(layoutSubStateMachine, trainSubStateMachine, stationSubStateMachine, duplicateSubStateMachine, catenarySubStateMachine),
+        IDLE: new KmtStateMachineExtensionIdleState(layoutSubStateMachine, trainSubStateMachine, stationSubStateMachine, duplicateSubStateMachine, catenarySubStateMachine, singleSpineSubStateMachine, dualSpineSubStateMachine),
         READY_TO_PAN_VIA_SPACEBAR: expandState(
             new ReadyToPanViaSpaceBarState()
         ),

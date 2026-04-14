@@ -7,9 +7,18 @@ import type {
 
 export class StationManager {
   private _manager: GenericEntityManager<Station>;
+  private _onDestroyStation: ((id: number) => void) | null = null;
 
   constructor(initialCount = 10) {
     this._manager = new GenericEntityManager<Station>(initialCount);
+  }
+
+  /**
+   * Register a callback that runs before a station is destroyed.
+   * Used to cascade-delete track-aligned platforms.
+   */
+  setOnDestroyStation(cb: (id: number) => void): void {
+    this._onDestroyStation = cb;
   }
 
   createStation(station: Omit<Station, 'id'>): number {
@@ -35,6 +44,7 @@ export class StationManager {
   }
 
   destroyStation(id: number): void {
+    this._onDestroyStation?.(id);
     this._manager.destroyEntity(id);
   }
 
@@ -60,6 +70,7 @@ export class StationManager {
         })),
         trackSegments: [...entity.trackSegments],
         joints: [...entity.joints],
+        trackAlignedPlatforms: [...entity.trackAlignedPlatforms],
       }));
 
     return { stations };
@@ -84,6 +95,7 @@ export class StationManager {
         })),
         trackSegments: [...s.trackSegments],
         joints: [...s.joints],
+        trackAlignedPlatforms: [...(s.trackAlignedPlatforms ?? [])],
       });
     }
     return manager;

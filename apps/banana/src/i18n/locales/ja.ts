@@ -25,6 +25,8 @@ const ja = {
         modePlacingStation: '駅を配置中',
         modeDuplicatingTrack: '線路を複製中',
         modeCatenaryLayout: '架線を配置中',
+        modeSingleSpinePlatform: '片側ホームを配置中',
+        modeDualSpinePlatform: '両側ホームを配置中',
         modePlacingBuilding: '建物を配置中',
         modeDeletingBuilding: '建物を削除中',
 
@@ -100,6 +102,19 @@ const ja = {
         autoSave3Min: '3分',
         autoSave5Min: '5分',
         autoSave10Min: '10分',
+        autoSaveToast: '「{{name}}」を自動保存しました',
+
+        // Track-aligned platform hints
+        hintPickStart: '線路をクリックして始点を設定',
+        hintPickEnd: '線路に沿ってクリックして終点を設定',
+        hintDrawOuter: 'クリックしてホーム端を描画 — 始点アンカー付近で閉じる',
+        hintDualPickSpineAStart: '線路をクリックしてスパインAの始点を設定',
+        hintDualPickSpineAEnd: '線路に沿ってクリックしてスパインAの終点を設定',
+        hintDualPickSpineBStart: '反対側の線路をクリックしてスパインBの始点を設定',
+        hintDualPickSpineBEnd: '線路に沿ってクリックしてスパインBの終点を設定',
+        hintDualDrawCap1: 'クリックして最初の端部キャップを描画 — スナップリング付近で閉じる',
+        hintDualDrawCap2: 'クリックして2番目の端部キャップを描画 — スナップリング付近で閉じる',
+        hintPlatformCreated: 'ホームが作成されました',
 
         // Validation errors
         invalidTrackData: '無効な線路データ：{{error}}',
@@ -129,6 +144,7 @@ const ja = {
 
         // Station List Panel
         stations: '駅',
+        createEmptyStation: '空の駅を作成',
         noStations: '駅がありません',
         platform_one: '{{count}} ホーム',
         platform_other: '{{count}} ホーム',
@@ -136,6 +152,10 @@ const ja = {
         pickPlatformsToAdd: '追加するホームを選択',
         panToStation: '駅に移動',
         deleteStation: '駅を削除',
+        addSingleSpinePlatform: '片側ホームを追加',
+        addDualSpinePlatform: '両側ホームを追加',
+        trackAlignedPlatform_one: '{{count}}個の線路ホーム',
+        trackAlignedPlatform_other: '{{count}}個の線路ホーム',
         nearbyPlatforms: '近くのホーム',
         cancel: 'キャンセル',
         noNearbyPlatforms: '他の駅の近くにホームがありません',

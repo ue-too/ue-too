@@ -31,7 +31,12 @@ import { BlockSignalManager, SignalStateEngine, SignalRenderSystem } from '@/sig
 import { StationManager } from '@/stations/station-manager';
 import { StationRenderSystem } from '@/stations/station-render-system';
 import { StationPlacementEngine, StationPlacementStateMachine } from '@/stations/station-placement-state-machine';
+import { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
+import { TrackAlignedPlatformRenderSystem } from '@/stations/track-aligned-platform-render-system';
+import { SingleSpinePlacementEngine, createSingleSpinePlacementStateMachine } from '@/stations/single-spine-placement-state-machine';
+import { DualSpinePlacementEngine, createDualSpinePlacementStateMachine } from '@/stations/dual-spine-placement-state-machine';
 import { CameraMuxWithAnimationAndLock, createCameraMuxWithAnimationAndLock } from '@ue-too/board';
+import i18n from '@/i18n';
 import { Animator, NumberAnimationHelper, Animation } from '@ue-too/animate';
 import { Point } from '@ue-too/math';
 
@@ -256,6 +261,8 @@ export type BananaAppComponents = BaseAppComponents & {
   animations: Animator[];
   stationManager: StationManager;
   stationRenderSystem: StationRenderSystem;
+  trackAlignedPlatformManager: TrackAlignedPlatformManager;
+  trackAlignedPlatformRenderSystem: TrackAlignedPlatformRenderSystem;
   blockSignalManager: BlockSignalManager;
   signalStateEngine: SignalStateEngine;
   signalRenderSystem: SignalRenderSystem;
@@ -492,6 +499,26 @@ export const initApp = async (
     { renderer: baseComponents.app.renderer },
   );
 
+  const trackAlignedPlatformManager = new TrackAlignedPlatformManager();
+  const trackAlignedPlatformRenderSystem = new TrackAlignedPlatformRenderSystem(
+      worldRenderSystem,
+      trackAlignedPlatformManager,
+      curveEngine.trackGraph,
+      { renderer: baseComponents.app.renderer },
+  );
+
+  curveEngine.trackGraph.setSegmentProtectionCheck((segNum) => {
+      return trackAlignedPlatformManager.getPlatformsBySegment(segNum).length > 0;
+  });
+
+  stationManager.setOnDestroyStation((stationId) => {
+      const platforms = trackAlignedPlatformManager.getPlatformsByStation(stationId);
+      for (const { id } of platforms) {
+          trackAlignedPlatformRenderSystem.removePlatform(id);
+          trackAlignedPlatformManager.destroyPlatform(id);
+      }
+  });
+
   const trainManager = new TrainManager();
   const carStockManager = new CarStockManager();
   const formationManager = new FormationManager(carStockManager);
@@ -528,6 +555,40 @@ export const initApp = async (
     stationRenderSystem,
   );
   const stationStateMachine = new StationPlacementStateMachine(stationPlacementEngine);
+
+  let platformHintToastId: string | number | undefined;
+  const showPlatformHint = (key: string) => {
+      if (platformHintToastId !== undefined) toast.dismiss(platformHintToastId);
+      const msg = i18n.t(key);
+      if (key === 'hintPlatformCreated') {
+          platformHintToastId = toast.success(msg, { duration: 2000 });
+      } else {
+          platformHintToastId = toast.info(msg, { duration: 8000 });
+      }
+  };
+
+  const singleSpineEngine = new SingleSpinePlacementEngine(
+      baseComponents.canvasProxy,
+      curveEngine.trackGraph,
+      baseComponents.camera,
+      stationManager,
+      trackAlignedPlatformManager,
+      trackAlignedPlatformRenderSystem,
+      showPlatformHint,
+  );
+  const singleSpineStateMachine = createSingleSpinePlacementStateMachine(singleSpineEngine);
+
+  const dualSpineEngine = new DualSpinePlacementEngine(
+      baseComponents.canvasProxy,
+      curveEngine.trackGraph,
+      baseComponents.camera,
+      stationManager,
+      trackAlignedPlatformManager,
+      trackAlignedPlatformRenderSystem,
+      showPlatformHint,
+  );
+  const dualSpineStateMachine = createDualSpinePlacementStateMachine(dualSpineEngine);
+
   const debugOverlayRenderSystem = new DebugOverlayRenderSystem(
     worldRenderSystem,
     trackGraph,
@@ -535,6 +596,7 @@ export const initApp = async (
   );
   debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
   debugOverlayRenderSystem.setStationManager(stationManager);
+  debugOverlayRenderSystem.setTrackAlignedPlatformManager(trackAlignedPlatformManager);
   debugOverlayRenderSystem.setProximityDetector(trainRenderSystem.proximityDetector);
 
   // Share the proximity detector with the train manager for coupling queries
@@ -569,7 +631,7 @@ export const initApp = async (
     formationManager.addFormation(train.formation);
   });
 
-  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, duplicateSubStateMachine, catenarySubStateMachine, baseComponents.observableInputTracker);
+  const kmtInputStateMachine = createKmtInputStateMachineExpansion(layoutSubStateMachine, trainStateMachine, stationStateMachine, duplicateSubStateMachine, catenarySubStateMachine, singleSpineStateMachine, dualSpineStateMachine, baseComponents.observableInputTracker);
   baseComponents.kmtParser.stateMachine = kmtInputStateMachine;
   baseComponents.kmtInputStateMachine = kmtInputStateMachine;
 
@@ -705,6 +767,8 @@ export const initApp = async (
     timetableRef,
     stationManager,
     stationRenderSystem,
+    trackAlignedPlatformManager,
+    trackAlignedPlatformRenderSystem,
     blockSignalManager,
     signalStateEngine,
     signalRenderSystem,

@@ -4,8 +4,10 @@ import { createLayoutStateMachine, CurveCreationEngine, TrainPlacementStateMachi
 import { CatenaryLayoutStateMachine } from "./catenary-layout-state-machine";
 import { DuplicateToSideStateMachine } from "./duplicate-to-side-state-machine";
 import { StationPlacementStateMachine } from "@/stations/station-placement-state-machine";
+import type { SingleSpinePlacementStateMachine } from '@/stations/single-spine-placement-state-machine';
+import type { DualSpinePlacementStateMachine } from '@/stations/dual-spine-placement-state-machine';
 
-export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'DUPLICATE', 'CATENARY', 'IDLE'] as const;
+export const TOOL_SWITCHER_STATES = ['LAYOUT', 'TRAIN', 'STATION', 'DUPLICATE', 'CATENARY', 'SINGLE_SPINE_PLATFORM', 'DUAL_SPINE_PLATFORM', 'IDLE'] as const;
 
 export type ToolSwitcherStates = CreateStateType<typeof TOOL_SWITCHER_STATES>;
 
@@ -15,6 +17,8 @@ export type ToolSwitcherEvents = {
     "switchToStation": {};
     "switchToDuplicate": {};
     "switchToCatenary": {};
+    "switchToSingleSpinePlatform": { stationId: number };
+    "switchToDualSpinePlatform": { stationId: number };
     "switchToIdle": {};
 }
 
@@ -30,6 +34,8 @@ export type ToolSwitcherEventOutputMapping = {
     switchToStation: void;
     switchToDuplicate: void;
     switchToCatenary: void;
+    switchToSingleSpinePlatform: void;
+    switchToDualSpinePlatform: void;
     switchToIdle: void;
 }
 
@@ -38,6 +44,14 @@ export type ToolSwitcherStateMachine = StateMachine<ToolSwitcherEvents, ToolSwit
 
 
 class ToolSwitcherIdleState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates, ToolSwitcherEventOutputMapping> {
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
+    }
+
     protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
         switchToLayout: {
             action: NO_OP,
@@ -59,6 +73,18 @@ class ToolSwitcherIdleState extends TemplateState<ToolSwitcherEvents, ToolSwitch
             action: NO_OP,
             defaultTargetState: 'CATENARY',
         },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -69,10 +95,17 @@ class ToolSwitcherIdleState extends TemplateState<ToolSwitcherEvents, ToolSwitch
 class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates, ToolSwitcherEventOutputMapping> {
 
     private _layoutSubStateMachine: LayoutStateMachine;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
 
     constructor(layoutSubStateMachine: LayoutStateMachine) {
         super();
         this._layoutSubStateMachine = layoutSubStateMachine;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
     }
 
     public uponEnter(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, fromState: ToolSwitcherStates) {
@@ -120,6 +153,18 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
             action: NO_OP,
             defaultTargetState: 'CATENARY',
         },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
+        },
         switchToIdle: {
             action: NO_OP,
             defaultTargetState: 'IDLE',
@@ -129,10 +174,17 @@ class ToolSwitcherLayoutState extends TemplateState<ToolSwitcherEvents, ToolSwit
 
 class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
     private _trainSubStateMachine: TrainPlacementStateMachine;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
 
     constructor(trainSubStateMachine: TrainPlacementStateMachine) {
         super();
         this._trainSubStateMachine = trainSubStateMachine;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
     }
 
     protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
@@ -155,6 +207,18 @@ class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitc
         switchToCatenary: {
             action: NO_OP,
             defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
         },
         switchToIdle: {
             action: NO_OP,
@@ -187,10 +251,17 @@ class ToolSwitcherTrainState extends TemplateState<ToolSwitcherEvents, ToolSwitc
 
 class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
     private _stationSubStateMachine: StationPlacementStateMachine;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
 
     constructor(stationSubStateMachine: StationPlacementStateMachine) {
         super();
         this._stationSubStateMachine = stationSubStateMachine;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
     }
 
     protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
@@ -213,6 +284,18 @@ class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwi
         switchToCatenary: {
             action: NO_OP,
             defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
         },
         switchToIdle: {
             action: NO_OP,
@@ -241,10 +324,17 @@ class ToolSwitcherStationState extends TemplateState<ToolSwitcherEvents, ToolSwi
 
 class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
     private _duplicateSubStateMachine: DuplicateToSideStateMachine;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
 
     constructor(duplicateSubStateMachine: DuplicateToSideStateMachine) {
         super();
         this._duplicateSubStateMachine = duplicateSubStateMachine;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
     }
 
     protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
@@ -267,6 +357,18 @@ class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolS
         switchToCatenary: {
             action: NO_OP,
             defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
         },
         switchToIdle: {
             action: NO_OP,
@@ -295,10 +397,17 @@ class ToolSwitcherDuplicateState extends TemplateState<ToolSwitcherEvents, ToolS
 
 class ToolSwitcherCatenaryState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
     private _catenarySubStateMachine: CatenaryLayoutStateMachine;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
 
     constructor(catenarySubStateMachine: CatenaryLayoutStateMachine) {
         super();
         this._catenarySubStateMachine = catenarySubStateMachine;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
     }
 
     protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
@@ -321,6 +430,18 @@ class ToolSwitcherCatenaryState extends TemplateState<ToolSwitcherEvents, ToolSw
         switchToCatenary: {
             action: NO_OP,
             defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
         },
         switchToIdle: {
             action: NO_OP,
@@ -347,20 +468,199 @@ class ToolSwitcherCatenaryState extends TemplateState<ToolSwitcherEvents, ToolSw
     };
 };
 
+class ToolSwitcherSingleSpinePlatformState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
+    private _subStateMachine: SingleSpinePlacementStateMachine;
+    private _stationId: number = 0;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
+
+    constructor(subStateMachine: SingleSpinePlacementStateMachine) {
+        super();
+        this._subStateMachine = subStateMachine;
+    }
+
+    setStationId(id: number) {
+        this._stationId = id;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
+    }
+
+    protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
+        switchToLayout: {
+            action: NO_OP,
+            defaultTargetState: 'LAYOUT',
+        },
+        switchToTrain: {
+            action: NO_OP,
+            defaultTargetState: 'TRAIN',
+        },
+        switchToStation: {
+            action: NO_OP,
+            defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
+        },
+        switchToIdle: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE',
+        }
+    }
+
+    uponEnter(context: BaseContext, stateMachine: StateMachine<ToolSwitcherEvents, BaseContext, ToolSwitcherStates, DefaultOutputMapping<ToolSwitcherEvents>>, from: ToolSwitcherStates | "INITIAL"): void {
+        this._subStateMachine.happens('startPlacement', { stationId: this._stationId });
+    }
+
+    beforeExit(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, toState: ToolSwitcherStates) {
+        this._subStateMachine.happens('endPlacement');
+    }
+
+    protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
+        action: (context, event, eventKey, stateMachine) => {
+            const result = this._subStateMachine.happens(eventKey, event);
+            if (result.handled) {
+                return { handled: true, output: result.output };
+            }
+            return { handled: false };
+        },
+    };
+};
+
+class ToolSwitcherDualSpinePlatformState extends TemplateState<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> {
+    private _subStateMachine: DualSpinePlacementStateMachine;
+    private _stationId: number = 0;
+    private _singleSpineState: ToolSwitcherSingleSpinePlatformState | null = null;
+    private _dualSpineState: ToolSwitcherDualSpinePlatformState | null = null;
+
+    constructor(subStateMachine: DualSpinePlacementStateMachine) {
+        super();
+        this._subStateMachine = subStateMachine;
+    }
+
+    setStationId(id: number) {
+        this._stationId = id;
+    }
+
+    setSubStates(singleSpineState: ToolSwitcherSingleSpinePlatformState, dualSpineState: ToolSwitcherDualSpinePlatformState) {
+        this._singleSpineState = singleSpineState;
+        this._dualSpineState = dualSpineState;
+    }
+
+    protected _eventReactions: EventReactions<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates> = {
+        switchToLayout: {
+            action: NO_OP,
+            defaultTargetState: 'LAYOUT',
+        },
+        switchToTrain: {
+            action: NO_OP,
+            defaultTargetState: 'TRAIN',
+        },
+        switchToStation: {
+            action: NO_OP,
+            defaultTargetState: 'STATION',
+        },
+        switchToDuplicate: {
+            action: NO_OP,
+            defaultTargetState: 'DUPLICATE',
+        },
+        switchToCatenary: {
+            action: NO_OP,
+            defaultTargetState: 'CATENARY',
+        },
+        switchToSingleSpinePlatform: {
+            action: (_context, event) => {
+                this._singleSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'SINGLE_SPINE_PLATFORM',
+        },
+        switchToDualSpinePlatform: {
+            action: (_context, event) => {
+                this._dualSpineState?.setStationId(event.stationId);
+            },
+            defaultTargetState: 'DUAL_SPINE_PLATFORM',
+        },
+        switchToIdle: {
+            action: NO_OP,
+            defaultTargetState: 'IDLE',
+        }
+    }
+
+    uponEnter(context: BaseContext, stateMachine: StateMachine<ToolSwitcherEvents, BaseContext, ToolSwitcherStates, DefaultOutputMapping<ToolSwitcherEvents>>, from: ToolSwitcherStates | "INITIAL"): void {
+        this._subStateMachine.happens('startPlacement', { stationId: this._stationId });
+    }
+
+    beforeExit(context: ToolSwitcherContext, stateMachine: ToolSwitcherStateMachine, toState: ToolSwitcherStates) {
+        this._subStateMachine.happens('endPlacement');
+    }
+
+    protected _defer: Defer<ToolSwitcherContext, ToolSwitcherEvents, ToolSwitcherStates> = {
+        action: (context, event, eventKey, stateMachine) => {
+            const result = this._subStateMachine.happens(eventKey, event);
+            if (result.handled) {
+                return { handled: true, output: result.output };
+            }
+            return { handled: false };
+        },
+    };
+};
+
 export const createToolSwitcherStateMachine = (
     layoutSubStateMachine: LayoutStateMachine,
     trainSubStateMachine: TrainPlacementStateMachine,
     stationSubStateMachine: StationPlacementStateMachine,
     duplicateSubStateMachine: DuplicateToSideStateMachine,
     catenarySubStateMachine: CatenaryLayoutStateMachine,
+    singleSpineSubStateMachine: SingleSpinePlacementStateMachine,
+    dualSpineSubStateMachine: DualSpinePlacementStateMachine,
 ): ToolSwitcherStateMachine => {
+    const singleSpineState = new ToolSwitcherSingleSpinePlatformState(singleSpineSubStateMachine);
+    const dualSpineState = new ToolSwitcherDualSpinePlatformState(dualSpineSubStateMachine);
+
+    const idleState = new ToolSwitcherIdleState();
+    const layoutState = new ToolSwitcherLayoutState(layoutSubStateMachine);
+    const trainState = new ToolSwitcherTrainState(trainSubStateMachine);
+    const stationState = new ToolSwitcherStationState(stationSubStateMachine);
+    const duplicateState = new ToolSwitcherDuplicateState(duplicateSubStateMachine);
+    const catenaryState = new ToolSwitcherCatenaryState(catenarySubStateMachine);
+
+    idleState.setSubStates(singleSpineState, dualSpineState);
+    layoutState.setSubStates(singleSpineState, dualSpineState);
+    trainState.setSubStates(singleSpineState, dualSpineState);
+    stationState.setSubStates(singleSpineState, dualSpineState);
+    duplicateState.setSubStates(singleSpineState, dualSpineState);
+    catenaryState.setSubStates(singleSpineState, dualSpineState);
+    singleSpineState.setSubStates(singleSpineState, dualSpineState);
+    dualSpineState.setSubStates(singleSpineState, dualSpineState);
+
     return new TemplateStateMachine<ToolSwitcherEvents, ToolSwitcherContext, ToolSwitcherStates>({
-        IDLE: new ToolSwitcherIdleState(),
-        LAYOUT: new ToolSwitcherLayoutState(layoutSubStateMachine),
-        TRAIN: new ToolSwitcherTrainState(trainSubStateMachine),
-        STATION: new ToolSwitcherStationState(stationSubStateMachine),
-        DUPLICATE: new ToolSwitcherDuplicateState(duplicateSubStateMachine),
-        CATENARY: new ToolSwitcherCatenaryState(catenarySubStateMachine),
+        IDLE: idleState,
+        LAYOUT: layoutState,
+        TRAIN: trainState,
+        STATION: stationState,
+        DUPLICATE: duplicateState,
+        CATENARY: catenaryState,
+        SINGLE_SPINE_PLATFORM: singleSpineState,
+        DUAL_SPINE_PLATFORM: dualSpineState,
     }, 'IDLE', {
         setup: () => { },
         cleanup: () => { },

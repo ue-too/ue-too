@@ -41,6 +41,7 @@ export type Station = {
   trackSegments: number[];
   /** IDs of track joints owned by this station. */
   joints: number[];
+  trackAlignedPlatforms: number[];
 };
 
 // ---------------------------------------------------------------------------
@@ -66,6 +67,7 @@ export type SerializedStation = {
   platforms: SerializedPlatform[];
   trackSegments: number[];
   joints: number[];
+  trackAlignedPlatforms: number[];
 };
 
 export type SerializedStationData = {
