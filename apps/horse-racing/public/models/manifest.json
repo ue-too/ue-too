@@ -14,5 +14,13 @@
   {
     "label": "V19 Best Jockey",
     "url": "/models/v19_best_jockey.onnx"
+  },
+  {
+    "label": "V21 Best Jockey",
+    "url": "/models/v21_best_jockey.onnx"
+  },
+  {
+    "label": "V22 Best Jockey",
+    "url": "/models/v22_best_jockey.onnx"
   }
 ]

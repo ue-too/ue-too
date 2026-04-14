@@ -51,6 +51,8 @@ export function makeInitApp(
             reset: () => sim.reset(),
             getPhase: () => sim.getPhase(),
             getHorses: () => sim.getHorses(),
+            getHorseCount: () => sim.getHorseCount(),
+            setHorseCount: count => sim.setHorseCount(count),
             onPhaseChange: cb => sim.onPhaseChange(cb),
             setJockey: (jockey: Jockey) => sim.setJockey(jockey),
             exportRace: () => sim.exportRace(),

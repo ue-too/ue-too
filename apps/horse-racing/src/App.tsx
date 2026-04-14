@@ -27,6 +27,7 @@ const App = (): ReactNode => {
     const [simHandle, setSimHandle] = useState<V2SimHandle | null>(null);
     const [phase, setPhase] = useState<RacePhase>('gate');
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
+    const [resetKey, setResetKey] = useState(0);
 
     const initFunction = useMemo(
         () => makeInitApp(handle => setSimHandle(handle)),
@@ -38,6 +39,7 @@ const App = (): ReactNode => {
         const unsubscribe = simHandle.onPhaseChange((p, order) => {
             setPhase(p);
             setFinishOrder(order);
+            if (p === 'gate') setResetKey(k => k + 1);
         });
         return () => {
             unsubscribe();
@@ -54,6 +56,7 @@ const App = (): ReactNode => {
                 <RaceToolbar sim={simHandle} phase={phase} />
                 {phase === 'gate' && simHandle && (
                     <HorsePicker
+                        key={resetKey}
                         sim={simHandle}
                         horses={simHandle.getHorses().map(h => ({
                             id: h.id,

@@ -5,7 +5,7 @@ import { createInputHandler } from './input';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';
 import type { TrackSegment } from './track-types';
-import type { Horse, InputState, RacePhase } from './types';
+import { MAX_HORSES, type Horse, type InputState, type RacePhase } from './types';
 
 export type PhaseChangeCallback = (
     phase: RacePhase,
@@ -46,6 +46,8 @@ export interface V2SimHandle {
     reset(): void;
     getPhase(): RacePhase;
     getHorses(): Horse[];
+    getHorseCount(): number;
+    setHorseCount(count: number): void;
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     setJockey(jockey: Jockey): void;
     exportRace(): RaceRecording | null;
@@ -68,11 +70,13 @@ export class V2Sim {
     private jockey: Jockey = new NullJockey();
     private frames: RaceFrame[] = [];
 
+    private horseCount = 4;
+
     constructor(
         private components: BaseAppComponents,
         private segments: TrackSegment[]
     ) {
-        this.race = new Race(segments);
+        this.race = new Race(segments, this.horseCount);
         this.renderer = new RaceRenderer(components.app.stage, segments);
         this.input = createInputHandler();
         this.renderer.syncHorses(this.race.state.horses, null);
@@ -160,7 +164,7 @@ export class V2Sim {
     }
 
     reset(): void {
-        this.race.reset();
+        this.race = new Race(this.segments, this.horseCount);
         this.pendingPlayerId = null;
         this.frames = [];
         this.renderer.dispose();
@@ -170,6 +174,16 @@ export class V2Sim {
         );
         this.renderer.syncHorses(this.race.state.horses, null);
         this.emitPhase();
+    }
+
+    getHorseCount(): number {
+        return this.horseCount;
+    }
+
+    setHorseCount(count: number): void {
+        if (this.race.state.phase !== 'gate') return;
+        this.horseCount = Math.max(2, Math.min(MAX_HORSES, count));
+        this.reset();
     }
 
     exportRace(): RaceRecording | null {

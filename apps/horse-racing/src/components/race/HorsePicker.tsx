@@ -13,15 +13,28 @@ interface Props {
     horses: { id: number; color: number }[];
 }
 
+const HORSE_COUNT_OPTIONS = [2, 3, 4, 6, 8, 10, 12];
+
 function hex(n: number): string {
     return `#${n.toString(16).padStart(6, '0')}`;
 }
+
+const selectStyle = {
+    padding: '6px 10px',
+    borderRadius: 8,
+    border: '1px solid #555',
+    background: '#222',
+    color: 'white',
+    fontSize: 13,
+    cursor: 'pointer',
+} as const;
 
 export function HorsePicker({ sim, horses }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
     const [models, setModels] = useState<ModelEntry[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [horseCount, setHorseCount] = useState(sim.getHorseCount());
 
     useEffect(() => {
         fetch('/models/manifest.json')
@@ -54,6 +67,12 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
         }
     };
 
+    const onHorseCountChange = (count: number) => {
+        setHorseCount(count);
+        setSelected(null);
+        sim.setHorseCount(count);
+    };
+
     return (
         <div
             style={{
@@ -72,33 +91,41 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                 pointerEvents: 'auto',
             }}
         >
-            {/* Model picker */}
-            {models.length > 0 && (
+            {/* Settings row */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                {/* Model picker */}
+                {models.length > 0 && (
+                    <select
+                        value={selectedModel}
+                        onChange={e => onModelChange(e.target.value)}
+                        disabled={loading}
+                        style={selectStyle}
+                    >
+                        <option value="">No AI Model</option>
+                        {models.map(m => (
+                            <option key={m.url} value={m.url}>
+                                {m.label}
+                            </option>
+                        ))}
+                    </select>
+                )}
+
+                {/* Horse count picker */}
                 <select
-                    value={selectedModel}
-                    onChange={e => onModelChange(e.target.value)}
-                    disabled={loading}
-                    style={{
-                        padding: '6px 10px',
-                        borderRadius: 8,
-                        border: '1px solid #555',
-                        background: '#222',
-                        color: 'white',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                    }}
+                    value={horseCount}
+                    onChange={e => onHorseCountChange(Number(e.target.value))}
+                    style={selectStyle}
                 >
-                    <option value="">No AI Model</option>
-                    {models.map(m => (
-                        <option key={m.url} value={m.url}>
-                            {m.label}
+                    {HORSE_COUNT_OPTIONS.map(n => (
+                        <option key={n} value={n}>
+                            {n} Horses
                         </option>
                     ))}
                 </select>
-            )}
+            </div>
 
             {/* Horse picker */}
-            <div style={{ display: 'flex', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
                 {horses.map(h => (
                     <button
                         key={h.id}
