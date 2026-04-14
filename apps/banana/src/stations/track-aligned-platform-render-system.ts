@@ -289,6 +289,207 @@ export class TrackAlignedPlatformRenderSystem {
         this._worldRenderSystem.sortChildren();
     }
 
+    /**
+     * Show the dual-spine placement preview: two spine edges, cap vertices, and anchors.
+     */
+    showDualSpinePlacementPreview(
+        spineAPoints: Point[],
+        spineBPoints: Point[],
+        capAVertices: Point[],
+        capBVertices: Point[],
+        spineAStartAnchor: Point | null,
+        spineAEndAnchor: Point | null,
+        spineBStartAnchor: Point | null,
+        spineBEndAnchor: Point | null,
+    ): void {
+        const g = this._ensurePreviewGraphics();
+        g.clear();
+
+        // Draw spine A edge (green).
+        if (spineAPoints.length >= 2) {
+            g.moveTo(spineAPoints[0].x, spineAPoints[0].y);
+            for (let i = 1; i < spineAPoints.length; i++) {
+                g.lineTo(spineAPoints[i].x, spineAPoints[i].y);
+            }
+            g.stroke({ color: 0x44cc88, alpha: 0.9, width: 0.25 });
+        }
+
+        // Draw spine B edge (cyan to distinguish from A).
+        if (spineBPoints.length >= 2) {
+            g.moveTo(spineBPoints[0].x, spineBPoints[0].y);
+            for (let i = 1; i < spineBPoints.length; i++) {
+                g.lineTo(spineBPoints[i].x, spineBPoints[i].y);
+            }
+            g.stroke({ color: 0x44aacc, alpha: 0.9, width: 0.25 });
+        }
+
+        // Draw cap A vertices (yellow, connecting spine A end → spine B end).
+        if (capAVertices.length > 0) {
+            if (spineAEndAnchor !== null) {
+                g.moveTo(spineAEndAnchor.x, spineAEndAnchor.y);
+                g.lineTo(capAVertices[0].x, capAVertices[0].y);
+            }
+            g.moveTo(capAVertices[0].x, capAVertices[0].y);
+            for (let i = 1; i < capAVertices.length; i++) {
+                g.lineTo(capAVertices[i].x, capAVertices[i].y);
+            }
+            // Close to the closing anchor (spine B end).
+            if (spineBEndAnchor !== null) {
+                g.lineTo(spineBEndAnchor.x, spineBEndAnchor.y);
+            }
+            g.stroke({ color: 0xf0cc00, alpha: 0.8, width: 0.2 });
+            for (const v of capAVertices) {
+                g.circle(v.x, v.y, 0.3);
+                g.fill({ color: 0xf0cc00, alpha: 0.8 });
+            }
+        }
+
+        // Draw cap B vertices (yellow, connecting spine B start → spine A start).
+        if (capBVertices.length > 0) {
+            if (spineBStartAnchor !== null) {
+                g.moveTo(spineBStartAnchor.x, spineBStartAnchor.y);
+                g.lineTo(capBVertices[0].x, capBVertices[0].y);
+            }
+            g.moveTo(capBVertices[0].x, capBVertices[0].y);
+            for (let i = 1; i < capBVertices.length; i++) {
+                g.lineTo(capBVertices[i].x, capBVertices[i].y);
+            }
+            // Close to the closing anchor (spine A start).
+            if (spineAStartAnchor !== null) {
+                g.lineTo(spineAStartAnchor.x, spineAStartAnchor.y);
+            }
+            g.stroke({ color: 0xf0cc00, alpha: 0.8, width: 0.2 });
+            for (const v of capBVertices) {
+                g.circle(v.x, v.y, 0.3);
+                g.fill({ color: 0xf0cc00, alpha: 0.8 });
+            }
+        }
+
+        // Anchor points.
+        if (spineAStartAnchor !== null) {
+            g.circle(spineAStartAnchor.x, spineAStartAnchor.y, 0.5);
+            g.fill({ color: 0x44cc88, alpha: 0.9 });
+        }
+        if (spineAEndAnchor !== null) {
+            g.circle(spineAEndAnchor.x, spineAEndAnchor.y, 0.5);
+            g.fill({ color: 0xcc4444, alpha: 0.9 });
+        }
+        if (spineBStartAnchor !== null) {
+            g.circle(spineBStartAnchor.x, spineBStartAnchor.y, 0.5);
+            g.fill({ color: 0x44aacc, alpha: 0.9 });
+        }
+        if (spineBEndAnchor !== null) {
+            g.circle(spineBEndAnchor.x, spineBEndAnchor.y, 0.5);
+            g.fill({ color: 0xcc8844, alpha: 0.9 });
+        }
+
+        this._worldRenderSystem.sortChildren();
+    }
+
+    /**
+     * Show the cap-pairing preview: both spines plus connection lines showing
+     * which endpoints would be paired based on cursor proximity.
+     */
+    showCapPairingPreview(
+        spineAPoints: Point[],
+        spineBPoints: Point[],
+        spineAStartAnchor: Point,
+        spineAEndAnchor: Point,
+        spineBStartAnchor: Point,
+        spineBEndAnchor: Point,
+        cursorNearBEnd: boolean,
+    ): void {
+        const g = this._ensurePreviewGraphics();
+        g.clear();
+
+        // Draw spine A (green).
+        if (spineAPoints.length >= 2) {
+            g.moveTo(spineAPoints[0].x, spineAPoints[0].y);
+            for (let i = 1; i < spineAPoints.length; i++) {
+                g.lineTo(spineAPoints[i].x, spineAPoints[i].y);
+            }
+            g.stroke({ color: 0x44cc88, alpha: 0.9, width: 0.25 });
+        }
+
+        // Draw spine B (cyan).
+        if (spineBPoints.length >= 2) {
+            g.moveTo(spineBPoints[0].x, spineBPoints[0].y);
+            for (let i = 1; i < spineBPoints.length; i++) {
+                g.lineTo(spineBPoints[i].x, spineBPoints[i].y);
+            }
+            g.stroke({ color: 0x44aacc, alpha: 0.9, width: 0.25 });
+        }
+
+        // Draw connection lines for the active pairing (bright).
+        // Draw the alternative pairing (dim).
+        const activeAlpha = 0.9;
+        const dimAlpha = 0.25;
+
+        // Option 1: A_end ↔ B_end, B_start ↔ A_start (cursorNearBEnd = true)
+        // Option 2: A_end ↔ B_start, B_end ↔ A_start (cursorNearBEnd = false)
+        const pair1Alpha = cursorNearBEnd ? activeAlpha : dimAlpha;
+        const pair2Alpha = cursorNearBEnd ? dimAlpha : activeAlpha;
+
+        // Pairing 1: A_end → B_end, B_start → A_start
+        g.moveTo(spineAEndAnchor.x, spineAEndAnchor.y);
+        g.lineTo(spineBEndAnchor.x, spineBEndAnchor.y);
+        g.moveTo(spineBStartAnchor.x, spineBStartAnchor.y);
+        g.lineTo(spineAStartAnchor.x, spineAStartAnchor.y);
+        g.stroke({ color: 0xf0cc00, alpha: pair1Alpha, width: 0.2 });
+
+        // Pairing 2: A_end → B_start, B_end → A_start
+        g.moveTo(spineAEndAnchor.x, spineAEndAnchor.y);
+        g.lineTo(spineBStartAnchor.x, spineBStartAnchor.y);
+        g.moveTo(spineBEndAnchor.x, spineBEndAnchor.y);
+        g.lineTo(spineAStartAnchor.x, spineAStartAnchor.y);
+        g.stroke({ color: 0xf0cc00, alpha: pair2Alpha, width: 0.2 });
+
+        // Anchors.
+        g.circle(spineAStartAnchor.x, spineAStartAnchor.y, 0.5);
+        g.fill({ color: 0x44cc88, alpha: 0.9 });
+        g.circle(spineAEndAnchor.x, spineAEndAnchor.y, 0.5);
+        g.fill({ color: 0xcc4444, alpha: 0.9 });
+        g.circle(spineBStartAnchor.x, spineBStartAnchor.y, 0.5);
+        g.fill({ color: 0x44aacc, alpha: 0.9 });
+        g.circle(spineBEndAnchor.x, spineBEndAnchor.y, 0.5);
+        g.fill({ color: 0xcc8844, alpha: 0.9 });
+
+        this._worldRenderSystem.sortChildren();
+    }
+
+    /**
+     * Overlay on top of the current preview: a trailing line from the last cap
+     * vertex to the cursor, plus a snap ring around the closing anchor when
+     * the cursor is nearby.
+     */
+    showCapDrawingHover(
+        lastPoint: Point | null,
+        cursorOrSnap: Point,
+        closingAnchor: Point | null,
+        isNearClosing: boolean,
+    ): void {
+        const g = this._ensurePreviewGraphics();
+
+        // Trailing line from last vertex/anchor to cursor.
+        if (lastPoint !== null) {
+            g.moveTo(lastPoint.x, lastPoint.y);
+            g.lineTo(cursorOrSnap.x, cursorOrSnap.y);
+            g.stroke({ color: 0xf0cc00, alpha: 0.5, width: 0.15 });
+        }
+
+        // Snap ring around closing anchor.
+        if (closingAnchor !== null) {
+            g.circle(closingAnchor.x, closingAnchor.y, isNearClosing ? 1.0 : 0.6);
+            g.stroke({
+                color: isNearClosing ? 0x44ff88 : 0xf0cc00,
+                alpha: isNearClosing ? 0.9 : 0.3,
+                width: isNearClosing ? 0.2 : 0.1,
+            });
+        }
+
+        this._worldRenderSystem.sortChildren();
+    }
+
     hidePreview(): void {
         if (this._previewGraphics !== null) {
             this._worldRenderSystem.removeDrawable(this._previewKey);
@@ -451,8 +652,10 @@ export class TrackAlignedPlatformRenderSystem {
 
     /**
      * Build a triangle-strip mesh for a dual-spine platform.
-     * Pairs spine A samples with corresponding resampled spine B points,
-     * plus earcut-triangulated end caps.
+     *
+     * Both spines are expected to run in the same direction (the placement
+     * tool's cap-pairing step normalises them). The strip pairs A[t] with
+     * B[t] directly; caps are triangulated at each end.
      */
     private _buildDualSpineStripMesh(
         trackEdgeA: Point[],
@@ -467,23 +670,22 @@ export class TrackAlignedPlatformRenderSystem {
         const totalArcA = arcLensA[arcLensA.length - 1];
         if (totalArcA < 1e-9) return null;
 
-        // Reverse edge B to align with edge A direction.
-        const reversedEdgeB = [...trackEdgeB].reverse();
-        const arcLensRevB = cumulativeArcLengths(reversedEdgeB);
-        const totalArcRevB = arcLensRevB[arcLensRevB.length - 1];
+        const arcLensB = cumulativeArcLengths(trackEdgeB);
+        const totalArcB = arcLensB[arcLensB.length - 1];
 
         const verts: number[] = [];
         const uvs: number[] = [];
         const indices: number[] = [];
 
-        // --- Main body strip: edge A (u=0) paired with resampled reversed edge B (u=1). ---
+        // --- Main body strip: edge A (u=0) paired with edge B (u=1). ---
+        // Both edges run in the same direction; pair by normalised arc-length.
         for (let i = 0; i < trackEdgeA.length; i++) {
             const t = arcLensA[i] / totalArcA;
             const pA = trackEdgeA[i];
             const pB =
-                totalArcRevB > 0
-                    ? samplePolylineAtArcLength(reversedEdgeB, arcLensRevB, t * totalArcRevB)
-                    : reversedEdgeB[0];
+                totalArcB > 0
+                    ? samplePolylineAtArcLength(trackEdgeB, arcLensB, t * totalArcB)
+                    : trackEdgeB[0];
             const v = arcLensA[i] / PLATFORM_TEXTURE_TILE_LEN;
 
             verts.push(pA.x, pA.y);
@@ -499,13 +701,14 @@ export class TrackAlignedPlatformRenderSystem {
         }
 
         // --- End caps (earcut for non-empty cap vertex arrays). ---
+        // capA connects A_end to B_end; capB connects B_start to A_start.
         const lastA = trackEdgeA[trackEdgeA.length - 1];
-        const firstRevB = reversedEdgeB[0];
-        this._appendCapTriangles(lastA, capA, firstRevB, trackEdgeA, arcLensA, verts, uvs, indices);
+        const lastB = trackEdgeB[trackEdgeB.length - 1];
+        this._appendCapTriangles(lastA, capA, lastB, trackEdgeA, arcLensA, verts, uvs, indices);
 
-        const lastRevB = reversedEdgeB[reversedEdgeB.length - 1];
+        const firstB = trackEdgeB[0];
         const firstA = trackEdgeA[0];
-        this._appendCapTriangles(lastRevB, capB, firstA, trackEdgeA, arcLensA, verts, uvs, indices);
+        this._appendCapTriangles(firstB, capB, firstA, trackEdgeA, arcLensA, verts, uvs, indices);
 
         if (indices.length === 0) return null;
 

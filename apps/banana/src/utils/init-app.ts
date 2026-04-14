@@ -582,6 +582,7 @@ export const initApp = async (
   );
   debugOverlayRenderSystem.setPlacedTrainsGetter(() => trainManager.getPlacedTrains());
   debugOverlayRenderSystem.setStationManager(stationManager);
+  debugOverlayRenderSystem.setTrackAlignedPlatformManager(trackAlignedPlatformManager);
   debugOverlayRenderSystem.setProximityDetector(trainRenderSystem.proximityDetector);
 
   // Share the proximity detector with the train manager for coupling queries

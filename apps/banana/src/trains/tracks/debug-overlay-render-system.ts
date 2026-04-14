@@ -7,6 +7,7 @@ import { PointCal } from '@ue-too/math';
 import { Container, Graphics, Text } from 'pixi.js';
 
 import type { StationManager } from '@/stations/station-manager';
+import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import type { ProximityDetector } from '@/trains/proximity-detector';
 import type { PlacedTrainEntry } from '@/trains/train-manager';
 import { WorldRenderSystem } from '@/world-render-system';
@@ -88,6 +89,7 @@ export class DebugOverlayRenderSystem {
     private _showProximityLines = false;
     private _getPlacedTrains: (() => readonly PlacedTrainEntry[]) | null = null;
     private _stationManager: StationManager | null = null;
+    private _trackAlignedPlatformManager: TrackAlignedPlatformManager | null = null;
     private _proximityDetector: ProximityDetector | null = null;
     private _zoomLevel = 1;
     private _abortController = new AbortController();
@@ -224,6 +226,14 @@ export class DebugOverlayRenderSystem {
     /** Provide the station manager so stop position labels can be rendered. */
     setStationManager(stationManager: StationManager): void {
         this._stationManager = stationManager;
+    }
+
+    /** Provide the track-aligned platform manager so its stop labels are rendered too. */
+    setTrackAlignedPlatformManager(manager: TrackAlignedPlatformManager): void {
+        this._trackAlignedPlatformManager = manager;
+        manager.onChange(() => this.refresh(), {
+            signal: this._abortController.signal,
+        });
     }
 
     /** Show or hide station stop position labels. */
@@ -483,34 +493,49 @@ export class DebugOverlayRenderSystem {
         const stations = this._stationManager.getStations();
         for (const { station } of stations) {
             for (const platform of station.platforms) {
-                for (const stop of platform.stopPositions) {
-                    const curve = this._trackGraph.getTrackSegmentCurve(
-                        stop.trackSegmentId
-                    );
-                    if (curve === null) continue;
-                    const pos = curve.get(stop.tValue);
-                    const derivative = curve.derivative(stop.tValue);
-                    const mag = PointCal.magnitude(derivative);
-                    let arrowDir: { x: number; y: number } | null = null;
-                    if (mag > 1e-6) {
-                        const unit = PointCal.unitVector(derivative);
-                        // 'tangent' points in derivative direction; 'reverseTangent' points opposite
-                        arrowDir =
-                            stop.direction === 'tangent'
-                                ? unit
-                                : { x: -unit.x, y: -unit.y };
-                    }
-                    const label = `S${stop.trackSegmentId}`;
-                    const node = this._makeLabelNode(
-                        label,
-                        pos.x,
-                        pos.y,
-                        STATION_STOP_CIRCLE_FILL,
-                        arrowDir
-                    );
-                    this._stationStopContainer.addChild(node);
+                this._addStopLabels(platform.stopPositions);
+            }
+
+            // Track-aligned platforms store stop positions on the platform entity.
+            if (this._trackAlignedPlatformManager !== null) {
+                for (const platformId of station.trackAlignedPlatforms) {
+                    const tap = this._trackAlignedPlatformManager.getPlatform(platformId);
+                    if (tap === null) continue;
+                    this._addStopLabels(tap.stopPositions);
                 }
             }
+        }
+    }
+
+    private _addStopLabels(
+        stopPositions: readonly { trackSegmentId: number; direction: string; tValue: number }[],
+    ): void {
+        for (const stop of stopPositions) {
+            const curve = this._trackGraph.getTrackSegmentCurve(
+                stop.trackSegmentId
+            );
+            if (curve === null) continue;
+            const pos = curve.get(stop.tValue);
+            const derivative = curve.derivative(stop.tValue);
+            const mag = PointCal.magnitude(derivative);
+            let arrowDir: { x: number; y: number } | null = null;
+            if (mag > 1e-6) {
+                const unit = PointCal.unitVector(derivative);
+                // 'tangent' points in derivative direction; 'reverseTangent' points opposite
+                arrowDir =
+                    stop.direction === 'tangent'
+                        ? unit
+                        : { x: -unit.x, y: -unit.y };
+            }
+            const label = `S${stop.trackSegmentId}`;
+            const node = this._makeLabelNode(
+                label,
+                pos.x,
+                pos.y,
+                STATION_STOP_CIRCLE_FILL,
+                arrowDir
+            );
+            this._stationStopContainer.addChild(node);
         }
     }
 

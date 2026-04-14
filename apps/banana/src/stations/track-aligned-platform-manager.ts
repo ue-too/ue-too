@@ -1,3 +1,4 @@
+import { Observable, SynchronousObservable, type SubscriptionOptions } from '@ue-too/board';
 import { GenericEntityManager } from '@/utils';
 import type {
     TrackAlignedPlatform,
@@ -7,9 +8,15 @@ import type {
 
 export class TrackAlignedPlatformManager {
     private _manager: GenericEntityManager<TrackAlignedPlatform>;
+    private _changeObservable: Observable<[]> = new SynchronousObservable<[]>();
 
     constructor(initialCount = 10) {
         this._manager = new GenericEntityManager<TrackAlignedPlatform>(initialCount);
+    }
+
+    /** Subscribe to notifications when platforms are created or destroyed. */
+    onChange(callback: () => void, options?: SubscriptionOptions) {
+        return this._changeObservable.subscribe(callback, options);
     }
 
     // -----------------------------------------------------------------------
@@ -18,6 +25,7 @@ export class TrackAlignedPlatformManager {
 
     createPlatformWithId(id: number, platform: Omit<TrackAlignedPlatform, 'id'>): void {
         this._manager.createEntityWithId(id, { ...platform, id } as TrackAlignedPlatform);
+        this._changeObservable.notify();
     }
 
     getAllPlatforms(): { id: number; platform: TrackAlignedPlatform }[] {
@@ -30,6 +38,7 @@ export class TrackAlignedPlatformManager {
         const id = this._manager.createEntity({ ...platform, id: -1 } as TrackAlignedPlatform);
         const entity = this._manager.getEntity(id);
         if (entity) entity.id = id;
+        this._changeObservable.notify();
         return id;
     }
 
@@ -39,6 +48,7 @@ export class TrackAlignedPlatformManager {
 
     destroyPlatform(id: number): void {
         this._manager.destroyEntity(id);
+        this._changeObservable.notify();
     }
 
     destroyPlatformsForStation(stationId: number): void {
@@ -49,6 +59,7 @@ export class TrackAlignedPlatformManager {
         for (const id of toDestroy) {
             this._manager.destroyEntity(id);
         }
+        if (toDestroy.length > 0) this._changeObservable.notify();
     }
 
     // -----------------------------------------------------------------------

@@ -27,7 +27,7 @@ import type { StationManager } from './station-manager';
 import type { TrackAlignedPlatformManager } from './track-aligned-platform-manager';
 import type { TrackAlignedPlatformRenderSystem } from './track-aligned-platform-render-system';
 import { computePlatformOffset } from './platform-offset';
-import { validateSpine, computeAnchorPoint, sampleSpineEdge } from './spine-utils';
+import { validateSpine, computeAnchorPoint, sampleSpineEdge, computeStopPositions } from './spine-utils';
 import type { SpineEntry } from './track-aligned-platform-types';
 
 // ---------------------------------------------------------------------------
@@ -226,9 +226,87 @@ export class SingleSpinePlacementEngine
         if (!this._hasStart || this._spine.length === 0) return false;
 
         const projection = this._trackGraph.projectPointNearTrack(position, 5);
-        if (projection === null) return false;
+        if (projection === null) {
+            this._updatePlacementPreview();
+            return false;
+        }
 
-        // Minimal preview update — just track the projected point for now.
+        const startEntry = this._spine[0];
+        const startSeg = startEntry.trackSegment;
+        const startT = startEntry.tStart;
+        const side = startEntry.side;
+
+        let tentativeSpine: SpineEntry[];
+
+        if (projection.curve === startSeg) {
+            const tEnd = projection.atT;
+            if (Math.abs(tEnd - startT) < 1e-6) {
+                this._updatePlacementPreview();
+                return false;
+            }
+            tentativeSpine = [
+                {
+                    trackSegment: startSeg,
+                    tStart: startT,
+                    tEnd,
+                    side,
+                },
+            ];
+        } else {
+            const built = this._buildSpinePath(
+                startSeg,
+                startT,
+                side,
+                projection.curve,
+                projection.atT,
+            );
+            if (built === null) {
+                this._updatePlacementPreview();
+                return false;
+            }
+            tentativeSpine = built;
+        }
+
+        // Compute tentative end anchor at the exact projection point.
+        let tentativeEndAnchor: Point | null = null;
+        const lastEntry = tentativeSpine[tentativeSpine.length - 1];
+        const endCurve = this._trackGraph.getTrackSegmentCurve(projection.curve);
+        if (endCurve !== null) {
+            const endPointEntry: SpineEntry = {
+                trackSegment: projection.curve,
+                tStart: projection.atT,
+                tEnd: projection.atT,
+                side: lastEntry.side,
+            };
+            tentativeEndAnchor = computeAnchorPoint(
+                endPointEntry,
+                'start',
+                this._offset,
+                () => endCurve,
+            );
+        }
+
+        // Show preview with the tentative spine (without committing state).
+        const getCurve = (segmentId: number) => {
+            const curve = this._trackGraph.getTrackSegmentCurve(segmentId);
+            if (curve === null) throw new Error(`Missing curve for segment ${segmentId}`);
+            return curve;
+        };
+
+        let spinePoints: Point[];
+        try {
+            spinePoints = sampleSpineEdge(tentativeSpine, this._offset, getCurve);
+        } catch {
+            spinePoints = [];
+        }
+
+        this._platformRenderSystem.showPlacementPreview(
+            spinePoints,
+            this._outerVertices,
+            this._startAnchor,
+            tentativeEndAnchor,
+        );
+
         return true;
     }
 
@@ -253,8 +331,8 @@ export class SingleSpinePlacementEngine
             finalSpine = [
                 {
                     trackSegment: startSeg,
-                    tStart: Math.min(startT, tEnd),
-                    tEnd: Math.max(startT, tEnd),
+                    tStart: startT,
+                    tEnd,
                     side,
                 },
             ];
@@ -284,11 +362,17 @@ export class SingleSpinePlacementEngine
 
         this._spine = finalSpine;
 
-        // Compute end anchor.
+        // Compute end anchor at the exact projection point.
         const lastEntry = finalSpine[finalSpine.length - 1];
-        const endCurve = this._trackGraph.getTrackSegmentCurve(lastEntry.trackSegment);
+        const endCurve = this._trackGraph.getTrackSegmentCurve(projection.curve);
         if (endCurve !== null) {
-            this._endAnchor = computeAnchorPoint(lastEntry, 'end', this._offset, () => endCurve);
+            const endPointEntry: SpineEntry = {
+                trackSegment: projection.curve,
+                tStart: projection.atT,
+                tEnd: projection.atT,
+                side: lastEntry.side,
+            };
+            this._endAnchor = computeAnchorPoint(endPointEntry, 'start', this._offset, () => endCurve);
         }
 
         this._hasEnd = true;
@@ -324,6 +408,12 @@ export class SingleSpinePlacementEngine
             return;
         }
 
+        const getCurve = (segmentId: number) => {
+            const curve = this._trackGraph.getTrackSegmentCurve(segmentId);
+            if (curve === null) throw new Error(`Missing curve for segment ${segmentId}`);
+            return curve;
+        };
+
         const platformId = this._platformManager.createPlatform({
             stationId: this._activeStationId,
             spineA: [...this._spine],
@@ -333,7 +423,7 @@ export class SingleSpinePlacementEngine
                 kind: 'single',
                 vertices: [...this._outerVertices],
             },
-            stopPositions: [],
+            stopPositions: computeStopPositions(this._spine, getCurve),
         });
 
         station.trackAlignedPlatforms.push(platformId);
@@ -475,6 +565,14 @@ export class SingleSpinePlacementEngine
     /**
      * Converts a sequence of segment IDs into SpineEntry objects.
      */
+    /**
+     * Converts a sequence of segment IDs into SpineEntry objects.
+     *
+     * The side value is propagated from the user's original pick. At each
+     * segment junction the tangent vectors of both curves are compared via dot
+     * product: if they point in opposite directions the side is flipped so that
+     * the offset stays on the same geometric side of the track.
+     */
     private _pathToSpineEntries(
         path: number[],
         startT: number,
@@ -482,89 +580,111 @@ export class SingleSpinePlacementEngine
         endT: number,
     ): SpineEntry[] {
         const entries: SpineEntry[] = [];
+        let currentSide = side;
 
         for (let i = 0; i < path.length; i++) {
             const segId = path[i];
             const isFirst = i === 0;
             const isLast = i === path.length - 1;
 
+            const segment = this._trackGraph.getTrackSegmentWithJoints(segId);
+
             let tStart: number;
             let tEnd: number;
-            let entrySide: 1 | -1 = side;
 
             if (isFirst && isLast) {
-                tStart = Math.min(startT, endT);
-                tEnd = Math.max(startT, endT);
+                // Same segment — preserve user's drawing direction.
+                tStart = startT;
+                tEnd = endT;
             } else if (isFirst) {
-                // For the first segment, we need to determine direction.
-                // Walk from startT toward the connecting joint.
-                const segment = this._trackGraph.getTrackSegmentWithJoints(segId);
-                if (segment === null) {
-                    tStart = startT;
-                    tEnd = 1;
-                } else {
-                    // Find shared joint with next segment.
+                // First segment: determine exit direction toward next segment.
+                if (segment !== null) {
                     const nextSegId = path[i + 1];
                     const nextSeg = this._trackGraph.getTrackSegmentWithJoints(nextSegId);
                     if (nextSeg !== null) {
-                        const segJoints = new Set([segment.t0Joint, segment.t1Joint]);
-                        const nextJoints = [nextSeg.t0Joint, nextSeg.t1Joint];
-                        const sharedJoint = nextJoints.find((j) => segJoints.has(j));
-                        if (sharedJoint === segment.t1Joint) {
-                            tStart = startT;
-                            tEnd = 1;
-                        } else {
-                            // Shared joint is t0Joint — going backwards.
-                            tStart = 0;
-                            tEnd = startT;
-                            entrySide = (side * -1) as 1 | -1;
-                        }
+                        const exitT = this._sharedJointT(segment, nextSeg);
+                        tStart = startT;
+                        tEnd = exitT;
                     } else {
                         tStart = startT;
                         tEnd = 1;
                     }
-                }
-            } else if (isLast) {
-                const segment = this._trackGraph.getTrackSegmentWithJoints(segId);
-                if (segment === null) {
-                    tStart = 0;
-                    tEnd = endT;
                 } else {
-                    // Find shared joint with previous segment.
-                    const prevSegId = path[i - 1];
-                    const prevSeg = this._trackGraph.getTrackSegmentWithJoints(prevSegId);
-                    if (prevSeg !== null) {
-                        const prevJoints = new Set([prevSeg.t0Joint, prevSeg.t1Joint]);
-                        const segJoints = [segment.t0Joint, segment.t1Joint];
-                        const sharedJoint = segJoints.find((j) => prevJoints.has(j));
-                        if (sharedJoint === segment.t0Joint) {
-                            tStart = 0;
-                            tEnd = endT;
-                        } else {
-                            // Shared joint is t1Joint — entering from t1.
-                            tStart = endT;
-                            tEnd = 1;
-                            entrySide = (side * -1) as 1 | -1;
+                    tStart = startT;
+                    tEnd = 1;
+                }
+                // First segment always keeps the user's original side — no flip.
+            } else {
+                // Non-first segment: determine entry t and check for side flip.
+                const prevSegId = path[i - 1];
+                const prevSeg = this._trackGraph.getTrackSegmentWithJoints(prevSegId);
+
+                let entryT: 0 | 1 = 0;
+
+                if (segment !== null && prevSeg !== null) {
+                    entryT = this._sharedJointT(segment, prevSeg);
+
+                    // Compare tangent directions at the junction to decide side flip.
+                    const prevCurve = this._trackGraph.getTrackSegmentCurve(prevSegId);
+                    const thisCurve = this._trackGraph.getTrackSegmentCurve(segId);
+                    if (prevCurve !== null && thisCurve !== null) {
+                        const prevExitT = this._sharedJointT(prevSeg, segment);
+                        const prevTangent = prevCurve.derivative(prevExitT);
+                        const thisTangent = thisCurve.derivative(entryT);
+                        const dot =
+                            prevTangent.x * thisTangent.x +
+                            prevTangent.y * thisTangent.y;
+                        if (dot < 0) {
+                            currentSide = (currentSide * -1) as 1 | -1;
                         }
-                    } else {
-                        tStart = 0;
-                        tEnd = endT;
                     }
                 }
-            } else {
-                tStart = 0;
-                tEnd = 1;
+
+                if (isLast) {
+                    tStart = entryT;
+                    tEnd = endT;
+                } else {
+                    // Middle segment: determine exit toward next segment.
+                    if (segment !== null) {
+                        const nextSegId = path[i + 1];
+                        const nextSeg = this._trackGraph.getTrackSegmentWithJoints(nextSegId);
+                        if (nextSeg !== null) {
+                            tStart = entryT;
+                            tEnd = this._sharedJointT(segment, nextSeg);
+                        } else {
+                            tStart = entryT;
+                            tEnd = entryT === 0 ? 1 : 0;
+                        }
+                    } else {
+                        tStart = entryT;
+                        tEnd = entryT === 0 ? 1 : 0;
+                    }
+                }
             }
 
             entries.push({
                 trackSegment: segId,
                 tStart,
                 tEnd,
-                side: entrySide,
+                side: currentSide,
             });
         }
 
         return entries;
+    }
+
+    /**
+     * Returns the t-value (0 or 1) on `seg` at the joint it shares with `other`.
+     * Falls back to 1 if no shared joint is found.
+     */
+    private _sharedJointT(
+        seg: { t0Joint: number; t1Joint: number },
+        other: { t0Joint: number; t1Joint: number },
+    ): 0 | 1 {
+        const otherJoints = new Set([other.t0Joint, other.t1Joint]);
+        if (otherJoints.has(seg.t0Joint)) return 0;
+        if (otherJoints.has(seg.t1Joint)) return 1;
+        return 1; // fallback
     }
 }
 

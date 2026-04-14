@@ -1,6 +1,7 @@
 import type { Point } from '@ue-too/math';
 import type { BCurve } from '@ue-too/curve';
 import type { SpineEntry } from './track-aligned-platform-types';
+import type { StopPosition } from './types';
 
 // ---------------------------------------------------------------------------
 // Internal minimal types for validation lookups
@@ -165,4 +166,71 @@ export function computeAnchorPoint(
         x: pos.x + nx * offset,
         y: pos.y + ny * offset,
     };
+}
+
+// ---------------------------------------------------------------------------
+// computeStopPositions
+// ---------------------------------------------------------------------------
+
+/**
+ * Computes stop positions at the midpoint of a spine.
+ *
+ * The midpoint is found by accumulating arc-length across all spine entries
+ * and locating the segment and t-value at half the total length. Two stop
+ * positions are returned — one for each travel direction (tangent and
+ * reverseTangent).
+ *
+ * @param spine - The spine entries to compute from.
+ * @param getCurve - Lookup that returns the `BCurve` for a segment id.
+ * @returns Array of two `StopPosition` values (one per direction).
+ */
+export function computeStopPositions(
+    spine: SpineEntry[],
+    getCurve: (segmentId: number) => BCurve,
+): StopPosition[] {
+    if (spine.length === 0) return [];
+
+    // Accumulate arc-length per entry.
+    const entryLengths: number[] = [];
+    let totalLength = 0;
+
+    for (const entry of spine) {
+        const curve = getCurve(entry.trackSegment);
+        const tRange = Math.abs(entry.tEnd - entry.tStart);
+        const length = curve.fullLength * tRange;
+        entryLengths.push(length);
+        totalLength += length;
+    }
+
+    if (totalLength < 1e-6) return [];
+
+    // Walk to the midpoint.
+    const halfLength = totalLength / 2;
+    let accumulated = 0;
+
+    for (let i = 0; i < spine.length; i++) {
+        const entryLength = entryLengths[i];
+        if (accumulated + entryLength >= halfLength) {
+            const entry = spine[i];
+            // Fraction within this entry where the midpoint falls.
+            const fraction = entryLength > 1e-6
+                ? (halfLength - accumulated) / entryLength
+                : 0.5;
+            // Interpolate the t-value.
+            const tValue = entry.tStart + (entry.tEnd - entry.tStart) * fraction;
+
+            return [
+                { trackSegmentId: entry.trackSegment, direction: 'tangent', tValue },
+                { trackSegmentId: entry.trackSegment, direction: 'reverseTangent', tValue },
+            ];
+        }
+        accumulated += entryLength;
+    }
+
+    // Fallback: use the last entry's endpoint.
+    const lastEntry = spine[spine.length - 1];
+    return [
+        { trackSegmentId: lastEntry.trackSegment, direction: 'tangent', tValue: lastEntry.tEnd },
+        { trackSegmentId: lastEntry.trackSegment, direction: 'reverseTangent', tValue: lastEntry.tEnd },
+    ];
 }
