@@ -8,7 +8,7 @@ import {
     InitAppOptions,
     baseInitApp,
 } from '@ue-too/board-pixi-integration';
-import { Point } from '@ue-too/math';
+import { Point, PointCal } from '@ue-too/math';
 import { toast } from 'sonner';
 import Stats from 'stats.js';
 
@@ -63,6 +63,7 @@ import {
 import { createLayoutStateMachine } from '@/trains/input-state-machine/utils';
 import { DebugOverlayRenderSystem } from '@/trains/tracks/debug-overlay-render-system';
 import { JointDirectionPreferenceMap } from '@/trains/tracks/joint-direction-preference-map';
+import { JointDirectionRenderSystem } from '@/trains/tracks/joint-direction-render-system';
 import {
     type ParallelTrackOptions,
     type ProceduralTrackOptions,
@@ -283,6 +284,7 @@ export type BananaAppComponents = BaseAppComponents & {
     formationManager: FormationManager;
     jointDirectionManager: JointDirectionManager;
     jointDirectionPreferenceMap: JointDirectionPreferenceMap;
+    jointDirectionRenderSystem: JointDirectionRenderSystem;
     layoutStateMachine: LayoutStateMachine;
     kmtStateMachineExpansion: KmtExpandedStateMachine;
     trainStateMachine: TrainPlacementStateMachine;
@@ -541,6 +543,81 @@ export const initApp = async (
 
     const jointDirectionSubStateMachine = createJointDirectionStateMachine();
 
+    const trackGraph = curveEngine.trackGraph;
+    const jointDirectionPreferenceMap = new JointDirectionPreferenceMap();
+
+    const jointDirectionRenderSystem = new JointDirectionRenderSystem(
+        worldRenderSystem,
+        trackGraph,
+        jointDirectionPreferenceMap,
+        baseComponents.camera
+    );
+
+    jointDirectionSubStateMachine.setContext({
+        setup: () => {},
+        cleanup: () => {},
+        convert2WorldPosition: pos => {
+            return curveEngine.convert2WorldPosition(pos);
+        },
+        getHoveredSwitchJoint: worldPos => {
+            const joints = trackGraph.getJoints();
+            let closestJoint: number | null = null;
+            let closestDist = 30 / baseComponents.camera.zoomLevel;
+            for (const { jointNumber, joint } of joints) {
+                if (
+                    joint.direction.tangent.size <= 1 &&
+                    joint.direction.reverseTangent.size <= 1
+                )
+                    continue;
+                const dist = PointCal.distanceBetweenPoints(
+                    worldPos,
+                    joint.position
+                );
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestJoint = jointNumber;
+                }
+            }
+            return closestJoint;
+        },
+        showHoverIndicator: jointNumber => {
+            jointDirectionRenderSystem.showHoverIndicator(jointNumber);
+        },
+        clearHoverIndicator: () => {
+            jointDirectionRenderSystem.clearHoverIndicator();
+        },
+        selectJoint: jointNumber => {
+            jointDirectionRenderSystem.selectJoint(jointNumber);
+        },
+        deselectJoint: () => {
+            jointDirectionRenderSystem.deselectJoint();
+        },
+        cycleDirection: (jointNumber, direction) => {
+            const joint = trackGraph.getJoint(jointNumber);
+            if (!joint) return;
+            const available = joint.direction[direction];
+            if (available.size <= 1) return;
+            jointDirectionPreferenceMap.cycle(
+                jointNumber,
+                direction,
+                available
+            );
+            jointDirectionRenderSystem.refresh();
+        },
+        getSelectedJointTangent: () => {
+            const selected = jointDirectionRenderSystem.selectedJoint;
+            if (selected === null) return null;
+            const joint = trackGraph.getJoint(selected);
+            return joint?.tangent ?? null;
+        },
+        getSelectedJointPosition: () => {
+            const selected = jointDirectionRenderSystem.selectedJoint;
+            if (selected === null) return null;
+            const joint = trackGraph.getJoint(selected);
+            return joint?.position ?? null;
+        },
+    });
+
     const trackRenderSystem = new TrackRenderSystem(
         worldRenderSystem,
         curveEngine.trackGraph.trackCurveManager,
@@ -592,8 +669,6 @@ export const initApp = async (
     const trainManager = new TrainManager();
     const carStockManager = new CarStockManager();
     const formationManager = new FormationManager(carStockManager);
-    const trackGraph = curveEngine.trackGraph;
-    const jointDirectionPreferenceMap = new JointDirectionPreferenceMap();
     const jointDirectionManager = new DefaultJointDirectionManager(
         trackGraph,
         jointDirectionPreferenceMap
@@ -858,6 +933,7 @@ export const initApp = async (
         formationManager,
         jointDirectionManager,
         jointDirectionPreferenceMap,
+        jointDirectionRenderSystem,
         cameraMux,
         startFocusAnimation,
         startFollowAnimation,

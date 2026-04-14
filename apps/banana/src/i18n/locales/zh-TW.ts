@@ -16,6 +16,7 @@ const zhTW = {
         endDeletion: '結束刪除',
         duplicateTrackToSide: '複製軌道到側邊',
         catenaryLayout: '架線佈置',
+        jointDirection: '道岔方向',
 
         // Toolbar - Mode Exit Chip
         exitMode: '結束',
