@@ -29,6 +29,7 @@ export {
     Focus,
     FolderOpen,
     Gauge,
+    GitFork,
     Github,
     GripHorizontal,
     Hash,

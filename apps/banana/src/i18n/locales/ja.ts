@@ -16,6 +16,7 @@ const ja = {
         endDeletion: '削除終了',
         duplicateTrackToSide: '線路を側方に複製',
         catenaryLayout: '架線配置',
+        jointDirection: 'ポイント方向',
 
         // Toolbar - Mode Exit Chip
         exitMode: '終了',
@@ -29,6 +30,7 @@ const ja = {
         modeDualSpinePlatform: '両側ホームを配置中',
         modePlacingBuilding: '建物を配置中',
         modeDeletingBuilding: '建物を削除中',
+        modeJointDirection: 'ポイント方向',
 
         // Toolbar - Train
         placeTrain: '列車を配置',
@@ -114,10 +116,13 @@ const ja = {
         hintDrawOuter: 'クリックしてホーム端を描画 — 始点アンカー付近で閉じる',
         hintDualPickSpineAStart: '線路をクリックしてスパインAの始点を設定',
         hintDualPickSpineAEnd: '線路に沿ってクリックしてスパインAの終点を設定',
-        hintDualPickSpineBStart: '反対側の線路をクリックしてスパインBの始点を設定',
+        hintDualPickSpineBStart:
+            '反対側の線路をクリックしてスパインBの始点を設定',
         hintDualPickSpineBEnd: '線路に沿ってクリックしてスパインBの終点を設定',
-        hintDualDrawCap1: 'クリックして最初の端部キャップを描画 — スナップリング付近で閉じる',
-        hintDualDrawCap2: 'クリックして2番目の端部キャップを描画 — スナップリング付近で閉じる',
+        hintDualDrawCap1:
+            'クリックして最初の端部キャップを描画 — スナップリング付近で閉じる',
+        hintDualDrawCap2:
+            'クリックして2番目の端部キャップを描画 — スナップリング付近で閉じる',
         hintPlatformCreated: 'ホームが作成されました',
 
         // Validation errors

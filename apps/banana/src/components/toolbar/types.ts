@@ -11,7 +11,8 @@ export type AppMode =
     | 'catenary-layout'
     | 'single-spine-platform'
     | 'dual-spine-platform'
-    | 'stress-pick';
+    | 'stress-pick'
+    | 'joint-direction';
 
 /** Shared left offset for left-aligned toolbars (main toolbar, layout deletion toolbar). */
 export const TOOLBAR_LEFT = 'left-6';

@@ -16,6 +16,7 @@ import {
     Download,
     FilePlus,
     FolderOpen,
+    GitFork,
     Landmark,
     Layers,
     List,
@@ -87,6 +88,7 @@ import { DebugPanel } from './DebugPanel';
 import { DepotPanel } from './DepotPanel';
 import { ExportSubmenu } from './ExportSubmenu';
 import { FormationSelector } from './FormationSelector';
+import { GaugeSelector } from './GaugeSelector';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { LayoutDeletionToolbar } from './LayoutDeletionToolbar';
 import { ScaleRuler } from './ScaleRuler';
@@ -96,7 +98,6 @@ import { SunAngleControl } from './SunAngleControl';
 import { TerrainControl } from './TerrainControl';
 import { TerrainLegend } from './TerrainLegend';
 import { TimetablePanel } from './TimetablePanel';
-import { GaugeSelector } from './GaugeSelector';
 import { TrackStyleSelector } from './TrackStyleSelector';
 import { TrainPanel } from './TrainPanel';
 import { TOOLBAR_LEFT } from './types';
@@ -316,6 +317,15 @@ export function BananaToolbar({
         }
     }, [app, buildingHeight]);
 
+    useEffect(() => {
+        if (!app) return;
+        if (mode === 'joint-direction') {
+            app.jointDirectionRenderSystem.show();
+        } else {
+            app.jointDirectionRenderSystem.hide();
+        }
+    }, [app, mode]);
+
     const exitAllModes = useCallback(() => {
         if (!app) return;
         app.kmtStateMachineExpansion.happens('switchToIdle');
@@ -420,24 +430,41 @@ export function BananaToolbar({
         }
     }, [app, mode, exitAllModes]);
 
+    const handleJointDirectionToggle = useCallback(() => {
+        if (!app) return;
+        if (mode === 'joint-direction') {
+            app.kmtStateMachineExpansion.happens('switchToIdle');
+            setMode('idle');
+        } else {
+            exitAllModes();
+            app.kmtStateMachineExpansion.happens('switchToJointDirection');
+            setMode('joint-direction');
+        }
+    }, [app, mode, exitAllModes, setMode]);
+
     const handleStartSingleSpinePlatform = useCallback(
         (stationId: number) => {
             if (!app) return;
             exitAllModes();
-            app.kmtStateMachineExpansion.happens('switchToSingleSpinePlatform', { stationId });
+            app.kmtStateMachineExpansion.happens(
+                'switchToSingleSpinePlatform',
+                { stationId }
+            );
             setMode('single-spine-platform');
         },
-        [app, exitAllModes],
+        [app, exitAllModes]
     );
 
     const handleStartDualSpinePlatform = useCallback(
         (stationId: number) => {
             if (!app) return;
             exitAllModes();
-            app.kmtStateMachineExpansion.happens('switchToDualSpinePlatform', { stationId });
+            app.kmtStateMachineExpansion.happens('switchToDualSpinePlatform', {
+                stationId,
+            });
             setMode('dual-spine-platform');
         },
-        [app, exitAllModes],
+        [app, exitAllModes]
     );
 
     const handlePointerDown = useCallback(
@@ -763,7 +790,8 @@ export function BananaToolbar({
         mode === 'duplicate-to-side' ||
         mode === 'catenary-layout' ||
         mode === 'single-spine-platform' ||
-        mode === 'dual-spine-platform'
+        mode === 'dual-spine-platform' ||
+        mode === 'joint-direction'
             ? 'drawing'
             : mode === 'train-placement'
               ? 'trains'
@@ -790,7 +818,9 @@ export function BananaToolbar({
                             ? 'modeSingleSpinePlatform'
                             : mode === 'dual-spine-platform'
                               ? 'modeDualSpinePlatform'
-                              : null;
+                              : mode === 'joint-direction'
+                                ? 'modeJointDirection'
+                                : null;
 
     const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
         drawing: {
@@ -831,6 +861,15 @@ export function BananaToolbar({
                     active: mode === 'catenary-layout',
                     disabled: mode !== 'idle' && mode !== 'catenary-layout',
                     onClick: handleCatenaryLayoutToggle,
+                },
+                {
+                    kind: 'button',
+                    id: 'joint-direction',
+                    icon: <GitFork />,
+                    label: t('jointDirection'),
+                    active: mode === 'joint-direction',
+                    disabled: mode !== 'idle' && mode !== 'joint-direction',
+                    onClick: handleJointDirectionToggle,
                 },
             ],
         },
@@ -1263,7 +1302,9 @@ export function BananaToolbar({
                     stationManager={app.stationManager}
                     stationRenderSystem={app.stationRenderSystem}
                     trackGraph={app.curveEngine.trackGraph}
-                    trackAlignedPlatformManager={app.trackAlignedPlatformManager}
+                    trackAlignedPlatformManager={
+                        app.trackAlignedPlatformManager
+                    }
                     cameraRig={app.cameraRig}
                     onClose={() => setPanel('stationList', false)}
                     onStationChange={() =>
