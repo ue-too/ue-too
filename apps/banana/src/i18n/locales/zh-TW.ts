@@ -128,6 +128,7 @@ const zhTW = {
 
         // Station List Panel
         stations: '車站',
+        createEmptyStation: '建立空車站',
         noStations: '沒有車站',
         platform_one: '{{count}} 個月台',
         platform_other: '{{count}} 個月台',

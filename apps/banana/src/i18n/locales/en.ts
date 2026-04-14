@@ -130,6 +130,7 @@ const en = {
 
         // Station List Panel
         stations: 'Stations',
+        createEmptyStation: 'Create empty station',
         noStations: 'No stations',
         platform_one: '{{count}} platform',
         platform_other: '{{count}} platforms',

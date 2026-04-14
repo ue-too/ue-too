@@ -18,6 +18,82 @@ const PLATFORM_TEX_SIZE = 128;
 /** Yellow safety-line width as a fraction of the texture. */
 const SAFETY_LINE_FRAC = 0.06;
 
+// ---------------------------------------------------------------------------
+// Spine-relative UV helpers
+// ---------------------------------------------------------------------------
+
+/** Compute cumulative arc-lengths for a polyline. */
+function cumulativeArcLengths(pts: Point[]): number[] {
+    const lens = [0];
+    for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i].x - pts[i - 1].x;
+        const dy = pts[i].y - pts[i - 1].y;
+        lens.push(lens[i - 1] + Math.sqrt(dx * dx + dy * dy));
+    }
+    return lens;
+}
+
+/** Interpolate a point along a polyline at a given arc-length. */
+function samplePolylineAtArcLength(
+    polyline: Point[],
+    arcLens: number[],
+    targetArc: number,
+): Point {
+    if (polyline.length <= 1) return polyline[0] ?? { x: 0, y: 0 };
+    for (let i = 0; i < polyline.length - 1; i++) {
+        if (targetArc <= arcLens[i + 1] || i === polyline.length - 2) {
+            const segArc = arcLens[i + 1] - arcLens[i];
+            const t = segArc > 0 ? Math.min(1, (targetArc - arcLens[i]) / segArc) : 0;
+            return {
+                x: polyline[i].x + t * (polyline[i + 1].x - polyline[i].x),
+                y: polyline[i].y + t * (polyline[i + 1].y - polyline[i].y),
+            };
+        }
+    }
+    return polyline[polyline.length - 1];
+}
+
+/**
+ * Project a point onto a polyline.
+ * Returns the arc-length at the closest point and the perpendicular distance.
+ */
+function projectOntoPolyline(
+    pt: Point,
+    polyline: Point[],
+    arcLengths: number[],
+): { arcLength: number; dist: number } {
+    let bestDistSq = Infinity;
+    let bestArc = 0;
+
+    for (let i = 0; i < polyline.length - 1; i++) {
+        const ax = polyline[i].x,
+            ay = polyline[i].y;
+        const bx = polyline[i + 1].x,
+            by = polyline[i + 1].y;
+        const abx = bx - ax,
+            aby = by - ay;
+        const segLenSq = abx * abx + aby * aby;
+
+        let t = 0;
+        if (segLenSq > 1e-12) {
+            t = Math.max(0, Math.min(1, ((pt.x - ax) * abx + (pt.y - ay) * aby) / segLenSq));
+        }
+
+        const projX = ax + t * abx;
+        const projY = ay + t * aby;
+        const dx = pt.x - projX;
+        const dy = pt.y - projY;
+        const distSq = dx * dx + dy * dy;
+
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            bestArc = arcLengths[i] + t * Math.sqrt(segLenSq);
+        }
+    }
+
+    return { arcLength: bestArc, dist: Math.sqrt(bestDistSq) };
+}
+
 type TrackAlignedPlatformRenderRecord = {
     container: Container;
 };
@@ -282,77 +358,202 @@ export class TrackAlignedPlatformRenderSystem {
         const texture = this._getOrCreateTexture();
         if (texture === null) return null;
 
-        // Build getCurve wrapper — bail if any curve is missing.
         const getCurve = (segmentId: number) => {
             const curve = this._trackGraph.getTrackSegmentCurve(segmentId);
             if (curve === null) throw new Error(`Missing curve for segment ${segmentId}`);
             return curve;
         };
 
-        let polygon: Point[];
-
         try {
             const trackEdgeA = sampleSpineEdge(platform.spineA, platform.offset, getCurve);
 
             if (platform.outerVertices.kind === 'single') {
-                // Single-spine: track edge + outer vertices polyline closes the polygon.
-                polygon = [...trackEdgeA, ...platform.outerVertices.vertices];
+                return this._buildSingleSpineStripMesh(
+                    trackEdgeA,
+                    platform.outerVertices.vertices,
+                    texture,
+                );
             } else {
-                // Dual-spine: track edge A → cap A → reversed track edge B → cap B.
                 const trackEdgeB = sampleSpineEdge(platform.spineB!, platform.offset, getCurve);
-                const reversedTrackEdgeB = [...trackEdgeB].reverse();
-                const { capA, capB } = platform.outerVertices;
-                polygon = [...trackEdgeA, ...capA, ...reversedTrackEdgeB, ...capB];
+                return this._buildDualSpineStripMesh(
+                    trackEdgeA,
+                    trackEdgeB,
+                    platform.outerVertices.capA,
+                    platform.outerVertices.capB,
+                    texture,
+                );
             }
         } catch {
             return null;
         }
+    }
 
-        if (polygon.length < 3) return null;
+    /**
+     * Build a triangle-strip mesh for a single-spine platform.
+     * Pairs each spine sample with a corresponding point on the outer edge
+     * (resampled by matching normalized arc-length).
+     */
+    private _buildSingleSpineStripMesh(
+        spineEdge: Point[],
+        outerVerts: Point[],
+        texture: Texture,
+    ): MeshSimple | null {
+        if (spineEdge.length < 2 || outerVerts.length < 1) return null;
 
-        // Flatten to coordinate array for earcut.
-        const flatCoords: number[] = [];
-        for (const p of polygon) {
-            flatCoords.push(p.x, p.y);
-        }
+        const spineArcLens = cumulativeArcLengths(spineEdge);
+        const totalSpineArc = spineArcLens[spineArcLens.length - 1];
+        if (totalSpineArc < 1e-9) return null;
 
-        const indices = earcut(flatCoords);
-        if (indices.length === 0) return null;
+        // Outer vertices run from spine end anchor back to spine start anchor.
+        // Reverse to align with the spine direction (start → end).
+        const alignedOuter = [...outerVerts].reverse();
+        const outerArcLens = cumulativeArcLengths(alignedOuter);
+        const totalOuterArc = outerArcLens[outerArcLens.length - 1];
 
-        // Compute bounding box for UV tiling.
-        let minX = Infinity,
-            minY = Infinity,
-            maxX = -Infinity,
-            maxY = -Infinity;
-        for (const p of polygon) {
-            if (p.x < minX) minX = p.x;
-            if (p.y < minY) minY = p.y;
-            if (p.x > maxX) maxX = p.x;
-            if (p.y > maxY) maxY = p.y;
-        }
-
-        const rangeX = maxX - minX;
-        const rangeY = maxY - minY;
-
-        // Generate UV coordinates using bounding-box tiling.
+        const verts: number[] = [];
         const uvs: number[] = [];
-        for (const p of polygon) {
-            const u = rangeX > 0 ? (p.x - minX) / PLATFORM_TEXTURE_TILE_LEN : 0;
-            const v = rangeY > 0 ? (p.y - minY) / PLATFORM_TEXTURE_TILE_LEN : 0;
-            uvs.push(u, v);
+
+        for (let i = 0; i < spineEdge.length; i++) {
+            const sp = spineEdge[i];
+            const t = spineArcLens[i] / totalSpineArc;
+            const op =
+                totalOuterArc > 0
+                    ? samplePolylineAtArcLength(alignedOuter, outerArcLens, t * totalOuterArc)
+                    : alignedOuter[0];
+
+            const v = spineArcLens[i] / PLATFORM_TEXTURE_TILE_LEN;
+
+            // Near edge (spine): u=0 → safety line.
+            verts.push(sp.x, sp.y);
+            uvs.push(0, v);
+
+            // Far edge (outer): u < 1 so the wrapping safety line doesn't appear.
+            verts.push(op.x, op.y);
+            uvs.push(1 - SAFETY_LINE_FRAC, v);
         }
 
-        // Flatten vertex positions.
-        const vertices: number[] = [];
-        for (const p of polygon) {
-            vertices.push(p.x, p.y);
+        const pairCount = spineEdge.length;
+        const indices: number[] = [];
+        for (let i = 0; i < pairCount - 1; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
         }
+
+        if (indices.length === 0) return null;
 
         return new MeshSimple({
             texture,
-            vertices: new Float32Array(vertices),
+            vertices: new Float32Array(verts),
             uvs: new Float32Array(uvs),
             indices: new Uint32Array(indices),
         });
+    }
+
+    /**
+     * Build a triangle-strip mesh for a dual-spine platform.
+     * Pairs spine A samples with corresponding resampled spine B points,
+     * plus earcut-triangulated end caps.
+     */
+    private _buildDualSpineStripMesh(
+        trackEdgeA: Point[],
+        trackEdgeB: Point[],
+        capA: Point[],
+        capB: Point[],
+        texture: Texture,
+    ): MeshSimple | null {
+        if (trackEdgeA.length < 2 || trackEdgeB.length < 2) return null;
+
+        const arcLensA = cumulativeArcLengths(trackEdgeA);
+        const totalArcA = arcLensA[arcLensA.length - 1];
+        if (totalArcA < 1e-9) return null;
+
+        // Reverse edge B to align with edge A direction.
+        const reversedEdgeB = [...trackEdgeB].reverse();
+        const arcLensRevB = cumulativeArcLengths(reversedEdgeB);
+        const totalArcRevB = arcLensRevB[arcLensRevB.length - 1];
+
+        const verts: number[] = [];
+        const uvs: number[] = [];
+        const indices: number[] = [];
+
+        // --- Main body strip: edge A (u=0) paired with resampled reversed edge B (u=1). ---
+        for (let i = 0; i < trackEdgeA.length; i++) {
+            const t = arcLensA[i] / totalArcA;
+            const pA = trackEdgeA[i];
+            const pB =
+                totalArcRevB > 0
+                    ? samplePolylineAtArcLength(reversedEdgeB, arcLensRevB, t * totalArcRevB)
+                    : reversedEdgeB[0];
+            const v = arcLensA[i] / PLATFORM_TEXTURE_TILE_LEN;
+
+            verts.push(pA.x, pA.y);
+            uvs.push(0, v); // spine A — safety line
+
+            verts.push(pB.x, pB.y);
+            uvs.push(1, v); // spine B — safety line (wraps to u=0)
+        }
+
+        for (let i = 0; i < trackEdgeA.length - 1; i++) {
+            const b = i * 2;
+            indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+        }
+
+        // --- End caps (earcut for non-empty cap vertex arrays). ---
+        const lastA = trackEdgeA[trackEdgeA.length - 1];
+        const firstRevB = reversedEdgeB[0];
+        this._appendCapTriangles(lastA, capA, firstRevB, trackEdgeA, arcLensA, verts, uvs, indices);
+
+        const lastRevB = reversedEdgeB[reversedEdgeB.length - 1];
+        const firstA = trackEdgeA[0];
+        this._appendCapTriangles(lastRevB, capB, firstA, trackEdgeA, arcLensA, verts, uvs, indices);
+
+        if (indices.length === 0) return null;
+
+        return new MeshSimple({
+            texture,
+            vertices: new Float32Array(verts),
+            uvs: new Float32Array(uvs),
+            indices: new Uint32Array(indices),
+        });
+    }
+
+    /**
+     * Triangulate and append a small cap polygon (startPt → capVerts → endPt)
+     * to the running vertex/index arrays using earcut.
+     */
+    private _appendCapTriangles(
+        startPt: Point,
+        capVerts: Point[],
+        endPt: Point,
+        spineEdge: Point[],
+        spineArcLens: number[],
+        verts: number[],
+        uvs: number[],
+        indices: number[],
+    ): void {
+        if (capVerts.length === 0) return;
+
+        const capPolygon = [startPt, ...capVerts, endPt];
+        if (capPolygon.length < 3) return;
+
+        const baseVertex = verts.length / 2;
+
+        const flatCoords: number[] = [];
+        for (const p of capPolygon) {
+            flatCoords.push(p.x, p.y);
+        }
+        const capIndices = earcut(flatCoords);
+        if (capIndices.length === 0) return;
+
+        // Approximate UVs for cap vertices via projection onto the spine.
+        for (const p of capPolygon) {
+            const proj = projectOntoPolyline(p, spineEdge, spineArcLens);
+            verts.push(p.x, p.y);
+            uvs.push(0.5, proj.arcLength / PLATFORM_TEXTURE_TILE_LEN);
+        }
+
+        for (const idx of capIndices) {
+            indices.push(baseVertex + idx);
+        }
     }
 }

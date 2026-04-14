@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Columns2, Crosshair, PanelLeft, Settings2, Trash2, X } from '@/assets/icons';
+import { Check, Columns2, Crosshair, PanelLeft, Plus, Settings2, Trash2, X } from '@/assets/icons';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import type { StationManager } from '@/stations/station-manager';
 import type { StationRenderSystem } from '@/stations/station-render-system';
 import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import type { TrackGraph } from '@/trains/tracks/track';
+import { ELEVATION } from '@/trains/tracks/types';
 import type { Platform, Station } from '@/stations/types';
 import type { CameraRig } from '@ue-too/board';
 
@@ -218,6 +219,22 @@ export function StationListPanel({
         onStationChange?.();
     };
 
+    const handleCreateEmptyStation = () => {
+        const pos = cameraRig.camera.position;
+        const stationId = stationManager.createStation({
+            name: 'Station',
+            position: { x: pos.x, y: pos.y },
+            elevation: ELEVATION.GROUND,
+            platforms: [],
+            trackSegments: [],
+            joints: [],
+            trackAlignedPlatforms: [],
+        });
+        stationRenderSystem.addStation(stationId);
+        setVersion(v => v + 1);
+        onStationChange?.();
+    };
+
     // Build nearby candidate list when picking
     const pickingStation = pickingForStation !== null
         ? stationManager.getStation(pickingForStation)
@@ -233,6 +250,15 @@ export function StationListPanel({
             className="w-64"
         >
             <Separator className="mb-2" />
+            <Button
+                variant="outline"
+                size="sm"
+                className="mb-2 w-full gap-1 text-xs"
+                onClick={handleCreateEmptyStation}
+            >
+                <Plus className="size-3" />
+                {t('createEmptyStation')}
+            </Button>
             <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
                 {stations.length === 0 ? (
                     <span className="text-muted-foreground py-4 text-center text-xs">

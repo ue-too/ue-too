@@ -131,6 +131,7 @@ const ja = {
 
         // Station List Panel
         stations: '駅',
+        createEmptyStation: '空の駅を作成',
         noStations: '駅がありません',
         platform_one: '{{count}} ホーム',
         platform_other: '{{count}} ホーム',
