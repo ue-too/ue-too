@@ -7,9 +7,9 @@ import type { Jockey } from './types';
 
 type OrtModule = typeof import('onnxruntime-web');
 
-/** Discrete 9×9 action space — quarter-step resolution on both axes. */
+/** Discrete 6×9 action space — asymmetric braking (light brake only). */
 export const TANGENTIAL_LEVELS = [
-    -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,
+    -0.25, 0, 0.25, 0.5, 0.75, 1,
 ] as const;
 export const NORMAL_LEVELS = [
     -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,

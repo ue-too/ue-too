@@ -8,12 +8,12 @@ const LOOKAHEAD_DISTANCES = [25, 50, 100, 200];
 
 // --- Constants ---
 
-export const SELF_STATE_SIZE = 14;
+export const SELF_STATE_SIZE = 16;
 export const TRACK_CONTEXT_SIZE = 2 + LOOKAHEAD_DISTANCES.length * 2; // 10
 export const OPPONENT_SLOT_SIZE = 5;
 export const OPPONENT_SLOTS = MAX_HORSES - 1; // 23
 export const OBS_SIZE =
-    SELF_STATE_SIZE + TRACK_CONTEXT_SIZE + OPPONENT_SLOTS * OPPONENT_SLOT_SIZE; // 139
+    SELF_STATE_SIZE + TRACK_CONTEXT_SIZE + OPPONENT_SLOTS * OPPONENT_SLOT_SIZE; // 140
 
 // --- Helpers ---
 
@@ -55,9 +55,9 @@ export function normalOffset(
 // --- Main function ---
 
 /**
- * Build a 139-float observation vector per horse from the current Race state.
+ * Build a 141-float observation vector per horse from the current Race state.
  *
- * @returns One Float64Array per horse, each of length OBS_SIZE (139).
+ * @returns One Float64Array per horse, each of length OBS_SIZE (141).
  */
 export function buildObservations(race: Race): Float64Array[] {
     const horses = race.state.horses;
@@ -69,7 +69,7 @@ export function buildObservations(race: Race): Float64Array[] {
         const eff = self.effectiveAttributes;
         const frame = self.navigator.getTrackFrame(self.pos);
 
-        // --- Self State (indices 0-13) ---
+        // --- Self State (indices 0-14) ---
         obs[0] = self.trackProgress;
         obs[1] = self.tangentialVel / base.maxSpeed;
         obs[2] = self.normalVel / base.maxSpeed;
@@ -84,21 +84,23 @@ export function buildObservations(race: Race): Float64Array[] {
         obs[11] = normalizeTrait(base.turnAccel, 'turnAccel');
         obs[12] = normalizeTrait(base.corneringGrip, 'corneringGrip');
         obs[13] = normalizeTrait(base.weight, 'weight');
+        obs[14] = self.lastDrain / base.maxStamina;
+        obs[15] = self.navigator.lateralOffset(self.pos) / TRACK_HALF_WIDTH;
 
-        // --- Track Context (indices 14-23) ---
-        obs[14] = curvature(frame.turnRadius);
-        obs[15] = frame.slope;
+        // --- Track Context (indices 16-25) ---
+        obs[16] = curvature(frame.turnRadius);
+        obs[17] = frame.slope;
 
         for (let i = 0; i < LOOKAHEAD_DISTANCES.length; i++) {
             const lookahead = self.navigator.sampleTrackAhead(
                 self.pos,
                 LOOKAHEAD_DISTANCES[i]
             );
-            obs[16 + i * 2] = curvature(lookahead.turnRadius);
-            obs[16 + i * 2 + 1] = lookahead.slope;
+            obs[18 + i * 2] = curvature(lookahead.turnRadius);
+            obs[18 + i * 2 + 1] = lookahead.slope;
         }
 
-        // --- Opponents (indices 24-138) ---
+        // --- Opponents (indices 26-140) ---
         // Collect opponents sorted by absolute track progress distance
         const opponents = horses
             .filter(h => h.id !== self.id)

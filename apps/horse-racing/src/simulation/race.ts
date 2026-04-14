@@ -4,7 +4,7 @@ import { createDefaultAttributes } from './attributes';
 import { applyExhaustion } from './exhaustion';
 import { stepPhysics } from './physics';
 import { RaceWorld } from './race-world';
-import { drainStamina } from './stamina';
+import { computeDrainScale, drainStamina } from './stamina';
 import { TrackNavigator } from './track-navigator';
 import type { TrackSegment } from './track-types';
 import {
@@ -69,6 +69,7 @@ export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
             baseAttributes: attrs,
             currentStamina: attrs.maxStamina,
             effectiveAttributes: { ...attrs },
+            lastDrain: 0,
         };
     });
 }
@@ -86,6 +87,7 @@ export class Race {
     private segments: TrackSegment[];
     private horseCount: number;
     private raceWorld: RaceWorld;
+    private drainScale: number;
 
     constructor(segments: TrackSegment[], horseCount = 4) {
         this.segments = segments;
@@ -99,6 +101,9 @@ export class Race {
         };
         this.raceWorld = new RaceWorld(segments);
         this.addHorseBodies();
+        const navigator = this.state.horses[0].navigator;
+        const defaultCruise = createDefaultAttributes().cruiseSpeed;
+        this.drainScale = computeDrainScale(navigator.totalLength, defaultCruise);
     }
 
     private addHorseBodies(): void {
@@ -147,7 +152,7 @@ export class Race {
             if (!h.finished) {
                 const frame = h.navigator.getTrackFrame(h.pos);
                 const horseInput = inputs.get(h.id) ?? zeroInput;
-                drainStamina(h, h.effectiveAttributes, horseInput, frame);
+                drainStamina(h, h.effectiveAttributes, horseInput, frame, this.drainScale);
             }
         }
 
@@ -179,5 +184,8 @@ export class Race {
         };
         this.raceWorld = new RaceWorld(this.segments);
         this.addHorseBodies();
+        const navigator = this.state.horses[0].navigator;
+        const defaultCruise = createDefaultAttributes().cruiseSpeed;
+        this.drainScale = computeDrainScale(navigator.totalLength, defaultCruise);
     }
 }

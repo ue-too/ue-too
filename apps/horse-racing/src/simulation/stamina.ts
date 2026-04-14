@@ -1,5 +1,6 @@
 import type { CoreAttributes } from './attributes';
 import type { Horse, InputState } from './types';
+import { FIXED_DT, PHYS_SUBSTEPS } from './types';
 import type { TrackFrame } from './track-navigator';
 
 // --- Drain rate constants (initial values, to be tuned via integration tests) ---
@@ -12,8 +13,26 @@ export const SPEED_DRAIN_RATE = 0.002;
 export const LATERAL_VELOCITY_DRAIN_RATE = 0.0008;
 export const GRIP_FORCE_BASELINE = 2.0;
 
+/** Reference cruise ticks calibrated from test_oval at cruise speed. */
+export const REFERENCE_CRUISE_TICKS = 2000;
+
 /**
- * Drain stamina based on the horse's current effort. Mutates `horse.currentStamina`.
+ * Compute drain normalization factor so cruise-effort stamina usage
+ * is consistent across tracks of different lengths.
+ */
+export function computeDrainScale(
+    trackTotalLength: number,
+    cruiseSpeed: number,
+): number {
+    const dtPerTick = FIXED_DT * PHYS_SUBSTEPS;
+    const estimatedTicks = trackTotalLength / (cruiseSpeed * dtPerTick);
+    if (estimatedTicks < 1e-6) return 1;
+    return REFERENCE_CRUISE_TICKS / estimatedTicks;
+}
+
+/**
+ * Drain stamina based on the horse's current effort.
+ * Mutates `horse.currentStamina` and `horse.lastDrain`.
  *
  * Called once per game tick (not per substep), after physics.
  */
@@ -22,6 +41,7 @@ export function drainStamina(
     attrs: CoreAttributes,
     input: InputState,
     frame: TrackFrame,
+    drainScale = 1.0,
 ): void {
     let drain = 0;
 
@@ -55,8 +75,10 @@ export function drainStamina(
     // Lateral velocity tax
     drain += Math.abs(horse.normalVel) * LATERAL_VELOCITY_DRAIN_RATE;
 
-    // Apply per-horse efficiency
+    // Apply per-horse efficiency and track-length normalization
     drain *= attrs.drainRateMult;
+    drain *= drainScale;
 
+    horse.lastDrain = drain;
     horse.currentStamina = Math.max(0, horse.currentStamina - drain);
 }

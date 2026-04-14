@@ -6,5 +6,13 @@
   {
     "label": "V15 Jockey",
     "url": "/models/v15_jockey.onnx"
+  },
+  {
+    "label": "V16 Jockey",
+    "url": "/models/v16_jockey.onnx"
+  },
+  {
+    "label": "V19 Best Jockey",
+    "url": "/models/v19_best_jockey.onnx"
   }
 ]
