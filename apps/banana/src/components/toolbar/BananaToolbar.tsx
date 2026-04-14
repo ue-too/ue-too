@@ -818,7 +818,9 @@ export function BananaToolbar({
                             ? 'modeSingleSpinePlatform'
                             : mode === 'dual-spine-platform'
                               ? 'modeDualSpinePlatform'
-                              : null;
+                              : mode === 'joint-direction'
+                                ? 'modeJointDirection'
+                                : null;
 
     const flyoutCategories: Record<ToolbarCategory, FlyoutCategory> = {
         drawing: {

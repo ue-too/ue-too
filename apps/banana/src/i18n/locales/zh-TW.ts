@@ -30,6 +30,7 @@ const zhTW = {
         modeDualSpinePlatform: '雙側月台佈置中',
         modePlacingBuilding: '放置建築中',
         modeDeletingBuilding: '刪除建築中',
+        modeJointDirection: '編輯道岔方向中',
 
         // Toolbar - Train
         placeTrain: '放置列車',

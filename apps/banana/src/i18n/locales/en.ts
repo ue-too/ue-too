@@ -30,6 +30,7 @@ const en = {
         modeDeletingBuilding: 'Deleting Building',
         modeSingleSpinePlatform: 'Placing Single-Side Platform',
         modeDualSpinePlatform: 'Placing Dual-Side Platform',
+        modeJointDirection: 'Editing Joint Direction',
 
         // Toolbar - Train
         placeTrain: 'Place Train',
