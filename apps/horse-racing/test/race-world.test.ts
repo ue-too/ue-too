@@ -41,10 +41,10 @@ describe('RaceWorld', () => {
         expect(body.orientationAngle).toBeCloseTo(Math.PI / 4);
     });
 
-    it('throws for unknown horse id', () => {
+    it('returns undefined for unknown horse id', () => {
         const segments = loadTrack('test_oval.json');
         const rw = new RaceWorld(segments);
-        expect(() => rw.getHorseBody(99)).toThrow();
+        expect(rw.getHorseBody(99)).toBeUndefined();
     });
 
     it('step advances the world without error', () => {

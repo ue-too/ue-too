@@ -2,5 +2,9 @@
   {
     "label": "V13 Jockey",
     "url": "/models/v13_jockey.onnx"
+  },
+  {
+    "label": "V15 Jockey",
+    "url": "/models/v15_jockey.onnx"
   }
 ]

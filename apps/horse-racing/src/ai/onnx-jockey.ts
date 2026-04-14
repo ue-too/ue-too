@@ -131,10 +131,9 @@ export class OnnxJockey implements Jockey {
 
         // Fire async inference — use last result until it completes
         this.inferring = true;
-        const tensor = new this.ort.Tensor('float32', inputData, [
-            batchSize,
-            OBS_SIZE,
-        ]);
+        const tensor = this.ort
+            ? new this.ort.Tensor('float32', inputData, [batchSize, OBS_SIZE])
+            : ({ dims: [batchSize, OBS_SIZE], type: 'float32', data: inputData } as any);
         const feeds = { [inputName]: tensor };
 
         this.session
