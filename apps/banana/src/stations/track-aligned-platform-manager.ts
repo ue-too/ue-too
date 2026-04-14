@@ -62,6 +62,11 @@ export class TrackAlignedPlatformManager {
         if (toDestroy.length > 0) this._changeObservable.notify();
     }
 
+    /** Manually trigger change notifications (e.g. after updating station references). */
+    notifyChange(): void {
+        this._changeObservable.notify();
+    }
+
     // -----------------------------------------------------------------------
     // Lookups
     // -----------------------------------------------------------------------

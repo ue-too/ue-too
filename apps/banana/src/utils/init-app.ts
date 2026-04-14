@@ -625,6 +625,7 @@ export const initApp = async (
     { renderer: baseComponents.app.renderer },
   );
   timetableManager.signalStateEngine = signalStateEngine;
+  timetableManager.trackAlignedPlatformManager = trackAlignedPlatformManager;
 
   // When a train is removed from the track, return its formation to the depot
   trainManager.setOnBeforeRemove((train) => {

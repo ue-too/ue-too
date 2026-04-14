@@ -14,6 +14,7 @@ import type { TrackGraph } from '@/trains/tracks/track';
 import type { Train, TrainPosition } from '@/trains/formation';
 import { DEFAULT_THROTTLE_STEPS } from '@/trains/formation';
 import type { StationManager } from '@/stations/station-manager';
+import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import type { StopPosition } from '@/stations/types';
 import type { SignalStateEngine } from '@/signals/signal-state-engine';
 
@@ -110,6 +111,7 @@ export class AutoDriver {
     stationManager: StationManager,
     trackGraph: TrackGraph,
     signalStateEngine?: SignalStateEngine,
+    trackAlignedPlatformManager?: TrackAlignedPlatformManager,
   ): void {
     switch (this._state.phase) {
       case 'waiting_departure':
@@ -119,10 +121,10 @@ export class AutoDriver {
         this._handleDeparting(train, trackGraph, signalStateEngine);
         break;
       case 'running':
-        this._handleRunning(train, shift, route, stationManager, trackGraph, signalStateEngine);
+        this._handleRunning(train, shift, route, stationManager, trackGraph, signalStateEngine, trackAlignedPlatformManager);
         break;
       case 'approaching':
-        this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
+        this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine, trackAlignedPlatformManager);
         break;
       case 'stopped':
         this._handleStopped(train, shift);
@@ -208,6 +210,7 @@ export class AutoDriver {
     stationManager: StationManager,
     trackGraph: TrackGraph,
     signalStateEngine?: SignalStateEngine,
+    trackAlignedPlatformManager?: TrackAlignedPlatformManager,
   ): void {
     const distanceToStop = this._getDistanceToStop(
       train,
@@ -215,6 +218,7 @@ export class AutoDriver {
       route,
       stationManager,
       trackGraph,
+      trackAlignedPlatformManager,
     );
 
     // Check for restrictive signals ahead
@@ -239,7 +243,7 @@ export class AutoDriver {
           const brakingDist = this._computeBrakingDistance(train.speed - cautionSpeed);
           if (signalInfo.distance <= brakingDist * BRAKING_SAFETY_MARGIN) {
             this._transition('approaching');
-            this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
+            this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine, trackAlignedPlatformManager);
             return;
           }
         }
@@ -256,7 +260,7 @@ export class AutoDriver {
 
     if (effectiveDistance <= brakingDistance * BRAKING_SAFETY_MARGIN) {
       this._transition('approaching');
-      this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine);
+      this._handleApproaching(train, shift, route, stationManager, trackGraph, signalStateEngine, trackAlignedPlatformManager);
       return;
     }
 
@@ -271,6 +275,7 @@ export class AutoDriver {
     stationManager: StationManager,
     trackGraph: TrackGraph,
     signalStateEngine?: SignalStateEngine,
+    trackAlignedPlatformManager?: TrackAlignedPlatformManager,
   ): void {
     const distanceToStop = this._getDistanceToStop(
       train,
@@ -278,6 +283,7 @@ export class AutoDriver {
       route,
       stationManager,
       trackGraph,
+      trackAlignedPlatformManager,
     );
 
     // Check signals
@@ -413,6 +419,7 @@ export class AutoDriver {
     route: Route,
     stationManager: StationManager,
     trackGraph: TrackGraph,
+    trackAlignedPlatformManager?: TrackAlignedPlatformManager,
   ): number | null {
     const nextStopIndex = this._state.currentLegIndex + 1;
     if (nextStopIndex >= shift.stops.length) return null;
@@ -421,12 +428,18 @@ export class AutoDriver {
     const station = stationManager.getStation(nextScheduledStop.stationId);
     if (station === null) return null;
 
-    const platform = station.platforms.find(
-      (p) => p.id === nextScheduledStop.platformId,
-    );
-    if (!platform) return null;
+    let stopPos: StopPosition | undefined;
 
-    const stopPos = platform.stopPositions[nextScheduledStop.stopPositionIndex];
+    if (nextScheduledStop.platformKind === 'trackAligned') {
+      const tap = trackAlignedPlatformManager?.getPlatform(nextScheduledStop.platformId);
+      stopPos = tap?.stopPositions[nextScheduledStop.stopPositionIndex];
+    } else {
+      const platform = station.platforms.find(
+        (p) => p.id === nextScheduledStop.platformId,
+      );
+      stopPos = platform?.stopPositions[nextScheduledStop.stopPositionIndex];
+    }
+
     if (!stopPos) return null;
 
     const position = train.position;

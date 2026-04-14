@@ -9,6 +9,7 @@ import type { TrackGraph } from '@/trains/tracks/track';
 import type { Train } from '@/trains/formation';
 import type { TrainManager } from '@/trains/train-manager';
 import type { StationManager } from '@/stations/station-manager';
+import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import {
   DefaultJointDirectionManager,
   type JointDirectionManager,
@@ -68,6 +69,7 @@ export class TimetableManager {
   private _trackGraph: TrackGraph;
   private _trainManager: TrainManager;
   private _stationManager: StationManager;
+  private _trackAlignedPlatformManager: TrackAlignedPlatformManager | null = null;
   private _signalStateEngine: SignalStateEngine | null = null;
 
   private _unsubTrainChanges: (() => void) | null = null;
@@ -123,6 +125,11 @@ export class TimetableManager {
   /** Set the signal state engine for block signal awareness. */
   set signalStateEngine(engine: SignalStateEngine | null) {
     this._signalStateEngine = engine;
+  }
+
+  /** Set the track-aligned platform manager for resolving track-aligned stop positions. */
+  set trackAlignedPlatformManager(manager: TrackAlignedPlatformManager | null) {
+    this._trackAlignedPlatformManager = manager;
   }
 
   /** Get all shift assignments. */
@@ -227,6 +234,7 @@ export class TimetableManager {
         this._stationManager,
         this._trackGraph,
         this._signalStateEngine ?? undefined,
+        this._trackAlignedPlatformManager ?? undefined,
       );
     }
   }

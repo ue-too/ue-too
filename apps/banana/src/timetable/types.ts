@@ -94,6 +94,10 @@ export type DayMask = {
  */
 export type ScheduledStop = {
   stationId: number;
+  /** Discriminator for the platform type — `'island'` for rectangle platforms
+   *  stored in `station.platforms`, `'trackAligned'` for platforms managed by
+   *  `TrackAlignedPlatformManager`. Defaults to `'island'` for backward compat. */
+  platformKind: 'island' | 'trackAligned';
   platformId: number;
   /** Index into the platform's `stopPositions` array. */
   stopPositionIndex: number;
@@ -196,6 +200,8 @@ export type SerializedRoute = {
 
 export type SerializedScheduledStop = {
   stationId: number;
+  /** Optional for backward compat — defaults to `'island'` when absent. */
+  platformKind?: 'island' | 'trackAligned';
   platformId: number;
   stopPositionIndex: number;
   arrivalTime: number | null;

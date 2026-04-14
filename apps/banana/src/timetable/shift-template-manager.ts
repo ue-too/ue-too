@@ -128,6 +128,7 @@ export class ShiftTemplateManager {
       ),
       stops: t.stops.map((s) => ({
         stationId: s.stationId,
+        platformKind: s.platformKind,
         platformId: s.platformId,
         stopPositionIndex: s.stopPositionIndex,
         arrivalTime: s.arrivalTime,
@@ -150,6 +151,7 @@ export class ShiftTemplateManager {
         activeDays,
         stops: st.stops.map((s) => ({
           stationId: s.stationId,
+          platformKind: s.platformKind ?? 'island',
           platformId: s.platformId,
           stopPositionIndex: s.stopPositionIndex,
           arrivalTime: s.arrivalTime,

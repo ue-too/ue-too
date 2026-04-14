@@ -83,6 +83,10 @@ const en = {
         importCarDefinitionFromLibrary: 'Import Car Definition (from Library)',
 
         // Scene Management
+        sceneNotFound: 'Scene not found in storage',
+        sceneDataInvalid: 'Scene data invalid: {{error}}',
+        sceneLoaded: 'Loaded "{{name}}"',
+        sceneRestoreFailed: 'Failed to restore scene',
         scenePickerTitle: 'Saved Scenes',
         scenePickerDescription:
             'Select a scene to continue, or create a new one.',
@@ -267,6 +271,7 @@ const en = {
         stationPlaceholder: 'Station...',
         arrivalTime: 'Arr HH:MM',
         departureTime: 'Dep HH:MM',
+        platformPlaceholder: 'Platform...',
         routePlaceholder: 'Route...',
         addStop: '+ Stop',
         assignments: 'Assignments',
