@@ -30,7 +30,7 @@ const ja = {
         modeDualSpinePlatform: '両側ホームを配置中',
         modePlacingBuilding: '建物を配置中',
         modeDeletingBuilding: '建物を削除中',
-        modeJointDirection: 'ポイント方向を編集中',
+        modeJointDirection: 'ポイント方向',
 
         // Toolbar - Train
         placeTrain: '列車を配置',
