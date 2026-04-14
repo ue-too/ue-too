@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { useBananaApp } from '@/contexts/pixi';
@@ -15,6 +16,7 @@ import { getSceneStorage } from '@/storage';
  */
 export function SceneRestorer(): null {
     const app = useBananaApp();
+    const { t } = useTranslation();
     const pendingSceneId = useSceneStore((s) => s.pendingSceneId);
     const clearPendingScene = useSceneStore((s) => s.clearPendingScene);
     const loaded = useRef(false);
@@ -26,13 +28,13 @@ export function SceneRestorer(): null {
         const restore = async () => {
             const stored = await getSceneStorage().loadScene(pendingSceneId);
             if (!stored) {
-                toast.error('Scene not found in storage');
+                toast.error(t('sceneNotFound'));
                 return;
             }
 
             const validation = validateSerializedSceneData(stored.data);
             if (!validation.valid) {
-                toast.error(`Scene data invalid: ${validation.error}`);
+                toast.error(t('sceneDataInvalid', { error: validation.error }));
                 return;
             }
 
@@ -47,7 +49,7 @@ export function SceneRestorer(): null {
             });
 
             useSceneStore.getState().setSceneLoading(false);
-            toast.success(`Loaded "${stored.metadata.name}"`, {
+            toast.success(t('sceneLoaded', { name: stored.metadata.name }), {
                 duration: 2000,
             });
         };
@@ -55,13 +57,13 @@ export function SceneRestorer(): null {
         restore()
             .catch((err) => {
                 console.error('Failed to restore scene:', err);
-                toast.error('Failed to restore scene');
+                toast.error(t('sceneRestoreFailed'));
                 useSceneStore.getState().setSceneLoading(false);
             })
             .finally(() => {
                 clearPendingScene();
             });
-    }, [app, pendingSceneId, clearPendingScene]);
+    }, [app, pendingSceneId, clearPendingScene, t]);
 
     return null;
 }

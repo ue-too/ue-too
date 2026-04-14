@@ -74,8 +74,8 @@ const ja = {
         importTracksStations: '線路 + 駅をインポート',
         exportTrains: '列車をエクスポート（車両・編成・位置）',
         importTrains: '列車をインポート',
-        exportAll: 'すべてエクスポート（線路 + 列車 + 駅）',
-        importAll: 'すべてインポート（線路 + 列車 + 駅）',
+        exportAll: 'すべてエクスポート（線路 + 列車 + 駅 + 時刻表）',
+        importAll: 'すべてインポート（線路 + 列車 + 駅 + 時刻表）',
         importTerrain: '地形をインポート',
         invalidTerrainData: '無効な地形データ：{{error}}',
         importCarDefinitionFromEditor:
@@ -84,6 +84,10 @@ const ja = {
             '車両定義をインポート（ライブラリから）',
 
         // Scene Management
+        sceneNotFound: 'ストレージにシーンが見つかりません',
+        sceneDataInvalid: 'シーンデータが無効です：{{error}}',
+        sceneLoaded: '「{{name}}」を読み込みました',
+        sceneRestoreFailed: 'シーンの復元に失敗しました',
         scenePickerTitle: '保存済みシーン',
         scenePickerDescription:
             'シーンを選択して続行するか、新しいシーンを作成してください。',

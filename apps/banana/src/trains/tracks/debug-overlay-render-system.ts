@@ -493,7 +493,7 @@ export class DebugOverlayRenderSystem {
         const stations = this._stationManager.getStations();
         for (const { station } of stations) {
             for (const platform of station.platforms) {
-                this._addStopLabels(platform.stopPositions);
+                this._addStopLabels(platform.stopPositions, `P${platform.id}`);
             }
 
             // Track-aligned platforms store stop positions on the platform entity.
@@ -501,7 +501,7 @@ export class DebugOverlayRenderSystem {
                 for (const platformId of station.trackAlignedPlatforms) {
                     const tap = this._trackAlignedPlatformManager.getPlatform(platformId);
                     if (tap === null) continue;
-                    this._addStopLabels(tap.stopPositions);
+                    this._addStopLabels(tap.stopPositions, `T${platformId}`);
                 }
             }
         }
@@ -509,6 +509,7 @@ export class DebugOverlayRenderSystem {
 
     private _addStopLabels(
         stopPositions: readonly { trackSegmentId: number; direction: string; tValue: number }[],
+        platformLabel: string,
     ): void {
         for (const stop of stopPositions) {
             const curve = this._trackGraph.getTrackSegmentCurve(
@@ -527,7 +528,7 @@ export class DebugOverlayRenderSystem {
                         ? unit
                         : { x: -unit.x, y: -unit.y };
             }
-            const label = `S${stop.trackSegmentId}`;
+            const label = `${platformLabel}:S${stop.trackSegmentId}`;
             const node = this._makeLabelNode(
                 label,
                 pos.x,

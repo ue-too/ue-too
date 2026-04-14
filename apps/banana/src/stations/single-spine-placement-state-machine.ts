@@ -448,10 +448,16 @@ export class SingleSpinePlacementEngine
         const elevation = station.elevation;
         this._platformRenderSystem.addPlatform(platformId, elevation);
 
-        this._isFinalized = true;
+        // Notify after the station's trackAlignedPlatforms array is updated
+        // so subscribers (e.g. debug overlay) see the new platform.
+        this._platformManager.notifyChange();
+
         this._platformRenderSystem.hidePreview();
         this._onHint('hintPlatformCreated');
         this._resetState();
+        // Set _isFinalized AFTER _resetState so the guard sees it as true
+        // and transitions from DRAW_OUTER → PICK_START.
+        this._isFinalized = true;
     }
 
     cancel(): void {

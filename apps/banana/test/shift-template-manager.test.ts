@@ -13,6 +13,7 @@ import { DayOfWeek, type ShiftTemplate, type ScheduledStop, type ShiftLeg } from
 function makeStop(overrides: Partial<ScheduledStop> = {}): ScheduledStop {
   return {
     stationId: 1,
+    platformKind: 'island',
     platformId: 1,
     stopPositionIndex: 0,
     arrivalTime: null,

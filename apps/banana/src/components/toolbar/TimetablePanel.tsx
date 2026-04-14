@@ -12,6 +12,7 @@ import { useBananaApp } from '@/contexts/pixi';
 import { TimetableManager } from '@/timetable/timetable-manager';
 import { downloadJson, uploadJson } from './utils';
 import type { StationManager } from '@/stations/station-manager';
+import type { TrackAlignedPlatformManager } from '@/stations/track-aligned-platform-manager';
 import type { FormationManager } from '@/trains/formation-manager';
 import type { TrackGraph } from '@/trains/tracks/track';
 import type { Route, ShiftTemplate, ShiftAssignment, SerializedTimetableData } from '@/timetable/types';
@@ -43,6 +44,53 @@ function parseTimeString(str: string): number | null {
     const m = parseInt(match[2], 10);
     if (h > 23 || m > 59) return null;
     return h * MS_PER_HOUR + m * MS_PER_MINUTE;
+}
+
+/** Unified platform option for the shift stop selector. */
+type PlatformOption = {
+    /** Encoded value: `island:<id>` or `trackAligned:<id>` */
+    value: string;
+    label: string;
+    kind: 'island' | 'trackAligned';
+    platformId: number;
+};
+
+/** Build a list of all platforms (island + track-aligned) for a given station. */
+function buildPlatformOptions(
+    stationId: number,
+    stationManager: StationManager,
+    trackAlignedPlatformManager: TrackAlignedPlatformManager,
+): PlatformOption[] {
+    const station = stationManager.getStation(stationId);
+    if (station === null) return [];
+    const options: PlatformOption[] = [];
+    for (const p of station.platforms) {
+        options.push({
+            value: `island:${p.id}`,
+            label: `P${p.id} (S${p.track})`,
+            kind: 'island',
+            platformId: p.id,
+        });
+    }
+    for (const tapId of station.trackAlignedPlatforms) {
+        const tap = trackAlignedPlatformManager.getPlatform(tapId);
+        if (tap === null) continue;
+        const segments = tap.spineA.map((e) => e.trackSegment).join(',');
+        options.push({
+            value: `trackAligned:${tapId}`,
+            label: `T${tapId} (S${segments})`,
+            kind: 'trackAligned',
+            platformId: tapId,
+        });
+    }
+    return options;
+}
+
+/** Parse an encoded platform value back into kind + id. */
+function parsePlatformValue(value: string): { kind: 'island' | 'trackAligned'; platformId: number } | null {
+    const m = value.match(/^(island|trackAligned):(\d+)$/);
+    if (!m) return null;
+    return { kind: m[1] as 'island' | 'trackAligned', platformId: parseInt(m[2], 10) };
 }
 
 type Tab = 'routes' | 'shifts' | 'assign';
@@ -221,9 +269,11 @@ function RouteSection({
 function ShiftSection({
     timetableManager,
     stationManager,
+    trackAlignedPlatformManager,
 }: {
     timetableManager: TimetableManager;
     stationManager: StationManager;
+    trackAlignedPlatformManager: TrackAlignedPlatformManager;
 }) {
     const { t } = useTranslation();
     const [shifts, setShifts] = useState<ShiftTemplate[]>(() =>
@@ -232,10 +282,10 @@ function ShiftSection({
     const [adding, setAdding] = useState(false);
     const [shiftName, setShiftName] = useState('');
     const [stopsInput, setStopsInput] = useState<
-        { stationId: string; platformIdx: string; arrive: string; depart: string }[]
+        { stationId: string; platformValue: string; arrive: string; depart: string }[]
     >([
-        { stationId: '', platformIdx: '0', arrive: '', depart: '' },
-        { stationId: '', platformIdx: '0', arrive: '', depart: '' },
+        { stationId: '', platformValue: '', arrive: '', depart: '' },
+        { stationId: '', platformValue: '', arrive: '', depart: '' },
     ]);
     const [routeIds, setRouteIds] = useState<string[]>(['']);
 
@@ -251,7 +301,7 @@ function ShiftSection({
     const addStop = () => {
         setStopsInput((prev) => [
             ...prev,
-            { stationId: '', platformIdx: '0', arrive: '', depart: '' },
+            { stationId: '', platformValue: '', arrive: '', depart: '' },
         ]);
         setRouteIds((prev) => [...prev, '']);
     };
@@ -265,7 +315,7 @@ function ShiftSection({
 
     const updateStop = (
         index: number,
-        field: 'stationId' | 'platformIdx' | 'arrive' | 'depart',
+        field: 'stationId' | 'platformValue' | 'arrive' | 'depart',
         value: string,
     ) => {
         setStopsInput((prev) =>
@@ -278,28 +328,28 @@ function ShiftSection({
 
         const builtStops: ScheduledStop[] = stopsInput.map((s, i) => {
             const stationId = parseInt(s.stationId, 10);
-            const station = stationManager.getStation(stationId);
-            const platformIdx = parseInt(s.platformIdx, 10) || 0;
+            const parsed = parsePlatformValue(s.platformValue);
 
             const arriveMs =
                 i === 0
                     ? null
                     : (() => {
-                          const parsed = parseTimeString(s.arrive);
-                          return parsed !== null ? DayOfWeek.Monday * MS_PER_DAY + parsed : null;
+                          const t = parseTimeString(s.arrive);
+                          return t !== null ? DayOfWeek.Monday * MS_PER_DAY + t : null;
                       })();
 
             const departMs =
                 i === stopsInput.length - 1
                     ? null
                     : (() => {
-                          const parsed = parseTimeString(s.depart);
-                          return parsed !== null ? DayOfWeek.Monday * MS_PER_DAY + parsed : null;
+                          const t = parseTimeString(s.depart);
+                          return t !== null ? DayOfWeek.Monday * MS_PER_DAY + t : null;
                       })();
 
             return {
                 stationId: isNaN(stationId) ? 0 : stationId,
-                platformId: station?.platforms[platformIdx]?.id ?? 0,
+                platformKind: parsed?.kind ?? 'island' as const,
+                platformId: parsed?.platformId ?? 0,
                 stopPositionIndex: 0,
                 arrivalTime: arriveMs,
                 departureTime: departMs,
@@ -322,8 +372,8 @@ function ShiftSection({
             timetableManager.shiftTemplateManager.addTemplate(template);
             setShiftName('');
             setStopsInput([
-                { stationId: '', platformIdx: '0', arrive: '', depart: '' },
-                { stationId: '', platformIdx: '0', arrive: '', depart: '' },
+                { stationId: '', platformValue: '', arrive: '', depart: '' },
+                { stationId: '', platformValue: '', arrive: '', depart: '' },
             ]);
             setRouteIds(['']);
             setAdding(false);
@@ -356,14 +406,20 @@ function ShiftSection({
                     />
 
                     <span className="text-muted-foreground text-[10px]">{t('stops')}:</span>
-                    {stopsInput.map((stop, i) => (
+                    {stopsInput.map((stop, i) => {
+                        const stationIdNum = parseInt(stop.stationId, 10);
+                        const platformOptions = !isNaN(stationIdNum)
+                            ? buildPlatformOptions(stationIdNum, stationManager, trackAlignedPlatformManager)
+                            : [];
+                        return (
                         <div key={i} className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-1">
                                 <Select
                                     value={stop.stationId || NONE}
-                                    onValueChange={(val) =>
-                                        updateStop(i, 'stationId', val === NONE ? '' : val)
-                                    }
+                                    onValueChange={(val) => {
+                                        updateStop(i, 'stationId', val === NONE ? '' : val);
+                                        updateStop(i, 'platformValue', '');
+                                    }}
                                 >
                                     <SelectTrigger size="sm" className="flex-1">
                                         <SelectValue />
@@ -387,6 +443,26 @@ function ShiftSection({
                                     </Button>
                                 )}
                             </div>
+                            {platformOptions.length > 0 && (
+                                <Select
+                                    value={stop.platformValue || NONE}
+                                    onValueChange={(val) =>
+                                        updateStop(i, 'platformValue', val === NONE ? '' : val)
+                                    }
+                                >
+                                    <SelectTrigger size="sm" className="text-[10px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={NONE}>{t('platformPlaceholder')}</SelectItem>
+                                        {platformOptions.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                             <div className="flex gap-1">
                                 {i > 0 && (
                                     <input
@@ -437,7 +513,8 @@ function ShiftSection({
                                 <Separator className="my-0.5" />
                             )}
                         </div>
-                    ))}
+                        );
+                    })}
                     <Button variant="ghost" size="xs" onClick={addStop}>
                         {t('addStop')}
                     </Button>
@@ -664,7 +741,7 @@ export function TimetablePanel({ onClose }: TimetablePanelProps) {
 
     if (!app) return null;
 
-    const { timetableManager, stationManager, formationManager } = app;
+    const { timetableManager, stationManager, trackAlignedPlatformManager, formationManager } = app;
     const trackGraph = app.curveEngine.trackGraph;
 
     const headerActions = (
@@ -713,6 +790,7 @@ export function TimetablePanel({ onClose }: TimetablePanelProps) {
                 <ShiftSection
                     timetableManager={timetableManager}
                     stationManager={stationManager}
+                    trackAlignedPlatformManager={trackAlignedPlatformManager}
                 />
             )}
 
