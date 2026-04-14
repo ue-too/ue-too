@@ -1,1 +1,6 @@
-[]
+[
+  {
+    "label": "V13 Jockey",
+    "url": "/models/v13_jockey.onnx"
+  }
+]

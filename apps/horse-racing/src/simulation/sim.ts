@@ -12,6 +12,34 @@ export type PhaseChangeCallback = (
     finishOrder: number[]
 ) => void;
 
+/** Per-horse snapshot recorded each tick. */
+export interface HorseFrame {
+    id: number;
+    x: number;
+    y: number;
+    tVel: number;
+    nVel: number;
+    progress: number;
+    stamina: number;
+    finished: boolean;
+    finishOrder: number | null;
+}
+
+/** One tick of race recording. */
+export interface RaceFrame {
+    tick: number;
+    horses: HorseFrame[];
+    inputs: Record<number, { t: number; n: number }>;
+}
+
+/** Full race recording blob. */
+export interface RaceRecording {
+    horseCount: number;
+    finishOrder: number[];
+    totalTicks: number;
+    frames: RaceFrame[];
+}
+
 export interface V2SimHandle {
     pickHorse(id: number | null): void;
     start(): void;
@@ -20,6 +48,7 @@ export interface V2SimHandle {
     getHorses(): Horse[];
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     setJockey(jockey: Jockey): void;
+    exportRace(): RaceRecording | null;
     cleanup(): void;
 }
 
@@ -37,6 +66,7 @@ export class V2Sim {
     private tickerCb: () => void;
     private disposed = false;
     private jockey: Jockey = new NullJockey();
+    private frames: RaceFrame[] = [];
 
     constructor(
         private components: BaseAppComponents,
@@ -62,6 +92,11 @@ export class V2Sim {
         }
         this.race.tick(inputs);
 
+        // Record frame after physics
+        if (this.race.state.phase === 'running' || prevPhase === 'running') {
+            this.recordFrame(inputs);
+        }
+
         this.renderer.syncHorses(
             this.race.state.horses,
             this.race.state.playerHorseId
@@ -76,6 +111,28 @@ export class V2Sim {
             const h = this.race.state.horses[pid];
             this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
         }
+    }
+
+    private recordFrame(inputs: Map<number, InputState>): void {
+        const inputRecord: Record<number, { t: number; n: number }> = {};
+        for (const [id, inp] of inputs) {
+            inputRecord[id] = { t: inp.tangential, n: inp.normal };
+        }
+        this.frames.push({
+            tick: this.race.state.tick,
+            horses: this.race.state.horses.map(h => ({
+                id: h.id,
+                x: Math.round(h.pos.x * 100) / 100,
+                y: Math.round(h.pos.y * 100) / 100,
+                tVel: Math.round(h.tangentialVel * 1000) / 1000,
+                nVel: Math.round(h.normalVel * 1000) / 1000,
+                progress: Math.round(h.trackProgress * 10000) / 10000,
+                stamina: Math.round(h.currentStamina * 100) / 100,
+                finished: h.finished,
+                finishOrder: h.finishOrder,
+            })),
+            inputs: inputRecord,
+        });
     }
 
     setJockey(jockey: Jockey): void {
@@ -105,6 +162,7 @@ export class V2Sim {
     reset(): void {
         this.race.reset();
         this.pendingPlayerId = null;
+        this.frames = [];
         this.renderer.dispose();
         this.renderer = new RaceRenderer(
             this.components.app.stage,
@@ -112,6 +170,16 @@ export class V2Sim {
         );
         this.renderer.syncHorses(this.race.state.horses, null);
         this.emitPhase();
+    }
+
+    exportRace(): RaceRecording | null {
+        if (this.frames.length === 0) return null;
+        return {
+            horseCount: this.race.state.horses.length,
+            finishOrder: [...this.race.state.finishOrder],
+            totalTicks: this.race.state.tick,
+            frames: this.frames,
+        };
     }
 
     getPhase(): RacePhase {

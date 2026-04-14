@@ -1,16 +1,22 @@
-import type { InferenceSession, Tensor } from 'onnxruntime-web';
+import type { InferenceSession } from 'onnxruntime-web';
 
 import { OBS_SIZE, buildObservations } from '../simulation/observation';
 import type { Race } from '../simulation/race';
 import type { InputState } from '../simulation/types';
 import type { Jockey } from './types';
 
-/** Discrete 7×5 action space — finer tangential for pacing, 5-level normal. */
-export const TANGENTIAL_LEVELS = [-1, -0.5, 0, 0.25, 0.5, 0.75, 1] as const;
-export const NORMAL_LEVELS = [-1, -0.5, 0, 0.5, 1] as const;
-export const NUM_TANGENTIAL = TANGENTIAL_LEVELS.length; // 7
-export const NUM_NORMAL = NORMAL_LEVELS.length; // 5
-export const NUM_ACTIONS = NUM_TANGENTIAL * NUM_NORMAL; // 35
+type OrtModule = typeof import('onnxruntime-web');
+
+/** Discrete 9×9 action space — quarter-step resolution on both axes. */
+export const TANGENTIAL_LEVELS = [
+    -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,
+] as const;
+export const NORMAL_LEVELS = [
+    -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1,
+] as const;
+export const NUM_TANGENTIAL = TANGENTIAL_LEVELS.length; // 9
+export const NUM_NORMAL = NORMAL_LEVELS.length; // 9
+export const NUM_ACTIONS = NUM_TANGENTIAL * NUM_NORMAL; // 81
 
 /**
  * Decode a flat action index (0-34) into a (tangential, normal) pair.
@@ -53,12 +59,14 @@ function argmax(data: Float32Array, offset: number, length: number): number {
  * The player horse (if any) is excluded from the batch.
  */
 export class OnnxJockey implements Jockey {
+    private ort: OrtModule;
     private session: InferenceSession;
     private pendingResult: Map<number, InputState> = new Map();
     private inferring = false;
     private disposed = false;
 
-    private constructor(session: InferenceSession) {
+    private constructor(ort: OrtModule, session: InferenceSession) {
+        this.ort = ort;
         this.session = session;
     }
 
@@ -68,14 +76,15 @@ export class OnnxJockey implements Jockey {
     static async create(modelUrl: string): Promise<OnnxJockey> {
         const ort = await import('onnxruntime-web');
         const session = await ort.InferenceSession.create(modelUrl);
-        return new OnnxJockey(session);
+        return new OnnxJockey(ort, session);
     }
 
     /**
      * Create from a pre-existing session (useful for testing with mocks).
      */
     static fromSession(session: InferenceSession): OnnxJockey {
-        return new OnnxJockey(session);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return new OnnxJockey(null as any, session);
     }
 
     infer(race: Race): Map<number, InputState> {
@@ -122,13 +131,11 @@ export class OnnxJockey implements Jockey {
 
         // Fire async inference — use last result until it completes
         this.inferring = true;
-        const feeds: Record<string, Tensor> = {
-            [inputName]: {
-                dims: [batchSize, OBS_SIZE],
-                type: 'float32',
-                data: inputData,
-            } as unknown as Tensor,
-        };
+        const tensor = new this.ort.Tensor('float32', inputData, [
+            batchSize,
+            OBS_SIZE,
+        ]);
+        const feeds = { [inputName]: tensor };
 
         this.session
             .run(feeds)

@@ -3,6 +3,7 @@ export {
     attachV2Sim,
     type V2SimHandle,
     type PhaseChangeCallback,
+    type RaceRecording,
 } from './sim';
 export type { Horse, InputState, RacePhase, RaceState } from './types';
 export { MAX_HORSES } from './types';

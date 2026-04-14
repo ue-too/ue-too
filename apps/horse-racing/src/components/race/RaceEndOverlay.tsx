@@ -1,5 +1,5 @@
 // apps/horse-racing/src/components/race-v2/RaceEndOverlay.tsx
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback } from 'react';
 
 import type { V2SimHandle } from '@/simulation';
 
@@ -16,6 +16,19 @@ function hex(n: number): string {
 }
 
 export function RaceEndOverlay({ order, sim }: Props): ReactNode {
+    const exportRace = useCallback(() => {
+        const recording = sim.exportRace();
+        if (!recording) return;
+        const json = JSON.stringify(recording);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `race-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }, [sim]);
+
     // Build a row per horse: first the finishers in order, then any DNFs.
     const finishers = order.map((id, idx) => ({
         id,
@@ -82,22 +95,38 @@ export function RaceEndOverlay({ order, sim }: Props): ReactNode {
                     </div>
                 ))}
             </div>
-            <button
-                onClick={() => sim.reset()}
-                style={{
-                    marginTop: 20,
-                    width: '100%',
-                    padding: '10px 0',
-                    fontSize: 15,
-                    borderRadius: 8,
-                    border: '1px solid #888',
-                    background: '#222',
-                    color: 'white',
-                    cursor: 'pointer',
-                }}
-            >
-                Reset
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                <button
+                    onClick={exportRace}
+                    style={{
+                        flex: 1,
+                        padding: '10px 0',
+                        fontSize: 15,
+                        borderRadius: 8,
+                        border: '1px solid #888',
+                        background: '#333',
+                        color: 'white',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Export
+                </button>
+                <button
+                    onClick={() => sim.reset()}
+                    style={{
+                        flex: 1,
+                        padding: '10px 0',
+                        fontSize: 15,
+                        borderRadius: 8,
+                        border: '1px solid #888',
+                        background: '#222',
+                        color: 'white',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Reset
+                </button>
+            </div>
         </div>
     );
 }

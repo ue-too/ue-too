@@ -141,11 +141,9 @@ export function stepPhysics(
     // syncFromBody writes body.center back to horse.pos at the end of each substep.
     for (let s = 0; s < substeps; s++) {
         for (const h of horses) {
+            if (h.finished) continue;
             const body = raceWorld.getHorseBody(h.id);
-            if (h.finished) {
-                body.linearVelocity = { x: 0, y: 0 };
-                continue;
-            }
+            if (!body) continue;
             applyForcesToBody(
                 h,
                 body,
@@ -158,7 +156,9 @@ export function stepPhysics(
 
         for (const h of horses) {
             if (h.finished) continue;
-            syncFromBody(h, raceWorld.getHorseBody(h.id));
+            const body = raceWorld.getHorseBody(h.id);
+            if (!body) continue;
+            syncFromBody(h, body);
         }
     }
 }

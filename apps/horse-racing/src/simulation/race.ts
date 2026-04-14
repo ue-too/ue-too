@@ -151,24 +151,17 @@ export class Race {
             }
         }
 
-        // 4. Finish detection
+        // 4. Finish detection — remove finished horses from physics
         for (const h of this.state.horses) {
             if (!h.finished && h.trackProgress >= 1.0) {
                 h.finished = true;
                 h.finishOrder = this.state.finishOrder.length + 1;
                 this.state.finishOrder.push(h.id);
+                this.raceWorld.removeHorse(h.id);
             }
         }
 
-        const playerId = this.state.playerHorseId;
-        const isPlayerMode = playerId !== null;
-        const player = isPlayerMode ? this.state.horses[playerId] : null;
-        const allFinished = this.state.horses.every(h => h.finished);
-
-        if (
-            (isPlayerMode && player!.finished) ||
-            (!isPlayerMode && allFinished)
-        ) {
+        if (this.state.horses.every(h => h.finished)) {
             this.state.phase = 'finished';
         }
 

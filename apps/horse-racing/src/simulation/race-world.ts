@@ -46,10 +46,14 @@ export class RaceWorld {
         return body;
     }
 
-    getHorseBody(id: number): Polygon {
-        const body = this.horseBodies.get(id);
-        if (!body) throw new Error(`No body for horse ${id}`);
-        return body;
+    getHorseBody(id: number): Polygon | undefined {
+        return this.horseBodies.get(id);
+    }
+
+    removeHorse(id: number): void {
+        if (!this.horseBodies.has(id)) return;
+        this.world.removeRigidBody(`horse-${id}`);
+        this.horseBodies.delete(id);
     }
 
     step(dt: number): void {
