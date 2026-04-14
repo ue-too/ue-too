@@ -428,6 +428,16 @@ export class SingleSpinePlacementEngine
 
         station.trackAlignedPlatforms.push(platformId);
 
+        // When the first platform is added, reposition the station to the
+        // spine midpoint so the station label sits on the platform.
+        if (station.trackAlignedPlatforms.length === 1 && station.platforms.length === 0) {
+            const stops = computeStopPositions(this._spine, getCurve);
+            if (stops.length > 0) {
+                const curve = getCurve(stops[0].trackSegmentId);
+                station.position = curve.get(stops[0].tValue);
+            }
+        }
+
         const elevation = station.elevation;
         this._platformRenderSystem.addPlatform(platformId, elevation);
 
