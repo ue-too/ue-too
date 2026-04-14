@@ -70,6 +70,7 @@ export interface SingleSpineContext extends BaseContext {
     finalize: () => void;
     cancel: () => void;
     convert2WorldPosition: (position: Point) => Point;
+    showHint: (key: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +89,7 @@ export class SingleSpinePlacementEngine
     private _platformManager: TrackAlignedPlatformManager;
     private _platformRenderSystem: TrackAlignedPlatformRenderSystem;
     private _camera: ObservableBoardCamera;
+    private _onHint: (key: string) => void;
 
     // State
     private _activeStationId: number | null = null;
@@ -109,6 +111,7 @@ export class SingleSpinePlacementEngine
         stationManager: StationManager,
         platformManager: TrackAlignedPlatformManager,
         platformRenderSystem: TrackAlignedPlatformRenderSystem,
+        onHint?: (key: string) => void,
     ) {
         super(canvas);
         this._trackGraph = trackGraph;
@@ -116,6 +119,7 @@ export class SingleSpinePlacementEngine
         this._stationManager = stationManager;
         this._platformManager = platformManager;
         this._platformRenderSystem = platformRenderSystem;
+        this._onHint = onHint ?? (() => {});
     }
 
     // -------------------------------------------------------------------------
@@ -144,6 +148,7 @@ export class SingleSpinePlacementEngine
 
     setStation(stationId: number): void {
         this._activeStationId = stationId;
+        this._onHint('hintPickStart');
     }
 
     hoverUpdate(position: Point): void {
@@ -219,6 +224,7 @@ export class SingleSpinePlacementEngine
         // Show preview with just the start anchor.
         this._updatePlacementPreview();
 
+        this._onHint('hintPickEnd');
         return true;
     }
 
@@ -377,6 +383,7 @@ export class SingleSpinePlacementEngine
 
         this._hasEnd = true;
         this._updatePlacementPreview();
+        this._onHint('hintDrawOuter');
         return true;
     }
 
@@ -443,12 +450,17 @@ export class SingleSpinePlacementEngine
 
         this._isFinalized = true;
         this._platformRenderSystem.hidePreview();
+        this._onHint('hintPlatformCreated');
         this._resetState();
     }
 
     cancel(): void {
         this._platformRenderSystem.hidePreview();
         this._resetState();
+    }
+
+    showHint(key: string): void {
+        this._onHint(key);
     }
 
     setup(): void {}

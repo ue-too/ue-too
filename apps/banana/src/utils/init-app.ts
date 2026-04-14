@@ -36,6 +36,7 @@ import { TrackAlignedPlatformRenderSystem } from '@/stations/track-aligned-platf
 import { SingleSpinePlacementEngine, createSingleSpinePlacementStateMachine } from '@/stations/single-spine-placement-state-machine';
 import { DualSpinePlacementEngine, createDualSpinePlacementStateMachine } from '@/stations/dual-spine-placement-state-machine';
 import { CameraMuxWithAnimationAndLock, createCameraMuxWithAnimationAndLock } from '@ue-too/board';
+import i18n from '@/i18n';
 import { Animator, NumberAnimationHelper, Animation } from '@ue-too/animate';
 import { Point } from '@ue-too/math';
 
@@ -555,6 +556,17 @@ export const initApp = async (
   );
   const stationStateMachine = new StationPlacementStateMachine(stationPlacementEngine);
 
+  let platformHintToastId: string | number | undefined;
+  const showPlatformHint = (key: string) => {
+      if (platformHintToastId !== undefined) toast.dismiss(platformHintToastId);
+      const msg = i18n.t(key);
+      if (key === 'hintPlatformCreated') {
+          platformHintToastId = toast.success(msg, { duration: 2000 });
+      } else {
+          platformHintToastId = toast.info(msg, { duration: 8000 });
+      }
+  };
+
   const singleSpineEngine = new SingleSpinePlacementEngine(
       baseComponents.canvasProxy,
       curveEngine.trackGraph,
@@ -562,6 +574,7 @@ export const initApp = async (
       stationManager,
       trackAlignedPlatformManager,
       trackAlignedPlatformRenderSystem,
+      showPlatformHint,
   );
   const singleSpineStateMachine = createSingleSpinePlacementStateMachine(singleSpineEngine);
 
@@ -572,6 +585,7 @@ export const initApp = async (
       stationManager,
       trackAlignedPlatformManager,
       trackAlignedPlatformRenderSystem,
+      showPlatformHint,
   );
   const dualSpineStateMachine = createDualSpinePlacementStateMachine(dualSpineEngine);
 

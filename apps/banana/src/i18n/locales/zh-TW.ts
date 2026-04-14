@@ -101,6 +101,18 @@ const zhTW = {
         autoSave10Min: '10 分鐘',
         autoSaveToast: '「{{name}}」已自動儲存',
 
+        // Track-aligned platform hints
+        hintPickStart: '點擊軌道設定起點',
+        hintPickEnd: '沿軌道點擊設定終點',
+        hintDrawOuter: '點擊繪製月台邊緣 — 靠近起點錨點以完成',
+        hintDualPickSpineAStart: '點擊軌道設定脊線 A 起點',
+        hintDualPickSpineAEnd: '沿軌道點擊設定脊線 A 終點',
+        hintDualPickSpineBStart: '點擊對面軌道設定脊線 B 起點',
+        hintDualPickSpineBEnd: '沿軌道點擊設定脊線 B 終點',
+        hintDualDrawCap1: '點擊繪製第一個端蓋 — 靠近吸附環以完成',
+        hintDualDrawCap2: '點擊繪製第二個端蓋 — 靠近吸附環以完成',
+        hintPlatformCreated: '月台已建立',
+
         // Validation errors
         invalidTrackData: '無效的軌道資料：{{error}}',
         invalidTrainData: '無效的列車資料：{{error}}',

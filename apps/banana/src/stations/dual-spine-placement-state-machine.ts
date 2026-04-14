@@ -93,6 +93,7 @@ export interface DualSpineContext extends BaseContext {
     finalize: () => void;
     cancel: () => void;
     convert2WorldPosition: (position: Point) => Point;
+    showHint: (key: string) => void;
 
     // Guard flags
     readonly hasSpineAStart: boolean;
@@ -120,6 +121,7 @@ export class DualSpinePlacementEngine
     private _platformManager: TrackAlignedPlatformManager;
     private _platformRenderSystem: TrackAlignedPlatformRenderSystem;
     private _camera: ObservableBoardCamera;
+    private _onHint: (key: string) => void;
 
     // State
     private _activeStationId: number | null = null;
@@ -153,6 +155,7 @@ export class DualSpinePlacementEngine
         stationManager: StationManager,
         platformManager: TrackAlignedPlatformManager,
         platformRenderSystem: TrackAlignedPlatformRenderSystem,
+        onHint?: (key: string) => void,
     ) {
         super(canvas);
         this._trackGraph = trackGraph;
@@ -160,6 +163,7 @@ export class DualSpinePlacementEngine
         this._stationManager = stationManager;
         this._platformManager = platformManager;
         this._platformRenderSystem = platformRenderSystem;
+        this._onHint = onHint ?? (() => {});
     }
 
     // -------------------------------------------------------------------------
@@ -204,6 +208,7 @@ export class DualSpinePlacementEngine
 
     setStation(stationId: number): void {
         this._activeStationId = stationId;
+        this._onHint('hintDualPickSpineAStart');
     }
 
     hoverUpdate(position: Point): void {
@@ -273,6 +278,7 @@ export class DualSpinePlacementEngine
         }
 
         this._updatePlacementPreview();
+        this._onHint('hintDualPickSpineAEnd');
         return true;
     }
 
@@ -425,6 +431,7 @@ export class DualSpinePlacementEngine
 
         this._hasSpineAEnd = true;
         this._updatePlacementPreview();
+        this._onHint('hintDualPickSpineBStart');
         return true;
     }
 
@@ -472,6 +479,7 @@ export class DualSpinePlacementEngine
         }
 
         this._updatePlacementPreview();
+        this._onHint('hintDualPickSpineBEnd');
         return true;
     }
 
@@ -633,6 +641,7 @@ export class DualSpinePlacementEngine
         this._autoDetectCapPairing();
 
         this._updatePlacementPreview();
+        this._onHint('hintDualDrawCap1');
         return true;
     }
 
@@ -730,6 +739,7 @@ export class DualSpinePlacementEngine
     confirmCapA(): void {
         this._isCapAClosed = true;
         this._updatePlacementPreview();
+        this._onHint('hintDualDrawCap2');
     }
 
     addCapBVertex(position: Point): boolean {
@@ -806,12 +816,17 @@ export class DualSpinePlacementEngine
 
         this._isFinalized = true;
         this._platformRenderSystem.hidePreview();
+        this._onHint('hintPlatformCreated');
         this._resetState();
     }
 
     cancel(): void {
         this._platformRenderSystem.hidePreview();
         this._resetState();
+    }
+
+    showHint(key: string): void {
+        this._onHint(key);
     }
 
     setup(): void {}

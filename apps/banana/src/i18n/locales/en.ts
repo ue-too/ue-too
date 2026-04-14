@@ -103,6 +103,18 @@ const en = {
         autoSave10Min: '10 minutes',
         autoSaveToast: '"{{name}}" auto-saved',
 
+        // Track-aligned platform hints
+        hintPickStart: 'Click on a track to set the start point',
+        hintPickEnd: 'Click along the track to set the end point',
+        hintDrawOuter: 'Click to draw the platform edge — close near the start anchor to finish',
+        hintDualPickSpineAStart: 'Click on a track to set spine A start',
+        hintDualPickSpineAEnd: 'Click along the track to set spine A end',
+        hintDualPickSpineBStart: 'Click the opposite track to set spine B start',
+        hintDualPickSpineBEnd: 'Click along the track to set spine B end',
+        hintDualDrawCap1: 'Click to draw the first end cap — close near the snap ring to finish',
+        hintDualDrawCap2: 'Click to draw the second end cap — close near the snap ring to finish',
+        hintPlatformCreated: 'Platform created',
+
         // Validation errors
         invalidTrackData: 'Invalid track data: {{error}}',
         invalidTrainData: 'Invalid train data: {{error}}',

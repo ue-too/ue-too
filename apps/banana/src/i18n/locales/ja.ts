@@ -104,6 +104,18 @@ const ja = {
         autoSave10Min: '10分',
         autoSaveToast: '「{{name}}」を自動保存しました',
 
+        // Track-aligned platform hints
+        hintPickStart: '線路をクリックして始点を設定',
+        hintPickEnd: '線路に沿ってクリックして終点を設定',
+        hintDrawOuter: 'クリックしてホーム端を描画 — 始点アンカー付近で閉じる',
+        hintDualPickSpineAStart: '線路をクリックしてスパインAの始点を設定',
+        hintDualPickSpineAEnd: '線路に沿ってクリックしてスパインAの終点を設定',
+        hintDualPickSpineBStart: '反対側の線路をクリックしてスパインBの始点を設定',
+        hintDualPickSpineBEnd: '線路に沿ってクリックしてスパインBの終点を設定',
+        hintDualDrawCap1: 'クリックして最初の端部キャップを描画 — スナップリング付近で閉じる',
+        hintDualDrawCap2: 'クリックして2番目の端部キャップを描画 — スナップリング付近で閉じる',
+        hintPlatformCreated: 'ホームが作成されました',
+
         // Validation errors
         invalidTrackData: '無効な線路データ：{{error}}',
         invalidTrainData: '無効な列車データ：{{error}}',
