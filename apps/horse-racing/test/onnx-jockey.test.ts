@@ -45,35 +45,35 @@ function createMockSession(actionIndex: number) {
 }
 
 describe('decodeAction', () => {
-    it('decodes index 0 to (-1, -1)', () => {
+    it('decodes index 0 to (-0.25, -1)', () => {
         const a = decodeAction(0);
-        expect(a.tangential).toBe(-1);
+        expect(a.tangential).toBe(-0.25);
         expect(a.normal).toBe(-1);
     });
 
-    it('decodes index 40 to (0, 0) — center of 9×9 grid', () => {
-        // tangential index = floor(40/9) = 4 → 0
-        // normal index = 40 % 9 = 4 → 0
-        const a = decodeAction(40);
+    it('decodes index 13 to (0, 0) — cruise, no steering', () => {
+        // tangential index = floor(13/9) = 1 → 0
+        // normal index = 13 % 9 = 4 → 0
+        const a = decodeAction(13);
         expect(a.tangential).toBe(0);
         expect(a.normal).toBe(0);
     });
 
-    it('decodes index 80 to (1, 1)', () => {
-        const a = decodeAction(80);
+    it('decodes index 49 to (1, 0) — full push, no steering', () => {
+        // tangential index = floor(49/9) = 5 → 1
+        // normal index = 49 % 9 = 4 → 0
+        const a = decodeAction(49);
+        expect(a.tangential).toBe(1);
+        expect(a.normal).toBe(0);
+    });
+
+    it('decodes index 53 to (1, 1) — last action', () => {
+        const a = decodeAction(53);
         expect(a.tangential).toBe(1);
         expect(a.normal).toBe(1);
     });
 
-    it('decodes index 73 to (1, -0.75)', () => {
-        // tangential=1 → index 8, normal=-0.75 → index 1
-        // 8*9 + 1 = 73
-        const a = decodeAction(73);
-        expect(a.tangential).toBe(1);
-        expect(a.normal).toBe(-0.75);
-    });
-
-    it('all 81 actions map to valid levels', () => {
+    it('all 54 actions map to valid levels', () => {
         for (let i = 0; i < NUM_ACTIONS; i++) {
             const a = decodeAction(i);
             expect(TANGENTIAL_LEVELS).toContain(a.tangential);
@@ -83,24 +83,24 @@ describe('decodeAction', () => {
 });
 
 describe('constants', () => {
-    it('TANGENTIAL_LEVELS has 9 entries', () => {
-        expect(TANGENTIAL_LEVELS).toHaveLength(9);
+    it('TANGENTIAL_LEVELS has 6 entries', () => {
+        expect(TANGENTIAL_LEVELS).toHaveLength(6);
     });
 
     it('NORMAL_LEVELS has 9 entries', () => {
         expect(NORMAL_LEVELS).toHaveLength(9);
     });
 
-    it('NUM_TANGENTIAL is 9', () => {
-        expect(NUM_TANGENTIAL).toBe(9);
+    it('NUM_TANGENTIAL is 6', () => {
+        expect(NUM_TANGENTIAL).toBe(6);
     });
 
     it('NUM_NORMAL is 9', () => {
         expect(NUM_NORMAL).toBe(9);
     });
 
-    it('NUM_ACTIONS is 81', () => {
-        expect(NUM_ACTIONS).toBe(81);
+    it('NUM_ACTIONS is 54', () => {
+        expect(NUM_ACTIONS).toBe(54);
     });
 });
 
@@ -110,8 +110,8 @@ describe('OnnxJockey', () => {
         const race = new Race(segments, 4);
         race.start(null);
 
-        // Action index 40 = (0, 0) — cruise, no steering
-        const session = createMockSession(40);
+        // Action index 13 = (0, 0) — cruise, no steering
+        const session = createMockSession(13);
         const jockey = OnnxJockey.fromSession(session as any);
 
         jockey.infer(race);
@@ -131,8 +131,8 @@ describe('OnnxJockey', () => {
         const race = new Race(segments, 2);
         race.start(null);
 
-        // tangential=1 → index 8, normal=0.75 → index 7 → flat = 8*9+7 = 79
-        const session = createMockSession(79);
+        // tangential=1 → index 5, normal=0.75 → index 7 → flat = 5*9+7 = 52
+        const session = createMockSession(52);
         const jockey = OnnxJockey.fromSession(session as any);
 
         jockey.infer(race);
@@ -150,7 +150,7 @@ describe('OnnxJockey', () => {
         const race = new Race(segments, 4);
         race.start(2);
 
-        const session = createMockSession(80); // (1, 1)
+        const session = createMockSession(53); // (1, 1)
         const jockey = OnnxJockey.fromSession(session as any);
 
         jockey.infer(race);
@@ -184,7 +184,7 @@ describe('OnnxJockey', () => {
         const race = new Race(segments, 6);
         race.start(0);
 
-        const session = createMockSession(40);
+        const session = createMockSession(13);
         const jockey = OnnxJockey.fromSession(session as any);
 
         jockey.infer(race);
