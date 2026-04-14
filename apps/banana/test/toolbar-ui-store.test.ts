@@ -32,6 +32,7 @@ const PANEL_STATE_KEYS: Record<PanelName, string> = {
 function resetStore() {
     useToolbarUIStore.setState({
         mode: 'idle',
+        activeCategory: null,
         showDepot: false,
         showTrainPanel: false,
         showFormationEditor: false,
@@ -64,6 +65,13 @@ describe('toolbar-ui-store', () => {
         it('changes the mode', () => {
             useToolbarUIStore.getState().setMode('layout');
             expect(useToolbarUIStore.getState().mode).toBe('layout');
+        });
+
+        it('closes the flyout when activating a tool', () => {
+            useToolbarUIStore.setState({ activeCategory: 'drawing' });
+            useToolbarUIStore.getState().setMode('layout');
+            expect(useToolbarUIStore.getState().mode).toBe('layout');
+            expect(useToolbarUIStore.getState().activeCategory).toBeNull();
         });
 
         it('supports all app modes', () => {
@@ -107,6 +115,23 @@ describe('toolbar-ui-store', () => {
             expect(state.showDepot).toBe(true);
             expect(state.showTrainPanel).toBe(false);
             expect(state.showDebugPanel).toBe(false);
+        });
+
+        it('closes the flyout when opening a panel', () => {
+            useToolbarUIStore.setState({ activeCategory: 'trains' });
+            useToolbarUIStore.getState().togglePanel('trainPanel');
+            expect(useToolbarUIStore.getState().showTrainPanel).toBe(true);
+            expect(useToolbarUIStore.getState().activeCategory).toBeNull();
+        });
+
+        it('does not reopen the flyout when closing a panel', () => {
+            useToolbarUIStore.setState({
+                showDepot: true,
+                activeCategory: null,
+            });
+            useToolbarUIStore.getState().togglePanel('depot');
+            expect(useToolbarUIStore.getState().showDepot).toBe(false);
+            expect(useToolbarUIStore.getState().activeCategory).toBeNull();
         });
     });
 

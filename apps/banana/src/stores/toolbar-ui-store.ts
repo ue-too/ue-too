@@ -80,12 +80,17 @@ export const useToolbarUIStore = create<ToolbarUIStore>()(
             activeCategory: null,
             ...INITIAL_PANEL_STATE,
 
-            setMode: mode => set({ mode }),
+            setMode: mode => set({ mode, activeCategory: null }),
 
             togglePanel: panel =>
                 set(state => {
                     const key = PANEL_KEY_MAP[panel];
-                    return { [key]: !state[key] };
+                    const opening = !state[key];
+                    return {
+                        [key]: opening,
+                        // Close the flyout when opening an independent panel
+                        ...(opening ? { activeCategory: null } : undefined),
+                    };
                 }),
 
             setPanel: (panel, open) => set({ [PANEL_KEY_MAP[panel]]: open }),
