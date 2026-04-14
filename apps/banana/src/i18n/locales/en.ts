@@ -101,6 +101,7 @@ const en = {
         autoSave3Min: '3 minutes',
         autoSave5Min: '5 minutes',
         autoSave10Min: '10 minutes',
+        autoSaveToast: '"{{name}}" auto-saved',
 
         // Validation errors
         invalidTrackData: 'Invalid track data: {{error}}',

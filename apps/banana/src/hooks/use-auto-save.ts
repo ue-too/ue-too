@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { useBananaApp } from '@/contexts/pixi';
@@ -18,6 +19,7 @@ const requestIdle =
  * Returns `saveNow` for triggering a manual save from the UI.
  */
 export function useAutoSave(): { saveNow: () => void } {
+    const { t } = useTranslation();
     const app = useBananaApp();
     const activeSceneId = useSceneStore((s) => s.activeSceneId);
     const activeSceneName = useSceneStore((s) => s.activeSceneName);
@@ -60,7 +62,7 @@ export function useAutoSave(): { saveNow: () => void } {
                     })
                     .then(() => {
                         if (!hasShownToast.current) {
-                            toast.success(`"${activeSceneName}" auto-saved`, {
+                            toast.success(t('autoSaveToast', { name: activeSceneName }), {
                                 duration: 2000,
                             });
                             hasShownToast.current = true;

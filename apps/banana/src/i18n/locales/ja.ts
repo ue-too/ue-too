@@ -102,6 +102,7 @@ const ja = {
         autoSave3Min: '3分',
         autoSave5Min: '5分',
         autoSave10Min: '10分',
+        autoSaveToast: '「{{name}}」を自動保存しました',
 
         // Validation errors
         invalidTrackData: '無効な線路データ：{{error}}',

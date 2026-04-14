@@ -99,6 +99,7 @@ const zhTW = {
         autoSave3Min: '3 分鐘',
         autoSave5Min: '5 分鐘',
         autoSave10Min: '10 分鐘',
+        autoSaveToast: '「{{name}}」已自動儲存',
 
         // Validation errors
         invalidTrackData: '無效的軌道資料：{{error}}',
