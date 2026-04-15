@@ -381,3 +381,140 @@ describe('CollisionGuard', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// CollisionGuard — crossing detection tests
+// ---------------------------------------------------------------------------
+
+describe('CollisionGuard — crossing detection', () => {
+
+    let registry: OccupancyRegistry;
+    let crossingMap: CrossingMap;
+
+    beforeEach(() => {
+        registry = new OccupancyRegistry();
+        crossingMap = new CrossingMap();
+    });
+
+    it('Tier 1: both trains approach crossing simultaneously within time window → er', () => {
+        // Segment 100 units long. Crossing at t=0.5 (arc=50) on both segments.
+        // t1 on seg 1 at t=0.3 (arc=30), tangent → dist to crossing = 50-30 = 20, speed=10 → time=2s
+        // t2 on seg 2 at t=0.3 (arc=30), tangent → dist to crossing = 50-30 = 20, speed=10 → time=2s
+        // |2 - 2| = 0 < 3s window → Tier 1 trigger
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.3, 'tangent'),
+            bogiePositions: [makePosition(1, 0.3, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.3, 'tangent'),
+            bogiePositions: [makePosition(2, 0.3, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        expect(t1.throttleStep).toBe('er');
+        expect(t2.throttleStep).toBe('er');
+        // Tier 1 does NOT collision-lock
+        expect(t1.collisionLocked).toBe(false);
+        expect(t2.collisionLocked).toBe(false);
+    });
+
+    it('No trigger: trains approach crossing at very different times (> 3s window)', () => {
+        // t1 on seg 1 at t=0.45 (arc=45), tangent → dist = 50-45 = 5, speed=10 → time=0.5s
+        // t2 on seg 2 at t=0.05 (arc=5), tangent → dist = 50-5 = 45, speed=10 → time=4.5s
+        // |0.5 - 4.5| = 4 > 3s → no trigger
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.45, 'tangent'),
+            bogiePositions: [makePosition(1, 0.45, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.05, 'tangent'),
+            bogiePositions: [makePosition(2, 0.05, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        expect(t1.throttleStep).toBe('N');
+        expect(t2.throttleStep).toBe('N');
+    });
+
+    it('No trigger: one train moving away from crossing (past it)', () => {
+        // t1 on seg 1 at t=0.6, tangent → crossing at 0.5, diff = 50-60 = -10 → null (past crossing)
+        // t2 on seg 2 at t=0.3, tangent → approaching, but t1 skips → no trigger
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.6, 'tangent'),
+            bogiePositions: [makePosition(1, 0.6, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.3, 'tangent'),
+            bogiePositions: [makePosition(2, 0.3, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        expect(t1.throttleStep).toBe('N');
+        expect(t2.throttleStep).toBe('N');
+    });
+
+    it('Tier 2: both trains very close to crossing → emergencyStop', () => {
+        // Crossing at t=0.5 (arc=50).
+        // t1 on seg 1 at t=0.5 (arc=50), tangent → dist = 50-50 = 0 < 5 → critical
+        // t2 on seg 2 at t=0.48 (arc=48), tangent → dist = 50-48 = 2 < 5 → critical
+        // Both within CRITICAL_DISTANCE → emergencyStop
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.5, 'tangent'),
+            bogiePositions: [makePosition(1, 0.5, 'tangent')],
+            speed: 2,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.48, 'tangent'),
+            bogiePositions: [makePosition(2, 0.48, 'tangent')],
+            speed: 2,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        expect(t1.collisionLocked).toBe(true);
+        expect(t1.speed).toBe(0);
+        expect(t2.collisionLocked).toBe(true);
+        expect(t2.speed).toBe(0);
+    });
+});

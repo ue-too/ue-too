@@ -13,6 +13,9 @@ const CRITICAL_DISTANCE = 5;
 /** Safety margin multiplier applied to the kinematic braking distance for Tier 1 throttle reduction. */
 const BRAKING_SAFETY_MARGIN = 1.8;
 
+/** Time window (seconds) within which two trains approaching a crossing are considered a conflict. */
+const CROSSING_TIME_WINDOW = 3;
+
 /**
  * Emergency brake deceleration magnitude (world units / s²).
  * Must match the `er` entry in DEFAULT_THROTTLE_STEPS (absolute value).
@@ -146,8 +149,8 @@ export class CollisionGuard {
             this._checkSameTrack(idA, entryA.train, idB, entryB.train, dangerousThisFrame);
         }
 
-        // --- Crossing detection (Task 4 placeholder) ---
-        this._checkCrossings();
+        // --- Crossing detection ---
+        this._checkCrossings(placedTrains, occupancyRegistry, trainMap, dangerousThisFrame);
 
         // --- Clear locks for trains no longer in danger ---
         for (const lockedId of this._lockedTrains) {
@@ -247,11 +250,118 @@ export class CollisionGuard {
     }
 
     // -----------------------------------------------------------------------
-    // Crossing detection (placeholder — implemented in Task 4)
+    // Crossing detection
     // -----------------------------------------------------------------------
 
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    private _checkCrossings(): void {
-        // Implemented in Task 4
+    private _checkCrossings(
+        placedTrains: readonly PlacedTrainEntry[],
+        occupancyRegistry: OccupancyRegistry,
+        trainMap: Map<number, PlacedTrainEntry>,
+        dangerousThisFrame: Set<number>,
+    ): void {
+        // Build segment → trains lookup (keyed by head position segment).
+        const segmentToTrains = new Map<number, { id: number; train: PlacedTrainEntry['train'] }[]>();
+        for (const entry of placedTrains) {
+            const pos = entry.train.position;
+            if (!pos) continue;
+            const seg = pos.trackSegment;
+            let list = segmentToTrains.get(seg);
+            if (!list) {
+                list = [];
+                segmentToTrains.set(seg, list);
+            }
+            list.push({ id: entry.id, train: entry.train });
+        }
+
+        // Deduplicate pair checks.
+        const checkedPairs = new Set<string>();
+
+        for (const [segNum, trainsOnSeg] of segmentToTrains) {
+            const crossings = this._crossingMap.getCrossings(segNum);
+            if (crossings.length === 0) continue;
+
+            const segData = this._trackGraph.getTrackSegmentWithJoints(segNum);
+            if (!segData) continue;
+
+            for (const crossing of crossings) {
+                const partnerTrains = segmentToTrains.get(crossing.crossingSegment);
+                if (!partnerTrains || partnerTrains.length === 0) continue;
+
+                const partnerSegData = this._trackGraph.getTrackSegmentWithJoints(
+                    crossing.crossingSegment,
+                );
+                if (!partnerSegData) continue;
+
+                for (const trainA of trainsOnSeg) {
+                    for (const trainB of partnerTrains) {
+                        const smallerId = Math.min(trainA.id, trainB.id);
+                        const largerId = Math.max(trainA.id, trainB.id);
+                        const pairKey = `${smallerId}:${largerId}`;
+                        if (checkedPairs.has(pairKey)) continue;
+                        checkedPairs.add(pairKey);
+
+                        const posA = trainA.train.position;
+                        const posB = trainB.train.position;
+                        if (!posA || !posB) continue;
+
+                        const distA = this._distanceToCrossing(posA, crossing.selfT, segData);
+                        const distB = this._distanceToCrossing(
+                            posB,
+                            crossing.otherT,
+                            partnerSegData,
+                        );
+
+                        // If either train is past the crossing, skip.
+                        if (distA === null || distB === null) continue;
+
+                        // Tier 2: both within critical distance → emergencyStop.
+                        if (distA <= CRITICAL_DISTANCE && distB <= CRITICAL_DISTANCE) {
+                            trainA.train.emergencyStop();
+                            trainB.train.emergencyStop();
+                            this._lockedTrains.add(trainA.id);
+                            this._lockedTrains.add(trainB.id);
+                            dangerousThisFrame.add(trainA.id);
+                            dangerousThisFrame.add(trainB.id);
+                            continue;
+                        }
+
+                        // Tier 1: check time-to-arrival window.
+                        const speedA = trainA.train.speed;
+                        const speedB = trainB.train.speed;
+                        if (speedA === 0 || speedB === 0) continue;
+
+                        const timeA = distA / speedA;
+                        const timeB = distB / speedB;
+
+                        if (isFinite(timeA) && isFinite(timeB) && Math.abs(timeA - timeB) < CROSSING_TIME_WINDOW) {
+                            trainA.train.setThrottleStep('er');
+                            trainB.train.setThrottleStep('er');
+                            dangerousThisFrame.add(trainA.id);
+                            dangerousThisFrame.add(trainB.id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Compute the arc-length distance from a train's current position to a crossing t-value
+     * along the same segment. Returns `null` if the train has already passed the crossing.
+     */
+    private _distanceToCrossing(
+        pos: TrainPosition,
+        crossingT: number,
+        segData: { curve: { lengthAtT(t: number): number } },
+    ): number | null {
+        const posLen = segData.curve.lengthAtT(pos.tValue);
+        const crossingLen = segData.curve.lengthAtT(crossingT);
+        const diff = crossingLen - posLen;
+
+        if (pos.direction === 'tangent') {
+            return diff >= 0 ? diff : null; // null = past crossing
+        } else {
+            return diff <= 0 ? -diff : null; // null = past crossing
+        }
     }
 }
