@@ -21,7 +21,7 @@
 
 2. **Bezier `advanceAtTWithLength()`** — Newton-Raphson iteration (2-4 iters) per bogie per frame. 100 trains × 11 bogies = 1100 calls/frame. Numerically intensive but manageable.
 
-3. **No spatial indexing for trains** — no train-train collision exists, so not an issue yet. Would need broad-phase if signaling/blocking is added.
+3. **Train collision prevention** — `CollisionGuard` runs per-frame after occupancy rebuild. Uses `OccupancyRegistry` colocated pairs for same-track broad-phase and a reactive `CrossingMap` (built from `TrackSegmentWithCollision` data, filtered to same-elevation) for crossing detection. Two-tier response: emergency brake at braking distance, hard stop at critical distance (~5 world units). Throttle lock prevents overrides during collision events. Block signals additionally enforce train separation for auto-driven trains, and proximity detection exists for coupling (detecting nearby stationary train endpoints).
 
 4. **`Array.unshift()` in `getPosition()`** — prepends to arrays when crossing joints. Minor but adds up at junctions.
 

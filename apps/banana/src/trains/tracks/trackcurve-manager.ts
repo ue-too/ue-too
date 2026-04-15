@@ -1041,6 +1041,28 @@ export class TrackCurveManager {
             aabb.max.y
         );
 
+        // Compute collisions with existing segments in the RTree (same as
+        // addTrackSegment). Without this, segments loaded from serialized data
+        // have empty collision arrays and crossing detection won't work.
+        const collisions: {
+            selfT: number;
+            anotherCurve: { curve: BCurve; tVal: number };
+        }[] = [];
+
+        const possibleCollisions = this._internalRTree.search(aabbRectangle);
+        for (const segment of possibleCollisions) {
+            const intersections = segment.curve
+                .getCurveIntersections(curve)
+                .map(intersection => ({
+                    selfT: intersection.otherT,
+                    anotherCurve: {
+                        curve: segment.curve,
+                        tVal: intersection.selfT,
+                    },
+                }));
+            collisions.push(...intersections);
+        }
+
         const splits: TrackSegmentSplit[] = [];
 
         if (splitTValues.length === 0) {
@@ -1135,7 +1157,7 @@ export class TrackCurveManager {
                 from: t0Elevation,
                 to: t1Elevation,
             },
-            collision: [],
+            collision: collisions,
             gauge,
             trackStyle: visualProps?.trackStyle,
             electrified: visualProps?.electrified,

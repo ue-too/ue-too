@@ -599,6 +599,7 @@ export class Train {
     private _speed: number = 0;
     private _acceleration: number = 0;
     private _throttle: ThrottleSteps = 'N';
+    private _collisionLocked: boolean = false;
     private _maxSpeed: number;
     private _previewPositions: TrainPosition[] | null = null;
     private _previewPositionCache: TrainPosition | null = null;
@@ -668,6 +669,10 @@ export class Train {
         return this._speed;
     }
 
+    get collisionLocked(): boolean {
+        return this._collisionLocked;
+    }
+
     /**
      * Speed ceiling in world units per second. `Infinity` means no clamp from this property.
      */
@@ -686,7 +691,20 @@ export class Train {
     }
 
     setThrottleStep(throttleStep: ThrottleSteps) {
+        if (this._collisionLocked) {
+            return;
+        }
         this._throttle = throttleStep;
+    }
+
+    emergencyStop(): void {
+        this._speed = 0;
+        this._throttle = 'er';
+        this._collisionLocked = true;
+    }
+
+    clearCollisionLock(): void {
+        this._collisionLocked = false;
     }
 
     /** Replace the junction direction manager (e.g. to use a route-aware manager for timetable driving). */
