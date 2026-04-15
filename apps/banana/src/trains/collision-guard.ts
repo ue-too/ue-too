@@ -325,9 +325,27 @@ export class CollisionGuard {
                             continue;
                         }
 
-                        // Tier 1: check time-to-arrival window.
+                        // Tier 1a: one train is stopped at/near the crossing — the
+                        // other must brake regardless of time-to-arrival.
                         const speedA = trainA.train.speed;
                         const speedB = trainB.train.speed;
+                        const aAtCrossing = distA <= CRITICAL_DISTANCE && speedA === 0;
+                        const bAtCrossing = distB <= CRITICAL_DISTANCE && speedB === 0;
+
+                        if (aAtCrossing && speedB > 0) {
+                            trainB.train.setThrottleStep('er');
+                            dangerousThisFrame.add(trainA.id);
+                            dangerousThisFrame.add(trainB.id);
+                            continue;
+                        }
+                        if (bAtCrossing && speedA > 0) {
+                            trainA.train.setThrottleStep('er');
+                            dangerousThisFrame.add(trainA.id);
+                            dangerousThisFrame.add(trainB.id);
+                            continue;
+                        }
+
+                        // Tier 1b: both moving — check time-to-arrival window.
                         if (speedA === 0 || speedB === 0) continue;
 
                         const timeA = distA / speedA;

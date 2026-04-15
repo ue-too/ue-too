@@ -517,4 +517,33 @@ describe('CollisionGuard — crossing detection', () => {
         expect(t2.collisionLocked).toBe(true);
         expect(t2.speed).toBe(0);
     });
+
+    it('should brake approaching train when another is stopped at the crossing', () => {
+        // Train 1 is stopped at the crossing (speed=0, dist=0)
+        // Train 2 is approaching on the other segment (speed=10)
+        // Train 2 should get emergency brake even though train 1 is stationary
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.5, 'tangent'),
+            bogiePositions: [makePosition(1, 0.5, 'tangent')],
+            speed: 0,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.2, 'tangent'),
+            bogiePositions: [makePosition(2, 0.2, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        // Train 2 should be braking, train 1 is already stopped
+        expect(t2.throttleStep).toBe('er');
+    });
 });
