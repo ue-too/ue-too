@@ -39,6 +39,7 @@ import { TerrainData } from '@/terrain/terrain-data';
 import { TerrainRenderSystem } from '@/terrain/terrain-render-system';
 import { TimeManager } from '@/time';
 import { ScheduleClock, TimetableManager } from '@/timetable';
+import { CollisionGuard, CrossingMap } from '@/trains/collision-guard';
 import { CarImageRegistry } from '@/trains/car-image-registry';
 import { CarStockManager } from '@/trains/car-stock-manager';
 import { Train, type TrainPosition } from '@/trains/formation';
@@ -71,6 +72,8 @@ import {
     generateProceduralTrackPath,
 } from '@/trains/tracks/procedural-tracks';
 import { TrackRenderSystem } from '@/trains/tracks/render-system';
+import type { TrackSegmentWithCollision } from '@/trains/tracks/types';
+import { intersectionSatisfiesVerticalClearance } from '@/trains/tracks/utils';
 import { TrainManager } from '@/trains/train-manager';
 import { TrainRenderSystem } from '@/trains/train-render-system';
 import { WorldRenderSystem } from '@/world-render-system';
@@ -796,6 +799,50 @@ export const initApp = async (
     );
     timetableManager.signalStateEngine = signalStateEngine;
     timetableManager.trackAlignedPlatformManager = trackAlignedPlatformManager;
+
+    // Collision prevention system
+    const crossingMap = new CrossingMap();
+    const collisionGuard = new CollisionGuard(trackGraph, crossingMap);
+    trainRenderSystem.collisionGuard = collisionGuard;
+
+    const trackCurveManager = trackGraph.trackCurveManager;
+
+    function addSegmentCrossings(curveNumber: number, segment: TrackSegmentWithCollision) {
+        for (const col of segment.collision) {
+            // Find which segment the other curve belongs to
+            for (const otherNum of trackCurveManager.livingEntities) {
+                if (otherNum === curveNumber) continue;
+                const otherSeg = trackCurveManager.getTrackSegmentWithJoints(otherNum);
+                if (!otherSeg || otherSeg.curve !== col.anotherCurve.curve) continue;
+
+                // Skip crossings with vertical clearance (different elevations)
+                if (intersectionSatisfiesVerticalClearance(
+                    col.selfT,
+                    segment,
+                    col.anotherCurve.tVal,
+                    otherSeg,
+                )) continue;
+
+                crossingMap.addCrossing(curveNumber, col.selfT, otherNum, col.anotherCurve.tVal);
+                break;
+            }
+        }
+    }
+
+    // Populate from existing segments
+    for (const segNum of trackCurveManager.livingEntities) {
+        const seg = trackCurveManager.getTrackSegmentWithJoints(segNum);
+        if (seg) addSegmentCrossings(segNum, seg);
+    }
+
+    // Subscribe to track mutations
+    trackCurveManager.onAddTrackSegment((curveNumber, segment) => {
+        addSegmentCrossings(curveNumber, segment);
+    });
+
+    trackCurveManager.onRemoveTrackSegment((curveNumber) => {
+        crossingMap.removeSegment(curveNumber);
+    });
 
     // When a train is removed from the track, return its formation to the depot
     trainManager.setOnBeforeRemove(train => {

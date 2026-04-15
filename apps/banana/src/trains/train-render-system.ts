@@ -8,6 +8,7 @@ import type { PlacedTrainEntry } from './train-manager';
 import type { CarImageRegistry } from './car-image-registry';
 import { OccupancyRegistry } from './occupancy-registry';
 import { ProximityDetector } from './proximity-detector';
+import type { CollisionGuard } from './collision-guard';
 
 const BOGIE_RADIUS = 1.067 / 2;
 
@@ -367,6 +368,7 @@ export class TrainRenderSystem {
 
   private _occupancyRegistry: OccupancyRegistry = new OccupancyRegistry();
   private _proximityDetector: ProximityDetector = new ProximityDetector();
+  private _collisionGuard: CollisionGuard | null = null;
 
   /** Cached procedural car body texture; created lazily when texture renderer is available. */
   private _carTexture: Texture | null = null;
@@ -419,6 +421,7 @@ export class TrainRenderSystem {
 
     this._occupancyRegistry.updateFromTrains(placed);
     this._proximityDetector.update(placed, this._occupancyRegistry);
+    this._collisionGuard?.update(placed, this._occupancyRegistry);
 
     this._updatePreviewBogies();
     this._updatePreviewCars();
@@ -457,6 +460,10 @@ export class TrainRenderSystem {
   /** The proximity detector, updated each frame. */
   get proximityDetector(): ProximityDetector {
     return this._proximityDetector;
+  }
+
+  set collisionGuard(guard: CollisionGuard) {
+    this._collisionGuard = guard;
   }
 
   /**
