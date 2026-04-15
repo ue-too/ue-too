@@ -546,4 +546,38 @@ describe('CollisionGuard — crossing detection', () => {
         // Train 2 should be braking, train 1 is already stopped
         expect(t2.throttleStep).toBe('er');
     });
+
+    it('should detect when train body spans the crossing even if head has passed', () => {
+        // Crossing at t=0.5 on both segments.
+        // Train 1 head at t=0.6 (past crossing) but last bogie at t=0.3 (before crossing)
+        // → body spans the crossing point → occupying it (dist = 0)
+        // Train 2 approaching on the other segment
+        crossingMap.addCrossing(1, 0.5, 2, 0.5);
+        const trackGraph = mockTrackGraph(100);
+        const guard = new CollisionGuard(trackGraph, crossingMap);
+
+        const t1 = mockTrain({
+            headPosition: makePosition(1, 0.6, 'tangent'),
+            bogiePositions: [
+                makePosition(1, 0.55, 'tangent'), // first bogie, past crossing
+                makePosition(1, 0.3, 'tangent'),  // last bogie, before crossing
+            ],
+            speed: 5,
+            occupiedSegments: [{ trackNumber: 1, inTrackDirection: 'tangent' }],
+        });
+        const t2 = mockTrain({
+            headPosition: makePosition(2, 0.3, 'tangent'),
+            bogiePositions: [makePosition(2, 0.3, 'tangent')],
+            speed: 10,
+            occupiedSegments: [{ trackNumber: 2, inTrackDirection: 'tangent' }],
+        });
+
+        const entries = [entry(1, t1), entry(2, t2)];
+        registry.updateFromTrains(entries);
+        guard.update(entries, registry);
+
+        // Train 1 body spans crossing (dist=0 ≤ 5) and train 2 approaching (dist=20)
+        // → Tier 1b time-based check: t1 time=0 (at crossing), t2 time=2s → |0-2|<3 → brake
+        expect(t2.throttleStep).toBe('er');
+    });
 });

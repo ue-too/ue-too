@@ -304,14 +304,14 @@ export class CollisionGuard {
                         const posB = trainB.train.position;
                         if (!posA || !posB) continue;
 
-                        const distA = this._distanceToCrossing(posA, crossing.selfT, segData);
-                        const distB = this._distanceToCrossing(
-                            posB,
-                            crossing.otherT,
-                            partnerSegData,
+                        const distA = this._distanceToCrossingOrOccupying(
+                            trainA.train, posA, crossing.selfT, segData,
+                        );
+                        const distB = this._distanceToCrossingOrOccupying(
+                            trainB.train, posB, crossing.otherT, partnerSegData,
                         );
 
-                        // If either train is past the crossing, skip.
+                        // If either train is past the crossing AND not occupying it, skip.
                         if (distA === null || distB === null) continue;
 
                         // Tier 2: both within critical distance → emergencyStop.
@@ -364,10 +364,16 @@ export class CollisionGuard {
     }
 
     /**
-     * Compute the arc-length distance from a train's current position to a crossing t-value
-     * along the same segment. Returns `null` if the train has already passed the crossing.
+     * Compute the arc-length distance from a train to a crossing t-value.
+     *
+     * Returns:
+     * - Positive number if the train's head is approaching the crossing
+     * - `0` if the train's body is currently occupying the crossing
+     *   (head has passed but bogies still span the crossing point)
+     * - `null` if the train is entirely past the crossing
      */
-    private _distanceToCrossing(
+    private _distanceToCrossingOrOccupying(
+        train: PlacedTrainEntry['train'],
         pos: TrainPosition,
         crossingT: number,
         segData: { curve: { lengthAtT(t: number): number } },
@@ -376,10 +382,26 @@ export class CollisionGuard {
         const crossingLen = segData.curve.lengthAtT(crossingT);
         const diff = crossingLen - posLen;
 
-        if (pos.direction === 'tangent') {
-            return diff >= 0 ? diff : null; // null = past crossing
-        } else {
-            return diff <= 0 ? -diff : null; // null = past crossing
+        // Head is approaching the crossing
+        if (pos.direction === 'tangent' && diff >= 0) return diff;
+        if (pos.direction === 'reverseTangent' && diff <= 0) return -diff;
+
+        // Head has passed — check if the body still covers the crossing.
+        // The train's body extends behind the head. If any bogie on this
+        // segment is on the other side of the crossing, the train spans it.
+        const bogies = train.getBogiePositions();
+        if (bogies) {
+            for (const bogie of bogies) {
+                if (bogie.trackSegment !== pos.trackSegment) continue;
+                const bogieLen = segData.curve.lengthAtT(bogie.tValue);
+                const bogieDiff = crossingLen - bogieLen;
+                // Head and bogie are on opposite sides of the crossing → occupying
+                if ((diff < 0 && bogieDiff >= 0) || (diff > 0 && bogieDiff <= 0)) {
+                    return 0; // occupying the crossing
+                }
+            }
         }
+
+        return null; // entirely past
     }
 }
