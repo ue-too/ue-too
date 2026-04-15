@@ -808,13 +808,7 @@ export const initApp = async (
     const trackCurveManager = trackGraph.trackCurveManager;
 
     function addSegmentCrossings(curveNumber: number, segment: TrackSegmentWithCollision) {
-        // Use checkForCollisions to find intersections dynamically rather than
-        // relying on segment.collision, which is empty during deserialization
-        // (loadSegmentWithId sets collision: []).
-        const exclude = new Set([curveNumber]);
-        const collisions = trackCurveManager.checkForCollisions(segment.curve, exclude);
-
-        for (const col of collisions) {
+        for (const col of segment.collision) {
             // Resolve the other segment's number by matching the BCurve reference
             for (const otherNum of trackCurveManager.livingEntities) {
                 if (otherNum === curveNumber) continue;
