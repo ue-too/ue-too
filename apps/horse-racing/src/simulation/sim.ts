@@ -2,10 +2,11 @@ import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
 
 import { type Jockey, NullJockey } from '../ai';
 import { createInputHandler } from './input';
+import { buildObservations } from './observation';
 import { Race } from './race';
 import { RaceRenderer } from './renderer';
 import type { TrackSegment } from './track-types';
-import { MAX_HORSES, type Horse, type InputState, type RacePhase } from './types';
+import { MAX_HORSES, TRACK_HALF_WIDTH, type Horse, type InputState, type RacePhase } from './types';
 
 export type PhaseChangeCallback = (
     phase: RacePhase,
@@ -21,8 +22,10 @@ export interface HorseFrame {
     nVel: number;
     progress: number;
     stamina: number;
+    lateralOffset: number;
     finished: boolean;
     finishOrder: number | null;
+    obs: number[];
 }
 
 /** One tick of race recording. */
@@ -50,6 +53,9 @@ export interface V2SimHandle {
     setHorseCount(count: number): void;
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     setJockey(jockey: Jockey): void;
+    setHorseJockey(horseId: number, jockey: Jockey | null): void;
+    getHorseJockeyUrl(horseId: number): string | null;
+    setHorseJockeyUrl(horseId: number, url: string | null): Promise<void>;
     exportRace(): RaceRecording | null;
     cleanup(): void;
 }
@@ -67,7 +73,12 @@ export class V2Sim {
     private listeners = new Set<PhaseChangeCallback>();
     private tickerCb: () => void;
     private disposed = false;
+    private ticking = false;
     private jockey: Jockey = new NullJockey();
+    /** Per-horse model URL assignment (horseId → model URL). */
+    private horseModelUrls = new Map<number, string>();
+    /** Shared jockey instances keyed by model URL (refcounted). */
+    private jockeyPool = new Map<string, { jockey: Jockey; refCount: number }>();
     private frames: RaceFrame[] = [];
 
     private horseCount = 4;
@@ -86,14 +97,51 @@ export class V2Sim {
     }
 
     private tick(): void {
-        if (this.disposed) return;
+        if (this.disposed || this.ticking) return;
+        this.ticking = true;
+        this.tickAsync().finally(() => { this.ticking = false; });
+    }
+
+    private async tickAsync(): Promise<void> {
         const prevPhase = this.race.state.phase;
 
-        const inputs = this.jockey.infer(this.race);
+        // Collect actions: per-horse jockeys override the global jockey
+        const inputs = new Map<number, InputState>();
+
+        // Global jockey for unassigned horses (await fresh inference)
+        const globalResult = await this.jockey.inferAsync(this.race);
+        for (const [id, action] of globalResult) {
+            if (!this.horseModelUrls.has(id)) inputs.set(id, action);
+        }
+
+        // Per-horse jockeys (one infer per unique model URL, only for assigned horses)
+        const urlToHorseIds = new Map<string, number[]>();
+        for (const [horseId, url] of this.horseModelUrls) {
+            const ids = urlToHorseIds.get(url) ?? [];
+            ids.push(horseId);
+            urlToHorseIds.set(url, ids);
+        }
+        const inferPromises: Promise<Map<number, InputState>>[] = [];
+        for (const [url, horseIds] of urlToHorseIds) {
+            const entry = this.jockeyPool.get(url);
+            if (entry) {
+                inferPromises.push(entry.jockey.inferAsync(this.race, horseIds));
+            }
+        }
+        const perHorseResults = await Promise.all(inferPromises);
+        for (const result of perHorseResults) {
+            for (const [id, action] of result) {
+                inputs.set(id, action);
+            }
+        }
+
         const pid = this.race.state.playerHorseId;
         if (pid !== null) {
             inputs.set(pid, this.input.state);
         }
+
+        if (this.disposed) return;
+
         this.race.tick(inputs);
 
         // Record frame after physics
@@ -122,9 +170,10 @@ export class V2Sim {
         for (const [id, inp] of inputs) {
             inputRecord[id] = { t: inp.tangential, n: inp.normal };
         }
+        const allObs = buildObservations(this.race);
         this.frames.push({
             tick: this.race.state.tick,
-            horses: this.race.state.horses.map(h => ({
+            horses: this.race.state.horses.map((h, i) => ({
                 id: h.id,
                 x: Math.round(h.pos.x * 100) / 100,
                 y: Math.round(h.pos.y * 100) / 100,
@@ -132,8 +181,10 @@ export class V2Sim {
                 nVel: Math.round(h.normalVel * 1000) / 1000,
                 progress: Math.round(h.trackProgress * 10000) / 10000,
                 stamina: Math.round(h.currentStamina * 100) / 100,
+                lateralOffset: Math.round(h.navigator.lateralOffset(h.pos) * 100) / 100,
                 finished: h.finished,
                 finishOrder: h.finishOrder,
+                obs: Array.from(allObs[i]),
             })),
             inputs: inputRecord,
         });
@@ -142,6 +193,57 @@ export class V2Sim {
     setJockey(jockey: Jockey): void {
         this.jockey.dispose();
         this.jockey = jockey;
+    }
+
+    setHorseJockey(horseId: number, jockey: Jockey | null): void {
+        // Release old assignment
+        const oldUrl = this.horseModelUrls.get(horseId);
+        if (oldUrl) {
+            const entry = this.jockeyPool.get(oldUrl);
+            if (entry) {
+                entry.refCount--;
+                if (entry.refCount <= 0) {
+                    entry.jockey.dispose();
+                    this.jockeyPool.delete(oldUrl);
+                }
+            }
+            this.horseModelUrls.delete(horseId);
+        }
+        // jockey param is ignored — pool is managed via setHorseJockeyUrl
+        // This method is kept for the null case (clearing assignment)
+    }
+
+    getHorseJockeyUrl(horseId: number): string | null {
+        return this.horseModelUrls.get(horseId) ?? null;
+    }
+
+    async setHorseJockeyUrl(horseId: number, url: string | null): Promise<void> {
+        // Release old assignment
+        const oldUrl = this.horseModelUrls.get(horseId);
+        if (oldUrl) {
+            const entry = this.jockeyPool.get(oldUrl);
+            if (entry) {
+                entry.refCount--;
+                if (entry.refCount <= 0) {
+                    entry.jockey.dispose();
+                    this.jockeyPool.delete(oldUrl);
+                }
+            }
+            this.horseModelUrls.delete(horseId);
+        }
+
+        if (!url) return;
+
+        // Reuse existing session or create new one
+        const existing = this.jockeyPool.get(url);
+        if (existing) {
+            existing.refCount++;
+        } else {
+            const { OnnxJockey } = await import('../ai');
+            const jockey = await OnnxJockey.create(url);
+            this.jockeyPool.set(url, { jockey, refCount: 1 });
+        }
+        this.horseModelUrls.set(horseId, url);
     }
 
     private emitPhase(): void {
@@ -223,6 +325,9 @@ export class V2Sim {
         this.input.dispose();
         this.renderer.dispose();
         this.jockey.dispose();
+        for (const entry of this.jockeyPool.values()) entry.jockey.dispose();
+        this.jockeyPool.clear();
+        this.horseModelUrls.clear();
         this.listeners.clear();
     }
 }

@@ -22,5 +22,29 @@
   {
     "label": "V22 Best Jockey",
     "url": "/models/v22_best_jockey.onnx"
+  },
+  {
+    "label": "V23b Best Jockey",
+    "url": "/models/v23b_best_jockey.onnx"
+  },
+  {
+    "label": "V24 Best Jockey",
+    "url": "/models/v24_best_jockey.onnx"
+  },
+  {
+    "label": "V25b Best Jockey",
+    "url": "/models/v25b_best_jockey.onnx"
+  },
+  {
+    "label": "V26 Jockey",
+    "url": "/models/v26_jockey.onnx"
+  },
+  {
+    "label": "V28b Best Jockey",
+    "url": "/models/v28b_jockey.onnx"
+  },
+  {
+    "label": "V32 Best Jockey",
+    "url": "/models/v32_jockey.onnx"
   }
 ]

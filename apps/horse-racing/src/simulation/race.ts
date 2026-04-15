@@ -45,12 +45,13 @@ export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
     const startPoint: Point = { x: first.startPoint.x, y: first.startPoint.y };
     const frame = probe.getTrackFrame(startPoint);
 
-    const laneSpacing =
-        count > 1 ? (TRACK_HALF_WIDTH * 2 * 0.8) / (count - 1) : 0;
+    const maxSpread = 3.0; // meters — tight formation matching training
+    const laneSpacing = count > 1 ? maxSpread / (count - 1) : 0;
+    const innerEdge = -TRACK_HALF_WIDTH * 0.95; // just off the inside rail
 
     return Array.from({ length: count }, (_, id) => {
         const laneOffset =
-            count > 1 ? -TRACK_HALF_WIDTH * 0.8 + id * laneSpacing : 0;
+            count > 1 ? innerEdge + id * laneSpacing : 0;
         const pos: Point = {
             x: startPoint.x + frame.normal.x * laneOffset,
             y: startPoint.y + frame.normal.y * laneOffset,

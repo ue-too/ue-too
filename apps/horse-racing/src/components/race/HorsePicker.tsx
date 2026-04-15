@@ -1,6 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
 
-import { NullJockey, OnnxJockey } from '@/ai';
 import type { V2SimHandle } from '@/simulation';
 
 interface ModelEntry {
@@ -20,21 +19,30 @@ function hex(n: number): string {
 }
 
 const selectStyle = {
-    padding: '6px 10px',
-    borderRadius: 8,
+    padding: '4px 6px',
+    borderRadius: 6,
     border: '1px solid #555',
     background: '#222',
     color: 'white',
-    fontSize: 13,
+    fontSize: 11,
     cursor: 'pointer',
+    maxWidth: 110,
+} as const;
+
+const mainSelectStyle = {
+    ...selectStyle,
+    fontSize: 13,
+    padding: '6px 10px',
+    borderRadius: 8,
+    maxWidth: 'none',
 } as const;
 
 export function HorsePicker({ sim, horses }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
     const [models, setModels] = useState<ModelEntry[]>([]);
-    const [selectedModel, setSelectedModel] = useState<string>('');
-    const [loading, setLoading] = useState(false);
     const [horseCount, setHorseCount] = useState(sim.getHorseCount());
+    const [horseModels, setHorseModels] = useState<Record<number, string>>({});
+    const [loadingHorse, setLoadingHorse] = useState<number | null>(null);
 
     useEffect(() => {
         fetch('/models/manifest.json')
@@ -48,28 +56,23 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
         sim.pickHorse(id);
     };
 
-    const onModelChange = async (url: string) => {
-        setSelectedModel(url);
-        if (!url) {
-            sim.setJockey(new NullJockey());
-            return;
-        }
-        setLoading(true);
+    const onHorseModelChange = async (horseId: number, url: string) => {
+        setHorseModels(prev => ({ ...prev, [horseId]: url }));
+        setLoadingHorse(horseId);
         try {
-            const jockey = await OnnxJockey.create(url);
-            sim.setJockey(jockey);
+            await sim.setHorseJockeyUrl(horseId, url || null);
         } catch (err) {
-            console.error('Failed to load model:', err);
-            sim.setJockey(new NullJockey());
-            setSelectedModel('');
+            console.error(`Failed to load model for horse ${horseId}:`, err);
+            setHorseModels(prev => ({ ...prev, [horseId]: '' }));
         } finally {
-            setLoading(false);
+            setLoadingHorse(null);
         }
     };
 
     const onHorseCountChange = (count: number) => {
         setHorseCount(count);
         setSelected(null);
+        setHorseModels({});
         sim.setHorseCount(count);
     };
 
@@ -83,7 +86,7 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 12,
+                gap: 10,
                 padding: '12px 16px',
                 background: 'rgba(20,20,20,0.85)',
                 borderRadius: 12,
@@ -91,64 +94,64 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                 pointerEvents: 'auto',
             }}
         >
-            {/* Settings row */}
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                {/* Model picker */}
-                {models.length > 0 && (
-                    <select
-                        value={selectedModel}
-                        onChange={e => onModelChange(e.target.value)}
-                        disabled={loading}
-                        style={selectStyle}
-                    >
-                        <option value="">No AI Model</option>
-                        {models.map(m => (
-                            <option key={m.url} value={m.url}>
-                                {m.label}
-                            </option>
-                        ))}
-                    </select>
-                )}
+            {/* Horse count picker */}
+            <select
+                value={horseCount}
+                onChange={e => onHorseCountChange(Number(e.target.value))}
+                style={mainSelectStyle}
+            >
+                {HORSE_COUNT_OPTIONS.map(n => (
+                    <option key={n} value={n}>
+                        {n} Horses
+                    </option>
+                ))}
+            </select>
 
-                {/* Horse count picker */}
-                <select
-                    value={horseCount}
-                    onChange={e => onHorseCountChange(Number(e.target.value))}
-                    style={selectStyle}
-                >
-                    {HORSE_COUNT_OPTIONS.map(n => (
-                        <option key={n} value={n}>
-                            {n} Horses
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Horse picker */}
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* Per-horse model + pick buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {horses.map(h => (
-                    <button
-                        key={h.id}
-                        onClick={() => pick(h.id)}
-                        aria-label={`Pick horse ${h.id + 1}`}
-                        style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 22,
-                            border:
-                                selected === h.id
-                                    ? '3px solid white'
-                                    : '2px solid #555',
-                            background: hex(h.color),
-                            cursor: 'pointer',
-                        }}
-                    />
+                    <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                            onClick={() => pick(h.id)}
+                            aria-label={`Pick horse ${h.id + 1}`}
+                            style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 14,
+                                border:
+                                    selected === h.id
+                                        ? '3px solid white'
+                                        : '2px solid #555',
+                                background: hex(h.color),
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                            }}
+                        />
+                        {models.length > 0 && (
+                            <select
+                                value={horseModels[h.id] ?? ''}
+                                onChange={e => onHorseModelChange(h.id, e.target.value)}
+                                disabled={loadingHorse === h.id || selected === h.id}
+                                style={{
+                                    ...selectStyle,
+                                    opacity: selected === h.id ? 0.4 : 1,
+                                }}
+                            >
+                                <option value="">No AI</option>
+                                {models.map(m => (
+                                    <option key={m.url} value={m.url}>
+                                        {m.label}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                 ))}
                 <button
                     onClick={() => pick(null)}
                     style={{
-                        padding: '0 14px',
-                        borderRadius: 22,
+                        padding: '4px 14px',
+                        borderRadius: 14,
                         border:
                             selected === null
                                 ? '3px solid white'
@@ -156,7 +159,8 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                         background: '#333',
                         color: 'white',
                         cursor: 'pointer',
-                        fontSize: 14,
+                        fontSize: 13,
+                        marginTop: 4,
                     }}
                 >
                     Watch
