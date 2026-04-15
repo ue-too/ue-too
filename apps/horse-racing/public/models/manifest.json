@@ -46,5 +46,13 @@
   {
     "label": "V32 Best Jockey",
     "url": "/models/v32_jockey.onnx"
+  },
+  {
+    "label": "V33c Best Jockey",
+    "url": "/models/v33c_jockey.onnx"
+  },
+  {
+    "label": "D2 Best Jockey",
+    "url": "/models/d2_jockey.onnx"
   }
 ]

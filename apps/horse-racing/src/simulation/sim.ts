@@ -262,6 +262,11 @@ export class V2Sim {
     start(): void {
         if (this.race.state.phase !== 'gate') return;
         this.race.start(this.pendingPlayerId);
+        // Reset frame buffers on all jockeys
+        this.jockey.resetFrames?.();
+        for (const entry of this.jockeyPool.values()) {
+            entry.jockey.resetFrames?.();
+        }
         this.emitPhase();
     }
 

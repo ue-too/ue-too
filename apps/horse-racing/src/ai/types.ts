@@ -19,6 +19,9 @@ export interface Jockey {
      */
     inferAsync(race: Race, horseIds?: number[]): Promise<Map<number, InputState>>;
 
+    /** Reset per-race state (e.g. frame buffers). Called on race start. */
+    resetFrames?(): void;
+
     /** Release any resources (e.g. ONNX session). */
     dispose(): void;
 }
