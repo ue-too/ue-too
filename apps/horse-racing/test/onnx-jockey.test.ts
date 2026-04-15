@@ -114,9 +114,7 @@ describe('OnnxJockey', () => {
         const session = createMockSession(13);
         const jockey = OnnxJockey.fromSession(session as any);
 
-        jockey.infer(race);
-        await Promise.resolve();
-        const actions = jockey.infer(race);
+        const actions = await jockey.inferAsync(race);
 
         expect(actions.size).toBe(4);
         for (let i = 0; i < 4; i++) {
@@ -135,9 +133,7 @@ describe('OnnxJockey', () => {
         const session = createMockSession(52);
         const jockey = OnnxJockey.fromSession(session as any);
 
-        jockey.infer(race);
-        await Promise.resolve();
-        const actions = jockey.infer(race);
+        const actions = await jockey.inferAsync(race);
 
         expect(actions.size).toBe(2);
         const a = actions.get(0)!;
@@ -153,9 +149,7 @@ describe('OnnxJockey', () => {
         const session = createMockSession(53); // (1, 1)
         const jockey = OnnxJockey.fromSession(session as any);
 
-        jockey.infer(race);
-        await Promise.resolve();
-        const actions = jockey.infer(race);
+        const actions = await jockey.inferAsync(race);
 
         expect(actions.size).toBe(3);
         expect(actions.has(2)).toBe(false);
@@ -163,7 +157,7 @@ describe('OnnxJockey', () => {
         expect(actions.get(0)!.normal).toBe(1);
     });
 
-    it('returns empty map when session.run throws', async () => {
+    it('returns cached result when session.run throws', async () => {
         const segments = loadOvalTrack();
         const race = new Race(segments, 4);
         race.start(null);
@@ -172,10 +166,9 @@ describe('OnnxJockey', () => {
         (session.run as jest.Mock).mockRejectedValue(new Error('WASM OOM'));
         const jockey = OnnxJockey.fromSession(session as any);
 
-        jockey.infer(race);
-        await Promise.resolve();
-        const actions = jockey.infer(race);
+        const actions = await jockey.inferAsync(race);
 
+        // First call with error returns empty cached result
         expect(actions.size).toBe(0);
     });
 
@@ -187,8 +180,7 @@ describe('OnnxJockey', () => {
         const session = createMockSession(13);
         const jockey = OnnxJockey.fromSession(session as any);
 
-        jockey.infer(race);
-        await Promise.resolve();
+        await jockey.inferAsync(race);
 
         expect(session.run).toHaveBeenCalledTimes(1);
         const feeds = session.run.mock.calls[0][0] as Record<string, any>;
@@ -207,39 +199,24 @@ describe('OnnxJockey', () => {
         expect(session.release).toHaveBeenCalled();
     });
 
-    it('re-entry guard: second infer while first is pending returns previous result', async () => {
+    it('inferAsync with horseIds only infers for specified horses', async () => {
         const segments = loadOvalTrack();
         const race = new Race(segments, 4);
         race.start(null);
 
-        let resolveRun!: (value: unknown) => void;
-        const session = {
-            inputNames: ['obs'],
-            outputNames: ['actions'],
-            run: jest.fn(
-                () =>
-                    new Promise(resolve => {
-                        resolveRun = resolve;
-                    })
-            ),
-            release: jest.fn(),
-        };
+        const session = createMockSession(13);
         const jockey = OnnxJockey.fromSession(session as any);
 
-        const firstResult = jockey.infer(race);
-        expect(session.run).toHaveBeenCalledTimes(1);
-        expect(firstResult.size).toBe(0);
+        const actions = await jockey.inferAsync(race, [1, 3]);
 
-        const secondResult = jockey.infer(race);
-        expect(session.run).toHaveBeenCalledTimes(1);
-        expect(secondResult.size).toBe(0);
+        expect(actions.size).toBe(2);
+        expect(actions.has(1)).toBe(true);
+        expect(actions.has(3)).toBe(true);
+        expect(actions.has(0)).toBe(false);
+        expect(actions.has(2)).toBe(false);
 
-        resolveRun({
-            actions: {
-                dims: [4, NUM_ACTIONS],
-                data: new Float32Array(4 * NUM_ACTIONS),
-            },
-        });
-        await Promise.resolve();
+        const feeds = session.run.mock.calls[0][0] as Record<string, any>;
+        const tensor = feeds['obs'];
+        expect(tensor.dims).toEqual([2, OBS_SIZE]);
     });
 });
