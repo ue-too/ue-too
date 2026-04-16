@@ -40,6 +40,12 @@ interface BTConfig {
     wPass: number;
     wKick: number;
     wDraft: number;
+    /** Lateral error above this (|lateral - target|) triggers tangential rating. */
+    offLanePenaltyStart: number;
+    /** Extra lateral error beyond start is multiplied by this for tangential penalty. */
+    offLaneTangPenaltyScale: number;
+    /** Maximum tangential subtracted while converging on lane (cruise / settle only). */
+    offLaneTangPenaltyMax: number;
 }
 
 const DEFAULT_CONFIG: BTConfig = {
@@ -66,6 +72,9 @@ const DEFAULT_CONFIG: BTConfig = {
     wPass: 1.0,
     wKick: 1.0,
     wDraft: 1.0,
+    offLanePenaltyStart: 0.06,
+    offLaneTangPenaltyScale: 0.5,
+    offLaneTangPenaltyMax: 0.18,
 };
 
 // ============================================================
@@ -77,6 +86,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         targetLane: -0.60,
         lateralAggression: 0.5,
         wDraft: 1.3,
+        offLanePenaltyStart: 0.06,
+        offLaneTangPenaltyMax: 0.16,
     },
     'front-runner': {
         cruiseLow: 0.72,
@@ -92,6 +103,10 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wPass: 1.3,
         wKick: 1.2,
         wDraft: 0.5,
+        // Stay on the gas near the rail; only rate if badly wrong-side.
+        offLanePenaltyStart: 0.10,
+        offLaneTangPenaltyScale: 0.35,
+        offLaneTangPenaltyMax: 0.10,
     },
     closer: {
         cruiseLow: 0.40,
@@ -107,6 +122,10 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wPass: 0.7,
         wKick: 1.5,
         wDraft: 1.5,
+        // Willing to rate to reach a wide lane early (less abreast stacking).
+        offLanePenaltyStart: 0.04,
+        offLaneTangPenaltyScale: 0.65,
+        offLaneTangPenaltyMax: 0.24,
     },
     speedball: {
         cruiseLow: 0.60,
@@ -122,6 +141,9 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wPass: 1.5,
         wKick: 0.9,
         wDraft: 0.6,
+        offLanePenaltyStart: 0.08,
+        offLaneTangPenaltyScale: 0.38,
+        offLaneTangPenaltyMax: 0.10,
     },
     steady: {
         cruiseLow: 0.58,
@@ -135,6 +157,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wPass: 0.5,
         wKick: 0.8,
         wDraft: 1.0,
+        offLanePenaltyStart: 0.07,
+        offLaneTangPenaltyMax: 0.14,
     },
 };
 
@@ -346,6 +370,27 @@ export class BTJockey implements Jockey {
         return tang;
     }
 
+    /**
+     * Reduce tangential when far from lane target so the field does not stay
+     * perfectly abreast on straights — horses "rate" slightly while changing lanes.
+     * Applied in CRUISE and SETTLING only (not PASSING / KICK).
+     */
+    private rateForLaneConvergence(
+        tang: number,
+        lateralNorm: number,
+        targetLane: number,
+    ): number {
+        const cfg = this.config;
+        const err = Math.abs(lateralNorm - targetLane);
+        if (err <= cfg.offLanePenaltyStart) return tang;
+        const excess = err - cfg.offLanePenaltyStart;
+        const penalty = Math.min(
+            cfg.offLaneTangPenaltyMax,
+            excess * cfg.offLaneTangPenaltyScale,
+        );
+        return Math.max(0, tang - penalty);
+    }
+
     // ---- State actions ----
 
     private doCruise(
@@ -353,9 +398,12 @@ export class BTJockey implements Jockey {
         staminaFrac: number,
         lateralNorm: number,
     ): InputState {
+        const cfg = this.config;
+        let tang = this.cruiseSpeed(speedRatio, staminaFrac);
+        tang = this.rateForLaneConvergence(tang, lateralNorm, cfg.targetLane);
         return {
-            tangential: this.cruiseSpeed(speedRatio, staminaFrac),
-            normal: this.steerToLane(lateralNorm, this.config.targetLane),
+            tangential: tang,
+            normal: this.steerToLane(lateralNorm, cfg.targetLane),
         };
     }
 
@@ -380,8 +428,10 @@ export class BTJockey implements Jockey {
         const cfg = this.config;
         const t = Math.min(st.ticks / cfg.settleTicks, 1.0);
         const target = st.settleFromLane + (cfg.targetLane - st.settleFromLane) * t;
+        let tang = this.cruiseSpeed(speedRatio, staminaFrac);
+        tang = this.rateForLaneConvergence(tang, lateralNorm, target);
         return {
-            tangential: this.cruiseSpeed(speedRatio, staminaFrac),
+            tangential: tang,
             normal: this.steerToLane(lateralNorm, target),
         };
     }

@@ -210,3 +210,10 @@ toward the archetype lane over `settleTicks` instead of snapping.
 | `wPass` | 1.0 | Weight multiplier on pass utility score. |
 | `wKick` | 1.0 | Weight multiplier on kick utility score. |
 | `wDraft` | 1.0 | Weight multiplier on cruise-while-drafting bonus. |
+| `offLanePenaltyStart` | 0.06 | If `|lateral − targetLane|` exceeds this, tangential is reduced (“rating” while changing lanes). |
+| `offLaneTangPenaltyScale` | 0.5 | Extra lateral error beyond start × this = tangential penalty, capped below. |
+| `offLaneTangPenaltyMax` | 0.18 | Max tangential subtracted during lane convergence (CRUISE / SETTLING only). |
+
+### Lane convergence (“rating”)
+
+Without coupling, every horse can hold **full cruise tangential** while **steering** sideways, so the field stays **abreast** on long straights. In **CRUISE** and **SETTLING**, tangential is lowered when the horse is far from its current lane target: horses **ease forward** while sliding to `targetLane`. **PASSING** and **KICK** are unchanged. Archetypes differ (e.g. closer rates more to reach a wide lane; front-runner barely rates).
