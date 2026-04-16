@@ -55,7 +55,7 @@ export function makeInitApp(
             setHorseCount: count => sim.setHorseCount(count),
             setTrack: async (url: string) => {
                 const segments = await loadTrack(url);
-                sim.setTrack(segments);
+                sim.setTrack(segments, url);
             },
             onPhaseChange: cb => sim.onPhaseChange(cb),
             onPrecomputeProgress: cb => sim.onPrecomputeProgress(cb),
@@ -72,6 +72,7 @@ export function makeInitApp(
             setHorseJockeyUrl: (horseId: number, url: string | null) => sim.setHorseJockeyUrl(horseId, url),
 
             exportRace: () => sim.exportRace(),
+            importRace: rec => sim.importRace(rec),
             getTrackSegments: () => sim.getTrackSegments(),
             runBtBatch: req => sim.runBtBatch(req),
             followHorse: id => sim.followHorse(id),

@@ -1,5 +1,5 @@
-import { ChevronFirst, ChevronLast, Pause, Play } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { ChevronFirst, ChevronLast, Download, Pause, Play } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 import type { V2SimHandle } from '@/simulation';
 
@@ -19,6 +19,18 @@ export function PlaybackControls({ sim }: Props): ReactNode {
             setTotalFrames(total);
             setPaused(p);
         });
+    }, [sim]);
+
+    const exportRecording = useCallback(() => {
+        const rec = sim.exportRace();
+        if (!rec) return;
+        const blob = new Blob([JSON.stringify(rec)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `race-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     }, [sim]);
 
     if (totalFrames === 0) return null;
@@ -174,6 +186,15 @@ export function PlaybackControls({ sim }: Props): ReactNode {
             >
                 {Math.round(pct)}%
             </div>
+
+            <button
+                onClick={exportRecording}
+                aria-label="Export race recording"
+                title="Export recording"
+                style={iconBtn}
+            >
+                <Download size={14} />
+            </button>
         </div>
     );
 }

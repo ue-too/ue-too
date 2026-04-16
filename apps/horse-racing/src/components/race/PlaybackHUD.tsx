@@ -95,15 +95,24 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
     const onPointerDown = useCallback((e: React.PointerEvent) => {
         if ((e.target as HTMLElement).tagName === 'SELECT') return;
         e.preventDefault();
+        let origX = pos.x;
+        let origY = pos.y;
+        if (!positioned && panelRef.current) {
+            const rect = panelRef.current.getBoundingClientRect();
+            origX = rect.left;
+            origY = rect.top;
+            setPos({ x: origX, y: origY });
+            setPositioned(true);
+        }
         dragRef.current = {
             startX: e.clientX,
             startY: e.clientY,
-            origX: pos.x,
-            origY: pos.y,
+            origX,
+            origY,
         };
         setDragging(true);
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    }, [pos]);
+    }, [pos, positioned]);
 
     const onPointerMove = useCallback((e: React.PointerEvent) => {
         if (!dragRef.current) return;
@@ -111,7 +120,6 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
             x: dragRef.current.origX + (e.clientX - dragRef.current.startX),
             y: dragRef.current.origY + (e.clientY - dragRef.current.startY),
         });
-        setPositioned(true);
     }, []);
 
     const onPointerUp = useCallback(() => {
@@ -150,9 +158,9 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
             ref={panelRef}
             style={{
                 position: 'absolute',
-                top: 56,
+                top: positioned ? pos.y : 56,
                 right: positioned ? undefined : 16,
-                left: positioned ? 0 : undefined,
+                left: positioned ? pos.x : undefined,
                 width: 340,
                 maxHeight: 'min(70vh, 600px)',
                 overflow: 'auto',
@@ -166,7 +174,6 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
                 color: '#eee',
                 fontSize: 11,
                 fontFamily: 'monospace',
-                transform: positioned ? `translate(${pos.x}px, ${pos.y}px)` : undefined,
             }}
         >
             <div

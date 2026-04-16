@@ -45,6 +45,10 @@ export interface RaceRecording {
     finishOrder: number[];
     totalTicks: number;
     frames: RaceFrame[];
+    /** Metadata for replaying in a different session. */
+    horseColors?: number[];
+    horseLabels?: Record<number, string>;
+    trackUrl?: string;
 }
 
 /** Callback for precompute progress. `null` means not precomputing. */
@@ -89,6 +93,8 @@ export interface V2SimHandle {
     getHorseJockeyUrl(horseId: number): string | null;
     setHorseJockeyUrl(horseId: number, url: string | null): Promise<void>;
     exportRace(): RaceRecording | null;
+    /** Load a previously exported recording and start playback. */
+    importRace(recording: RaceRecording): void;
     /** Current track geometry (for headless BT batch tuning). */
     getTrackSegments(): TrackSegment[];
     /** Run repeated BT-only races in-process (no rendering). */
@@ -150,6 +156,7 @@ export class V2Sim {
 
     /** Which horse the camera follows during playback (null = no auto-follow). */
     private followTarget: number | null = null;
+    private currentTrackUrl = '';
     private horseCount = 4;
 
     constructor(
@@ -203,18 +210,64 @@ export class V2Sim {
             steps < maxSteps
         ) {
             this.playbackAccumulator -= 1;
-            this.applyPlaybackFrame(this.playbackIndex);
             this.playbackIndex++;
             steps++;
         }
 
         if (this.playbackIndex >= this.frames.length) {
+            this.applyPlaybackFrame(this.frames.length - 1);
             if (this.race.state.phase !== 'finished') {
                 this.race.state.phase = 'finished';
                 this.emitPhase();
             }
+        } else if (this.playbackSpeed < 1 && this.playbackIndex + 1 < this.frames.length) {
+            this.applyInterpolatedFrame(
+                this.playbackIndex,
+                this.playbackIndex + 1,
+                this.playbackAccumulator
+            );
+        } else {
+            this.applyPlaybackFrame(this.playbackIndex);
         }
         this.emitPlaybackProgress();
+    }
+
+    /** Interpolate between two frames for smooth sub-1x playback. */
+    private applyInterpolatedFrame(idxA: number, idxB: number, t: number): void {
+        const a = this.frames[idxA];
+        const b = this.frames[idxB];
+        const rotations = new Map<number, number>();
+        for (let i = 0; i < a.horses.length; i++) {
+            const ha = a.horses[i];
+            const hb = b.horses[i];
+            const h = this.race.state.horses[ha.id];
+            if (!h || !hb) continue;
+            h.pos.x = ha.x + (hb.x - ha.x) * t;
+            h.pos.y = ha.y + (hb.y - ha.y) * t;
+            h.tangentialVel = ha.tVel + (hb.tVel - ha.tVel) * t;
+            h.normalVel = ha.nVel + (hb.nVel - ha.nVel) * t;
+            h.trackProgress = ha.progress + (hb.progress - ha.progress) * t;
+            h.currentStamina = ha.stamina + (hb.stamina - ha.stamina) * t;
+            h.finished = ha.finished;
+            h.finishOrder = ha.finishOrder;
+            const rA = ha.rotation;
+            let rB = hb.rotation;
+            let diff = rB - rA;
+            if (diff > Math.PI) diff -= 2 * Math.PI;
+            if (diff < -Math.PI) diff += 2 * Math.PI;
+            rotations.set(ha.id, rA + diff * t);
+        }
+        this.renderer.syncHorses(
+            this.race.state.horses,
+            this.race.state.playerHorseId,
+            rotations
+        );
+        this.renderer.drawTraces(this.frames, idxA);
+        const follow = this.followTarget ?? this.race.state.playerHorseId;
+        if (follow !== null) {
+            const h = this.race.state.horses[follow];
+            if (h) this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
+        }
     }
 
     /** Apply recorded horse state for one frame index (playback / seek). */
@@ -538,28 +591,71 @@ export class V2Sim {
         this.reset();
     }
 
-    setTrack(segments: TrackSegment[]): void {
+    setTrack(segments: TrackSegment[], trackUrl?: string): void {
         if (this.race.state.phase !== 'gate') return;
         this.segments = segments;
+        if (trackUrl !== undefined) this.currentTrackUrl = trackUrl;
         this.reset();
     }
 
     exportRace(): RaceRecording | null {
         if (this.frames.length === 0) return null;
-        // During/after playback, the race object is fresh — use the
-        // preserved values from the precomputed simulation.
         const order = this.simulatedFinishOrder.length > 0
             ? this.simulatedFinishOrder
             : this.race.state.finishOrder;
         const ticks = this.simulatedTotalTicks > 0
             ? this.simulatedTotalTicks
             : this.race.state.tick;
+        const colors = this.race.state.horses.map(h => h.color);
+        const labels: Record<number, string> = {};
+        for (const h of this.race.state.horses) {
+            const url = this.horseModelUrls.get(h.id);
+            if (url?.startsWith('bt://')) {
+                labels[h.id] = url.slice(5);
+            } else if (url) {
+                labels[h.id] = url.split('/').pop()?.replace('.onnx', '') ?? url;
+            } else {
+                labels[h.id] = 'no AI';
+            }
+        }
         return {
             horseCount: this.race.state.horses.length,
             finishOrder: [...order],
             totalTicks: ticks,
             frames: this.frames,
+            horseColors: colors,
+            horseLabels: labels,
+            trackUrl: this.currentTrackUrl || undefined,
         };
+    }
+
+    importRace(recording: RaceRecording): void {
+        this.horseCount = recording.horseCount;
+        this.reset();
+        this.race = new Race(this.segments, this.horseCount);
+        this.race.start(null);
+        if (recording.horseColors) {
+            for (let i = 0; i < recording.horseColors.length; i++) {
+                const h = this.race.state.horses[i];
+                if (h) h.color = recording.horseColors[i];
+            }
+        }
+        this.renderer.dispose();
+        this.renderer = new RaceRenderer(
+            this.components.app.stage,
+            this.segments
+        );
+        this.renderer.syncHorses(this.race.state.horses, null);
+        this.frames = recording.frames;
+        this.simulatedFinishOrder = [...recording.finishOrder];
+        this.simulatedTotalTicks = recording.totalTicks;
+        this.playbackIndex = 0;
+        this.playbackMode = true;
+        this.playbackPaused = true;
+        this.playbackAccumulator = 0;
+        this.simulationReady = false;
+        this.emitPhase();
+        this.emitPlaybackProgress();
     }
 
     getTrackSegments(): TrackSegment[] {

@@ -3,7 +3,7 @@ import {
     ScrollBarDisplay,
     Wrapper,
 } from '@ue-too/board-pixi-react-integration';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BtWorkbench } from '@/components/race/BtWorkbench';
 import { HorsePicker } from '@/components/race/HorsePicker';
@@ -11,7 +11,7 @@ import { PlaybackControls } from '@/components/race/PlaybackControls';
 import { PlaybackHUD } from '@/components/race/PlaybackHUD';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
 import { RaceToolbar } from '@/components/race/RaceToolbar';
-import type { RacePhase, V2SimHandle } from '@/simulation';
+import type { RacePhase, RaceRecording, V2SimHandle } from '@/simulation';
 import { makeInitApp } from '@/utils/init-app';
 
 // Stable reference — the Wrapper's init hook uses `option` as a useEffect
@@ -36,6 +36,7 @@ const App = (): ReactNode => {
     const [btVersion, setBtVersion] = useState(0);
     const bumpBtVersion = useCallback(() => setBtVersion(v => v + 1), []);
     const [horseLabels, setHorseLabels] = useState<Map<number, string>>(new Map());
+    const pendingImportLabels = useRef<Map<number, string> | null>(null);
 
     const initFunction = useMemo(
         () => makeInitApp(handle => setSimHandle(handle)),
@@ -53,18 +54,23 @@ const App = (): ReactNode => {
             }
             if (p === 'running') {
                 setSimulationReady(false);
-                const labels = new Map<number, string>();
-                for (const h of simHandle.getHorses()) {
-                    const url = simHandle.getHorseJockeyUrl(h.id);
-                    if (url?.startsWith('bt://')) {
-                        labels.set(h.id, url.slice(5));
-                    } else if (url) {
-                        labels.set(h.id, url.split('/').pop()?.replace('.onnx', '') ?? url);
-                    } else {
-                        labels.set(h.id, 'no AI');
+                if (pendingImportLabels.current) {
+                    setHorseLabels(pendingImportLabels.current);
+                    pendingImportLabels.current = null;
+                } else {
+                    const labels = new Map<number, string>();
+                    for (const h of simHandle.getHorses()) {
+                        const url = simHandle.getHorseJockeyUrl(h.id);
+                        if (url?.startsWith('bt://')) {
+                            labels.set(h.id, url.slice(5));
+                        } else if (url) {
+                            labels.set(h.id, url.split('/').pop()?.replace('.onnx', '') ?? url);
+                        } else {
+                            labels.set(h.id, 'no AI');
+                        }
                     }
+                    setHorseLabels(labels);
                 }
-                setHorseLabels(labels);
             }
         });
         const unsubscribeProgress = simHandle.onPrecomputeProgress(p => {
@@ -83,6 +89,21 @@ const App = (): ReactNode => {
     // Sim cleanup is handled by components.cleanups in init-app.ts,
     // not by a React effect — avoids the Strict Mode double-mount race.
 
+    const handleImportRace = useCallback(
+        (rec: RaceRecording) => {
+            if (!simHandle) return;
+            if (rec.horseLabels) {
+                const labels = new Map<number, string>();
+                for (const [k, v] of Object.entries(rec.horseLabels)) {
+                    labels.set(Number(k), v);
+                }
+                pendingImportLabels.current = labels;
+            }
+            simHandle.importRace(rec);
+        },
+        [simHandle]
+    );
+
     return (
         <div className="app">
             <Wrapper option={WRAPPER_OPTION} initFunction={initFunction}>
@@ -91,6 +112,7 @@ const App = (): ReactNode => {
                     sim={simHandle}
                     phase={phase}
                     onOpenBtTune={() => setShowWorkbench(true)}
+                    onImportRace={handleImportRace}
                 />
                 {showWorkbench && simHandle && (
                     <BtWorkbench

@@ -252,24 +252,6 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
                         )}
                     </div>
                 ))}
-                <button
-                    onClick={() => pick(null)}
-                    style={{
-                        padding: '4px 14px',
-                        borderRadius: 14,
-                        border:
-                            selected === null
-                                ? '3px solid white'
-                                : '2px solid #555',
-                        background: '#333',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontSize: 13,
-                        marginTop: 4,
-                    }}
-                >
-                    Watch
-                </button>
             </div>
         </div>
     );

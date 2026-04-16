@@ -1,12 +1,13 @@
 // apps/horse-racing/src/components/race-v2/RaceToolbar.tsx
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useRef } from 'react';
 
-import type { RacePhase, V2SimHandle } from '@/simulation';
+import type { RacePhase, RaceRecording, V2SimHandle } from '@/simulation';
 
 interface Props {
     sim: V2SimHandle | null;
     phase: RacePhase;
     onOpenBtTune?: () => void;
+    onImportRace?: (recording: RaceRecording) => void;
 }
 
 const buttonStyle: React.CSSProperties = {
@@ -19,7 +20,27 @@ const buttonStyle: React.CSSProperties = {
     cursor: 'pointer',
 };
 
-export function RaceToolbar({ sim, phase, onOpenBtTune }: Props): ReactNode {
+export function RaceToolbar({ sim, phase, onOpenBtTune, onImportRace }: Props): ReactNode {
+    const fileRef = useRef<HTMLInputElement>(null);
+
+    const handleImport = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const rec = JSON.parse(reader.result as string) as RaceRecording;
+                    if (!rec.frames || !Array.isArray(rec.frames)) return;
+                    onImportRace?.(rec);
+                } catch { /* ignore bad json */ }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        },
+        [onImportRace]
+    );
+
     if (!sim) return null;
 
     return (
@@ -45,6 +66,24 @@ export function RaceToolbar({ sim, phase, onOpenBtTune }: Props): ReactNode {
                 <button style={buttonStyle} onClick={() => sim.start()}>
                     Start
                 </button>
+            )}
+            {phase === 'gate' && (
+                <>
+                    <button
+                        style={buttonStyle}
+                        onClick={() => fileRef.current?.click()}
+                        title="Import a race recording (.json)"
+                    >
+                        Import Race
+                    </button>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept=".json"
+                        onChange={handleImport}
+                        style={{ display: 'none' }}
+                    />
+                </>
             )}
             {(phase === 'running' || phase === 'finished') && (
                 <button style={buttonStyle} onClick={() => sim.reset()}>
