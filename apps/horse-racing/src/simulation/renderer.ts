@@ -18,17 +18,25 @@ const PLAYER_OUTLINE_COLOR = 0xffff00;
 const PLAYER_OUTLINE_WIDTH = 0.25;
 const TRACE_WIDTH = 5;
 const TRACE_ALPHA = 0.65;
-const ACCEL_TINT = 0x00ff88;
-const DECEL_TINT = 0xff2244;
-const TINT_MIX = 0.5;
+const LIGHTEN = 0.55;
+const DARKEN = 0.55;
 
-function blendColor(base: number, tint: number, mix: number): number {
-    const br = (base >> 16) & 0xff, bg = (base >> 8) & 0xff, bb = base & 0xff;
-    const tr = (tint >> 16) & 0xff, tg = (tint >> 8) & 0xff, tb = tint & 0xff;
-    const r = Math.round(br + (tr - br) * mix);
-    const g = Math.round(bg + (tg - bg) * mix);
-    const b = Math.round(bb + (tb - bb) * mix);
-    return (r << 16) | (g << 8) | b;
+function lightenColor(c: number, amount: number): number {
+    const r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+    return (
+        (Math.round(r + (255 - r) * amount) << 16) |
+        (Math.round(g + (255 - g) * amount) << 8) |
+        Math.round(b + (255 - b) * amount)
+    );
+}
+
+function darkenColor(c: number, amount: number): number {
+    const r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+    return (
+        (Math.round(r * (1 - amount)) << 16) |
+        (Math.round(g * (1 - amount)) << 8) |
+        Math.round(b * (1 - amount))
+    );
 }
 
 // ---- Geometry helpers ----
@@ -299,21 +307,39 @@ export class RaceRenderer {
             g.clear();
 
             const baseColor = this.horseColors.get(id) ?? 0xffffff;
-            const accelColor = blendColor(baseColor, ACCEL_TINT, TINT_MIX);
-            const decelColor = blendColor(baseColor, DECEL_TINT, TINT_MIX);
+            const lightColor = lightenColor(baseColor, LIGHTEN);
+            const darkColor = darkenColor(baseColor, DARKEN);
 
             const w = TRACE_WIDTH / zoomLevel;
             let prevHf = frames[0].horses[hi];
+            let runColor = baseColor;
+            let runStarted = false;
+
+            const flushRun = () => {
+                if (runStarted) {
+                    g!.stroke({ width: w, color: runColor, alpha: TRACE_ALPHA });
+                    runStarted = false;
+                }
+            };
+
             for (let fi = 1; fi <= endIdx; fi++) {
                 const hf = frames[fi].horses[hi];
                 if (!hf) break;
                 const accel = hf.tVel - prevHf.tVel;
-                const segColor = accel > 0.001 ? accelColor : accel < -0.001 ? decelColor : baseColor;
-                g.moveTo(prevHf.x, prevHf.y);
+                const segColor = accel > 0.001 ? lightColor : accel < -0.001 ? darkColor : baseColor;
+
+                if (segColor !== runColor && runStarted) {
+                    flushRun();
+                }
+                if (!runStarted) {
+                    g.moveTo(prevHf.x, prevHf.y);
+                    runColor = segColor;
+                    runStarted = true;
+                }
                 g.lineTo(hf.x, hf.y);
-                g.stroke({ width: w, color: segColor, alpha: TRACE_ALPHA });
                 prevHf = hf;
             }
+            flushRun();
         }
     }
 
