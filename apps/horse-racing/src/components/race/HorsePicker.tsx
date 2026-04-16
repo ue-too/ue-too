@@ -69,7 +69,8 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     useEffect(() => {
         setHorseCount(sim.getHorseCount());
         setHorseModels(readHorseModels(sim, horses));
-    }, [sim, horses]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sim, horses.length]);
 
     useEffect(() => {
         fetch('/models/manifest.json')
