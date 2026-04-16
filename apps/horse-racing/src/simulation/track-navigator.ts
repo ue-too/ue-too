@@ -92,6 +92,24 @@ export class TrackNavigator {
     }
 
     /**
+     * Directly set the navigator's current segment index by a track-progress
+     * fraction [0, 1]. Used during playback scrubbing to jump the navigator
+     * to the right segment without relying on forward-only updateSegment.
+     */
+    setSegmentByProgress(progress: number): void {
+        if (this._totalLength < 1e-6 || this.segments.length === 0) return;
+        const clamped = Math.max(0, Math.min(0.999999, progress));
+        const targetDist = clamped * this._totalLength;
+        for (let i = this.segments.length - 1; i >= 0; i--) {
+            if (this._cumulativeLengths[i] <= targetDist) {
+                this.currentIndex = i;
+                return;
+            }
+        }
+        this.currentIndex = 0;
+    }
+
+    /**
      * Return continuous progress fraction [0, 1] along the total track length.
      * Matches Python `TrackNavigator.compute_progress()`.
      */

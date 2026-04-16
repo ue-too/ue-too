@@ -173,12 +173,10 @@ export class V2Sim {
             h.currentStamina = recorded.stamina;
             h.finished = recorded.finished;
             h.finishOrder = recorded.finishOrder;
-            // Sync navigator segment state so getTrackFrame returns correct
-            // orientation. updateSegment only advances one segment per call,
-            // so after a seek we may need multiple calls to catch up.
-            for (let i = 0; i < this.segments.length; i++) {
-                h.navigator.updateSegment(h.pos);
-            }
+            // Jump navigator directly to the segment for this progress value.
+            // updateSegment-based catch-up fails on closed tracks due to
+            // angle-wrap after a multi-segment seek.
+            h.navigator.setSegmentByProgress(recorded.progress);
         }
         this.renderer.syncHorses(
             this.race.state.horses,
