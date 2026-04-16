@@ -21,10 +21,8 @@ interface BTConfig {
 }
 
 const DEFAULT_CONFIG: BTConfig = {
-    // obs[1] is tvel/max_speed (20). cruise_speed=13, so cruise = 0.65 ratio.
-    // Band: 65-80% of cruise speed → 8.45-10.4 m/s → 0.42-0.52 ratio.
-    cruiseLow: 0.42,
-    cruiseHigh: 0.52,
+    cruiseLow: 0.325,       // normalized speed (= 0.65 of cruise / 2)
+    cruiseHigh: 0.4,        // normalized speed (= 0.80 of cruise / 2)
     kickPhase: 0.75,
     blockProgressMax: 0.03,
     blockLateralTol: 0.15,
