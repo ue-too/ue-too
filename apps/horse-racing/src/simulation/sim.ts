@@ -173,8 +173,12 @@ export class V2Sim {
             h.currentStamina = recorded.stamina;
             h.finished = recorded.finished;
             h.finishOrder = recorded.finishOrder;
-            // Sync navigator segment state so getTrackFrame returns correct orientation.
-            h.navigator.updateSegment(h.pos);
+            // Sync navigator segment state so getTrackFrame returns correct
+            // orientation. updateSegment only advances one segment per call,
+            // so after a seek we may need multiple calls to catch up.
+            for (let i = 0; i < this.segments.length; i++) {
+                h.navigator.updateSegment(h.pos);
+            }
         }
         this.renderer.syncHorses(
             this.race.state.horses,
@@ -564,11 +568,13 @@ export class V2Sim {
         if (!this.playbackMode || this.frames.length === 0) return;
         const clamped = Math.max(0, Math.min(this.frames.length - 1, Math.floor(frame)));
         this.playbackIndex = clamped;
-        // If playback had ended, re-arm the 'running' phase for the replay.
-        if (this.race.state.phase === 'finished') {
-            this.race.state.phase = 'running';
-            this.emitPhase();
-        }
+        // Navigators can only advance forward — recreate on seek so when
+        // scrubbing backwards we can catch up to the correct segment.
+        const playerId = this.race.state.playerHorseId;
+        this.race = new Race(this.segments, this.horseCount);
+        this.race.start(playerId);
+        this.race.state.phase = 'running';
+        this.emitPhase();
         this.emitPlaybackProgress();
     }
 
