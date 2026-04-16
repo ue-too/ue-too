@@ -28,6 +28,7 @@ const App = (): ReactNode => {
     const [phase, setPhase] = useState<RacePhase>('gate');
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
     const [resetKey, setResetKey] = useState(0);
+    const [precomputeProgress, setPrecomputeProgress] = useState<number | null>(null);
 
     const initFunction = useMemo(
         () => makeInitApp(handle => setSimHandle(handle)),
@@ -41,8 +42,12 @@ const App = (): ReactNode => {
             setFinishOrder(order);
             if (p === 'gate') setResetKey(k => k + 1);
         });
+        const unsubscribeProgress = simHandle.onPrecomputeProgress(p => {
+            setPrecomputeProgress(p);
+        });
         return () => {
             unsubscribe();
+            unsubscribeProgress();
         };
     }, [simHandle]);
 
@@ -70,9 +75,70 @@ const App = (): ReactNode => {
                 {simHandle && phase === 'running' && (
                     <StaminaOverlay sim={simHandle} />
                 )}
+                {precomputeProgress !== null && (
+                    <PrecomputeModal progress={precomputeProgress} />
+                )}
             </Wrapper>
         </div>
     );
 };
+
+function PrecomputeModal({ progress }: { progress: number }): ReactNode {
+    const pct = Math.round(progress * 100);
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'rgba(0,0,0,0.6)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 100,
+                pointerEvents: 'auto',
+            }}
+        >
+            <div
+                style={{
+                    background: '#1a1a1a',
+                    padding: '24px 32px',
+                    borderRadius: 12,
+                    minWidth: 280,
+                    color: 'white',
+                    textAlign: 'center',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                }}
+            >
+                <div style={{ fontSize: 16, marginBottom: 12, fontWeight: 500 }}>
+                    Simulating race...
+                </div>
+                <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
+                    Running physics and AI decisions.
+                </div>
+                <div
+                    style={{
+                        width: '100%',
+                        height: 8,
+                        background: '#333',
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                    }}
+                >
+                    <div
+                        style={{
+                            width: `${pct}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #4a9eff, #22d3ee)',
+                            transition: 'width 0.15s ease-out',
+                        }}
+                    />
+                </div>
+                <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
+                    {pct}%
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default App;

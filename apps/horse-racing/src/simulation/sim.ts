@@ -43,6 +43,9 @@ export interface RaceRecording {
     frames: RaceFrame[];
 }
 
+/** Callback for precompute progress. `null` means not precomputing. */
+export type PrecomputeProgressCallback = (progress: number | null) => void;
+
 export interface V2SimHandle {
     pickHorse(id: number | null): void;
     start(): void;
@@ -52,6 +55,7 @@ export interface V2SimHandle {
     getHorseCount(): number;
     setHorseCount(count: number): void;
     onPhaseChange(cb: PhaseChangeCallback): () => void;
+    onPrecomputeProgress(cb: PrecomputeProgressCallback): () => void;
     setJockey(jockey: Jockey): void;
     setHorseJockey(horseId: number, jockey: Jockey | null): void;
     getHorseJockeyUrl(horseId: number): string | null;
@@ -80,6 +84,7 @@ export class V2Sim {
     /** Shared jockey instances keyed by model URL (refcounted). */
     private jockeyPool = new Map<string, { jockey: Jockey; refCount: number }>();
     private frames: RaceFrame[] = [];
+    private precomputeListeners = new Set<PrecomputeProgressCallback>();
 
     // --- Precompute + playback ---
     /** If set, we're replaying precomputed frames instead of live-simulating. */
@@ -342,6 +347,10 @@ export class V2Sim {
     private async precomputeThenPlayback(): Promise<void> {
         this.precomputing = true;
         const MAX_TICKS = 10000; // safety cap
+        // Estimate expected tick count from track length / average speed.
+        // Typical race ~2000 ticks. Use this to show progress as percentage.
+        const ESTIMATED_TICKS = 2200;
+        this.emitPrecomputeProgress(0);
         try {
             let guard = 0;
             while (
@@ -351,9 +360,17 @@ export class V2Sim {
             ) {
                 await this.tickAsync();
                 guard++;
+                // Emit progress every 20 ticks to avoid event spam
+                if (guard % 20 === 0) {
+                    const progress = Math.min(0.99, guard / ESTIMATED_TICKS);
+                    this.emitPrecomputeProgress(progress);
+                    // Yield to the event loop so React can render the modal
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
             }
         } finally {
             this.precomputing = false;
+            this.emitPrecomputeProgress(null);
         }
         if (this.disposed) return;
         // Recreate the race so navigators/state start fresh for playback.
@@ -418,6 +435,19 @@ export class V2Sim {
         return () => {
             this.listeners.delete(cb);
         };
+    }
+
+    onPrecomputeProgress(cb: PrecomputeProgressCallback): () => void {
+        this.precomputeListeners.add(cb);
+        return () => {
+            this.precomputeListeners.delete(cb);
+        };
+    }
+
+    private emitPrecomputeProgress(progress: number | null): void {
+        for (const cb of this.precomputeListeners) {
+            cb(progress);
+        }
     }
 
     cleanup(): void {
