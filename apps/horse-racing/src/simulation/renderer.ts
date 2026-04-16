@@ -223,7 +223,17 @@ export class RaceRenderer {
         stage.addChild(this.trackGfx);
     }
 
-    syncHorses(horses: Horse[], playerHorseId: number | null): void {
+    /**
+     * Sync horse sprites.
+     * @param rotations - Optional per-horse rotation overrides (from recorded
+     *   playback frames). When provided, skip the navigator lookup and use the
+     *   recorded angle directly — simpler and correct after seek scrubbing.
+     */
+    syncHorses(
+        horses: Horse[],
+        playerHorseId: number | null,
+        rotations?: Map<number, number>
+    ): void {
         for (const h of horses) {
             let gfx = this.horseGfx.get(h.id);
             if (!gfx) {
@@ -232,8 +242,13 @@ export class RaceRenderer {
                 this.horseGfx.set(h.id, gfx);
             }
             gfx.position.set(h.pos.x, h.pos.y);
-            const frame = h.navigator.getTrackFrame(h.pos);
-            gfx.rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
+            const recorded = rotations?.get(h.id);
+            if (recorded !== undefined) {
+                gfx.rotation = recorded;
+            } else {
+                const frame = h.navigator.getTrackFrame(h.pos);
+                gfx.rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
+            }
         }
     }
 

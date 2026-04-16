@@ -23,6 +23,8 @@ export interface HorseFrame {
     progress: number;
     stamina: number;
     lateralOffset: number;
+    /** Sprite rotation in radians — captured at sim time so playback is exact. */
+    rotation: number;
     finished: boolean;
     finishOrder: number | null;
     obs: number[];
@@ -162,6 +164,7 @@ export class V2Sim {
         // But only advance the index when not paused.
         const frame = this.frames[this.playbackIndex];
         // Write frame's horse state back into the live race objects (for rendering)
+        const rotations = new Map<number, number>();
         for (const recorded of frame.horses) {
             const h = this.race.state.horses[recorded.id];
             if (!h) continue;
@@ -173,14 +176,14 @@ export class V2Sim {
             h.currentStamina = recorded.stamina;
             h.finished = recorded.finished;
             h.finishOrder = recorded.finishOrder;
-            // Jump navigator directly to the segment for this progress value.
-            // updateSegment-based catch-up fails on closed tracks due to
-            // angle-wrap after a multi-segment seek.
-            h.navigator.setSegmentByProgress(recorded.progress);
+            // Use recorded rotation directly — avoids navigator jumping issues
+            // on closed tracks and after seek scrubbing.
+            rotations.set(recorded.id, recorded.rotation);
         }
         this.renderer.syncHorses(
             this.race.state.horses,
-            this.race.state.playerHorseId
+            this.race.state.playerHorseId,
+            rotations
         );
         const pid = this.race.state.playerHorseId;
         if (pid !== null) {
@@ -268,19 +271,24 @@ export class V2Sim {
         const allObs = buildObservations(this.race);
         this.frames.push({
             tick: this.race.state.tick,
-            horses: this.race.state.horses.map((h, i) => ({
-                id: h.id,
-                x: Math.round(h.pos.x * 100) / 100,
-                y: Math.round(h.pos.y * 100) / 100,
-                tVel: Math.round(h.tangentialVel * 1000) / 1000,
-                nVel: Math.round(h.normalVel * 1000) / 1000,
-                progress: Math.round(h.trackProgress * 10000) / 10000,
-                stamina: Math.round(h.currentStamina * 100) / 100,
-                lateralOffset: Math.round(h.navigator.lateralOffset(h.pos) * 100) / 100,
-                finished: h.finished,
-                finishOrder: h.finishOrder,
-                obs: Array.from(allObs[i]),
-            })),
+            horses: this.race.state.horses.map((h, i) => {
+                const frame = h.navigator.getTrackFrame(h.pos);
+                const rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
+                return {
+                    id: h.id,
+                    x: Math.round(h.pos.x * 100) / 100,
+                    y: Math.round(h.pos.y * 100) / 100,
+                    tVel: Math.round(h.tangentialVel * 1000) / 1000,
+                    nVel: Math.round(h.normalVel * 1000) / 1000,
+                    progress: Math.round(h.trackProgress * 10000) / 10000,
+                    stamina: Math.round(h.currentStamina * 100) / 100,
+                    lateralOffset: Math.round(h.navigator.lateralOffset(h.pos) * 100) / 100,
+                    rotation: Math.round(rotation * 10000) / 10000,
+                    finished: h.finished,
+                    finishOrder: h.finishOrder,
+                    obs: Array.from(allObs[i]),
+                };
+            }),
             inputs: inputRecord,
         });
     }
@@ -566,13 +574,11 @@ export class V2Sim {
         if (!this.playbackMode || this.frames.length === 0) return;
         const clamped = Math.max(0, Math.min(this.frames.length - 1, Math.floor(frame)));
         this.playbackIndex = clamped;
-        // Navigators can only advance forward — recreate on seek so when
-        // scrubbing backwards we can catch up to the correct segment.
-        const playerId = this.race.state.playerHorseId;
-        this.race = new Race(this.segments, this.horseCount);
-        this.race.start(playerId);
-        this.race.state.phase = 'running';
-        this.emitPhase();
+        // Re-arm 'running' phase if we had played to the end.
+        if (this.race.state.phase === 'finished') {
+            this.race.state.phase = 'running';
+            this.emitPhase();
+        }
         this.emitPlaybackProgress();
     }
 
