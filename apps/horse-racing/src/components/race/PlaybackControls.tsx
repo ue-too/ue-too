@@ -23,6 +23,28 @@ export function PlaybackControls({ sim }: Props): ReactNode {
 
     const pct = Math.min(100, (frame / totalFrames) * 100);
 
+    const stepBy = (delta: number) => {
+        // Pause before stepping so auto-advance doesn't immediately move
+        // the frame forward again.
+        if (!paused) sim.togglePlayback();
+        sim.seekPlayback(frame + delta);
+    };
+
+    const iconBtn = {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        border: 'none',
+        background: '#333',
+        color: 'white',
+        cursor: 'pointer',
+        fontSize: 13,
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    } as const;
+
     return (
         <div
             style={{
@@ -32,17 +54,26 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 transform: 'translateX(-50%)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 8,
                 padding: '10px 16px',
                 background: 'rgba(20, 20, 20, 0.9)',
                 borderRadius: 28,
                 color: 'white',
                 zIndex: 20,
                 pointerEvents: 'auto',
-                minWidth: 400,
+                minWidth: 440,
                 boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
             }}
         >
+            <button
+                onClick={() => stepBy(-1)}
+                aria-label="Step back one frame"
+                title="Step back"
+                style={iconBtn}
+            >
+                ⏮
+            </button>
+
             <button
                 onClick={() => sim.togglePlayback()}
                 aria-label={paused ? 'Resume' : 'Pause'}
@@ -64,6 +95,15 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 {paused ? '▶' : '❚❚'}
             </button>
 
+            <button
+                onClick={() => stepBy(1)}
+                aria-label="Step forward one frame"
+                title="Step forward"
+                style={iconBtn}
+            >
+                ⏭
+            </button>
+
             <input
                 type="range"
                 min={0}
@@ -72,6 +112,7 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 onChange={e => sim.seekPlayback(Number(e.target.value))}
                 style={{
                     flexGrow: 1,
+                    marginLeft: 4,
                     accentColor: '#4a9eff',
                     cursor: 'pointer',
                 }}
