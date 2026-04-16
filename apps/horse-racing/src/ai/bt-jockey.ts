@@ -46,6 +46,13 @@ interface BTConfig {
     offLaneTangPenaltyScale: number;
     /** Maximum tangential subtracted while converging on lane (cruise / settle only). */
     offLaneTangPenaltyMax: number;
+    /** Multiplier on geometric lane penalty: below 1 favors momentum, above 1 favors coasting to the lane. */
+    offLaneDecelScale: number;
+    /**
+     * Add back tangential after lane penalty (capped at cruise tang).
+     * Positive values favor keeping drive while shifting (accelerate-through lean).
+     */
+    offLaneAccelRelief: number;
 }
 
 const DEFAULT_CONFIG: BTConfig = {
@@ -75,6 +82,8 @@ const DEFAULT_CONFIG: BTConfig = {
     offLanePenaltyStart: 0.06,
     offLaneTangPenaltyScale: 0.5,
     offLaneTangPenaltyMax: 0.18,
+    offLaneDecelScale: 1.0,
+    offLaneAccelRelief: 0.0,
 };
 
 // ============================================================
@@ -88,6 +97,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wDraft: 1.3,
         offLanePenaltyStart: 0.06,
         offLaneTangPenaltyMax: 0.16,
+        offLaneDecelScale: 1.0,
+        offLaneAccelRelief: 0.03,
     },
     'front-runner': {
         cruiseLow: 0.72,
@@ -107,6 +118,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLanePenaltyStart: 0.10,
         offLaneTangPenaltyScale: 0.35,
         offLaneTangPenaltyMax: 0.10,
+        offLaneDecelScale: 0.75,
+        offLaneAccelRelief: 0.07,
     },
     closer: {
         cruiseLow: 0.40,
@@ -126,6 +139,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLanePenaltyStart: 0.04,
         offLaneTangPenaltyScale: 0.65,
         offLaneTangPenaltyMax: 0.24,
+        offLaneDecelScale: 1.25,
+        offLaneAccelRelief: 0.0,
     },
     speedball: {
         cruiseLow: 0.60,
@@ -144,6 +159,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLanePenaltyStart: 0.08,
         offLaneTangPenaltyScale: 0.38,
         offLaneTangPenaltyMax: 0.10,
+        offLaneDecelScale: 0.7,
+        offLaneAccelRelief: 0.09,
     },
     steady: {
         cruiseLow: 0.58,
@@ -159,6 +176,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         wDraft: 1.0,
         offLanePenaltyStart: 0.07,
         offLaneTangPenaltyMax: 0.14,
+        offLaneDecelScale: 1.05,
+        offLaneAccelRelief: 0.02,
     },
 };
 
@@ -384,11 +403,11 @@ export class BTJockey implements Jockey {
         const err = Math.abs(lateralNorm - targetLane);
         if (err <= cfg.offLanePenaltyStart) return tang;
         const excess = err - cfg.offLanePenaltyStart;
-        const penalty = Math.min(
-            cfg.offLaneTangPenaltyMax,
-            excess * cfg.offLaneTangPenaltyScale,
-        );
-        return Math.max(0, tang - penalty);
+        const raw = excess * cfg.offLaneTangPenaltyScale * cfg.offLaneDecelScale;
+        const penalty = Math.min(cfg.offLaneTangPenaltyMax, raw);
+        let out = tang - penalty + cfg.offLaneAccelRelief;
+        out = Math.max(0, Math.min(tang, out));
+        return out;
     }
 
     // ---- State actions ----

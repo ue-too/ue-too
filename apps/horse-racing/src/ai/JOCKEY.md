@@ -213,7 +213,9 @@ toward the archetype lane over `settleTicks` instead of snapping.
 | `offLanePenaltyStart` | 0.06 | If `|lateral − targetLane|` exceeds this, tangential is reduced (“rating” while changing lanes). |
 | `offLaneTangPenaltyScale` | 0.5 | Extra lateral error beyond start × this = tangential penalty, capped below. |
 | `offLaneTangPenaltyMax` | 0.18 | Max tangential subtracted during lane convergence (CRUISE / SETTLING only). |
+| `offLaneDecelScale` | 1.0 | Multiplies geometric lane penalty: **below 1** = less coasting (momentum), **above 1** = more willingness to decelerate into the lane. |
+| `offLaneAccelRelief` | 0.0 | Add-back to tangential after penalty (capped at cruise tang): **positive** = accelerate-through lean while shifting. |
 
 ### Lane convergence (“rating”)
 
-Without coupling, every horse can hold **full cruise tangential** while **steering** sideways, so the field stays **abreast** on long straights. In **CRUISE** and **SETTLING**, tangential is lowered when the horse is far from its current lane target: horses **ease forward** while sliding to `targetLane`. **PASSING** and **KICK** are unchanged. Archetypes differ (e.g. closer rates more to reach a wide lane; front-runner barely rates).
+Without coupling, every horse can hold **full cruise tangential** while **steering** sideways, so the field stays **abreast** on long straights. In **CRUISE** and **SETTLING**, tangential is adjusted when far from lane: penalty = `min(max, excess × scale × offLaneDecelScale)`, then **`offLaneAccelRelief`** adds a small forward bias back (capped). **`offLaneDecelScale`** = prefer coasting vs momentum; **`offLaneAccelRelief`** = keep drive while changing lanes. **PASSING** and **KICK** are unchanged.
