@@ -17,9 +17,11 @@ interface BTConfig {
     kickPhase: number;
     blockProgressMax: number;
     blockLateralTol: number;
+    blockMinSlowness: number;
     conserveThreshold: number;
     passMinTicks: number;
     passClearLateral: number;
+    passCooldownTicks: number;
 }
 
 const DEFAULT_CONFIG: BTConfig = {
@@ -29,9 +31,11 @@ const DEFAULT_CONFIG: BTConfig = {
     kickPhase: 0.75,
     blockProgressMax: 0.03,
     blockLateralTol: 0.15,
+    blockMinSlowness: 0.03, // blocker must be meaningfully slower
     conserveThreshold: 0.30,
     passMinTicks: 40,
     passClearLateral: 0.25,
+    passCooldownTicks: 80,  // no repeat passing for this many ticks after a pass
 };
 
 const STATE_CRUISE = 0;
@@ -47,7 +51,7 @@ function isBlocked(obs: Float64Array, cfg: BTConfig): boolean {
         const normalOffset = obs[base + 3];
         if (!(progressDelta > 0 && progressDelta < cfg.blockProgressMax)) continue;
         if (Math.abs(normalOffset) > cfg.blockLateralTol) continue;
-        if (tvelDelta >= 0) continue;
+        if (tvelDelta >= -cfg.blockMinSlowness) continue;
         return true;
     }
     return false;
@@ -71,6 +75,7 @@ function stillBlocked(obs: Float64Array, cfg: BTConfig): boolean {
 interface HorseState {
     state: number;
     ticks: number;
+    cooldown: number;
 }
 
 /**
@@ -107,7 +112,7 @@ export class BTJockey implements Jockey {
     private getState(id: number): HorseState {
         let s = this.states.get(id);
         if (!s) {
-            s = { state: STATE_CRUISE, ticks: 0 };
+            s = { state: STATE_CRUISE, ticks: 0, cooldown: 0 };
             this.states.set(id, s);
         }
         return s;
@@ -139,6 +144,7 @@ export class BTJockey implements Jockey {
             if (st.ticks >= cfg.passMinTicks && !stillBlocked(obs, cfg)) {
                 st.state = STATE_CRUISE;
                 st.ticks = 0;
+                st.cooldown = cfg.passCooldownTicks;
             } else {
                 return this.doPass(staminaFrac);
             }
@@ -146,7 +152,9 @@ export class BTJockey implements Jockey {
 
         // CRUISE state
         if (st.state === STATE_CRUISE) {
-            if (isBlocked(obs, cfg)) {
+            if (st.cooldown > 0) {
+                st.cooldown--;
+            } else if (isBlocked(obs, cfg)) {
                 st.state = STATE_PASSING;
                 st.ticks = 0;
                 return this.doPass(staminaFrac);
@@ -165,9 +173,9 @@ export class BTJockey implements Jockey {
     ): InputState {
         const cfg = this.config;
         let tang: number;
-        // Default cruise is 0.25; gentle push when below, coast when above.
-        if (speedRatio < cfg.cruiseLow) tang = 0.5;
-        else if (speedRatio > cfg.cruiseHigh) tang = 0.0;
+        // Default cruise is 0.25; wider tolerance (±0.05) to avoid overshoot flips.
+        if (speedRatio < cfg.cruiseLow - 0.05) tang = 0.5;
+        else if (speedRatio > cfg.cruiseHigh + 0.05) tang = 0.0;
         else tang = 0.25;
         if (staminaFrac < cfg.conserveThreshold) tang = Math.min(tang, 0.25);
 
