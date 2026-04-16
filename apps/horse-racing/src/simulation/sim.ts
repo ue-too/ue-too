@@ -73,6 +73,8 @@ export interface V2SimHandle {
     getHorses(): Horse[];
     getHorseCount(): number;
     setHorseCount(count: number): void;
+    /** Load a different track and reset the race. Only valid in 'gate' phase. */
+    setTrack(url: string): Promise<void>;
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     onPrecomputeProgress(cb: PrecomputeProgressCallback): () => void;
     onSimulationReady(cb: SimulationReadyCallback): () => void;
@@ -480,6 +482,12 @@ export class V2Sim {
     setHorseCount(count: number): void {
         if (this.race.state.phase !== 'gate') return;
         this.horseCount = Math.max(2, Math.min(MAX_HORSES, count));
+        this.reset();
+    }
+
+    setTrack(segments: TrackSegment[]): void {
+        if (this.race.state.phase !== 'gate') return;
+        this.segments = segments;
         this.reset();
     }
 

@@ -53,6 +53,10 @@ export function makeInitApp(
             getHorses: () => sim.getHorses(),
             getHorseCount: () => sim.getHorseCount(),
             setHorseCount: count => sim.setHorseCount(count),
+            setTrack: async (url: string) => {
+                const segments = await loadTrack(url);
+                sim.setTrack(segments);
+            },
             onPhaseChange: cb => sim.onPhaseChange(cb),
             onPrecomputeProgress: cb => sim.onPrecomputeProgress(cb),
             onSimulationReady: cb => sim.onSimulationReady(cb),

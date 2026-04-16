@@ -40,16 +40,39 @@ const mainSelectStyle = {
 export function HorsePicker({ sim, horses }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
     const [models, setModels] = useState<ModelEntry[]>([]);
+    const [tracks, setTracks] = useState<ModelEntry[]>([]);
+    const [currentTrack, setCurrentTrack] = useState<string>('/tracks/test_oval.json');
     const [horseCount, setHorseCount] = useState(sim.getHorseCount());
     const [horseModels, setHorseModels] = useState<Record<number, string>>({});
     const [loadingHorse, setLoadingHorse] = useState<number | null>(null);
+    const [loadingTrack, setLoadingTrack] = useState(false);
 
     useEffect(() => {
         fetch('/models/manifest.json')
             .then(res => res.json())
             .then((data: ModelEntry[]) => setModels(data))
             .catch(() => setModels([]));
+        fetch('/tracks/manifest.json')
+            .then(res => res.json())
+            .then((data: ModelEntry[]) => setTracks(data))
+            .catch(() => setTracks([]));
     }, []);
+
+    const onTrackChange = async (url: string) => {
+        if (url === currentTrack) return;
+        setLoadingTrack(true);
+        try {
+            await sim.setTrack(url);
+            setCurrentTrack(url);
+            // Changing track resets the race, so clear per-horse model state
+            setHorseModels({});
+            setSelected(null);
+        } catch (err) {
+            console.error(`Failed to load track ${url}:`, err);
+        } finally {
+            setLoadingTrack(false);
+        }
+    };
 
     const pick = (id: number | null) => {
         setSelected(id);
@@ -113,6 +136,22 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                 pointerEvents: 'auto',
             }}
         >
+            {/* Track picker */}
+            {tracks.length > 0 && (
+                <select
+                    value={currentTrack}
+                    onChange={e => onTrackChange(e.target.value)}
+                    disabled={loadingTrack}
+                    style={mainSelectStyle}
+                >
+                    {tracks.map(t => (
+                        <option key={t.url} value={t.url}>
+                            {t.label}
+                        </option>
+                    ))}
+                </select>
+            )}
+
             {/* Horse count picker */}
             <select
                 value={horseCount}
