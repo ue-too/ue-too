@@ -69,6 +69,25 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
         }
     };
 
+    const onAllHorsesModelChange = async (url: string) => {
+        const ids = horses
+            .filter(h => h.id !== selected)
+            .map(h => h.id);
+        if (ids.length === 0) return;
+        setHorseModels(prev => {
+            const next = { ...prev };
+            for (const id of ids) next[id] = url;
+            return next;
+        });
+        try {
+            await Promise.all(
+                ids.map(id => sim.setHorseJockeyUrl(id, url || null))
+            );
+        } catch (err) {
+            console.error('Failed to apply model to all horses:', err);
+        }
+    };
+
     const onHorseCountChange = (count: number) => {
         setHorseCount(count);
         setSelected(null);
@@ -106,6 +125,38 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
                     </option>
                 ))}
             </select>
+
+            {/* Apply model to all horses at once (excluding player) */}
+            {models.length > 0 && (
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        fontSize: 11,
+                        color: '#aaa',
+                    }}
+                >
+                    <span>All horses:</span>
+                    <select
+                        value=""
+                        onChange={e => {
+                            if (e.target.value !== '__label__') {
+                                onAllHorsesModelChange(e.target.value);
+                            }
+                        }}
+                        style={{ ...selectStyle, maxWidth: 160 }}
+                    >
+                        <option value="__label__">— set all —</option>
+                        <option value="">No AI</option>
+                        {models.map(m => (
+                            <option key={m.url} value={m.url}>
+                                {m.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Per-horse model + pick buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
