@@ -292,7 +292,7 @@ export class RaceRenderer {
                 g.lineTo(hf.x, hf.y);
             }
             const color = this.horseColors.get(id) ?? 0xffffff;
-            g.stroke({ width: TRACE_WIDTH, color, alpha: TRACE_ALPHA });
+            g.stroke({ width: TRACE_WIDTH, color, alpha: TRACE_ALPHA, pixelLine: true });
         }
     }
 
