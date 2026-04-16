@@ -6,6 +6,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { HorsePicker } from '@/components/race/HorsePicker';
+import { PlaybackControls } from '@/components/race/PlaybackControls';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
 import { RaceToolbar } from '@/components/race/RaceToolbar';
 import { StaminaOverlay } from '@/components/race/StaminaOverlay';
@@ -83,6 +84,9 @@ const App = (): ReactNode => {
                 )}
                 {simHandle && phase === 'running' && (
                     <StaminaOverlay sim={simHandle} />
+                )}
+                {simHandle && (phase === 'running' || phase === 'finished') && (
+                    <PlaybackControls sim={simHandle} />
                 )}
                 {(precomputeProgress !== null || simulationReady) && simHandle && (
                     <PrecomputeModal

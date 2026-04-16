@@ -49,12 +49,23 @@ export type PrecomputeProgressCallback = (progress: number | null) => void;
 /** Fired once the precompute is done and playback can start. */
 export type SimulationReadyCallback = () => void;
 
+/** Fires during playback with current frame index and total frames. */
+export type PlaybackProgressCallback = (
+    frame: number,
+    totalFrames: number,
+    paused: boolean
+) => void;
+
 export interface V2SimHandle {
     pickHorse(id: number | null): void;
     /** Stage 1: run the full race simulation (precompute). UI shows progress. */
     start(): void;
     /** Stage 2: start playback of the precomputed race. Call after ready event. */
     playback(): void;
+    /** Toggle pause/resume during playback. */
+    togglePlayback(): void;
+    /** Jump playback to a specific frame index. */
+    seekPlayback(frame: number): void;
     reset(): void;
     getPhase(): RacePhase;
     getHorses(): Horse[];
@@ -63,6 +74,7 @@ export interface V2SimHandle {
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     onPrecomputeProgress(cb: PrecomputeProgressCallback): () => void;
     onSimulationReady(cb: SimulationReadyCallback): () => void;
+    onPlaybackProgress(cb: PlaybackProgressCallback): () => void;
     setJockey(jockey: Jockey): void;
     setHorseJockey(horseId: number, jockey: Jockey | null): void;
     getHorseJockeyUrl(horseId: number): string | null;
@@ -105,6 +117,9 @@ export class V2Sim {
     private precomputing = false;
     /** True once precompute finished and frames are ready for playback. */
     private simulationReady = false;
+    /** When true, playback ticker advances no frames. */
+    private playbackPaused = false;
+    private playbackListeners = new Set<PlaybackProgressCallback>();
 
     private horseCount = 4;
 
@@ -138,10 +153,13 @@ export class V2Sim {
             // End of playback — ensure race phase is 'finished' and emit
             if (this.race.state.phase !== 'finished') {
                 this.race.state.phase = 'finished';
+                this.emitPlaybackProgress();
                 this.emitPhase();
             }
             return;
         }
+        // Render the current frame even when paused (so seek updates visually).
+        // But only advance the index when not paused.
         const frame = this.frames[this.playbackIndex];
         // Write frame's horse state back into the live race objects (for rendering)
         for (const recorded of frame.horses) {
@@ -167,7 +185,10 @@ export class V2Sim {
             const h = this.race.state.horses[pid];
             this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
         }
-        this.playbackIndex++;
+        if (!this.playbackPaused) {
+            this.playbackIndex++;
+        }
+        this.emitPlaybackProgress();
     }
 
     private async tickAsync(): Promise<void> {
@@ -383,8 +404,10 @@ export class V2Sim {
         this.race.start(playerId);
         this.playbackIndex = 0;
         this.playbackMode = true;
+        this.playbackPaused = false;
         this.simulationReady = false;
         this.emitPhase();
+        this.emitPlaybackProgress();
     }
 
     /**
@@ -427,6 +450,7 @@ export class V2Sim {
         this.frames = [];
         this.playbackMode = false;
         this.playbackIndex = 0;
+        this.playbackPaused = false;
         this.simulationReady = false;
         this.simulatedFinishOrder = [];
         this.simulatedTotalTicks = 0;
@@ -511,6 +535,41 @@ export class V2Sim {
         for (const cb of this.readyListeners) {
             cb();
         }
+    }
+
+    onPlaybackProgress(cb: PlaybackProgressCallback): () => void {
+        this.playbackListeners.add(cb);
+        // Fire immediately so new subscribers see current state
+        cb(this.playbackIndex, this.frames.length, this.playbackPaused);
+        return () => {
+            this.playbackListeners.delete(cb);
+        };
+    }
+
+    private emitPlaybackProgress(): void {
+        const total = this.frames.length;
+        const frame = Math.min(this.playbackIndex, total);
+        for (const cb of this.playbackListeners) {
+            cb(frame, total, this.playbackPaused);
+        }
+    }
+
+    togglePlayback(): void {
+        if (!this.playbackMode) return;
+        this.playbackPaused = !this.playbackPaused;
+        this.emitPlaybackProgress();
+    }
+
+    seekPlayback(frame: number): void {
+        if (!this.playbackMode || this.frames.length === 0) return;
+        const clamped = Math.max(0, Math.min(this.frames.length - 1, Math.floor(frame)));
+        this.playbackIndex = clamped;
+        // If playback had ended, re-arm the 'running' phase for the replay.
+        if (this.race.state.phase === 'finished') {
+            this.race.state.phase = 'running';
+            this.emitPhase();
+        }
+        this.emitPlaybackProgress();
     }
 
     cleanup(): void {
