@@ -42,6 +42,7 @@ export function drainStamina(
     input: InputState,
     frame: TrackFrame,
     drainScale = 1.0,
+    draftBonus = 0.0,
 ): void {
     let drain = 0;
 
@@ -74,6 +75,11 @@ export function drainStamina(
 
     // Lateral velocity tax
     drain += Math.abs(horse.normalVel) * LATERAL_VELOCITY_DRAIN_RATE;
+
+    // Drafting: reduced effort when tucked behind another horse
+    if (draftBonus > 0 && Math.abs(input.normal) < 0.3) {
+        drain *= (1.0 - draftBonus);
+    }
 
     // Apply per-horse efficiency and track-length normalization
     drain *= attrs.drainRateMult;

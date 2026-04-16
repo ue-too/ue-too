@@ -154,7 +154,8 @@ export class Race {
             if (!h.finished) {
                 const frame = h.navigator.getTrackFrame(h.pos);
                 const horseInput = inputs.get(h.id) ?? zeroInput;
-                drainStamina(h, h.effectiveAttributes, horseInput, frame, this.drainScale);
+                const draftBonus = this.computeDraftBonus(h);
+                drainStamina(h, h.effectiveAttributes, horseInput, frame, this.drainScale, draftBonus);
             }
         }
 
@@ -173,6 +174,21 @@ export class Race {
         }
 
         this.state.tick++;
+    }
+
+    private computeDraftBonus(horse: Horse): number {
+        const selfLateral = horse.navigator.lateralOffset(horse.pos);
+        for (const other of this.state.horses) {
+            if (other.id === horse.id || other.finished) continue;
+            const progressDelta = other.trackProgress - horse.trackProgress;
+            if (progressDelta <= 0.005 || progressDelta >= 0.05) continue;
+            const otherLateral = other.navigator.lateralOffset(other.pos);
+            if (Math.abs(otherLateral - selfLateral) > 1.0) continue;
+            if (other.tangentialVel >= horse.tangentialVel - 0.5) {
+                return 0.15;
+            }
+        }
+        return 0.0;
     }
 
     reset(): void {
