@@ -47,15 +47,29 @@ function btManifestEntries(): ModelEntry[] {
     }));
 }
 
+function readHorseModels(sim: V2SimHandle, horses: { id: number }[]): Record<number, string> {
+    const out: Record<number, string> = {};
+    for (const h of horses) {
+        const url = sim.getHorseJockeyUrl(h.id);
+        if (url) out[h.id] = url;
+    }
+    return out;
+}
+
 export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
     const [onnxModels, setOnnxModels] = useState<ModelEntry[]>([]);
     const [tracks, setTracks] = useState<ModelEntry[]>([]);
     const [currentTrack, setCurrentTrack] = useState<string>('/tracks/test_oval.json');
     const [horseCount, setHorseCount] = useState(sim.getHorseCount());
-    const [horseModels, setHorseModels] = useState<Record<number, string>>({});
+    const [horseModels, setHorseModels] = useState<Record<number, string>>(() => readHorseModels(sim, horses));
     const [loadingHorse, setLoadingHorse] = useState<number | null>(null);
     const [loadingTrack, setLoadingTrack] = useState(false);
+
+    useEffect(() => {
+        setHorseCount(sim.getHorseCount());
+        setHorseModels(readHorseModels(sim, horses));
+    }, [sim, horses]);
 
     useEffect(() => {
         fetch('/models/manifest.json')
@@ -133,6 +147,17 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
         sim.setHorseCount(count);
     };
 
+    const resetSetup = () => {
+        for (const h of horses) {
+            sim.setHorseJockeyUrl(h.id, null);
+        }
+        const defaultCount = 4;
+        setHorseCount(defaultCount);
+        setSelected(null);
+        setHorseModels({});
+        sim.setHorseCount(defaultCount);
+    };
+
     return (
         <div
             style={{
@@ -167,18 +192,30 @@ export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
                 </select>
             )}
 
-            {/* Horse count picker */}
-            <select
-                value={horseCount}
-                onChange={e => onHorseCountChange(Number(e.target.value))}
-                style={mainSelectStyle}
-            >
-                {HORSE_COUNT_OPTIONS.map(n => (
-                    <option key={n} value={n}>
-                        {n} Horses
-                    </option>
-                ))}
-            </select>
+            {/* Horse count picker + reset setup */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <select
+                    value={horseCount}
+                    onChange={e => onHorseCountChange(Number(e.target.value))}
+                    style={mainSelectStyle}
+                >
+                    {HORSE_COUNT_OPTIONS.map(n => (
+                        <option key={n} value={n}>
+                            {n} Horses
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={resetSetup}
+                    title="Reset horse count and AI selections to defaults"
+                    style={{
+                        ...mainSelectStyle,
+                        color: '#aaa',
+                    }}
+                >
+                    Reset
+                </button>
+            </div>
 
             {/* Apply model to all horses at once (excluding player) */}
             {models.length > 0 && (

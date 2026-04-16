@@ -22,35 +22,165 @@ export const WORKBENCH_BT_URL = 'bt://~workbench';
 
 type KnobKey = keyof BTConfig;
 
-const KNOB_META: { key: KnobKey; label: string; min: number; max: number; step: number }[] = [
-    { key: 'cruiseLow', label: 'Cruise low', min: 0.2, max: 0.9, step: 0.01 },
-    { key: 'cruiseHigh', label: 'Cruise high', min: 0.25, max: 0.95, step: 0.01 },
-    { key: 'targetLane', label: 'Target lane', min: -0.95, max: 0.0, step: 0.01 },
-    { key: 'lateralAggression', label: 'Lateral aggression', min: 0.1, max: 1.0, step: 0.05 },
-    { key: 'kickPhase', label: 'Kick phase', min: 0.5, max: 0.96, step: 0.01 },
-    { key: 'kickEarlyMargin', label: 'Kick early margin', min: 0, max: 0.2, step: 0.01 },
-    { key: 'kickLateCap', label: 'Kick late cap', min: 0.8, max: 0.98, step: 0.01 },
-    { key: 'wPass', label: 'w_pass', min: 0, max: 3, step: 0.05 },
-    { key: 'wKick', label: 'w_kick', min: 0, max: 3, step: 0.05 },
-    { key: 'wDraft', label: 'w_draft', min: 0, max: 3, step: 0.05 },
-    { key: 'blockProgressMax', label: 'Block progress max', min: 0, max: 0.1, step: 0.005 },
-    { key: 'blockLateralTol', label: 'Block lateral tol', min: 0, max: 0.5, step: 0.01 },
-    { key: 'blockMinSlowness', label: 'Block min slowness', min: 0, max: 0.1, step: 0.005 },
-    { key: 'conserveThreshold', label: 'Conserve threshold', min: 0, max: 0.6, step: 0.05 },
-    { key: 'passMinTicks', label: 'Pass min ticks', min: 10, max: 120, step: 5 },
-    { key: 'passClearLateral', label: 'Pass clear lateral', min: 0.05, max: 0.5, step: 0.05 },
-    { key: 'passCooldownTicks', label: 'Pass cooldown', min: 10, max: 300, step: 10 },
-    { key: 'settleTicks', label: 'Settle ticks', min: 10, max: 120, step: 5 },
-    { key: 'transitionMinTicks', label: 'Transition min ticks', min: 5, max: 100, step: 5 },
-    { key: 'defendOnScore', label: 'Defend on score', min: 0.1, max: 1.5, step: 0.05 },
-    { key: 'defendOffScore', label: 'Defend off score', min: 0.05, max: 1.0, step: 0.05 },
-    { key: 'defendTangMin', label: 'Defend tang min', min: 0.1, max: 1.0, step: 0.05 },
-    { key: 'defendDrift', label: 'Defend drift', min: 0, max: 0.5, step: 0.01 },
-    { key: 'offLanePenaltyStart', label: 'Off-lane pen start', min: 0, max: 0.2, step: 0.005 },
-    { key: 'offLaneTangPenaltyScale', label: 'Off-lane pen scale', min: 0, max: 1.5, step: 0.05 },
-    { key: 'offLaneTangPenaltyMax', label: 'Off-lane pen max', min: 0, max: 0.4, step: 0.01 },
-    { key: 'offLaneDecelScale', label: 'Off-lane decel scale', min: 0.3, max: 2.0, step: 0.05 },
-    { key: 'offLaneAccelRelief', label: 'Off-lane accel relief', min: 0, max: 0.2, step: 0.01 },
+interface KnobDef {
+    key: KnobKey;
+    label: string;
+    tip: string;
+    min: number;
+    max: number;
+    step: number;
+    group: string;
+}
+
+const KNOB_META: KnobDef[] = [
+    // -- Cruise --
+    {
+        key: 'cruiseLow', label: 'Cruise low', group: 'Cruise speed',
+        tip: 'Low end of the speed band (fraction of max speed). When the horse drops below this, it pushes the throttle harder (0.5) to speed back up. A closer uses ~0.40, a front-runner ~0.72.',
+        min: 0.2, max: 0.9, step: 0.01,
+    },
+    {
+        key: 'cruiseHigh', label: 'Cruise high', group: 'Cruise speed',
+        tip: 'High end of the speed band. When the horse exceeds this, it coasts (0.0 throttle) until speed falls. Together with Cruise Low this forms a thermostat — the horse oscillates between the two boundaries.',
+        min: 0.25, max: 0.95, step: 0.01,
+    },
+    {
+        key: 'conserveThreshold', label: 'Conserve threshold', group: 'Cruise speed',
+        tip: 'Stamina fraction below which throttle is capped at 0.25 (gentle). Higher values make the horse save energy earlier — useful for closers who need stamina for the kick.',
+        min: 0, max: 0.6, step: 0.05,
+    },
+    // -- Lane position --
+    {
+        key: 'targetLane', label: 'Target lane', group: 'Lane position',
+        tip: 'Preferred lateral position. -0.95 = tight to rail, 0.0 = middle of track. Closers sit wide; front-runners hug the rail.',
+        min: -0.95, max: 0.0, step: 0.01,
+    },
+    {
+        key: 'lateralAggression', label: 'Lateral aggression', group: 'Lane position',
+        tip: 'How hard the horse steers to reach its target lane. Higher = sharper lane changes.',
+        min: 0.1, max: 1.0, step: 0.05,
+    },
+    // -- Kick timing --
+    {
+        key: 'kickPhase', label: 'Kick phase', group: 'Kick (final sprint)',
+        tip: 'Track progress at which the horse begins its finishing kick. Lower = earlier kick (front-runner style), higher = late closer kick.',
+        min: 0.5, max: 0.96, step: 0.01,
+    },
+    {
+        key: 'kickEarlyMargin', label: 'Kick early margin', group: 'Kick (final sprint)',
+        tip: 'How much earlier than kickPhase the horse may start kicking if stamina allows.',
+        min: 0, max: 0.2, step: 0.01,
+    },
+    {
+        key: 'kickLateCap', label: 'Kick late cap', group: 'Kick (final sprint)',
+        tip: 'Progress beyond which the horse is forced into kick regardless of score. Safety net so no horse misses the sprint.',
+        min: 0.8, max: 0.98, step: 0.01,
+    },
+    // -- Utility weights --
+    {
+        key: 'wPass', label: 'w_pass', group: 'Utility weights',
+        tip: 'Multiplier on the passing utility score. Higher = more eager to attempt overtakes.',
+        min: 0, max: 3, step: 0.05,
+    },
+    {
+        key: 'wKick', label: 'w_kick', group: 'Utility weights',
+        tip: 'Multiplier on the kick utility score. Higher = more willing to enter the finishing sprint.',
+        min: 0, max: 3, step: 0.05,
+    },
+    {
+        key: 'wDraft', label: 'w_draft', group: 'Utility weights',
+        tip: 'Multiplier on the drafting bonus during cruise. Higher = stronger preference to sit behind another horse and conserve energy.',
+        min: 0, max: 3, step: 0.05,
+    },
+    // -- Blocking / passing --
+    {
+        key: 'blockProgressMax', label: 'Block progress max', group: 'Blocking & passing',
+        tip: 'Maximum progress gap to consider an opponent "blocking." Larger = detects blockers further ahead.',
+        min: 0, max: 0.1, step: 0.005,
+    },
+    {
+        key: 'blockLateralTol', label: 'Block lateral tol', group: 'Blocking & passing',
+        tip: 'Lateral distance within which an opponent counts as blocking the path.',
+        min: 0, max: 0.5, step: 0.01,
+    },
+    {
+        key: 'blockMinSlowness', label: 'Block min slowness', group: 'Blocking & passing',
+        tip: 'Minimum speed difference (blocker is slower by this much) to trigger a pass attempt.',
+        min: 0, max: 0.1, step: 0.005,
+    },
+    {
+        key: 'passMinTicks', label: 'Pass min ticks', group: 'Blocking & passing',
+        tip: 'Minimum ticks committed to a pass once started. Prevents aborting mid-overtake.',
+        min: 10, max: 120, step: 5,
+    },
+    {
+        key: 'passClearLateral', label: 'Pass clear lateral', group: 'Blocking & passing',
+        tip: 'Lateral clearance needed before the horse considers the pass complete.',
+        min: 0.05, max: 0.5, step: 0.05,
+    },
+    {
+        key: 'passCooldownTicks', label: 'Pass cooldown', group: 'Blocking & passing',
+        tip: 'Ticks to wait after settling before attempting another pass. Lower = more aggressive repeat passing.',
+        min: 10, max: 300, step: 10,
+    },
+    // -- Transitions --
+    {
+        key: 'settleTicks', label: 'Settle ticks', group: 'State transitions',
+        tip: 'Ticks spent drifting back to the target lane after a pass completes.',
+        min: 10, max: 120, step: 5,
+    },
+    {
+        key: 'transitionMinTicks', label: 'Transition min ticks', group: 'State transitions',
+        tip: 'Minimum ticks between any state change. Prevents rapid state oscillation.',
+        min: 5, max: 100, step: 5,
+    },
+    // -- Defense --
+    {
+        key: 'defendOnScore', label: 'Defend on score', group: 'Defensive overlay',
+        tip: 'Threat score threshold to activate defense. Lower = reacts to smaller threats.',
+        min: 0.1, max: 1.5, step: 0.05,
+    },
+    {
+        key: 'defendOffScore', label: 'Defend off score', group: 'Defensive overlay',
+        tip: 'Threat score below which defense deactivates. Creates hysteresis so defense doesn\'t flicker.',
+        min: 0.05, max: 1.0, step: 0.05,
+    },
+    {
+        key: 'defendTangMin', label: 'Defend tang min', group: 'Defensive overlay',
+        tip: 'Minimum throttle while defending. Ensures the horse doesn\'t slow down when an opponent threatens.',
+        min: 0.1, max: 1.0, step: 0.05,
+    },
+    {
+        key: 'defendDrift', label: 'Defend drift', group: 'Defensive overlay',
+        tip: 'Lateral nudge applied during defense to cut off the overtaker\'s line.',
+        min: 0, max: 0.5, step: 0.01,
+    },
+    // -- Off-lane penalties --
+    {
+        key: 'offLanePenaltyStart', label: 'Off-lane pen start', group: 'Off-lane rating',
+        tip: 'Lateral error beyond which the horse begins to slow down ("rate") while changing lanes. Smaller = rates sooner.',
+        min: 0, max: 0.2, step: 0.005,
+    },
+    {
+        key: 'offLaneTangPenaltyScale', label: 'Off-lane pen scale', group: 'Off-lane rating',
+        tip: 'How steeply speed is reduced per unit of excess lateral error. Higher = loses more speed while off-lane.',
+        min: 0, max: 1.5, step: 0.05,
+    },
+    {
+        key: 'offLaneTangPenaltyMax', label: 'Off-lane pen max', group: 'Off-lane rating',
+        tip: 'Cap on how much speed the off-lane penalty can subtract. Prevents the horse from nearly stopping.',
+        min: 0, max: 0.4, step: 0.01,
+    },
+    {
+        key: 'offLaneDecelScale', label: 'Off-lane decel scale', group: 'Off-lane rating',
+        tip: 'Multiplier on the geometric lane penalty. Below 1 favors momentum; above 1 favors coasting to the lane.',
+        min: 0.3, max: 2.0, step: 0.05,
+    },
+    {
+        key: 'offLaneAccelRelief', label: 'Off-lane accel relief', group: 'Off-lane rating',
+        tip: 'Throttle added back after the lane penalty. Positive values let the horse keep drive while shifting lanes.',
+        min: 0, max: 0.2, step: 0.01,
+    },
 ];
 
 function resolvedConfig(base: string, custom: Partial<BTConfig>): BTConfig {
@@ -223,11 +353,34 @@ export function BtWorkbench({ sim, onClose, onConfigChange }: Props): ReactNode 
                 </button>
             </div>
 
-            <p style={{ fontSize: 11, color: '#999', marginBottom: 10, lineHeight: 1.4 }}>
+            <p style={{ fontSize: 11, color: '#999', marginBottom: 6, lineHeight: 1.4 }}>
                 Tweak knobs here — the live config is available as{' '}
                 <strong>BT · ~workbench</strong> in the horse picker.
                 Assign it to any horse, then start the race normally.
             </p>
+            <details style={{ fontSize: 11, color: '#888', marginBottom: 10, lineHeight: 1.5 }}>
+                <summary style={{ cursor: 'pointer', color: '#aaa', marginBottom: 4 }}>
+                    How the BT works
+                </summary>
+                <p style={{ margin: '4px 0' }}>
+                    The jockey cycles through four states:{' '}
+                    <b style={{ color: '#aaa' }}>Cruise</b> (maintain speed in a lane),{' '}
+                    <b style={{ color: '#aaa' }}>Passing</b> (overtake a blocker),{' '}
+                    <b style={{ color: '#aaa' }}>Kick</b> (final all-out sprint), and{' '}
+                    <b style={{ color: '#aaa' }}>Settling</b> (drift back to target lane after a pass).
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                    Each tick, the utility selector scores Cruise, Pass, and Kick — the highest wins.
+                    A <b style={{ color: '#aaa' }}>defensive overlay</b> reacts to nearby threats by
+                    boosting throttle and drifting to cut off overtakers.
+                </p>
+                <p style={{ margin: '4px 0' }}>
+                    Archetype personalities emerge from tuning these knobs:{' '}
+                    a <em>closer</em> cruises slow with a late kick,
+                    a <em>front-runner</em> cruises fast with an early kick,
+                    a <em>stalker</em> sits behind and drafts.
+                </p>
+            </details>
 
             {/* Base archetype */}
             <label style={lblStyle}>Base archetype</label>
@@ -332,42 +485,67 @@ export function BtWorkbench({ sim, onClose, onConfigChange }: Props): ReactNode 
                 )}
             </div>
 
-            {/* Knob sliders */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-                {KNOB_META.map(({ key, label, min, max, step }) => (
-                    <div key={key}>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                fontSize: 11,
-                                color: '#aaa',
-                                marginBottom: 2,
-                            }}
-                        >
-                            <span>{label}</span>
-                            <span style={{ fontFamily: 'monospace' }}>
-                                {merged[key].toFixed(
-                                    step < 0.01 ? 3 : step < 0.1 ? 2 : 1
+            {/* Knob sliders — grouped */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                {(() => {
+                    let lastGroup = '';
+                    return KNOB_META.map(({ key, label, tip, min, max, step, group }) => {
+                        const showHeader = group !== lastGroup;
+                        lastGroup = group;
+                        return (
+                            <div key={key}>
+                                {showHeader && (
+                                    <div style={groupHeaderStyle}>{group}</div>
                                 )}
-                            </span>
-                        </div>
-                        <input
-                            type="range"
-                            min={min}
-                            max={max}
-                            step={step}
-                            value={merged[key]}
-                            onChange={e => setKnob(key, parseFloat(e.target.value))}
-                            style={{ width: '100%', accentColor: '#4a9eff' }}
-                        />
-                    </div>
-                ))}
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        fontSize: 11,
+                                        color: '#aaa',
+                                        marginBottom: 1,
+                                    }}
+                                >
+                                    <span title={tip} style={{ cursor: 'help', borderBottom: '1px dotted #666' }}>
+                                        {label}
+                                    </span>
+                                    <span style={{ fontFamily: 'monospace' }}>
+                                        {merged[key].toFixed(
+                                            step < 0.01 ? 3 : step < 0.1 ? 2 : 1
+                                        )}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: 10, color: '#777', marginBottom: 2, lineHeight: 1.3 }}>
+                                    {tip}
+                                </div>
+                                <input
+                                    type="range"
+                                    min={min}
+                                    max={max}
+                                    step={step}
+                                    value={merged[key]}
+                                    onChange={e => setKnob(key, parseFloat(e.target.value))}
+                                    style={{ width: '100%', accentColor: '#4a9eff' }}
+                                />
+                            </div>
+                        );
+                    });
+                })()}
             </div>
 
         </div>
     );
 }
+
+const groupHeaderStyle: React.CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#7eb8ff',
+    marginTop: 10,
+    marginBottom: 4,
+    borderBottom: '1px solid #333',
+    paddingBottom: 3,
+};
 
 const smallBtn: React.CSSProperties = {
     border: '1px solid #555',

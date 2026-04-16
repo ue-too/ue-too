@@ -29,7 +29,6 @@ const App = (): ReactNode => {
     const [simHandle, setSimHandle] = useState<V2SimHandle | null>(null);
     const [phase, setPhase] = useState<RacePhase>('gate');
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
-    const [resetKey, setResetKey] = useState(0);
     const [precomputeProgress, setPrecomputeProgress] = useState<number | null>(null);
     const [simulationReady, setSimulationReady] = useState(false);
     const [showWorkbench, setShowWorkbench] = useState(false);
@@ -49,7 +48,6 @@ const App = (): ReactNode => {
             setPhase(p);
             setFinishOrder(order);
             if (p === 'gate') {
-                setResetKey(k => k + 1);
                 setSimulationReady(false);
             }
             if (p === 'running') {
@@ -123,7 +121,6 @@ const App = (): ReactNode => {
                 )}
                 {phase === 'gate' && simHandle && (
                     <HorsePicker
-                        key={resetKey}
                         sim={simHandle}
                         horses={simHandle.getHorses().map(h => ({
                             id: h.id,

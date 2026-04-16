@@ -561,6 +561,7 @@ export class V2Sim {
     }
 
     reset(): void {
+        const savedUrls = new Map(this.horseModelUrls);
         this.race = new Race(this.segments, this.horseCount);
         this.pendingPlayerId = null;
         this.frames = [];
@@ -578,6 +579,12 @@ export class V2Sim {
             this.segments
         );
         this.renderer.syncHorses(this.race.state.horses, null);
+        this.horseModelUrls.clear();
+        for (const [id, url] of savedUrls) {
+            if (id < this.horseCount) {
+                void this.setHorseJockeyUrl(id, url);
+            }
+        }
         this.emitPhase();
     }
 
