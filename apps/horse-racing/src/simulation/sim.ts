@@ -532,8 +532,10 @@ export class V2Sim {
      */
     private async runSimulation(): Promise<void> {
         this.precomputing = true;
-        const MAX_TICKS = 10000; // safety cap
+        const MAX_TICKS = 10000;
         const ESTIMATED_TICKS = 2200;
+        const VISIBLE_BATCH = 20;
+        const HIDDEN_BATCH = 200;
         this.emitPrecomputeProgress(0);
         try {
             let guard = 0;
@@ -544,10 +546,10 @@ export class V2Sim {
             ) {
                 await this.tickAsync();
                 guard++;
-                if (guard % 20 === 0) {
+                const batch = document.hidden ? HIDDEN_BATCH : VISIBLE_BATCH;
+                if (guard % batch === 0) {
                     const progress = Math.min(0.99, guard / ESTIMATED_TICKS);
                     this.emitPrecomputeProgress(progress);
-                    // Yield to the event loop so React can render
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }

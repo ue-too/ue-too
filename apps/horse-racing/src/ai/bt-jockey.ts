@@ -64,8 +64,8 @@ export interface BTConfig {
 export const DEFAULT_CONFIG: BTConfig = {
     cruiseLow: 0.55,
     cruiseHigh: 0.70,
-    targetLane: -0.80,
-    lateralAggression: 0.6,
+    targetLane: -0.90,
+    lateralAggression: 0.7,
     kickPhase: 0.75,
     kickEarlyMargin: 0.10,
     kickLateCap: 0.92,
@@ -99,8 +99,8 @@ export const DEFAULT_CONFIG: BTConfig = {
 
 export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     stalker: {
-        targetLane: -0.60,
-        lateralAggression: 0.5,
+        targetLane: -0.85,
+        lateralAggression: 0.65,
         wDraft: 1.3,
         offLanePenaltyStart: 0.06,
         offLaneTangPenaltyMax: 0.16,
@@ -110,8 +110,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     'front-runner': {
         cruiseLow: 0.72,
         cruiseHigh: 0.85,
-        targetLane: -0.80,
-        lateralAggression: 0.8,
+        targetLane: -0.92,
+        lateralAggression: 0.85,
         kickPhase: 0.65,
         kickEarlyMargin: 0.05,
         kickLateCap: 0.88,
@@ -129,19 +129,19 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLaneAccelRelief: 0.07,
     },
     closer: {
-        cruiseLow: 0.40,
-        cruiseHigh: 0.52,
-        targetLane: -0.30,
-        lateralAggression: 0.4,
-        kickPhase: 0.85,
-        kickEarlyMargin: 0.05,
-        kickLateCap: 0.93,
-        conserveThreshold: 0.50,
+        cruiseLow: 0.48,
+        cruiseHigh: 0.60,
+        targetLane: -0.75,
+        lateralAggression: 0.6,
+        kickPhase: 0.78,
+        kickEarlyMargin: 0.06,
+        kickLateCap: 0.92,
+        conserveThreshold: 0.40,
         settleTicks: 50,
         defendOnScore: 0.8,
         wPass: 0.7,
         wKick: 1.5,
-        wDraft: 1.5,
+        wDraft: 1.8,
         // Willing to rate to reach a wide lane early (less abreast stacking).
         offLanePenaltyStart: 0.04,
         offLaneTangPenaltyScale: 0.65,
@@ -152,7 +152,7 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     speedball: {
         cruiseLow: 0.60,
         cruiseHigh: 0.75,
-        targetLane: -0.20,
+        targetLane: -0.80,
         lateralAggression: 0.8,
         kickPhase: 0.70,
         kickEarlyMargin: 0.10,
@@ -172,8 +172,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     steady: {
         cruiseLow: 0.58,
         cruiseHigh: 0.68,
-        targetLane: -0.70,
-        lateralAggression: 0.5,
+        targetLane: -0.88,
+        lateralAggression: 0.65,
         kickPhase: 0.80,
         blockMinSlowness: 0.08,
         passCooldownTicks: 150,
@@ -189,8 +189,8 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
     drifter: {
         cruiseLow: 0.52,
         cruiseHigh: 0.65,
-        targetLane: -0.45,
-        lateralAggression: 0.55,
+        targetLane: -0.82,
+        lateralAggression: 0.65,
         kickPhase: 0.78,
         wPass: 1.0,
         wKick: 1.05,
@@ -507,7 +507,7 @@ export class BTJockey implements Jockey {
         if (this.isBlockedDuringKick(obs)) {
             return { tangential: 1.0, normal: 0.5 };
         }
-        return { tangential: 1.0, normal: lateralNorm > -0.80 ? -0.5 : -0.25 };
+        return { tangential: 1.0, normal: this.steerToLane(lateralNorm, this.config.targetLane) };
     }
 
     private doSettle(
