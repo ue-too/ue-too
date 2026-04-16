@@ -45,8 +45,9 @@ export function spawnHorses(segments: TrackSegment[], horseCount = 4): Horse[] {
     const startPoint: Point = { x: first.startPoint.x, y: first.startPoint.y };
     const frame = probe.getTrackFrame(startPoint);
 
-    const maxSpread = 3.0; // meters — tight formation matching training
-    const laneSpacing = count > 1 ? maxSpread / (count - 1) : 0;
+    // Fixed 1m spacing between horses (body width 0.65m, ~0.35m gap).
+    // Prevents overlap regardless of horse count.
+    const laneSpacing = 1.0;
     const innerEdge = -TRACK_HALF_WIDTH * 0.95; // just off the inside rail
 
     return Array.from({ length: count }, (_, id) => {
