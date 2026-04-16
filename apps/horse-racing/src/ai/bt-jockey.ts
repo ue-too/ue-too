@@ -18,25 +18,29 @@ interface BTConfig {
     blockProgressMax: number;
     blockLateralTol: number;
     conserveThreshold: number;
+    passMinTicks: number;
+    passClearLateral: number;
 }
 
 const DEFAULT_CONFIG: BTConfig = {
-    cruiseLow: 0.325,       // normalized speed (= 0.65 of cruise / 2)
-    cruiseHigh: 0.4,        // normalized speed (= 0.80 of cruise / 2)
+    cruiseLow: 0.325,       // obs speed ratio (tvel/max_speed)
+    cruiseHigh: 0.4,
     kickPhase: 0.75,
     blockProgressMax: 0.03,
     blockLateralTol: 0.15,
     conserveThreshold: 0.30,
+    passMinTicks: 40,
+    passClearLateral: 0.25,
 };
 
-/**
- * Check if opponent slot contains a slower horse directly ahead in same lane.
- */
+const STATE_CRUISE = 0;
+const STATE_PASSING = 1;
+const STATE_KICK = 2;
+
 function isBlocked(obs: Float64Array, cfg: BTConfig): boolean {
     for (let s = 0; s < OPPONENT_SLOTS; s++) {
         const base = OPP_BASE + s * OPPONENT_SLOT_SIZE;
-        const active = obs[base + 0];
-        if (active < 0.5) continue;
+        if (obs[base + 0] < 0.5) continue;
         const progressDelta = obs[base + 1];
         const tvelDelta = obs[base + 2];
         const normalOffset = obs[base + 3];
@@ -48,66 +52,37 @@ function isBlocked(obs: Float64Array, cfg: BTConfig): boolean {
     return false;
 }
 
-function decide(obs: Float64Array, cfg: BTConfig): InputState {
-    const progress = obs[0];
-    const speedRatio = obs[1]; // tvel / max_speed
-    const staminaFrac = obs[3];
-    const lateralNorm = obs[15];
-
-    // Phase 1: Final kick
-    if (progress >= cfg.kickPhase) {
-        const tang = 1.0;
-        let normal: number;
-        if (isBlocked(obs, cfg)) {
-            normal = 0.5; // swing wide to pass
-        } else if (lateralNorm > -0.75) {
-            normal = -0.75; // pull inside
-        } else {
-            normal = -0.25;
+function stillBlocked(obs: Float64Array, cfg: BTConfig): boolean {
+    for (let s = 0; s < OPPONENT_SLOTS; s++) {
+        const base = OPP_BASE + s * OPPONENT_SLOT_SIZE;
+        if (obs[base + 0] < 0.5) continue;
+        const progressDelta = obs[base + 1];
+        const normalOffset = obs[base + 3];
+        if (progressDelta > -0.01 && progressDelta < cfg.blockProgressMax) {
+            if (normalOffset < -cfg.passClearLateral) {
+                return true;
+            }
         }
-        return { tangential: tang, normal };
     }
+    return false;
+}
 
-    // Phase 2: Unbox
-    if (isBlocked(obs, cfg)) {
-        const tang = staminaFrac > cfg.conserveThreshold ? 0.75 : 0.5;
-        return { tangential: tang, normal: 0.5 };
-    }
-
-    // Phase 3: Cruise + hold inside
-    let tang: number;
-    if (speedRatio < cfg.cruiseLow) {
-        tang = 0.75;
-    } else if (speedRatio > cfg.cruiseHigh) {
-        tang = 0.0;
-    } else {
-        tang = 0.25;
-    }
-    if (staminaFrac < cfg.conserveThreshold) {
-        tang = Math.min(tang, 0.25);
-    }
-
-    let normal: number;
-    if (lateralNorm > -0.75) {
-        normal = -0.75;
-    } else {
-        normal = -0.25;
-    }
-
-    return { tangential: tang, normal };
+interface HorseState {
+    state: number;
+    ticks: number;
 }
 
 /**
- * Behavior-tree jockey — reactive, tactical opponent using the agent's obs.
+ * Behavior-tree jockey with committed maneuvers (CRUISE / PASSING / KICK).
  *
- * Decisions:
- * 1. Final kick (past 75% progress): full push, pull inside unless blocked.
- * 2. Unbox: if slower horse directly ahead in same lane, swing wide.
- * 3. Cruise: hold speed in band, pull to inside rail.
+ * Holds per-horse state so passing commits for pass_min_ticks instead of
+ * flipping back and forth every frame. Uses only the agent's observation
+ * vector — no privileged access to race state.
  */
 export class BTJockey implements Jockey {
     private config: BTConfig;
     private disposed = false;
+    private states = new Map<number, HorseState>();
 
     constructor(config: Partial<BTConfig> = {}) {
         this.config = { ...DEFAULT_CONFIG, ...config };
@@ -122,6 +97,94 @@ export class BTJockey implements Jockey {
         horseIds?: number[]
     ): Promise<Map<number, InputState>> {
         return this.computeActions(race, horseIds);
+    }
+
+    resetFrames(): void {
+        this.states.clear();
+    }
+
+    private getState(id: number): HorseState {
+        let s = this.states.get(id);
+        if (!s) {
+            s = { state: STATE_CRUISE, ticks: 0 };
+            this.states.set(id, s);
+        }
+        return s;
+    }
+
+    private decide(obs: Float64Array, horseId: number): InputState {
+        const cfg = this.config;
+        const progress = obs[0];
+        const speedRatio = obs[1];
+        const staminaFrac = obs[3];
+        const lateralNorm = obs[15];
+        const st = this.getState(horseId);
+
+        // Transition to KICK (absorbing)
+        if (progress >= cfg.kickPhase) {
+            if (st.state !== STATE_KICK) {
+                st.state = STATE_KICK;
+                st.ticks = 0;
+            }
+        }
+
+        if (st.state === STATE_KICK) {
+            st.ticks++;
+            return this.doKick(obs, lateralNorm);
+        }
+
+        if (st.state === STATE_PASSING) {
+            st.ticks++;
+            if (st.ticks >= cfg.passMinTicks && !stillBlocked(obs, cfg)) {
+                st.state = STATE_CRUISE;
+                st.ticks = 0;
+            } else {
+                return this.doPass(staminaFrac);
+            }
+        }
+
+        // CRUISE state
+        if (st.state === STATE_CRUISE) {
+            if (isBlocked(obs, cfg)) {
+                st.state = STATE_PASSING;
+                st.ticks = 0;
+                return this.doPass(staminaFrac);
+            }
+            st.ticks++;
+            return this.doCruise(speedRatio, staminaFrac, lateralNorm);
+        }
+
+        return { tangential: 0.25, normal: -0.25 };
+    }
+
+    private doCruise(
+        speedRatio: number,
+        staminaFrac: number,
+        lateralNorm: number
+    ): InputState {
+        const cfg = this.config;
+        let tang: number;
+        if (speedRatio < cfg.cruiseLow) tang = 0.75;
+        else if (speedRatio > cfg.cruiseHigh) tang = 0.0;
+        else tang = 0.25;
+        if (staminaFrac < cfg.conserveThreshold) tang = Math.min(tang, 0.25);
+
+        const normal = lateralNorm > -0.80 ? -0.5 : -0.25;
+        return { tangential: tang, normal };
+    }
+
+    private doPass(staminaFrac: number): InputState {
+        const cfg = this.config;
+        const tang = staminaFrac > cfg.conserveThreshold ? 0.75 : 0.5;
+        return { tangential: tang, normal: 0.5 };
+    }
+
+    private doKick(obs: Float64Array, lateralNorm: number): InputState {
+        if (isBlocked(obs, this.config)) {
+            return { tangential: 1.0, normal: 0.5 };
+        }
+        const normal = lateralNorm > -0.80 ? -0.5 : -0.25;
+        return { tangential: 1.0, normal };
     }
 
     private computeActions(
@@ -152,7 +215,7 @@ export class BTJockey implements Jockey {
         const allObs = buildObservations(race);
         const actions = new Map<number, InputState>();
         for (const id of targets) {
-            actions.set(id, decide(allObs[id], this.config));
+            actions.set(id, this.decide(allObs[id], id));
         }
         return actions;
     }
