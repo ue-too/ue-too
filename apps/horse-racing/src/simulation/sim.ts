@@ -239,8 +239,14 @@ export class V2Sim {
         if (existing) {
             existing.refCount++;
         } else {
-            const { OnnxJockey } = await import('../ai');
-            const jockey = await OnnxJockey.create(url);
+            let jockey: Jockey;
+            if (url.startsWith('bt://')) {
+                const { BTJockey } = await import('../ai/bt-jockey');
+                jockey = new BTJockey();
+            } else {
+                const { OnnxJockey } = await import('../ai');
+                jockey = await OnnxJockey.create(url);
+            }
             this.jockeyPool.set(url, { jockey, refCount: 1 });
         }
         this.horseModelUrls.set(horseId, url);
