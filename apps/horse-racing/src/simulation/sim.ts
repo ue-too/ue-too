@@ -469,17 +469,6 @@ export class V2Sim {
         this.playbackAccumulator = 0;
         this.simulationReady = false;
 
-        const labels = new Map<number, string>();
-        for (const h of this.race.state.horses) {
-            const url = this.horseModelUrls.get(h.id);
-            if (url?.startsWith('bt://')) {
-                labels.set(h.id, url.slice(5));
-            } else if (url) {
-                labels.set(h.id, url.split('/').pop()?.replace('.onnx', '') ?? url);
-            }
-        }
-        this.renderer.setLabels(labels);
-
         this.emitPhase();
         this.emitPlaybackProgress();
     }

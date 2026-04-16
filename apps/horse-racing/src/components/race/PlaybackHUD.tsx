@@ -139,7 +139,11 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
         [sim]
     );
 
-    const sorted = [...rows].sort((a, b) => b.progress - a.progress);
+    const sorted = [...rows].sort((a, b) => a.id - b.id);
+    const positionByHorse = new Map<number, number>();
+    [...rows]
+        .sort((a, b) => b.progress - a.progress)
+        .forEach((r, i) => positionByHorse.set(r.id, i + 1));
 
     return (
         <div
@@ -201,7 +205,7 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
                         <option value="__none__">Free cam</option>
                         {rows.map(r => (
                             <option key={r.id} value={r.id}>
-                                {r.label}
+                                #{r.id}
                             </option>
                         ))}
                     </select>
@@ -237,7 +241,7 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
                                 }}
                             >
                                 <td style={td}>
-                                    {r.place ?? idx + 1}
+                                    {r.place ?? positionByHorse.get(r.id) ?? idx + 1}
                                 </td>
                                 <td style={td}>
                                     <span
@@ -252,7 +256,7 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
                                         }}
                                     />
                                     <span style={{ verticalAlign: 'middle' }}>
-                                        {r.label}
+                                        #{r.id} {r.label}
                                     </span>
                                 </td>
                                 <td style={td}>{r.speed.toFixed(1)}</td>

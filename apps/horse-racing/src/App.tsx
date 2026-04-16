@@ -59,10 +59,9 @@ const App = (): ReactNode => {
                     if (url?.startsWith('bt://')) {
                         labels.set(h.id, url.slice(5));
                     } else if (url) {
-                        const name = url.split('/').pop()?.replace('.onnx', '') ?? url;
-                        labels.set(h.id, name);
+                        labels.set(h.id, url.split('/').pop()?.replace('.onnx', '') ?? url);
                     } else {
-                        labels.set(h.id, `Horse ${h.id}`);
+                        labels.set(h.id, 'no AI');
                     }
                 }
                 setHorseLabels(labels);

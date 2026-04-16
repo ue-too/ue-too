@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics } from 'pixi.js';
 import type { CurveSegment, StraightSegment, TrackSegment } from './track-types';
 
 import { TRACK_HALF_WIDTH, type Horse } from './types';
@@ -16,14 +16,7 @@ const HORSE_LENGTH = 2.0;
 const HORSE_WIDTH = 0.65;
 const PLAYER_OUTLINE_COLOR = 0xffff00;
 const PLAYER_OUTLINE_WIDTH = 0.25;
-const LABEL_STYLE = new TextStyle({
-    fontFamily: 'monospace',
-    fontSize: 10,
-    fill: 0xffffff,
-    stroke: { color: 0x000000, width: 3 },
-    align: 'center',
-});
-const TRACE_WIDTH = 1.2;
+const TRACE_WIDTH = 5;
 const TRACE_ALPHA = 0.55;
 
 // ---- Geometry helpers ----
@@ -227,11 +220,9 @@ function drawHorse(color: number, isPlayer: boolean): Graphics {
 export class RaceRenderer {
     private horseGfx = new Map<number, Graphics>();
     private horseColors = new Map<number, number>();
-    private horseLabelGfx = new Map<number, Text>();
     private traceGfx = new Map<number, Graphics>();
     private traceContainer: Container;
     private trackGfx: Graphics;
-    private labels = new Map<number, string>();
     private lastTraceIdx = -1;
 
     constructor(private stage: Container, segments: TrackSegment[]) {
@@ -239,13 +230,6 @@ export class RaceRenderer {
         stage.addChild(this.trackGfx);
         this.traceContainer = new Container();
         stage.addChild(this.traceContainer);
-    }
-
-    setLabels(labels: Map<number, string>): void {
-        this.labels = labels;
-        for (const [id, txt] of this.horseLabelGfx) {
-            txt.text = labels.get(id) ?? '';
-        }
     }
 
     /**
@@ -275,17 +259,6 @@ export class RaceRenderer {
                 const frame = h.navigator.getTrackFrame(h.pos);
                 gfx.rotation = Math.atan2(frame.tangential.y, frame.tangential.x);
             }
-
-            let label = this.horseLabelGfx.get(h.id);
-            if (!label) {
-                label = new Text({ text: this.labels.get(h.id) ?? '', style: LABEL_STYLE });
-                label.anchor.set(0.5, 1);
-                label.scale.set(0.12);
-                this.stage.addChild(label);
-                this.horseLabelGfx.set(h.id, label);
-            }
-            label.position.set(h.pos.x, h.pos.y - HORSE_WIDTH * 0.8);
-            label.rotation = 0;
         }
     }
 
@@ -334,8 +307,6 @@ export class RaceRenderer {
         for (const g of this.horseGfx.values()) g.destroy();
         this.horseGfx.clear();
         this.horseColors.clear();
-        for (const t of this.horseLabelGfx.values()) t.destroy();
-        this.horseLabelGfx.clear();
         for (const g of this.traceGfx.values()) g.destroy();
         this.traceGfx.clear();
         this.traceContainer.destroy();
