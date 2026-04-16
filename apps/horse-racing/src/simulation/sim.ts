@@ -239,6 +239,7 @@ export class V2Sim {
             this.race.state.playerHorseId,
             rotations
         );
+        this.renderer.drawTraces(this.frames, index);
         const follow = this.followTarget ?? this.race.state.playerHorseId;
         if (follow !== null) {
             const h = this.race.state.horses[follow];
@@ -467,6 +468,18 @@ export class V2Sim {
         this.playbackPaused = false;
         this.playbackAccumulator = 0;
         this.simulationReady = false;
+
+        const labels = new Map<number, string>();
+        for (const h of this.race.state.horses) {
+            const url = this.horseModelUrls.get(h.id);
+            if (url?.startsWith('bt://')) {
+                labels.set(h.id, url.slice(5));
+            } else if (url) {
+                labels.set(h.id, url.split('/').pop()?.replace('.onnx', '') ?? url);
+            }
+        }
+        this.renderer.setLabels(labels);
+
         this.emitPhase();
         this.emitPlaybackProgress();
     }
