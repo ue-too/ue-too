@@ -55,6 +55,8 @@ export function makeInitApp(
             setHorseCount: count => sim.setHorseCount(count),
             onPhaseChange: cb => sim.onPhaseChange(cb),
             onPrecomputeProgress: cb => sim.onPrecomputeProgress(cb),
+            onSimulationReady: cb => sim.onSimulationReady(cb),
+            playback: () => sim.playback(),
             setJockey: (jockey: Jockey) => sim.setJockey(jockey),
             setHorseJockey: (horseId: number, jockey: Jockey | null) => sim.setHorseJockey(horseId, jockey),
             getHorseJockeyUrl: (horseId: number) => sim.getHorseJockeyUrl(horseId),

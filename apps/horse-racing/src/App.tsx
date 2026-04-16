@@ -29,6 +29,7 @@ const App = (): ReactNode => {
     const [finishOrder, setFinishOrder] = useState<number[]>([]);
     const [resetKey, setResetKey] = useState(0);
     const [precomputeProgress, setPrecomputeProgress] = useState<number | null>(null);
+    const [simulationReady, setSimulationReady] = useState(false);
 
     const initFunction = useMemo(
         () => makeInitApp(handle => setSimHandle(handle)),
@@ -40,14 +41,22 @@ const App = (): ReactNode => {
         const unsubscribe = simHandle.onPhaseChange((p, order) => {
             setPhase(p);
             setFinishOrder(order);
-            if (p === 'gate') setResetKey(k => k + 1);
+            if (p === 'gate') {
+                setResetKey(k => k + 1);
+                setSimulationReady(false);
+            }
+            if (p === 'running') setSimulationReady(false);
         });
         const unsubscribeProgress = simHandle.onPrecomputeProgress(p => {
             setPrecomputeProgress(p);
         });
+        const unsubscribeReady = simHandle.onSimulationReady(() => {
+            setSimulationReady(true);
+        });
         return () => {
             unsubscribe();
             unsubscribeProgress();
+            unsubscribeReady();
         };
     }, [simHandle]);
 
@@ -75,16 +84,29 @@ const App = (): ReactNode => {
                 {simHandle && phase === 'running' && (
                     <StaminaOverlay sim={simHandle} />
                 )}
-                {precomputeProgress !== null && (
-                    <PrecomputeModal progress={precomputeProgress} />
+                {(precomputeProgress !== null || simulationReady) && simHandle && (
+                    <PrecomputeModal
+                        progress={precomputeProgress}
+                        ready={simulationReady}
+                        onPlay={() => simHandle.playback()}
+                    />
                 )}
             </Wrapper>
         </div>
     );
 };
 
-function PrecomputeModal({ progress }: { progress: number }): ReactNode {
-    const pct = Math.round(progress * 100);
+function PrecomputeModal({
+    progress,
+    ready,
+    onPlay,
+}: {
+    progress: number | null;
+    ready: boolean;
+    onPlay: () => void;
+}): ReactNode {
+    const showProgress = !ready && progress !== null;
+    const pct = showProgress ? Math.round((progress ?? 0) * 100) : 100;
     return (
         <div
             style={{
@@ -109,33 +131,61 @@ function PrecomputeModal({ progress }: { progress: number }): ReactNode {
                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 }}
             >
-                <div style={{ fontSize: 16, marginBottom: 12, fontWeight: 500 }}>
-                    Simulating race...
-                </div>
-                <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
-                    Running physics and AI decisions.
-                </div>
-                <div
-                    style={{
-                        width: '100%',
-                        height: 8,
-                        background: '#333',
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                    }}
-                >
-                    <div
-                        style={{
-                            width: `${pct}%`,
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #4a9eff, #22d3ee)',
-                            transition: 'width 0.15s ease-out',
-                        }}
-                    />
-                </div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
-                    {pct}%
-                </div>
+                {ready ? (
+                    <>
+                        <div style={{ fontSize: 18, marginBottom: 8, fontWeight: 500 }}>
+                            Race ready
+                        </div>
+                        <div style={{ fontSize: 13, color: '#888', marginBottom: 20 }}>
+                            Simulation complete. Click to watch the replay.
+                        </div>
+                        <button
+                            onClick={onPlay}
+                            style={{
+                                padding: '10px 28px',
+                                borderRadius: 8,
+                                border: 'none',
+                                background: 'linear-gradient(90deg, #4a9eff, #22d3ee)',
+                                color: '#0a0a0a',
+                                fontSize: 15,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            ▶ Play
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <div style={{ fontSize: 16, marginBottom: 12, fontWeight: 500 }}>
+                            Simulating race...
+                        </div>
+                        <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
+                            Running physics and AI decisions.
+                        </div>
+                        <div
+                            style={{
+                                width: '100%',
+                                height: 8,
+                                background: '#333',
+                                borderRadius: 4,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: `${pct}%`,
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #4a9eff, #22d3ee)',
+                                    transition: 'width 0.15s ease-out',
+                                }}
+                            />
+                        </div>
+                        <div style={{ fontSize: 12, color: '#888', marginTop: 8 }}>
+                            {pct}%
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

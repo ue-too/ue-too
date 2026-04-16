@@ -46,9 +46,15 @@ export interface RaceRecording {
 /** Callback for precompute progress. `null` means not precomputing. */
 export type PrecomputeProgressCallback = (progress: number | null) => void;
 
+/** Fired once the precompute is done and playback can start. */
+export type SimulationReadyCallback = () => void;
+
 export interface V2SimHandle {
     pickHorse(id: number | null): void;
+    /** Stage 1: run the full race simulation (precompute). UI shows progress. */
     start(): void;
+    /** Stage 2: start playback of the precomputed race. Call after ready event. */
+    playback(): void;
     reset(): void;
     getPhase(): RacePhase;
     getHorses(): Horse[];
@@ -56,6 +62,7 @@ export interface V2SimHandle {
     setHorseCount(count: number): void;
     onPhaseChange(cb: PhaseChangeCallback): () => void;
     onPrecomputeProgress(cb: PrecomputeProgressCallback): () => void;
+    onSimulationReady(cb: SimulationReadyCallback): () => void;
     setJockey(jockey: Jockey): void;
     setHorseJockey(horseId: number, jockey: Jockey | null): void;
     getHorseJockeyUrl(horseId: number): string | null;
@@ -85,6 +92,7 @@ export class V2Sim {
     private jockeyPool = new Map<string, { jockey: Jockey; refCount: number }>();
     private frames: RaceFrame[] = [];
     private precomputeListeners = new Set<PrecomputeProgressCallback>();
+    private readyListeners = new Set<SimulationReadyCallback>();
 
     // --- Precompute + playback ---
     /** If set, we're replaying precomputed frames instead of live-simulating. */
@@ -92,6 +100,8 @@ export class V2Sim {
     private playbackIndex = 0;
     /** True while precompute loop is running. */
     private precomputing = false;
+    /** True once precompute finished and frames are ready for playback. */
+    private simulationReady = false;
 
     private horseCount = 4;
 
@@ -326,29 +336,52 @@ export class V2Sim {
         this.pendingPlayerId = id;
     }
 
+    /**
+     * Stage 1: run the entire race simulation upfront.
+     * Does NOT start playback — emits `simulationReady` when done.
+     * UI should call `playback()` to actually start rendering the race.
+     */
     start(): void {
         if (this.race.state.phase !== 'gate') return;
+        if (this.simulationReady || this.precomputing) return;
         this.race.start(this.pendingPlayerId);
         // Reset frame buffers on all jockeys
         this.jockey.resetFrames?.();
         for (const entry of this.jockeyPool.values()) {
             entry.jockey.resetFrames?.();
         }
-        // Precompute the full race upfront, then switch to playback.
-        void this.precomputeThenPlayback();
+        // tickAsync suppresses emitPhase while precomputing, so the UI
+        // stays at 'gate' (no StaminaOverlay, no end screen) during the
+        // simulation. We only emit 'running' when playback actually starts.
+        void this.runSimulation();
+    }
+
+    /**
+     * Stage 2: start playback of the precomputed race.
+     * Must be called after `simulationReady` event fires.
+     */
+    playback(): void {
+        if (!this.simulationReady || this.playbackMode) return;
+        // Recreate the race so navigators/state start fresh for playback.
+        // Horse positions/velocities are rewritten each playback tick anyway,
+        // but we need navigators to start at segment 0 so getTrackFrame()
+        // returns the correct orientation at the start of the track.
+        const playerId = this.pendingPlayerId;
+        this.race = new Race(this.segments, this.horseCount);
+        this.race.start(playerId);
+        this.playbackIndex = 0;
+        this.playbackMode = true;
+        this.simulationReady = false;
         this.emitPhase();
     }
 
     /**
      * Run the entire race synchronously (awaiting inference each tick) and
-     * collect all frames. Then reset the playback index so the render loop
-     * replays from tick 0.
+     * collect all frames. Emits `simulationReady` when done.
      */
-    private async precomputeThenPlayback(): Promise<void> {
+    private async runSimulation(): Promise<void> {
         this.precomputing = true;
         const MAX_TICKS = 10000; // safety cap
-        // Estimate expected tick count from track length / average speed.
-        // Typical race ~2000 ticks. Use this to show progress as percentage.
         const ESTIMATED_TICKS = 2200;
         this.emitPrecomputeProgress(0);
         try {
@@ -360,11 +393,10 @@ export class V2Sim {
             ) {
                 await this.tickAsync();
                 guard++;
-                // Emit progress every 20 ticks to avoid event spam
                 if (guard % 20 === 0) {
                     const progress = Math.min(0.99, guard / ESTIMATED_TICKS);
                     this.emitPrecomputeProgress(progress);
-                    // Yield to the event loop so React can render the modal
+                    // Yield to the event loop so React can render
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }
@@ -373,16 +405,8 @@ export class V2Sim {
             this.emitPrecomputeProgress(null);
         }
         if (this.disposed) return;
-        // Recreate the race so navigators/state start fresh for playback.
-        // Horse positions/velocities are rewritten each playback tick anyway,
-        // but we need navigators to start at segment 0 so getTrackFrame()
-        // returns the correct orientation at the start of the track.
-        const playerId = this.race.state.playerHorseId;
-        this.race = new Race(this.segments, this.horseCount);
-        this.race.start(playerId);
-        // Enter playback from the start of the recorded frames
-        this.playbackIndex = 0;
-        this.playbackMode = true;
+        this.simulationReady = true;
+        this.emitSimulationReady();
     }
 
     reset(): void {
@@ -391,6 +415,7 @@ export class V2Sim {
         this.frames = [];
         this.playbackMode = false;
         this.playbackIndex = 0;
+        this.simulationReady = false;
         this.renderer.dispose();
         this.renderer = new RaceRenderer(
             this.components.app.stage,
@@ -447,6 +472,19 @@ export class V2Sim {
     private emitPrecomputeProgress(progress: number | null): void {
         for (const cb of this.precomputeListeners) {
             cb(progress);
+        }
+    }
+
+    onSimulationReady(cb: SimulationReadyCallback): () => void {
+        this.readyListeners.add(cb);
+        return () => {
+            this.readyListeners.delete(cb);
+        };
+    }
+
+    private emitSimulationReady(): void {
+        for (const cb of this.readyListeners) {
+            cb();
         }
     }
 
