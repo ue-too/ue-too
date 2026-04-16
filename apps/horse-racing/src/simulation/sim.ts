@@ -262,7 +262,7 @@ export class V2Sim {
             this.race.state.playerHorseId,
             rotations
         );
-        this.renderer.drawTraces(this.frames, idxA);
+        this.renderer.drawTraces(this.frames, idxA, this.components.camera.zoomLevel);
         const follow = this.followTarget ?? this.race.state.playerHorseId;
         if (follow !== null) {
             const h = this.race.state.horses[follow];
@@ -292,7 +292,7 @@ export class V2Sim {
             this.race.state.playerHorseId,
             rotations
         );
-        this.renderer.drawTraces(this.frames, index);
+        this.renderer.drawTraces(this.frames, index, this.components.camera.zoomLevel);
         const follow = this.followTarget ?? this.race.state.playerHorseId;
         if (follow !== null) {
             const h = this.race.state.horses[follow];

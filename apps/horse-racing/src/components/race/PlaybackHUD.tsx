@@ -161,7 +161,7 @@ export function PlaybackHUD({ sim, horseLabels }: Props): ReactNode {
                 top: positioned ? pos.y : 56,
                 right: positioned ? undefined : 16,
                 left: positioned ? pos.x : undefined,
-                width: 340,
+                width: 460,
                 maxHeight: 'min(70vh, 600px)',
                 overflow: 'auto',
                 zIndex: 20,

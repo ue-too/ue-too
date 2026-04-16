@@ -17,7 +17,19 @@ const HORSE_WIDTH = 0.65;
 const PLAYER_OUTLINE_COLOR = 0xffff00;
 const PLAYER_OUTLINE_WIDTH = 0.25;
 const TRACE_WIDTH = 5;
-const TRACE_ALPHA = 0.55;
+const TRACE_ALPHA = 0.65;
+const ACCEL_TINT = 0x00ff88;
+const DECEL_TINT = 0xff2244;
+const TINT_MIX = 0.5;
+
+function blendColor(base: number, tint: number, mix: number): number {
+    const br = (base >> 16) & 0xff, bg = (base >> 8) & 0xff, bb = base & 0xff;
+    const tr = (tint >> 16) & 0xff, tg = (tint >> 8) & 0xff, tb = tint & 0xff;
+    const r = Math.round(br + (tr - br) * mix);
+    const g = Math.round(bg + (tg - bg) * mix);
+    const b = Math.round(bb + (tb - bb) * mix);
+    return (r << 16) | (g << 8) | b;
+}
 
 // ---- Geometry helpers ----
 
@@ -224,6 +236,7 @@ export class RaceRenderer {
     private traceContainer: Container;
     private trackGfx: Graphics;
     private lastTraceIdx = -1;
+    private lastTraceZoom = -1;
 
     constructor(private stage: Container, segments: TrackSegment[]) {
         this.trackGfx = drawTrack(segments);
@@ -266,11 +279,12 @@ export class RaceRenderer {
      * Draw position traces for all horses up to `frameIndex` (inclusive).
      * Skips redraw when the index hasn't changed.
      */
-    drawTraces(frames: RaceFrame[], frameIndex: number): void {
+    drawTraces(frames: RaceFrame[], frameIndex: number, zoomLevel = 1): void {
         const endIdx = Math.min(frameIndex, frames.length - 1);
         if (endIdx < 0) return;
-        if (endIdx === this.lastTraceIdx) return;
+        if (endIdx === this.lastTraceIdx && zoomLevel === this.lastTraceZoom) return;
         this.lastTraceIdx = endIdx;
+        this.lastTraceZoom = zoomLevel;
 
         const horseCount = frames[0]?.horses.length ?? 0;
 
@@ -284,15 +298,22 @@ export class RaceRenderer {
             }
             g.clear();
 
-            const first = frames[0].horses[hi];
-            g.moveTo(first.x, first.y);
+            const baseColor = this.horseColors.get(id) ?? 0xffffff;
+            const accelColor = blendColor(baseColor, ACCEL_TINT, TINT_MIX);
+            const decelColor = blendColor(baseColor, DECEL_TINT, TINT_MIX);
+
+            const w = TRACE_WIDTH / zoomLevel;
+            let prevHf = frames[0].horses[hi];
             for (let fi = 1; fi <= endIdx; fi++) {
                 const hf = frames[fi].horses[hi];
                 if (!hf) break;
+                const accel = hf.tVel - prevHf.tVel;
+                const segColor = accel > 0.001 ? accelColor : accel < -0.001 ? decelColor : baseColor;
+                g.moveTo(prevHf.x, prevHf.y);
                 g.lineTo(hf.x, hf.y);
+                g.stroke({ width: w, color: segColor, alpha: TRACE_ALPHA });
+                prevHf = hf;
             }
-            const color = this.horseColors.get(id) ?? 0xffffff;
-            g.stroke({ width: TRACE_WIDTH, color, alpha: TRACE_ALPHA, pixelLine: true });
         }
     }
 
@@ -301,6 +322,7 @@ export class RaceRenderer {
             g.clear();
         }
         this.lastTraceIdx = -1;
+        this.lastTraceZoom = -1;
     }
 
     dispose(): void {
