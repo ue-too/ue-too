@@ -1,3 +1,4 @@
+import { ChevronFirst, ChevronLast, Pause, Play } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 
 import type { V2SimHandle } from '@/simulation';
@@ -71,7 +72,7 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 title="Step back"
                 style={iconBtn}
             >
-                ⏮
+                <ChevronFirst size={16} />
             </button>
 
             <button
@@ -85,14 +86,17 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                     background: paused ? '#4a9eff' : '#333',
                     color: 'white',
                     cursor: 'pointer',
-                    fontSize: 14,
                     flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}
             >
-                {paused ? '▶' : '❚❚'}
+                {paused ? (
+                    <Play size={16} fill="currentColor" style={{ marginLeft: 2 }} />
+                ) : (
+                    <Pause size={16} fill="currentColor" />
+                )}
             </button>
 
             <button
@@ -101,7 +105,7 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 title="Step forward"
                 style={iconBtn}
             >
-                ⏭
+                <ChevronLast size={16} />
             </button>
 
             <input
