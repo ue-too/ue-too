@@ -81,6 +81,13 @@ export class V2Sim {
     private jockeyPool = new Map<string, { jockey: Jockey; refCount: number }>();
     private frames: RaceFrame[] = [];
 
+    // --- Precompute + playback ---
+    /** If set, we're replaying precomputed frames instead of live-simulating. */
+    private playbackMode = false;
+    private playbackIndex = 0;
+    /** True while precompute loop is running. */
+    private precomputing = false;
+
     private horseCount = 4;
 
     constructor(
@@ -97,9 +104,50 @@ export class V2Sim {
     }
 
     private tick(): void {
-        if (this.disposed || this.ticking) return;
+        if (this.disposed) return;
+        if (this.playbackMode) {
+            this.playbackTick();
+            return;
+        }
+        if (this.precomputing || this.ticking) return;
         this.ticking = true;
         this.tickAsync().finally(() => { this.ticking = false; });
+    }
+
+    /** Render one frame from precomputed data, no physics. */
+    private playbackTick(): void {
+        if (this.playbackIndex >= this.frames.length) {
+            // End of playback — ensure race phase is 'finished' and emit
+            if (this.race.state.phase !== 'finished') {
+                this.race.state.phase = 'finished';
+                this.emitPhase();
+            }
+            return;
+        }
+        const frame = this.frames[this.playbackIndex];
+        // Write frame's horse state back into the live race objects (for rendering)
+        for (const recorded of frame.horses) {
+            const h = this.race.state.horses[recorded.id];
+            if (!h) continue;
+            h.pos.x = recorded.x;
+            h.pos.y = recorded.y;
+            h.tangentialVel = recorded.tVel;
+            h.normalVel = recorded.nVel;
+            h.trackProgress = recorded.progress;
+            h.currentStamina = recorded.stamina;
+            h.finished = recorded.finished;
+            h.finishOrder = recorded.finishOrder;
+        }
+        this.renderer.syncHorses(
+            this.race.state.horses,
+            this.race.state.playerHorseId
+        );
+        const pid = this.race.state.playerHorseId;
+        if (pid !== null) {
+            const h = this.race.state.horses[pid];
+            this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
+        }
+        this.playbackIndex++;
     }
 
     private async tickAsync(): Promise<void> {
@@ -148,6 +196,10 @@ export class V2Sim {
         if (this.race.state.phase === 'running' || prevPhase === 'running') {
             this.recordFrame(inputs);
         }
+
+        // Skip rendering + phase emission while precomputing (we'll emit once
+        // playback starts, and rendering happens on the playback tick).
+        if (this.precomputing) return;
 
         this.renderer.syncHorses(
             this.race.state.horses,
@@ -273,13 +325,46 @@ export class V2Sim {
         for (const entry of this.jockeyPool.values()) {
             entry.jockey.resetFrames?.();
         }
+        // Precompute the full race upfront, then switch to playback.
+        void this.precomputeThenPlayback();
         this.emitPhase();
+    }
+
+    /**
+     * Run the entire race synchronously (awaiting inference each tick) and
+     * collect all frames. Then reset the playback index so the render loop
+     * replays from tick 0.
+     */
+    private async precomputeThenPlayback(): Promise<void> {
+        this.precomputing = true;
+        const MAX_TICKS = 10000; // safety cap
+        try {
+            let guard = 0;
+            while (
+                !this.disposed &&
+                this.race.state.phase === 'running' &&
+                guard < MAX_TICKS
+            ) {
+                await this.tickAsync();
+                guard++;
+            }
+        } finally {
+            this.precomputing = false;
+        }
+        if (this.disposed) return;
+        // Enter playback from the start of the recorded frames
+        this.playbackIndex = 0;
+        this.playbackMode = true;
+        // Reset phase back to 'running' for playback emission
+        this.race.state.phase = 'running';
     }
 
     reset(): void {
         this.race = new Race(this.segments, this.horseCount);
         this.pendingPlayerId = null;
         this.frames = [];
+        this.playbackMode = false;
+        this.playbackIndex = 0;
         this.renderer.dispose();
         this.renderer = new RaceRenderer(
             this.components.app.stage,
