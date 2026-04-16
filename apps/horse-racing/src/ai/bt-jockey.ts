@@ -23,8 +23,9 @@ interface BTConfig {
 }
 
 const DEFAULT_CONFIG: BTConfig = {
-    cruiseLow: 0.325,       // obs speed ratio (tvel/max_speed)
-    cruiseHigh: 0.4,
+    // obs speed_ratio = tvel/max_speed. Natural cruise ~13 m/s → ratio ~0.65.
+    cruiseLow: 0.55,        // ~11 m/s
+    cruiseHigh: 0.70,       // ~14 m/s
     kickPhase: 0.75,
     blockProgressMax: 0.03,
     blockLateralTol: 0.15,
@@ -164,7 +165,8 @@ export class BTJockey implements Jockey {
     ): InputState {
         const cfg = this.config;
         let tang: number;
-        if (speedRatio < cfg.cruiseLow) tang = 0.75;
+        // Default cruise is 0.25; gentle push when below, coast when above.
+        if (speedRatio < cfg.cruiseLow) tang = 0.5;
         else if (speedRatio > cfg.cruiseHigh) tang = 0.0;
         else tang = 0.25;
         if (staminaFrac < cfg.conserveThreshold) tang = Math.min(tang, 0.25);
