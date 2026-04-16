@@ -93,6 +93,9 @@ export class V2Sim {
     private frames: RaceFrame[] = [];
     private precomputeListeners = new Set<PrecomputeProgressCallback>();
     private readyListeners = new Set<SimulationReadyCallback>();
+    /** finishOrder and tick count from the precomputed race (cleared on reset). */
+    private simulatedFinishOrder: number[] = [];
+    private simulatedTotalTicks = 0;
 
     // --- Precompute + playback ---
     /** If set, we're replaying precomputed frames instead of live-simulating. */
@@ -324,8 +327,13 @@ export class V2Sim {
     }
 
     private emitPhase(): void {
+        // During playback the race object is fresh and has no finishOrder —
+        // use the preserved finishOrder from the precomputed race instead.
+        const order = (this.playbackMode || this.simulatedFinishOrder.length > 0)
+            ? this.simulatedFinishOrder
+            : this.race.state.finishOrder;
         for (const cb of this.listeners) {
-            cb(this.race.state.phase, [...this.race.state.finishOrder]);
+            cb(this.race.state.phase, [...order]);
         }
     }
 
@@ -362,6 +370,10 @@ export class V2Sim {
      */
     playback(): void {
         if (!this.simulationReady || this.playbackMode) return;
+        // Preserve finishOrder and tick count from the precomputed race
+        // so RaceEndOverlay and exportRace see the right values.
+        this.simulatedFinishOrder = [...this.race.state.finishOrder];
+        this.simulatedTotalTicks = this.race.state.tick;
         // Recreate the race so navigators/state start fresh for playback.
         // Horse positions/velocities are rewritten each playback tick anyway,
         // but we need navigators to start at segment 0 so getTrackFrame()
@@ -416,6 +428,8 @@ export class V2Sim {
         this.playbackMode = false;
         this.playbackIndex = 0;
         this.simulationReady = false;
+        this.simulatedFinishOrder = [];
+        this.simulatedTotalTicks = 0;
         this.renderer.dispose();
         this.renderer = new RaceRenderer(
             this.components.app.stage,
@@ -437,10 +451,18 @@ export class V2Sim {
 
     exportRace(): RaceRecording | null {
         if (this.frames.length === 0) return null;
+        // During/after playback, the race object is fresh — use the
+        // preserved values from the precomputed simulation.
+        const order = this.simulatedFinishOrder.length > 0
+            ? this.simulatedFinishOrder
+            : this.race.state.finishOrder;
+        const ticks = this.simulatedTotalTicks > 0
+            ? this.simulatedTotalTicks
+            : this.race.state.tick;
         return {
             horseCount: this.race.state.horses.length,
-            finishOrder: [...this.race.state.finishOrder],
-            totalTicks: this.race.state.tick,
+            finishOrder: [...order],
+            totalTicks: ticks,
             frames: this.frames,
         };
     }
@@ -456,7 +478,10 @@ export class V2Sim {
     onPhaseChange(cb: PhaseChangeCallback): () => void {
         this.listeners.add(cb);
         // Fire immediately so new subscribers see current state.
-        cb(this.race.state.phase, [...this.race.state.finishOrder]);
+        const order = this.simulatedFinishOrder.length > 0
+            ? this.simulatedFinishOrder
+            : this.race.state.finishOrder;
+        cb(this.race.state.phase, [...order]);
         return () => {
             this.listeners.delete(cb);
         };
