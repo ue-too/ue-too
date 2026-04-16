@@ -38,6 +38,42 @@ const DEFAULT_CONFIG: BTConfig = {
     passCooldownTicks: 80,  // no repeat passing for this many ticks after a pass
 };
 
+// ============================================================
+// Archetypes — preset configs for different racing styles.
+// ============================================================
+
+export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
+    stalker: {},                       // defaults
+    'front-runner': {
+        cruiseLow: 0.65,
+        cruiseHigh: 0.80,
+        kickPhase: 0.65,
+        blockMinSlowness: 0.01,
+        passCooldownTicks: 40,
+    },
+    closer: {
+        cruiseLow: 0.45,
+        cruiseHigh: 0.60,
+        kickPhase: 0.85,
+        conserveThreshold: 0.50,
+    },
+    speedball: {
+        cruiseLow: 0.60,
+        cruiseHigh: 0.75,
+        kickPhase: 0.70,
+        blockMinSlowness: 0.005,
+        passMinTicks: 30,
+        passCooldownTicks: 30,
+    },
+    steady: {
+        cruiseLow: 0.58,
+        cruiseHigh: 0.68,
+        kickPhase: 0.80,
+        blockMinSlowness: 0.08,
+        passCooldownTicks: 150,
+    },
+};
+
 const STATE_CRUISE = 0;
 const STATE_PASSING = 1;
 const STATE_KICK = 2;

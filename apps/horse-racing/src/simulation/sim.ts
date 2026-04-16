@@ -295,8 +295,10 @@ export class V2Sim {
         } else {
             let jockey: Jockey;
             if (url.startsWith('bt://')) {
-                const { BTJockey } = await import('../ai/bt-jockey');
-                jockey = new BTJockey();
+                const { BTJockey, ARCHETYPES } = await import('../ai/bt-jockey');
+                const archetype = url.slice('bt://'.length);
+                const config = ARCHETYPES[archetype] ?? {};
+                jockey = new BTJockey(config);
             } else {
                 const { OnnxJockey } = await import('../ai');
                 jockey = await OnnxJockey.create(url);

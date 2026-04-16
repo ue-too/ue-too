@@ -1,7 +1,23 @@
 [
   {
-    "label": "BT (Behavior Tree)",
-    "url": "bt://default"
+    "label": "BT — Stalker",
+    "url": "bt://stalker"
+  },
+  {
+    "label": "BT — Front-runner",
+    "url": "bt://front-runner"
+  },
+  {
+    "label": "BT — Closer",
+    "url": "bt://closer"
+  },
+  {
+    "label": "BT — Speedball",
+    "url": "bt://speedball"
+  },
+  {
+    "label": "BT — Steady",
+    "url": "bt://steady"
   },
   {
     "label": "V13 Jockey",
