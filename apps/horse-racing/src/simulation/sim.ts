@@ -137,6 +137,8 @@ export class V2Sim {
             h.currentStamina = recorded.stamina;
             h.finished = recorded.finished;
             h.finishOrder = recorded.finishOrder;
+            // Sync navigator segment state so getTrackFrame returns correct orientation.
+            h.navigator.updateSegment(h.pos);
         }
         this.renderer.syncHorses(
             this.race.state.horses,
@@ -352,11 +354,16 @@ export class V2Sim {
             this.precomputing = false;
         }
         if (this.disposed) return;
+        // Recreate the race so navigators/state start fresh for playback.
+        // Horse positions/velocities are rewritten each playback tick anyway,
+        // but we need navigators to start at segment 0 so getTrackFrame()
+        // returns the correct orientation at the start of the track.
+        const playerId = this.race.state.playerHorseId;
+        this.race = new Race(this.segments, this.horseCount);
+        this.race.start(playerId);
         // Enter playback from the start of the recorded frames
         this.playbackIndex = 0;
         this.playbackMode = true;
-        // Reset phase back to 'running' for playback emission
-        this.race.state.phase = 'running';
     }
 
     reset(): void {
