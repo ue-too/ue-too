@@ -37,3 +37,22 @@ export function createDefaultAttributes(): CoreAttributes {
         weight: 500,
     };
 }
+
+/**
+ * Sample attributes in TRAIT_RANGES for batch tuning (deterministic if `rng` is).
+ * Weight stays at 500 so the physics world mass stays consistent with spawn.
+ */
+export function createRandomizedAttributes(rng: () => number): CoreAttributes {
+    const r = (range: [number, number]): number =>
+        range[0] + rng() * (range[1] - range[0]);
+    return {
+        cruiseSpeed: r(TRAIT_RANGES.cruiseSpeed),
+        maxSpeed: r(TRAIT_RANGES.maxSpeed),
+        forwardAccel: r(TRAIT_RANGES.forwardAccel),
+        turnAccel: r(TRAIT_RANGES.turnAccel),
+        corneringGrip: r(TRAIT_RANGES.corneringGrip),
+        maxStamina: r(TRAIT_RANGES.maxStamina),
+        drainRateMult: r(TRAIT_RANGES.drainRateMult),
+        weight: 500,
+    };
+}

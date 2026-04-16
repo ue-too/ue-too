@@ -11,6 +11,7 @@ export function PlaybackControls({ sim }: Props): ReactNode {
     const [frame, setFrame] = useState(0);
     const [totalFrames, setTotalFrames] = useState(0);
     const [paused, setPaused] = useState(false);
+    const [speed, setSpeed] = useState(() => sim.getPlaybackSpeed());
 
     useEffect(() => {
         return sim.onPlaybackProgress((f, total, p) => {
@@ -62,7 +63,7 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 color: 'white',
                 zIndex: 20,
                 pointerEvents: 'auto',
-                minWidth: 440,
+                minWidth: 520,
                 boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
             }}
         >
@@ -122,12 +123,52 @@ export function PlaybackControls({ sim }: Props): ReactNode {
                 }}
             />
 
+            <label
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    color: '#bbb',
+                    flexShrink: 0,
+                }}
+            >
+                <span style={{ whiteSpace: 'nowrap' }}>Speed</span>
+                <select
+                    aria-label="Playback speed"
+                    value={String(speed)}
+                    onChange={e => {
+                        const v = Number(e.target.value);
+                        sim.setPlaybackSpeed(v);
+                        setSpeed(sim.getPlaybackSpeed());
+                    }}
+                    style={{
+                        background: '#333',
+                        color: 'white',
+                        border: '1px solid #555',
+                        borderRadius: 6,
+                        padding: '4px 8px',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        maxWidth: 88,
+                    }}
+                >
+                    <option value="0.25">0.25×</option>
+                    <option value="0.5">0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                    <option value="8">8×</option>
+                </select>
+            </label>
+
             <div
                 style={{
                     fontSize: 12,
                     fontFamily: 'monospace',
                     color: '#aaa',
-                    minWidth: 60,
+                    minWidth: 48,
                     textAlign: 'right',
                 }}
             >

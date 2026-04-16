@@ -1,23 +1,11 @@
 [
   {
-    "label": "BT — Stalker",
-    "url": "bt://stalker"
+    "label": "D2 Jockey",
+    "url": "/models/d2_jockey.onnx"
   },
   {
-    "label": "BT — Front-runner",
-    "url": "bt://front-runner"
-  },
-  {
-    "label": "BT — Closer",
-    "url": "bt://closer"
-  },
-  {
-    "label": "BT — Speedball",
-    "url": "bt://speedball"
-  },
-  {
-    "label": "BT — Steady",
-    "url": "bt://steady"
+    "label": "D6 Jockey",
+    "url": "/models/d6_jockey.onnx"
   },
   {
     "label": "V13 Jockey",
@@ -60,23 +48,15 @@
     "url": "/models/v26_jockey.onnx"
   },
   {
-    "label": "V28b Best Jockey",
+    "label": "V28b Jockey",
     "url": "/models/v28b_jockey.onnx"
   },
   {
-    "label": "V32 Best Jockey",
+    "label": "V32 Jockey",
     "url": "/models/v32_jockey.onnx"
   },
   {
-    "label": "V33c Best Jockey",
+    "label": "V33c Jockey",
     "url": "/models/v33c_jockey.onnx"
-  },
-  {
-    "label": "D2 Best Jockey",
-    "url": "/models/d2_jockey.onnx"
-  },
-  {
-    "label": "D6 Best Jockey",
-    "url": "/models/d6_jockey.onnx"
   }
 ]

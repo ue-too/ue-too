@@ -3,13 +3,14 @@ import {
     ScrollBarDisplay,
     Wrapper,
 } from '@ue-too/board-pixi-react-integration';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
+import { BtWorkbench } from '@/components/race/BtWorkbench';
 import { HorsePicker } from '@/components/race/HorsePicker';
 import { PlaybackControls } from '@/components/race/PlaybackControls';
+import { PlaybackHUD } from '@/components/race/PlaybackHUD';
 import { RaceEndOverlay } from '@/components/race/RaceEndOverlay';
 import { RaceToolbar } from '@/components/race/RaceToolbar';
-import { StaminaOverlay } from '@/components/race/StaminaOverlay';
 import type { RacePhase, V2SimHandle } from '@/simulation';
 import { makeInitApp } from '@/utils/init-app';
 
@@ -31,6 +32,10 @@ const App = (): ReactNode => {
     const [resetKey, setResetKey] = useState(0);
     const [precomputeProgress, setPrecomputeProgress] = useState<number | null>(null);
     const [simulationReady, setSimulationReady] = useState(false);
+    const [showWorkbench, setShowWorkbench] = useState(false);
+    const [btVersion, setBtVersion] = useState(0);
+    const bumpBtVersion = useCallback(() => setBtVersion(v => v + 1), []);
+    const [horseLabels, setHorseLabels] = useState<Map<number, string>>(new Map());
 
     const initFunction = useMemo(
         () => makeInitApp(handle => setSimHandle(handle)),
@@ -46,7 +51,22 @@ const App = (): ReactNode => {
                 setResetKey(k => k + 1);
                 setSimulationReady(false);
             }
-            if (p === 'running') setSimulationReady(false);
+            if (p === 'running') {
+                setSimulationReady(false);
+                const labels = new Map<number, string>();
+                for (const h of simHandle.getHorses()) {
+                    const url = simHandle.getHorseJockeyUrl(h.id);
+                    if (url?.startsWith('bt://')) {
+                        labels.set(h.id, url.slice(5));
+                    } else if (url) {
+                        const name = url.split('/').pop()?.replace('.onnx', '') ?? url;
+                        labels.set(h.id, name);
+                    } else {
+                        labels.set(h.id, `Horse ${h.id}`);
+                    }
+                }
+                setHorseLabels(labels);
+            }
         });
         const unsubscribeProgress = simHandle.onPrecomputeProgress(p => {
             setPrecomputeProgress(p);
@@ -68,7 +88,18 @@ const App = (): ReactNode => {
         <div className="app">
             <Wrapper option={WRAPPER_OPTION} initFunction={initFunction}>
                 <ScrollBarDisplay />
-                <RaceToolbar sim={simHandle} phase={phase} />
+                <RaceToolbar
+                    sim={simHandle}
+                    phase={phase}
+                    onOpenBtTune={() => setShowWorkbench(true)}
+                />
+                {showWorkbench && simHandle && (
+                    <BtWorkbench
+                        sim={simHandle}
+                        onClose={() => setShowWorkbench(false)}
+                        onConfigChange={bumpBtVersion}
+                    />
+                )}
                 {phase === 'gate' && simHandle && (
                     <HorsePicker
                         key={resetKey}
@@ -77,16 +108,17 @@ const App = (): ReactNode => {
                             id: h.id,
                             color: h.color,
                         }))}
+                        btVersion={btVersion}
                     />
                 )}
                 {phase === 'finished' && simHandle && (
                     <RaceEndOverlay order={finishOrder} sim={simHandle} />
                 )}
-                {simHandle && phase === 'running' && (
-                    <StaminaOverlay sim={simHandle} />
-                )}
                 {simHandle && (phase === 'running' || phase === 'finished') && (
-                    <PlaybackControls sim={simHandle} />
+                    <>
+                        <PlaybackHUD sim={simHandle} horseLabels={horseLabels} />
+                        <PlaybackControls sim={simHandle} />
+                    </>
                 )}
                 {(precomputeProgress !== null || simulationReady) && simHandle && (
                     <PrecomputeModal

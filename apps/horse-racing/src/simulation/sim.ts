@@ -1,6 +1,8 @@
 import type { BaseAppComponents } from '@ue-too/board-pixi-integration';
 
 import { type Jockey, NullJockey } from '../ai';
+import type { BtBatchRequest, BtBatchResult } from './bt-batch';
+import { runBtBatch } from './bt-batch';
 import { createInputHandler } from './input';
 import { buildObservations } from './observation';
 import { Race } from './race';
@@ -68,6 +70,9 @@ export interface V2SimHandle {
     togglePlayback(): void;
     /** Jump playback to a specific frame index. */
     seekPlayback(frame: number): void;
+    /** Simulation-frame steps per display tick while playing back (default 1). */
+    getPlaybackSpeed(): number;
+    setPlaybackSpeed(multiplier: number): void;
     reset(): void;
     getPhase(): RacePhase;
     getHorses(): Horse[];
@@ -84,6 +89,20 @@ export interface V2SimHandle {
     getHorseJockeyUrl(horseId: number): string | null;
     setHorseJockeyUrl(horseId: number, url: string | null): Promise<void>;
     exportRace(): RaceRecording | null;
+    /** Current track geometry (for headless BT batch tuning). */
+    getTrackSegments(): TrackSegment[];
+    /** Run repeated BT-only races in-process (no rendering). */
+    runBtBatch(req: BtBatchRequest): Promise<BtBatchResult>;
+    /** Camera follow: set which horse ID the camera tracks (null = free). */
+    followHorse(id: number | null): void;
+    getFollowedHorse(): number | null;
+    /** Snapshot of the current playback frame (null if not playing). */
+    getCurrentFrame(): RaceFrame | null;
+    /**
+     * Flush cached jockey for a specific URL so next race recreates it.
+     * Used by the workbench to ensure live config changes take effect.
+     */
+    invalidateJockeyUrl(url: string): void;
     cleanup(): void;
 }
 
@@ -123,8 +142,14 @@ export class V2Sim {
     private simulationReady = false;
     /** When true, playback ticker advances no frames. */
     private playbackPaused = false;
+    /** Display-tick steps toward next sim frame; supports fractional speeds below 1. */
+    private playbackAccumulator = 0;
+    /** Sim frames advanced per Pixi tick (1 = realtime-ish). */
+    private playbackSpeed = 1;
     private playbackListeners = new Set<PlaybackProgressCallback>();
 
+    /** Which horse the camera follows during playback (null = no auto-follow). */
+    private followTarget: number | null = null;
     private horseCount = 4;
 
     constructor(
@@ -162,10 +187,39 @@ export class V2Sim {
             }
             return;
         }
-        // Render the current frame even when paused (so seek updates visually).
-        // But only advance the index when not paused.
-        const frame = this.frames[this.playbackIndex];
-        // Write frame's horse state back into the live race objects (for rendering)
+        // Paused: redraw current frame only (seek uses the same path).
+        if (this.playbackPaused) {
+            this.applyPlaybackFrame(this.playbackIndex);
+            this.emitPlaybackProgress();
+            return;
+        }
+
+        this.playbackAccumulator += this.playbackSpeed;
+        const maxSteps = 64;
+        let steps = 0;
+        while (
+            this.playbackAccumulator >= 1 &&
+            this.playbackIndex < this.frames.length &&
+            steps < maxSteps
+        ) {
+            this.playbackAccumulator -= 1;
+            this.applyPlaybackFrame(this.playbackIndex);
+            this.playbackIndex++;
+            steps++;
+        }
+
+        if (this.playbackIndex >= this.frames.length) {
+            if (this.race.state.phase !== 'finished') {
+                this.race.state.phase = 'finished';
+                this.emitPhase();
+            }
+        }
+        this.emitPlaybackProgress();
+    }
+
+    /** Apply recorded horse state for one frame index (playback / seek). */
+    private applyPlaybackFrame(index: number): void {
+        const frame = this.frames[index];
         const rotations = new Map<number, number>();
         for (const recorded of frame.horses) {
             const h = this.race.state.horses[recorded.id];
@@ -178,8 +232,6 @@ export class V2Sim {
             h.currentStamina = recorded.stamina;
             h.finished = recorded.finished;
             h.finishOrder = recorded.finishOrder;
-            // Use recorded rotation directly — avoids navigator jumping issues
-            // on closed tracks and after seek scrubbing.
             rotations.set(recorded.id, recorded.rotation);
         }
         this.renderer.syncHorses(
@@ -187,15 +239,11 @@ export class V2Sim {
             this.race.state.playerHorseId,
             rotations
         );
-        const pid = this.race.state.playerHorseId;
-        if (pid !== null) {
-            const h = this.race.state.horses[pid];
-            this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
+        const follow = this.followTarget ?? this.race.state.playerHorseId;
+        if (follow !== null) {
+            const h = this.race.state.horses[follow];
+            if (h) this.components.camera.setPosition({ x: h.pos.x, y: h.pos.y });
         }
-        if (!this.playbackPaused) {
-            this.playbackIndex++;
-        }
-        this.emitPlaybackProgress();
     }
 
     private async tickAsync(): Promise<void> {
@@ -417,6 +465,7 @@ export class V2Sim {
         this.playbackIndex = 0;
         this.playbackMode = true;
         this.playbackPaused = false;
+        this.playbackAccumulator = 0;
         this.simulationReady = false;
         this.emitPhase();
         this.emitPlaybackProgress();
@@ -463,6 +512,8 @@ export class V2Sim {
         this.playbackMode = false;
         this.playbackIndex = 0;
         this.playbackPaused = false;
+        this.playbackAccumulator = 0;
+        this.playbackSpeed = 1;
         this.simulationReady = false;
         this.simulatedFinishOrder = [];
         this.simulatedTotalTicks = 0;
@@ -507,6 +558,42 @@ export class V2Sim {
             totalTicks: ticks,
             frames: this.frames,
         };
+    }
+
+    getTrackSegments(): TrackSegment[] {
+        return this.segments;
+    }
+
+    runBtBatch(req: BtBatchRequest): Promise<BtBatchResult> {
+        return runBtBatch(this.segments, req);
+    }
+
+    followHorse(id: number | null): void {
+        this.followTarget = id;
+    }
+
+    getFollowedHorse(): number | null {
+        return this.followTarget;
+    }
+
+    getCurrentFrame(): RaceFrame | null {
+        if (!this.playbackMode || this.frames.length === 0) return null;
+        const idx = Math.min(this.playbackIndex, this.frames.length - 1);
+        return this.frames[idx] ?? null;
+    }
+
+    invalidateJockeyUrl(url: string): void {
+        const entry = this.jockeyPool.get(url);
+        if (!entry) return;
+        const horseIds = [...this.horseModelUrls.entries()]
+            .filter(([, u]) => u === url)
+            .map(([id]) => id);
+        entry.jockey.dispose();
+        this.jockeyPool.delete(url);
+        for (const id of horseIds) {
+            this.horseModelUrls.delete(id);
+            void this.setHorseJockeyUrl(id, url);
+        }
     }
 
     getPhase(): RacePhase {
@@ -582,12 +669,23 @@ export class V2Sim {
         if (!this.playbackMode || this.frames.length === 0) return;
         const clamped = Math.max(0, Math.min(this.frames.length - 1, Math.floor(frame)));
         this.playbackIndex = clamped;
+        this.playbackAccumulator = 0;
         // Re-arm 'running' phase if we had played to the end.
         if (this.race.state.phase === 'finished') {
             this.race.state.phase = 'running';
             this.emitPhase();
         }
         this.emitPlaybackProgress();
+    }
+
+    getPlaybackSpeed(): number {
+        return this.playbackSpeed;
+    }
+
+    setPlaybackSpeed(multiplier: number): void {
+        const m = Number(multiplier);
+        if (!Number.isFinite(m)) return;
+        this.playbackSpeed = Math.min(8, Math.max(0.25, m));
     }
 
     cleanup(): void {

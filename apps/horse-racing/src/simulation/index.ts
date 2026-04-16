@@ -4,7 +4,10 @@ export {
     type V2SimHandle,
     type PhaseChangeCallback,
     type RaceRecording,
+    type RaceFrame,
+    type HorseFrame,
 } from './sim';
+export type { BtBatchRequest, BtBatchResult, BtArchetypeAggregate } from './bt-batch';
 export type { Horse, InputState, RacePhase, RaceState } from './types';
 export { MAX_HORSES } from './types';
 export type { CoreAttributes } from './attributes';

@@ -6,6 +6,7 @@ import type { RacePhase, V2SimHandle } from '@/simulation';
 interface Props {
     sim: V2SimHandle | null;
     phase: RacePhase;
+    onOpenBtTune?: () => void;
 }
 
 const buttonStyle: React.CSSProperties = {
@@ -18,7 +19,7 @@ const buttonStyle: React.CSSProperties = {
     cursor: 'pointer',
 };
 
-export function RaceToolbar({ sim, phase }: Props): ReactNode {
+export function RaceToolbar({ sim, phase, onOpenBtTune }: Props): ReactNode {
     if (!sim) return null;
 
     return (
@@ -48,6 +49,16 @@ export function RaceToolbar({ sim, phase }: Props): ReactNode {
             {(phase === 'running' || phase === 'finished') && (
                 <button style={buttonStyle} onClick={() => sim.reset()}>
                     Reset
+                </button>
+            )}
+            {onOpenBtTune && (
+                <button
+                    type="button"
+                    style={buttonStyle}
+                    onClick={onOpenBtTune}
+                    title="Open BT workbench — edit knobs, run races, export configs"
+                >
+                    Workbench
                 </button>
             )}
         </div>

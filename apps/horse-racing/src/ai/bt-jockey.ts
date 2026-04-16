@@ -16,7 +16,12 @@ const STATE_PASSING = 1;
 const STATE_KICK = 2;
 const STATE_SETTLING = 3;
 
-interface BTConfig {
+/**
+ * Tunable BT parameters — keep **all fields and default numbers** in sync with
+ * `horse_racing/opponents/behavior_tree.py` (`BTConfig` + defaults + archetypes)
+ * in the hr-simulation repo (camelCase here ↔ snake_case there).
+ */
+export interface BTConfig {
     cruiseLow: number;
     cruiseHigh: number;
     targetLane: number;
@@ -55,7 +60,8 @@ interface BTConfig {
     offLaneAccelRelief: number;
 }
 
-const DEFAULT_CONFIG: BTConfig = {
+/** Default BT tuning values — keep in sync with Python `BTConfig`. */
+export const DEFAULT_CONFIG: BTConfig = {
     cruiseLow: 0.55,
     cruiseHigh: 0.70,
     targetLane: -0.80,
@@ -88,6 +94,7 @@ const DEFAULT_CONFIG: BTConfig = {
 
 // ============================================================
 // Archetypes — weight profiles for different racing styles.
+// Must match `ARCHETYPES` / archetype_*() in behavior_tree.py (same keys & values).
 // ============================================================
 
 export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
@@ -179,7 +186,72 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         offLaneDecelScale: 1.05,
         offLaneAccelRelief: 0.02,
     },
+    drifter: {
+        cruiseLow: 0.52,
+        cruiseHigh: 0.65,
+        targetLane: -0.45,
+        lateralAggression: 0.55,
+        kickPhase: 0.78,
+        wPass: 1.0,
+        wKick: 1.05,
+        wDraft: 1.2,
+        offLanePenaltyStart: 0.055,
+        offLaneTangPenaltyScale: 0.42,
+        offLaneTangPenaltyMax: 0.14,
+        offLaneDecelScale: 0.95,
+        offLaneAccelRelief: 0.04,
+    },
 };
+
+/** Archetype name → merged defaults (for batch tuning / inspectors). */
+export function mergeBtConfig(
+    archetype: string,
+    overrides?: Partial<BTConfig>
+): BTConfig {
+    const base = ARCHETYPES[archetype] ?? {};
+    return { ...DEFAULT_CONFIG, ...base, ...(overrides ?? {}) };
+}
+
+/** Sorted archetype keys for UI dropdowns — kept in sync by register/remove. */
+export let BT_ARCHETYPE_IDS: string[] = Object.keys(ARCHETYPES).sort((a, b) =>
+    a.localeCompare(b)
+);
+
+function rebuildIds(): void {
+    BT_ARCHETYPE_IDS = Object.keys(ARCHETYPES).sort((a, b) =>
+        a.localeCompare(b)
+    );
+}
+
+/**
+ * Register (or overwrite) a named archetype at runtime.
+ * The config is stored as overrides from DEFAULT_CONFIG.
+ */
+export function registerArchetype(
+    name: string,
+    config: Partial<BTConfig>
+): void {
+    ARCHETYPES[name] = { ...config };
+    rebuildIds();
+}
+
+/** Remove a runtime-registered archetype. Built-in names can be removed too. */
+export function removeArchetype(name: string): boolean {
+    if (!(name in ARCHETYPES)) return false;
+    delete ARCHETYPES[name];
+    rebuildIds();
+    return true;
+}
+
+/** Names of the original built-in archetypes (safe to check before deleting). */
+export const BUILTIN_ARCHETYPE_NAMES = new Set([
+    'stalker',
+    'front-runner',
+    'closer',
+    'speedball',
+    'steady',
+    'drifter',
+]);
 
 interface HorseState {
     state: number;

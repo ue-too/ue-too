@@ -1,5 +1,6 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
+import { BT_ARCHETYPE_IDS } from '@/ai/bt-jockey';
 import type { V2SimHandle } from '@/simulation';
 
 interface ModelEntry {
@@ -10,6 +11,7 @@ interface ModelEntry {
 interface Props {
     sim: V2SimHandle;
     horses: { id: number; color: number }[];
+    btVersion?: number;
 }
 
 const HORSE_COUNT_OPTIONS = [2, 3, 4, 6, 8, 10, 12];
@@ -37,9 +39,17 @@ const mainSelectStyle = {
     maxWidth: 'none',
 } as const;
 
-export function HorsePicker({ sim, horses }: Props): ReactNode {
+/** ONNX list comes from `/models/manifest.json` (vite scans .onnx only). BT URLs are merged in. */
+function btManifestEntries(): ModelEntry[] {
+    return BT_ARCHETYPE_IDS.map(id => ({
+        label: `BT · ${id}`,
+        url: `bt://${id}`,
+    }));
+}
+
+export function HorsePicker({ sim, horses, btVersion }: Props): ReactNode {
     const [selected, setSelected] = useState<number | null>(null);
-    const [models, setModels] = useState<ModelEntry[]>([]);
+    const [onnxModels, setOnnxModels] = useState<ModelEntry[]>([]);
     const [tracks, setTracks] = useState<ModelEntry[]>([]);
     const [currentTrack, setCurrentTrack] = useState<string>('/tracks/test_oval.json');
     const [horseCount, setHorseCount] = useState(sim.getHorseCount());
@@ -50,13 +60,18 @@ export function HorsePicker({ sim, horses }: Props): ReactNode {
     useEffect(() => {
         fetch('/models/manifest.json')
             .then(res => res.json())
-            .then((data: ModelEntry[]) => setModels(data))
-            .catch(() => setModels([]));
+            .then((data: ModelEntry[]) =>
+                setOnnxModels(Array.isArray(data) ? data : [])
+            )
+            .catch(() => setOnnxModels([]));
         fetch('/tracks/manifest.json')
             .then(res => res.json())
             .then((data: ModelEntry[]) => setTracks(data))
             .catch(() => setTracks([]));
     }, []);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const models = useMemo(() => [...btManifestEntries(), ...onnxModels], [onnxModels, btVersion]);
 
     const onTrackChange = async (url: string) => {
         if (url === currentTrack) return;
