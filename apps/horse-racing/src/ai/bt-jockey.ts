@@ -179,7 +179,7 @@ export const ARCHETYPES: Record<string, Partial<BTConfig>> = {
         passCooldownTicks: 150,
         defendOnScore: 0.9,
         wPass: 0.5,
-        wKick: 0.8,
+        wKick: 0.9,
         wDraft: 1.0,
         offLanePenaltyStart: 0.07,
         offLaneTangPenaltyMax: 0.14,
