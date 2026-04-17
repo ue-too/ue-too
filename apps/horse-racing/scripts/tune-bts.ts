@@ -373,18 +373,87 @@ export function computeFitness(metrics: Metrics, proposal: Proposal): number {
 // ============================================================
 
 async function main(): Promise<void> {
+    const itersOverride = process.env.TUNE_ITERS
+        ? parseInt(process.env.TUNE_ITERS, 10)
+        : ITERS;
+    const racesOverride = process.env.TUNE_RACES
+        ? parseInt(process.env.TUNE_RACES, 10)
+        : RACES_PER_EVAL;
+    console.log(`config: iters=${itersOverride} racesPerEval=${racesOverride}`);
+
     const tracks: Record<TrackName, TrackSegment[]> = {
         test_oval: loadTrack('test_oval'),
         tokyo: loadTrack('tokyo'),
         kyoto: loadTrack('kyoto'),
     };
-    console.log(
-        `Loaded tracks: ${Object.entries(tracks)
-            .map(([n, segs]) => `${n}(${segs.length} segs)`)
-            .join(', ')}`
-    );
-    console.log(`Archetypes: ${ARCHETYPE_NAMES.join(', ')}`);
-    console.log('Skeleton OK — search loop not yet implemented.');
+
+    // Starting proposal = current ARCHETYPES (empty overrides → mergeBtConfig
+    // fills from ARCHETYPES).
+    const starting: Proposal = {} as Proposal;
+    for (const name of ARCHETYPE_NAMES) starting[name] = {};
+
+    let current = enforceAnchors(starting);
+    let best = current;
+
+    console.log('Evaluating starting configs (1 baseline)...');
+    let currentMetrics = await evaluate(current, tracks, racesOverride, 0);
+    let currentFit = computeFitness(currentMetrics, current);
+    let bestFit = currentFit;
+    let bestMetrics = currentMetrics;
+    console.log(`baseline fitness=${currentFit.toFixed(4)}`);
+
+    let sigma = SIGMA_INIT;
+    const rng = mulberry32(2026_04_17);
+
+    for (let iter = 1; iter <= itersOverride; iter++) {
+        const proposal = enforceAnchors(perturb(current, sigma, rng));
+        const metrics = await evaluate(proposal, tracks, racesOverride, iter);
+        const fit = computeFitness(metrics, proposal);
+        const accepted = fit > currentFit;
+        const delta = fit - currentFit;
+        const flag = accepted ? 'ACCEPTED' : 'rejected';
+        console.log(
+            `[${iter.toString().padStart(3, ' ')}/${itersOverride}] ` +
+                `fitness=${fit.toFixed(4)}  Δ=${delta >= 0 ? '+' : ''}${delta.toFixed(4)}  ` +
+                `${flag}  σ=${sigma.toFixed(3)}  best=${bestFit.toFixed(4)}`
+        );
+        if (accepted) {
+            current = proposal;
+            currentFit = fit;
+            sigma = Math.min(SIGMA_MAX, sigma * SIGMA_GROW);
+            if (fit > bestFit) {
+                best = proposal;
+                bestFit = fit;
+                bestMetrics = metrics;
+            }
+        } else {
+            sigma = Math.max(SIGMA_MIN, sigma * SIGMA_SHRINK);
+        }
+        if (iter % 10 === 0) {
+            console.log('---- per-archetype best mean place ----');
+            for (const a of ARCHETYPE_NAMES) {
+                const perTrack = TRACK_FILES.map(t => {
+                    const cell = bestMetrics[a][t];
+                    return `${t}=${meanPlace(cell).toFixed(2)}`;
+                }).join('  ');
+                console.log(`  ${a.padEnd(13)} ${perTrack}`);
+            }
+            console.log('---------------------------------------');
+        }
+    }
+
+    console.log(`\nSearch complete. best fitness=${bestFit.toFixed(4)}`);
+    console.log('Best configs:');
+    for (const a of ARCHETYPE_NAMES) {
+        const merged = mergeBtConfig(a, best[a]);
+        const compact = PERSONALITY_PARAMS.map(
+            p => `${p}=${merged[p].toFixed(3)}`
+        ).join(' ');
+        console.log(`  ${a.padEnd(13)} ${compact}`);
+    }
+
+    // Task 9 (next) appends JSON output here using the same in-scope
+    // variables: itersOverride, racesOverride, best, bestFit, bestMetrics.
 }
 
 main().catch(err => {
