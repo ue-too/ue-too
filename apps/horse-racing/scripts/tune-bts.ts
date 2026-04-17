@@ -143,6 +143,43 @@ export function perturb(
 }
 
 // ============================================================
+// Role anchors — preserve archetype identity through the search
+// ============================================================
+
+export function enforceAnchors(p: Proposal): Proposal {
+    const out: Proposal = {} as Proposal;
+    for (const name of ARCHETYPE_NAMES) {
+        out[name] = { ...p[name] };
+    }
+
+    // front-runner: kicks early, runs high
+    out['front-runner'].kickPhase = Math.min(
+        out['front-runner'].kickPhase ?? 0.65,
+        0.72
+    );
+    out['front-runner'].cruiseHigh = Math.max(
+        out['front-runner'].cruiseHigh ?? 0.85,
+        0.78
+    );
+
+    // closer: late kick, prioritizes kick decision
+    out.closer.kickPhase = Math.max(out.closer.kickPhase ?? 0.78, 0.78);
+    out.closer.wKick = Math.max(out.closer.wKick ?? 1.5, 1.2);
+
+    // speedball: aggressive overtaker
+    out.speedball.wPass = Math.max(out.speedball.wPass ?? 1.5, 1.2);
+
+    // stalker: drafting-oriented
+    out.stalker.wDraft = Math.max(out.stalker.wDraft ?? 1.3, 1.0);
+
+    // steady: conservative passer
+    out.steady.wPass = Math.min(out.steady.wPass ?? 0.5, 0.8);
+
+    // drifter: no anchor (free baseline)
+    return out;
+}
+
+// ============================================================
 // Entrypoint (skeleton)
 // ============================================================
 

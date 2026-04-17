@@ -3,6 +3,7 @@ import {
     PARAM_RANGES,
     PERSONALITY_PARAMS,
     type Proposal,
+    enforceAnchors,
     gaussian,
     mulberry32,
     perturb,
@@ -75,5 +76,87 @@ describe('perturb', () => {
                 expect(v).toBeCloseTo(expected, 10);
             }
         }
+    });
+});
+
+describe('enforceAnchors', () => {
+    it('clamps front-runner kickPhase down to 0.72', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            'front-runner': { kickPhase: 0.85, cruiseHigh: 0.85 },
+        };
+        const out = enforceAnchors(p);
+        expect(out['front-runner'].kickPhase).toBe(0.72);
+    });
+
+    it('clamps front-runner cruiseHigh up to 0.78', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            'front-runner': { kickPhase: 0.65, cruiseHigh: 0.6 },
+        };
+        const out = enforceAnchors(p);
+        expect(out['front-runner'].cruiseHigh).toBe(0.78);
+    });
+
+    it('clamps closer kickPhase up to 0.78 and wKick up to 1.2', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            closer: { kickPhase: 0.6, wKick: 0.5 },
+        };
+        const out = enforceAnchors(p);
+        expect(out.closer.kickPhase).toBe(0.78);
+        expect(out.closer.wKick).toBe(1.2);
+    });
+
+    it('clamps speedball wPass up to 1.2', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            speedball: { wPass: 0.4 },
+        };
+        const out = enforceAnchors(p);
+        expect(out.speedball.wPass).toBe(1.2);
+    });
+
+    it('clamps stalker wDraft up to 1.0', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            stalker: { wDraft: 0.5 },
+        };
+        const out = enforceAnchors(p);
+        expect(out.stalker.wDraft).toBe(1.0);
+    });
+
+    it('clamps steady wPass down to 0.8', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            steady: { wPass: 1.5 },
+        };
+        const out = enforceAnchors(p);
+        expect(out.steady.wPass).toBe(0.8);
+    });
+
+    it('does not clamp values that satisfy the anchor', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            'front-runner': { kickPhase: 0.65, cruiseHigh: 0.85 },
+            closer: { kickPhase: 0.85, wKick: 1.5 },
+        };
+        const out = enforceAnchors(p);
+        expect(out['front-runner'].kickPhase).toBe(0.65);
+        expect(out['front-runner'].cruiseHigh).toBe(0.85);
+        expect(out.closer.kickPhase).toBe(0.85);
+        expect(out.closer.wKick).toBe(1.5);
+    });
+
+    it('leaves drifter unconstrained', () => {
+        const p: Proposal = {
+            ...startingProposal(),
+            drifter: { kickPhase: 0.55, wPass: 0.1, wKick: 0.1, wDraft: 0.1 },
+        };
+        const out = enforceAnchors(p);
+        expect(out.drifter.kickPhase).toBe(0.55);
+        expect(out.drifter.wPass).toBe(0.1);
+        expect(out.drifter.wKick).toBe(0.1);
+        expect(out.drifter.wDraft).toBe(0.1);
     });
 });
